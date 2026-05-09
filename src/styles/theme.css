@@ -85,6 +85,29 @@
   border-width: 1px;
 }
 
+/* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.
+   Uses @starting-style + display/overlay allow-discrete so the dialog fades
+   from opacity:0 → 1 on showModal() and 1 → 0 on close(). Reduced-motion
+   branch below disables the transition. */
+dialog.modal-fade {
+  opacity: 0;
+  transition:
+    opacity 200ms ease-out,
+    display 200ms allow-discrete,
+    overlay 200ms allow-discrete;
+}
+dialog.modal-fade[open] {
+  opacity: 1;
+}
+@starting-style {
+  dialog.modal-fade[open] {
+    opacity: 0;
+  }
+}
+dialog.modal-fade[open]::backdrop {
+  transition: background-color 200ms ease-out;
+}
+
 /* Reduced-motion (D-05, D-07, D-09):
    - Suppress the orb scale transition and the legacy .breathing-shape transform animation.
    - Intentionally PRESERVE the .orb-layer--out opacity transition — it is the
@@ -93,10 +116,13 @@
      reduced-motion fixed scale via inline `transform: scale(var(--orb-scale-mid))`
      when usePrefersReducedMotion() is true. Inline styles do NOT win over an
      `!important` stylesheet rule, so a `transform: none !important` here would
-     silently nuke the JS-controlled MID_SCALE and render the orb at scale(1). */
+     silently nuke the JS-controlled MID_SCALE and render the orb at scale(1).
+   - F3: dialog modal fade also disabled here (per UI-SPEC: "in reduced-motion,
+     dialog appears immediately"). */
 @media (prefers-reduced-motion: reduce) {
   .breathing-shape,
-  .orb {
+  .orb,
+  dialog.modal-fade {
     transition: none !important;
   }
 }

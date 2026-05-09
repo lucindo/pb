@@ -51,7 +51,7 @@ export function EndSessionDialog({ open, onConfirm, onCancel }: EndSessionDialog
       ref={dialogRef}
       aria-labelledby="end-session-title"
       onClick={handleBackdropClick}
-      className="m-auto max-w-sm rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-auto max-w-sm rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
         <h2
