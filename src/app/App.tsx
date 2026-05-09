@@ -1,10 +1,11 @@
-import { useState } from 'react'
-
 import { SettingsForm } from '../components/SettingsForm'
-import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
+import { SessionControls } from '../components/SessionControls'
+import { useSessionEngine } from '../hooks/useSessionEngine'
 
 export default function App() {
-  const [settings, setSettings] = useState<SessionSettings>(DEFAULT_SETTINGS)
+  const session = useSessionEngine()
+  const { state } = session
+  const isRunning = state.status === 'running'
 
   return (
     <main className="min-h-screen bg-[var(--color-breathing-bg)] px-6 py-8 text-slate-900">
@@ -20,13 +21,12 @@ export default function App() {
           and exhale session with no pauses.
         </p>
         <div className="mt-10 w-full rounded-[2rem] border border-white/70 bg-white/60 p-5 shadow-xl shadow-teal-950/5 backdrop-blur sm:p-6">
-          <SettingsForm settings={settings} isRunning={false} onChange={setSettings} />
-          <button
-            type="button"
-            className="mt-6 w-full rounded-full bg-teal-700 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-teal-900/20 transition hover:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-200"
-          >
-            Start session
-          </button>
+          <SettingsForm
+            settings={state.selectedSettings}
+            isRunning={isRunning}
+            onChange={session.setSelectedSettings}
+          />
+          <SessionControls status={state.status} onStart={session.start} onEnd={session.end} />
         </div>
       </section>
     </main>
