@@ -270,8 +270,10 @@ describe('end-session confirmation modal (App integration)', () => {
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
 
       // Advance past the session end without the user dismissing the modal.
+      // Phase 3 fix: completion now waits for the surrounding cycle to finish;
+      // advance an extra minute past the 5-min duration mark.
       act(() => {
-        vi.advanceTimersByTime(5 * 60_000)
+        vi.advanceTimersByTime(6 * 60_000)
       })
 
       // Modal must auto-close, and the app should be back at the idle/complete state.

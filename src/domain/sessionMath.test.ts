@@ -52,6 +52,19 @@ describe('session frame derivation', () => {
     })
   })
 
+  // Phase 3 fix: timed completion holds until the current cycle ends so cues
+  // and the orb finish their In/Out before transitioning to 'complete'.
+  it('holds completion until the current cycle finishes when total duration falls mid-cycle', () => {
+    // bpm 5.5 → cycle ≈ 10909.09 ms; 5 min total → 27.5 cycles (mid-cycle).
+    const offsetPlan = createBreathingPlan({ bpm: 5.5, ratio: '40:60', durationMinutes: 5 })
+    const cycleMs = offsetPlan.cycleMs
+    const cycleEnd = Math.ceil(300_000 / cycleMs) * cycleMs
+
+    expect(getSessionFrame(offsetPlan, 300_000).isComplete).toBe(false)
+    expect(getSessionFrame(offsetPlan, cycleEnd - 1).isComplete).toBe(false)
+    expect(getSessionFrame(offsetPlan, cycleEnd).isComplete).toBe(true)
+  })
+
   it('keeps open-ended sessions running without remaining time', () => {
     expect(getSessionFrame(openEndedPlan, 3_600_000)).toMatchObject({
       remainingMs: null,

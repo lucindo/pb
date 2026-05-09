@@ -216,9 +216,11 @@ describe('App — audio cues (Phase 3)', () => {
     fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
-    // Advance past the 5-minute total duration to trigger completion.
+    // Phase 3 fix: completion now waits for the surrounding cycle to finish so
+    // cues never get cut mid-In/mid-Out. Advance an extra minute to clear the
+    // next cycle boundary after the 5-min duration mark.
     act(() => {
-      vi.advanceTimersByTime(5 * 60_000)
+      vi.advanceTimersByTime(6 * 60_000)
     })
     await flushMicrotasks()
 

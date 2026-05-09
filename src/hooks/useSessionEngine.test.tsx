@@ -76,8 +76,12 @@ describe('useSessionEngine', () => {
     act(() => {
       result.current.start()
     })
+    // Phase 3 fix: completion holds until the cycle that contains the
+    // configured duration finishes. 5 min at bpm 5.5 lands mid-cycle, so the
+    // hook only flips to 'complete' after the next cycle boundary
+    // (~305 454 ms). Advance well past it.
     act(() => {
-      vi.advanceTimersByTime(5 * 60_000)
+      vi.advanceTimersByTime(6 * 60_000)
     })
 
     expect(result.current.state.status).toBe('complete')

@@ -21,6 +21,13 @@ export function getSessionFrame(plan: BreathingPlan, elapsedMs: number): Session
   const phaseDurationMs = isInPhase ? plan.inhaleMs : plan.exhaleMs
   const phaseProgress = phaseDurationMs === 0 ? 0 : phaseElapsedMs / phaseDurationMs
   const remainingMs = plan.totalMs === null ? null : Math.max(0, plan.totalMs - safeElapsedMs)
+  // Phase 3 fix: completion holds until the current cycle finishes so audio cues
+  // and the visual orb never get cut mid-In/mid-Out. Round the configured total up
+  // to the next cycle boundary; isComplete fires only at that boundary.
+  const completionMs =
+    plan.totalMs === null
+      ? null
+      : Math.ceil(plan.totalMs / plan.cycleMs) * plan.cycleMs
 
   return {
     phase: isInPhase ? 'in' : 'out',
@@ -29,7 +36,7 @@ export function getSessionFrame(plan: BreathingPlan, elapsedMs: number): Session
     remainingMs,
     phaseProgress,
     cycleIndex,
-    isComplete: plan.totalMs !== null && safeElapsedMs >= plan.totalMs,
+    isComplete: completionMs !== null && safeElapsedMs >= completionMs,
   }
 }
 

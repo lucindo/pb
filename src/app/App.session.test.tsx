@@ -231,8 +231,11 @@ describe('running duration edits and completion', () => {
     fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /decrease duration/i }))
     await startAndAdvancePastLeadIn()
 
+    // Phase 3 fix: timed completion holds until the surrounding cycle ends so
+    // cues never get cut mid-In/mid-Out. 5 min at the default bpm lands
+    // mid-cycle; advance an extra minute to clear the next boundary.
     act(() => {
-      vi.advanceTimersByTime(5 * 60_000)
+      vi.advanceTimersByTime(6 * 60_000)
     })
 
     expect(screen.getByText('Session complete')).toBeVisible()
