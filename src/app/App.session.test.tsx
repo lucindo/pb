@@ -15,15 +15,21 @@ function sessionReadout() {
 }
 
 describe('running session display', () => {
-  it('immediately shows the current In phase after starting a session', async () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('immediately shows the current In phase after starting a session (orb hosts the label per D-03)', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Start session' }))
 
-    const readout = sessionReadout()
-    expect(within(readout).getByText('In')).toBeVisible()
-    expect(within(readout).getByText('Current phase')).toBeVisible()
+    // D-03: the In/Out label lives inside the orb (orb is the single visible source).
+    expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
+
+    // The readout region is still rendered (clock pill + ARIA contract preserved).
+    expect(sessionReadout()).toBeVisible()
   })
 
   it('shows remaining time for timed sessions', async () => {
@@ -63,6 +69,79 @@ describe('running session display', () => {
     expect(shape).toHaveAttribute('data-phase', 'in')
     expect(shape).toHaveAttribute('data-progress', '0.000')
     expect(shape).toHaveTextContent('In')
+  })
+
+  it('renders the orb with two static aria-hidden reference rings', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
+    const outerRing = shape.querySelector('[aria-hidden="true"].orb-ring--outer')
+    const innerRing = shape.querySelector('[aria-hidden="true"].orb-ring--inner')
+    expect(outerRing).not.toBeNull()
+    expect(innerRing).not.toBeNull()
+  })
+
+  it('renders two stacked gradient layers (In and Out) and a single in-orb phase label', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
+    expect(shape.querySelector('[aria-hidden="true"].orb-layer--in')).not.toBeNull()
+    expect(shape.querySelector('[aria-hidden="true"].orb-layer--out')).not.toBeNull()
+    expect(shape).toHaveTextContent('In')
+  })
+
+  it('renders the in-orb phase label at large display size (text-5xl semibold) per D-03', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
+    // The visible label is a non-aria-hidden child whose text content is the phase label.
+    const label = Array.from(shape.children).find((child) => {
+      return !(child as HTMLElement).hasAttribute('aria-hidden') && child.textContent === 'In'
+    }) as HTMLElement | undefined
+    expect(label).toBeDefined()
+    expect(label!.className).toMatch(/text-5xl/)
+    expect(label!.className).toMatch(/font-semibold/)
+  })
+
+  it('binds the orb scale to phaseProgress in normal motion mode', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
+    const scaleHost = shape.querySelector<HTMLElement>('.orb')
+    expect(scaleHost).not.toBeNull()
+    // Default matchMedia mock has matches: false; phaseProgress at start is 0
+    // → liveScale for 'in' = MIN_SCALE = 0.58.
+    expect(scaleHost!.style.transform).toContain('scale(0.58')
+  })
+
+  it('holds the orb at fixed mid-scale (0.79) when reduced-motion is preferred (D-06)', async () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    } as unknown as MediaQueryList)
+
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
+    expect(shape).toHaveAttribute('data-phase', 'in')
+    const scaleHost = shape.querySelector<HTMLElement>('.orb')
+    expect(scaleHost!.style.transform).toBe('scale(0.79)')
   })
 })
 
