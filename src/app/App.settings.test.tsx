@@ -77,4 +77,50 @@ describe('main screen settings controls', () => {
     await user.click(increase)
     expect(within(duration).getByText('Open-ended')).toBeVisible()
   })
+
+  it('starts a running session from the primary idle action', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+  })
+
+  it('ends a running session and returns to the idle start action', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'End session' })).not.toBeInTheDocument()
+  })
+
+  it('keeps selected settings visible after manually ending a session', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
+    expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
+    expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
+  })
+
+  it('does not allow BPM or ratio edits while a session is running', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    expect(within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })).toBeDisabled()
+    expect(within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })).toBeDisabled()
+    expect(within(settingGroup('Ratio')).getByRole('button', { name: /decrease ratio/i })).toBeDisabled()
+    expect(within(settingGroup('Ratio')).getByRole('button', { name: /increase ratio/i })).toBeDisabled()
+  })
 })
