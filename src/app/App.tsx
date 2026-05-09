@@ -169,6 +169,54 @@ export default function App() {
     }
   }, [state.status, audio, clearLeadInTimeouts])
 
+  // Phase 3 D-12 + Pitfall 2 dual-anchor invariant: 1-cue lookahead.
+  // On every cycleIndex/phase transition in SessionFrame, schedule the corresponding In/Out cue
+  // at its EXACT audio-clock time, computed from the dual anchor captured at lead-in completion
+  // PLUS the boundary's deterministic offset derived from the breathing plan.
+  //
+  // Per checker B1 fix: the boundary start time MUST come from the plan (cycleIndex * cycleMs +
+  // phase offset), NOT from frame.elapsedMs at render time. Reading the rAF-driven elapsedMs is
+  // the self-invalidating "main-thread clock" anti-pattern that Pitfall 2 explicitly warns
+  // against: rAF jitter (±16 ms) becomes audio jitter (audible). The audio thread's job is to
+  // schedule cues at deterministic instants on the audio clock; the main-thread effect's job is
+  // to compute those instants from the source-of-truth plan.
+  //
+  // Per checker B2 fix: when audioAnchorRef.current is null (AC unavailable), this effect is a
+  // no-op — the visual session continues without audio. This is the D-10 fallback path.
+  useEffect(() => {
+    if (appPhase !== 'running') {
+      lastBoundaryKeyRef.current = null
+      return
+    }
+    const frame = session.currentFrame
+    if (frame === null) return
+    const key = `${frame.cycleIndex}:${frame.phase}`
+    if (lastBoundaryKeyRef.current === key) return
+    lastBoundaryKeyRef.current = key
+
+    // Skip the very first In phase: its cue was already scheduled inside audio.start() at the
+    // lead-in anchor (firstInAudioTime). cycleIndex=0 + phase='in' is the t=0 moment we covered.
+    if (frame.cycleIndex === 0 && frame.phase === 'in') return
+
+    const audioAnchor = audioAnchorRef.current
+    const plan = planRef.current
+    // D-10 fallback: AC unavailable → no-op (visual session continues uninterrupted).
+    if (audioAnchor === null || plan === null) return
+
+    // Compute boundary start time from the plan (NOT from frame.elapsedMs).
+    // boundaryStartMs is the elapsed offset from session t=0 to the start of THIS phase.
+    // - For In phase (start of cycle N): cycleIndex * cycleMs
+    // - For Out phase (after In within cycle N): cycleIndex * cycleMs + inhaleMs
+    const boundaryStartMs =
+      frame.cycleIndex * plan.cycleMs +
+      (frame.phase === 'in' ? 0 : plan.inhaleMs)
+
+    // Convert to audio-clock time using the dual anchor captured at lead-in completion.
+    const audioTime = audioAnchor + boundaryStartMs / 1000
+
+    audio.notifyPhaseBoundary({ newPhase: frame.phase, audioTime })
+  }, [appPhase, session.currentFrame, audio])
+
   // Cleanup pending lead-in timeouts on unmount (Pitfall 3 leak guard).
   useEffect(() => {
     return () => {
