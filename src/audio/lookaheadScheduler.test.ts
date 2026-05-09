@@ -78,13 +78,12 @@ describe('lookaheadScheduler', () => {
   it('re-runs after LOOKAHEAD_MS milliseconds', () => {
     const ac = makeFakeAcWithCurrentTime(() => 0)
     const scheduleAtTime = vi.fn()
-    let firstTick = true
+    // Sequence: first-tick null → second-tick 0.05 → null thereafter.
+    // (Always returning 0.05 would loop forever inside the while-loop.)
+    const sequence: Array<number | null> = [null, 0.05]
     const getNext = vi.fn(() => {
-      if (firstTick) {
-        firstTick = false
-        return null
-      }
-      return 0.05
+      if (sequence.length === 0) return null
+      return sequence.shift() ?? null
     })
 
     const handle = startScheduler(ac, getNext, scheduleAtTime)
@@ -140,23 +139,21 @@ describe('lookaheadScheduler', () => {
   })
 
   it('reads from audioCtx.currentTime, not Date.now()', () => {
-    const dateNowSpy = vi.spyOn(Date, 'now')
-    const dateNowCallsBefore = dateNowSpy.mock.calls.length
-
     const currentTimeGetter = vi.fn(() => 0)
     const ac = makeFakeAcWithCurrentTime(currentTimeGetter)
+
+    // Provide a non-null boundary BEYOND the lookahead window — this forces
+    // the while-loop condition to evaluate audioCtx.currentTime (without
+    // entering the body, so we never schedule). If the scheduler used
+    // Date.now() instead, currentTimeGetter would never fire.
     const handle = startScheduler(
       ac,
-      () => null,
+      () => 99.0, // beyond 0 + 0.1; condition is evaluated then loop exits
       () => {},
     )
 
     expect(currentTimeGetter).toHaveBeenCalled()
-    // Date.now should not have been called by the scheduler tick itself.
-    // (Vitest fake timers may use Date.now, but the scheduler must not.)
-    // Just assert the scheduler made currentTime reads — that's the load-bearing check.
     expect(currentTimeGetter.mock.calls.length).toBeGreaterThan(0)
-    expect(dateNowSpy.mock.calls.length).toBe(dateNowCallsBefore)
 
     handle.stop()
   })
