@@ -2,9 +2,13 @@ import '@testing-library/jest-dom/vitest'
 
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 function settingGroup(name: string) {
   return screen.getByRole('group', { name })

@@ -10,6 +10,10 @@ function settingGroup(name: string) {
   return screen.getByRole('group', { name })
 }
 
+function sessionReadout() {
+  return screen.getByRole('region', { name: 'Session readout' })
+}
+
 describe('running session display', () => {
   it('immediately shows the current In phase after starting a session', async () => {
     const user = userEvent.setup()
@@ -17,7 +21,7 @@ describe('running session display', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start session' }))
 
-    const readout = screen.getByRole('status', { name: 'Session readout' })
+    const readout = sessionReadout()
     expect(within(readout).getByText('In')).toBeVisible()
     expect(within(readout).getByText('Current phase')).toBeVisible()
   })
@@ -28,7 +32,7 @@ describe('running session display', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start session' }))
 
-    const readout = screen.getByRole('status', { name: 'Session readout' })
+    const readout = sessionReadout()
     expect(within(readout).getByText('Remaining')).toBeVisible()
     expect(within(readout).getByText('10:00')).toBeVisible()
   })
@@ -44,7 +48,7 @@ describe('running session display', () => {
     }
     await user.click(screen.getByRole('button', { name: 'Start session' }))
 
-    const readout = screen.getByRole('status', { name: 'Session readout' })
+    const readout = sessionReadout()
     expect(within(readout).getByText('Elapsed')).toBeVisible()
     expect(within(readout).getByText('0:00')).toBeVisible()
   })
@@ -142,7 +146,7 @@ describe('running duration edits and completion', () => {
 
     expect(screen.queryByText('Session complete')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
-    const readout = screen.getByRole('status', { name: 'Session readout' })
+    const readout = sessionReadout()
     expect(within(readout).getByText('Elapsed')).toBeVisible()
   })
 })

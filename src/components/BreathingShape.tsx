@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+
 import type { SessionFrame } from '../domain/sessionMath'
 
 export interface BreathingShapeProps {
@@ -18,8 +20,8 @@ export function BreathingShape({ frame }: BreathingShapeProps) {
       aria-label={`Breathing shape: ${frame.phaseLabel}`}
       data-phase={frame.phase}
       data-progress={progress.toFixed(3)}
-      className="mx-auto mb-5 grid size-40 place-items-center rounded-full border-4 border-teal-200 bg-gradient-to-br from-teal-100 to-emerald-50 text-lg font-semibold text-teal-900 shadow-lg shadow-teal-900/10 transition-transform duration-200"
-      style={{ transform: `scale(${scale})` }}
+      className="breathing-shape mx-auto mb-5 grid size-40 place-items-center rounded-full border-4 border-teal-200 bg-gradient-to-br from-teal-100 to-emerald-50 text-lg font-semibold text-teal-900 shadow-lg shadow-teal-900/10 transition-transform duration-200 motion-reduce:transition-none"
+      style={{ '--breathing-scale': scale } as CSSProperties}
     >
       <span className="rounded-full bg-white/75 px-4 py-2 shadow-sm">{frame.phaseLabel}</span>
     </div>

@@ -7,3 +7,14 @@
   --color-breathing-muted: #64748b;
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
 }
+
+.breathing-shape {
+  transform: scale(var(--breathing-scale, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathing-shape {
+    transform: none;
+    transition: none;
+  }
+}
