@@ -146,3 +146,58 @@ describe('running duration edits and completion', () => {
     expect(within(readout).getByText('Elapsed')).toBeVisible()
   })
 })
+
+describe('manual session ending', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.useRealTimers()
+  })
+
+  it('asks for confirmation before ending a timed running session and keeps running when cancelled', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(confirm).toHaveBeenCalledWith('End this timed session?')
+    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.getByRole('status', { name: 'Session readout' })).toBeVisible()
+  })
+
+  it('confirms timed manual end, clears active readouts, and keeps selected settings', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<App />)
+
+    fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /Breathing shape/i })).not.toBeInTheDocument()
+    expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
+  })
+
+  it('ends open-ended sessions directly without confirmation', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<App />)
+
+    const duration = settingGroup('Duration')
+    const increase = within(duration).getByRole('button', { name: /increase duration/i })
+    for (let index = 0; index < 11; index += 1) {
+      fireEvent.click(increase)
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+  })
+})
