@@ -20,12 +20,15 @@ function renderDialog(
 
 describe('EndSessionDialog (component-level)', () => {
   it('does not show the modal when open=false', () => {
-    renderDialog({ open: false })
-    const dialog = screen.queryByRole('dialog', { name: 'End this session?' })
-    // The native <dialog> exists in the DOM either way; .open should be false.
-    if (dialog) {
-      expect((dialog as HTMLDialogElement).open).toBe(false)
-    }
+    // IN-03: previous version wrapped the assertion in `if (dialog) { ... }`,
+    // which made the test "always-green" — a closed <dialog> has no a11y role,
+    // so queryByRole returned null and the test passed without asserting
+    // anything. Query the DOM directly for the <dialog> element and assert the
+    // closed-dialog contract (.open === false) unconditionally.
+    const { container } = renderDialog({ open: false })
+    const dialog = container.querySelector('dialog')
+    expect(dialog).not.toBeNull()
+    expect((dialog as HTMLDialogElement).open).toBe(false)
   })
 
   it('opens with focus on Keep going when open=true', () => {
