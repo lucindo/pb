@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 
-import { render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,6 +12,21 @@ afterEach(() => {
 
 function settingGroup(name: string) {
   return screen.getByRole('group', { name })
+}
+
+// Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
+// session timing clock starts. Helper to click Start + flush microtasks for the
+// awaited audio.start() promise + advance fake timers past the 3 s setTimeout
+// chain so the In phase appears.
+const LEAD_IN_MS = 3000
+
+async function startAndAdvancePastLeadIn() {
+  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+    vi.advanceTimersByTime(LEAD_IN_MS)
+  })
 }
 
 describe('main screen settings controls', () => {
@@ -85,79 +100,103 @@ describe('main screen settings controls', () => {
   })
 
   it('starts a running session from the primary idle action', async () => {
-    const user = userEvent.setup()
-    render(<App />)
+    vi.useFakeTimers()
+    try {
+      render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+      await startAndAdvancePastLeadIn()
 
-    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
-    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('ends a running session and returns to the idle start action', async () => {
-    const user = userEvent.setup()
-    render(<App />)
+    vi.useFakeTimers()
+    try {
+      render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
-    await user.click(screen.getByRole('button', { name: 'End session' }))
-    await user.click(screen.getByRole('button', { name: 'End' }))
+      await startAndAdvancePastLeadIn()
+      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
-    expect(screen.queryByRole('button', { name: 'End session' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'End session' })).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('keeps selected settings visible after manually ending a session', async () => {
-    const user = userEvent.setup()
-    render(<App />)
+    vi.useFakeTimers()
+    try {
+      render(<App />)
 
-    await user.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
-    await user.click(screen.getByRole('button', { name: 'End session' }))
-    await user.click(screen.getByRole('button', { name: 'End' }))
+      fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
+      await startAndAdvancePastLeadIn()
+      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-    expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
-    expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
-    expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
+      expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
+      expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
+      expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('removes BPM and Ratio steppers from the DOM while a session is running (D-16)', async () => {
-    const user = userEvent.setup()
-    render(<App />)
+    vi.useFakeTimers()
+    try {
+      render(<App />)
 
-    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+      await startAndAdvancePastLeadIn()
 
-    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+      expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('restores BPM and Ratio steppers after the session ends (D-16)', async () => {
-    const user = userEvent.setup()
-    render(<App />)
+    vi.useFakeTimers()
+    try {
+      render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
-    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+      await startAndAdvancePastLeadIn()
+      expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'End session' }))
-    await user.click(screen.getByRole('button', { name: 'End' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('does not render the Current phase eyebrow inside the readout while running (D-03)', async () => {
-    const user = userEvent.setup()
-    render(<App />)
+    vi.useFakeTimers()
+    try {
+      render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+      await startAndAdvancePastLeadIn()
 
-    // D-03: the orb is the single source of the visible phase label.
-    expect(screen.queryByText('Current phase')).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
+      // D-03: the orb is the single source of the visible phase label.
+      expect(screen.queryByText('Current phase')).not.toBeInTheDocument()
+      expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
