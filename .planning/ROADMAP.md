@@ -65,7 +65,14 @@ Plans:
   1. User can hear soft generated gong/bowl-like cues when inhale and exhale phases change.
   2. Audio cues align with the active breathing phase rather than drifting away from the visual guide.
   3. User can mute audio cues and continue the full session using visual guidance alone.
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 03-01-PLAN.md — Test infrastructure (FakeAudioContext polyfill) + pure cueSynth + lookaheadScheduler modules with unit tests.
+- [ ] 03-02-PLAN.md — audioEngine service (AC lifecycle + mute fade + lead-in scheduling) + useAudioCues React hook with hook tests.
+- [ ] 03-03-PLAN.md — MuteToggle component (D-05/D-06/D-10) + SessionControls inline composition + BreathingShape leadInDigit prop (D-14).
+- [ ] 03-04-PLAN.md — App.tsx integration (appPhase state machine, lead-in orchestration, dual-anchor audio scheduling, four end paths) + App.audio.test.tsx integration tests.
+- [ ] 03-05-PLAN.md — Manual UAT checkpoints (bowl-cue tuning, mute-fade smoothness, tick distinctness, AC-failure path, iOS real-device behavior, full acceptance sign-off).
+**UI hint**: yes
 
 ### Phase 4: Local Memory & Practice Stats
 **Goal**: Users can return to convenient saved settings and see simple local practice context while retaining control over stored data.
@@ -111,7 +118,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Configurable Session Timing | 4/4 | Complete    | 2026-05-09 |
 | 2. Visual Guide & Accessible Responsive Interface | 4/4 | Complete    | 2026-05-09 |
-| 3. Optional Generated Audio Cues | 0/TBD | Not started | - |
+| 3. Optional Generated Audio Cues | 0/5 | Not started | - |
 | 4. Local Memory & Practice Stats | 0/TBD | Not started | - |
 | 5. Mobile Hands-Off Resilience | 0/TBD | Not started | - |
 | 6. Learning & Claim-Safe Positioning | 0/TBD | Not started | - |
