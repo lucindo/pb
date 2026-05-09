@@ -14,10 +14,15 @@
   --orb-scale-max: 1.0;
   --orb-scale-mid: 0.79;
 
-  /* Phase 2 orb gradient color tokens (D-02) */
-  --color-orb-in-from: #ccfbf1;
+  /* Phase 2 orb gradient color tokens (D-02).
+     UAT-1: "from" stops deepened one Tailwind step (teal-200 / blue-200) so the
+     opacity crossfade between In and Out is perceptually readable under
+     prefers-reduced-motion (where the orb is locked at MID_SCALE and the
+     crossfade is the sole phase indicator per D-07). "to" stops kept light so
+     palette still reads as calm pastel. */
+  --color-orb-in-from: #99f6e4;
   --color-orb-in-to: #ecfdf5;
-  --color-orb-out-from: #dbeafe;
+  --color-orb-out-from: #bfdbfe;
   --color-orb-out-to: #eef2ff;
   --color-orb-in-text: #134e4a;
   --color-orb-out-text: #1e3a8a;
