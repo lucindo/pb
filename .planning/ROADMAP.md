@@ -31,7 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can end/reset a running session without stale session state carrying over.
   4. Timed sessions complete automatically, while unlimited sessions continue until the user ends them.
   5. Inhale and exhale phases alternate continuously from one accurate session clock with no pauses.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Create React/Vite foundation and pure timing domain math.
+- [ ] 01-02-PLAN.md — Implement session lifecycle rules and engine hook.
+- [ ] 01-03-PLAN.md — Build main-screen setting steppers and start/end controls.
+- [ ] 01-04-PLAN.md — Complete running readout, breathing shape, extension, completion, and timed-end confirmation.
 **UI hint**: yes
 
 ### Phase 2: Visual Guide & Accessible Responsive Interface
@@ -99,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Configurable Session Timing | 0/TBD | Not started | - |
+| 1. Configurable Session Timing | 0/4 | Planned | - |
 | 2. Visual Guide & Accessible Responsive Interface | 0/TBD | Not started | - |
 | 3. Optional Generated Audio Cues | 0/TBD | Not started | - |
 | 4. Local Memory & Practice Stats | 0/TBD | Not started | - |
