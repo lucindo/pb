@@ -9,7 +9,16 @@
 }
 
 .breathing-shape {
+  background: linear-gradient(135deg, #ccfbf1, #ecfdf5);
+  border-color: #99f6e4;
+  color: #134e4a;
   transform: scale(var(--breathing-scale, 1));
+}
+
+.breathing-shape[data-phase='out'] {
+  background: linear-gradient(135deg, #dbeafe, #eef2ff);
+  border-color: #bfdbfe;
+  color: #1e3a8a;
 }
 
 @media (prefers-reduced-motion: reduce) {

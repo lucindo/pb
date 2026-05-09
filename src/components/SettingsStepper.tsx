@@ -5,6 +5,8 @@ export interface SettingsStepperProps<T extends string | number> {
   formatValue?: (value: T) => string
   onChange(value: T): void
   disabled?: boolean
+  disableDecrease?: boolean
+  disableIncrease?: boolean
 }
 
 export function SettingsStepper<T extends string | number>({
@@ -14,6 +16,8 @@ export function SettingsStepper<T extends string | number>({
   formatValue = String,
   onChange,
   disabled = false,
+  disableDecrease = false,
+  disableIncrease = false,
 }: SettingsStepperProps<T>) {
   const selectedIndex = options.indexOf(value)
   const canDecrease = selectedIndex > 0
@@ -39,7 +43,7 @@ export function SettingsStepper<T extends string | number>({
           type="button"
           aria-label={`Decrease ${label}`}
           className="grid size-12 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 focus:outline-none focus:ring-4 focus:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-45"
-          disabled={disabled || !canDecrease}
+          disabled={disabled || disableDecrease || !canDecrease}
           onClick={() => changeBy(-1)}
         >
           −
@@ -54,7 +58,7 @@ export function SettingsStepper<T extends string | number>({
           type="button"
           aria-label={`Increase ${label}`}
           className="grid size-12 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 focus:outline-none focus:ring-4 focus:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-45"
-          disabled={disabled || !canIncrease}
+          disabled={disabled || disableIncrease || !canIncrease}
           onClick={() => changeBy(1)}
         >
           +

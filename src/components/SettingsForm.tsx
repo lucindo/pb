@@ -12,6 +12,7 @@ export interface SettingsFormProps {
   settings: SessionSettings
   isRunning: boolean
   onChange(settings: SessionSettings): void
+  onExtendDuration(durationMinutes: number): void
 }
 
 function formatBpm(value: number): string {
@@ -22,9 +23,29 @@ function formatDuration(value: DurationOption): string {
   return value === 'open-ended' ? 'Open-ended' : `${value} min`
 }
 
-export function SettingsForm({ settings, isRunning, onChange }: SettingsFormProps) {
+export function SettingsForm({
+  settings,
+  isRunning,
+  onChange,
+  onExtendDuration,
+}: SettingsFormProps) {
+  const durationOptions = DURATION_OPTIONS as readonly DurationOption[]
+  const durationIndex = durationOptions.indexOf(settings.durationMinutes)
+  const nextDuration = durationOptions[durationIndex + 1]
+
   const updateSettings = (nextSettings: Partial<SessionSettings>) => {
     onChange({ ...settings, ...nextSettings })
+  }
+
+  const updateDuration = (durationMinutes: DurationOption) => {
+    if (isRunning) {
+      if (typeof durationMinutes === 'number') {
+        onExtendDuration(durationMinutes)
+      }
+      return
+    }
+
+    updateSettings({ durationMinutes })
   }
 
   return (
@@ -47,10 +68,11 @@ export function SettingsForm({ settings, isRunning, onChange }: SettingsFormProp
       <SettingsStepper<DurationOption>
         label="Duration"
         value={settings.durationMinutes}
-        options={DURATION_OPTIONS}
+        options={durationOptions}
         formatValue={formatDuration}
-        onChange={(durationMinutes) => updateSettings({ durationMinutes })}
-        disabled={isRunning}
+        onChange={updateDuration}
+        disableDecrease={isRunning}
+        disableIncrease={isRunning && typeof nextDuration !== 'number'}
       />
     </div>
   )

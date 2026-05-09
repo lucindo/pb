@@ -1,5 +1,4 @@
 import { BreathingShape } from '../components/BreathingShape'
-import { RunningDurationControl } from '../components/RunningDurationControl'
 import { SettingsForm } from '../components/SettingsForm'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
@@ -43,14 +42,8 @@ export default function App() {
             settings={state.selectedSettings}
             isRunning={isRunning}
             onChange={session.setSelectedSettings}
+            onExtendDuration={session.extendDuration}
           />
-          {state.status === 'running' ? (
-            <RunningDurationControl
-              lockedDurationMinutes={state.lockedSettings.durationMinutes}
-              selectedDurationMinutes={state.selectedSettings.durationMinutes}
-              onIncrease={session.extendDuration}
-            />
-          ) : null}
           <SessionControls status={state.status} onStart={session.start} onEnd={endSession} />
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Timing stays local to this browser and continuously alternates In and Out with no
