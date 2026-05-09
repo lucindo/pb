@@ -115,6 +115,7 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
 
   Object.defineProperty(window, 'AudioContext', {
     writable: true,
+    configurable: true, // allow vi.stubGlobal('AudioContext', ...) per-test overrides (D-10 / failure-path tests in audioEngine).
     value: FakeAudioContext,
   })
 }
