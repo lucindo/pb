@@ -9,11 +9,15 @@
   --color-breathing-muted: #64748b;
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
 
-  /* Phase 2 orb tokens (D-04, D-18, UI-SPEC §Token Inventory) */
+  /* Phase 2 orb tokens (D-04, D-18, UI-SPEC §Token Inventory).
+     IN-01: --orb-scale-{min,max,mid} are mirrored as the TS constants
+     MIN_SCALE/MAX_SCALE/MID_SCALE in `src/components/BreathingShape.tsx`. The TS
+     side drives the breathing math; the CSS side is consumed by stylesheet
+     fallbacks. If you edit one side, edit the other. */
   --orb-size: clamp(180px, 35vw, 360px);
-  --orb-scale-min: 0.58;
-  --orb-scale-max: 1.0;
-  --orb-scale-mid: 0.79;
+  --orb-scale-min: 0.58; /* keep in sync with MIN_SCALE in BreathingShape.tsx */
+  --orb-scale-max: 1.0; /* keep in sync with MAX_SCALE in BreathingShape.tsx */
+  --orb-scale-mid: 0.79; /* keep in sync with MID_SCALE in BreathingShape.tsx */
 
   /* Phase 2 orb gradient color tokens (D-02).
      UAT-1: "from" stops deepened one Tailwind step (teal-200 / blue-200) so the

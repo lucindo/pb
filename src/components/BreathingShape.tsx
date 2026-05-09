@@ -7,9 +7,14 @@ export interface BreathingShapeProps {
   frame: SessionFrame | null
 }
 
-const MIN_SCALE = 0.58
-const MAX_SCALE = 1.0
-const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — D-06 reduced-motion fixed size
+// IN-01: keep these in sync with the matching tokens in `src/styles/theme.css`
+// (`--orb-scale-min`, `--orb-scale-max`, `--orb-scale-mid`). The TS constants
+// drive the breathing math here; the CSS tokens are exposed for stylesheet
+// consumers (e.g. the inline `transform: scale(var(--orb-scale-mid))` fallback
+// path under reduced-motion). If you edit one side, edit the other.
+const MIN_SCALE = 0.58 // keep in sync with --orb-scale-min
+const MAX_SCALE = 1.0 // keep in sync with --orb-scale-max
+const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — D-06 reduced-motion fixed size; keep in sync with --orb-scale-mid
 
 export function BreathingShape({ frame }: BreathingShapeProps) {
   const reducedMotion = usePrefersReducedMotion()
