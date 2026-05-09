@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
@@ -14,16 +13,45 @@ function sessionReadout() {
   return screen.getByRole('region', { name: 'Session readout' })
 }
 
+// Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
+// session timing clock starts (SESS-05 single-clock invariant + D-13 + D-14). All
+// pre-existing Phase 1/2 tests below assume "click Start → immediately running".
+// To preserve their original intent under the new lead-in, we click Start via
+// fireEvent (sync), flush microtasks for the awaited audio.start() promise, then
+// advance fake timers past the 3 s setTimeout chain.
+//
+// Tests in this file no longer use @testing-library/user-event because the
+// userEvent + fake-timer pairing produces hangs when combined with the async
+// onStartClick handler. fireEvent + manual microtask flushing is sufficient for
+// the assertions these tests make (button clicks, no keyboard navigation).
+const LEAD_IN_MS = 3000
+
+async function startAndAdvancePastLeadIn() {
+  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+  // Flush the microtask queue so the await audio.start() in onStartClick resolves
+  // and the setTimeout chain is registered, THEN advance timers past LEAD_IN_MS.
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+    vi.advanceTimersByTime(LEAD_IN_MS)
+  })
+}
+
 describe('running session display', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
   it('immediately shows the current In phase after starting a session (orb hosts the label per D-03)', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     // D-03: the In/Out label lives inside the orb (orb is the single visible source).
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
@@ -33,10 +61,9 @@ describe('running session display', () => {
   })
 
   it('shows remaining time for timed sessions', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const readout = sessionReadout()
     expect(within(readout).getByText('Remaining')).toBeVisible()
@@ -44,15 +71,14 @@ describe('running session display', () => {
   })
 
   it('shows elapsed time for open-ended sessions', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
     const duration = settingGroup('Duration')
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let index = 0; index < 11; index += 1) {
-      await user.click(increase)
+      fireEvent.click(increase)
     }
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const readout = sessionReadout()
     expect(within(readout).getByText('Elapsed')).toBeVisible()
@@ -60,10 +86,9 @@ describe('running session display', () => {
   })
 
   it('drives the breathing shape from the same phase and progress frame as the readout', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     expect(shape).toHaveAttribute('data-phase', 'in')
@@ -72,9 +97,8 @@ describe('running session display', () => {
   })
 
   it('renders the orb with two static aria-hidden reference rings', async () => {
-    const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     const outerRing = shape.querySelector('[aria-hidden="true"].orb-ring--outer')
@@ -84,9 +108,8 @@ describe('running session display', () => {
   })
 
   it('renders two stacked gradient layers (In and Out) and a single in-orb phase label', async () => {
-    const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     expect(shape.querySelector('[aria-hidden="true"].orb-layer--in')).not.toBeNull()
@@ -95,9 +118,8 @@ describe('running session display', () => {
   })
 
   it('renders the in-orb phase label at large display size (text-5xl semibold) per D-03', async () => {
-    const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     // The visible label is a non-aria-hidden child whose text content is the phase label.
@@ -110,9 +132,8 @@ describe('running session display', () => {
   })
 
   it('binds the orb scale to phaseProgress in normal motion mode', async () => {
-    const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     const scaleHost = shape.querySelector<HTMLElement>('.orb')
@@ -134,9 +155,8 @@ describe('running session display', () => {
       dispatchEvent: () => false,
     } as unknown as MediaQueryList)
 
-    const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     expect(shape).toHaveAttribute('data-phase', 'in')
@@ -155,10 +175,10 @@ describe('running duration edits and completion', () => {
     vi.useRealTimers()
   })
 
-  it('extends timed sessions from the existing duration stepper increase button', () => {
+  it('extends timed sessions from the existing duration stepper increase button', async () => {
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const duration = settingGroup('Duration')
     expect(screen.queryByRole('group', { name: 'Extend duration' })).not.toBeInTheDocument()
@@ -170,10 +190,10 @@ describe('running duration edits and completion', () => {
     expect(within(duration).getByText('15 min')).toBeVisible()
   })
 
-  it('does not allow shortening or switching a timed running session to open-ended', () => {
+  it('does not allow shortening or switching a timed running session to open-ended', async () => {
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     const duration = settingGroup('Duration')
     const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
@@ -190,7 +210,7 @@ describe('running duration edits and completion', () => {
     expect(within(duration).queryByText('Open-ended')).not.toBeInTheDocument()
   })
 
-  it('does not allow running duration edits for open-ended sessions', () => {
+  it('does not allow running duration edits for open-ended sessions', async () => {
     render(<App />)
 
     const duration = settingGroup('Duration')
@@ -198,18 +218,18 @@ describe('running duration edits and completion', () => {
     for (let index = 0; index < 11; index += 1) {
       fireEvent.click(increase)
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     expect(screen.queryByRole('group', { name: 'Extend duration' })).not.toBeInTheDocument()
     expect(within(duration).getByRole('button', { name: /decrease duration/i })).toBeDisabled()
     expect(within(duration).getByRole('button', { name: /increase duration/i })).toBeDisabled()
   })
 
-  it('automatically renders Session complete when a timed session reaches the end', () => {
+  it('automatically renders Session complete when a timed session reaches the end', async () => {
     render(<App />)
 
     fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /decrease duration/i }))
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     act(() => {
       vi.advanceTimersByTime(5 * 60_000)
@@ -219,7 +239,7 @@ describe('running duration edits and completion', () => {
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
   })
 
-  it('keeps open-ended sessions running when mocked time advances', () => {
+  it('keeps open-ended sessions running when mocked time advances', async () => {
     render(<App />)
 
     const duration = settingGroup('Duration')
@@ -227,7 +247,7 @@ describe('running duration edits and completion', () => {
     for (let index = 0; index < 11; index += 1) {
       fireEvent.click(increase)
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await startAndAdvancePastLeadIn()
 
     act(() => {
       vi.advanceTimersByTime(61 * 60_000)
@@ -241,19 +261,24 @@ describe('running duration edits and completion', () => {
 })
 
 describe('manual session ending', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
   it('opens the end-session modal for timed sessions and keeps the session running on Keep going', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
-    await user.click(screen.getByRole('button', { name: 'End session' }))
+    await startAndAdvancePastLeadIn()
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
 
-    expect(await screen.findByRole('dialog', { name: 'End this session?' })).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'Keep going' }))
+    expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Keep going' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
@@ -261,13 +286,12 @@ describe('manual session ending', () => {
   })
 
   it('confirms timed manual end via the modal End button, clears active readouts, and keeps selected settings', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
-    await user.click(screen.getByRole('button', { name: 'End session' }))
-    await user.click(screen.getByRole('button', { name: 'End' }))
+    fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
+    await startAndAdvancePastLeadIn()
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
@@ -276,16 +300,15 @@ describe('manual session ending', () => {
   })
 
   it('ends open-ended sessions directly without showing the modal (D-14)', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
     const duration = settingGroup('Duration')
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let index = 0; index < 11; index += 1) {
-      await user.click(increase)
+      fireEvent.click(increase)
     }
-    await user.click(screen.getByRole('button', { name: 'Start session' }))
-    await user.click(screen.getByRole('button', { name: 'End session' }))
+    await startAndAdvancePastLeadIn()
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
