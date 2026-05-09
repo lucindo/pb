@@ -49,7 +49,7 @@ describe('supported breathing settings', () => {
     expect(() => validateSettings({ bpm: 7.5, ratio: '40:60', durationMinutes: 10 })).toThrow(
       /Unsupported BPM/,
     )
-    expect(() => validateSettings({ bpm: 5.5, ratio: '60:40', durationMinutes: 10 })).toThrow(
+    expect(() => validateSettings({ bpm: 5.5, ratio: '60:40' as never, durationMinutes: 10 })).toThrow(
       /Unsupported ratio/,
     )
     expect(() => validateSettings({ bpm: 5.5, ratio: '40:60', durationMinutes: 65 })).toThrow(

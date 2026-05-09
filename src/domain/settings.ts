@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS: SessionSettings = {
 }
 
 export function validateSettings(settings: SessionSettings): SessionSettings {
-  if (!BPM_OPTIONS.includes(settings.bpm)) {
+  if (!(BPM_OPTIONS as readonly number[]).includes(settings.bpm)) {
     throw new RangeError(`Unsupported BPM: ${settings.bpm}`)
   }
 
@@ -56,7 +56,7 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
   }
 
-  if (!DURATION_OPTIONS.includes(settings.durationMinutes)) {
+  if (!(DURATION_OPTIONS as readonly DurationOption[]).includes(settings.durationMinutes)) {
     throw new RangeError(`Unsupported duration: ${settings.durationMinutes}`)
   }
 
