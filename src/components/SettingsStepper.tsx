@@ -42,7 +42,7 @@ export function SettingsStepper<T extends string | number>({
         <button
           type="button"
           aria-label={`Decrease ${label}`}
-          className="grid size-12 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 focus:outline-none focus:ring-4 focus:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-45"
+          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled || disableDecrease || !canDecrease}
           onClick={() => changeBy(-1)}
         >
@@ -57,7 +57,7 @@ export function SettingsStepper<T extends string | number>({
         <button
           type="button"
           aria-label={`Increase ${label}`}
-          className="grid size-12 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 focus:outline-none focus:ring-4 focus:ring-teal-200 disabled:cursor-not-allowed disabled:opacity-45"
+          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled || disableIncrease || !canIncrease}
           onClick={() => changeBy(1)}
         >

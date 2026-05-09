@@ -24,18 +24,12 @@ export function SessionReadout({ frame, status, message }: SessionReadoutProps) 
       <div role="status" aria-label="Session readout" aria-live="polite" aria-atomic="true">
         {message ? (
           <p className="text-3xl font-semibold text-teal-900">{message}</p>
-        ) : (
-          <>
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-teal-700">
-              Current phase
-            </p>
-            <p className="mt-2 text-6xl font-semibold tracking-tight text-slate-950">
-              {frame?.phaseLabel ?? 'In'}
-            </p>
-          </>
-        )}
+        ) : null}
       </div>
-      <div aria-live="off" className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-white/80 px-5 py-3 text-slate-900">
+      <div
+        aria-live="off"
+        className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-white/80 px-5 py-3 text-slate-900"
+      >
         <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
           {timeLabel}
         </span>

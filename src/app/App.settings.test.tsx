@@ -120,15 +120,99 @@ describe('main screen settings controls', () => {
     expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
   })
 
-  it('does not allow BPM or ratio edits while a session is running', async () => {
+  it('removes BPM and Ratio steppers from the DOM while a session is running (D-16)', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+  })
+
+  it('restores BPM and Ratio steppers after the session ends (D-16)', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+  })
+
+  it('does not render the Current phase eyebrow inside the readout while running (D-03)', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Start session' }))
 
-    expect(within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })).toBeDisabled()
-    expect(within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })).toBeDisabled()
-    expect(within(settingGroup('Ratio')).getByRole('button', { name: /decrease ratio/i })).toBeDisabled()
-    expect(within(settingGroup('Ratio')).getByRole('button', { name: /increase ratio/i })).toBeDisabled()
+    // D-03: the orb is the single source of the visible phase label.
+    expect(screen.queryByText('Current phase')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
+  })
+})
+
+describe('focus and hit-area accessibility (Phase 2 D-09/D-17/D-21)', () => {
+  it('stepper +/- buttons expose focus-visible ring on theme accent', () => {
+    render(<App />)
+    const decreaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })
+    const increaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })
+
+    for (const button of [decreaseBpm, increaseBpm]) {
+      expect(button.className).toMatch(/focus-visible:outline-none/)
+      expect(button.className).toMatch(/focus-visible:ring-2/)
+      expect(button.className).toMatch(/focus-visible:ring-breathing-accent/)
+      expect(button.className).toMatch(/focus-visible:ring-offset-2/)
+    }
+  })
+
+  it('Start session button exposes focus-visible ring on theme accent', () => {
+    render(<App />)
+    const start = screen.getByRole('button', { name: 'Start session' })
+
+    expect(start.className).toMatch(/focus-visible:outline-none/)
+    expect(start.className).toMatch(/focus-visible:ring-2/)
+    expect(start.className).toMatch(/focus-visible:ring-breathing-accent/)
+    expect(start.className).toMatch(/focus-visible:ring-offset-2/)
+  })
+
+  it('disables decorative transitions on interactive controls under reduced motion (D-09)', () => {
+    render(<App />)
+    const decreaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })
+    const increaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })
+    const start = screen.getByRole('button', { name: 'Start session' })
+
+    for (const button of [decreaseBpm, increaseBpm, start]) {
+      expect(button.className).toMatch(/motion-reduce:transition-none/)
+    }
+  })
+
+  it('primary tappable controls meet the 44x44 hit-area floor (D-17)', () => {
+    render(<App />)
+    const decreaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })
+    const start = screen.getByRole('button', { name: 'Start session' })
+
+    expect(decreaseBpm.className).toMatch(/(?:size-12|min-h-(?:11|12))/)
+    expect(decreaseBpm.className).toMatch(/(?:size-12|min-w-(?:11|12))/)
+    expect(start.className).toMatch(/min-h-(?:11|12)/)
+  })
+
+  it('removes the legacy Phase 1 focus:ring-4 focus:ring-teal-200 utilities (regression guard)', () => {
+    render(<App />)
+    const allButtons = screen.getAllByRole('button')
+
+    for (const button of allButtons) {
+      expect(button.className).not.toMatch(/(?:^|\s)focus:ring-4(?:\s|$)/)
+      expect(button.className).not.toMatch(/(?:^|\s)focus:ring-teal-200(?:\s|$)/)
+    }
   })
 })

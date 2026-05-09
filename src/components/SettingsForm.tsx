@@ -50,21 +50,23 @@ export function SettingsForm({
 
   return (
     <div className="grid w-full gap-4" aria-label="Session settings">
-      <SettingsStepper
-        label="BPM"
-        value={settings.bpm}
-        options={BPM_OPTIONS}
-        formatValue={formatBpm}
-        onChange={(bpm) => updateSettings({ bpm })}
-        disabled={isRunning}
-      />
-      <SettingsStepper<RatioLabel>
-        label="Ratio"
-        value={settings.ratio}
-        options={RATIO_OPTIONS}
-        onChange={(ratio) => updateSettings({ ratio })}
-        disabled={isRunning}
-      />
+      {!isRunning && (
+        <>
+          <SettingsStepper
+            label="BPM"
+            value={settings.bpm}
+            options={BPM_OPTIONS}
+            formatValue={formatBpm}
+            onChange={(bpm) => updateSettings({ bpm })}
+          />
+          <SettingsStepper<RatioLabel>
+            label="Ratio"
+            value={settings.ratio}
+            options={RATIO_OPTIONS}
+            onChange={(ratio) => updateSettings({ ratio })}
+          />
+        </>
+      )}
       <SettingsStepper<DurationOption>
         label="Duration"
         value={settings.durationMinutes}
