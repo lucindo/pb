@@ -83,11 +83,15 @@
 /* Reduced-motion (D-05, D-07, D-09):
    - Suppress the orb scale transition and the legacy .breathing-shape transform animation.
    - Intentionally PRESERVE the .orb-layer--out opacity transition — it is the
-     substitute phase indicator under reduced-motion (D-07). */
+     substitute phase indicator under reduced-motion (D-07).
+   - CR-01: Do NOT set `transform: none !important` here. BreathingShape sets the
+     reduced-motion fixed scale via inline `transform: scale(var(--orb-scale-mid))`
+     when usePrefersReducedMotion() is true. Inline styles do NOT win over an
+     `!important` stylesheet rule, so a `transform: none !important` here would
+     silently nuke the JS-controlled MID_SCALE and render the orb at scale(1). */
 @media (prefers-reduced-motion: reduce) {
   .breathing-shape,
   .orb {
-    transform: none !important;
     transition: none !important;
   }
 }
