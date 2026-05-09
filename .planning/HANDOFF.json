@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-09T15:05:48.457Z",
+  "phase": "02",
+  "phase_name": "visual-guide-accessible-responsive-interface",
+  "phase_dir": ".planning/phases/02-visual-guide-accessible-responsive-interface",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "02-01", "name": "vitest polyfills + usePrefersReducedMotion hook", "status": "done", "commit": "10fcdcf"},
+    {"id": "02-02", "name": "BreathingShape orb refinement", "status": "done", "commit": "9a677e5"},
+    {"id": "02-03", "name": "a11y / hit-area / focus-ring polish", "status": "done", "commit": "2320119"},
+    {"id": "02-04", "name": "EndSessionDialog (native <dialog> modal)", "status": "done", "commit": "9099335"}
+  ],
+  "remaining_tasks": [
+    {"id": "review-fix", "name": "Fix code-review findings (1 BLOCKER + 4 WARNING; INFO optional)", "status": "not_started"},
+    {"id": "human-uat", "name": "Complete 5-item perceptual UAT on real devices", "status": "not_started"}
+  ],
+  "blockers": [
+    {
+      "description": "CR-01 (BLOCKER): theme.css :87-93 reduced-motion rule sets `transform: none !important` which silently overrides BreathingShape's inline `transform: scale(0.79)`. Real users with prefers-reduced-motion: reduce see orb at full 1.0 scale, not D-06 mid-scale. Test passes only because it asserts `style.transform` (inline) not computed style. Fix: drop `transform: none !important`, keep `transition: none !important`.",
+      "type": "technical",
+      "workaround": "none — must fix in src/styles/theme.css"
+    },
+    {
+      "description": "WR-01: App.tsx modal stays open if timed session auto-completes while dialog is showing — no effect syncs endDialogOpen with state.status transitions away from running",
+      "type": "technical",
+      "workaround": "add useEffect that closes dialog when status !== running"
+    },
+    {
+      "description": "WR-02: EndSessionDialog rebinds `cancel` listener on every parent render because App recreates confirmEnd/cancelEnd each render (no useCallback). Hundreds of addEventListener/removeEventListener per second during running session.",
+      "type": "technical",
+      "workaround": "wrap App's confirmEnd/cancelEnd in useCallback OR move listener-binding into stable ref pattern"
+    },
+    {
+      "description": "WR-03: Inner reference ring in BreathingShape.tsx:44-52 has no inset/top/left — centering relies on grid auto-positioning of an absolutely-positioned child (browser-dependent, untested)",
+      "type": "technical",
+      "workaround": "add explicit inset-0 + margin: auto OR remove `absolute` and let grid place it"
+    },
+    {
+      "description": "WR-04: SessionReadout outer <section> and inner <div role=status> both carry aria-label='Session readout' — screen readers announce twice on entry",
+      "type": "technical",
+      "workaround": "drop one of the two aria-labels"
+    }
+  ],
+  "human_actions_pending": [
+    {"action": "Run 5-item perceptual UAT on real devices (iPhone SE / mid-Android + Chrome/Safari/iOS Safari)", "context": ".planning/phases/02-visual-guide-accessible-responsive-interface/02-HUMAN-UAT.md — items: reduced-motion crossfade calmness, 44x44 hit-area comfort, above-the-fold layout, palette contrast, focus-ring readability", "blocking": true},
+    {"action": "Decide whether to apply CR-01 fix manually or via /gsd-code-review 02 --fix", "context": "BLOCKER contradicts D-06 reduced-motion intent; real users impacted; recommend fix before phase close", "blocking": true}
+  ],
+  "decisions": [
+    {"decision": "Reconstructed 02-03 SUMMARY.md from agent's structured handoff post-merge", "rationale": "Sandbox blocked git add on .planning/ paths inside the executor subagent; SUMMARY metadata captured verbatim from agent report; verification commands re-run by orchestrator confirm reported results", "phase": "02"},
+    {"decision": "Recovery merge of wave-2 stray branch into main with --no-ff", "rationale": "Initial merge loop drifted HEAD off main onto worktree-agent-a5d3057adcf4e4332 branch (root cause unclear; possibly --amend interaction). All 02-02/02-03 source commits + 02-02 SUMMARY were on stray branch. Re-merged from main; subsequent wave-3 merge added explicit branch verification.", "phase": "02"},
+    {"decision": "Phase config set during session: model_profile=balanced, all workflow toggles On except auto_advance/skip_discuss/research_before_questions/tdd_mode/intel/graphify (Off). Branching=none. Worktrees=on.", "rationale": "User selected Recommended defaults via /gsd-config", "phase": "02"}
+  ],
+  "uncommitted_files": [
+    ".planning/phases/02-visual-guide-accessible-responsive-interface/02-PATTERNS.md (untracked — present pre-session, not produced this run)"
+  ],
+  "next_action": "Run /gsd-code-review 02 --fix to auto-apply CR-01 BLOCKER + 4 WARNINGs (skip INFO) — OR fix theme.css:87-93 manually first then continue. After fixes land, run perceptual UAT on real device per 02-HUMAN-UAT.md and update its statuses. Phase will close once verification re-runs to status=passed.",
+  "context_notes": "Phase 2 plans 4/4 complete and merged on main. Tests 78/78 green, tsc clean, build clean. Verifier returned status=human_needed (24/24 automated must-haves passed; 5 perceptual UAT items pending). Code reviewer found 1 BLOCKER + 4 WARNING + 4 INFO. The BLOCKER (CR-01) is real — reduced-motion users see wrong orb size. The phase is technically complete but should NOT be marked Complete in ROADMAP until CR-01 is fixed and HUMAN-UAT is signed. STATE.md still says status=executing; ROADMAP plan_count=4/summary_count=4/status=Complete (set by SDK after wave 3) but real phase-level Complete gate is verification + UAT."
+}
