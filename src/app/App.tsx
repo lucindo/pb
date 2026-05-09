@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BreathingShape } from '../components/BreathingShape'
 import { EndSessionDialog } from '../components/EndSessionDialog'
@@ -8,6 +8,7 @@ import { SessionControls } from '../components/SessionControls'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { createBreathingPlan } from '../domain/breathingPlan'
+import { getSessionFrame } from '../domain/sessionMath'
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
@@ -27,6 +28,13 @@ export default function App() {
   // Without this the countdown 3-2-1 fires on the configuration screen, then
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
+  // Pre-session readout chip shown during lead-in so the layout doesn't shift
+  // when the In phase begins. Synthesises an elapsed=0 frame from the locked
+  // settings (Remaining = configured duration; Elapsed 0:00 for open-ended).
+  const leadInPlaceholderFrame = useMemo(() => {
+    if (appPhase !== 'lead-in') return null
+    return getSessionFrame(createBreathingPlan(state.selectedSettings), 0)
+  }, [appPhase, state.selectedSettings])
   // null when not in lead-in OR when the lead-in has reached t=0 (the In phase label takes over).
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)
 
@@ -269,7 +277,7 @@ export default function App() {
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
           />
           <SessionReadout
-            frame={session.currentFrame}
+            frame={leadInPlaceholderFrame ?? session.currentFrame}
             status={state.status}
             message={state.status === 'complete' ? state.message : undefined}
           />
