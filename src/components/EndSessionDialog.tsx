@@ -60,7 +60,13 @@ export function EndSessionDialog({ open, onConfirm, onCancel }: EndSessionDialog
         >
           End this session?
         </h2>
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        {/* F2: drop flex-col-reverse so mobile column order matches DOM order
+            (Keep going on top, End below). Previously column-reverse stacked the
+            destructive End above Keep going on mobile, which inverts the safety
+            stance behind D-12 (default focus on Keep going). Desktop layout
+            (sm:flex-row sm:justify-end) keeps Keep going left, End right, where
+            CTA conventions place primary actions. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
             ref={cancelButtonRef}
             type="button"
