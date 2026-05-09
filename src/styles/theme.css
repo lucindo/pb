@@ -2,6 +2,7 @@
   /* Existing Phase 1 tokens — preserved verbatim */
   --color-breathing-bg: #f2fbf7;
   --color-breathing-bg-soft: #e4f6ef;
+  --color-breathing-bg-edge: #f8fffc;
   --color-breathing-surface: #ffffff;
   --color-breathing-accent: #0f766e;
   --color-breathing-accent-strong: #115e59;
@@ -33,21 +34,6 @@
 
   /* Phase 2 modal token (consumed by Plan 04) */
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
-}
-
-/* Legacy Phase 1 .breathing-shape — kept harmless; the new orb structure
-   uses .orb / .orb-layer--* / .orb-ring--* below. */
-.breathing-shape {
-  background: linear-gradient(135deg, var(--color-orb-in-from), var(--color-orb-in-to));
-  border-color: #99f6e4;
-  color: var(--color-orb-in-text);
-  transform: scale(var(--breathing-scale, 1));
-}
-
-.breathing-shape[data-phase='out'] {
-  background: linear-gradient(135deg, var(--color-orb-out-from), var(--color-orb-out-to));
-  border-color: #bfdbfe;
-  color: var(--color-orb-out-text);
 }
 
 /* Phase 2 orb structure (D-01..D-04, D-07) */
@@ -109,7 +95,7 @@ dialog.modal-fade[open]::backdrop {
 }
 
 /* Reduced-motion (D-05, D-07, D-09):
-   - Suppress the orb scale transition and the legacy .breathing-shape transform animation.
+   - Suppress the orb scale transition.
    - Intentionally PRESERVE the .orb-layer--out opacity transition — it is the
      substitute phase indicator under reduced-motion (D-07).
    - CR-01: Do NOT set `transform: none !important` here. BreathingShape sets the
@@ -120,7 +106,6 @@ dialog.modal-fade[open]::backdrop {
    - F3: dialog modal fade also disabled here (per UI-SPEC: "in reduced-motion,
      dialog appears immediately"). */
 @media (prefers-reduced-motion: reduce) {
-  .breathing-shape,
   .orb,
   dialog.modal-fade {
     transition: none !important;
