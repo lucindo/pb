@@ -114,35 +114,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | TBD | Pending |
-| SESS-02 | TBD | Pending |
-| SESS-03 | TBD | Pending |
-| SESS-04 | TBD | Pending |
-| SESS-05 | TBD | Pending |
-| BREA-01 | TBD | Pending |
-| BREA-02 | TBD | Pending |
-| BREA-03 | TBD | Pending |
-| GUID-01 | TBD | Pending |
-| GUID-02 | TBD | Pending |
-| GUID-03 | TBD | Pending |
-| GUID-04 | TBD | Pending |
-| AUDI-01 | TBD | Pending |
-| AUDI-02 | TBD | Pending |
-| LOCL-01 | TBD | Pending |
-| LOCL-02 | TBD | Pending |
-| LOCL-03 | TBD | Pending |
-| MOBL-01 | TBD | Pending |
-| MOBL-02 | TBD | Pending |
-| LEARN-01 | TBD | Pending |
-| LEARN-02 | TBD | Pending |
-| LEARN-03 | TBD | Pending |
-| LEARN-04 | TBD | Pending |
+| SESS-01 | Phase 1 | Pending |
+| SESS-02 | Phase 1 | Pending |
+| SESS-03 | Phase 1 | Pending |
+| SESS-04 | Phase 1 | Pending |
+| SESS-05 | Phase 1 | Pending |
+| BREA-01 | Phase 1 | Pending |
+| BREA-02 | Phase 1 | Pending |
+| BREA-03 | Phase 1 | Pending |
+| GUID-01 | Phase 2 | Pending |
+| GUID-02 | Phase 2 | Pending |
+| GUID-03 | Phase 2 | Pending |
+| GUID-04 | Phase 2 | Pending |
+| AUDI-01 | Phase 3 | Pending |
+| AUDI-02 | Phase 3 | Pending |
+| LOCL-01 | Phase 4 | Pending |
+| LOCL-02 | Phase 4 | Pending |
+| LOCL-03 | Phase 4 | Pending |
+| MOBL-01 | Phase 2 | Pending |
+| MOBL-02 | Phase 5 | Pending |
+| LEARN-01 | Phase 6 | Pending |
+| LEARN-02 | Phase 6 | Pending |
+| LEARN-03 | Phase 6 | Pending |
+| LEARN-04 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-08*
-*Last updated: 2026-05-08 after initial definition*
+*Last updated: 2026-05-08 after roadmap creation*
