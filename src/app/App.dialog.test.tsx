@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom/vitest'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { EndSessionDialog } from '../components/EndSessionDialog'
+import App from './App'
 
 function renderDialog(
   props: Partial<{ open: boolean; onConfirm: () => void; onCancel: () => void }> = {},
@@ -127,5 +128,115 @@ describe('EndSessionDialog (component-level)', () => {
 
     expect(end.className).toMatch(/min-h-12/)
     expect(keepGoing.className).toMatch(/min-h-12/)
+  })
+})
+
+describe('end-session confirmation modal (App integration)', () => {
+  it('opens the modal when End session is clicked during a timed session', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'End this session?' })
+    expect(dialog).toBeVisible()
+    const keepGoing = screen.getByRole('button', { name: 'Keep going' })
+    expect(keepGoing).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+  })
+
+  it('keeps the session running when Keep going is clicked', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'Keep going' }))
+
+    expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
+  })
+
+  it('ends the session when End is clicked', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'End' }))
+
+    expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+  })
+
+  it('treats Escape as Keep going (cancel pathway, D-13)', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'End this session?' })
+    // jsdom polyfill: dispatch the cancel event manually (Task 1 Test 7 pattern).
+    fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }))
+
+    expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+  })
+
+  it('open-ended sessions skip the modal entirely (D-14)', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const duration = screen.getByRole('group', { name: 'Duration' })
+    const increase = within(duration).getByRole('button', { name: /increase duration/i })
+    for (let i = 0; i < 11; i += 1) {
+      await user.click(increase)
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+  })
+
+  describe('SESS-05 regression with fake timers', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('keeps the session timing clock advancing while the modal is open (D-13)', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+
+      render(<App />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+
+      const readout = screen.getByRole('region', { name: 'Session readout' })
+      expect(within(readout).getByText('10:00')).toBeVisible()
+
+      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+
+      // Modal opened, clock still at 10:00.
+      expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+
+      act(() => {
+        vi.advanceTimersByTime(1_000)
+      })
+
+      // Modal still open …
+      expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+      // … and clock has advanced (Remaining shrunk by 1s).
+      expect(within(readout).queryByText('10:00')).not.toBeInTheDocument()
+      expect(within(readout).getByText('9:59')).toBeVisible()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Keep going' }))
+    })
   })
 })

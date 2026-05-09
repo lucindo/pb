@@ -241,35 +241,33 @@ describe('running duration edits and completion', () => {
 })
 
 describe('manual session ending', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
-  })
-
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.useRealTimers()
   })
 
-  it('asks for confirmation before ending a timed running session and keeps running when cancelled', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('opens the end-session modal for timed sessions and keeps the session running on Keep going', async () => {
+    const user = userEvent.setup()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
 
-    expect(confirm).toHaveBeenCalledWith('End this timed session?')
+    expect(await screen.findByRole('dialog', { name: 'End this session?' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Keep going' }))
+
+    expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
     expect(screen.getByRole('status', { name: 'Session readout' })).toBeVisible()
   })
 
-  it('confirms timed manual end, clears active readouts, and keeps selected settings', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('confirms timed manual end via the modal End button, clears active readouts, and keeps selected settings', async () => {
+    const user = userEvent.setup()
     render(<App />)
 
-    fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
@@ -277,19 +275,19 @@ describe('manual session ending', () => {
     expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
   })
 
-  it('ends open-ended sessions directly without confirmation', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('ends open-ended sessions directly without showing the modal (D-14)', async () => {
+    const user = userEvent.setup()
     render(<App />)
 
     const duration = settingGroup('Duration')
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let index = 0; index < 11; index += 1) {
-      fireEvent.click(increase)
+      await user.click(increase)
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    await user.click(screen.getByRole('button', { name: 'End session' }))
 
-    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
   })

@@ -95,25 +95,25 @@ describe('main screen settings controls', () => {
   })
 
   it('ends a running session and returns to the idle start action', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Start session' }))
     await user.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'End session' })).not.toBeInTheDocument()
   })
 
   it('keeps selected settings visible after manually ending a session', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
     await user.click(screen.getByRole('button', { name: 'Start session' }))
     await user.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'End' }))
 
     expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
     expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
@@ -135,7 +135,6 @@ describe('main screen settings controls', () => {
   })
 
   it('restores BPM and Ratio steppers after the session ends (D-16)', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
     const user = userEvent.setup()
     render(<App />)
 
@@ -143,6 +142,7 @@ describe('main screen settings controls', () => {
     expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'End session' }))
+    await user.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
