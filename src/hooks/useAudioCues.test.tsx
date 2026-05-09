@@ -226,6 +226,49 @@ describe('useAudioCues', () => {
     expect(closeSpy).toHaveBeenCalledTimes(1)
   })
 
+  it('start() after stop() builds a fresh AudioContext (regression: race during async close)', async () => {
+    // Reproduce the window between stop() being called and the engine actually
+    // closing. close() returns a promise that never resolves during the test;
+    // the regression check is that start() must build a SECOND AudioContext
+    // instead of reusing the one whose close is in flight.
+    const closeSpy = vi.fn(() => new Promise<void>(() => {}))
+    let constructCount = 0
+    class SlowCloseAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      constructor() {
+        constructCount++
+      }
+      resume = vi.fn(async () => {})
+      close = closeSpy
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', SlowCloseAC)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    await act(async () => {
+      await result.current.start(samplePlan)
+    })
+    expect(constructCount).toBe(1)
+
+    // Fire stop() without awaiting; the close promise stays pending. Then
+    // immediately re-start. The new start MUST build a second AudioContext.
+    act(() => {
+      void result.current.stop()
+    })
+    await act(async () => {
+      await result.current.start(samplePlan)
+    })
+    expect(constructCount).toBe(2)
+
+    unmount()
+  })
+
   it('start() called twice without stop is idempotent — only one AudioContext is constructed', async () => {
     let constructCount = 0
     class CountingAC {

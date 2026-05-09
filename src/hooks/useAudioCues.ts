@@ -106,12 +106,16 @@ export function useAudioCues(): UseAudioCues {
   )
 
   const stop = useCallback(async (): Promise<void> => {
+    // Null engineRef synchronously BEFORE awaiting close — otherwise a fast
+    // start() arriving during the close window hits the defensive guard in
+    // start() and returns from a closing AudioContext, leaving engineRef
+    // pointing at a dead engine.
     const engine = engineRef.current
+    engineRef.current = null
+    setStatus('idle')
     if (engine !== null) {
       await engine.close() // D-11
-      engineRef.current = null
     }
-    setStatus('idle')
   }, [])
 
   const setMuted = useCallback((next: boolean): void => {
