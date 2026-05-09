@@ -15,6 +15,11 @@ export function usePrefersReducedMotion(): boolean {
       return
     }
     const mql = window.matchMedia(QUERY)
+    // IN-02: re-seed from the live MediaQueryList in case the OS preference
+    // changed between the initial render commit and this mount-effect (rare,
+    // but the canonical pattern from MDN and the only way to defeat the stale
+    // initial-state window for hooks that do not subscribe synchronously).
+    setReduced(mql.matches)
     const onChange = (event: MediaQueryListEvent) => {
       setReduced(event.matches)
     }

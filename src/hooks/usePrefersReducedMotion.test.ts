@@ -50,6 +50,35 @@ describe('usePrefersReducedMotion', () => {
     expect(removeSpy).toHaveBeenCalledWith('change', expect.any(Function))
   })
 
+  it('re-syncs against mql.matches inside the mount effect (IN-02)', () => {
+    // Simulate the (rare) drift case: useState initializer captured matches=false,
+    // but by the time the effect runs the OS preference has flipped to matches=true.
+    // The hook MUST re-seed from the live MediaQueryList in the effect body,
+    // not just wait for the next 'change' event.
+    let callCount = 0
+    vi.spyOn(window, 'matchMedia').mockImplementation((media: string) => {
+      callCount += 1
+      // First call (during useState initializer): matches=false.
+      // Subsequent calls (inside the mount effect): matches=true.
+      const matches = callCount > 1
+      return {
+        matches,
+        media,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      } as unknown as MediaQueryList
+    })
+
+    const { result } = renderHook(() => usePrefersReducedMotion())
+    // After mount, the effect's setReduced(mql.matches) must have flushed and the
+    // hook returns the live OS preference, not the stale initial-render value.
+    expect(result.current).toBe(true)
+  })
+
   it('updates when the matchMedia change event fires', () => {
     let captured: ((event: MediaQueryListEvent) => void) | null = null
     vi.spyOn(window, 'matchMedia').mockReturnValue({
