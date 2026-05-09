@@ -167,7 +167,12 @@ export default function App() {
   // 'complete' transition is the external trigger we synchronise with — exactly the
   // "subscribe to external state" effect pattern React recommends.
   useEffect(() => {
-    if (state.status === 'complete') {
+    if (state.status !== 'running') {
+      // Covers BOTH 'complete' (timed end-of-session) and 'idle' (manual End,
+      // modal-confirm End, open-ended End). All four lifecycle exits must
+      // reset appPhase + clear engine/anchor refs — otherwise appPhase stays
+      // 'running' after End and the next Start click silently no-ops on the
+      // `appPhase !== 'idle'` guard in onStartClick.
       void audioStop()
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAppPhase('idle')
