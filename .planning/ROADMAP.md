@@ -52,8 +52,8 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 02-01-PLAN.md — Polyfill HTMLDialogElement + matchMedia in vitest.setup.ts and add the usePrefersReducedMotion hook (test infrastructure for Plans 02 and 04).
-- [ ] 02-02-PLAN.md — Refine BreathingShape into the polished orb (stacked gradient layers, two static reference rings, in-orb large phase label, fluid clamp() sizing, reduced-motion fixed-mid-scale branch) and extend theme.css with Phase 2 tokens.
-- [ ] 02-03-PLAN.md — Hide BPM/Ratio steppers while running, drop the redundant in-readout phase label, upgrade focus rings to focus-visible on theme accent, add motion-reduce guards, lock 44x44 hit-area floors.
+- [x] 02-02-PLAN.md — Refine BreathingShape into the polished orb (stacked gradient layers, two static reference rings, in-orb large phase label, fluid clamp() sizing, reduced-motion fixed-mid-scale branch) and extend theme.css with Phase 2 tokens.
+- [x] 02-03-PLAN.md — Hide BPM/Ratio steppers while running, drop the redundant in-readout phase label, upgrade focus rings to focus-visible on theme accent, add motion-reduce guards, lock 44x44 hit-area floors.
 - [ ] 02-04-PLAN.md — Replace window.confirm with a native <dialog>-based EndSessionDialog (focus on Keep going, Esc cancels, backdrop closes, timing keeps running), wire App.tsx state machine, migrate Phase 1 confirm-spy tests.
 **UI hint**: yes
 
