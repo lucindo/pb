@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 import { BreathingShape } from '../components/BreathingShape'
+import { EndSessionDialog } from '../components/EndSessionDialog'
 import { SettingsForm } from '../components/SettingsForm'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
@@ -8,14 +11,26 @@ export default function App() {
   const session = useSessionEngine()
   const { state } = session
   const isRunning = state.status === 'running'
-  const endSession = () => {
-    if (state.status === 'running' && state.lockedSettings.durationMinutes !== 'open-ended') {
-      if (!window.confirm('End this timed session?')) {
-        return
-      }
-    }
+  const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
 
+  // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
+  // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
+  const requestEnd = () => {
+    if (state.status === 'running' && state.lockedSettings.durationMinutes !== 'open-ended') {
+      setEndDialogOpen(true)
+      return
+    }
     session.end()
+  }
+
+  const confirmEnd = () => {
+    setEndDialogOpen(false)
+    session.end()
+  }
+
+  const cancelEnd = () => {
+    setEndDialogOpen(false)
+    // session continues — clock keeps running (D-13). No additional work.
   }
 
   return (
@@ -44,13 +59,18 @@ export default function App() {
             onChange={session.setSelectedSettings}
             onExtendDuration={session.extendDuration}
           />
-          <SessionControls status={state.status} onStart={session.start} onEnd={endSession} />
+          <SessionControls status={state.status} onStart={session.start} onEnd={requestEnd} />
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Timing stays local to this browser and continuously alternates In and Out with no
             pause segment.
           </p>
         </div>
       </section>
+      <EndSessionDialog
+        open={endDialogOpen}
+        onConfirm={confirmEnd}
+        onCancel={cancelEnd}
+      />
     </main>
   )
 }
