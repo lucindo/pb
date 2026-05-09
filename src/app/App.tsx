@@ -22,6 +22,11 @@ export default function App() {
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
   const [appPhase, setAppPhase] = useState<AppPhase>('idle')
+  // True for both lead-in and running: the "session view" layout (settings
+  // collapsed to Duration only, page description hidden, tighter top margin).
+  // Without this the countdown 3-2-1 fires on the configuration screen, then
+  // the layout snaps to the running view at t=0 — a jarring jump.
+  const inSessionView = appPhase !== 'idle'
   // null when not in lead-in OR when the lead-in has reached t=0 (the In phase label takes over).
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)
 
@@ -248,16 +253,16 @@ export default function App() {
         <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
           HRV breathing timer
         </h1>
-        {/* F1: hide page description during running session so the orb + End
-            session button reach above the fold on common mobile heights
-            (375x812+). The description is informational and not needed mid-practice. */}
-        {!isRunning && (
+        {/* Hide page description for the entire session view (lead-in + running)
+            so the screen stops shifting between countdown and the first In phase
+            and the orb + End-session button stay above the fold on mobile. */}
+        {!inSessionView && (
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">
             Choose a calm, supported timing pattern, then start a continuous inhale
             and exhale session with no pauses.
           </p>
         )}
-        <div className={`${isRunning ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
+        <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           <BreathingShape
             frame={appPhase === 'running' ? session.currentFrame : null}
@@ -270,7 +275,7 @@ export default function App() {
           />
           <SettingsForm
             settings={state.selectedSettings}
-            isRunning={isRunning}
+            isRunning={inSessionView}
             onChange={session.setSelectedSettings}
             onExtendDuration={session.extendDuration}
           />
