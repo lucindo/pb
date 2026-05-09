@@ -179,22 +179,15 @@ describe('audioEngine', () => {
   })
 
   it('close() calls audioCtx.close exactly once', async () => {
-    const engine = await createAudioEngine()
-    // Capture the AC instance via the engine's now() side-effect — but easier:
-    // just spy on the global AudioContext factory and grab the instance from the prototype.
-    // We rely on FakeAudioContext.close being a vi.fn(); access the instance via a probe.
+    // Spy on a Probe AudioContext whose close is observable (the generic FakeAudioContext
+    // close is shared across instances and gets noisy if other tests in the same describe
+    // leak an unclosed engine).
     const closeSpy = vi.fn(async () => {})
-    // Re-create with an AC whose close is observable.
-    const previousAC = window.AudioContext
-    let lastInstance: unknown = null
     class ProbeAC {
       state: AudioContextState = 'running'
       sampleRate = 44100
       destination = {}
       currentTime = 0
-      constructor() {
-        lastInstance = this
-      }
       resume = vi.fn(async () => {})
       close = closeSpy
       createOscillator = vi.fn()
@@ -206,11 +199,6 @@ describe('audioEngine', () => {
     const probeEngine = await createAudioEngine()
     await probeEngine.close()
     expect(closeSpy).toHaveBeenCalledTimes(1)
-    expect(lastInstance).not.toBeNull()
-
-    vi.unstubAllGlobals()
-    void previousAC
-    await engine.close()
   })
 
   it('close() is idempotent — calling twice does not throw and does not call audioCtx.close twice', async () => {
