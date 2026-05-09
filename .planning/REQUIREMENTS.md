@@ -9,17 +9,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Session
 
-- [ ] **SESS-01**: User can start a breathing session from the main app screen.
-- [ ] **SESS-02**: User can end/reset a running breathing session.
-- [ ] **SESS-03**: User can complete a timed session and see completion handled without manual cleanup.
-- [ ] **SESS-04**: User can run an unlimited session until they choose to end it.
-- [ ] **SESS-05**: User can follow inhale/exhale phases driven by one accurate session clock with no pauses between phases.
+- [x] **SESS-01**: User can start a breathing session from the main app screen.
+- [x] **SESS-02**: User can end/reset a running breathing session.
+- [x] **SESS-03**: User can complete a timed session and see completion handled without manual cleanup.
+- [x] **SESS-04**: User can run an unlimited session until they choose to end it.
+- [x] **SESS-05**: User can follow inhale/exhale phases driven by one accurate session clock with no pauses between phases.
 
 ### Breath Settings
 
-- [ ] **BREA-01**: User can choose breaths per minute from 1 to 7 in 0.5 increments.
-- [ ] **BREA-02**: User can choose inhale/exhale ratio from 50:50, 40:60, 30:70, and 20:80.
-- [ ] **BREA-03**: User can choose session duration from 5 to 60 minutes in 5 minute increments or unlimited.
+- [x] **BREA-01**: User can choose breaths per minute from 1 to 7 in 0.5 increments.
+- [x] **BREA-02**: User can choose inhale/exhale ratio from 50:50, 40:60, 30:70, and 20:80.
+- [x] **BREA-03**: User can choose session duration from 5 to 60 minutes in 5 minute increments or unlimited.
 
 ### Visual Guidance & Accessibility
 
@@ -114,14 +114,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | Phase 1 | Pending |
-| SESS-02 | Phase 1 | Pending |
-| SESS-03 | Phase 1 | Pending |
-| SESS-04 | Phase 1 | Pending |
-| SESS-05 | Phase 1 | Pending |
-| BREA-01 | Phase 1 | Pending |
-| BREA-02 | Phase 1 | Pending |
-| BREA-03 | Phase 1 | Pending |
+| SESS-01 | Phase 1 | Complete |
+| SESS-02 | Phase 1 | Complete |
+| SESS-03 | Phase 1 | Complete |
+| SESS-04 | Phase 1 | Complete |
+| SESS-05 | Phase 1 | Complete |
+| BREA-01 | Phase 1 | Complete |
+| BREA-02 | Phase 1 | Complete |
+| BREA-03 | Phase 1 | Complete |
 | GUID-01 | Phase 2 | Pending |
 | GUID-02 | Phase 2 | Pending |
 | GUID-03 | Phase 2 | Pending |

@@ -14,14 +14,13 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] User can choose breaths per minute from 1 to 7 in 0.5 increments. Validated in Phase 1: Configurable Session Timing.
+- [x] User can choose inhale/exhale ratio from 50:50, 40:60, 30:70, and 20:80. Validated in Phase 1: Configurable Session Timing.
+- [x] User can choose session duration from 5 to 60 minutes in 5 minute increments, or choose an unlimited session. Validated in Phase 1: Configurable Session Timing.
+- [x] User can start a hands-off breathing session that continuously alternates inhale and exhale with no pauses. Validated in Phase 1: Configurable Session Timing.
 
 ### Active
 
-- [ ] User can choose breaths per minute from 1 to 7 in 0.5 increments.
-- [ ] User can choose inhale/exhale ratio from 50:50, 40:60, 30:70, and 20:80.
-- [ ] User can choose session duration from 5 to 60 minutes in 5 minute increments, or choose an unlimited session.
-- [ ] User can start a hands-off breathing session that continuously alternates inhale and exhale with no pauses.
 - [ ] User can follow a polished breathing animation that clearly communicates in/out breathing without requiring exact mimicry of the mobile app.
 - [ ] User can hear soft built-in inhale and exhale cues that align with the active breathing phase and can be muted.
 - [ ] User can use the app comfortably on mobile and desktop browsers.
@@ -91,4 +90,4 @@ The first release feels successful when:
 | Treat Forrest logo/assets as permission-dependent | The app should honor Forrest's material without assuming rights to protected branding | — Pending |
 
 ---
-*Last updated: 2026-05-08 after initialization*
+*Last updated: 2026-05-09 after Phase 1 completion*

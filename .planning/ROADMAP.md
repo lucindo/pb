@@ -12,7 +12,7 @@ The v1 roadmap builds toward one trustworthy hands-off HRV breathing guide: firs
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Configurable Session Timing** - Users can configure and run accurate timed or unlimited breathing sessions.
+- [x] **Phase 1: Configurable Session Timing** - Users can configure and run accurate timed or unlimited breathing sessions. (completed 2026-05-09)
 - [ ] **Phase 2: Visual Guide & Accessible Responsive Interface** - Users can comfortably follow the breathing guide through a polished, accessible UI on mobile and desktop.
 - [ ] **Phase 3: Optional Generated Audio Cues** - Users can add or mute soft phase-aligned audio cues without losing visual guidance.
 - [ ] **Phase 4: Local Memory & Practice Stats** - Users can keep convenience settings and simple local practice history under their control.
@@ -33,10 +33,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Inhale and exhale phases alternate continuously from one accurate session clock with no pauses.
 **Plans**: 4 plans
 Plans:
-- [ ] 01-01-PLAN.md — Create React/Vite foundation and pure timing domain math.
-- [ ] 01-02-PLAN.md — Implement session lifecycle rules and engine hook.
-- [ ] 01-03-PLAN.md — Build main-screen setting steppers and start/end controls.
-- [ ] 01-04-PLAN.md — Complete running readout, breathing shape, extension, completion, and timed-end confirmation.
+- [x] 01-01-PLAN.md — Create React/Vite foundation and pure timing domain math.
+- [x] 01-02-PLAN.md — Implement session lifecycle rules and engine hook.
+- [x] 01-03-PLAN.md — Build main-screen setting steppers and start/end controls.
+- [x] 01-04-PLAN.md — Complete running readout, breathing shape, extension, completion, and timed-end confirmation.
 **UI hint**: yes
 
 ### Phase 2: Visual Guide & Accessible Responsive Interface
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Configurable Session Timing | 0/4 | Planned | - |
+| 1. Configurable Session Timing | 4/4 | Complete    | 2026-05-09 |
 | 2. Visual Guide & Accessible Responsive Interface | 0/TBD | Not started | - |
 | 3. Optional Generated Audio Cues | 0/TBD | Not started | - |
 | 4. Local Memory & Practice Stats | 0/TBD | Not started | - |
