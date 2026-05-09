@@ -50,6 +50,7 @@ export function SettingsForm({ settings, isRunning, onChange }: SettingsFormProp
         options={DURATION_OPTIONS}
         formatValue={formatDuration}
         onChange={(durationMinutes) => updateSettings({ durationMinutes })}
+        disabled={isRunning}
       />
     </div>
   )
