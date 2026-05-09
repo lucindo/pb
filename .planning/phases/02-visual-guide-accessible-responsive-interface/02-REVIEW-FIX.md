@@ -1,28 +1,31 @@
 ---
 phase: 02-visual-guide-accessible-responsive-interface
-fixed_at: 2026-05-09T13:02:00Z
+fixed_at: 2026-05-09T15:23:00Z
 review_path: .planning/phases/02-visual-guide-accessible-responsive-interface/02-REVIEW.md
-iteration: 1
-findings_in_scope: 5
-fixed: 5
+iteration: 2
+findings_in_scope: 9
+fixed: 9
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 02: Code Review Fix Report
 
-**Fixed at:** 2026-05-09T13:02:00Z
+**Fixed at:** 2026-05-09T15:23:00Z
 **Source review:** .planning/phases/02-visual-guide-accessible-responsive-interface/02-REVIEW.md
-**Iteration:** 1
+**Iteration:** 2 (cumulative; round 1 = CR + WR findings, round 2 = INFO findings)
 
 **Summary:**
-- Findings in scope: 5 (1 Critical + 4 Warning; Info skipped per fix_scope=critical_warning)
-- Fixed: 5
+- Findings in scope: 9 (1 Critical + 4 Warning + 4 Info)
+- Fixed: 9
 - Skipped: 0
 
-All 5 in-scope findings fixed. The full Vitest suite (8 files, 79 tests — 78 pre-existing + 1 new regression test for WR-01) passes after every fix. TypeScript build (`tsc -b`) is clean.
+All 9 findings from REVIEW.md are now fixed across two iteration rounds. After
+the round-2 fixes, the full Vitest suite (8 files, 80 tests — 78 pre-existing
++ 1 WR-01 regression test from round 1 + 1 IN-02 regression test from round 2)
+passes, and `npx tsc --noEmit` is clean.
 
-## Fixed Issues
+## Round 1 (CR + WR) — fixed 2026-05-09T13:02:00Z
 
 ### CR-01: Reduced-motion CSS overrides the JS-applied orb scale via `!important`
 
@@ -57,8 +60,34 @@ All 5 in-scope findings fixed. The full Vitest suite (8 files, 79 tests — 78 p
 **Commit:** `c5570f5`
 **Applied fix:** Renamed the inner `<div role="status">`'s `aria-label` from `"Session readout"` (duplicated the outer section's name) to `"Session announcement"`. **Deviation from the review's first-choice fix (drop the aria-label entirely):** the unnamed approach was attempted first but failed — the page contains other implicit `role="status"` elements (the form's `<output>` sliders for BPM and Ratio), so an unnamed `getByRole('status')` query was ambiguous and 5 tests broke. Renaming preserves the find-by-name pattern while disambiguating the two nested regions. Updated 4 test sites in lockstep (`App.session.test.tsx` × 3, `App.dialog.test.tsx` × 1) to query for `'Session announcement'`. Added a comment in `SessionReadout.tsx` documenting the naming rationale.
 
+## Round 2 (INFO) — fixed 2026-05-09T15:23:00Z
+
+### IN-01: `MID_SCALE` is duplicated between component and CSS token
+
+**Files modified:** `src/components/BreathingShape.tsx`, `src/styles/theme.css`
+**Commit:** `dd3e134`
+**Applied fix:** Added cross-reference "keep in sync" comments on both sides — the TS constants `MIN_SCALE`/`MAX_SCALE`/`MID_SCALE` in `BreathingShape.tsx` annotate which CSS token they mirror (`--orb-scale-min`/`--orb-scale-max`/`--orb-scale-mid`), and the CSS tokens annotate the same in reverse. The TS side drives the breathing math; the CSS side is consumed by stylesheet fallbacks (e.g. the `transform: scale(var(--orb-scale-mid))` reduced-motion path). **Deviation from the review's first-choice fix:** the review suggested reading the CSS variable from the component at mount via `getComputedStyle(document.documentElement).getPropertyValue(...)`. That approach was rejected because (a) it introduces a runtime dependency on the document being painted before the math runs, (b) it would break SSR/test harnesses that already assume the constants are pure, and (c) the values are dimensionless small numbers used in arithmetic — string-parsing them on every mount is more failure-prone than the documented mirror. The `// keep in sync` comment-pair was the review's explicit fallback option.
+
+### IN-02: `usePrefersReducedMotion` does not re-sync against `mql.matches` inside the effect
+
+**Files modified:** `src/hooks/usePrefersReducedMotion.ts`, `src/hooks/usePrefersReducedMotion.test.ts`
+**Commit:** `b980093`
+**Applied fix:** Added `setReduced(mql.matches)` inside the mount effect, before the `'change'` subscription is attached — the canonical pattern from MDN. The `useState` initializer captures `matchMedia(QUERY).matches` at first render; if the OS preference changes between the render commit and the effect mount (rare on this codebase since SSR is not used, but real), the hook would otherwise return the stale initial value until the next change event. Added a regression test ("re-syncs against mql.matches inside the mount effect (IN-02)") that simulates the drift case via a `vi.spyOn(window, 'matchMedia')` mock that flips `matches` between the useState-initializer call and the effect call, then asserts the hook returns the post-effect value. Test count went from 79 → 80.
+
+### IN-03: Test 'does not show the modal when open=false' is conditional and weakly asserting
+
+**Files modified:** `src/app/App.dialog.test.tsx`
+**Commit:** `15c5c2b`
+**Applied fix:** Replaced the `if (dialog) { expect(...) }` wrapper with an unconditional contract assertion. Since a closed native `<dialog>` exposes no accessible role, `queryByRole('dialog', ...)` returned `null` and the original test passed without ever reaching its only assertion. New test queries the DOM directly via `container.querySelector('dialog')`, asserts the element exists (`not.toBeNull()`), and asserts `(dialog as HTMLDialogElement).open === false` unconditionally. Test count unchanged (80 → 80) — same test, stricter assertions.
+
+### IN-04: `BreathingShape` calls `usePrefersReducedMotion` even when it returns null
+
+**Files modified:** `src/components/BreathingShape.tsx`
+**Commit:** `4427fbd`
+**Applied fix:** Split `BreathingShape` into a thin wrapper that early-returns `null` when `frame === null`, plus an inner `BreathingShapeBody` that owns the `usePrefersReducedMotion` subscription. The matchMedia subscription is now scoped to active sessions only — on the idle screen the hook never mounts. Hooks-rules-of-React are still satisfied because each component calls its hooks unconditionally. Test count unchanged (80 → 80) — pure refactor, no behavior change.
+
 ---
 
-_Fixed: 2026-05-09T13:02:00Z_
+_Fixed: 2026-05-09T15:23:00Z_
 _Fixer: Claude (gsd-code-fixer)_
-_Iteration: 1_
+_Iteration: 2_
