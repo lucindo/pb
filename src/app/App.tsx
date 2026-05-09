@@ -1,4 +1,6 @@
+import { BreathingShape } from '../components/BreathingShape'
 import { SettingsForm } from '../components/SettingsForm'
+import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 
@@ -21,6 +23,12 @@ export default function App() {
           and exhale session with no pauses.
         </p>
         <div className="mt-10 w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6">
+          <BreathingShape frame={session.currentFrame} />
+          <SessionReadout
+            frame={session.currentFrame}
+            status={state.status}
+            message={state.status === 'complete' ? state.message : undefined}
+          />
           <SettingsForm
             settings={state.selectedSettings}
             isRunning={isRunning}
