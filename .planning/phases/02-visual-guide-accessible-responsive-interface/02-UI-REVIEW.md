@@ -1,6 +1,6 @@
 ---
 phase: 02-visual-guide-accessible-responsive-interface
-status: needs-revision
+status: addressed
 audited_at: 2026-05-09
 auditor: gsd-ui-auditor
 baseline: 02-UI-SPEC.md
@@ -18,14 +18,26 @@ top_fixes:
   - id: F1
     severity: BLOCKER
     summary: "Mobile running layout fails the above-the-fold goal — End session button is below the fold at 375x812"
+    resolution: "FIXED in 0cfdb88 — page description hidden during isRunning; card top margin tightened mt-10→mt-6"
   - id: F2
     severity: WARNING
     summary: "Mobile dialog button order puts destructive 'End' visually above 'Keep going' (flex-col-reverse) — fingers reach the destructive action first"
+    resolution: "FIXED in 1209876 — flex-col-reverse → flex-col so mobile column order matches DOM (Keep going on top)"
   - id: F3
     severity: WARNING
     summary: "Modal entry/exit fade declared in UI-SPEC §Confirmation Modal (200ms ease-out) is not implemented — dialog snaps open with no transition"
+    resolution: "FIXED in 4877d86 — added .modal-fade utility with @starting-style + display/overlay allow-discrete; reduced-motion suppresses"
+warnings_addressed:
+  - "WR Color: destructive End button switched to bg-red-700 per UI-SPEC contract (53df3c4)"
+  - "WR Color: hardcoded #f8fffc promoted to --color-breathing-bg-edge token (db4559e)"
+  - "WR Color: legacy .breathing-shape rule with hardcoded hex deleted from theme.css (db4559e)"
+  - "WR Experience: :active press feedback added to all interactive controls (29147fd)"
+  - "WR Typography + Spacing: UI-SPEC extended with shipped roles (Hero h1, Status announcement, Hero CTA, md-tight 12px, --radius-readout 28px, --radius-card 32px) (718e9be)"
 warnings_count: 6
 blockers_count: 1
+warnings_resolved: 6
+blockers_resolved: 1
+info_pending: 3
 ---
 
 # Phase 02 — UI Review
