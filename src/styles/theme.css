@@ -1,6 +1,9 @@
 @theme {
   --color-breathing-bg: #f2fbf7;
+  --color-breathing-bg-soft: #e4f6ef;
   --color-breathing-surface: #ffffff;
   --color-breathing-accent: #0f766e;
+  --color-breathing-accent-strong: #115e59;
   --color-breathing-muted: #64748b;
+  --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
 }

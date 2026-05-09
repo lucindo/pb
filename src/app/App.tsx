@@ -8,8 +8,8 @@ export default function App() {
   const isRunning = state.status === 'running'
 
   return (
-    <main className="min-h-screen bg-[var(--color-breathing-bg)] px-6 py-8 text-slate-900">
-      <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col items-center justify-center text-center">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_#f8fffc)] px-4 py-6 text-slate-900 sm:px-6 sm:py-8">
+      <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-center text-center sm:min-h-[calc(100vh-4rem)]">
         <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-teal-700">
           HRV practice
         </p>
@@ -20,13 +20,17 @@ export default function App() {
           Choose a calm, supported timing pattern, then start a continuous inhale
           and exhale session with no pauses.
         </p>
-        <div className="mt-10 w-full rounded-[2rem] border border-white/70 bg-white/60 p-5 shadow-xl shadow-teal-950/5 backdrop-blur sm:p-6">
+        <div className="mt-10 w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6">
           <SettingsForm
             settings={state.selectedSettings}
             isRunning={isRunning}
             onChange={session.setSelectedSettings}
           />
           <SessionControls status={state.status} onStart={session.start} onEnd={session.end} />
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            Timing stays local to this browser and continuously alternates In and Out with no
+            pause segment.
+          </p>
         </div>
       </section>
     </main>
