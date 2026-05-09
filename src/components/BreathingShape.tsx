@@ -16,11 +16,20 @@ const MIN_SCALE = 0.58 // keep in sync with --orb-scale-min
 const MAX_SCALE = 1.0 // keep in sync with --orb-scale-max
 const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — D-06 reduced-motion fixed size; keep in sync with --orb-scale-mid
 
+// IN-04: split into wrapper + body so the matchMedia subscription in
+// usePrefersReducedMotion only mounts when there is an active frame to render.
+// On the idle screen (frame === null) we render nothing without paying for the
+// hook lifecycle. Hooks-rules-of-React are still respected because each
+// component calls its hooks unconditionally.
 export function BreathingShape({ frame }: BreathingShapeProps) {
-  const reducedMotion = usePrefersReducedMotion()
   if (frame === null) {
     return null
   }
+  return <BreathingShapeBody frame={frame} />
+}
+
+function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
+  const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
   const liveScale =
