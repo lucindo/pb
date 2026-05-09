@@ -41,10 +41,14 @@ export function BreathingShape({ frame }: BreathingShapeProps) {
         aria-hidden="true"
         className="orb-ring--outer absolute inset-0 rounded-full border-solid"
       />
-      {/* D-04: inner reference ring at MIN_SCALE boundary */}
+      {/* D-04: inner reference ring at MIN_SCALE boundary.
+          WR-03: position explicitly with left/top + translate centering rather
+          than relying on implicit grid auto-positioning of an absolutely-positioned
+          child, which is genuinely ambiguous in the spec for absolutely-positioned
+          grid items and is rendered inconsistently by older Safari. */}
       <span
         aria-hidden="true"
-        className="orb-ring--inner absolute rounded-full border-solid"
+        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
         style={{
           width: `${MIN_SCALE * 100}%`,
           height: `${MIN_SCALE * 100}%`,
