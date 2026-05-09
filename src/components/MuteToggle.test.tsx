@@ -1,0 +1,108 @@
+import '@testing-library/jest-dom/vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+
+import { MuteToggle, type MuteToggleProps } from './MuteToggle'
+
+function renderToggle(props: Partial<MuteToggleProps> = {}) {
+  const onToggle = props.onToggle ?? vi.fn()
+  const utils = render(
+    <MuteToggle
+      muted={props.muted ?? false}
+      audioAvailable={props.audioAvailable ?? true}
+      onToggle={onToggle}
+    />,
+  )
+  return { ...utils, onToggle }
+}
+
+describe('MuteToggle', () => {
+  it('renders a button (role="button")', () => {
+    renderToggle()
+    expect(screen.getByRole('button')).toBeInTheDocument()
+  })
+
+  it('when muted=false and audioAvailable=true, aria-pressed is "false" and accessible name is "Mute audio cues"', () => {
+    renderToggle({ muted: false, audioAvailable: true })
+    const button = screen.getByRole('button', { name: 'Mute audio cues' })
+    expect(button.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('when muted=true and audioAvailable=true, aria-pressed is "true" and accessible name is "Unmute audio cues"', () => {
+    renderToggle({ muted: true, audioAvailable: true })
+    const button = screen.getByRole('button', { name: 'Unmute audio cues' })
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('when audioAvailable=false, button is disabled and accessible name is "Audio unavailable in this browser"', () => {
+    renderToggle({ audioAvailable: false })
+    const button = screen.getByRole('button', { name: 'Audio unavailable in this browser' })
+    expect(button).toBeDisabled()
+  })
+
+  it('when audioAvailable=false, the title attribute is "Audio unavailable in this browser" (D-10 tooltip)', () => {
+    renderToggle({ audioAvailable: false })
+    const button = screen.getByRole('button', { name: 'Audio unavailable in this browser' })
+    expect(button.getAttribute('title')).toBe('Audio unavailable in this browser')
+  })
+
+  it('clicking while audioAvailable=true invokes onToggle exactly once', async () => {
+    const user = userEvent.setup()
+    const { onToggle } = renderToggle({ muted: false, audioAvailable: true })
+    await user.click(screen.getByRole('button', { name: 'Mute audio cues' }))
+    expect(onToggle).toHaveBeenCalledTimes(1)
+  })
+
+  it('clicking while audioAvailable=false does NOT invoke onToggle (button is disabled)', async () => {
+    const user = userEvent.setup()
+    const { onToggle } = renderToggle({ audioAvailable: false })
+    await user.click(screen.getByRole('button', { name: 'Audio unavailable in this browser' }))
+    expect(onToggle).not.toHaveBeenCalled()
+  })
+
+  it('button has the 44 px hit-area floor classes (size-11 / min-h-11 / min-w-11)', () => {
+    renderToggle()
+    const button = screen.getByRole('button')
+    expect(button.className).toMatch(/size-11/)
+    expect(button.className).toMatch(/min-h-11/)
+    expect(button.className).toMatch(/min-w-11/)
+  })
+
+  it('button has Phase 2 focus-ring tokens (focus-visible:ring-2 + focus-visible:ring-breathing-accent)', () => {
+    renderToggle()
+    const button = screen.getByRole('button')
+    expect(button.className).toMatch(/focus-visible:ring-2/)
+    expect(button.className).toMatch(/focus-visible:ring-breathing-accent/)
+  })
+
+  it('button has the Phase 2 reduced-motion guard (motion-reduce:transition-none)', () => {
+    renderToggle()
+    const button = screen.getByRole('button')
+    expect(button.className).toMatch(/motion-reduce:transition-none/)
+  })
+
+  it('button has the Phase 2 disabled-icon affordance (disabled:cursor-not-allowed + disabled:opacity-45)', () => {
+    renderToggle()
+    const button = screen.getByRole('button')
+    expect(button.className).toMatch(/disabled:cursor-not-allowed/)
+    expect(button.className).toMatch(/disabled:opacity-45/)
+  })
+
+  it('renders a speaker SVG when muted=false (3 path elements) and a speaker-with-slash SVG when muted=true (2 line elements)', () => {
+    const { container: containerOn, unmount: unmountOn } = render(
+      <MuteToggle muted={false} audioAvailable={true} onToggle={vi.fn()} />,
+    )
+    const svgOn = containerOn.querySelector('svg')
+    expect(svgOn).not.toBeNull()
+    expect(containerOn.querySelectorAll('svg path').length).toBe(3)
+    unmountOn()
+
+    const { container: containerOff } = render(
+      <MuteToggle muted={true} audioAvailable={true} onToggle={vi.fn()} />,
+    )
+    const svgOff = containerOff.querySelector('svg')
+    expect(svgOff).not.toBeNull()
+    expect(containerOff.querySelectorAll('svg line').length).toBe(2)
+  })
+})
