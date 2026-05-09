@@ -67,7 +67,7 @@ Plans:
   3. User can mute audio cues and continue the full session using visual guidance alone.
 **Plans**: 5 plans
 Plans:
-- [ ] 03-01-PLAN.md — Test infrastructure (FakeAudioContext polyfill) + pure cueSynth + lookaheadScheduler modules with unit tests.
+- [x] 03-01-PLAN.md — Test infrastructure (FakeAudioContext polyfill) + pure cueSynth + lookaheadScheduler modules with unit tests.
 - [ ] 03-02-PLAN.md — audioEngine service (AC lifecycle + mute fade + lead-in scheduling) + useAudioCues React hook with hook tests.
 - [ ] 03-03-PLAN.md — MuteToggle component (D-05/D-06/D-10) + SessionControls inline composition + BreathingShape leadInDigit prop (D-14).
 - [ ] 03-04-PLAN.md — App.tsx integration (appPhase state machine, lead-in orchestration, dual-anchor audio scheduling, four end paths) + App.audio.test.tsx integration tests.
