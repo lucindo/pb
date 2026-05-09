@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import App from './App'
 
-function settingGroup(name: RegExp) {
+function settingGroup(name: string) {
   return screen.getByRole('group', { name })
 }
 
@@ -12,9 +12,9 @@ describe('main screen settings controls', () => {
   it('renders BPM, ratio, and duration controls in the locked order before the start action', () => {
     render(<App />)
 
-    const bpm = settingGroup(/bpm/i)
-    const ratio = settingGroup(/ratio/i)
-    const duration = settingGroup(/duration/i)
+    const bpm = settingGroup('BPM')
+    const ratio = settingGroup('Ratio')
+    const duration = settingGroup('Duration')
     const start = screen.getByRole('button', { name: 'Start session' })
 
     expect(bpm.compareDocumentPosition(ratio)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
@@ -29,30 +29,30 @@ describe('main screen settings controls', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
 
-    expect(within(settingGroup(/bpm/i)).getByRole('button', { name: /decrease bpm/i })).toBeVisible()
-    expect(within(settingGroup(/bpm/i)).getByRole('button', { name: /increase bpm/i })).toBeVisible()
-    expect(within(settingGroup(/ratio/i)).getByRole('button', { name: /decrease ratio/i })).toBeVisible()
-    expect(within(settingGroup(/ratio/i)).getByRole('button', { name: /increase ratio/i })).toBeVisible()
+    expect(within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })).toBeVisible()
+    expect(within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })).toBeVisible()
+    expect(within(settingGroup('Ratio')).getByRole('button', { name: /decrease ratio/i })).toBeVisible()
+    expect(within(settingGroup('Ratio')).getByRole('button', { name: /increase ratio/i })).toBeVisible()
     expect(
-      within(settingGroup(/duration/i)).getByRole('button', { name: /decrease duration/i }),
+      within(settingGroup('Duration')).getByRole('button', { name: /decrease duration/i }),
     ).toBeVisible()
     expect(
-      within(settingGroup(/duration/i)).getByRole('button', { name: /increase duration/i }),
+      within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }),
     ).toBeVisible()
   })
 
   it('shows the first-open defaults for BPM, ratio, and duration', () => {
     render(<App />)
 
-    expect(within(settingGroup(/bpm/i)).getByText('5.5 BPM')).toBeVisible()
-    expect(within(settingGroup(/ratio/i)).getByText('40:60')).toBeVisible()
-    expect(within(settingGroup(/duration/i)).getByText('10 min')).toBeVisible()
+    expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
+    expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
+    expect(within(settingGroup('Duration')).getByText('10 min')).toBeVisible()
   })
 
   it('uses compact ratio labels without expanded inhale or exhale wording', () => {
     render(<App />)
 
-    const ratio = settingGroup(/ratio/i)
+    const ratio = settingGroup('Ratio')
     expect(within(ratio).getByText('40:60')).toBeVisible()
     expect(within(ratio).queryByText(/inhale/i)).not.toBeInTheDocument()
     expect(within(ratio).queryByText(/exhale/i)).not.toBeInTheDocument()
@@ -62,7 +62,7 @@ describe('main screen settings controls', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    const duration = settingGroup(/duration/i)
+    const duration = settingGroup('Duration')
     const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
 
