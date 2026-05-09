@@ -75,11 +75,24 @@ Declared values (multiples of 4 — 8-point base scale):
 |-------|-------|-------|
 | xs | 4px | Icon gaps, label-to-value inline spacing |
 | sm | 8px | Intra-component element gaps |
+| md-tight | 12px (Tailwind `*-3`) | Stepper inner row gap, between-button gap, mid-gradation vertical rhythm |
 | md | 16px | Default element spacing, card inner padding |
 | lg | 24px | Section gaps, modal inner padding |
 | xl | 32px | Layout vertical rhythm |
 | 2xl | 48px | Orb top/bottom margins |
 | 3xl | 64px | — (not used in this phase) |
+
+**Note on 12px (md-tight):** Tailwind's natural `*-3` step (12px) sits between the canonical 8/16 stops and is used liberally in shipped code (`gap-3`, `py-3`, `mt-3`). Declared explicitly here so the spacing audit treats it as in-scale rather than as an arbitrary deviation.
+
+### Radii
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `rounded-2xl` | 16px | Stepper output pill |
+| `rounded-3xl` | 24px | Stepper fieldset, dialog panel |
+| `--radius-readout` (custom) | 28px (`rounded-[1.75rem]`) | `SessionReadout` outer card — sits between rounded-3xl and rounded-4xl for a softer-than-card-border look |
+| `--radius-card` (custom) | 32px (`rounded-[2rem]`) | App primary card — most rounded surface, frames the practice area |
+| `rounded-full` | pill | All buttons (44/48px hit-area circles + readout time pill) |
 
 **Exceptions:**
 - Stepper +/- buttons: minimum 44×44px hit area (D-17). Implemented via `min-h-11 min-w-11` (44px) or `size-12` (48px) — current codebase already uses `size-12` (48px), which satisfies the constraint.
@@ -92,10 +105,13 @@ Declared values (multiples of 4 — 8-point base scale):
 
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
+| Hero h1 | 36px (text-4xl) / 48px (sm:text-5xl) | 600 (semibold) | tight | Page title `HRV breathing timer` (`App.tsx:61`). Scales up at sm breakpoint. |
 | Phase label (in-orb) | 48px (text-5xl) / 60px (sm:text-6xl) | 600 (semibold) | 1 (tight) | `In`/`Out` centered inside orb (D-03) |
-| Section heading | 24px (text-2xl) | 600 (semibold) | 1.2 | Modal title "End this session?" |
-| Body | 16px (text-base) | 400 (normal) | 1.5 | Descriptive copy, settings labels |
-| Small label | 14px (text-sm) | 600 (semibold) | 1 | Uppercase tracking labels (BPM, RATIO, REMAINING) |
+| Status announcement | 30px (text-3xl) | 600 (semibold) | 1.2 | `Session complete` end-of-session readout (`SessionReadout.tsx:39`). Larger than section heading because it is the only on-screen content at the moment of session completion. |
+| Section heading | 24px (text-2xl) | 600 (semibold) | 1.2 | Modal title `End this session?`; stepper output value display |
+| Hero CTA / Body large | 18px (text-lg) | 400 normal (description) / 600 semibold (CTA) | 1.5 | Page description copy and `Start session` / `End session` primary CTA button label. Larger than body to draw the eye on the idle screen. |
+| Body | 16px (text-base) | 400 (normal) | 1.5 | Descriptive copy, settings labels, modal button labels |
+| Small label | 14px (text-sm) | 600 (semibold) | 1 | Uppercase tracking labels (BPM, RATIO, REMAINING, footer note) |
 
 **Font weights used:** 400 (normal) and 600 (semibold). No other weights.
 
