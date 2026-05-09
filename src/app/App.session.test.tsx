@@ -257,7 +257,7 @@ describe('manual session ending', () => {
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
-    expect(screen.getByRole('status', { name: 'Session readout' })).toBeVisible()
+    expect(screen.getByRole('status', { name: 'Session announcement' })).toBeVisible()
   })
 
   it('confirms timed manual end via the modal End button, clears active readouts, and keeps selected settings', async () => {
@@ -270,7 +270,7 @@ describe('manual session ending', () => {
     await user.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
-    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /Breathing shape/i })).not.toBeInTheDocument()
     expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
   })
@@ -289,6 +289,6 @@ describe('manual session ending', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
-    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
   })
 })

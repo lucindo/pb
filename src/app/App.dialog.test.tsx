@@ -169,7 +169,7 @@ describe('end-session confirmation modal (App integration)', () => {
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
-    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
   })
 
   it('treats Escape as Keep going (cancel pathway, D-13)', async () => {
@@ -202,7 +202,7 @@ describe('end-session confirmation modal (App integration)', () => {
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
-    expect(screen.queryByRole('status', { name: 'Session readout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
   })
 
   describe('SESS-05 regression with fake timers', () => {

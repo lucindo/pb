@@ -21,7 +21,20 @@ export function SessionReadout({ frame, status, message }: SessionReadoutProps) 
       aria-label="Session readout"
       className="mb-6 rounded-[1.75rem] border border-teal-100 bg-teal-50/80 p-5 text-center shadow-inner shadow-teal-900/5"
     >
-      <div role="status" aria-label="Session readout" aria-live="polite" aria-atomic="true">
+      {/* WR-04: the live region's accessible name describes WHAT it announces,
+          not the parent area. Previously this was duplicated as
+          aria-label="Session readout" — identical to the outer <section>'s name —
+          which caused screen readers to announce "Session readout, region,
+          Session readout, status" on entry. Naming it "Session announcement"
+          disambiguates the nested regions while keeping the live-region named
+          (consistent with WAI-ARIA practice for distinguishing similar live
+          regions on the same page). */}
+      <div
+        role="status"
+        aria-label="Session announcement"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {message ? (
           <p className="text-3xl font-semibold text-teal-900">{message}</p>
         ) : null}
