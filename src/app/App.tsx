@@ -46,6 +46,17 @@ export default function App() {
   // Read by Task 1b boundary effect.
   const lastBoundaryKeyRef = useRef<string | null>(null)
 
+  // useAudioCues returns a fresh object literal each render, but its individual
+  // function fields are wrapped in useCallback([]) so their identities are stable.
+  // Hoist the stable references so effects can depend on them without re-firing
+  // every render (the bug: depending on `audio` made the complete useEffect run on
+  // each render while status was 'complete', repeatedly resetting appPhase to
+  // 'idle' AND destroying the engine that onStartClick had just rebuilt).
+  const audioStop = audio.stop
+  const audioStart = audio.start
+  const audioNow = audio.audioNow
+  const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
+
   // WR-01: Auto-close the confirmation modal when the session leaves the running
   // state on its own (e.g. timer reaches the end while the modal is open). Without
   // this, the modal would float over a "Session complete" readout for an arbitrary
@@ -81,7 +92,7 @@ export default function App() {
       audioAnchorRef.current = null
       sessionAnchorMsRef.current = null
       planRef.current = null
-      void audio.stop()
+      void audioStop()
       return
     }
     if (appPhase !== 'idle') return // defensive: ignore clicks during running (handled by onEnd)
@@ -92,7 +103,7 @@ export default function App() {
     // D-09: AudioContext is constructed inside this user-gesture-derived chain.
     const plan = createBreathingPlan(state.selectedSettings)
     planRef.current = plan // stored for Task 1b boundary computation
-    await audio.start(plan)
+    await audioStart(plan)
     // The returned firstInAudioTime is null if AC failed (D-10) — visuals-only path.
     // The lead-in setTimeout chain still runs in either case so the visual countdown
     // is independent of audio availability.
@@ -106,13 +117,13 @@ export default function App() {
       // Capture dual anchor (Pitfall 2) for boundary-aware audio scheduling in Task 1b.
       // audioAnchorRef stays null when AC unavailable — Task 1b's effect treats null as
       // "skip cue scheduling" (D-10 visuals-only fallback).
-      audioAnchorRef.current = audio.audioNow() // null if AC unavailable
+      audioAnchorRef.current = audioNow() // null if AC unavailable
       sessionAnchorMsRef.current = performance.now()
       setAppPhase('running')
       session.start()
     }, 3000)
     leadInTimeoutsRef.current = [t1, t2, t3]
-  }, [appPhase, state.selectedSettings, audio, session, clearLeadInTimeouts])
+  }, [appPhase, state.selectedSettings, audioStart, audioStop, audioNow, session, clearLeadInTimeouts])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
@@ -126,8 +137,8 @@ export default function App() {
       return
     }
     session.end()
-    void audio.stop() // D-11
-  }, [state, session, audio])
+    void audioStop() // D-11
+  }, [state, session, audioStop])
 
   // WR-02: memoize so EndSessionDialog's cancel-listener effect (depends on
   // [onCancel]) does not tear down and re-attach on every parent render.
@@ -138,7 +149,6 @@ export default function App() {
   // useCallback([])) rather than session itself. The session object literal is
   // re-created each render, so [session] would not memoize.
   const sessionEnd = session.end
-  const audioStop = audio.stop // capture for memoization stability
   const confirmEnd = useCallback(() => {
     setEndDialogOpen(false)
     sessionEnd()
@@ -158,7 +168,7 @@ export default function App() {
   // "subscribe to external state" effect pattern React recommends.
   useEffect(() => {
     if (state.status === 'complete') {
-      void audio.stop()
+      void audioStop()
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAppPhase('idle')
       clearLeadInTimeouts()
@@ -167,7 +177,7 @@ export default function App() {
       planRef.current = null
       lastBoundaryKeyRef.current = null
     }
-  }, [state.status, audio, clearLeadInTimeouts])
+  }, [state.status, audioStop, clearLeadInTimeouts])
 
   // Phase 3 D-12 + Pitfall 2 dual-anchor invariant: 1-cue lookahead.
   // On every cycleIndex/phase transition in SessionFrame, schedule the corresponding In/Out cue
@@ -214,8 +224,8 @@ export default function App() {
     // Convert to audio-clock time using the dual anchor captured at lead-in completion.
     const audioTime = audioAnchor + boundaryStartMs / 1000
 
-    audio.notifyPhaseBoundary({ newPhase: frame.phase, audioTime })
-  }, [appPhase, session.currentFrame, audio])
+    audioNotifyPhaseBoundary({ newPhase: frame.phase, audioTime })
+  }, [appPhase, session.currentFrame, audioNotifyPhaseBoundary])
 
   // Cleanup pending lead-in timeouts on unmount (Pitfall 3 leak guard).
   useEffect(() => {
