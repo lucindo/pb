@@ -69,7 +69,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Test infrastructure (FakeAudioContext polyfill) + pure cueSynth + lookaheadScheduler modules with unit tests.
 - [x] 03-02-PLAN.md — audioEngine service (AC lifecycle + mute fade + lead-in scheduling) + useAudioCues React hook with hook tests.
-- [ ] 03-03-PLAN.md — MuteToggle component (D-05/D-06/D-10) + SessionControls inline composition + BreathingShape leadInDigit prop (D-14).
+- [x] 03-03-PLAN.md — MuteToggle component (D-05/D-06/D-10) + SessionControls inline composition + BreathingShape leadInDigit prop (D-14).
 - [ ] 03-04-PLAN.md — App.tsx integration (appPhase state machine, lead-in orchestration, dual-anchor audio scheduling, four end paths) + App.audio.test.tsx integration tests.
 - [ ] 03-05-PLAN.md — Manual UAT checkpoints (bowl-cue tuning, mute-fade smoothness, tick distinctness, AC-failure path, iOS real-device behavior, full acceptance sign-off).
 **UI hint**: yes
