@@ -61,11 +61,16 @@ export default function App() {
         <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
           HRV breathing timer
         </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">
-          Choose a calm, supported timing pattern, then start a continuous inhale
-          and exhale session with no pauses.
-        </p>
-        <div className="mt-10 w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6">
+        {/* F1: hide page description during running session so the orb + End
+            session button reach above the fold on common mobile heights
+            (375x812+). The description is informational and not needed mid-practice. */}
+        {!isRunning && (
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">
+            Choose a calm, supported timing pattern, then start a continuous inhale
+            and exhale session with no pauses.
+          </p>
+        )}
+        <div className={`${isRunning ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           <BreathingShape frame={session.currentFrame} />
           <SessionReadout
             frame={session.currentFrame}
