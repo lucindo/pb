@@ -13,7 +13,7 @@ The v1 roadmap builds toward one trustworthy hands-off HRV breathing guide: firs
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Configurable Session Timing** - Users can configure and run accurate timed or unlimited breathing sessions. (completed 2026-05-09)
-- [ ] **Phase 2: Visual Guide & Accessible Responsive Interface** - Users can comfortably follow the breathing guide through a polished, accessible UI on mobile and desktop.
+- [x] **Phase 2: Visual Guide & Accessible Responsive Interface** - Users can comfortably follow the breathing guide through a polished, accessible UI on mobile and desktop. (completed 2026-05-09)
 - [ ] **Phase 3: Optional Generated Audio Cues** - Users can add or mute soft phase-aligned audio cues without losing visual guidance.
 - [ ] **Phase 4: Local Memory & Practice Stats** - Users can keep convenience settings and simple local practice history under their control.
 - [ ] **Phase 5: Mobile Hands-Off Resilience** - Users get best-effort screen-awake behavior during running sessions where browsers support it.
@@ -110,7 +110,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Configurable Session Timing | 4/4 | Complete    | 2026-05-09 |
-| 2. Visual Guide & Accessible Responsive Interface | 0/4 | Not started | - |
+| 2. Visual Guide & Accessible Responsive Interface | 4/4 | Complete    | 2026-05-09 |
 | 3. Optional Generated Audio Cues | 0/TBD | Not started | - |
 | 4. Local Memory & Practice Stats | 0/TBD | Not started | - |
 | 5. Mobile Hands-Off Resilience | 0/TBD | Not started | - |

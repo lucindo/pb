@@ -18,12 +18,12 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] User can choose inhale/exhale ratio from 50:50, 40:60, 30:70, and 20:80. Validated in Phase 1: Configurable Session Timing.
 - [x] User can choose session duration from 5 to 60 minutes in 5 minute increments, or choose an unlimited session. Validated in Phase 1: Configurable Session Timing.
 - [x] User can start a hands-off breathing session that continuously alternates inhale and exhale with no pauses. Validated in Phase 1: Configurable Session Timing.
+- [x] User can follow a polished breathing animation that clearly communicates in/out breathing without requiring exact mimicry of the mobile app. Validated in Phase 2: Visual Guide & Accessible Responsive Interface (orb + In/Out label + reduced-motion crossfade).
+- [x] User can use the app comfortably on mobile and desktop browsers. Validated in Phase 2: Visual Guide & Accessible Responsive Interface (mobile-first breakpoints, 44×44 hit areas, fluid clamp() orb sizing, focus-visible rings, end-session modal).
 
 ### Active
 
-- [ ] User can follow a polished breathing animation that clearly communicates in/out breathing without requiring exact mimicry of the mobile app.
 - [ ] User can hear soft built-in inhale and exhale cues that align with the active breathing phase and can be muted.
-- [ ] User can use the app comfortably on mobile and desktop browsers.
 - [ ] User's last settings are saved locally for convenience between visits.
 - [ ] User can see basic local practice stats such as total sessions, total minutes, and recent session information.
 - [ ] User can access a prominent learning section with links to Forrest Knutson's YouTube channel and selected HRV breathing explanation videos.
@@ -88,6 +88,10 @@ The first release feels successful when:
 | Keep customization and biofeedback out of v1 | The first milestone should prove the core breathing guide before adding advanced features | — Pending |
 | Use English first while keeping multilingual support possible later | English is enough for v1, but future multi-language support is expected | — Pending |
 | Treat Forrest logo/assets as permission-dependent | The app should honor Forrest's material without assuming rights to protected branding | — Pending |
+| Single abstract orb as visual guide (D-01) | One excellent default beats multiple animation styles for v1; orb + In/Out label communicates phase without anatomical metaphor | ✓ Validated Phase 2 |
+| OS `prefers-reduced-motion` is sole switch (D-05); fixed mid-scale orb + gradient crossfade as substitute cue (D-06/D-07) | Honors OS accessibility preference without an in-app override; chromatic delta carries phase signal when scale animation is suppressed | ✓ Validated Phase 2 |
+| Native `<dialog>` for End-session modal with locked copy (D-10/D-11) | Browser-managed top-layer + focus trap; locked strings prevent copy drift across plans | ✓ Validated Phase 2 |
+| Fluid clamp() orb sizing + 44×44 hit-area floor + focus-visible rings (D-15/D-17/D-18/D-21) | Mobile-first responsive without media-query churn; meets WCAG target size and keyboard-only operation | ✓ Validated Phase 2 |
 
 ---
-*Last updated: 2026-05-09 after Phase 1 completion*
+*Last updated: 2026-05-09 after Phase 2 completion*
