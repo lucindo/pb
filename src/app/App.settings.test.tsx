@@ -120,15 +120,43 @@ describe('main screen settings controls', () => {
     expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
   })
 
-  it('does not allow BPM or ratio edits while a session is running', async () => {
+  it('removes BPM and Ratio steppers from the DOM while a session is running (D-16)', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+  })
+
+  it('restores BPM and Ratio steppers after the session ends (D-16)', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start session' }))
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'End session' }))
+
+    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+  })
+
+  it('does not render the Current phase eyebrow inside the readout while running (D-03)', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Start session' }))
 
-    expect(within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })).toBeDisabled()
-    expect(within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })).toBeDisabled()
-    expect(within(settingGroup('Ratio')).getByRole('button', { name: /decrease ratio/i })).toBeDisabled()
-    expect(within(settingGroup('Ratio')).getByRole('button', { name: /increase ratio/i })).toBeDisabled()
+    // D-03: the orb is the single source of the visible phase label.
+    expect(screen.queryByText('Current phase')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
   })
 })
