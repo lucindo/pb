@@ -9,6 +9,15 @@ export default function App() {
   const session = useSessionEngine()
   const { state } = session
   const isRunning = state.status === 'running'
+  const endSession = () => {
+    if (state.status === 'running' && state.lockedSettings.durationMinutes !== 'open-ended') {
+      if (!window.confirm('End this timed session?')) {
+        return
+      }
+    }
+
+    session.end()
+  }
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_#f8fffc)] px-4 py-6 text-slate-900 sm:px-6 sm:py-8">
@@ -42,7 +51,7 @@ export default function App() {
               onIncrease={session.extendDuration}
             />
           ) : null}
-          <SessionControls status={state.status} onStart={session.start} onEnd={session.end} />
+          <SessionControls status={state.status} onStart={session.start} onEnd={endSession} />
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Timing stays local to this browser and continuously alternates In and Out with no
             pause segment.

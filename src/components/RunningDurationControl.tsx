@@ -16,8 +16,8 @@ export function RunningDurationControl({
   }
 
   const minimumDuration = Math.max(lockedDurationMinutes, selectedDurationMinutes)
-  const availableDurations = DURATION_OPTIONS.filter(
-    (duration): duration is number => typeof duration === 'number' && duration > minimumDuration,
+  const availableDurations = DURATION_OPTIONS.flatMap((duration) =>
+    typeof duration === 'number' && duration > minimumDuration ? [duration] : [],
   )
 
   if (availableDurations.length === 0) {

@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest'
 
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 
@@ -91,6 +91,7 @@ describe('main screen settings controls', () => {
   })
 
   it('ends a running session and returns to the idle start action', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
     const user = userEvent.setup()
     render(<App />)
 
@@ -102,6 +103,7 @@ describe('main screen settings controls', () => {
   })
 
   it('keeps selected settings visible after manually ending a session', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
     const user = userEvent.setup()
     render(<App />)
 
