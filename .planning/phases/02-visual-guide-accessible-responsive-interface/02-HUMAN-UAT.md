@@ -14,10 +14,9 @@ updated: 2026-05-09T15:45:00Z
 
 ### 1. Reduced-motion crossfade timing feels calm (not abrupt)
 expected: With OS reduced-motion enabled, In→Out transitions are a soft 300–500ms gradient crossfade and the orb stays at fixed mid-scale (no pulsing).
-result: issue
-reported: "Reduced-motion crossfade is working properly, the only thing is that the fading is hard to perceive, too subtle"
-severity: minor
-note: CR-01 fix confirmed working (orb holds at mid-scale). Issue is visual contrast of crossfade itself — opacity delta or color delta between In/Out gradients insufficient.
+result: pass
+note: |
+  Initial run flagged crossfade as too subtle to perceive (CR-01 fix confirmed working — orb at mid-scale). Root cause: both gradients used teal-100/blue-100 as 'from' stops → low chromatic delta when scale animation suppressed. Fix `cc2d91a` deepened 'from' stops to teal-200/blue-200; 'to' stops kept light. Re-test passed.
 
 ### 2. 44×44 hit areas comfortable on real mobile devices
 expected: One-handed taps on stepper +/− and Start/End buttons land cleanly without mis-taps.
@@ -39,17 +38,19 @@ result: pass
 ## Summary
 
 total: 5
-passed: 4
-issues: 1
+passed: 5
+issues: 0
 pending: 0
 failed: 0
 
 ## Gaps
 
 - truth: "Reduced-motion crossfade is perceptually visible — user can tell when phase changes from In to Out without animation"
-  status: failed
+  status: resolved
   reason: "User reported: Reduced-motion crossfade is working properly, the only thing is that the fading is hard to perceive, too subtle"
   severity: minor
   test: 1
+  fix_commit: cc2d91a
+  fix_summary: "Deepened orb gradient 'from' stops one Tailwind step (teal-200, blue-200) so chromatic delta carries phase signal under reduced-motion. 'to' stops kept light to preserve calm pastel palette. Re-tested by user: pass."
   artifacts: []
   missing: []
