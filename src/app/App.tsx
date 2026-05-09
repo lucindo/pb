@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { BreathingShape } from '../components/BreathingShape'
 import { EndSessionDialog } from '../components/EndSessionDialog'
@@ -12,6 +12,16 @@ export default function App() {
   const { state } = session
   const isRunning = state.status === 'running'
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
+
+  // WR-01: Auto-close the confirmation modal when the session leaves the running
+  // state on its own (e.g. timer reaches the end while the modal is open). Without
+  // this, the modal would float over a "Session complete" readout for an arbitrary
+  // window until the user dismissed it.
+  useEffect(() => {
+    if (state.status !== 'running' && endDialogOpen) {
+      setEndDialogOpen(false)
+    }
+  }, [state.status, endDialogOpen])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).

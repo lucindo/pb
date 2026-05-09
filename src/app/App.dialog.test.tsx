@@ -238,5 +238,36 @@ describe('end-session confirmation modal (App integration)', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Keep going' }))
     })
+
+    it('auto-closes the modal when the session completes underneath it (WR-01)', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+
+      render(<App />)
+
+      // Use a 5-min duration so the clock can run out within the test.
+      fireEvent.click(
+        within(screen.getByRole('group', { name: 'Duration' })).getByRole('button', {
+          name: /decrease duration/i,
+        }),
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+
+      // Modal is open while the session is still running.
+      expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+
+      // Advance past the session end without the user dismissing the modal.
+      act(() => {
+        vi.advanceTimersByTime(5 * 60_000)
+      })
+
+      // Modal must auto-close, and the app should be back at the idle/complete state.
+      expect(
+        screen.queryByRole('dialog', { name: 'End this session?' }),
+      ).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+      expect(screen.getByText('Session complete')).toBeVisible()
+    })
   })
 })
