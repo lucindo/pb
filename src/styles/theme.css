@@ -1,4 +1,5 @@
 @theme {
+  /* Existing Phase 1 tokens — preserved verbatim */
   --color-breathing-bg: #f2fbf7;
   --color-breathing-bg-soft: #e4f6ef;
   --color-breathing-surface: #ffffff;
@@ -6,24 +7,87 @@
   --color-breathing-accent-strong: #115e59;
   --color-breathing-muted: #64748b;
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
+
+  /* Phase 2 orb tokens (D-04, D-18, UI-SPEC §Token Inventory) */
+  --orb-size: clamp(180px, 35vw, 360px);
+  --orb-scale-min: 0.58;
+  --orb-scale-max: 1.0;
+  --orb-scale-mid: 0.79;
+
+  /* Phase 2 orb gradient color tokens (D-02) */
+  --color-orb-in-from: #ccfbf1;
+  --color-orb-in-to: #ecfdf5;
+  --color-orb-out-from: #dbeafe;
+  --color-orb-out-to: #eef2ff;
+  --color-orb-in-text: #134e4a;
+  --color-orb-out-text: #1e3a8a;
+
+  /* Phase 2 reference ring tokens (D-04) */
+  --color-ring-outer: rgb(153 246 228 / 0.6);
+  --color-ring-inner: rgb(191 219 254 / 0.45);
+
+  /* Phase 2 modal token (consumed by Plan 04) */
+  --color-modal-backdrop: rgb(15 23 42 / 0.30);
 }
 
+/* Legacy Phase 1 .breathing-shape — kept harmless; the new orb structure
+   uses .orb / .orb-layer--* / .orb-ring--* below. */
 .breathing-shape {
-  background: linear-gradient(135deg, #ccfbf1, #ecfdf5);
+  background: linear-gradient(135deg, var(--color-orb-in-from), var(--color-orb-in-to));
   border-color: #99f6e4;
-  color: #134e4a;
+  color: var(--color-orb-in-text);
   transform: scale(var(--breathing-scale, 1));
 }
 
 .breathing-shape[data-phase='out'] {
-  background: linear-gradient(135deg, #dbeafe, #eef2ff);
+  background: linear-gradient(135deg, var(--color-orb-out-from), var(--color-orb-out-to));
   border-color: #bfdbfe;
-  color: #1e3a8a;
+  color: var(--color-orb-out-text);
 }
 
+/* Phase 2 orb structure (D-01..D-04, D-07) */
+.orb {
+  transition: transform 200ms ease-out;
+}
+
+.orb-layer--in {
+  background: linear-gradient(135deg, var(--color-orb-in-from), var(--color-orb-in-to));
+  opacity: 1;
+  transition: opacity 400ms ease-in-out;
+}
+
+.orb-layer--out {
+  background: linear-gradient(135deg, var(--color-orb-out-from), var(--color-orb-out-to));
+  opacity: 0;
+  transition: opacity 400ms ease-in-out;
+}
+
+[data-phase='out'] .orb-layer--in {
+  opacity: 0;
+}
+
+[data-phase='out'] .orb-layer--out {
+  opacity: 1;
+}
+
+.orb-ring--outer {
+  border-color: var(--color-ring-outer);
+  border-width: 1.5px;
+}
+
+.orb-ring--inner {
+  border-color: var(--color-ring-inner);
+  border-width: 1px;
+}
+
+/* Reduced-motion (D-05, D-07, D-09):
+   - Suppress the orb scale transition and the legacy .breathing-shape transform animation.
+   - Intentionally PRESERVE the .orb-layer--out opacity transition — it is the
+     substitute phase indicator under reduced-motion (D-07). */
 @media (prefers-reduced-motion: reduce) {
-  .breathing-shape {
-    transform: none;
-    transition: none;
+  .breathing-shape,
+  .orb {
+    transform: none !important;
+    transition: none !important;
   }
 }
