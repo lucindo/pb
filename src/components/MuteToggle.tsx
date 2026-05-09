@@ -1,0 +1,88 @@
+// Phase 3 D-05/D-06/D-07/D-10/D-17: inline icon-button toggle for the audio cues.
+// Pure presentational layer — receives props from App.tsx (Plan 04) and emits a
+// click callback. No hook calls, no AudioContext access.
+//
+// Class string mirrors src/components/SettingsStepper.tsx:42-50 (the Phase 2
+// icon-button baseline) verbatim, EXCEPT:
+// - size-12 → size-11 (44 px exact match for the Phase 2 D-17 hit-area floor)
+// - text-2xl + leading-none dropped (this button hosts an SVG icon, not a glyph)
+
+export interface MuteToggleProps {
+  muted: boolean
+  audioAvailable: boolean
+  onToggle(): void
+}
+
+export function MuteToggle({ muted, audioAvailable, onToggle }: MuteToggleProps) {
+  // D-10: when audioAvailable is false, the toggle is disabled and the label
+  // explains why. Otherwise D-06 action-verb labels (Mute / Unmute) describe
+  // what the click will do, not the current state.
+  const label = !audioAvailable
+    ? 'Audio unavailable in this browser'
+    : muted
+      ? 'Unmute audio cues'
+      : 'Mute audio cues'
+
+  return (
+    <button
+      type="button"
+      aria-pressed={muted}
+      aria-label={label}
+      title={label}
+      disabled={!audioAvailable}
+      onClick={onToggle}
+      className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+    >
+      {muted ? <SpeakerSlashIcon /> : <SpeakerIcon />}
+    </button>
+  )
+}
+
+// 03-PATTERNS.md line 538: 24-line inline SVG per icon is sufficient — no asset
+// bundle, no icon-font dependency, ships with the component.
+
+function SpeakerIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* Speaker body */}
+      <path d="M11 5L6 9H2v6h4l5 4z" />
+      {/* Sound waves */}
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+  )
+}
+
+function SpeakerSlashIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* Speaker body */}
+      <path d="M11 5L6 9H2v6h4l5 4z" />
+      {/* Slash overlay (X over the waves) */}
+      <line x1="22" y1="9" x2="16" y2="15" />
+      <line x1="16" y1="9" x2="22" y2="15" />
+    </svg>
+  )
+}
