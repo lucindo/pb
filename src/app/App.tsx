@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { BreathingShape } from '../components/BreathingShape'
 import { EndSessionDialog } from '../components/EndSessionDialog'
@@ -33,15 +33,24 @@ export default function App() {
     session.end()
   }
 
-  const confirmEnd = () => {
+  // WR-02: memoize so EndSessionDialog's cancel-listener effect (depends on
+  // [onCancel]) does not tear down and re-attach on every parent render.
+  // App re-renders on every animation frame while a session is running, which
+  // would otherwise produce hundreds of addEventListener/removeEventListener
+  // pairs per second on long sessions.
+  // Note: depend on session.end (which is stable — useSessionEngine wraps it in
+  // useCallback([])) rather than session itself. The session object literal is
+  // re-created each render, so [session] would not memoize.
+  const sessionEnd = session.end
+  const confirmEnd = useCallback(() => {
     setEndDialogOpen(false)
-    session.end()
-  }
+    sessionEnd()
+  }, [sessionEnd])
 
-  const cancelEnd = () => {
+  const cancelEnd = useCallback(() => {
     setEndDialogOpen(false)
     // session continues — clock keeps running (D-13). No additional work.
-  }
+  }, [])
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_#f8fffc)] px-4 py-6 text-slate-900 sm:px-6 sm:py-8">
