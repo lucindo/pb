@@ -5,6 +5,11 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 
 export interface BreathingShapeProps {
   frame: SessionFrame | null
+  // Phase 3 D-14: when set, renders the digit in the orb area in place of the
+  // In/Out phase label. Lead-in always wins when both leadInDigit and frame are
+  // present (the lead-in is a pre-session visual; the frame may already be
+  // advancing in App.tsx but the user shouldn't see it yet).
+  leadInDigit?: 3 | 2 | 1 | null
 }
 
 // IN-01: keep these in sync with the matching tokens in `src/styles/theme.css`
@@ -16,12 +21,21 @@ const MIN_SCALE = 0.58 // keep in sync with --orb-scale-min
 const MAX_SCALE = 1.0 // keep in sync with --orb-scale-max
 const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — D-06 reduced-motion fixed size; keep in sync with --orb-scale-mid
 
-// IN-04: split into wrapper + body so the matchMedia subscription in
-// usePrefersReducedMotion only mounts when there is an active frame to render.
-// On the idle screen (frame === null) we render nothing without paying for the
-// hook lifecycle. Hooks-rules-of-React are still respected because each
-// component calls its hooks unconditionally.
-export function BreathingShape({ frame }: BreathingShapeProps) {
+// IN-04 + Phase 3 D-14: split into wrapper + body so the matchMedia
+// subscription in usePrefersReducedMotion only mounts when there is an active
+// frame to render. On the idle screen (frame === null AND leadInDigit == null)
+// we render nothing without paying for the hook lifecycle.
+//
+// During lead-in we render BreathingShapeLeadIn (no usePrefersReducedMotion
+// subscription — the orb is locked at MID_SCALE for everyone, mirroring Phase
+// 2 D-06 reduced-motion mode regardless of OS preference).
+//
+// Hooks-rules-of-React are still respected because each component calls its
+// hooks unconditionally.
+export function BreathingShape({ frame, leadInDigit }: BreathingShapeProps) {
+  if (leadInDigit != null) {
+    return <BreathingShapeLeadIn digit={leadInDigit} />
+  }
   if (frame === null) {
     return null
   }
@@ -93,6 +107,64 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
         }}
       >
         {frame.phaseLabel}
+      </span>
+    </div>
+  )
+}
+
+// Phase 3 D-14 + Phase 2 D-06: the lead-in is a neutral pre-state. The orb is
+// locked at MID_SCALE for everyone (mirrors reduced-motion mode regardless of
+// OS preference), and only the In gradient is rendered (no Out crossfade) so
+// the lead-in feels like a still pool of water awaiting the first breath.
+//
+// No usePrefersReducedMotion subscription here — the lead-in is constant by
+// design, so there is no animation to suppress.
+//
+// No data-phase / data-progress on the root — those attributes belong to the
+// active phase loop. The lead-in is pre-state and exposes only the aria-label
+// "Lead-in: N" for assistive tech.
+function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
+  return (
+    <div
+      role="img"
+      aria-label={`Lead-in: ${digit}`}
+      className="relative mx-auto my-12 grid place-items-center"
+      style={{
+        width: 'var(--orb-size)',
+        height: 'var(--orb-size)',
+      } as CSSProperties}
+    >
+      {/* Outer reference ring (Phase 2 D-04) */}
+      <span
+        aria-hidden="true"
+        className="orb-ring--outer absolute inset-0 rounded-full border-solid"
+      />
+      {/* Inner reference ring (Phase 2 D-04) */}
+      <span
+        aria-hidden="true"
+        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
+        style={{
+          width: `${MIN_SCALE * 100}%`,
+          height: `${MIN_SCALE * 100}%`,
+        }}
+      />
+      {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
+          is rendered (no Out crossfade) so the lead-in feels like a still pool
+          of water awaiting the first breath. */}
+      <div
+        className="orb absolute inset-0 rounded-full"
+        style={{ transform: `scale(${MID_SCALE})` }}
+      >
+        <span
+          aria-hidden="true"
+          className="orb-layer--in absolute inset-0 rounded-full"
+        />
+      </div>
+      {/* D-14: digit in the same large-display position as the In/Out label,
+          one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
+          so the countdown reads as dominant. */}
+      <span className="relative z-10 text-7xl font-semibold tracking-tight text-slate-900 sm:text-8xl">
+        {digit}
       </span>
     </div>
   )
