@@ -20,12 +20,12 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] User can start a hands-off breathing session that continuously alternates inhale and exhale with no pauses. Validated in Phase 1: Configurable Session Timing.
 - [x] User can follow a polished breathing animation that clearly communicates in/out breathing without requiring exact mimicry of the mobile app. Validated in Phase 2: Visual Guide & Accessible Responsive Interface (orb + In/Out label + reduced-motion crossfade).
 - [x] User can use the app comfortably on mobile and desktop browsers. Validated in Phase 2: Visual Guide & Accessible Responsive Interface (mobile-first breakpoints, 44×44 hit areas, fluid clamp() orb sizing, focus-visible rings, end-session modal).
+- [x] User can hear soft built-in inhale and exhale cues that align with the active breathing phase and can be muted. Validated in Phase 3: Optional Generated Audio Cues (cueSynth + lookaheadScheduler + dual-anchor scheduling + MuteToggle + lead-in countdown).
+- [x] User's last settings are saved locally for convenience between visits. Validated in Phase 4: Local Memory & Practice Stats (silent-fallback localStorage envelope, per-field validate-and-fallback restore on mount, persisted setters).
+- [x] User can see basic local practice stats such as total sessions, total minutes, and recent session information. Validated in Phase 4: Local Memory & Practice Stats (StatsFooter shows count + total minutes + last session, single-write-site stats record, ResetStatsDialog wipes stats only).
 
 ### Active
 
-- [ ] User can hear soft built-in inhale and exhale cues that align with the active breathing phase and can be muted.
-- [ ] User's last settings are saved locally for convenience between visits.
-- [ ] User can see basic local practice stats such as total sessions, total minutes, and recent session information.
 - [ ] User can access a prominent learning section with links to Forrest Knutson's YouTube channel and selected HRV breathing explanation videos.
 
 ### Out of Scope
@@ -94,4 +94,4 @@ The first release feels successful when:
 | Fluid clamp() orb sizing + 44×44 hit-area floor + focus-visible rings (D-15/D-17/D-18/D-21) | Mobile-first responsive without media-query churn; meets WCAG target size and keyboard-only operation | ✓ Validated Phase 2 |
 
 ---
-*Last updated: 2026-05-09 after Phase 2 completion*
+*Last updated: 2026-05-10 after Phase 4 completion*
