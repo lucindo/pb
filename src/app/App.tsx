@@ -48,6 +48,14 @@ export default function App() {
   //  read — so it was deleted along with its writes.)
   const audioAnchorRef = useRef<number | null>(null)
 
+  // CR-01: cancel-during-lead-in race guard. onStartClick is async (awaits AC creation).
+  // Between setAppPhase('lead-in') and the await resolving, the user can re-click — the
+  // cancel branch flips appPhase back to 'idle' and calls audioStop(). When the original
+  // chain resumes, it would otherwise schedule timeouts that flip appPhase back to
+  // 'running' on a session the user already cancelled. Bumping startGenerationRef in
+  // both branches and re-checking after the await lets the post-await continuation abort.
+  const startGenerationRef = useRef(0)
+
   // The breathing plan captured at session start. Stored in a ref so Task 1b's boundary effect
   // can read cycleMs/inhaleMs/exhaleMs to compute boundary start times (per Pitfall 2 fix from
   // checker B1: boundary start times come from the PLAN, not from frame.elapsedMs at render time).
@@ -101,6 +109,10 @@ export default function App() {
   const onStartClick = useCallback(async () => {
     // Cancel-during-lead-in branch (Open Question 2 option (a) + checker W4):
     if (appPhase === 'lead-in') {
+      // CR-01: invalidate any in-flight start whose await audioStart(plan) is still
+      // pending. The post-await continuation re-checks startGenerationRef and aborts
+      // when the token has been bumped.
+      startGenerationRef.current += 1
       clearLeadInTimeouts()
       setLeadInDigit(null)
       setAppPhase('idle')
@@ -110,6 +122,11 @@ export default function App() {
       return
     }
     if (appPhase !== 'idle') return // defensive: ignore clicks during running (handled by onEnd)
+
+    // CR-01: stamp this start's generation token before any await — the cancel branch
+    // bumps the same ref, so the post-await continuation can detect "I was cancelled"
+    // by comparing local generation against the ref's current value.
+    const generation = ++startGenerationRef.current
 
     setAppPhase('lead-in')
     setLeadInDigit(3)
@@ -121,6 +138,16 @@ export default function App() {
     // The returned firstInAudioTime is null if AC failed (D-10) — visuals-only path.
     // The lead-in setTimeout chain still runs in either case so the visual countdown
     // is independent of audio availability.
+
+    // CR-01: if the user clicked Start again while we were awaiting AC creation, the
+    // cancel branch already ran (cleared timeouts, reset appPhase, called audioStop).
+    // Tear down the freshly-built engine and abort BEFORE scheduling timeouts — otherwise
+    // the timeouts would later flip appPhase back to 'running' and start the session the
+    // user just cancelled.
+    if (generation !== startGenerationRef.current) {
+      void audioStop()
+      return
+    }
 
     // WR-04: drive these from the shared LEAD_IN_TICK_INTERVAL_MS / LEAD_IN_DURATION_MS
     // exports so a future tweak to the lead-in length stays in lockstep across the
