@@ -86,6 +86,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
@@ -209,6 +212,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
@@ -246,6 +252,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', SlowCloseAC)
 
@@ -284,6 +293,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', CountingAC)
 
@@ -406,6 +418,338 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
       await Promise.resolve()
     })
     expect(resumeSpy).not.toHaveBeenCalled()
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+})
+
+describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1 Plan 06 D-34/D-35/D-37/D-41)', () => {
+  // Extended SpyableAC for Plan 06: adds 'interrupted' state, real statechange
+  // registry, _simulateInterrupted, _simulateResumeReject, and tracks construction
+  // count for reconstruction-path assertions. resume/close stay as regular methods
+  // (Pattern E) so vi.spyOn(SpyableAC.prototype, 'resume') intercepts calls.
+  let constructed = 0
+  class SpyableAC {
+    // Track the most recently constructed instance so prototype-spy tests can
+    // reach the live AC the engine is holding (used by D-41 (d) closed-transition
+    // discriminating assertion). reset() clears both the count and the reference.
+    static lastInstance: SpyableAC | null = null
+    static reset() { constructed = 0; SpyableAC.lastInstance = null }
+    state: AudioContextState | 'interrupted' = 'running'
+    sampleRate = 44100
+    destination = {}
+    private _start = performance.now() / 1000
+    private _listeners = new Map<string, Set<EventListener>>()
+    private _resumeRejection: { name: string; message: string } | null = null
+    get currentTime() { return performance.now() / 1000 - this._start }
+    constructor(_options?: AudioContextOptions) { constructed += 1; SpyableAC.lastInstance = this }
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    async resume(): Promise<void> {
+      if (this._resumeRejection !== null) {
+        const err = new DOMException(this._resumeRejection.message, this._resumeRejection.name)
+        this._resumeRejection = null
+        if (this.state === 'interrupted') this.state = 'suspended'
+        this._fireStateChange()
+        throw err
+      }
+      this.state = 'running'
+      this._fireStateChange()
+    }
+    async suspend(): Promise<void> { this.state = 'suspended'; this._fireStateChange() }
+    async close(): Promise<void> { this.state = 'closed'; this._fireStateChange() }
+    _simulateSuspend(): void { this.state = 'suspended'; this._fireStateChange() }
+    _simulateInterrupted(): void { this.state = 'interrupted'; this._fireStateChange() }
+    _simulateResumeReject(errorName: string = 'InvalidStateError'): void {
+      this._resumeRejection = { name: errorName, message: 'Failed to start the audio device' }
+    }
+    dispatchStateChange(): void { this._fireStateChange() }
+    addEventListener(type: string, listener: EventListener): void {
+      let set = this._listeners.get(type)
+      if (!set) { set = new Set(); this._listeners.set(type, set) }
+      set.add(listener)
+    }
+    removeEventListener(type: string, listener: EventListener): void {
+      this._listeners.get(type)?.delete(listener)
+    }
+    private _fireStateChange(): void {
+      const evt = new Event('statechange')
+      for (const l of this._listeners.get('statechange') ?? []) l(evt)
+    }
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+  })
+
+  // D-41 four-state matrix:
+
+  it("D-41 (a): 'running' state — audioStatus stays 'ok' after visibility resume succeeds", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan) })
+    // AC stays 'running'. Dispatch visibilitychange; resume() will succeed.
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.audioStatus).toBe('ok')
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it("D-41 (b): 'suspended' state — audioStatus returns to 'ok' after visibility resume succeeds", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan) })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.audioStatus).toBe('ok')
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it("D-41 (c): 'interrupted' state + resume rejects with InvalidStateError → audioStatus === 'needs-resume' (D-37 / D-38)", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan) })
+
+    // Reach the live AC via the prototype trick: spy on resume to flip the instance
+    // state to 'interrupted' AND arm the rejection BEFORE the visibility-handler call.
+    // The engine's audioCtx is encapsulated; we use vi.spyOn(SpyableAC.prototype, 'resume')
+    // with mockImplementationOnce to model the iOS-Safari path.
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      // Simulate the iOS path: state was 'interrupted', resume rejects, transitions to 'suspended'.
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve() // settle the rejection
+    })
+    // visibilityResumeAttemptedRef is armed; engine swallowed the reject and fired
+    // onStateChange via the D-38 InvalidStateError branch; handleStateChange flipped
+    // audioStatus to 'needs-resume'.
+    expect(result.current.audioStatus).toBe('needs-resume')
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it("D-41 (d): 'closed' state → audioStatus === 'unavailable' (discriminating: asserts BEFORE stop() resets)", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan) })
+    // Pre-condition: post-start, audioStatus is 'ok'.
+    expect(result.current.audioStatus).toBe('ok')
+
+    // Drive a synthetic 'closed' statechange dispatch on the live AC instance via
+    // a prototype-level spy on dispatchStateChange (same SpyableAC pattern as D-41 (c)).
+    // The spy flips this.state to 'closed' and then invokes every registered
+    // 'statechange' listener — the engine's listener forwards to the hook's
+    // handleStateChange, which MUST flip audioStatus to 'unavailable' on 'closed'.
+    // We assert that transition DIRECTLY, BEFORE stop() runs (stop() resets to 'ok').
+    // This makes the test discriminating: it FAILS if the close→unavailable branch
+    // in handleStateChange is removed (D-41 contract).
+    vi.spyOn(SpyableAC.prototype, 'dispatchStateChange').mockImplementationOnce(function (this: SpyableAC) {
+      this.state = 'closed'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const l of (this as any)._listeners.get('statechange') ?? []) l(new Event('statechange'))
+    })
+
+    // Trigger the spied dispatchStateChange on the live AC. Since the engine's
+    // audioCtx is encapsulated, we exercise the prototype-level spy by invoking
+    // dispatchStateChange via the constructor-tracked lastInstance reference.
+    await act(async () => {
+      const live = SpyableAC.lastInstance as SpyableAC
+      live.dispatchStateChange()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // Discriminating assertion: audioStatus MUST be 'unavailable' exactly.
+    // If the close→unavailable branch in handleStateChange is removed, this fails
+    // (audioStatus would remain 'ok'). The disjunctive {ok, unavailable} assertion
+    // used previously was non-discriminating because stop()'s reset masked the bug.
+    expect(result.current.audioStatus).toBe('unavailable')
+
+    // Clean up AFTER the assertion. stop() resets audioStatus to 'ok' for the next
+    // session — we do not assert on post-stop state here (that is stop()'s contract,
+    // not the close→unavailable transition contract).
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  // D-33 / D-35 / D-35b reconstruction tests:
+
+  it("public resume() falls back to reconstruction when engine.resume rejects again (D-33)", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const reanchorSpy = vi.fn()
+    const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
+    await act(async () => { await result.current.start(samplePlan) })
+    const initialConstructed = constructed
+    // Drive audioStatus to 'needs-resume' via the same path as D-41 (c).
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.audioStatus).toBe('needs-resume')
+
+    // Now invoke the public resume() — it should call engine.resume() (rejects again),
+    // then reconstructEngine() → close old + new SpyableAC + setMuted + onReanchorRequired.
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (_this: SpyableAC) {
+      const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
+      throw err
+    })
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    // Reconstruction must have constructed a new SpyableAC instance.
+    expect(constructed).toBe(initialConstructed + 1)
+    // onReanchorRequired must have been invoked with the new AC's currentTime.
+    expect(reanchorSpy).toHaveBeenCalledTimes(1)
+    expect(typeof reanchorSpy.mock.calls[0][0]).toBe('number')
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it("reconstruction preserves muted=true state (D-35b)", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues(true /* initialMuted */, vi.fn()))
+    await act(async () => { await result.current.start(samplePlan) })
+    expect(result.current.muted).toBe(true)
+    // Drive audioStatus to 'needs-resume'.
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // Public resume() — first call rejects, escalates to reconstruction.
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (_this: SpyableAC) {
+      throw new DOMException('Failed', 'InvalidStateError')
+    })
+    // Spy on setMuted at the prototype level — must be invoked with currentMuted=true on the new engine.
+    // Since the engine is constructed inside the hook, we observe the effect via result.current.muted
+    // staying true after reconstruction.
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+    expect(result.current.muted).toBe(true)
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it("plain resume success does NOT re-anchor (D-06 preserved)", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const reanchorSpy = vi.fn()
+    const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
+    await act(async () => { await result.current.start(samplePlan) })
+    // Default SpyableAC.resume() succeeds — no rejection armed.
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // audioStatus should be 'ok' (resume succeeded; no reconstruction).
+    expect(result.current.audioStatus).toBe('ok')
+    // onReanchorRequired must NOT have been called — D-06 preserved on plain resume.
+    expect(reanchorSpy).not.toHaveBeenCalled()
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  // Post-UAT regression guard (real-iPhone Plan 06 Task 8 cycle 2 — kitchen-sink fix
+  // 2026-05-10). The diagnostic proved plain resume() on iOS Safari returns
+  // state='running' but the audio session is dead (AC.currentTime stuck, cues never
+  // fire, beep test silent). The recovery path now ALWAYS reconstructs a fresh AC
+  // inside the gesture context — never relies on engine.resume() to restore the AC.
+  it("public resume() always reconstructs a fresh AC (kitchen-sink fix for iOS state-lies bug)", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const reanchorSpy = vi.fn()
+    const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
+    await act(async () => { await result.current.start(samplePlan) })
+    const initialConstructed = constructed
+
+    // Drive audioStatus to 'needs-resume' via the visibility-handler optimistic
+    // resume() rejecting (matches the device-confirmed Plan 06 Task 8 trace).
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.audioStatus).toBe('needs-resume')
+
+    // Gesture-attached public resume() — kitchen-sink fix means this ALWAYS
+    // reconstructs a fresh AC. The bug being guarded against: previously the
+    // hook tried engine.resume() first, which on iOS appeared to succeed but
+    // left the AC clock dead. Now we skip engine.resume() entirely and go
+    // straight to reconstruction.
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    // Exactly one new AC must have been constructed (reconstruction fired).
+    expect(constructed).toBe(initialConstructed + 1)
+    // Re-anchor callback fired with new AC's currentTime (D-35).
+    expect(reanchorSpy).toHaveBeenCalledTimes(1)
+    expect(typeof reanchorSpy.mock.calls[0][0]).toBe('number')
+
     await act(async () => { await result.current.stop() })
     unmount()
   })

@@ -162,10 +162,14 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
   }
 
   class FakeAudioContext {
-    state: AudioContextState = 'running'
+    // Plan 06 D-37/D-40: WebKit superset includes 'interrupted'. Type widened.
+    state: AudioContextState | 'interrupted' = 'running'
     sampleRate = 44100
     destination = new FakeAudioNode()
     private _start = performance.now() / 1000
+    private _listeners = new Map<string, Set<EventListener>>()
+    private _resumeRejection: { name: string; message: string } | null = null
+
     get currentTime() {
       return performance.now() / 1000 - this._start
     }
@@ -179,20 +183,65 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
     createBiquadFilter() {
       return new FakeBiquadFilterNode()
     }
+
     resume = vi.fn(async () => {
+      if (this._resumeRejection !== null) {
+        const err = new DOMException(this._resumeRejection.message, this._resumeRejection.name)
+        this._resumeRejection = null
+        // Per device diagnostic (05.1-UAT.md Task 2 line 36-37): 'interrupted' → 'suspended' after rejected resume.
+        if (this.state === 'interrupted') this.state = 'suspended'
+        this._fireStateChange()
+        throw err
+      }
       this.state = 'running'
+      this._fireStateChange()
     })
     suspend = vi.fn(async () => {
       this.state = 'suspended'
+      this._fireStateChange()
     })
-    _simulateSuspend = (): void => {
-      this.state = 'suspended'
-    }
     close = vi.fn(async () => {
       this.state = 'closed'
+      this._fireStateChange()
     })
-    addEventListener = vi.fn()
-    removeEventListener = vi.fn()
+
+    // Plan 01 D-14 (preserved):
+    _simulateSuspend = (): void => {
+      this.state = 'suspended'
+      this._fireStateChange()
+    }
+
+    // Plan 06 D-40 additions:
+    _simulateInterrupted = (): void => {
+      this.state = 'interrupted'
+      this._fireStateChange()
+    }
+    _simulateResumeReject = (errorName: string = 'InvalidStateError'): void => {
+      this._resumeRejection = { name: errorName, message: 'Failed to start the audio device' }
+    }
+    dispatchStateChange = (): void => {
+      this._fireStateChange()
+    }
+
+    // Real listener registry — replaces Plan 01's `addEventListener = vi.fn()` stub
+    // so the engine's wired statechange listener actually receives events. The mock
+    // identity remains a vi.fn() so existing tests asserting `.toHaveBeenCalled` still work.
+    addEventListener = vi.fn((type: string, listener: EventListener): void => {
+      let set = this._listeners.get(type)
+      if (!set) {
+        set = new Set()
+        this._listeners.set(type, set)
+      }
+      set.add(listener)
+    })
+    removeEventListener = vi.fn((type: string, listener: EventListener): void => {
+      this._listeners.get(type)?.delete(listener)
+    })
+
+    private _fireStateChange(): void {
+      const evt = new Event('statechange')
+      for (const l of this._listeners.get('statechange') ?? []) l(evt)
+    }
   }
 
   Object.defineProperty(window, 'AudioContext', {

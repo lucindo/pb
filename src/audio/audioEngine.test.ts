@@ -193,6 +193,9 @@ describe('audioEngine', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
@@ -213,6 +216,9 @@ describe('audioEngine', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
@@ -245,12 +251,49 @@ describe('audioEngine', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
     const engine = await createAudioEngine()
     probeTime = 42.5
     expect(engine.now()).toBe(42.5)
+    await engine.close()
+  })
+
+  // Plan 06 polish (post-UAT bug fix): engine.state is the live read of audioCtx.state.
+  // The hook's public resume() uses it instead of React's audioStatus closure (which
+  // is stale within the useCallback invocation) to decide whether reconstruction is
+  // required after `await engine.resume()`.
+  it('engine.state reflects live audioCtx.state including the WebKit-only "interrupted" superset', async () => {
+    let probeState: AudioContextState | 'interrupted' = 'suspended'
+    class ProbeAC {
+      get state(): AudioContextState | 'interrupted' { return probeState }
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      resume = vi.fn(async () => { probeState = 'running' })
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const engine = await createAudioEngine()
+    // WR-06 path resumed the AC at construction.
+    expect(engine.state).toBe('running')
+
+    probeState = 'suspended'
+    expect(engine.state).toBe('suspended')
+
+    probeState = 'interrupted'
+    expect(engine.state).toBe('interrupted')
+
     await engine.close()
   })
 

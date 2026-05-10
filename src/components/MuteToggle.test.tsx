@@ -11,6 +11,7 @@ function renderToggle(props: Partial<MuteToggleProps> = {}) {
     <MuteToggle
       muted={props.muted ?? false}
       audioAvailable={props.audioAvailable ?? true}
+      needsResume={props.needsResume}
       onToggle={onToggle}
     />,
   )
@@ -104,5 +105,35 @@ describe('MuteToggle', () => {
     const svgOff = containerOff.querySelector('svg')
     expect(svgOff).not.toBeNull()
     expect(containerOff.querySelectorAll('svg line').length).toBe(2)
+  })
+
+  // Plan 06 D-32 tests:
+  it('when needsResume=true and audioAvailable=true, accessible name is "Resume audio" and aria-pressed is absent', () => {
+    renderToggle({ needsResume: true, muted: false, audioAvailable: true })
+    const button = screen.getByRole('button', { name: 'Resume audio' })
+    expect(button.hasAttribute('aria-pressed')).toBe(false)
+  })
+
+  it('renders a refresh-arrow ResumeIcon (1 path + 1 polyline) when needsResume=true', () => {
+    const { container } = render(
+      <MuteToggle needsResume={true} muted={false} audioAvailable={true} onToggle={vi.fn()} />,
+    )
+    const svg = container.querySelector('svg')
+    expect(svg).not.toBeNull()
+    expect(svg!.querySelectorAll('path').length).toBe(1)
+    expect(svg!.querySelectorAll('polyline').length).toBe(1)
+  })
+
+  it('needsResume=true takes priority over muted in the accessible name (Plan 06 D-32 priority)', () => {
+    renderToggle({ needsResume: true, muted: true, audioAvailable: true })
+    const button = screen.getByRole('button', { name: 'Resume audio' })
+    expect(button.getAttribute('aria-label')).toBe('Resume audio')
+  })
+
+  it('audioAvailable=false takes priority over needsResume (Phase 3 D-10 outranks D-32)', () => {
+    renderToggle({ needsResume: true, audioAvailable: false })
+    const button = screen.getByRole('button', { name: 'Audio unavailable in this browser' })
+    expect(button.getAttribute('aria-label')).toBe('Audio unavailable in this browser')
+    expect(button).toBeDisabled()
   })
 })
