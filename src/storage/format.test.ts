@@ -21,8 +21,16 @@ describe('formatTotalMinutes (D-06)', () => {
     expect(formatTotalMinutes(59 * 60 + 59)).toBe('59 min')
   })
 
-  it('flips to hours format at exactly 60 minutes ("1.0 hours" — D-06)', () => {
-    expect(formatTotalMinutes(60 * 60)).toBe('1.0 hours')
+  it('keeps minutes through the 1.0-hours dead-zone (WR-02 — 60..62 min still shows "N min")', () => {
+    // WR-02: 60..62:59 would render as "1.0 hours", visually identical to "60 min".
+    // Defer the flip until the hours decimal can show meaningful progression.
+    expect(formatTotalMinutes(60 * 60)).toBe('60 min')
+    expect(formatTotalMinutes(62 * 60 + 59)).toBe('62 min')
+  })
+
+  it('flips to hours format at ~63 minutes ("1.1 hours" — D-06 / WR-02)', () => {
+    // 63 min = 3780 s -> 1.05 h, the new flip threshold. toFixed(1) -> "1.1".
+    expect(formatTotalMinutes(63 * 60)).toBe('1.1 hours')
   })
 
   it('renders 126 minutes as "2.1 hours" with one decimal', () => {

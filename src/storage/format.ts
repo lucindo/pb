@@ -16,10 +16,20 @@ const DATE_FMT_OTHER_YEAR = new Intl.DateTimeFormat(undefined, {
 })
 
 // D-06: < 60 min -> "N min"; >= 60 min -> "N.N hours" with one decimal.
+//
+// WR-02: defer the hours flip until the rendered hours value rounds up to 1.1
+// (i.e. ~63 minutes / 3780 s). For totalSeconds in [3600, 3779] (60:00 through
+// 62:59), `(totalSeconds/3600).toFixed(1)` rounds to "1.0" — visually identical
+// to the 60-minute boundary tick — so users practising 60-62 minutes would see
+// no decimal progression. Keeping minutes through that range preserves D-06's
+// spirit ("decimal communicates progression") without crossing a UX dead-zone.
+// The minute display continues to tick (60 min -> 61 min -> 62 min) until the
+// hours decimal can show a meaningful step (1.1 hours).
+const HOURS_FLIP_THRESHOLD_HOURS = 1.05
 export function formatTotalMinutes(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60)
-  if (minutes < 60) return `${minutes} min`
   const hours = totalSeconds / 3600
+  if (hours < HOURS_FLIP_THRESHOLD_HOURS) return `${minutes} min`
   return `${hours.toFixed(1)} hours`
 }
 
