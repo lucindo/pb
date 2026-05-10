@@ -21,7 +21,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BreathingPlan } from '../domain/breathingPlan'
 import {
   createAudioEngine,
-  LEAD_IN_DURATION_SEC,
   type AudioEngine,
   type AudioStatus,
 } from '../audio/audioEngine'
@@ -54,6 +53,11 @@ export function useAudioCues(): UseAudioCues {
   // Imperative resource — engineRef is NOT in render state because each AC create/close
   // is a side effect, not a UI value. Mirrors useSessionEngine.ts's animationFrameId posture.
   const engineRef = useRef<AudioEngine | null>(null)
+  // WR-05: cache the firstInCueTime returned by the original engine.scheduleLeadIn
+  // call so a defensive double-call to start() returns the deterministic anchor
+  // (matching the JSDoc contract on start()) instead of a fresh "now + 3" projection
+  // that drifts from the actual scheduled cue time.
+  const firstInCueTimeRef = useRef<number | null>(null)
   const [status, setStatus] = useState<AudioStatus>('idle')
   const [muted, setMutedState] = useState<boolean>(false) // D-07
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
@@ -68,17 +72,19 @@ export function useAudioCues(): UseAudioCues {
         void engine.close()
         engineRef.current = null
       }
+      firstInCueTimeRef.current = null
     }
   }, [])
 
   const start = useCallback(
     async (plan: BreathingPlan): Promise<number | null> => {
       // Defensive: if the hook user accidentally calls start() twice without stop(),
-      // return the cached engine's "now + 3" without constructing a second AC.
-      // App.tsx (Plan 04) will not actually do this, but the hook should be safe.
+      // return the cached firstInCueTime from the ORIGINAL schedule (WR-05), not a
+      // freshly-projected "now + 3" — those two values drift apart by the time
+      // between the two start() calls.
       const existing = engineRef.current
       if (existing !== null) {
-        return existing.now() + LEAD_IN_DURATION_SEC
+        return firstInCueTimeRef.current
       }
       setStatus('starting')
       try {
@@ -93,6 +99,7 @@ export function useAudioCues(): UseAudioCues {
         // session.start(performance.now()) for the dual-clock alignment.
         const startAudioTime = engine.now()
         const firstInCueTime = engine.scheduleLeadIn(startAudioTime, plan)
+        firstInCueTimeRef.current = firstInCueTime // WR-05
         setStatus('lead-in')
         setAudioAvailable(true)
         return firstInCueTime
@@ -115,6 +122,7 @@ export function useAudioCues(): UseAudioCues {
     // pointing at a dead engine.
     const engine = engineRef.current
     engineRef.current = null
+    firstInCueTimeRef.current = null // WR-05: clear cached anchor for the next start()
     setStatus('idle')
     if (engine !== null) {
       await engine.close() // D-11
