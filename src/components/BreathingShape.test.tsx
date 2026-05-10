@@ -103,16 +103,21 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       expect(orb!).not.toHaveClass('inset-0')
     })
 
-    it('`.orb` has explicit inline left/top/width/height (D-20)', () => {
+    it('`.orb` has explicit four-edge anchoring left/right/top/bottom (D-20 + post-UAT hotfix)', () => {
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       const style = orb!.getAttribute('style') ?? ''
       // jsdom serializes React's `left: 0` as `left: 0px` for length props.
+      // Four-edge form (not `width: 100%`) — percent dims froze Safari's
+      // transform transition; four-edge anchoring matches the working outer-ring
+      // pattern and preserves the transition.
       expect(style).toMatch(/left:\s*0(px)?\b/)
+      expect(style).toMatch(/right:\s*0(px)?\b/)
       expect(style).toMatch(/top:\s*0(px)?\b/)
-      expect(style).toMatch(/width:\s*100%/)
-      expect(style).toMatch(/height:\s*100%/)
+      expect(style).toMatch(/bottom:\s*0(px)?\b/)
+      expect(style).not.toMatch(/width:\s*100%/)
+      expect(style).not.toMatch(/height:\s*100%/)
     })
 
     it('`.orb` still carries the existing transform: scale(...) (Phase 2 D-01/D-02 preserved)', () => {
@@ -174,15 +179,17 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       expect(orb!).not.toHaveClass('inset-0')
     })
 
-    it('lead-in `.orb` has explicit inline left/top/width/height (D-20 + D-22)', () => {
+    it('lead-in `.orb` has explicit four-edge anchoring left/right/top/bottom (D-20 + D-22 + post-UAT hotfix)', () => {
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       const style = orb!.getAttribute('style') ?? ''
       expect(style).toMatch(/left:\s*0(px)?\b/)
+      expect(style).toMatch(/right:\s*0(px)?\b/)
       expect(style).toMatch(/top:\s*0(px)?\b/)
-      expect(style).toMatch(/width:\s*100%/)
-      expect(style).toMatch(/height:\s*100%/)
+      expect(style).toMatch(/bottom:\s*0(px)?\b/)
+      expect(style).not.toMatch(/width:\s*100%/)
+      expect(style).not.toMatch(/height:\s*100%/)
     })
 
     it('lead-in `.orb` still carries transform: scale(0.79) (Phase 2 D-06 + Phase 3 D-14 preserved)', () => {

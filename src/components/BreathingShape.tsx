@@ -91,20 +91,25 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
         }}
       />
       {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07).
-          Phase 5.1 Plan 04 D-20: drop `inset-0` and use explicit WR-03 positioning
-          (left/top/width/height) so Safari Desktop sizes the abs-pos `.orb` against
-          the container's padding-box rather than collapsing to the inner-ring's
-          implicit grid auto-track (which made `.orb` 58% of parent — see 05.1-UAT.md
-          Task 3 inspector data: 209 px instead of 360 px). Same WR-03 mechanism the
-          inner-ring span at lines 85-92 already uses. Mirrored in BreathingShapeLeadIn
-          below — both render sites must match (D-22). */}
+          Phase 5.1 Plan 04 D-20 + post-UAT hotfix: drop `inset-0` and use explicit
+          four-edge anchoring (left/right/top/bottom) so Safari Desktop sizes the
+          abs-pos `.orb` against the container's padding-box rather than collapsing
+          to the inner-ring's implicit grid auto-track (which made `.orb` 58% of
+          parent — see 05.1-UAT.md Task 3 pre-fix inspector data: 209 px instead
+          of 360 px). Initial Plan 04 fix used `width:100%; height:100%` (percent
+          dims) which sized correctly but FROZE the `transition: transform 200ms`
+          interpolation on Safari (post-fix UAT showed scale stuck at 0.58
+          despite React inline transform updating to scale(0.99) — Safari layer
+          interpolation never advanced beyond the initial value). Four-edge
+          anchoring matches the working outer-ring pattern and preserves the
+          transition. Mirrored in BreathingShapeLeadIn below (D-22). */}
       <div
         className="orb absolute rounded-full motion-reduce:transition-none"
         style={{
           left: 0,
+          right: 0,
           top: 0,
-          width: '100%',
-          height: '100%',
+          bottom: 0,
           transform: `scale(${orbScale})`,
         }}
       >
@@ -174,17 +179,18 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       />
       {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
           is rendered (no Out crossfade) so the lead-in feels like a still pool
-          of water awaiting the first breath. Phase 5.1 Plan 04 D-20 + D-22: same
-          WR-03 explicit-positioning fix as BreathingShapeBody — drop `inset-0`,
-          add `left:0; top:0; width:100%; height:100%` so Safari Desktop does
-          not collapse the orb during the 3-2-1 countdown. */}
+          of water awaiting the first breath. Phase 5.1 Plan 04 D-20 + D-22 +
+          post-UAT hotfix: same four-edge anchoring as BreathingShapeBody. The
+          lead-in is locked at MID_SCALE so the transition-freeze symptom
+          doesn't show up here, but match the body for D-22 invariant + so any
+          future "lead-in animates" change inherits the working CSS shape. */}
       <div
         className="orb absolute rounded-full"
         style={{
           left: 0,
+          right: 0,
           top: 0,
-          width: '100%',
-          height: '100%',
+          bottom: 0,
           transform: `scale(${MID_SCALE})`,
         }}
       >
