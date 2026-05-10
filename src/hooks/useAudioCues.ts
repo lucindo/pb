@@ -81,6 +81,35 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
     }
   }, [])
 
+  // Phase 5.1 D-01..D-05, D-08, D-09: visibility-resume listener.
+  // Mirrors useWakeLock.ts:77-100 verbatim — same shape, same gate posture, same
+  // silent-absorb posture. The hook owns its own DOM listener (D-02 keeps audioEngine
+  // free of document.* / window.* access). The single gate is engineRef.current !== null
+  // (D-03 / D-04): if we own a live AC, calling resume() on an already-running AC
+  // resolves silently — same idempotent posture as Phase 5 D-08. After a successful
+  // resume mid-phase, NO make-up cue is fired (D-05): the next In/Out cue plays at
+  // the next phase boundary via App.tsx's existing scheduleNextCue dispatch. The
+  // Phase 3 dual-anchor is NOT re-anchored on resume (D-06).
+  useEffect(() => {
+    const onVisibility = (): void => {
+      // Discretion pick #5: use `visibilityState !== 'visible'` for symmetry with
+      // useWakeLock.ts:82. Equivalent to `document.hidden`, but the existing
+      // wakeLock listener uses this expression so future readers see the convention twice.
+      if (document.visibilityState !== 'visible') return
+      // D-03 / D-04: single gate is "we own a live AC". Do NOT read audioCtx.state
+      // (unreliable on iOS during the lock window). After stop() nulls engineRef
+      // synchronously, this guard rejects late visibility events — no zombie resumes.
+      if (engineRef.current === null) return
+      // D-09: resume() itself is silent on rejection; we still wrap with `void` so
+      // an unexpected synchronous throw cannot escape into React's render lifecycle.
+      void engineRef.current.resume()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
+
   const start = useCallback(
     async (plan: BreathingPlan): Promise<number | null> => {
       // Defensive: if the hook user accidentally calls start() twice without stop(),
