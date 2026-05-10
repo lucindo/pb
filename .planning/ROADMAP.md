@@ -99,7 +99,12 @@ Plans:
   1. User can start a running session that requests Wake Lock on supported browsers.
   2. During supported running sessions, the screen is kept awake without additional user interaction.
   3. Ending, resetting, or completing a session releases hands-off screen-awake behavior cleanly.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 05-01-PLAN.md — Wave 0 polyfill smoke: extend vitest.setup.ts with the navigator.wakeLock fake (D-13) and confirm full Phase 1–4 suite stays green (RESEARCH A4 carry-forward mitigation).
+- [ ] 05-02-PLAN.md — useWakeLock hook + 10 unit tests: two-ref pattern (sentinel + wasAcquired), match-pair sentinel guard (Pitfall 1 / Anti-pattern 4), idempotent release (D-08), silent fallback (D-09), visibility re-acquire (D-03).
+- [ ] 05-03-PLAN.md — App.tsx integration at three call sites (D-01 / D-07): onStartClick lead-in (parallel with audioStart), cancel-during-lead-in (parallel with audioStop), state.status !== 'running' cleanup effect (parallel with audioStop) + App.wakeLock.test.tsx with 6 integration tests.
+- [ ] 05-04-PLAN.md — Manual UAT: real iOS Safari 16.4+ and Android Chrome screen-stays-awake validation, phone-lock/unlock re-acquire (D-03), Firefox/disabled-flag silent-fallback (D-09), zero-UI visual sweep (D-12).
 **UI hint**: yes
 
 ### Phase 6: Learning & Claim-Safe Positioning
@@ -125,5 +130,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Visual Guide & Accessible Responsive Interface | 4/4 | Complete    | 2026-05-09 |
 | 3. Optional Generated Audio Cues | 0/5 | Not started | - |
 | 4. Local Memory & Practice Stats | 3/4 | In Progress|  |
-| 5. Mobile Hands-Off Resilience | 0/TBD | Not started | - |
+| 5. Mobile Hands-Off Resilience | 0/4 | Not started | - |
 | 6. Learning & Claim-Safe Positioning | 0/TBD | Not started | - |
