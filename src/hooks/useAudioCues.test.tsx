@@ -304,3 +304,109 @@ describe('useAudioCues', () => {
     unmount()
   })
 })
+
+describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
+  // SpyableAC: an AudioContext stub that places resume() on the prototype so
+  // vi.spyOn(SpyableAC.prototype, 'resume') intercepts calls made by the engine's
+  // resume() method. FakeAudioContext uses arrow-function class fields (instance props)
+  // which are not spyable via the prototype — this stub uses a regular method instead.
+  class SpyableAC {
+    state: AudioContextState = 'running'
+    sampleRate = 44100
+    destination = {}
+    private _start = performance.now() / 1000
+    get currentTime() { return performance.now() / 1000 - this._start }
+    constructor(_options?: AudioContextOptions) {}
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    async resume(): Promise<void> { this.state = 'running' }
+    async suspend(): Promise<void> { this.state = 'suspended' }
+    async close(): Promise<void> { this.state = 'closed' }
+    addEventListener = vi.fn()
+    removeEventListener = vi.fn()
+    _simulateSuspend(): void { this.state = 'suspended' }
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+  })
+
+  it('visibilitychange→visible calls audioCtx.resume() when engineRef is non-null (D-01..D-04)', async () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const resumeSpy = vi.spyOn(SpyableAC.prototype, 'resume')
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan)
+    })
+    // Reset spy call count after start() which may call resume() internally (WR-06 path).
+    resumeSpy.mockClear()
+    // Model iOS unlock: visibilityState flips to 'visible', visibilitychange fires.
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve() // flush microtasks for the void-awaited resume()
+    })
+    expect(resumeSpy).toHaveBeenCalledTimes(1)
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('visibilitychange→visible does NOT call resume() when engineRef is null (D-04 gate)', async () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const resumeSpy = vi.spyOn(SpyableAC.prototype, 'resume')
+    const { unmount } = renderHook(() => useAudioCues())
+    // No start() — engineRef stays null.
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+    })
+    expect(resumeSpy).not.toHaveBeenCalled()
+    unmount()
+  })
+
+  it('visibilitychange→visible silently absorbs resume() rejection (D-09)', async () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan)
+    })
+    const resumeSpy = vi
+      .spyOn(SpyableAC.prototype, 'resume')
+      .mockRejectedValueOnce(new Error('iOS veto'))
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    // The act() must NOT throw — silent absorption per D-09.
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve() // flush rejection settlement
+    })
+    expect(resumeSpy).toHaveBeenCalledTimes(1)
+    // Hook is still alive — no failed-state transition triggered by the resume rejection.
+    expect(result.current.audioAvailable).toBe(true)
+    expect(result.current.status).toBe('lead-in')
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('visibilitychange→hidden does NOT call resume() (defensive guard, mirrors useWakeLock D-04)', async () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const resumeSpy = vi.spyOn(SpyableAC.prototype, 'resume')
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan)
+    })
+    resumeSpy.mockClear()
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+    })
+    expect(resumeSpy).not.toHaveBeenCalled()
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+})
