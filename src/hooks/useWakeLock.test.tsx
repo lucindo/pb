@@ -11,6 +11,7 @@ describe('useWakeLock', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('request() calls navigator.wakeLock.request("screen") exactly once when supported', async () => {
@@ -57,6 +58,7 @@ describe('useWakeLock', () => {
     ).resolves.toBeUndefined()
     // A subsequent request() (no rejection mock) succeeds — verifies rejection didn't poison state.
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
+    requestSpy.mockClear() // clear call history before the assertion (prior call from failed request)
     await act(async () => {
       await result.current.request()
     })
