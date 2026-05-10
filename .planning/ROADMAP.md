@@ -15,8 +15,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Configurable Session Timing** - Users can configure and run accurate timed or unlimited breathing sessions. (completed 2026-05-09)
 - [x] **Phase 2: Visual Guide & Accessible Responsive Interface** - Users can comfortably follow the breathing guide through a polished, accessible UI on mobile and desktop. (completed 2026-05-09)
 - [x] **Phase 3: Optional Generated Audio Cues** - Users can add or mute soft phase-aligned audio cues without losing visual guidance. (completed 2026-05-09)
-- [ ] **Phase 4: Local Memory & Practice Stats** - Users can keep convenience settings and simple local practice history under their control.
-- [ ] **Phase 5: Mobile Hands-Off Resilience** - Users get best-effort screen-awake behavior during running sessions where browsers support it.
+- [x] **Phase 4: Local Memory & Practice Stats** - Users can keep convenience settings and simple local practice history under their control. (completed 2026-05-10)
+- [x] **Phase 5: Mobile Hands-Off Resilience** - Users get best-effort screen-awake behavior during running sessions where browsers support it. (completed 2026-05-10, S2 Android UAT carried forward as known gap — see Phase 5.1 ack)
+- [ ] **Phase 5.1: Hands-Off Resilience Polish (INSERTED)** - Audio guidance survives a screen-lock/unlock cycle on iOS Safari, and the breathing-orb max-scale matches the outer reference ring on Safari desktop.
 - [ ] **Phase 6: Learning & Claim-Safe Positioning** - Users can understand the practice context and reach Forrest Knutson resources without medical claims or implied endorsement.
 
 ## Phase Details
@@ -103,8 +104,20 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Wave 0 polyfill smoke: extend vitest.setup.ts with the navigator.wakeLock fake (D-13) and confirm full Phase 1–4 suite stays green (RESEARCH A4 carry-forward mitigation).
 - [x] 05-02-PLAN.md — useWakeLock hook + 10 unit tests: two-ref pattern (sentinel + wasAcquired), match-pair sentinel guard (Pitfall 1 / Anti-pattern 4), idempotent release (D-08), silent fallback (D-09), visibility re-acquire (D-03).
-- [ ] 05-03-PLAN.md — App.tsx integration at three call sites (D-01 / D-07): onStartClick lead-in (parallel with audioStart), cancel-during-lead-in (parallel with audioStop), state.status !== 'running' cleanup effect (parallel with audioStop) + App.wakeLock.test.tsx with 6 integration tests.
-- [ ] 05-04-PLAN.md — Manual UAT: real iOS Safari 16.4+ and Android Chrome screen-stays-awake validation, phone-lock/unlock re-acquire (D-03), Firefox/disabled-flag silent-fallback (D-09), zero-UI visual sweep (D-12).
+- [x] 05-03-PLAN.md — App.tsx integration at three call sites (D-01 / D-07): onStartClick lead-in (parallel with audioStart), cancel-during-lead-in (parallel with audioStop), state.status !== 'running' cleanup effect (parallel with audioStop) + App.wakeLock.test.tsx with 6 integration tests.
+- [x] 05-04-PLAN.md — Manual UAT: real iOS Safari 16.4+ and Android Chrome screen-stays-awake validation, phone-lock/unlock re-acquire (D-03), Firefox/disabled-flag silent-fallback (D-09), zero-UI visual sweep (D-12). **Carried forward:** S2 Android Chrome run pending physical device (tracked in 05-04-UAT-LOG.md Gap 1, 05-UAT.md Test 3, 05-SECURITY.md AR-05-01).
+**UI hint**: yes
+
+### Phase 5.1: Hands-Off Resilience Polish (INSERTED 2026-05-10)
+**Goal**: Audio guidance survives a screen-lock/unlock cycle on iOS Safari, and the breathing-orb max-scale visually meets the outer reference ring on Safari desktop.
+**Depends on**: Phase 5
+**Requirements**: AUDI-01, AUDI-02, GUID-01 (carry-forward — no new requirement IDs)
+**Success Criteria** (what must be TRUE):
+  1. After the user manually locks the phone mid-session and unlocks ≥30s later, audio cues resume playing automatically without the user having to end + restart the session (mirrors useWakeLock D-03 re-acquire on `visibilitychange→visible`).
+  2. On Safari desktop, the breathing orb at peak inhale (`scale(MAX_SCALE)`) visually meets the dashed outer reference ring with no perceptible gap.
+  3. All Phase 1–5 automated tests remain green; no regressions in Chromium, Firefox, or jsdom test runs.
+**Plans**: TBD (see /gsd-plan-phase 5.1)
+**Origin**: Plan 05-04 manual UAT findings on real iPhone Xs Max iOS 18.7.8 Safari + Safari desktop visual sweep. Discovered 2026-05-10. Documented in `05-04-UAT-LOG.md` Findings 1+2 and `05-UAT.md` Out-of-Scope Findings.
 **UI hint**: yes
 
 ### Phase 6: Learning & Claim-Safe Positioning
@@ -128,7 +141,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Configurable Session Timing | 4/4 | Complete    | 2026-05-09 |
 | 2. Visual Guide & Accessible Responsive Interface | 4/4 | Complete    | 2026-05-09 |
-| 3. Optional Generated Audio Cues | 0/5 | Not started | - |
-| 4. Local Memory & Practice Stats | 3/4 | In Progress|  |
-| 5. Mobile Hands-Off Resilience | 0/4 | Not started | - |
+| 3. Optional Generated Audio Cues | 5/5 | Complete    | 2026-05-09 |
+| 4. Local Memory & Practice Stats | 4/4 | Complete    | 2026-05-10 |
+| 5. Mobile Hands-Off Resilience | 4/4 | Complete (S2 Android UAT carried forward) | 2026-05-10 |
+| 5.1. Hands-Off Resilience Polish | 0/TBD | Not started | - |
 | 6. Learning & Claim-Safe Positioning | 0/TBD | Not started | - |

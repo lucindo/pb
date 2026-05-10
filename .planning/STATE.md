@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 — Wave 1+2 complete (3/4 plans); Plan 05-04 UAT deferred until GitHub Pages HTTPS deploy
-last_updated: "2026-05-10T14:36:38.037Z"
-last_activity: 2026-05-10 -- Phase 05 Wave 1+2 complete; Plan 05-04 UAT deferred (awaiting GitHub Pages)
+stopped_at: Phase 5 complete with S2 Android UAT carry-forward; Phase 5.1 INSERTED for iOS audio + Safari orb fixes before Phase 6
+last_updated: "2026-05-10T15:00:00.000Z"
+last_activity: 2026-05-10 -- Phase 05 closed (security verified, validation Nyquist-compliant, 4/5 UAT PASS); Phase 5.1 inserted
 progress:
   total_phases: 6
   completed_phases: 4
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 
 ## Current Position
 
-Phase: 05 (mobile-hands-off-resilience) — UAT DEFERRED
-Plan: 3 of 4 complete; 05-04 deferred (awaiting GitHub Pages HTTPS)
-Status: Phase 05 Wave 1+2 complete; Plan 05-04 UAT deferred
-Last activity: 2026-05-10 -- Phase 05 Wave 1+2 complete; Plan 05-04 UAT deferred
+Phase: 05 (mobile-hands-off-resilience) — COMPLETE (with S2 Android carry-forward)
+Plan: 4/4; UAT 4/5 PASS, S2 acknowledged carry-forward
+Status: Phase 05 closed; Phase 5.1 (Hands-Off Resilience Polish) inserted next
+Last activity: 2026-05-10 -- Phase 05 closed; Phase 5.1 inserted (iOS audio resume + Safari orb fix)
 
 Progress: [█████████░] 94%
 

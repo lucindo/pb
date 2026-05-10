@@ -1,9 +1,11 @@
 ---
 phase: 05-mobile-hands-off-resilience
 plan: 04
-status: partial
-signed_off: false
-gating_gap: S2 (Android Chrome real-device coverage)
+status: signed_off_with_carry_forward
+signed_off: true
+signed_off_date: 2026-05-10
+carry_forward_gap: S2 (Android Chrome real-device coverage) — to be closed when device available
+gap_acknowledged_by: Renato Lucindo
 build_commit: 9d11af8
 deployed_url: https://lucindo.github.io/hrv/
 tested_on: 2026-05-10
@@ -85,10 +87,16 @@ App build: `9d11af8` (deployed at https://lucindo.github.io/hrv/)
 
 ## Phase 5 Acceptance Disposition
 
-**NOT formally complete.** Resolve Gap 1 (S2 Android Chrome) before
-flipping ROADMAP SC2 to PASS. Findings 1 and 2 are tracked as
-out-of-scope follow-ups; they do not block Phase 5 wake-lock acceptance
-but Finding 2 should be triaged for a follow-up phase before v1 ship.
+**Phase 5 ADVANCING with documented carry-forward gap.** User explicitly
+acknowledged on 2026-05-10 that:
+- S1, S3, S4, S5 all PASS on real device + desktop
+- S2 (Android Chrome) cannot run for ~few days until device available
+- Phase 5 advances to Complete with the gap tracked formally; S2 will
+  be appended to this log when the Android run is performed
+- Findings 1 (Safari orb cosmetic) and 2 (iOS audio resume) are routed
+  to Phase 5.1 (INSERTED 2026-05-10) for fix before Phase 6 begins
 
-When Gap 1 is closed, replace the gating-gap line in this log's
-frontmatter with `signed_off: true` and re-run `/gsd-verify-work 05`.
+When the Android UAT run is later performed, append a Scenario 2 row
+to the table above with device/browser/version + observed behavior; if
+PASS, flip `carry_forward_gap` in frontmatter to null. If FAIL, route
+to a new gap-closure plan via `/gsd-plan-phase 05 --gaps`.

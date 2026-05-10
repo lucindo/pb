@@ -1,5 +1,5 @@
 ---
-status: partial
+status: complete_with_carry_forward
 phase: 05-mobile-hands-off-resilience
 source:
   - 05-01-SUMMARY.md
@@ -29,9 +29,11 @@ verified_by: 05-04-UAT-LOG.md S1 PASS — iPhone Xs Max iOS 18.7.8, full 10 min,
 
 ### 3. SC2 — Screen stays awake during 10-min running session (Android Chrome)
 expected: Same as Test 2 but on Android Chrome 85+ device with Android Display → Screen timeout set to 30s.
-result: blocked
+result: blocked_acknowledged
 blocked_by: physical-device
-reason: "No Android device available at test time. Plan 04 acceptance criteria require ≥1 Android Chrome device for cross-platform coverage (Scenarios 1-3 of 05-04-PLAN.md)."
+reason: "No Android device available at test time. User acknowledged 2026-05-10 to advance Phase 5 with this gap carried forward; Android run will be appended to 05-04-UAT-LOG.md when device available (~few days). Tracked as carry-forward in 05-SECURITY.md AR-05-01."
+acknowledged_by: Renato Lucindo
+acknowledged_date: 2026-05-10
 
 ### 4. SC3 — Wake lock released cleanly on session end / completion / reset
 expected: When a session ends naturally (timer hits 0), is cancelled mid-running via End modal, or is reset, `wakeLock.release()` runs and the OS auto-lock resumes its normal interval. Verified observationally by watching the screen after session end.
