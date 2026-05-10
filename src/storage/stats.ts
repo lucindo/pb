@@ -28,8 +28,22 @@ function isFiniteNonNegativeInt(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && v >= 0 && Number.isInteger(v)
 }
 
-function isFiniteNonNegativeIntOrNull(v: unknown): v is number | null {
-  return v === null || isFiniteNonNegativeInt(v)
+// WR-06: lastSessionAtMs and lastSessionDurationSeconds use the looser
+// finite-non-negative-number check (no Number.isInteger) so a fractional now()
+// injection survives the round trip. D-18 invites tests to control the clock,
+// and a future test author could naturally use performance.now() (which returns
+// sub-ms floats on most browsers) — the previous integer-only check would have
+// silently coerced fractional timestamps to null on the next loadStats(),
+// breaking the recordSession -> loadStats round-trip invariant.
+//
+// totalSessions and totalElapsedSeconds keep the integer check — those fields
+// are genuinely integer-only (count + floor(ms/1000) seconds).
+function isFiniteNonNegativeNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0
+}
+
+function isFiniteNonNegativeNumberOrNull(v: unknown): v is number | null {
+  return v === null || isFiniteNonNegativeNumber(v)
 }
 
 export function coerceStats(raw: unknown): PersistedStats {
@@ -37,10 +51,10 @@ export function coerceStats(raw: unknown): PersistedStats {
     ? raw as Record<string, unknown>
     : {}
   return {
-    totalSessions:              isFiniteNonNegativeInt(r.totalSessions)             ? r.totalSessions             : 0,
-    totalElapsedSeconds:        isFiniteNonNegativeInt(r.totalElapsedSeconds)       ? r.totalElapsedSeconds       : 0,
-    lastSessionAtMs:            isFiniteNonNegativeIntOrNull(r.lastSessionAtMs)     ? r.lastSessionAtMs           : null,
-    lastSessionDurationSeconds: isFiniteNonNegativeIntOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
+    totalSessions:              isFiniteNonNegativeInt(r.totalSessions)                 ? r.totalSessions             : 0,
+    totalElapsedSeconds:        isFiniteNonNegativeInt(r.totalElapsedSeconds)           ? r.totalElapsedSeconds       : 0,
+    lastSessionAtMs:            isFiniteNonNegativeNumberOrNull(r.lastSessionAtMs)      ? r.lastSessionAtMs           : null,
+    lastSessionDurationSeconds: isFiniteNonNegativeNumberOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
   }
 }
 
