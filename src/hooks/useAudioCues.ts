@@ -10,8 +10,10 @@
 //     and the first In bowl will strike at +3 s).
 //   - 'failed' is the D-10 visuals-only fallback path; audioAvailable=false.
 //
-// muted defaults to false (D-07: first-visit audio is ON). The hook never
-// persists this value; LOCL-01 (Phase 4) will revisit if mute survives reload.
+// muted defaults to the optional `initialMuted` parameter (Phase 4 D-14 / LOCL-01)
+// or to false (Phase 3 D-07: first-visit audio is ON) when the parent does not
+// supply a value. The hook itself does NOT persist the value — App.tsx wraps
+// setMuted to call saveMute (Plan 04-03).
 //
 // Cleanup posture (Pitfall 3): the unmount effect closes the engine if one
 // is alive. Mirrors the cancelled-flag idiom from useSessionEngine.ts:53-56.
@@ -49,7 +51,7 @@ export interface UseAudioCues {
   audioNow(): number | null
 }
 
-export function useAudioCues(): UseAudioCues {
+export function useAudioCues(initialMuted?: boolean): UseAudioCues {
   // Imperative resource — engineRef is NOT in render state because each AC create/close
   // is a side effect, not a UI value. Mirrors useSessionEngine.ts's animationFrameId posture.
   const engineRef = useRef<AudioEngine | null>(null)
@@ -59,7 +61,10 @@ export function useAudioCues(): UseAudioCues {
   // that drifts from the actual scheduled cue time.
   const firstInCueTimeRef = useRef<number | null>(null)
   const [status, setStatus] = useState<AudioStatus>('idle')
-  const [muted, setMutedState] = useState<boolean>(false) // D-07
+  // Phase 4 D-14 / LOCL-01: persisted mute preference is restored at construction time
+  // when the parent supplies it. When `initialMuted` is undefined, fall back to the
+  // Phase 3 D-07 first-visit default (muted=false / audio ON).
+  const [muted, setMutedState] = useState<boolean>(initialMuted ?? false)
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
 
   // Cleanup-on-unmount: close the engine if a session is still alive.
