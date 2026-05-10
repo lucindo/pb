@@ -87,3 +87,26 @@ pending: 0
   severity: high (undermines Phase 5 user value, but does NOT violate Phase 5 wake-lock spec which explicitly excludes audio resume)
   recommended_action: "Plan a follow-up phase: add `visibilitychange→visible` AudioContext resume path conditional on `state.status === 'running'`, mirroring `useWakeLock`'s D-03 re-acquire structure (ref-gated, idempotent, silent fallback). Cross-reference RESEARCH 'Validation Architecture → Browser-Specific Holes'."
   reproduces_on: "iPhone Xs Max iOS 18.7.8 Safari (likely all iOS Safari)"
+  resolution_status: addressed_by_phase_05.1_partial_carry_forward
+  resolution_note: |
+    Phase 5.1 Plan 01 added the visibilitychange→visible resume path (D-01..D-09). Real-iPhone UAT proved
+    it was empirically insufficient on iOS: audioCtx.resume() rejects with InvalidStateError from non-gesture
+    context. Phase 5.1 Plan 06 added a gesture-attached recovery affordance (needs-resume state + MuteToggle
+    morph + statechange D-38) plus engine-reconstruction fallback (kitchen-sink fix 213c2c7: always reconstruct,
+    gesture-preserving order, session-elapsed anchor offset). Three real-iPhone UAT cycles (2026-05-10) then
+    proved that even a freshly-constructed AudioContext acquired inside iOS gesture context has its
+    AC.currentTime stuck at 0 — iOS Safari (this device class) loses the audio session permanently on
+    lock/unlock and grants no new session to any subsequent AudioContext within the same page lifetime.
+    Scoped as v1.x carry-forward per user sign-off 2026-05-10. v1 user workaround: end + start a new
+    session to restore audio cues. See
+    .planning/phases/05.1-hands-off-resilience-polish/05.1-UAT.md "Task 2 (Re-test post-Plan 06)" and
+    05.1-06-SUMMARY.md for full diagnostic detail and v1.x candidate scopes.
+
+- finding: "Safari desktop: breathing-orb at peak In does not visually meet the dashed outer guide ring; visible gap remains (carried forward from earlier 05-04-UAT-LOG.md capture)."
+  resolution_status: resolved_by_phase_05.1
+  resolution_note: |
+    Phase 5.1 Plan 04 + post-UAT remediation chain (commits 67c03fb → 4f4dea4 → 9e4889e → b717175 → revert
+    425fa5a) fixed this. Final form: 4-edge anchoring (left:0/right:0/top:0/bottom:0 on .orb) + dropped
+    CSS transition + will-change: transform + inline translate3d(0,0,0) scale(s). Verified PASS on Safari
+    Desktop, iOS Safari, Chrome; Firefox has a known FF-01 scale-animation flicker caveat documented as
+    v1.x carry-forward in 05.1-UAT.md Caveats.
