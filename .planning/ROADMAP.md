@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Configurable Session Timing** - Users can configure and run accurate timed or unlimited breathing sessions. (completed 2026-05-09)
 - [x] **Phase 2: Visual Guide & Accessible Responsive Interface** - Users can comfortably follow the breathing guide through a polished, accessible UI on mobile and desktop. (completed 2026-05-09)
-- [ ] **Phase 3: Optional Generated Audio Cues** - Users can add or mute soft phase-aligned audio cues without losing visual guidance.
+- [x] **Phase 3: Optional Generated Audio Cues** - Users can add or mute soft phase-aligned audio cues without losing visual guidance. (completed 2026-05-09)
 - [ ] **Phase 4: Local Memory & Practice Stats** - Users can keep convenience settings and simple local practice history under their control.
 - [ ] **Phase 5: Mobile Hands-Off Resilience** - Users get best-effort screen-awake behavior during running sessions where browsers support it.
 - [ ] **Phase 6: Learning & Claim-Safe Positioning** - Users can understand the practice context and reach Forrest Knutson resources without medical claims or implied endorsement.
