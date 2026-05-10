@@ -15,8 +15,7 @@ import type { PersistedStats } from '../storage'
 import {
   formatSessionCount,
   formatTotalMinutes,
-  formatLastSessionDate,
-  formatLastSessionDuration,
+  formatLastSession,
 } from '../storage'
 
 export interface StatsFooterProps {
@@ -25,8 +24,12 @@ export interface StatsFooterProps {
 }
 
 export function StatsFooter({ stats, onResetClick }: StatsFooterProps) {
-  const hasLastSession =
-    stats.lastSessionAtMs !== null && stats.lastSessionDurationSeconds !== null
+  // WR-09: reuse the formatLastSession helper from format.ts instead of
+  // re-composing the "Last: <date> · <duration>" string inline. Removes
+  // the duplicated logic (the helper was previously dead code, IN-01) and
+  // lets it own the null-handling (returns null when either lastSessionAtMs
+  // or lastSessionDurationSeconds is null).
+  const lastLine = formatLastSession(stats)
 
   return (
     <div className="mt-6 text-center text-sm leading-6 text-[var(--color-breathing-muted)]">
@@ -35,13 +38,7 @@ export function StatsFooter({ stats, onResetClick }: StatsFooterProps) {
         total
       </p>
       <p className="mt-1">
-        {hasLastSession && (
-          <>
-            Last: {formatLastSessionDate(stats.lastSessionAtMs as number)} ·{' '}
-            {formatLastSessionDuration(stats.lastSessionDurationSeconds as number)}
-            {' · '}
-          </>
-        )}
+        {lastLine && <>{lastLine} · </>}
         <button
           type="button"
           onClick={onResetClick}
