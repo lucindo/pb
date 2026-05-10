@@ -39,6 +39,10 @@ export interface AudioEngine {
   now(): number
   /** Close the AudioContext. Idempotent. D-11 anchor. */
   close(): Promise<void>
+  /** Resume the AudioContext if it is currently suspended (e.g., after iOS lock-screen auto-suspend).
+   *  Idempotent: calling on an already-running AC resolves silently. Short-circuits on closed.
+   *  Silently absorbs rejection (D-09). Used by useAudioCues' visibilitychange listener (Phase 5.1 D-01..D-09). */
+  resume(): Promise<void>
 }
 
 // D-08: soft fade-out tail when muting mid-cue.
@@ -176,6 +180,17 @@ export async function createAudioEngine(): Promise<AudioEngine> {
       // thread's already-scheduled gain ramps. We close immediately and trust those ramps
       // to drain naturally. D-11: closing AudioContext releases the system audio resources.
       await audioCtx.close()
+    },
+
+    async resume(): Promise<void> {
+      if (closed) return
+      try {
+        await audioCtx.resume()
+      } catch {
+        // D-09: silently absorb. Browser veto, AC race against close, etc.
+        //       The session continues on visuals only — same posture as Phase 3 D-10
+        //       and Phase 5 D-09. No console.debug per discretion #4.
+      }
     },
   }
 
