@@ -110,13 +110,11 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           right: 0,
           top: 0,
           bottom: 0,
-          // `scale3d(s, s, 1)` forces a 3D rendering context (single 3D
-          // transform, Firefox-friendlier than `translate3d(0,0,0) scale(s)`)
-          // and pairs with `.orb { will-change: transform; backface-visibility:
-          // hidden }` in theme.css for compositor-layer promotion. Safari and
-          // Chromium auto-promote on plain scale; Firefox is more conservative
-          // and needed the explicit hints to suppress flicker.
-          transform: `scale3d(${orbScale}, ${orbScale}, 1)`,
+          // `translate3d(0,0,0)` forces GPU compositor promotion (Firefox
+          // Desktop flickers without this; Safari/Chromium auto-promote).
+          // Order matters: translate3d first so it establishes the 3D
+          // context, scale applies inside it.
+          transform: `translate3d(0,0,0) scale(${orbScale})`,
         }}
       >
         <span
@@ -197,8 +195,8 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
           right: 0,
           top: 0,
           bottom: 0,
-          // GPU promotion via scale3d (see BreathingShapeBody comment above).
-          transform: `scale3d(${MID_SCALE}, ${MID_SCALE}, 1)`,
+          // GPU promotion (see BreathingShapeBody comment above).
+          transform: `translate3d(0,0,0) scale(${MID_SCALE})`,
         }}
       >
         <span

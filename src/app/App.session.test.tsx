@@ -140,9 +140,7 @@ describe('running session display', () => {
     expect(scaleHost).not.toBeNull()
     // Default matchMedia mock has matches: false; phaseProgress at start is 0
     // → liveScale for 'in' = MIN_SCALE = 0.58.
-    // Phase 5.1 Plan 04 post-UAT: transform is `scale3d(s, s, 1)` (Firefox GPU
-    // promotion). MIN_SCALE = 0.58 — assert via regex tolerant of either form.
-    expect(scaleHost!.style.transform).toMatch(/scale3d\(0\.58,\s*0\.58,\s*1\)|scale\(0\.58/)
+    expect(scaleHost!.style.transform).toContain('scale(0.58')
   })
 
   it('holds the orb at fixed mid-scale (0.79) when reduced-motion is preferred (D-06)', async () => {
@@ -163,10 +161,10 @@ describe('running session display', () => {
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     expect(shape).toHaveAttribute('data-phase', 'in')
     const scaleHost = shape.querySelector<HTMLElement>('.orb')
-    // Phase 5.1 Plan 04 post-UAT: transform is `scale3d(0.79, 0.79, 1)`
-    // (scale3d added for Firefox GPU promotion). What matters for D-06 is
-    // that the scale stays fixed at MID_SCALE (0.79).
-    expect(scaleHost!.style.transform).toMatch(/^scale3d\(0\.79,\s*0\.79,\s*1\)$/)
+    // Phase 5.1 Plan 04 post-UAT: transform is `translate3d(0,0,0) scale(...)`
+    // (translate3d added for Firefox GPU promotion). The scale(0.79) substring
+    // is the assertion that matters — D-06 fixed mid-scale invariant.
+    expect(scaleHost!.style.transform).toMatch(/^translate3d\(0(?:px)?,\s*0(?:px)?,\s*0(?:px)?\)\s+scale\(0\.79\)$/)
   })
 })
 

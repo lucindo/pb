@@ -53,17 +53,13 @@
    write applies instantly and the 60fps rAF cadence handles smoothing. */
 .orb {
   /* No transition — see comment above. Per-frame React updates handle motion.
-     GPU compositor-promotion stack (Firefox-flicker remedy):
-     - `will-change: transform` declares intent to mutate transform.
-     - `backface-visibility: hidden` forces a 3D rendering context.
-     - The inline transform itself uses `scale3d(s, s, 1)` (single 3D
-       transform) so Firefox keeps the layer hot.
-     UAT cadence: Safari Desktop / iOS / Chromium were smooth on plain `scale`;
-     Firefox Desktop flickered on `scale`, partially improved with `will-change`,
-     partially again with `translate3d(0,0,0) scale(s)`, intended to fully
-     resolve with the kitchen-sink combo here. */
+     `will-change: transform` promotes `.orb` to its own compositor layer so
+     per-frame transform writes are GPU-composited rather than triggering
+     main-thread repaints. Without this, Firefox Desktop flickers during
+     scale animation (Safari/Chromium auto-promote transformed elements but
+     Firefox is more conservative). UAT confirmed: Safari Desktop, Safari iOS,
+     and Chrome Desktop are smooth without the hint; Firefox needed it. */
   will-change: transform;
-  backface-visibility: hidden;
 }
 
 .orb-layer--in {
