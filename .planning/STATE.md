@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-05-10T14:08:49.552Z"
-last_activity: 2026-05-10 -- Phase 05 execution started
+stopped_at: Phase 5 — Wave 1+2 complete (3/4 plans); Plan 05-04 UAT deferred until GitHub Pages HTTPS deploy
+last_updated: "2026-05-10T14:36:38.037Z"
+last_activity: 2026-05-10 -- Phase 05 Wave 1+2 complete; Plan 05-04 UAT deferred (awaiting GitHub Pages)
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 21
-  completed_plans: 17
-  percent: 81
+  completed_plans: 20
+  percent: 95
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 
 ## Current Position
 
-Phase: 05 (mobile-hands-off-resilience) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 05
-Last activity: 2026-05-10 -- Phase 05 execution started
+Phase: 05 (mobile-hands-off-resilience) — UAT DEFERRED
+Plan: 3 of 4 complete; 05-04 deferred (awaiting GitHub Pages HTTPS)
+Status: Phase 05 Wave 1+2 complete; Plan 05-04 UAT deferred
+Last activity: 2026-05-10 -- Phase 05 Wave 1+2 complete; Plan 05-04 UAT deferred
 
 Progress: [█████████░] 94%
 
