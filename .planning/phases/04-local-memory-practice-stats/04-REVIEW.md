@@ -26,7 +26,8 @@ findings:
   warning: 9
   info: 5
   total: 15
-status: issues_found
+status: resolved
+resolved_in: ["5ecd04f", "ed24c56", "5bf0159", "71d84b5", "efaa8e9", "340c38a", "e859200", "f76e7f6", "4d84c16", "927eeb1"]
 ---
 
 # Phase 4: Code Review Report
