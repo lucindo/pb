@@ -9,6 +9,7 @@ import { StatsFooter } from '../components/StatsFooter'
 import { ResetStatsDialog } from '../components/ResetStatsDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
+import { useWakeLock } from '../hooks/useWakeLock'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame } from '../domain/sessionMath'
 import {
@@ -48,6 +49,7 @@ export default function App() {
   const { state } = session
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
   const audio = useAudioCues(initialMute) // Phase 3: audio engine; Phase 4: restores persisted mute
+  const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
   const [appPhase, setAppPhase] = useState<AppPhase>('idle')
@@ -120,6 +122,12 @@ export default function App() {
   const audioStop = audio.stop
   const audioStart = audio.start
   const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
+  // useWakeLock returns a fresh object literal each render but `request`/`release`
+  // are useCallback([])-stable. Hoist the same way as audio (App.tsx:114-122) so the
+  // state.status !== 'running' cleanup effect can depend on `wakeLockRelease` without
+  // re-firing every render.
+  const wakeLockRequest = wakeLock.request
+  const wakeLockRelease = wakeLock.release
 
   // Phase 4 LOCL-01: wrap setSelectedSettings + setMuted to persist on every change.
   // The wrapped functions are passed to children in place of the raw setters.
@@ -175,6 +183,7 @@ export default function App() {
       audioAnchorRef.current = null
       planRef.current = null
       void audioStop()
+      void wakeLockRelease() // Phase 5 D-07/D-08: idempotent if no lock held
       return
     }
     if (appPhase !== 'idle') return // defensive: ignore clicks during running (handled by onEnd)
@@ -186,6 +195,9 @@ export default function App() {
 
     setAppPhase('lead-in')
     setLeadInDigit(3)
+    // Phase 5 D-01/D-02: parallel with audioStart, fire-and-forget. Failures
+    // (rejection, no API) update internal hook state but do not block lead-in.
+    void wakeLockRequest()
 
     // D-09: AudioContext is constructed inside this user-gesture-derived chain.
     const plan = createBreathingPlan(state.selectedSettings)
@@ -227,7 +239,7 @@ export default function App() {
       session.start()
     }, LEAD_IN_DURATION_MS)
     leadInTimeoutsRef.current = [t1, t2, t3]
-  }, [appPhase, state.selectedSettings, audioStart, audioStop, session, clearLeadInTimeouts])
+  }, [appPhase, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
@@ -313,6 +325,7 @@ export default function App() {
       // 'running' after End and the next Start click silently no-ops on the
       // `appPhase !== 'idle'` guard in onStartClick.
       void audioStop()
+      void wakeLockRelease() // Phase 5 D-07: single-write release site (D-08 idempotent)
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAppPhase('idle')
       clearLeadInTimeouts()
@@ -340,7 +353,7 @@ export default function App() {
       }
       runningSnapshotRef.current = null
     }
-  }, [state, audioStop, clearLeadInTimeouts])
+  }, [state, audioStop, wakeLockRelease, clearLeadInTimeouts])
 
   // Phase 3 D-12 + Pitfall 2 dual-anchor invariant: 1-cue lookahead.
   // On every cycleIndex/phase transition in SessionFrame, schedule the corresponding In/Out cue
