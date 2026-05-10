@@ -17,7 +17,13 @@ export interface PersistedStats {
   lastSessionDurationSeconds: number | null
 }
 
-const ZERO_STATS: PersistedStats = {
+// WR-08: exported so App.tsx confirmReset can update React state optimistically
+// (without re-reading from disk) when the user confirms reset. If the disk
+// write silently fails (D-16 quota / Safari ITP / private mode), the RAM state
+// must STILL reflect the user's intent — otherwise the footer keeps showing
+// the old stats and the user thinks the button is broken. Mirrors Phase 3
+// D-10's posture (visuals continue when audio fails).
+export const ZERO_STATS: PersistedStats = {
   totalSessions: 0,
   totalElapsedSeconds: 0,
   lastSessionAtMs: null,

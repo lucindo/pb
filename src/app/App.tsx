@@ -23,6 +23,7 @@ import {
   loadStats,
   recordSession,
   resetStats,
+  ZERO_STATS,
   type PersistedStats,
 } from '../storage'
 import type { SessionSettings } from '../domain/settings'
@@ -268,8 +269,14 @@ export default function App() {
   }, [])
 
   const confirmReset = useCallback(() => {
+    // WR-08: optimistic UI — set RAM state from a known zero-state, not from
+    // a re-read of disk. If resetStats() fails silently (D-16 quota / Safari
+    // ITP / private mode), the disk still holds the OLD stats; loadStats()
+    // would return them; the footer would keep showing them despite the
+    // user clicking Reset. RAM-side state must reflect the user's intent
+    // regardless of disk-write success — same posture as Phase 3 D-10.
     resetStats()           // D-11: stats only (settings + mute survive)
-    setStats(loadStats())  // re-read zero-state envelope
+    setStats(ZERO_STATS)   // optimistic — disk may or may not have synced
     setResetDialogOpen(false)
   }, [])
 
