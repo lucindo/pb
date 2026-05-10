@@ -5,6 +5,8 @@ import { EndSessionDialog } from '../components/EndSessionDialog'
 import { SettingsForm } from '../components/SettingsForm'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
+import { StatsFooter } from '../components/StatsFooter'
+import { ResetStatsDialog } from '../components/ResetStatsDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { createBreathingPlan } from '../domain/breathingPlan'
@@ -13,16 +15,38 @@ import {
   LEAD_IN_DURATION_MS,
   LEAD_IN_TICK_INTERVAL_MS,
 } from '../audio/audioEngine'
+import {
+  loadSettings,
+  saveSettings,
+  loadMute,
+  saveMute,
+  loadStats,
+  recordSession,
+  resetStats,
+  type PersistedStats,
+} from '../storage'
+import type { SessionSettings } from '../domain/settings'
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
 type AppPhase = 'idle' | 'lead-in' | 'running'
 
 export default function App() {
-  const session = useSessionEngine()
+  // Phase 4 LOCL-01: restore persisted settings + mute at mount.
+  // useMemo([]) ensures one synchronous read per app load, before children mount.
+  const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
+  const initialMute = useMemo<boolean>(() => loadMute(), [])
+
+  // Phase 4 LOCL-02: stats are loaded once at mount, then mutated through three
+  // sites (recordSession at end-transition, resetStats from the dialog, and the
+  // initial loadStats here). React state holds the current snapshot for rendering.
+  const [stats, setStats] = useState<PersistedStats>(() => loadStats())
+  const [resetDialogOpen, setResetDialogOpen] = useState<boolean>(false)
+
+  const session = useSessionEngine(initialSettings)
   const { state } = session
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
-  const audio = useAudioCues() // Phase 3: audio engine
+  const audio = useAudioCues(initialMute) // Phase 3: audio engine; Phase 4: restores persisted mute
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
   const [appPhase, setAppPhase] = useState<AppPhase>('idle')
@@ -70,6 +94,22 @@ export default function App() {
   // Read by Task 1b boundary effect.
   const lastBoundaryKeyRef = useRef<string | null>(null)
 
+  // Phase 4 LOCL-02: capture the running session's startedAtMs + lastElapsedMs
+  // each render WHILE running, so the cleanup effect (which fires AFTER the
+  // transition out of running) can compute elapsed without losing the previous
+  // startedAtMs to the discriminated union narrowing. Updated by the snapshot
+  // effect below; READ by the cleanup effect.
+  const runningSnapshotRef = useRef<{
+    key: string
+    startedAtMs: number
+    lastElapsedMs: number
+  } | null>(null)
+
+  // Pitfall 1 idempotency guard: keyed on state.startedAtMs (unique per session
+  // generation since performance.now() does not repeat). Prevents the cleanup
+  // effect from double-writing if React re-runs it on dependency drift.
+  const recordedSessionKeyRef = useRef<string | null>(null)
+
   // useAudioCues returns a fresh object literal each render, but its individual
   // function fields are wrapped in useCallback([]) so their identities are stable.
   // Hoist the stable references so effects can depend on them without re-firing
@@ -79,6 +119,21 @@ export default function App() {
   const audioStop = audio.stop
   const audioStart = audio.start
   const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
+
+  // Phase 4 LOCL-01: wrap setSelectedSettings + setMuted to persist on every change.
+  // The wrapped functions are passed to children in place of the raw setters.
+  const sessionSetSelectedSettings = session.setSelectedSettings
+  const audioSetMuted = audio.setMuted
+
+  const persistedSetSettings = useCallback((next: SessionSettings) => {
+    sessionSetSelectedSettings(next)
+    saveSettings(next)
+  }, [sessionSetSelectedSettings])
+
+  const persistedSetMuted = useCallback((next: boolean) => {
+    audioSetMuted(next)
+    saveMute(next)
+  }, [audioSetMuted])
 
   // WR-01: Auto-close the confirmation modal when the session leaves the running
   // state on its own (e.g. timer reaches the end while the modal is open). Without
@@ -208,6 +263,35 @@ export default function App() {
     // session continues — clock keeps running (D-13). No additional work.
   }, [])
 
+  const onResetClick = useCallback(() => {
+    setResetDialogOpen(true)
+  }, [])
+
+  const confirmReset = useCallback(() => {
+    resetStats()           // D-11: stats only (settings + mute survive)
+    setStats(loadStats())  // re-read zero-state envelope
+    setResetDialogOpen(false)
+  }, [])
+
+  const cancelReset = useCallback(() => {
+    setResetDialogOpen(false)
+  }, [])
+
+  // Phase 4 LOCL-02: keep runningSnapshotRef fresh on every render while running.
+  // Reads state.startedAtMs and state.lastFrame.elapsedMs (both available only on
+  // RunningSessionState — discriminated-union narrowing on `state.status === 'running'`
+  // is required for TypeScript). The snapshot is consumed by the cleanup effect on
+  // transition out of running.
+  useEffect(() => {
+    if (state.status === 'running') {
+      runningSnapshotRef.current = {
+        key: String(state.startedAtMs),
+        startedAtMs: state.startedAtMs,
+        lastElapsedMs: state.lastFrame.elapsedMs,
+      }
+    }
+  }, [state])
+
   // D-11 + D-16: when the session reaches 'complete', the last cue tail naturally rings out
   // (cues already scheduled in the audio thread; AC.close() resolves after they finish).
   // Reset appPhase to 'idle' so the orb stops rendering the last frame, and clear the dual anchors.
@@ -228,8 +312,28 @@ export default function App() {
       audioAnchorRef.current = null
       planRef.current = null
       lastBoundaryKeyRef.current = null
+
+      // Phase 4 LOCL-02: single write site for stats (Pitfall 1).
+      // - For 'complete': elapsed = state.completedAtMs - snap.startedAtMs (sample-accurate)
+      // - For 'idle' (manual End): elapsed = snap.lastElapsedMs (last rAF reading; <16ms stale)
+      // The snap-null guard handles cancel-during-lead-in (D-03 / Pitfall 2): when the user
+      // never entered 'running', runningSnapshotRef was never populated and we skip the write.
+      // The recordedSessionKeyRef guard makes the write idempotent per session — protects
+      // against React re-running the effect under StrictMode or dep-drift.
+      const snap = runningSnapshotRef.current
+      if (snap !== null && recordedSessionKeyRef.current !== snap.key) {
+        const isComplete = state.status === 'complete'
+        const elapsedMs = isComplete
+          ? state.completedAtMs - snap.startedAtMs
+          : snap.lastElapsedMs
+        const updated = recordSession(elapsedMs, isComplete)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setStats(updated)
+        recordedSessionKeyRef.current = snap.key
+      }
+      runningSnapshotRef.current = null
     }
-  }, [state.status, audioStop, clearLeadInTimeouts])
+  }, [state, audioStop, clearLeadInTimeouts])
 
   // Phase 3 D-12 + Pitfall 2 dual-anchor invariant: 1-cue lookahead.
   // On every cycleIndex/phase transition in SessionFrame, schedule the corresponding In/Out cue
@@ -323,7 +427,7 @@ export default function App() {
           <SettingsForm
             settings={state.selectedSettings}
             isRunning={inSessionView}
-            onChange={session.setSelectedSettings}
+            onChange={persistedSetSettings}
             onExtendDuration={session.extendDuration}
           />
           <SessionControls
@@ -332,18 +436,26 @@ export default function App() {
             onEnd={requestEnd}
             muted={audio.muted}
             audioAvailable={audio.audioAvailable}
-            onMuteToggle={() => audio.setMuted(!audio.muted)}
+            onMuteToggle={() => persistedSetMuted(!audio.muted)}
           />
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Timing stays local to this browser and continuously alternates In and Out with no
             pause segment.
           </p>
         </div>
+        {!inSessionView && stats.totalSessions > 0 && (
+          <StatsFooter stats={stats} onResetClick={onResetClick} />
+        )}
       </section>
       <EndSessionDialog
         open={endDialogOpen}
         onConfirm={confirmEnd}
         onCancel={cancelEnd}
+      />
+      <ResetStatsDialog
+        open={resetDialogOpen}
+        onConfirm={confirmReset}
+        onCancel={cancelReset}
       />
     </main>
   )

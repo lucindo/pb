@@ -1,5 +1,16 @@
 import '@testing-library/jest-dom/vitest'
-import { vi } from 'vitest'
+import { beforeEach, vi } from 'vitest'
+
+// Phase 4 isolation: clear localStorage before every test so persisted state from one
+// test (e.g. saveMute(true) in a mute-toggle test) does not contaminate the next test's
+// mount-time restore (loadSettings / loadMute / loadStats). Storage-specific tests that
+// need pre-seeded data call localStorage.setItem() in their own beforeEach / test body —
+// this global clear runs first and provides a clean slate.
+beforeEach(() => {
+  if (typeof window !== 'undefined' && typeof window.localStorage?.clear === 'function') {
+    window.localStorage.clear()
+  }
+})
 
 // localStorage polyfill — Node 25 ships a built-in localStorage that is a non-functional
 // empty object when `--localstorage-file` is not provided (overriding jsdom's functional
