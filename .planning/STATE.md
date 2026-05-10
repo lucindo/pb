@@ -81,6 +81,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:01:23.052Z
-Stopped at: Phase 5.1 context gathered
-Resume file: None
+Last session: 2026-05-10T17:20:00Z
+Stopped at: Phase 5.1 Plan 03 Task 2 — iOS audio bug DIAGNOSED. Root cause: WebKit `'interrupted'` state + visibilitychange handler not a user gesture. Diagnostic logged in 05.1-UAT.md Task 2. Ready to spec Plan 05.1-06.
+Resume file: .planning/phases/05.1-hands-off-resilience-polish/.continue-here.md (HANDOFF.json superseded by UAT diagnostic block)
+Next command: `/gsd-plan-phase 05.1` (Plan 06: iOS audio resume — interrupted-state + gesture-affordance)
