@@ -87,7 +87,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Storage core: silent-fallback envelope, per-field settings/mute coercion, stats aggregator with D-01 threshold + D-18 injected clock, display formatters, and unit tests.
 - [x] 04-02-PLAN.md — UI components: StatsFooter (D-08 layout, D-13 44x44 hit area) and ResetStatsDialog (clone of EndSessionDialog with locked D-12 copy), plus component tests.
-- [ ] 04-03-PLAN.md — App wiring: mount restore, persisted setters, single-write-site stats record, footer + reset dialog rendering, useAudioCues initialMuted parameter, and App.persistence integration tests.
+- [x] 04-03-PLAN.md — App wiring: mount restore, persisted setters, single-write-site stats record, footer + reset dialog rendering, useAudioCues initialMuted parameter, and App.persistence integration tests.
 - [ ] 04-04-PLAN.md — Manual UAT: cross-reload restoration, stats footer + 44x44 hit area in real viewport, reset dialog + stats-only wipe, silent-fallback under Safari Private Browsing.
 **UI hint**: yes
 
@@ -124,6 +124,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Configurable Session Timing | 4/4 | Complete    | 2026-05-09 |
 | 2. Visual Guide & Accessible Responsive Interface | 4/4 | Complete    | 2026-05-09 |
 | 3. Optional Generated Audio Cues | 0/5 | Not started | - |
-| 4. Local Memory & Practice Stats | 0/4 | Not started | - |
+| 4. Local Memory & Practice Stats | 3/4 | In Progress|  |
 | 5. Mobile Hands-Off Resilience | 0/TBD | Not started | - |
 | 6. Learning & Claim-Safe Positioning | 0/TBD | Not started | - |

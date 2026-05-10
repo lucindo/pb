@@ -35,9 +35,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Local Memory & Stats
 
-- [ ] **LOCL-01**: User's last BPM, ratio, duration, and audio preference are saved locally between visits.
-- [ ] **LOCL-02**: User can see basic local practice stats: total sessions, total minutes, and last session.
-- [ ] **LOCL-03**: User can reset locally saved settings and stats.
+- [x] **LOCL-01**: User's last BPM, ratio, duration, and audio preference are saved locally between visits.
+- [x] **LOCL-02**: User can see basic local practice stats: total sessions, total minutes, and last session.
+- [x] **LOCL-03**: User can reset locally saved settings and stats.
 
 ### Mobile & Responsive Use
 
@@ -128,9 +128,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUID-04 | Phase 2 | Pending |
 | AUDI-01 | Phase 3 | Pending |
 | AUDI-02 | Phase 3 | Pending |
-| LOCL-01 | Phase 4 | Pending |
-| LOCL-02 | Phase 4 | Pending |
-| LOCL-03 | Phase 4 | Pending |
+| LOCL-01 | Phase 4 | Complete |
+| LOCL-02 | Phase 4 | Complete |
+| LOCL-03 | Phase 4 | Complete |
 | MOBL-01 | Phase 2 | Pending |
 | MOBL-02 | Phase 5 | Pending |
 | LEARN-01 | Phase 6 | Pending |
