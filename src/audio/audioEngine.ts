@@ -1,5 +1,5 @@
-// Stateful audio service that composes the pure cueSynth + lookaheadScheduler
-// modules from Plan 01 into a lifecycle-aware engine. Zero React imports.
+// Stateful audio service that composes the pure cueSynth module from Plan 01
+// into a lifecycle-aware engine. Zero React imports.
 //
 // Owns:
 //   - The single AudioContext (D-09: created from a user-gesture chain only).

@@ -1,6 +1,6 @@
 // Tests for the audioEngine factory + AudioEngine interface.
 // Source: 03-02-PLAN.md <behavior> tests 1-15.
-// Engine composes the pure cueSynth + lookaheadScheduler modules from Plan 01.
+// Engine composes the pure cueSynth module from Plan 01.
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
