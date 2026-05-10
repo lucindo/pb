@@ -121,7 +121,7 @@ Plans:
 - [x] 05.1-01-PLAN.md — iOS Safari audio resume on visibilitychange→visible (useAudioCues visibility listener + audioEngine.resume() + FakeAudioContext._simulateSuspend test hook + 4 unit tests).
 - [x] 05.1-02-PLAN.md — Safari outer-ring max-scale visual fix (negative-inset compensation on both BreathingShapeBody and BreathingShapeLeadIn outer rings). **Insufficient — see Plan 04.**
 - [ ] 05.1-03-PLAN.md — Manual UAT on real Safari (iOS audio resume + desktop orb visual) + Phase 1–5 regression sweep + sign-off. (Tasks 2-4 paused pending Plan 04.)
-- [ ] 05.1-04-PLAN.md — Safari Desktop `.orb` WR-03 sizing re-fix (apply explicit-positioning pattern to `.orb` div + outer-ring spans, both render sites; structural regression test). **Inserted 2026-05-10 after Task 3 UAT FAIL revealed deeper grid+abs-pos collapse beyond Plan 02's 1.5px border-box compensation.**
+- [x] 05.1-04-PLAN.md — Safari Desktop `.orb` WR-03 sizing re-fix (apply explicit-positioning pattern to `.orb` div + outer-ring spans, both render sites; structural regression test). **Inserted 2026-05-10 after Task 3 UAT FAIL revealed deeper grid+abs-pos collapse beyond Plan 02's 1.5px border-box compensation.**
 **Origin**: Plan 05-04 manual UAT findings on real iPhone Xs Max iOS 18.7.8 Safari + Safari desktop visual sweep. Discovered 2026-05-10. Documented in `05-04-UAT-LOG.md` Findings 1+2 and `05-UAT.md` Out-of-Scope Findings. Plan 04 origin: 05.1-UAT.md Task 3 FAIL.
 **UI hint**: yes
 
@@ -149,5 +149,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Optional Generated Audio Cues | 5/5 | Complete    | 2026-05-09 |
 | 4. Local Memory & Practice Stats | 4/4 | Complete    | 2026-05-10 |
 | 5. Mobile Hands-Off Resilience | 4/4 | Complete (S2 Android UAT carried forward) | 2026-05-10 |
-| 5.1. Hands-Off Resilience Polish | 0/3 | Not started | - |
+| 5.1. Hands-Off Resilience Polish | 3/4 | In Progress|  |
 | 6. Learning & Claim-Safe Positioning | 0/TBD | Not started | - |

@@ -23,7 +23,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Visual Guidance & Accessibility
 
-- [ ] **GUID-01**: User can follow a polished breathing animation synchronized to the current inhale/exhale phase.
+- [x] **GUID-01**: User can follow a polished breathing animation synchronized to the current inhale/exhale phase.
 - [ ] **GUID-02**: User can always read the current breathing phase as text.
 - [ ] **GUID-03**: User with reduced-motion preference gets a calmer reduced-motion session display.
 - [ ] **GUID-04**: User can operate the app with accessible labeled controls, visible focus states, keyboard support, and non-color-only cues.
@@ -122,7 +122,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BREA-01 | Phase 1 | Complete |
 | BREA-02 | Phase 1 | Complete |
 | BREA-03 | Phase 1 | Complete |
-| GUID-01 | Phase 2 | Pending |
+| GUID-01 | Phase 2 | Complete |
 | GUID-02 | Phase 2 | Pending |
 | GUID-03 | Phase 2 | Pending |
 | GUID-04 | Phase 2 | Pending |
