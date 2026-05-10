@@ -60,7 +60,7 @@ describe('BreathingShape', () => {
     const { container } = render(<BreathingShape frame={null} leadInDigit={1} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
-    expect(orb!.getAttribute('style')).toContain('scale(0.79)')
+    expect(orb!.getAttribute('style')).toMatch(/scale3d\(0\.79,\s*0\.79,\s*1\)|scale\(0\.79\)/)
   })
 
   it('lead-in does not have data-phase or data-progress attributes (it is a neutral pre-state)', () => {
@@ -125,7 +125,7 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       const style = orb!.getAttribute('style') ?? ''
-      expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale\(/)
+      expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale3?d?\(/)
     })
 
     it('`.orb-ring--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21)', () => {
@@ -197,7 +197,7 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       const style = orb!.getAttribute('style') ?? ''
-      expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale\(0\.79\)/)
+      expect(style).toMatch(/transform:\s*(?:scale3d\(0\.79,\s*0\.79,\s*1\)|scale\(0\.79\)|translate3d\([^)]+\)\s+scale\(0\.79\))/)
     })
 
     it('lead-in `.orb-ring--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21 + D-22)', () => {
