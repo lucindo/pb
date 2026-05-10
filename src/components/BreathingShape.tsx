@@ -75,7 +75,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
       <span
         aria-hidden="true"
         className="orb-ring--outer absolute rounded-full border-solid"
-        style={{ inset: '-1.5px' }}
+        style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
       {/* D-04: inner reference ring at MIN_SCALE boundary.
           WR-03: position explicitly with left/top + translate centering rather
@@ -90,10 +90,23 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           height: `${MIN_SCALE * 100}%`,
         }}
       />
-      {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07) */}
+      {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07).
+          Phase 5.1 Plan 04 D-20: drop `inset-0` and use explicit WR-03 positioning
+          (left/top/width/height) so Safari Desktop sizes the abs-pos `.orb` against
+          the container's padding-box rather than collapsing to the inner-ring's
+          implicit grid auto-track (which made `.orb` 58% of parent — see 05.1-UAT.md
+          Task 3 inspector data: 209 px instead of 360 px). Same WR-03 mechanism the
+          inner-ring span at lines 85-92 already uses. Mirrored in BreathingShapeLeadIn
+          below — both render sites must match (D-22). */}
       <div
-        className="orb absolute inset-0 rounded-full motion-reduce:transition-none"
-        style={{ transform: `scale(${orbScale})` }}
+        className="orb absolute rounded-full motion-reduce:transition-none"
+        style={{
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
+          transform: `scale(${orbScale})`,
+        }}
       >
         <span
           aria-hidden="true"
@@ -148,7 +161,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       <span
         aria-hidden="true"
         className="orb-ring--outer absolute rounded-full border-solid"
-        style={{ inset: '-1.5px' }}
+        style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
       {/* Inner reference ring (Phase 2 D-04) */}
       <span
@@ -161,10 +174,19 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       />
       {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
           is rendered (no Out crossfade) so the lead-in feels like a still pool
-          of water awaiting the first breath. */}
+          of water awaiting the first breath. Phase 5.1 Plan 04 D-20 + D-22: same
+          WR-03 explicit-positioning fix as BreathingShapeBody — drop `inset-0`,
+          add `left:0; top:0; width:100%; height:100%` so Safari Desktop does
+          not collapse the orb during the 3-2-1 countdown. */}
       <div
-        className="orb absolute inset-0 rounded-full"
-        style={{ transform: `scale(${MID_SCALE})` }}
+        className="orb absolute rounded-full"
+        style={{
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
+          transform: `scale(${MID_SCALE})`,
+        }}
       >
         <span
           aria-hidden="true"
