@@ -79,8 +79,16 @@ export async function createAudioEngine(): Promise<AudioEngine> {
 
   // Chrome can occasionally hand back an AC in 'suspended' even from a gesture chain
   // (race conditions during page bootstrap); resume immediately so currentTime advances.
+  // WR-06: if resume() rejects (e.g., the user agent vetoed autoplay between
+  // construction and the resume attempt), close the AC before re-throwing — otherwise
+  // the AC leaks (browsers cap concurrent ACs ~6 in Chrome).
   if (audioCtx.state === 'suspended') {
-    await audioCtx.resume()
+    try {
+      await audioCtx.resume()
+    } catch (err) {
+      await audioCtx.close().catch(() => undefined)
+      throw err
+    }
   }
 
   let activeCue: CueHandle | null = null
