@@ -40,9 +40,19 @@
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
 }
 
-/* Phase 2 orb structure (D-01..D-04, D-07) */
+/* Phase 2 orb structure (D-01..D-04, D-07).
+   Phase 5.1 Plan 04 post-UAT: removed `transition: transform 200ms ease-out`.
+   useSessionEngine ticks via requestAnimationFrame (~60fps), so React already
+   updates the inline `transform: scale(...)` per frame — the CSS transition
+   is redundant on Chromium/Firefox and was actively broken on Safari Desktop:
+   when sizing properties (left/right/top/bottom or width/height) are written
+   inline alongside transform on each render, Safari restarts the transition
+   on every property reassignment, freezing the computed transform at the
+   start value (Plan 04 UAT showed inline transform=scale(0.99) but computed
+   stuck at scale(0.58)). Without the transition, each per-frame transform
+   write applies instantly and the 60fps rAF cadence handles smoothing. */
 .orb {
-  transition: transform 200ms ease-out;
+  /* No transition — see comment above. Per-frame React updates handle motion. */
 }
 
 .orb-layer--in {
@@ -99,7 +109,8 @@ dialog.modal-fade[open]::backdrop {
 }
 
 /* Reduced-motion (D-05, D-07, D-09):
-   - Suppress the orb scale transition.
+   - The .orb scale transition was removed (see .orb rule above), so this block
+     no longer needs to suppress it. Kept for the dialog modal fade only.
    - Intentionally PRESERVE the .orb-layer--out opacity transition — it is the
      substitute phase indicator under reduced-motion (D-07).
    - CR-01: Do NOT set `transform: none !important` here. BreathingShape sets the
@@ -110,7 +121,6 @@ dialog.modal-fade[open]::backdrop {
    - F3: dialog modal fade also disabled here (per UI-SPEC: "in reduced-motion,
      dialog appears immediately"). */
 @media (prefers-reduced-motion: reduce) {
-  .orb,
   dialog.modal-fade {
     transition: none !important;
   }
