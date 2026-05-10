@@ -17,7 +17,6 @@ type AppPhase = 'idle' | 'lead-in' | 'running'
 export default function App() {
   const session = useSessionEngine()
   const { state } = session
-  const isRunning = state.status === 'running'
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
   const audio = useAudioCues() // Phase 3: audio engine
 
