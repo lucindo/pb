@@ -141,7 +141,7 @@ describe('useWakeLock', () => {
 
   it('visibilitychange to visible does NOT re-request when wasAcquired is false (D-04 gate)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
-    const { result, unmount } = renderHook(() => useWakeLock())
+    const { unmount } = renderHook(() => useWakeLock())
     // Do NOT call request() — wasAcquiredRef stays false.
     Object.defineProperty(document, 'visibilityState', {
       value: 'visible',
