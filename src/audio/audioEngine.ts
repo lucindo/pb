@@ -91,9 +91,22 @@ export async function createAudioEngine(): Promise<AudioEngine> {
     }
   }
 
-  let activeCue: CueHandle | null = null
+  // WR-08: track ALL in-flight cues (lead-in ticks + In/Out bowls), not just the
+  // most recent one. Mute mid-lead-in must silence the remaining ticks too —
+  // previously only the bowl cue stored as `activeCue` was faded, leaving ticks
+  // 2 and 3 audible after the user clicked Mute.
+  const activeCues = new Set<CueHandle>()
   let muted = false // D-07: default false (audio ON on first visit)
   let closed = false
+
+  // Drop cues whose tails have already finished (cleanupAt < now). Keeps the Set
+  // bounded over a long session and avoids re-fading already-silent envelopes.
+  function pruneExpiredCues(): void {
+    const now = audioCtx.currentTime
+    for (const cue of activeCues) {
+      if (cue.cleanupAt < now) activeCues.delete(cue)
+    }
+  }
 
   const engine: AudioEngine = {
     scheduleLeadIn(startAudioTime: number, _plan: BreathingPlan): number {
@@ -103,12 +116,13 @@ export async function createAudioEngine(): Promise<AudioEngine> {
       if (closed) return firstInCueTime
       if (muted) return firstInCueTime
 
-      // 3 ticks at +0/+1/+2 (D-14 lead-in).
-      scheduleTick(audioCtx, startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination)
-      scheduleTick(audioCtx, startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination)
-      scheduleTick(audioCtx, startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination)
+      // 3 ticks at +0/+1/+2 (D-14 lead-in). Track each so mid-lead-in mute can
+      // fade them out (WR-08).
+      activeCues.add(scheduleTick(audioCtx, startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
+      activeCues.add(scheduleTick(audioCtx, startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
+      activeCues.add(scheduleTick(audioCtx, startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
       // First In cue at +3 (numerals replaced by the In phase label at t=0; bowl strikes).
-      activeCue = scheduleInCue(audioCtx, firstInCueTime, audioCtx.destination)
+      activeCues.add(scheduleInCue(audioCtx, firstInCueTime, audioCtx.destination))
 
       return firstInCueTime
     },
@@ -116,10 +130,12 @@ export async function createAudioEngine(): Promise<AudioEngine> {
     scheduleNextCue({ newPhase, audioTime }: { newPhase: 'in' | 'out'; audioTime: number }): void {
       if (closed) return
       if (muted) return // D-08 unmute-waits-for-boundary; if currently muted, skip this cue.
-      activeCue =
+      pruneExpiredCues()
+      const cue =
         newPhase === 'in'
           ? scheduleInCue(audioCtx, audioTime, audioCtx.destination)
           : scheduleOutCue(audioCtx, audioTime, audioCtx.destination)
+      activeCues.add(cue)
     },
 
     setMuted(next: boolean): void {
@@ -127,9 +143,14 @@ export async function createAudioEngine(): Promise<AudioEngine> {
         muted = next
         return
       }
-      if (next && activeCue !== null) {
-        // D-08: muting mid-cue applies a soft fade-out tail to the active cue's envelope.
-        applyMuteFadeOut(activeCue, audioCtx)
+      if (next && activeCues.size > 0) {
+        // D-08 + WR-08: muting mid-cue applies a soft fade-out tail to EVERY in-flight
+        // cue's envelope (lead-in ticks AND bowl cues). Prune already-finished cues
+        // first so we don't ramp dead envelopes.
+        pruneExpiredCues()
+        for (const cue of activeCues) {
+          applyMuteFadeOut(cue, audioCtx)
+        }
       }
       // D-08: unmuting mid-phase is silent — the next cue plays at the next phase boundary,
       //       NOT a make-up cue here. Boundary scheduling is owned by App.tsx (Plan 04).
