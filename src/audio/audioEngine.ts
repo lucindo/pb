@@ -49,8 +49,12 @@ const MUTE_FADE_TIME_CONSTANT = 0.05
 const MIN_GAIN_VALUE = 0.0001
 
 // Lead-in: 3 ticks one second apart, then the first In cue at the start of the breath cycle.
-const LEAD_IN_TICK_INTERVAL_SEC = 1.0
-const LEAD_IN_DURATION_SEC = 3.0
+// WR-04: exported as the single source of truth — App.tsx and useAudioCues.ts import these
+// instead of redefining the same numbers locally (which silently drifted before).
+export const LEAD_IN_TICK_INTERVAL_SEC = 1.0
+export const LEAD_IN_DURATION_SEC = 3.0
+export const LEAD_IN_TICK_INTERVAL_MS = LEAD_IN_TICK_INTERVAL_SEC * 1000
+export const LEAD_IN_DURATION_MS = LEAD_IN_DURATION_SEC * 1000
 
 function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
   const now = audioCtx.currentTime

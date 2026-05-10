@@ -19,11 +19,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { BreathingPlan } from '../domain/breathingPlan'
-import { createAudioEngine, type AudioEngine, type AudioStatus } from '../audio/audioEngine'
+import {
+  createAudioEngine,
+  LEAD_IN_DURATION_SEC,
+  type AudioEngine,
+  type AudioStatus,
+} from '../audio/audioEngine'
 
 export type { AudioStatus }
-
-const LEAD_IN_DURATION_SEC = 3.0
 
 export interface UseAudioCues {
   status: AudioStatus

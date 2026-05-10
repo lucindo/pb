@@ -9,6 +9,10 @@ import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame } from '../domain/sessionMath'
+import {
+  LEAD_IN_DURATION_MS,
+  LEAD_IN_TICK_INTERVAL_MS,
+} from '../audio/audioEngine'
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
@@ -120,8 +124,11 @@ export default function App() {
     // The lead-in setTimeout chain still runs in either case so the visual countdown
     // is independent of audio availability.
 
-    const t1 = window.setTimeout(() => setLeadInDigit(2), 1000)
-    const t2 = window.setTimeout(() => setLeadInDigit(1), 2000)
+    // WR-04: drive these from the shared LEAD_IN_TICK_INTERVAL_MS / LEAD_IN_DURATION_MS
+    // exports so a future tweak to the lead-in length stays in lockstep across the
+    // visual countdown, the audio ticks, and the audio anchor.
+    const t1 = window.setTimeout(() => setLeadInDigit(2), 1 * LEAD_IN_TICK_INTERVAL_MS)
+    const t2 = window.setTimeout(() => setLeadInDigit(1), 2 * LEAD_IN_TICK_INTERVAL_MS)
     const t3 = window.setTimeout(() => {
       // t=0: lead-in done. Switch to running. SESS-05: session.start() is called HERE,
       // not at the original Start button-press. The session clock begins now.
@@ -133,7 +140,7 @@ export default function App() {
       sessionAnchorMsRef.current = performance.now()
       setAppPhase('running')
       session.start()
-    }, 3000)
+    }, LEAD_IN_DURATION_MS)
     leadInTimeoutsRef.current = [t1, t2, t3]
   }, [appPhase, state.selectedSettings, audioStart, audioStop, audioNow, session, clearLeadInTimeouts])
 
