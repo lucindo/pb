@@ -16,46 +16,67 @@ beforeEach(() => {
 // empty object when `--localstorage-file` is not provided (overriding jsdom's functional
 // Storage). Phase 4 storage tests require a fully-operational Storage instance including
 // `clear()`, and `vi.spyOn(Storage.prototype, 'getItem')` must intercept calls.
-// Strategy: install methods from `Storage.prototype` onto the fake object so spyOn
-// finds them on the prototype chain, then back the storage with a Map.
+//
+// Strategy (WR-01): install methods on `Storage.prototype` so `vi.spyOn` finds them on
+// the prototype chain, but back each fake Storage instance with its OWN Map via a
+// WeakMap keyed on the instance itself. This gives per-instance isolation: localStorage
+// and sessionStorage no longer share a single backing Map (the previous polyfill closed
+// over one `_store` for both, so a write to either store contaminated the other and a
+// `localStorage.clear()` wiped sessionStorage too). The methods read `this` to look up
+// the per-instance Map.
+//
 // Source: 04-RESEARCH.md; observed in Node 25.9.0 + jsdom 29.1.1 combination.
 if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'function') {
-  const _store = new Map<string, string>()
+  const _stores = new WeakMap<object, Map<string, string>>()
 
-  // Create an object whose prototype IS Storage.prototype so that
-  // `vi.spyOn(Storage.prototype, 'getItem')` intercepts calls made via this object.
-  const fakeStorage = Object.create(Storage.prototype) as Storage
+  function storeFor(instance: object): Map<string, string> {
+    let s = _stores.get(instance)
+    if (!s) {
+      s = new Map<string, string>()
+      _stores.set(instance, s)
+    }
+    return s
+  }
 
-  // Provide concrete implementations for every Storage method.
+  function makeFakeStorage(): Storage {
+    const fake = Object.create(Storage.prototype) as Storage
+    // Pre-create the backing Map so `instance.length` works before first write.
+    _stores.set(fake, new Map<string, string>())
+    return fake
+  }
+
+  // Provide concrete implementations on Storage.prototype that read `this` to look up
+  // the per-instance Map. spyOn(Storage.prototype, ...) still intercepts calls.
   Storage.prototype.getItem = function (key: string): string | null {
-    return _store.has(key) ? (_store.get(key) ?? null) : null
+    const s = storeFor(this)
+    return s.has(key) ? (s.get(key) ?? null) : null
   }
   Storage.prototype.setItem = function (key: string, value: string): void {
-    _store.set(key, String(value))
+    storeFor(this).set(key, String(value))
   }
   Storage.prototype.removeItem = function (key: string): void {
-    _store.delete(key)
+    storeFor(this).delete(key)
   }
   Storage.prototype.clear = function (): void {
-    _store.clear()
+    storeFor(this).clear()
   }
   Storage.prototype.key = function (index: number): string | null {
-    return [..._store.keys()][index] ?? null
+    return [...storeFor(this).keys()][index] ?? null
   }
   Object.defineProperty(Storage.prototype, 'length', {
-    get() { return _store.size },
+    get() { return storeFor(this).size },
     configurable: true,
   })
 
   Object.defineProperty(window, 'localStorage', {
     writable: true,
     configurable: true,
-    value: fakeStorage,
+    value: makeFakeStorage(),
   })
   Object.defineProperty(window, 'sessionStorage', {
     writable: true,
     configurable: true,
-    value: Object.create(Storage.prototype) as Storage,
+    value: makeFakeStorage(),
   })
 }
 
