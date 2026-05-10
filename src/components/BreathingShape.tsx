@@ -142,10 +142,13 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
         height: 'var(--orb-size)',
       } as CSSProperties}
     >
-      {/* Outer reference ring (Phase 2 D-04) */}
+      {/* Outer reference ring (Phase 2 D-04 + Phase 5.1 D-10/D-12).
+          Mirrors BreathingShapeBody above — both render sites must match
+          or the Safari outer-ring gap reappears during the 3-2-1 countdown. */}
       <span
         aria-hidden="true"
-        className="orb-ring--outer absolute inset-0 rounded-full border-solid"
+        className="orb-ring--outer absolute rounded-full border-solid"
+        style={{ inset: '-1.5px' }}
       />
       {/* Inner reference ring (Phase 2 D-04) */}
       <span
