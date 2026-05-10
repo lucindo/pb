@@ -281,21 +281,25 @@ export function useAudioCues(
   // cannot recover the AC, escalate to reconstruction inside the SAME gesture
   // chain (Pitfall 2 — no setTimeout/Promise.then between resume and reconstruct).
   const resume = useCallback(async (): Promise<void> => {
-    if (engineRef.current === null) return
+    const engine = engineRef.current
+    if (engine === null) return
     try {
-      await engineRef.current.resume()
+      await engine.resume()
     } catch {
       // The engine's resume() catches internally; this catch covers any
       // synchronous-throw escape route. Fall through to reconstruction.
     }
-    // After the await, the engine's statechange listener may have transitioned
-    // audioStatus back to 'ok' (resume succeeded). If audioStatus is still
-    // 'needs-resume', resume did not recover the AC — escalate to reconstruction
-    // synchronously (still in the gesture context).
-    if (audioStatus === 'needs-resume') {
+    // Plan 06 polish (post-UAT bug fix): read engine.state DIRECTLY instead of
+    // React's audioStatus. The useCallback closure captures a stale audioStatus
+    // value — within this invocation, even a successful resume that flipped
+    // audioCtx.state to 'running' may not have triggered the statechange handler
+    // to call setAudioStatus('ok') by this point (statechange fires async on
+    // iOS Safari). Reading audioCtx.state via engine.state is the live truth
+    // and avoids the spurious reconstruction that kills a recovered AC.
+    if (engine.state !== 'running') {
       await reconstructEngine()
     }
-  }, [audioStatus, reconstructEngine])
+  }, [reconstructEngine])
 
   const setMuted = useCallback((next: boolean): void => {
     setMutedState(next)

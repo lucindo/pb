@@ -43,6 +43,11 @@ export interface AudioEngine {
    *  Idempotent: calling on an already-running AC resolves silently. Short-circuits on closed.
    *  Silently absorbs rejection (D-09). Used by useAudioCues' visibilitychange listener (Phase 5.1 D-01..D-09). */
   resume(): Promise<void>
+  /** Plan 06 polish: live read of audioCtx.state. The hook's public resume() reads this AFTER
+   *  `await engine.resume()` to decide whether reconstruction is required — React's audioStatus
+   *  is closed-over by useCallback and may be stale within the same invocation. Reading
+   *  audioCtx.state directly is the live truth. */
+  readonly state: AudioContextState | 'interrupted'
 }
 
 export interface AudioEngineOptions {
@@ -221,6 +226,10 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
         // Else: silent. No console.debug (discretion #4). The session continues on visuals
         // only — same posture as Phase 3 D-10 and Phase 5 D-09.
       }
+    },
+
+    get state(): AudioContextState | 'interrupted' {
+      return audioCtx.state as AudioContextState | 'interrupted'
     },
   }
 

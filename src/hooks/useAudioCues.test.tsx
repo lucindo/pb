@@ -702,4 +702,65 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     await act(async () => { await result.current.stop() })
     unmount()
   })
+
+  // Post-UAT regression guard (real-iPhone Plan 06 Task 8 cycle 1 — see commit msg).
+  // The pre-fix bug: hook's public resume() read React's audioStatus (stale closure
+  // value from the render that surfaced the affordance). After a SUCCESSFUL
+  // gesture-attached resume — audioCtx.state === 'running' — the closure still saw
+  // audioStatus === 'needs-resume' and escalated to reconstruction, killing the
+  // recovered AC. Fix reads engine.state (live audioCtx.state) instead.
+  it("public resume() success on iOS-style suspended→running transition does NOT reconstruct", async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const reanchorSpy = vi.fn()
+    const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
+    await act(async () => { await result.current.start(samplePlan) })
+    const initialConstructed = constructed
+
+    // Drive audioStatus to 'needs-resume' via the visibility-handler optimistic
+    // resume() rejecting (matches the device-confirmed Plan 06 Task 8 trace).
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.audioStatus).toBe('needs-resume')
+
+    // Gesture-attached resume() — this time engine.resume() SUCCEEDS and flips
+    // audioCtx.state to 'running'. The bug was that the post-await check used
+    // React's audioStatus (stale 'needs-resume') and escalated to reconstruction.
+    // After the fix, the check reads engine.state and sees 'running' → no
+    // reconstruction. statechange listener fires AFTER the await chain (modeled
+    // here by deferring dispatchStateChange to a microtask) so React state
+    // remains 'needs-resume' during the check — proves the fix doesn't rely on
+    // React state being up-to-date.
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'running'
+      // Defer statechange to next macrotask to simulate iOS Safari's async
+      // statechange dispatch. The bug fix MUST not rely on this firing before
+      // the post-await check.
+      setTimeout(() => this.dispatchStateChange(), 0)
+    })
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    // No new AC constructed — reconstruction did NOT fire.
+    expect(constructed).toBe(initialConstructed)
+    // No re-anchor — D-06 preserved when plain resume recovers the AC.
+    expect(reanchorSpy).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
 })
