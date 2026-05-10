@@ -110,7 +110,11 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           right: 0,
           top: 0,
           bottom: 0,
-          transform: `scale(${orbScale})`,
+          // `translate3d(0,0,0)` forces GPU compositor promotion (Firefox
+          // Desktop flickers without this; Safari/Chromium auto-promote).
+          // Order matters: translate3d first so it establishes the 3D
+          // context, scale applies inside it.
+          transform: `translate3d(0,0,0) scale(${orbScale})`,
         }}
       >
         <span
@@ -191,7 +195,8 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
           right: 0,
           top: 0,
           bottom: 0,
-          transform: `scale(${MID_SCALE})`,
+          // GPU promotion (see BreathingShapeBody comment above).
+          transform: `translate3d(0,0,0) scale(${MID_SCALE})`,
         }}
       >
         <span

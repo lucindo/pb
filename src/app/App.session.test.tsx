@@ -161,7 +161,10 @@ describe('running session display', () => {
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     expect(shape).toHaveAttribute('data-phase', 'in')
     const scaleHost = shape.querySelector<HTMLElement>('.orb')
-    expect(scaleHost!.style.transform).toBe('scale(0.79)')
+    // Phase 5.1 Plan 04 post-UAT: transform is `translate3d(0,0,0) scale(...)`
+    // (translate3d added for Firefox GPU promotion). The scale(0.79) substring
+    // is the assertion that matters — D-06 fixed mid-scale invariant.
+    expect(scaleHost!.style.transform).toMatch(/^translate3d\(0(?:px)?,\s*0(?:px)?,\s*0(?:px)?\)\s+scale\(0\.79\)$/)
   })
 })
 
