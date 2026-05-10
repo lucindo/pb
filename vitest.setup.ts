@@ -1,6 +1,53 @@
 import '@testing-library/jest-dom/vitest'
 import { vi } from 'vitest'
 
+// localStorage polyfill — Node 25 ships a built-in localStorage that is a non-functional
+// empty object when `--localstorage-file` is not provided (overriding jsdom's functional
+// Storage). Phase 4 storage tests require a fully-operational Storage instance including
+// `clear()`, and `vi.spyOn(Storage.prototype, 'getItem')` must intercept calls.
+// Strategy: install methods from `Storage.prototype` onto the fake object so spyOn
+// finds them on the prototype chain, then back the storage with a Map.
+// Source: 04-RESEARCH.md; observed in Node 25.9.0 + jsdom 29.1.1 combination.
+if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'function') {
+  const _store = new Map<string, string>()
+
+  // Create an object whose prototype IS Storage.prototype so that
+  // `vi.spyOn(Storage.prototype, 'getItem')` intercepts calls made via this object.
+  const fakeStorage = Object.create(Storage.prototype) as Storage
+
+  // Provide concrete implementations for every Storage method.
+  Storage.prototype.getItem = function (key: string): string | null {
+    return _store.has(key) ? (_store.get(key) ?? null) : null
+  }
+  Storage.prototype.setItem = function (key: string, value: string): void {
+    _store.set(key, String(value))
+  }
+  Storage.prototype.removeItem = function (key: string): void {
+    _store.delete(key)
+  }
+  Storage.prototype.clear = function (): void {
+    _store.clear()
+  }
+  Storage.prototype.key = function (index: number): string | null {
+    return [..._store.keys()][index] ?? null
+  }
+  Object.defineProperty(Storage.prototype, 'length', {
+    get() { return _store.size },
+    configurable: true,
+  })
+
+  Object.defineProperty(window, 'localStorage', {
+    writable: true,
+    configurable: true,
+    value: fakeStorage,
+  })
+  Object.defineProperty(window, 'sessionStorage', {
+    writable: true,
+    configurable: true,
+    value: Object.create(Storage.prototype) as Storage,
+  })
+}
+
 // HTMLDialogElement polyfill — jsdom 29.1.1 does not implement show/showModal/close.
 // Source: 02-RESEARCH.md Pitfall 1 / Code Examples; verified against
 // github.com/jestjs/jest/issues/13010 and github.com/jsdom/jsdom/issues/3294.
