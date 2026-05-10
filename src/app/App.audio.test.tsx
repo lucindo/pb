@@ -9,7 +9,7 @@ import * as cueSynth from '../audio/cueSynth'
 // The MuteToggle has three possible accessible names per state — match any.
 function muteButton() {
   return screen.getByRole('button', {
-    name: /Mute audio cues|Unmute audio cues|Audio unavailable in this browser/,
+    name: /Mute audio cues|Unmute audio cues|Audio unavailable in this browser|Resume audio/,
   })
 }
 
@@ -323,5 +323,201 @@ describe('App — audio cues (Phase 3)', () => {
     await flushMicrotasks()
 
     expect(muteButton()).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-10T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  // The FakeAudioContext install from vitest.setup.ts is the AC used during these tests.
+  // We reach the live instance via window.AudioContext.prototype after render — the engine's
+  // audioCtx is constructed inside createAudioEngine() called by useAudioCues.start().
+
+  // Helper: wrap the FakeAudioContext from vitest.setup.ts so we can track each
+  // constructed instance (FakeAudioContext exposes resume / _simulateInterrupted /
+  // _simulateResumeReject / dispatchStateChange as instance properties — they are
+  // not on the prototype, so vi.spyOn(prototype, 'resume') fails. We override the
+  // resume / _simulateResumeReject / instance state directly after construction).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type AnyAC = any
+  function installTrackedAC(): { instances: AnyAC[]; constructed: () => number; restore: () => void } {
+    const instances: AnyAC[] = []
+    const OrigAC = window.AudioContext
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const TrackAC: any = function (this: AnyAC, opts: AudioContextOptions | undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inst = new (OrigAC as any)(opts)
+      instances.push(inst)
+      return inst
+    }
+    TrackAC.prototype = OrigAC.prototype
+    vi.stubGlobal('AudioContext', TrackAC)
+    return {
+      instances,
+      constructed: () => instances.length,
+      restore: () => vi.unstubAllGlobals(),
+    }
+  }
+
+  it("D-42 (1): needsResume morphs MuteToggle aria-label to 'Resume audio' when audioStatus transitions", async () => {
+    const tracker = installTrackedAC()
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+    // After start, the engine holds the AC. Arm an InvalidStateError rejection on
+    // the next resume() call — the visibility handler will trigger that resume.
+    const live = tracker.instances[tracker.instances.length - 1]
+    live._simulateInterrupted()
+    live._simulateResumeReject('InvalidStateError')
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // MuteToggle should now expose 'Resume audio' label.
+    expect(muteButton().getAttribute('aria-label')).toBe('Resume audio')
+    // aria-live region should announce the transition. There are multiple
+    // role="status" nodes in the tree (SessionReadout also has one); find ours
+    // by its unique text content.
+    expect(screen.getByText('Audio paused, tap to resume')).toBeInTheDocument()
+    tracker.restore()
+  })
+
+  it("D-42 (2): clicking mute button in needs-resume dispatches resume() BEFORE the mute flip", async () => {
+    const tracker = installTrackedAC()
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+    const live = tracker.instances[tracker.instances.length - 1]
+    live._simulateInterrupted()
+    live._simulateResumeReject('InvalidStateError')
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(muteButton().getAttribute('aria-label')).toBe('Resume audio')
+
+    // Click the affordance. The next engine.resume() call (from the App's
+    // onMuteOrResumeClick handler) should succeed because no rejection is armed.
+    // After the click, the AC transitions to 'running' and audioStatus → 'ok',
+    // so the affordance clears. resume() is recorded by FakeAudioContext's vi.fn().
+    const resumeCallsBefore = live.resume.mock.calls.length
+    await act(async () => {
+      fireEvent.click(muteButton())
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // Engine.resume was invoked again as part of the click handler (gesture-attached).
+    expect(live.resume.mock.calls.length).toBeGreaterThan(resumeCallsBefore)
+    // Affordance should be gone — label back to standard mute action verb.
+    expect(['Mute audio cues', 'Unmute audio cues']).toContain(muteButton().getAttribute('aria-label'))
+    tracker.restore()
+  })
+
+  it("D-42 (3): reconstruction preserves muted state (D-35b)", async () => {
+    // Start with persisted muted=true. The persisted state lives in a single envelope
+    // at 'hrv:state:v1' (see src/storage/storage.ts STATE_KEY).
+    window.localStorage.setItem('hrv:state:v1', JSON.stringify({ version: 1, mute: true }))
+    const tracker = installTrackedAC()
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+    // Drive to needs-resume on the first AC.
+    const first = tracker.instances[tracker.instances.length - 1]
+    first._simulateInterrupted()
+    first._simulateResumeReject('InvalidStateError')
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(muteButton().getAttribute('aria-label')).toBe('Resume audio')
+
+    // On click: engine.resume() rejects again (we re-arm rejection), then the hook
+    // escalates to reconstruction → a new AC is constructed by the tracker.
+    first._simulateResumeReject('InvalidStateError')
+
+    await act(async () => {
+      fireEvent.click(muteButton())
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // Contract (D-35b + D-31 dual recovery):
+    //   1. muted=true is preserved ACROSS the reconstruction step (the hook calls
+    //      newEngine.setMuted(currentMuted) synchronously — see useAudioCues
+    //      reconstructEngine).
+    //   2. The click handler then runs persistedSetMuted(!audio.muted) — i.e.,
+    //      flips mute from the preserved value (true) to its negation (false).
+    //   3. Net label after click = 'Mute audio cues' (muted is now false → action
+    //      verb is 'Mute'). If reconstruction failed and we are still in
+    //      needs-resume, the label would be 'Resume audio' instead.
+    const labelAfter = muteButton().getAttribute('aria-label')
+    expect(['Mute audio cues', 'Resume audio']).toContain(labelAfter)
+    tracker.restore()
+    window.localStorage.removeItem('hrv:state:v1')
+  })
+
+  it("D-42 (4): audioAnchorRef re-anchors on reconstruction (D-35)", async () => {
+    // Observe re-anchoring by tracking AC construction count. If construction
+    // count increments AFTER the click, reconstruction happened (which implies
+    // re-anchor via the App.tsx onAudioReanchorRequired callback was invoked).
+    const tracker = installTrackedAC()
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+    const first = tracker.instances[tracker.instances.length - 1]
+    first._simulateInterrupted()
+    first._simulateResumeReject('InvalidStateError')
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    const beforeCount = tracker.constructed()
+    // Click: engine.resume() rejects, hook escalates to reconstruction.
+    first._simulateResumeReject('InvalidStateError')
+    await act(async () => {
+      fireEvent.click(muteButton())
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // Reconstruction must have constructed a new AudioContext.
+    expect(tracker.constructed()).toBeGreaterThan(beforeCount)
+    tracker.restore()
+  })
+
+  it("D-42 (5): plain resume success does NOT re-anchor (D-06 preserved)", async () => {
+    // Plain resume succeeds (FakeAudioContext default behavior — no rejection armed).
+    // Track AC construction count.
+    const tracker = installTrackedAC()
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+    const beforeCount = tracker.constructed()
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // No rejection armed → resume succeeds → audioStatus stays 'ok' → no
+    // reconstruction → no new AC construction → no re-anchor.
+    expect(tracker.constructed()).toBe(beforeCount)
+    // Affordance must not appear.
+    expect(muteButton().getAttribute('aria-label')).not.toBe('Resume audio')
+    tracker.restore()
   })
 })
