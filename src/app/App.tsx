@@ -42,7 +42,8 @@ export default function App() {
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)
 
   // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
-  // - audioAnchorRef.current = audio.audioNow() at t=0 → null if AC unavailable (D-10 fallback)
+  // - audioAnchorRef.current = the firstInAudioTime returned by audioStart (deterministic
+  //   on the audio clock — WR-01) → null if AC unavailable (D-10 fallback)
   // Read by Task 1b's boundary effect to compute each cue's audio-clock time from the breathing plan.
   // (WR-03: the previously-paired sessionAnchorMsRef was orphaned — set in three places, never
   //  read — so it was deleted along with its writes.)
@@ -77,7 +78,6 @@ export default function App() {
   // 'idle' AND destroying the engine that onStartClick had just rebuilt).
   const audioStop = audio.stop
   const audioStart = audio.start
-  const audioNow = audio.audioNow
   const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
 
   // WR-01: Auto-close the confirmation modal when the session leaves the running
@@ -134,8 +134,8 @@ export default function App() {
     // D-09: AudioContext is constructed inside this user-gesture-derived chain.
     const plan = createBreathingPlan(state.selectedSettings)
     planRef.current = plan // stored for Task 1b boundary computation
-    await audioStart(plan)
-    // The returned firstInAudioTime is null if AC failed (D-10) — visuals-only path.
+    const firstInAudioTime = await audioStart(plan)
+    // firstInAudioTime is null if AC failed (D-10) — visuals-only path.
     // The lead-in setTimeout chain still runs in either case so the visual countdown
     // is independent of audio availability.
 
@@ -158,15 +158,20 @@ export default function App() {
       // t=0: lead-in done. Switch to running. SESS-05: session.start() is called HERE,
       // not at the original Start button-press. The session clock begins now.
       setLeadInDigit(null)
-      // Capture dual anchor (Pitfall 2) for boundary-aware audio scheduling in Task 1b.
-      // audioAnchorRef stays null when AC unavailable — Task 1b's effect treats null as
-      // "skip cue scheduling" (D-10 visuals-only fallback).
-      audioAnchorRef.current = audioNow() // null if AC unavailable
+      // WR-01: capture the audio anchor from the deterministic firstInAudioTime returned
+      // by audioStart, NOT from a re-query of audioNow() inside this setTimeout callback.
+      // setTimeout(LEAD_IN_DURATION_MS) overshoots its deadline by 4-16 ms (more under
+      // load); reading audioCtx.currentTime in the overshoot window gave an anchor that
+      // was late by that delta, and every subsequent boundary inherited the drift on top
+      // of the rAF jitter. firstInAudioTime is sample-accurate on the audio clock
+      // (= engine.now() + LEAD_IN_DURATION_SEC at schedule time). null when AC unavailable
+      // → Task 1b's effect treats null as "skip cue scheduling" (D-10 visuals-only fallback).
+      audioAnchorRef.current = firstInAudioTime
       setAppPhase('running')
       session.start()
     }, LEAD_IN_DURATION_MS)
     leadInTimeoutsRef.current = [t1, t2, t3]
-  }, [appPhase, state.selectedSettings, audioStart, audioStop, audioNow, session, clearLeadInTimeouts])
+  }, [appPhase, state.selectedSettings, audioStart, audioStop, session, clearLeadInTimeouts])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
