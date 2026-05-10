@@ -73,7 +73,7 @@ describe('coerceSettings (D-15)', () => {
     // into an object we use as a prototype. Test that a __proto__ key in the raw doesn't
     // propagate to the returned object.
     const polluted = JSON.parse('{"bpm":4,"ratio":"40:60","durationMinutes":10,"__proto__":{"polluted":true}}')
-    const out = coerceSettings(polluted) as Record<string, unknown>
+    const out = coerceSettings(polluted) as unknown as Record<string, unknown>
     expect(out.polluted).toBeUndefined()
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
   })
