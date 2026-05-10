@@ -29,6 +29,16 @@ import {
 
 export type { AudioStatus }
 
+/** Plan 06 D-34: high-level audio-path health for the UI's resume affordance.
+ *  - 'ok': audio is running OR not started yet — no affordance shown.
+ *  - 'needs-resume': iOS Safari left the AC in 'interrupted'/'suspended' after a
+ *    visibility-resume attempt rejected with InvalidStateError. User-tappable
+ *    affordance is required (D-29). Reset to 'ok' once a gesture-attached
+ *    resume or engine reconstruction succeeds (D-30).
+ *  - 'unavailable': terminal — engine closed without recovery. Visuals-only path
+ *    (Phase 3 D-10 fallback). */
+export type AudioStatusFlag = 'ok' | 'needs-resume' | 'unavailable'
+
 export interface UseAudioCues {
   status: AudioStatus
   /** True if the AudioContext was created successfully; false if D-10 fallback path was taken. */
@@ -49,9 +59,22 @@ export interface UseAudioCues {
   /** Returns audioCtx.currentTime, or null if AC unavailable. App.tsx uses this for
    *  the dual-anchor (Pitfall 2). */
   audioNow(): number | null
+  /** Plan 06 D-34: see AudioStatusFlag JSDoc. App.tsx reads this to drive
+   *  MuteToggle's needsResume prop. */
+  audioStatus: AudioStatusFlag
+  /** Plan 06 D-34: gesture-attached recovery seam. App.tsx awaits this from
+   *  inside the mute-button click handler when audioStatus === 'needs-resume'.
+   *  Internally calls engine.resume() first; falls back to engine reconstruction
+   *  (close + new createAudioEngine + setMuted replay + re-anchor signal) if
+   *  resume cannot recover the AC. All chained synchronously inside the click
+   *  handler so the iOS gesture context spans both calls (Pitfall 2). */
+  resume(): Promise<void>
 }
 
-export function useAudioCues(initialMuted?: boolean): UseAudioCues {
+export function useAudioCues(
+  initialMuted?: boolean,
+  onReanchorRequired?: (newAudioAnchor: number) => void,
+): UseAudioCues {
   // Imperative resource — engineRef is NOT in render state because each AC create/close
   // is a side effect, not a UI value. Mirrors useSessionEngine.ts's animationFrameId posture.
   const engineRef = useRef<AudioEngine | null>(null)
@@ -67,6 +90,46 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
   const [muted, setMutedState] = useState<boolean>(initialMuted ?? false)
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
 
+  // Plan 06 D-34: high-level audio-path health surface.
+  const [audioStatus, setAudioStatus] = useState<AudioStatusFlag>('ok')
+
+  // Plan 06 Pitfall 5: gate audioStatus = 'needs-resume' on a prior resume attempt
+  // for THIS suspend cycle. Without this, AC startup's transient 'suspended' → 'running'
+  // transition (Phase 3 WR-06 path) would briefly flash the affordance for one render.
+  // Reset to false on every transition back to 'running' (or on stop()).
+  const visibilityResumeAttemptedRef = useRef<boolean>(false)
+
+  // Plan 06 D-35: re-anchor callback stored in a ref to avoid closure-capture issues
+  // when App.tsx passes a new callback identity per render. The reconstruction path
+  // reads this ref synchronously and invokes the latest callback.
+  const onReanchorRequiredRef = useRef<typeof onReanchorRequired>(onReanchorRequired)
+  useEffect(() => {
+    onReanchorRequiredRef.current = onReanchorRequired
+  }, [onReanchorRequired])
+
+  // Plan 06 D-36 / D-37: statechange listener — single source of truth for audioStatus
+  // transitions. Wired by passing this as { onStateChange } to createAudioEngine().
+  // The cast accepts WebKit's 'interrupted' superset (D-37).
+  const handleStateChange = useCallback(
+    (state: AudioContextState | 'interrupted'): void => {
+      if (state === 'running') {
+        visibilityResumeAttemptedRef.current = false
+        setAudioStatus('ok')
+      } else if (state === 'closed') {
+        setAudioStatus('unavailable')
+      } else if (
+        (state === 'suspended' || state === 'interrupted') &&
+        visibilityResumeAttemptedRef.current
+      ) {
+        // Pitfall 5: gated on a prior resume attempt to suppress startup-time flicker.
+        setAudioStatus('needs-resume')
+      }
+      // Other transitions (e.g., 'suspended' BEFORE any visibility resume) are
+      // ignored — the next visibility-handler call will arm the gate.
+    },
+    [],
+  )
+
   // Cleanup-on-unmount: close the engine if a session is still alive.
   // Pitfall 3 leak guard: rapid mount/unmount during dev/strict-mode would otherwise
   // leak AudioContexts. Browsers cap concurrent ACs (~6 in Chrome) before refusing new ones.
@@ -81,27 +144,28 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
     }
   }, [])
 
-  // Phase 5.1 D-01..D-05, D-08, D-09: visibility-resume listener.
-  // Mirrors useWakeLock.ts:77-100 verbatim — same shape, same gate posture, same
-  // silent-absorb posture. The hook owns its own DOM listener (D-02 keeps audioEngine
-  // free of document.* / window.* access). The single gate is engineRef.current !== null
-  // (D-03 / D-04): if we own a live AC, calling resume() on an already-running AC
-  // resolves silently — same idempotent posture as Phase 5 D-08. After a successful
-  // resume mid-phase, NO make-up cue is fired (D-05): the next In/Out cue plays at
-  // the next phase boundary via App.tsx's existing scheduleNextCue dispatch. The
-  // Phase 3 dual-anchor is NOT re-anchored on resume (D-06).
+  // Phase 5.1 D-01..D-05, D-08, D-09 (Plan 01) + Plan 06 D-39 / Pitfall 5:
+  // visibility-resume listener.
+  // Mirrors useWakeLock.ts:77-100 — same shape, same gate posture. The hook owns
+  // its own DOM listener (D-02 keeps audioEngine free of document.* / window.*
+  // access). The single gate is engineRef.current !== null (D-03 / D-04). Plan 06
+  // adds: visibilityResumeAttemptedRef.current = true BEFORE the void-call. This
+  // arms the Pitfall 5 gate inside handleStateChange so a subsequent
+  // 'suspended'/'interrupted' transition (from the engine's narrowed catch — D-38)
+  // can flip audioStatus = 'needs-resume'. Plan 01 D-09 silent absorption is
+  // preserved — the engine's resume() still catches the rejection internally; what
+  // CHANGED is that InvalidStateError is now surfaced via the onStateChange callback
+  // (D-38) instead of being fully swallowed. D-39: the optimistic resume call is
+  // PRESERVED — sometimes it works without a gesture (headphone in, brief lock,
+  // certain iOS versions). When it rejects, the affordance becomes the user's
+  // recovery path.
   useEffect(() => {
     const onVisibility = (): void => {
-      // Discretion pick #5: use `visibilityState !== 'visible'` for symmetry with
-      // useWakeLock.ts:82. Equivalent to `document.hidden`, but the existing
-      // wakeLock listener uses this expression so future readers see the convention twice.
       if (document.visibilityState !== 'visible') return
-      // D-03 / D-04: single gate is "we own a live AC". Do NOT read audioCtx.state
-      // (unreliable on iOS during the lock window). After stop() nulls engineRef
-      // synchronously, this guard rejects late visibility events — no zombie resumes.
       if (engineRef.current === null) return
-      // D-09: resume() itself is silent on rejection; we still wrap with `void` so
-      // an unexpected synchronous throw cannot escape into React's render lifecycle.
+      // Plan 06 Pitfall 5: arm the gate BEFORE the resume call so a subsequent
+      // 'suspended'/'interrupted' statechange can transition audioStatus.
+      visibilityResumeAttemptedRef.current = true
       void engineRef.current.resume()
     }
     document.addEventListener('visibilitychange', onVisibility)
@@ -122,7 +186,7 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
       }
       setStatus('starting')
       try {
-        const engine = await createAudioEngine()
+        const engine = await createAudioEngine({ onStateChange: handleStateChange })
         engineRef.current = engine
         // Carry the React mute state through to the freshly-built engine in case the user
         // toggled mute before clicking Start (the engine defaults to muted=false too,
@@ -146,7 +210,7 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
         return null
       }
     },
-    [muted],
+    [muted, handleStateChange],
   )
 
   const stop = useCallback(async (): Promise<void> => {
@@ -157,11 +221,81 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
     const engine = engineRef.current
     engineRef.current = null
     firstInCueTimeRef.current = null // WR-05: clear cached anchor for the next start()
+    // Plan 06: reset the audioStatus state machine + Pitfall 5 gate so the next
+    // session starts clean (otherwise a residual 'needs-resume' from a prior
+    // suspend cycle would carry into the new session's first render).
+    visibilityResumeAttemptedRef.current = false
+    setAudioStatus('ok')
     setStatus('idle')
     if (engine !== null) {
       await engine.close() // D-11
     }
   }, [])
+
+  // Plan 06 D-33 / D-35 / D-35b: reconstruction path — close old engine + create
+  // new one + replay muted state + signal re-anchor to App.tsx. ALL await chained
+  // synchronously so the iOS gesture context (entered by the click handler that
+  // called the public resume()) spans both close and createAudioEngine (Pitfall 2).
+  const reconstructEngine = useCallback(async (): Promise<void> => {
+    const oldEngine = engineRef.current
+    const currentMuted = muted
+    // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting close —
+    // mirrors stop()'s posture so a fast call into setMuted() during the window
+    // does not deref a closing AC.
+    engineRef.current = null
+    firstInCueTimeRef.current = null
+
+    if (oldEngine !== null) {
+      await oldEngine.close().catch(() => undefined) // D-09 silent on close failure
+    }
+
+    try {
+      const newEngine = await createAudioEngine({ onStateChange: handleStateChange })
+      engineRef.current = newEngine
+      // D-35b: replay mute state synchronously so the new engine starts with the
+      // user's chosen muted-ness — the React `muted` state was not reset by the
+      // close + new-create cycle.
+      newEngine.setMuted(currentMuted)
+      // D-35: re-anchor signal — the new AC's currentTime starts at 0, so the
+      // dual-anchor (App.tsx audioAnchorRef) MUST be reset against the new origin
+      // or subsequent scheduleNextCue calls will compute against a stale anchor
+      // and silently fail to fire (Phase 3 dual-anchor invariant).
+      onReanchorRequiredRef.current?.(newEngine.now())
+      // The new AC starts in 'running' via the WR-06 constructor path. Set
+      // audioStatus = 'ok' synchronously — the statechange listener will also
+      // fire but may race with the React render.
+      visibilityResumeAttemptedRef.current = false
+      setAudioStatus('ok')
+      setAudioAvailable(true)
+    } catch {
+      // D-10 terminal fallback: createAudioEngine threw (user-agent vetoed
+      // construction, or hardware unavailable). Visuals-only mode.
+      setAudioStatus('unavailable')
+      setAudioAvailable(false)
+    }
+  }, [muted, handleStateChange])
+
+  // Plan 06 D-34: public resume() — invoked from the App.tsx mute-button click
+  // handler when audioStatus === 'needs-resume'. The click IS a user gesture, so
+  // engine.resume() can succeed for 'interrupted' / 'suspended' cases. If it
+  // cannot recover the AC, escalate to reconstruction inside the SAME gesture
+  // chain (Pitfall 2 — no setTimeout/Promise.then between resume and reconstruct).
+  const resume = useCallback(async (): Promise<void> => {
+    if (engineRef.current === null) return
+    try {
+      await engineRef.current.resume()
+    } catch {
+      // The engine's resume() catches internally; this catch covers any
+      // synchronous-throw escape route. Fall through to reconstruction.
+    }
+    // After the await, the engine's statechange listener may have transitioned
+    // audioStatus back to 'ok' (resume succeeded). If audioStatus is still
+    // 'needs-resume', resume did not recover the AC — escalate to reconstruction
+    // synchronously (still in the gesture context).
+    if (audioStatus === 'needs-resume') {
+      await reconstructEngine()
+    }
+  }, [audioStatus, reconstructEngine])
 
   const setMuted = useCallback((next: boolean): void => {
     setMutedState(next)
@@ -189,5 +323,7 @@ export function useAudioCues(initialMuted?: boolean): UseAudioCues {
     setMuted,
     notifyPhaseBoundary,
     audioNow,
+    audioStatus,
+    resume,
   }
 }
