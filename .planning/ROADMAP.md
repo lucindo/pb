@@ -85,8 +85,8 @@ Plans:
   4. Practice stats remain local and descriptive, without account creation or health-outcome claims.
 **Plans**: 4 plans
 Plans:
-- [ ] 04-01-PLAN.md — Storage core: silent-fallback envelope, per-field settings/mute coercion, stats aggregator with D-01 threshold + D-18 injected clock, display formatters, and unit tests.
-- [ ] 04-02-PLAN.md — UI components: StatsFooter (D-08 layout, D-13 44x44 hit area) and ResetStatsDialog (clone of EndSessionDialog with locked D-12 copy), plus component tests.
+- [x] 04-01-PLAN.md — Storage core: silent-fallback envelope, per-field settings/mute coercion, stats aggregator with D-01 threshold + D-18 injected clock, display formatters, and unit tests.
+- [x] 04-02-PLAN.md — UI components: StatsFooter (D-08 layout, D-13 44x44 hit area) and ResetStatsDialog (clone of EndSessionDialog with locked D-12 copy), plus component tests.
 - [ ] 04-03-PLAN.md — App wiring: mount restore, persisted setters, single-write-site stats record, footer + reset dialog rendering, useAudioCues initialMuted parameter, and App.persistence integration tests.
 - [ ] 04-04-PLAN.md — Manual UAT: cross-reload restoration, stats footer + 44x44 hit area in real viewport, reset dialog + stats-only wipe, silent-fallback under Safari Private Browsing.
 **UI hint**: yes
