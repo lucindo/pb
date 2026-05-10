@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 5 complete with S2 Android UAT carry-forward; Phase 5.1 INSERTED for iOS audio + Safari orb fixes before Phase 6
-last_updated: "2026-05-10T15:00:00.000Z"
-last_activity: 2026-05-10 -- Phase 05 closed (security verified, validation Nyquist-compliant, 4/5 UAT PASS); Phase 5.1 inserted
+status: Phase 05 closed; Phase 5.1 (Hands-Off Resilience Polish) inserted next
+stopped_at: Phase 5.1 context gathered
+last_updated: "2026-05-10T16:15:50.282Z"
+last_activity: 2026-05-10 -- Phase 05 closed; Phase 5.1 inserted (iOS audio resume + Safari orb fix)
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 4
   total_plans: 21
   completed_plans: 20
@@ -80,6 +80,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-10T13:04:51.309Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-mobile-hands-off-resilience/05-CONTEXT.md
+Last session: 2026-05-10T16:15:50.265Z
+Stopped at: Phase 5.1 context gathered
+Resume file: .planning/phases/05.1-hands-off-resilience-polish/05.1-CONTEXT.md
