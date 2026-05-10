@@ -37,8 +37,17 @@ export function StatsFooter({ stats, onResetClick }: StatsFooterProps) {
         {formatSessionCount(stats.totalSessions)} · {formatTotalMinutes(stats.totalElapsedSeconds)}{' '}
         total
       </p>
-      <p className="mt-1">
-        {lastLine && <>{lastLine} · </>}
+      {/* WR-04: line 2 wraps the optional "Last: …" text + Reset button in a
+          flex container that handles vertical alignment explicitly. Previously
+          the <p> contained a 44 px inline-flex button inside a 24 px line-height
+          line-box, producing visible asymmetry between line 1 (24 px) and line 2
+          (extended to 44 px only on the line with the button). Using flex with
+          items-center centers the button against the surrounding text without
+          extending the line-box, and `flex-wrap` keeps narrow viewports tidy.
+          A <div role="presentation"> is more semantically appropriate than a
+          <p> because the line is a flex layout container, not a paragraph. */}
+      <div role="presentation" className="mt-1 flex flex-wrap items-center justify-center gap-x-1">
+        {lastLine && <span>{lastLine} ·</span>}
         <button
           type="button"
           onClick={onResetClick}
@@ -46,7 +55,7 @@ export function StatsFooter({ stats, onResetClick }: StatsFooterProps) {
         >
           Reset
         </button>
-      </p>
+      </div>
     </div>
   )
 }
