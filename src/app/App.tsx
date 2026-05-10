@@ -62,11 +62,28 @@ export default function App() {
   // dual-anchor (Phase 3 D-13/D-14) is re-established against the new origin. The new
   // useCallback identity is captured via the hook's onReanchorRequiredRef so closure churn
   // does not bypass the latest callback.
+  //
+  // Plan 06 Task 8 UAT cycle 2 — kitchen-sink fix (2026-05-10): the boundary effect
+  // computes `audioTime = audioAnchor + boundaryStartMs/1000` where boundaryStartMs is
+  // the absolute offset from SESSION start (cycle * cycleMs + maybe inhaleMs). When
+  // reconstruction fires mid-session, the new AC.currentTime ≈ 0 while session-elapsed
+  // has accumulated lockDuration + pre-lock seconds. If we set audioAnchor = newAC.now()
+  // (≈ 0), the formula evaluates to a large audioTime far in the new AC's future and
+  // cues schedule past the visual boundary window (real-device diagnostic showed
+  // deltas growing 9s → 26s → 57s). Subtract the session-elapsed visual offset so the
+  // formula yields audioTime ≈ newAC.currentTime at the upcoming boundary — i.e., the
+  // next cue plays at the right perceptual moment relative to the next visual phase.
+  const sessionFrameRef = useRef(session.currentFrame)
+  useEffect(() => {
+    sessionFrameRef.current = session.currentFrame
+  }, [session.currentFrame])
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number) => {
-    // D-35: write the new AC currentTime to the dual-anchor ref. Subsequent boundary
-    // cues schedule against this new origin. D-35a: do NOT replay lead-in here — the
-    // session continues to the next phase boundary via the existing boundary effect.
-    audioAnchorRef.current = newAudioAnchor
+    const elapsedMs = sessionFrameRef.current?.elapsedMs ?? 0
+    // D-35: write the new AC currentTime (offset by session-elapsed) to the
+    // dual-anchor ref. Subsequent boundary cues schedule against this new
+    // origin. D-35a: do NOT replay lead-in here — the session continues to
+    // the next phase boundary via the existing boundary effect.
+    audioAnchorRef.current = newAudioAnchor - elapsedMs / 1000
   }, [])
   const audio = useAudioCues(initialMute, onAudioReanchorRequired) // Phase 3 + Plan 06 D-35
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)

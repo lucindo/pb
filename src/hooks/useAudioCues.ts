@@ -233,72 +233,83 @@ export function useAudioCues(
   }, [])
 
   // Plan 06 D-33 / D-35 / D-35b: reconstruction path — close old engine + create
-  // new one + replay muted state + signal re-anchor to App.tsx. ALL await chained
-  // synchronously so the iOS gesture context (entered by the click handler that
-  // called the public resume()) spans both close and createAudioEngine (Pitfall 2).
+  // new one + replay muted state + signal re-anchor to App.tsx.
+  //
+  // iOS gesture preservation (Plan 06 Task 8 UAT cycle 2 — kitchen-sink fix
+  // 2026-05-10): the FIRST sync operation after the user-gesture click MUST be
+  // `new AudioContext()` — iOS Safari consumes the gesture activation token at
+  // the first `await`. Awaiting oldEngine.close() before the new AC ran the
+  // construction outside gesture context, so the new AC came up in degraded
+  // (interrupted) state (real-iPhone diagnostic captured this exact sequence:
+  // new AC → 'running' → immediately 'interrupted' after gesture loss).
+  // createAudioEngine() begins with `new AudioContext()` (sync) and only THEN
+  // awaits resume() — that resume() runs inside the new AC's gesture context.
+  // Old engine is closed AFTER the new AC is constructed (fire-and-forget;
+  // close needs no gesture).
   const reconstructEngine = useCallback(async (): Promise<void> => {
     const oldEngine = engineRef.current
     const currentMuted = muted
-    // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting close —
+    // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting —
     // mirrors stop()'s posture so a fast call into setMuted() during the window
     // does not deref a closing AC.
     engineRef.current = null
     firstInCueTimeRef.current = null
 
-    if (oldEngine !== null) {
-      await oldEngine.close().catch(() => undefined) // D-09 silent on close failure
-    }
-
+    let newEngine: AudioEngine | null = null
     try {
-      const newEngine = await createAudioEngine({ onStateChange: handleStateChange })
-      engineRef.current = newEngine
-      // D-35b: replay mute state synchronously so the new engine starts with the
-      // user's chosen muted-ness — the React `muted` state was not reset by the
-      // close + new-create cycle.
-      newEngine.setMuted(currentMuted)
-      // D-35: re-anchor signal — the new AC's currentTime starts at 0, so the
-      // dual-anchor (App.tsx audioAnchorRef) MUST be reset against the new origin
-      // or subsequent scheduleNextCue calls will compute against a stale anchor
-      // and silently fail to fire (Phase 3 dual-anchor invariant).
-      onReanchorRequiredRef.current?.(newEngine.now())
-      // The new AC starts in 'running' via the WR-06 constructor path. Set
-      // audioStatus = 'ok' synchronously — the statechange listener will also
-      // fire but may race with the React render.
-      visibilityResumeAttemptedRef.current = false
-      setAudioStatus('ok')
-      setAudioAvailable(true)
+      newEngine = await createAudioEngine({ onStateChange: handleStateChange })
     } catch {
-      // D-10 terminal fallback: createAudioEngine threw (user-agent vetoed
-      // construction, or hardware unavailable). Visuals-only mode.
+      // D-10 terminal fallback: createAudioEngine threw. Fire-and-forget close
+      // the old engine (gesture already consumed by the failed construction).
+      if (oldEngine !== null) void oldEngine.close()
       setAudioStatus('unavailable')
       setAudioAvailable(false)
+      return
     }
+
+    // Fire-and-forget close of the old AC — gesture token already used for new
+    // AC construction; awaiting close would only delay the recovery (D-09
+    // silent on close failure).
+    if (oldEngine !== null) void oldEngine.close()
+
+    engineRef.current = newEngine
+    // D-35b: replay mute state synchronously so the new engine starts with the
+    // user's chosen muted-ness — the React `muted` state was not reset by the
+    // close + new-create cycle.
+    newEngine.setMuted(currentMuted)
+    // D-35: re-anchor signal — the new AC's currentTime starts at 0, so the
+    // dual-anchor (App.tsx audioAnchorRef) MUST be reset against the new origin
+    // or subsequent scheduleNextCue calls will compute against a stale anchor
+    // and silently fail to fire (Phase 3 dual-anchor invariant). App.tsx
+    // additionally subtracts session-elapsed time so boundary math lands near
+    // the new AC.currentTime instead of in its distant future (kitchen-sink
+    // re-anchor offset fix).
+    onReanchorRequiredRef.current?.(newEngine.now())
+    // The new AC starts in 'running' via the WR-06 constructor path. Set
+    // audioStatus = 'ok' synchronously — the statechange listener will also
+    // fire but may race with the React render.
+    visibilityResumeAttemptedRef.current = false
+    setAudioStatus('ok')
+    setAudioAvailable(true)
   }, [muted, handleStateChange])
 
   // Plan 06 D-34: public resume() — invoked from the App.tsx mute-button click
-  // handler when audioStatus === 'needs-resume'. The click IS a user gesture, so
-  // engine.resume() can succeed for 'interrupted' / 'suspended' cases. If it
-  // cannot recover the AC, escalate to reconstruction inside the SAME gesture
-  // chain (Pitfall 2 — no setTimeout/Promise.then between resume and reconstruct).
+  // handler when audioStatus === 'needs-resume'. The click IS a user gesture
+  // that we use to acquire a fresh AudioContext via reconstruction.
+  //
+  // iOS Safari ground truth (Plan 06 Task 8 UAT cycle 2 — kitchen-sink fix
+  // 2026-05-10): plain engine.resume() returns audioCtx.state === 'running' on
+  // this device class even when the underlying iOS audio session is dead —
+  // AC.currentTime never advances, scheduled cues never fire, beep test
+  // silent. State is a lie; only a freshly-constructed AudioContext inside
+  // gesture context restores audio output. D-31/D-33's spec language is
+  // preserved (gesture-attached recovery + dual-path on mute click); the
+  // mechanism changes from "try resume, fall back to reconstruct" to "always
+  // reconstruct". The cost is negligible (~tens of ms of AC construction +
+  // node setup) and the recovery is reliable.
   const resume = useCallback(async (): Promise<void> => {
-    const engine = engineRef.current
-    if (engine === null) return
-    try {
-      await engine.resume()
-    } catch {
-      // The engine's resume() catches internally; this catch covers any
-      // synchronous-throw escape route. Fall through to reconstruction.
-    }
-    // Plan 06 polish (post-UAT bug fix): read engine.state DIRECTLY instead of
-    // React's audioStatus. The useCallback closure captures a stale audioStatus
-    // value — within this invocation, even a successful resume that flipped
-    // audioCtx.state to 'running' may not have triggered the statechange handler
-    // to call setAudioStatus('ok') by this point (statechange fires async on
-    // iOS Safari). Reading audioCtx.state via engine.state is the live truth
-    // and avoids the spurious reconstruction that kills a recovered AC.
-    if (engine.state !== 'running') {
-      await reconstructEngine()
-    }
+    if (engineRef.current === null) return
+    await reconstructEngine()
   }, [reconstructEngine])
 
   const setMuted = useCallback((next: boolean): void => {

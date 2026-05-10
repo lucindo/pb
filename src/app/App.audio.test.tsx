@@ -393,13 +393,18 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     tracker.restore()
   })
 
-  it("D-42 (2): clicking mute button in needs-resume dispatches resume() BEFORE the mute flip", async () => {
+  it("D-42 (2): clicking mute button in needs-resume reconstructs a fresh AC (kitchen-sink fix)", async () => {
+    // Plan 06 Task 8 UAT cycle 2 (2026-05-10) revealed that plain engine.resume()
+    // returns state='running' on iOS Safari but the underlying audio session is
+    // dead — AC.currentTime never advances, scheduled cues never fire. The
+    // gesture-attached recovery now ALWAYS reconstructs a fresh AC (never just
+    // resumes the old one). This test enforces that contract.
     const tracker = installTrackedAC()
     render(<App />)
     await startAndAdvancePastLeadIn()
-    const live = tracker.instances[tracker.instances.length - 1]
-    live._simulateInterrupted()
-    live._simulateResumeReject('InvalidStateError')
+    const first = tracker.instances[tracker.instances.length - 1]
+    first._simulateInterrupted()
+    first._simulateResumeReject('InvalidStateError')
 
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
     await act(async () => {
@@ -408,19 +413,19 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
       await Promise.resolve()
     })
     expect(muteButton().getAttribute('aria-label')).toBe('Resume audio')
+    const constructedBeforeClick = tracker.constructed()
 
-    // Click the affordance. The next engine.resume() call (from the App's
-    // onMuteOrResumeClick handler) should succeed because no rejection is armed.
-    // After the click, the AC transitions to 'running' and audioStatus → 'ok',
-    // so the affordance clears. resume() is recorded by FakeAudioContext's vi.fn().
-    const resumeCallsBefore = live.resume.mock.calls.length
+    // Click the affordance. The recovery path always reconstructs — a fresh
+    // AudioContext is built inside the gesture context (iOS-safe), and the old
+    // one is fire-and-forget closed. After the click, the affordance clears
+    // (new AC starts in 'running' → audioStatus → 'ok').
     await act(async () => {
       fireEvent.click(muteButton())
       await Promise.resolve()
       await Promise.resolve()
     })
-    // Engine.resume was invoked again as part of the click handler (gesture-attached).
-    expect(live.resume.mock.calls.length).toBeGreaterThan(resumeCallsBefore)
+    // A new AC was constructed by reconstruction.
+    expect(tracker.constructed()).toBeGreaterThan(constructedBeforeClick)
     // Affordance should be gone — label back to standard mute action verb.
     expect(['Mute audio cues', 'Unmute audio cues']).toContain(muteButton().getAttribute('aria-label'))
     tracker.restore()
