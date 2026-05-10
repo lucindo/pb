@@ -22,7 +22,7 @@
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { scheduleInCue, scheduleOutCue, scheduleTick, type CueHandle } from './cueSynth'
 
-export type AudioStatus = 'idle' | 'starting' | 'lead-in' | 'running' | 'failed' | 'closed'
+export type AudioStatus = 'idle' | 'starting' | 'lead-in' | 'failed'
 
 export interface AudioEngine {
   /** Schedule the 3-2-1 lead-in: ticks at startAudioTime + 0/+1/+2 s, first In cue at startAudioTime + 3 s.
