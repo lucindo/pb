@@ -6,6 +6,32 @@
 // in-memory defaults. NO console.warn in production (D-17 says it is "acceptable
 // but not required"); gate on `import.meta.env.DEV` if you add it (Open Question 1).
 
+// WR-05: dual-versioning convention.
+//
+// Two parallel version markers cover different schema-evolution scenarios:
+//
+//   1. STATE_KEY = 'hrv:state:v1'        — the localStorage KEY's :v1 suffix.
+//   2. STATE_VERSION = 1 (in envelope)   — a version field INSIDE the JSON.
+//
+// When to bump which:
+//   - Bump STATE_VERSION (in-envelope) for in-place, migrate-on-read schema
+//     changes that are reachable from v1 data via per-field coercion +
+//     readEnvelope-time migration logic. The user keeps their data; the
+//     storage adapter migrates it.
+//   - Bump STATE_KEY suffix (:v2) for breaking shape changes where v1 data is
+//     unreadable / unmigratable. v2-aware code reads the new key; v1 data is
+//     orphaned (not user-data-loss because we never had cloud sync — they would
+//     just see defaults on first load of the new code).
+//
+// v1 has no migration framework; D-15's per-field coercers absorb soft drift.
+// A migration framework will be added when a non-trivial schema change lands
+// (deferred per 04-CONTEXT.md "Storage schema versioning / migration framework"
+// and 04-RESEARCH.md R-02).
+//
+// Tests should NOT depend on the literal STATE_KEY string; assert through the
+// public load*/save* API where possible. Tests that DO use STATE_KEY directly
+// are seeding fixtures (App.persistence.test.tsx, storage.test.ts) — those are
+// expected to migrate together with the constant if it changes.
 export const STATE_KEY = 'hrv:state:v1'
 export const STATE_VERSION = 1 as const
 
