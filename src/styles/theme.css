@@ -52,7 +52,14 @@
    stuck at scale(0.58)). Without the transition, each per-frame transform
    write applies instantly and the 60fps rAF cadence handles smoothing. */
 .orb {
-  /* No transition — see comment above. Per-frame React updates handle motion. */
+  /* No transition — see comment above. Per-frame React updates handle motion.
+     `will-change: transform` promotes `.orb` to its own compositor layer so
+     per-frame transform writes are GPU-composited rather than triggering
+     main-thread repaints. Without this, Firefox Desktop flickers during
+     scale animation (Safari/Chromium auto-promote transformed elements but
+     Firefox is more conservative). UAT confirmed: Safari Desktop, Safari iOS,
+     and Chrome Desktop are smooth without the hint; Firefox needed it. */
+  will-change: transform;
 }
 
 .orb-layer--in {
