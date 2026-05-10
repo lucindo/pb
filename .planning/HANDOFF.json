@@ -1,62 +1,73 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-09T15:05:48.457Z",
-  "phase": "02",
-  "phase_name": "visual-guide-accessible-responsive-interface",
-  "phase_dir": ".planning/phases/02-visual-guide-accessible-responsive-interface",
-  "plan": null,
-  "task": null,
-  "total_tasks": null,
+  "timestamp": "2026-05-10T20:00:25.394Z",
+  "phase": "05.1",
+  "phase_name": "hands-off-resilience-polish",
+  "phase_dir": ".planning/phases/05.1-hands-off-resilience-polish",
+  "plan": 3,
+  "task": 2,
+  "total_tasks": 4,
   "status": "paused",
   "completed_tasks": [
-    {"id": "02-01", "name": "vitest polyfills + usePrefersReducedMotion hook", "status": "done", "commit": "10fcdcf"},
-    {"id": "02-02", "name": "BreathingShape orb refinement", "status": "done", "commit": "9a677e5"},
-    {"id": "02-03", "name": "a11y / hit-area / focus-ring polish", "status": "done", "commit": "2320119"},
-    {"id": "02-04", "name": "EndSessionDialog (native <dialog> modal)", "status": "done", "commit": "9099335"}
+    {"id": "05.1-01", "name": "iOS Safari audio resume listener (useAudioCues + audioEngine.resume + tests)", "status": "shipped_but_insufficient", "commit": "a988c8c→cced07b→178caaf→e1ac686→f3cc646", "note": "Code matches D-01..D-09 spec exactly. Empirical iOS UAT FAILED — see blocker."},
+    {"id": "05.1-02", "name": "Outer-ring 1.5px border-box compensation", "status": "shipped_superseded", "commit": "85235b5→8fb5057→a0e4f53", "note": "Partial fix; Plan 04 supersedes the .orb sizing piece."},
+    {"id": "05.1-03 Task 1", "name": "Auto regression suite (vitest + tsc)", "status": "PASS", "commit": "e174687", "note": "294/294 tests pass; tsc exit 0. Original was 280; +14 D-24 structural assertions from Plan 04."},
+    {"id": "05.1-03 Task 3", "name": "Safari Desktop orb-to-outer-ring visual UAT", "status": "PASS", "commit": "7e883d6", "note": "After Plan 04 + 5 hotfixes. PASS on Safari Desktop / iOS Safari / Chrome / Firefox-with-FF-01-caveat."},
+    {"id": "05.1-04", "name": "Safari .orb WR-03 sizing re-fix", "status": "shipped", "commit": "9ed80c3→39eee56→52719c0→67c03fb→4f4dea4→9e4889e→b717175→425fa5a", "note": "Final form: 4-edge anchoring + transition removed + will-change:transform + inline translate3d(0,0,0) scale(s). Kitchen-sink (scale3d + backface-visibility) reverted at user request."}
   ],
   "remaining_tasks": [
-    {"id": "review-fix", "name": "Fix code-review findings (1 BLOCKER + 4 WARNING; INFO optional)", "status": "not_started"},
-    {"id": "human-uat", "name": "Complete 5-item perceptual UAT on real devices", "status": "not_started"}
+    {"id": "05.1-03 Task 2", "name": "iOS Safari audio resume after lock/unlock — REAL DEVICE UAT", "status": "BLOCKED — Plan 01 fix empirically inadequate; needs root-cause diagnosis"},
+    {"id": "05.1-03 Task 4", "name": "Phase 1-5 regression sweep on real Safari", "status": "not_started", "note": "Skip Phase 5 wake-lock check on iPhone-over-HTTP; use macOS Safari for that piece."},
+    {"id": "05.1-03 sign-off", "name": "Fill Sign-off block in 05.1-UAT.md", "status": "not_started"},
+    {"id": "05.1-03 SUMMARY.md", "name": "Create plan summary after UAT closes", "status": "not_started"},
+    {"id": "Phase verification + completion", "name": "Final goal-backward verification + STATE.md/ROADMAP.md close", "status": "not_started"},
+    {"id": "05.1-05", "name": "Inner-ring UX symmetry (Issue B) — separate discuss→plan→execute cycle", "status": "deferred until 5.1-03 closes"}
   ],
   "blockers": [
     {
-      "description": "CR-01 (BLOCKER): theme.css :87-93 reduced-motion rule sets `transform: none !important` which silently overrides BreathingShape's inline `transform: scale(0.79)`. Real users with prefers-reduced-motion: reduce see orb at full 1.0 scale, not D-06 mid-scale. Test passes only because it asserts `style.transform` (inline) not computed style. Fix: drop `transform: none !important`, keep `transition: none !important`.",
+      "description": "Plan 05.1-01 audio-resume fix does NOT actually resume audio on real iPhone iOS Safari. Symptoms: <30s lock → session continues running, AC apparently dead, mute/unmute toggle doesn't restore audio, only starting a NEW session restores audio. ≥30s lock → iOS discards the tab entirely (full reload to setup screen — out of app's reach). The Plan 01 spec assumed iOS only SUSPENDS the AudioContext on lock; empirical behavior is that iOS likely CLOSES the AC, so audioCtx.resume() rejects (silently absorbed per D-09) and there's no recovery path without reconstructing the engine.",
       "type": "technical",
-      "workaround": "none — must fix in src/styles/theme.css"
+      "workaround": "Diagnose first via Mac+iPhone Safari Web Inspector to confirm audioCtx.state ('suspended' vs 'closed') after unlock + whether visibilitychange→visible fires + whether engine.resume() is called and resolves vs rejects."
     },
     {
-      "description": "WR-01: App.tsx modal stays open if timed session auto-completes while dialog is showing — no effect syncs endDialogOpen with state.status transitions away from running",
-      "type": "technical",
-      "workaround": "add useEffect that closes dialog when status !== running"
+      "description": "iOS Safari ≥30s background discard. Tab is killed under memory pressure; React/JS state is lost. Plan 01 cannot help here. Phase 4 persistence restores user-facing settings, which is the maximum recovery possible without redesigning around server-side session state. Document as known iOS limitation; not a Plan 01 bug.",
+      "type": "external",
+      "workaround": "None at app level. Document in UAT log."
     },
     {
-      "description": "WR-02: EndSessionDialog rebinds `cancel` listener on every parent render because App recreates confirmEnd/cancelEnd each render (no useCallback). Hundreds of addEventListener/removeEventListener per second during running session.",
+      "description": "Firefox Desktop scale-animation flicker (FF-01) — slight residual flicker during orb scaling. Mitigation stack applied (will-change + translate3d) reduced but did not eliminate. Kitchen-sink (scale3d + backface-visibility) was reverted at user request. Phase 5.1 success criterion #2 names Safari only; Firefox is not a primary target. Acceptable as carry-forward to v1.x or Phase 6.",
       "type": "technical",
-      "workaround": "wrap App's confirmEnd/cancelEnd in useCallback OR move listener-binding into stable ref pattern"
-    },
-    {
-      "description": "WR-03: Inner reference ring in BreathingShape.tsx:44-52 has no inset/top/left — centering relies on grid auto-positioning of an absolutely-positioned child (browser-dependent, untested)",
-      "type": "technical",
-      "workaround": "add explicit inset-0 + margin: auto OR remove `absolute` and let grid place it"
-    },
-    {
-      "description": "WR-04: SessionReadout outer <section> and inner <div role=status> both carry aria-label='Session readout' — screen readers announce twice on entry",
-      "type": "technical",
-      "workaround": "drop one of the two aria-labels"
+      "workaround": "Logged in 05.1-UAT.md Task 3 Caveats section. Real fix likely requires CSS-keyframe-driven animation instead of per-frame React inline transform writes — out of Phase 5.1 budget."
     }
   ],
   "human_actions_pending": [
-    {"action": "Run 5-item perceptual UAT on real devices (iPhone SE / mid-Android + Chrome/Safari/iOS Safari)", "context": ".planning/phases/02-visual-guide-accessible-responsive-interface/02-HUMAN-UAT.md — items: reduced-motion crossfade calmness, 44x44 hit-area comfort, above-the-fold layout, palette contrast, focus-ring readability", "blocking": true},
-    {"action": "Decide whether to apply CR-01 fix manually or via /gsd-code-review 02 --fix", "context": "BLOCKER contradicts D-06 reduced-motion intent; real users impacted; recommend fix before phase close", "blocking": true}
+    {
+      "action": "User runs Mac+iPhone Safari Web Inspector diagnostic on the audio resume bug. Connect iPhone to Mac via USB; Safari menu → Develop → [iPhone] → inspect the running tab. Capture: (1) audioCtx.state value after unlock, (2) whether the 'visibilitychange' event fires on unlock (add console.log in onVisibility handler temporarily, OR set a breakpoint), (3) whether engine.resume() resolves or rejects, (4) any console errors during lock/unlock cycle.",
+      "context": "Determines which of three root causes is real: (a) AC closed not suspended → need full engine reconstruction, (b) listener not firing → need different event hook, (c) resume() succeeds but cue scheduler events stale → need re-anchoring on resume. Choice between Plan 05.1-06 designs depends on this answer.",
+      "blocking": true
+    },
+    {
+      "action": "User runs UAT Task 4 (Phase 1-5 regression sweep) on real Safari (desktop OR iOS) after Task 2 audio-resume bug is resolved. Skip the wake-lock part on iPhone-over-HTTP; use macOS Safari over localhost for wake-lock check. Record per-phase PASS/FAIL with notes in 05.1-UAT.md Task 4 block.",
+      "context": "Phase 5.1 success criterion #3: Phase 1-5 must remain green. Auto suite (Task 1) is PASS; manual sweep on real Safari is the human-verification half.",
+      "blocking": true
+    },
+    {
+      "action": "User fills Sign-off block in 05.1-UAT.md and types 'approved' (or describes failure mode for plan-checker escalation).",
+      "context": "Phase 5.1 closes only when sign-off is written.",
+      "blocking": true
+    }
   ],
   "decisions": [
-    {"decision": "Reconstructed 02-03 SUMMARY.md from agent's structured handoff post-merge", "rationale": "Sandbox blocked git add on .planning/ paths inside the executor subagent; SUMMARY metadata captured verbatim from agent report; verification commands re-run by orchestrator confirm reported results", "phase": "02"},
-    {"decision": "Recovery merge of wave-2 stray branch into main with --no-ff", "rationale": "Initial merge loop drifted HEAD off main onto worktree-agent-a5d3057adcf4e4332 branch (root cause unclear; possibly --amend interaction). All 02-02/02-03 source commits + 02-02 SUMMARY were on stray branch. Re-merged from main; subsequent wave-3 merge added explicit branch verification.", "phase": "02"},
-    {"decision": "Phase config set during session: model_profile=balanced, all workflow toggles On except auto_advance/skip_discuss/research_before_questions/tdd_mode/intel/graphify (Off). Branching=none. Worktrees=on.", "rationale": "User selected Recommended defaults via /gsd-config", "phase": "02"}
+    {"decision": "Phase 5.1 was inserted AFTER Phase 5 closed, to hold the carry-forward defects from 05-04-UAT-LOG.md Findings 1+2 (orb visual gap + iOS audio resume).", "rationale": "Surgical scope; doesn't reopen Phase 5 milestone.", "phase": "05.1"},
+    {"decision": "Plan 05.1-04 was inserted AFTER Task 3 of Plan 03 UAT FAILED on Safari Desktop. Plan 02's 1.5px border fix was insufficient — root cause was deeper grid+abs-pos sizing collapse.", "rationale": "Web Inspector data showed .orb width = 209px (58% of 360 container) due to WR-03 quirk on absolutely-positioned grid children with inset-0 on Safari Desktop.", "phase": "05.1"},
+    {"decision": "Plan 04 final form: 4-edge anchoring (left:0/right:0/top:0/bottom:0, NOT width:100%/height:100%) on .orb + drop the .orb {transition: transform 200ms} + will-change:transform + inline translate3d(0,0,0) scale(s). 5 commits of iteration.", "rationale": "Initial Plan 04 used width:100%/height:100% which sized correctly but FROZE Safari's transform transition (computed stuck at scale(0.58) despite inline scale(0.99) — Safari restarts transition on every inline-style reassignment when sizing properties are present). Removing transition + 4-edge anchoring fixed Safari/iOS/Chrome. Firefox needed GPU-promotion hints (will-change + translate3d combo) to suppress flicker; kitchen-sink scale3d + backface-visibility was reverted as marginal.", "phase": "05.1"},
+    {"decision": "Plan 05.1-05 (Issue B inner-ring UX symmetry — out-phase has no 'approaching boundary' cue) is DEFERRED until Plan 5.1-03 closes and Plan 01 audio bug is resolved.", "rationale": "Out-of-scope for Plan 02 per D-11 (inner ring untouched). User chose to expand Phase 5.1 to include it via separate discuss→plan→execute cycle. Sequence: fix audio bug → close UAT → ship 05.1-04 visual fixes (already shipped) → spec/plan/execute 05.1-05.", "phase": "05.1"}
   ],
   "uncommitted_files": [
-    ".planning/phases/02-visual-guide-accessible-responsive-interface/02-PATTERNS.md (untracked — present pre-session, not produced this run)"
+    ".planning/phases/02-visual-guide-accessible-responsive-interface/02-PATTERNS.md",
+    ".planning/phases/05-mobile-hands-off-resilience/SECURITY.md",
+    ".planning/ui-reviews/"
   ],
-  "next_action": "Run /gsd-code-review 02 --fix to auto-apply CR-01 BLOCKER + 4 WARNINGs (skip INFO) — OR fix theme.css:87-93 manually first then continue. After fixes land, run perceptual UAT on real device per 02-HUMAN-UAT.md and update its statuses. Phase will close once verification re-runs to status=passed.",
-  "context_notes": "Phase 2 plans 4/4 complete and merged on main. Tests 78/78 green, tsc clean, build clean. Verifier returned status=human_needed (24/24 automated must-haves passed; 5 perceptual UAT items pending). Code reviewer found 1 BLOCKER + 4 WARNING + 4 INFO. The BLOCKER (CR-01) is real — reduced-motion users see wrong orb size. The phase is technically complete but should NOT be marked Complete in ROADMAP until CR-01 is fixed and HUMAN-UAT is signed. STATE.md still says status=executing; ROADMAP plan_count=4/summary_count=4/status=Complete (set by SDK after wave 3) but real phase-level Complete gate is verification + UAT."
+  "next_action": "User runs Mac+iPhone Safari Web Inspector diagnostic on the audio-resume bug (see human_actions_pending #1). Goal: determine audioCtx.state after iOS Safari unlock — is it 'suspended' (resume() should work; bug elsewhere) or 'closed' (need engine reconstruction)? Once answered, agent specs Plan 05.1-06 to fix the audio bug accordingly, OR scopes the bug as carry-forward to v1.x. After audio fix lands, user runs Task 4 regression sweep + writes sign-off block. Then agent creates 05.1-03-SUMMARY, closes Phase 5.1, and routes to Plan 05.1-05 (Issue B).",
+  "context_notes": "Phase 5.1 was scoped as a surgical 2-3 plan polish phase; it has now consumed 4 plans + 8+ commits of post-UAT iteration on Plan 04 + an uncovered Plan 01 spec inadequacy. The scope-creep path was driven entirely by real-device UAT findings, all of which were correct calls — no rework was wasted. The orb visual fix is empirically solid across 4 browsers (Firefox flicker is a known caveat). The audio fix is the remaining blocker. Plan 01 code matches its spec verbatim; the spec itself underestimated iOS Safari's auto-close behavior on lock. Diagnosis-then-decide is the right next move (vs preemptively shipping Plan 05.1-06)."
 }
