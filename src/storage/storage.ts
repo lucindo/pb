@@ -30,9 +30,20 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
     if (raw === null) return { ...EMPTY_ENVELOPE }
     const parsed: unknown = JSON.parse(raw)
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      // D-17: shape is `unknown` here — downstream coerceSettings / coerceMute / coerceStats
-      // do per-field validation. We only check "is an object" here.
-      return { ...(parsed as Envelope), version: STATE_VERSION }
+      // CR-01: pick ONLY the three known subtree keys; drop everything else
+      // (unknown / drifted / oversized fields injected via DevTools or future-schema
+      // drift). The downstream coercers (coerceSettings / coerceMute / coerceStats)
+      // do per-field validation on each subtree before consumers read it. By NOT
+      // spreading `parsed`, we ensure save-after-load is idempotent for valid data
+      // and discards drift instead of re-persisting it (D-15 invariant for the
+      // round-trip semantics — bad fields are dropped, not re-saved).
+      const p = parsed as Record<string, unknown>
+      return {
+        version: STATE_VERSION,
+        settings: p.settings,
+        mute: p.mute,
+        stats: p.stats,
+      }
     }
     return { ...EMPTY_ENVELOPE }
   } catch {
