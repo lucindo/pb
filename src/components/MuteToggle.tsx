@@ -10,30 +10,38 @@
 export interface MuteToggleProps {
   muted: boolean
   audioAvailable: boolean
+  /** Plan 06 D-32: when true, button morphs into a resume affordance —
+   *  refresh-arrow glyph + aria-label 'Resume audio'. Priority: audioAvailable=false
+   *  outranks; muted is ignored in label and aria-pressed is undefined. */
+  needsResume?: boolean
   onToggle(): void
 }
 
-export function MuteToggle({ muted, audioAvailable, onToggle }: MuteToggleProps) {
-  // D-10: when audioAvailable is false, the toggle is disabled and the label
-  // explains why. Otherwise D-06 action-verb labels (Mute / Unmute) describe
-  // what the click will do, not the current state.
+export function MuteToggle({ muted, audioAvailable, needsResume, onToggle }: MuteToggleProps) {
+  // Plan 06 D-32: label priority — unavailable > needsResume > muted/unmuted.
+  // Phase 3 D-10 'unavailable' takes highest priority and outranks needsResume because
+  // in practice the hook's audioStatus state machine makes them mutually exclusive
+  // (audioStatus='unavailable' suppresses 'needs-resume') — but the priority order
+  // is defensive against any future state surface change.
   const label = !audioAvailable
     ? 'Audio unavailable in this browser'
-    : muted
-      ? 'Unmute audio cues'
-      : 'Mute audio cues'
+    : needsResume
+      ? 'Resume audio'
+      : muted
+        ? 'Unmute audio cues'
+        : 'Mute audio cues'
 
   return (
     <button
       type="button"
-      aria-pressed={muted}
+      aria-pressed={needsResume ? undefined : muted}
       aria-label={label}
       title={label}
       disabled={!audioAvailable}
       onClick={onToggle}
       className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
     >
-      {muted ? <SpeakerSlashIcon /> : <SpeakerIcon />}
+      {needsResume ? <ResumeIcon /> : muted ? <SpeakerSlashIcon /> : <SpeakerIcon />}
     </button>
   )
 }
@@ -83,6 +91,32 @@ function SpeakerSlashIcon() {
       {/* Slash overlay (X over the waves) */}
       <line x1="22" y1="9" x2="16" y2="15" />
       <line x1="16" y1="9" x2="22" y2="15" />
+    </svg>
+  )
+}
+
+// Plan 06 D-32 / discretion #1: refresh-arrow glyph for the resume affordance.
+// Calm/meditative — suggests "resume" not "warning"; no red, no alarm. Same 24×24
+// viewBox + currentColor stroke convention as SpeakerIcon / SpeakerSlashIcon
+// (Pattern G — single icon-bundling convention across the component).
+function ResumeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* Refresh arc */}
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      {/* Arrowhead */}
+      <polyline points="3 3 3 8 8 8" />
     </svg>
   )
 }
