@@ -13,6 +13,10 @@ export interface SessionControlsProps {
   // produces a half-broken toggle: all three must be defined or none render.
   muted?: boolean
   audioAvailable?: boolean
+  /** Plan 06 D-32: when true, MuteToggle morphs into a Resume affordance. The
+   *  click handler at the App level dispatches audio.resume() synchronously
+   *  inside the gesture chain before flipping mute (D-31/D-33). */
+  needsResume?: boolean
   onMuteToggle?(): void
 }
 
@@ -22,6 +26,7 @@ export function SessionControls({
   onEnd,
   muted,
   audioAvailable,
+  needsResume,
   onMuteToggle,
 }: SessionControlsProps) {
   const isRunning = status === 'running'
@@ -63,6 +68,7 @@ export function SessionControls({
       <MuteToggle
         muted={muted}
         audioAvailable={audioAvailable}
+        needsResume={needsResume}
         onToggle={onMuteToggle}
       />
     </div>

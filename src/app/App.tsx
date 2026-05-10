@@ -48,7 +48,27 @@ export default function App() {
   const session = useSessionEngine(initialSettings)
   const { state } = session
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
-  const audio = useAudioCues(initialMute) // Phase 3: audio engine; Phase 4: restores persisted mute
+  // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
+  // - audioAnchorRef.current = the firstInAudioTime returned by audioStart (deterministic
+  //   on the audio clock — WR-01) → null if AC unavailable (D-10 fallback)
+  // Read by Task 1b's boundary effect to compute each cue's audio-clock time from the breathing plan.
+  // (WR-03: the previously-paired sessionAnchorMsRef was orphaned — set in three places, never
+  //  read — so it was deleted along with its writes.)
+  // Plan 06: declared BEFORE useAudioCues so the onAudioReanchorRequired callback (which
+  // writes audioAnchorRef.current on engine reconstruction — D-35) can close over the ref.
+  const audioAnchorRef = useRef<number | null>(null)
+  // Plan 06 D-35: pass the re-anchor receiver — fires on engine reconstruction (NOT plain
+  // resume). The callback writes the new AC's currentTime to audioAnchorRef.current so the
+  // dual-anchor (Phase 3 D-13/D-14) is re-established against the new origin. The new
+  // useCallback identity is captured via the hook's onReanchorRequiredRef so closure churn
+  // does not bypass the latest callback.
+  const onAudioReanchorRequired = useCallback((newAudioAnchor: number) => {
+    // D-35: write the new AC currentTime to the dual-anchor ref. Subsequent boundary
+    // cues schedule against this new origin. D-35a: do NOT replay lead-in here — the
+    // session continues to the next phase boundary via the existing boundary effect.
+    audioAnchorRef.current = newAudioAnchor
+  }, [])
+  const audio = useAudioCues(initialMute, onAudioReanchorRequired) // Phase 3 + Plan 06 D-35
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
@@ -67,14 +87,6 @@ export default function App() {
   }, [appPhase, state.selectedSettings])
   // null when not in lead-in OR when the lead-in has reached t=0 (the In phase label takes over).
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)
-
-  // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
-  // - audioAnchorRef.current = the firstInAudioTime returned by audioStart (deterministic
-  //   on the audio clock — WR-01) → null if AC unavailable (D-10 fallback)
-  // Read by Task 1b's boundary effect to compute each cue's audio-clock time from the breathing plan.
-  // (WR-03: the previously-paired sessionAnchorMsRef was orphaned — set in three places, never
-  //  read — so it was deleted along with its writes.)
-  const audioAnchorRef = useRef<number | null>(null)
 
   // CR-01: cancel-during-lead-in race guard. onStartClick is async (awaits AC creation).
   // Between setAppPhase('lead-in') and the await resolving, the user can re-click — the
@@ -143,6 +155,23 @@ export default function App() {
     audioSetMuted(next)
     saveMute(next)
   }, [audioSetMuted])
+
+  // Plan 06 D-31 / D-33: gesture-attached recovery click handler.
+  // When audioStatus === 'needs-resume', the click IS a user gesture — chain
+  // audio.resume() synchronously inside this handler so the iOS gesture context
+  // spans the engine.resume() (and any escalation to reconstruction inside
+  // useAudioCues.resume()) call (Pitfall 2 — no setTimeout/Promise.then break
+  // between the click event and audio.resume()).
+  // D-31: also fires for unmute clicks during needs-resume — a user who
+  // instinctively un-mutes after lock/unlock gets recovery for free.
+  // When audioStatus !== 'needs-resume', this collapses to the pre-Plan-06
+  // persistedSetMuted(!audio.muted) behavior verbatim.
+  const onMuteOrResumeClick = useCallback(async () => {
+    if (audio.audioStatus === 'needs-resume') {
+      await audio.resume()
+    }
+    persistedSetMuted(!audio.muted)
+  }, [audio.audioStatus, audio.resume, audio.muted, persistedSetMuted])
 
   // WR-01: Auto-close the confirmation modal when the session leaves the running
   // state on its own (e.g. timer reaches the end while the modal is open). Without
@@ -456,8 +485,20 @@ export default function App() {
             onEnd={requestEnd}
             muted={audio.muted}
             audioAvailable={audio.audioAvailable}
-            onMuteToggle={() => persistedSetMuted(!audio.muted)}
+            needsResume={audio.audioStatus === 'needs-resume'}
+            onMuteToggle={onMuteOrResumeClick}
           />
+          {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
+              Lives at the App level (discretion #6) so the announcement fires once on
+              transition, not on every MuteToggle re-render. Empty string when not in
+              needs-resume mode — React's reconciler suppresses no-op updates. */}
+          <div
+            role="status"
+            aria-live="polite"
+            className="sr-only"
+          >
+            {audio.audioStatus === 'needs-resume' ? 'Audio paused, tap to resume' : ''}
+          </div>
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Timing stays local to this browser and continuously alternates In and Out with no
             pause segment.
