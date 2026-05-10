@@ -45,6 +45,15 @@ export interface AudioEngine {
   resume(): Promise<void>
 }
 
+export interface AudioEngineOptions {
+  /** Plan 06 D-36: receives every audioCtx.state transition. The hook listens
+   *  and pushes the value into React state. Engine stays React-free per D-02.
+   *  Cast accepts WebKit's 'interrupted' superset (D-37). Fires from:
+   *  (a) the wired addEventListener('statechange') — every transition;
+   *  (b) the resume() catch when err.name === 'InvalidStateError' (D-38). */
+  onStateChange?: (state: AudioContextState | 'interrupted') => void
+}
+
 // D-08: soft fade-out tail when muting mid-cue.
 // timeConstant 0.05 → ~150 ms perceptual decay (3× constant — see 03-RESEARCH.md Pattern 5).
 const MUTE_FADE_TIME_CONSTANT = 0.05
@@ -79,7 +88,7 @@ function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
 
 /** Create a new AudioContext + engine. MUST be called from a user-gesture path (D-09).
  *  Throws (rejects) if AudioContext construction fails (D-10 caller branch). */
-export async function createAudioEngine(): Promise<AudioEngine> {
+export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<AudioEngine> {
   // D-09: AudioContext is constructed here, which is invoked synchronously from the
   // Start session click handler in App.tsx (Plan 04). The browser autoplay policy MUST
   // see a fresh user-gesture chain or AC will start in 'suspended'.
@@ -98,6 +107,14 @@ export async function createAudioEngine(): Promise<AudioEngine> {
       throw err
     }
   }
+
+  // Plan 06 D-36: single statechange listener — drives the hook's state machine.
+  // Cast accepts WebKit's 'interrupted' superset (D-37). The listener is REMOVED inside
+  // close() BEFORE audioCtx.close() to prevent a 'closed' event firing after unmount.
+  const onStateChange = (): void => {
+    opts.onStateChange?.(audioCtx.state as AudioContextState | 'interrupted')
+  }
+  audioCtx.addEventListener('statechange', onStateChange)
 
   // WR-08: track ALL in-flight cues (lead-in ticks + In/Out bowls), not just the
   // most recent one. Mute mid-lead-in must silence the remaining ticks too —
@@ -176,6 +193,9 @@ export async function createAudioEngine(): Promise<AudioEngine> {
     async close(): Promise<void> {
       if (closed) return
       closed = true
+      // Plan 06 D-36: remove the statechange listener BEFORE close() so a final
+      // 'closed' transition does not fire after the hook has nulled engineRef.
+      audioCtx.removeEventListener('statechange', onStateChange)
       // Pitfall 8: in-flight cue tails (up to ~5× decayTimeConstant) ring out via the audio
       // thread's already-scheduled gain ramps. We close immediately and trust those ramps
       // to drain naturally. D-11: closing AudioContext releases the system audio resources.
@@ -186,10 +206,20 @@ export async function createAudioEngine(): Promise<AudioEngine> {
       if (closed) return
       try {
         await audioCtx.resume()
-      } catch {
-        // D-09: silently absorb. Browser veto, AC race against close, etc.
-        //       The session continues on visuals only — same posture as Phase 3 D-10
-        //       and Phase 5 D-09. No console.debug per discretion #4.
+      } catch (err) {
+        // Plan 06 D-38: narrow the Plan 01 D-09 silent-absorb posture. The specific
+        // iOS-Safari failure mode is `DOMException { name: 'InvalidStateError' }`
+        // raised when resume() is invoked from a non-gesture context (the
+        // visibilitychange listener qualifies as non-gesture on iOS Safari per device
+        // diagnostic 05.1-UAT.md Task 2). Surface THIS error class via the state-change
+        // callback so the hook can transition to 'needs-resume' and surface the
+        // user-tappable affordance (D-29). All other errors continue silent-absorb
+        // (Plan 01 D-09 preserved for unknown failure modes).
+        if ((err as DOMException)?.name === 'InvalidStateError') {
+          opts.onStateChange?.(audioCtx.state as AudioContextState | 'interrupted')
+        }
+        // Else: silent. No console.debug (discretion #4). The session continues on visuals
+        // only — same posture as Phase 3 D-10 and Phase 5 D-09.
       }
     },
   }

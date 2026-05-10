@@ -86,6 +86,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
@@ -209,6 +212,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
@@ -246,6 +252,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', SlowCloseAC)
 
@@ -284,6 +293,9 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn()
       createBiquadFilter = vi.fn()
+      // Plan 06: engine wires a statechange listener at construction.
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
     }
     vi.stubGlobal('AudioContext', CountingAC)
 
