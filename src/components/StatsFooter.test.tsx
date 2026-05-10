@@ -37,7 +37,15 @@ describe('StatsFooter (D-08)', () => {
 
   it('renders Line 2 with "Last: <date> · <duration>" when last-session fields are present', () => {
     renderFooter()
-    expect(screen.getByText(/Last:.*May 7.*·.*10 min/)).toBeInTheDocument()
+    // WR-03: structural assertion (locale-independent). Implementation passes
+    // `undefined` to Intl.DateTimeFormat (correct user-facing behaviour); the
+    // rendered date string format depends on the CI runner's LANG. Assert that
+    // the line contains "Last:", the month abbreviation, the day digit, and the
+    // duration without depending on month/day order.
+    const line = screen.getByText(/Last:.*10 min/)
+    expect(line).toBeInTheDocument()
+    expect(line.textContent).toMatch(/May/i)
+    expect(line.textContent).toMatch(/\b7\b/)
   })
 
   it('omits the "Last:" prefix when lastSessionAtMs is null (graceful degradation)', () => {

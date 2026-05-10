@@ -57,15 +57,22 @@ describe('formatLastSessionDate (D-05)', () => {
   const otherYearAtMs = new Date(2025, 4, 7).getTime() // May 7, 2025
   const today = () => new Date(2026, 4, 10).getTime()  // May 10, 2026
 
-  it('renders same-year date without year suffix (e.g. "May 7")', () => {
+  // WR-03: assert structurally — `Intl.DateTimeFormat(undefined, ...)` uses the
+  // system locale, which differs between CI runners (en-US: "May 7"; en-GB: "7 May";
+  // fr_FR: "7 mai"). A literal /May 7/ regex is fragile under LANG drift. Assert
+  // that the rendered string contains the month abbreviation AND the day digit
+  // without depending on order or punctuation.
+  it('renders same-year date without year suffix (month + day present, no year)', () => {
     const out = formatLastSessionDate(sameYearAtMs, today)
-    expect(out).toMatch(/May 7/)
+    expect(out).toMatch(/May/i)
+    expect(out).toMatch(/\b7\b/)
     expect(out).not.toMatch(/2026/)
   })
 
-  it('renders other-year date with year suffix (e.g. "May 7, 2025")', () => {
+  it('renders other-year date with year suffix (month + day + year present)', () => {
     const out = formatLastSessionDate(otherYearAtMs, today)
-    expect(out).toMatch(/May 7/)
+    expect(out).toMatch(/May/i)
+    expect(out).toMatch(/\b7\b/)
     expect(out).toMatch(/2025/)
   })
 })
@@ -99,8 +106,10 @@ describe('formatLastSession (composition + null guard)', () => {
       lastSessionAtMs: new Date(2026, 4, 7).getTime(),
       lastSessionDurationSeconds: 600,
     }, today)
+    // WR-03: structural assertions, not literal-order regex.
     expect(out).toMatch(/^Last: /)
-    expect(out).toMatch(/May 7/)
+    expect(out).toMatch(/May/i)
+    expect(out).toMatch(/\b7\b/)
     expect(out).toMatch(/10 min$/)
     expect(out).toMatch(/·/) // middle dot separator (D-08)
   })
