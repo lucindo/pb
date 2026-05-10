@@ -41,13 +41,12 @@ export default function App() {
   // null when not in lead-in OR when the lead-in has reached t=0 (the In phase label takes over).
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)
 
-  // Anchors for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
+  // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
   // - audioAnchorRef.current = audio.audioNow() at t=0 → null if AC unavailable (D-10 fallback)
-  // - sessionAnchorMsRef.current = performance.now() at t=0 → matches what useSessionEngine
-  //   captures internally when session.start() runs in the same setTimeout callback.
   // Read by Task 1b's boundary effect to compute each cue's audio-clock time from the breathing plan.
+  // (WR-03: the previously-paired sessionAnchorMsRef was orphaned — set in three places, never
+  //  read — so it was deleted along with its writes.)
   const audioAnchorRef = useRef<number | null>(null)
-  const sessionAnchorMsRef = useRef<number | null>(null)
 
   // The breathing plan captured at session start. Stored in a ref so Task 1b's boundary effect
   // can read cycleMs/inhaleMs/exhaleMs to compute boundary start times (per Pitfall 2 fix from
@@ -106,7 +105,6 @@ export default function App() {
       setLeadInDigit(null)
       setAppPhase('idle')
       audioAnchorRef.current = null
-      sessionAnchorMsRef.current = null
       planRef.current = null
       void audioStop()
       return
@@ -137,7 +135,6 @@ export default function App() {
       // audioAnchorRef stays null when AC unavailable — Task 1b's effect treats null as
       // "skip cue scheduling" (D-10 visuals-only fallback).
       audioAnchorRef.current = audioNow() // null if AC unavailable
-      sessionAnchorMsRef.current = performance.now()
       setAppPhase('running')
       session.start()
     }, LEAD_IN_DURATION_MS)
@@ -197,7 +194,6 @@ export default function App() {
       setAppPhase('idle')
       clearLeadInTimeouts()
       audioAnchorRef.current = null
-      sessionAnchorMsRef.current = null
       planRef.current = null
       lastBoundaryKeyRef.current = null
     }
