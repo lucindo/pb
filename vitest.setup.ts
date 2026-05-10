@@ -185,6 +185,9 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
     suspend = vi.fn(async () => {
       this.state = 'suspended'
     })
+    _simulateSuspend = (): void => {
+      this.state = 'suspended'
+    }
     close = vi.fn(async () => {
       this.state = 'closed'
     })
