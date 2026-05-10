@@ -198,3 +198,32 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
     value: FakeAudioContext,
   })
 }
+
+// navigator.wakeLock polyfill — jsdom 29.1.1 does not implement the Screen Wake Lock API.
+// Source: D-13 + 05-RESEARCH.md Pattern 3 (polyfill-and-spy); WakeLock / WakeLockSentinel /
+// WakeLockType types are bundled in TypeScript 6.0.2 lib.dom.d.ts — no @types/ package needed.
+// Per-test failure paths use `vi.spyOn(navigator.wakeLock, 'request').mockRejectedValueOnce(...)`
+// and per-test API-absent paths use `Object.defineProperty(navigator, 'wakeLock', { value: undefined, configurable: true, writable: true })`.
+if (typeof navigator !== 'undefined' && !('wakeLock' in navigator)) {
+  class FakeWakeLockSentinel extends EventTarget {
+    type: WakeLockType = 'screen'
+    released = false
+    onrelease: ((this: WakeLockSentinel, ev: Event) => any) | null = null
+
+    async release(): Promise<void> {
+      if (this.released) return
+      this.released = true
+      const event = new Event('release')
+      if (this.onrelease) this.onrelease.call(this as unknown as WakeLockSentinel, event)
+      this.dispatchEvent(event)
+    }
+  }
+
+  Object.defineProperty(navigator, 'wakeLock', {
+    writable: true,
+    configurable: true, // allow per-test vi.stubGlobal / Object.defineProperty override (D-09 failure-path tests)
+    value: {
+      request: vi.fn(async (_type?: WakeLockType) => new FakeWakeLockSentinel()),
+    },
+  })
+}
