@@ -64,10 +64,18 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
         height: 'var(--orb-size)',
       } as CSSProperties}
     >
-      {/* D-04: outer reference ring at MAX_SCALE boundary */}
+      {/* D-04 + Phase 5.1 D-10/D-12: outer reference ring at MAX_SCALE boundary.
+          The 1.5px border (theme.css `.orb-ring--outer { border-width: 1.5px }`) lives
+          INSIDE the box under the global `border-box` sizing. With `inset-0` the border's
+          outer edge sat 1.5px inside the 100% container; the orb at scale(MAX_SCALE = 1.0)
+          fills the 100% container exactly, leaving a Safari-visible gap at peak inhale.
+          `inset: -1.5px` shifts the border-box outward by exactly the border width so the
+          border's outer edge meets the orb at scale(1.0) on Safari + Chromium + Firefox.
+          Mirror in BreathingShapeLeadIn below — both render sites must match (D-12). */}
       <span
         aria-hidden="true"
-        className="orb-ring--outer absolute inset-0 rounded-full border-solid"
+        className="orb-ring--outer absolute rounded-full border-solid"
+        style={{ inset: '-1.5px' }}
       />
       {/* D-04: inner reference ring at MIN_SCALE boundary.
           WR-03: position explicitly with left/top + translate centering rather
