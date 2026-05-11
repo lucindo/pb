@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0.1
 milestone_name: Code Review Patch
-status: executing
+status: ready_to_plan
 stopped_at: Phase 8 UI-SPEC approved
 last_updated: "2026-05-11T18:08:53.547Z"
 last_activity: 2026-05-11 -- Phase 08 execution started
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
   completed_plans: 4
-  percent: 67
+  percent: 33
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 — v1.0.1 milestone opened)
 
 ## Current Position
 
-Phase: 08 (storage-forward-compat-cross-tab-ui-sync) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 08
-Last activity: 2026-05-11 -- Phase 08 execution started
+Phase: 9
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-11
 
 **Milestone invariant:** `npm run test` must keep passing 363/363 Vitest tests at every phase boundary. `npm run build` and `tsc --noEmit` must exit 0. No new user-facing features.
 
@@ -54,6 +54,7 @@ Last activity: 2026-05-11 -- Phase 08 execution started
 | 06 | 4 | - | - |
 | 7 (v1.0.1) | 0 | - | - |
 | 07 | 4 | - | - |
+| 08 | 2 | - | - |
 
 ## Accumulated Context
 
