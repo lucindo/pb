@@ -43,7 +43,7 @@ export const LEARN_CONTENT: LearnContent = {
     },
     forrest: {
       title: 'Who is Forrest Knutson',
-      body: "Forrest Knutson is a teacher who has shared HRV breathing practice for many years on YouTube. This is an independent web app inspired by Forrest's teachings, made so anyone can follow a calm paced breath from a browser. The links below point to his channel, his site, and hand-picked starting videos.",
+      body: "Forrest Knutson is a Kriya Yoga guru, meditation teacher, author, and online educator best known for simplifying ancient yogic and contemplative practices for modern audiences. Through his videos and teachings, he explains techniques related to breathwork, meditation, nervous system regulation, and spiritual development. His work is appreciated for combining practical instruction with clear, science-informed explanations that make complex spiritual concepts more accessible.\n\nThis is an independent web app inspired by Forrest's teachings, made so anyone can follow a calm paced breath from a browser. The links below point to his channel, his site, and hand-picked starting videos.",
     },
   },
   links: {

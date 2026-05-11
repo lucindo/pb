@@ -88,7 +88,9 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
           </div>
           <div>
             <h3 className="text-base font-semibold text-slate-900">{explainer.forrest.title}</h3>
-            <p className="text-base leading-6 text-slate-700">{explainer.forrest.body}</p>
+            {explainer.forrest.body.split('\n\n').map((paragraph, idx) => (
+              <p key={idx} className="text-base leading-6 text-slate-700 [&:not(:first-of-type)]:mt-2">{paragraph}</p>
+            ))}
           </div>
         </div>
 
