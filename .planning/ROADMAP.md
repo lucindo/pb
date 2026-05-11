@@ -140,7 +140,7 @@ Plans:
 - [x] 06-01-PLAN.md — [BLOCKING] Gather deferred Forrest URLs (channel, website, hero video + title, 0–5 key videos + titles) from the user and stamp them into `06-URLS.md`; book URL pre-locked at `https://amzn.to/3RTAVqi`.
 - [x] 06-02-PLAN.md — Create `src/content/learnContent.ts` typed content asset with drafted three-section explainer prose (locked phrase `inspired by Forrest's teachings` in section 3) + five-item link record + contract tests.
 - [x] 06-03-PLAN.md — Implement `src/components/LearnDialog.tsx` (native `<dialog>` clone of `ResetStatsDialog` — three explainer sections + link block + two disclaimer micro-lines + Close button with default focus) + D-19 unit tests (Esc/backdrop close, default focus on Close, every link `target="_blank" rel="noopener noreferrer"`, locked phrase + disclaimer copy assertions).
-- [ ] 06-04-PLAN.md — Create `src/components/LearnAnchor.tsx` (page-level fixed top-right `Learn` button — D-04 44×44 padding floor + D-21 focus-visible ring + D-03 aria-disabled + JSX-layer no-op click during session view) with D-18 invariant tests, then wire `<LearnAnchor>` + `<LearnDialog>` + `learnDialogOpen` state into `src/app/App.tsx`.
+- [x] 06-04-PLAN.md — Create `src/components/LearnAnchor.tsx` (page-level fixed top-right `Learn` button — D-04 44×44 padding floor + D-21 focus-visible ring + D-03 aria-disabled + JSX-layer no-op click during session view) with D-18 invariant tests, then wire `<LearnAnchor>` + `<LearnDialog>` + `learnDialogOpen` state into `src/app/App.tsx`.
 **UI hint**: yes
 
 ## Progress
