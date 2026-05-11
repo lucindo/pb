@@ -157,7 +157,11 @@ describe('useAudioCues', () => {
 
     outSpy.mockClear()
     act(() => {
-      result.current.notifyPhaseBoundary({ newPhase: 'out', audioTime: 8 })
+      result.current.notifyPhaseBoundary({
+        newPhase: 'out',
+        audioTime: 8,
+        phaseDurationSec: samplePlan.exhaleMs / 1000,
+      })
     })
 
     expect(outSpy).toHaveBeenCalledTimes(1)
@@ -626,7 +630,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
 
     // Now invoke the public resume() — it should call engine.resume() (rejects again),
     // then reconstructEngine() → close old + new SpyableAC + setMuted + onReanchorRequired.
-    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (_this: SpyableAC) {
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      void this
       const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
       throw err
     })
@@ -667,7 +672,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       await Promise.resolve()
     })
     // Public resume() — first call rejects, escalates to reconstruction.
-    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (_this: SpyableAC) {
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      void this
       throw new DOMException('Failed', 'InvalidStateError')
     })
     // Spy on setMuted at the prototype level — must be invoked with currentMuted=true on the new engine.
