@@ -135,3 +135,181 @@ describe('useSessionEngine', () => {
     openEnded.unmount()
   })
 })
+
+// Phase 10 HOOKS-03 / HOOKS-04 / HOOKS-02 identity contracts.
+// Locks the new currentFrame per-phase-stable identity (D-03), the liveFrame
+// per-rAF identity (D-04), the top-of-tick cancel-guard (D-10), and the
+// engine-owned runningSnapshotRef writer (D-06/D-07/D-08). The 5 existing
+// tests in the describe block above are preserved verbatim — this block is
+// strictly additive per CONTEXT D-13 / D-20 (with PATTERNS.md drift correction:
+// EXTEND existing .tsx, do NOT create a new .ts).
+describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('currentFrame identity is stable across renders within the same phase (HOOKS-03 D-03)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+
+    act(() => {
+      result.current.start()
+    })
+
+    const firstFrame = result.current.currentFrame
+    expect(firstFrame).not.toBeNull()
+    expect(firstFrame?.phase).toBe('in')
+
+    // Advance ~1s — well under the In phase length (~4.36s at bpm 5.5, ratio 40:60).
+    // Multiple rAF ticks fire but cycleIndex+phase do not change.
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+
+    // Identity preserved by the primitives-only useMemo deps. SessionReadout
+    // boundary effect dep arrays that include `currentFrame` no longer re-run
+    // per rAF as a result.
+    expect(result.current.currentFrame).toBe(firstFrame)
+
+    unmount()
+  })
+
+  it('currentFrame identity changes at a phase boundary (HOOKS-03 D-03)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+
+    act(() => {
+      result.current.start()
+    })
+
+    const inFrame = result.current.currentFrame
+    expect(inFrame?.phase).toBe('in')
+
+    // Cross into the Out phase. Inhale duration ≈ 4363ms at bpm 5.5 ratio 40:60.
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+
+    const outFrame = result.current.currentFrame
+    expect(outFrame?.phase).toBe('out')
+    // Identity changed because `phase` changed; the useMemo recomputed.
+    expect(outFrame).not.toBe(inFrame)
+
+    unmount()
+  })
+
+  it('liveFrame identity changes per rAF while currentFrame stays stable (HOOKS-03 D-04)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+
+    act(() => {
+      result.current.start()
+    })
+
+    const live1 = result.current.liveFrame
+    const stable1 = result.current.currentFrame
+    expect(live1).not.toBeNull()
+    expect(stable1).not.toBeNull()
+
+    // Advance well inside the In phase so cycleIndex + phase do not change.
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+
+    const live2 = result.current.liveFrame
+    const stable2 = result.current.currentFrame
+    // liveFrame is a per-render-cycle direct read — identity churns by design.
+    expect(live2).not.toBe(live1)
+    // currentFrame stays the same `===` reference across renders within a phase.
+    expect(stable2).toBe(stable1)
+
+    unmount()
+  })
+
+  it('liveFrame.phaseProgress advances within a phase (HOOKS-03 D-04)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+
+    act(() => {
+      result.current.start()
+    })
+
+    const p1 = result.current.liveFrame?.phaseProgress ?? -1
+    expect(p1).toBeGreaterThanOrEqual(0)
+
+    // Advance ~1s within the In phase (~4.36s long). phaseProgress monotonically
+    // increases across rAF ticks; the live frame reflects the per-frame value.
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+
+    const p2 = result.current.liveFrame?.phaseProgress ?? -1
+    expect(p2).toBeGreaterThan(p1)
+
+    unmount()
+  })
+
+  it('rAF cancel-guard: tick after teardown is a no-op (HOOKS-04 D-10)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+
+    act(() => {
+      result.current.start()
+    })
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+
+    const frameBeforeUnmount = result.current.currentFrame
+    // Sanity: at least one rAF tick ran successfully before teardown.
+    expect(frameBeforeUnmount).not.toBeNull()
+
+    unmount()
+
+    // After unmount, the effect cleanup ran (cancelled=true; cancelAnimationFrame
+    // fired). A subsequent advanceTimersByTime that surfaces any in-flight rAF
+    // callback must short-circuit at the top-of-tick `if (cancelled) return`
+    // guard — no setState observed, no act() warning emitted. The negative
+    // assertion is implicit via clean test runner output; this test's value is
+    // exercising the code path under fake timers so a regression that removed
+    // the guard would surface as a console.error from React.
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+  })
+
+  it('runningSnapshotRef.current is populated while running and nulled on transition out (HOOKS-02 D-06/D-07/D-08)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+
+    // Idle baseline — the hook hasn't written to the ref yet.
+    expect(result.current.runningSnapshotRef.current).toBeNull()
+
+    act(() => {
+      result.current.start()
+    })
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+
+    const snap = result.current.runningSnapshotRef.current
+    expect(snap).not.toBeNull()
+    // The key derives from startedAtMs per D-07.
+    expect(snap?.key).toBe(String(snap?.startedAtMs))
+    // lastElapsedMs reflects the rAF tick value (allow some jitter — fake
+    // timers advance setState across multiple rAF callbacks so the snapshot
+    // captures the latest known elapsed inside the setState updater per D-08;
+    // ≥ 900 keeps the assertion robust against the ~16ms per-frame quantum).
+    expect(snap?.lastElapsedMs).toBeGreaterThanOrEqual(900)
+
+    // End the session — the rAF effect's early-return branch nulls the ref
+    // on transition out of running (D-06).
+    act(() => {
+      result.current.end()
+    })
+
+    expect(result.current.runningSnapshotRef.current).toBeNull()
+
+    unmount()
+  })
+})
+

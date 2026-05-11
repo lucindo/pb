@@ -553,11 +553,11 @@ export default function App() {
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           <BreathingShape
-            frame={appPhase === 'running' ? session.currentFrame : null}
+            frame={appPhase === 'running' ? session.liveFrame : null}
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
           />
           <SessionReadout
-            frame={leadInPlaceholderFrame ?? session.currentFrame}
+            frame={leadInPlaceholderFrame ?? session.liveFrame}
             // During lead-in, the underlying state.status may still be 'complete'
             // from the prior session (session.start() doesn't fire until t3).
             // Override to 'idle' so SessionReadout renders the placeholder
