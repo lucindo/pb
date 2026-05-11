@@ -544,7 +544,7 @@ export default function App() {
               relaxes that decision and surfaces LEARN-04 framing on the practice
               screen too. The phrase matches D-14's modal-only line verbatim. */}
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            This is guided breathing practice — not medical advice.
+            Guided breathing practice — not medical advice.
           </p>
         </div>
         {!inSessionView && stats.totalSessions > 0 && (

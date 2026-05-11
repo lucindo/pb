@@ -153,7 +153,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
         {/* D-14 amendment (2026-05-10, user-approved): the medical-advice
             micro-line was moved from this modal to the main breathing card
             (D-15 amendment). Only the affiliation micro-line remains here. */}
-        <p className="text-xs text-[var(--color-breathing-muted)]">
+        <p className="text-center text-xs text-[var(--color-breathing-muted)]">
           Independent project. Not affiliated with Forrest Knutson.
         </p>
 
