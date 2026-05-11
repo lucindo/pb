@@ -71,6 +71,7 @@ Recent decisions affecting current work:
 
 - Phase 7 verified complete; Phase 8 awaits `/gsd-discuss-phase 8`.
 - `2026-05-11-missing-favicon-404-in-console` — ui — index.html references `/favicon.svg` but no asset shipped → 404 in console (cosmetic).
+- `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — ui — Out-phase inner reference ring still rendered under reduced motion (minor; violates D-06/D-07 reduced-motion contract).
 
 ### Blockers/Concerns
 
