@@ -27,7 +27,12 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
     if (!dialog) return
     if (open && !dialog.open) {
       dialog.showModal()
-      closeButtonRef.current?.focus()
+      // Reset scroll to the top so the dialog opens at its first content row
+      // (without this, focusing Close at the bottom auto-scrolls the dialog).
+      dialog.scrollTop = 0
+      // preventScroll: true keeps the focus on Close (T-06-08) without forcing
+      // the dialog to scroll the button into view.
+      closeButtonRef.current?.focus({ preventScroll: true })
     } else if (!open && dialog.open) {
       dialog.close()
     }
@@ -63,7 +68,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
       ref={dialogRef}
       aria-labelledby="learn-dialog-title"
       onClick={handleBackdropClick}
-      className="modal-fade m-auto max-w-sm rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-auto w-[calc(100vw-2rem)] max-w-lg rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
         <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-slate-950">About this practice</h2>
@@ -153,7 +158,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
 
         {/* T-06-08 mitigation: default focus lands here (Close), not on any link.
             Prevents accidental Enter dispatching navigation on a Forrest link. */}
-        <div className="flex justify-end">
+        <div className="flex justify-center">
           <button
             ref={closeButtonRef}
             type="button"
