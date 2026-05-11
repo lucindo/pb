@@ -86,7 +86,7 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
   5. `useWakeLock.request()` no-ops the second concurrent caller via an in-flight ref and cleanly releases a freshly-acquired sentinel if `release()` / unmount ran during the await; second-caller-leak and unmount-during-await scenarios are covered by Vitest.
   6. Full Vitest suite passes; new tests cover the reconstruction race, boundary clamp, lead-in `null`, oscillator disconnect, and wake-lock concurrency.
 **Plans**: 2 plans (wave 1 engine-layer → wave 2 hook+App-layer; Plan 02 depends on Plan 01 for the SAFE_LEAD_SEC export and the scheduleLeadIn: number | null return type)
-  - [ ] 09-01-PLAN.md — Wave 1 engine-layer: AUDIO-02 engine-side clamp + `SAFE_LEAD_SEC` export, AUDIO-03 `scheduleLeadIn` returns null when closed, AUDIO-04 cueSynth `osc.onended { once: true }` chain disconnect, AUDIO-06 `AudioStatus` union tightening, WAKELOCK-01 in-flight ref + post-await sentinel handoff (wave 1, 3 tasks)
+  - [x] 09-01-PLAN.md — Wave 1 engine-layer: AUDIO-02 engine-side clamp + `SAFE_LEAD_SEC` export, AUDIO-03 `scheduleLeadIn` returns null when closed, AUDIO-04 cueSynth `osc.onended { once: true }` chain disconnect, AUDIO-06 `AudioStatus` union tightening, WAKELOCK-01 in-flight ref + post-await sentinel handoff (wave 1, 3 tasks)
   - [ ] 09-02-PLAN.md — Wave 2 hook+App-layer: AUDIO-01 `reconstructGenerationRef` + stop/unmount bumps + post-await bail, AUDIO-05 `handleStateChange` single null gate, AUDIO-03 hook-side null propagation, AUDIO-06 hook-side `setStatus('starting')` removal + docstring rewrite, AUDIO-02 caller-side clamp at App.tsx:504 (wave 2, depends on 09-01, 2 tasks)
 
 ### Phase 10: Hooks Identity & Effect Hygiene
