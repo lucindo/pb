@@ -55,6 +55,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 Deferred to future release. Tracked but not in current roadmap.
 
+> **Next-milestone immediate priorities (user-captured 2026-05-11):**
+> An **Appearance / Settings area** (umbrella surface) hosting CUST-01 (themes / colours), CUST-02 (sound timbre options — Flute as the named alternative), CUST-03 (visual guide variants — Meditator, Lungs, alternate expanding/retracting shapes), and I18N-01 (language switch). Plus **PWA-01** (mobile home-screen install with app icon) and **PATT-02** (BPM stretch / ramp session). Treat this cluster as the spine of the next milestone.
+
 ### Session
 
 - **SESS-06**: User can pause and resume a running session.
@@ -77,11 +80,13 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### PWA & Offline
 
-- **PWA-01**: User can install or use the app offline after core web behavior is stable.
+- **PWA-01**: User can install or use the app offline after core web behavior is stable. Includes the mobile **Add to Home Screen** flow, the manifest (`name`, `short_name`, `theme_color`, `background_color`, `display: standalone`), and the full app-icon set (favicon variants, 192 / 512 maskable PNGs, Apple touch icon). May require a dedicated app logo asset.
 
 ### Customization
 
-- **CUST-01**: User can choose alternate themes, animation styles, audio timbres, or display options.
+- **CUST-01**: User can choose between theme / colour palettes (e.g. the current pastel teal, plus one or more alternate calm palettes). Lives inside an `Appearance / Settings` umbrella surface (planner picks the navigation gesture — full settings page vs. expandable drawer vs. modal vs. a tab inside the Learn anchor).
+- **CUST-02**: User can pick the audio cue timbre. v1 ships a single bowl-like tone; v2 adds at least **Flute** as a named alternative, with the option to add further calm timbres later (e.g. soft pad, harmonic chime). Selection is persisted in the same `localStorage` namespace as mute.
+- **CUST-03**: User can pick the visual guide. v1 ships the abstract orb (with reduced-motion fallback); v2 adds at least **Meditator** and **Lungs** silhouettes, plus the option to add further expanding/retracting shape or effect variants. Each variant honors `prefers-reduced-motion` and shares the engine's frame contract — they are presentation-only swaps.
 
 ### Biofeedback
 
@@ -89,11 +94,12 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Localization
 
-- **I18N-01**: User can use the app in multiple languages after English v1.
+- **I18N-01**: User can use the app in multiple languages after English v1. Surfaces inside the `Appearance / Settings` umbrella as a language switch. Reuses Phase 6's section-keyed content shape (`learnContent.ts`) and extends the pattern to the rest of the page copy.
 
 ### Advanced Patterns
 
 - **PATT-01**: User can use advanced custom ratios, holds, or multi-stage breathing programs.
+- **PATT-02**: User can run a **BPM stretch session** — picks an `initialBpm`, a `targetBpm`, a `holdInitialSeconds` (or minutes) warm-up where BPM stays at `initialBpm`, then the engine slowly walks BPM toward `targetBpm` with a step strictly **smaller than 0.5 BPM** (so the transition is sub-perceptual), and finally holds at `targetBpm` for a `holdTargetSeconds` cool-down. The total session duration is the sum of the three segments (or open-ended on the target hold). Only enabled for sessions long enough to make the ramp meaningful (planner picks the minimum-duration gate). The ramp interpolation runs on the same engine timing clock as v1 so the dual-anchor audio invariants (Phase 3 D-13/D-14) keep holding across BPM changes.
 
 ## Out of Scope
 
