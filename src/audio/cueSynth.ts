@@ -101,9 +101,10 @@ function scheduleBowlCue(
 
   let stopAt: number
   let cleanupAt: number
-  if (needsSustain && phaseDurationSec !== undefined) {
+  if (needsSustain) {
     // Hard fade-out in the last lead window so the floor does not bleed into
     // the next phase's strike.
+    // phaseDurationSec is always defined when needsSustain is true per the outer condition at line 88.
     const phaseEnd = when + phaseDurationSec
     const fadeStart = phaseEnd - PHASE_END_FADE_OUT_LEAD_SEC
     envelope.gain.setTargetAtTime(NEAR_SILENCE, fadeStart, PHASE_END_FADE_OUT_TAU)

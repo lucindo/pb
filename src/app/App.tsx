@@ -191,7 +191,7 @@ export default function App() {
       await audio.resume()
     }
     persistedSetMuted(!audio.muted)
-  }, [audio.audioStatus, audio.resume, audio.muted, persistedSetMuted])
+  }, [audio, persistedSetMuted])
 
   // WR-01: Auto-close the confirmation modal when the session leaves the running
   // state on its own (e.g. timer reaches the end while the modal is open). Without
@@ -408,7 +408,6 @@ export default function App() {
           ? state.completedAtMs - snap.startedAtMs
           : snap.lastElapsedMs
         const updated = recordSession(elapsedMs, isComplete)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStats(updated)
         recordedSessionKeyRef.current = snap.key
       }
