@@ -72,6 +72,8 @@ describe('audioEngine', () => {
   it('createAudioEngine rejects when AudioContext construction throws (D-10 anchor)', async () => {
     vi.stubGlobal(
       'AudioContext',
+      // Reason: test stub — constructor-only class simulates a browser that denies AudioContext.
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class {
         constructor() {
           throw new Error('blocked')
@@ -246,7 +248,7 @@ describe('audioEngine', () => {
     const engine = await createAudioEngine()
     await engine.close()
     inSpy.mockClear()
-    expect(() => engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })).not.toThrow()
+    expect(() => { engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 }) }).not.toThrow()
     expect(inSpy).not.toHaveBeenCalled()
   })
 
@@ -287,6 +289,8 @@ describe('audioEngine', () => {
       sampleRate = 44100
       destination = {}
       currentTime = 0
+      // Reason: async required to match AudioContext.resume() Promise<void> signature; state assignment is the async side-effect.
+      // eslint-disable-next-line @typescript-eslint/require-await
       resume = vi.fn(async () => { probeState = 'running' })
       close = vi.fn(async () => {})
       createOscillator = vi.fn()

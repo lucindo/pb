@@ -44,7 +44,11 @@ describe('cueSynth', () => {
   it('scheduleInCue applies strike-and-decay envelope', () => {
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
 
     expect(setValue).toHaveBeenCalledWith(0.18, 1.0)
@@ -64,7 +68,10 @@ describe('cueSynth', () => {
     scheduleInCue(ac, 1.0, ac.destination)
 
     for (const osc of oscillators) {
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const startMock = osc.start as unknown as ReturnType<typeof vi.fn>
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const stopMock = osc.stop as unknown as ReturnType<typeof vi.fn>
       expect(startMock).toHaveBeenCalledWith(1.0)
       const stopArg = stopMock.mock.calls[0]?.[0] as number
@@ -95,6 +102,8 @@ describe('cueSynth', () => {
   it('scheduleOutCue uses decay timeConstant 1.8 (longer than In)', () => {
     const ac = createAc()
     const handle = scheduleOutCue(ac, 1.0, ac.destination)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
     expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, 1.8)
   })
@@ -115,6 +124,7 @@ describe('cueSynth', () => {
 
     expect(oscillators).toHaveLength(1)
     // Reason: length asserted by toHaveLength(1) immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(oscillators[0]!.type).toBe('square')
   })
 
@@ -157,16 +167,21 @@ describe('cueSynth', () => {
 
     expect(filters).toHaveLength(1)
     // Reason: length asserted by toHaveLength(1) immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(filters[0]!.type).toBe('lowpass')
     // Reason: length asserted by toHaveLength(1) above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(filters[0]!.frequency.value).toBe(3000)
     // Reason: length asserted by toHaveLength(1) above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(filters[0]!.Q.value).toBe(0.5)
   })
 
   it('peakGain is well below 1.0 to leave headroom', () => {
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
     const peakArg = setValue.mock.calls[0]?.[0] as number
     expect(peakArg).toBeLessThanOrEqual(0.25)
@@ -184,6 +199,8 @@ describe('cueSynth', () => {
   it('scheduleInCue with no phaseDurationSec keeps original decay target NEAR_SILENCE and original τ', () => {
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
     // Only the original decay call — no phase-end fade.
     expect(setTarget).toHaveBeenCalledTimes(1)
@@ -195,6 +212,8 @@ describe('cueSynth', () => {
     // before that, so the cue must NOT switch into sustain-to-floor mode.
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination, 2)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
     expect(setTarget).toHaveBeenCalledTimes(1)
     expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, IN_DEFAULT_TAU)
@@ -203,6 +222,8 @@ describe('cueSynth', () => {
   it('scheduleInCue with phaseDurationSec=10 decays toward SUSTAIN_FLOOR (not zero) using ORIGINAL τ — strike onset character preserved', () => {
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination, 10)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
     const decayCall = setTarget.mock.calls[0] as [number, number, number]
     expect(decayCall[0]).toBeCloseTo(SUSTAIN_FLOOR, 5)
@@ -213,6 +234,8 @@ describe('cueSynth', () => {
   it('scheduleInCue with phaseDurationSec=10 schedules a hard fade-out 0.2 s before phase end', () => {
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination, 10)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
     // Second setTargetAtTime call: target ≈ 0 at (when + phaseDuration - 0.2) with fast τ.
     expect(setTarget).toHaveBeenCalledTimes(2)
@@ -229,6 +252,8 @@ describe('cueSynth', () => {
     // phase length.
     const ac = createAc()
     const handle = scheduleOutCue(ac, 1.0, ac.destination, 30)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
     const decayCall = setTarget.mock.calls[0] as [number, number, number]
     expect(decayCall[0]).toBeCloseTo(SUSTAIN_FLOOR, 5)

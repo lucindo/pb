@@ -7,6 +7,8 @@ import { beforeEach, vi } from 'vitest'
 // need pre-seeded data call localStorage.setItem() in their own beforeEach / test body —
 // this global clear runs first and provides a clean slate.
 beforeEach(() => {
+  // Reason: jsdom always defines window, but the guard is kept for environments where this setup may run outside jsdom.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (typeof window !== 'undefined' && typeof window.localStorage?.clear === 'function') {
     window.localStorage.clear()
   }
@@ -26,6 +28,8 @@ beforeEach(() => {
 // the per-instance Map.
 //
 // Source: 04-RESEARCH.md; observed in Node 25.9.0 + jsdom 29.1.1 combination.
+// Reason: jsdom always defines window, but the guard is kept for environments where this setup may run outside jsdom.
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'function') {
   const _stores = new WeakMap<object, Map<string, string>>()
 
@@ -52,7 +56,7 @@ if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'fu
     return s.has(key) ? (s.get(key) ?? null) : null
   }
   Storage.prototype.setItem = function (key: string, value: string): void {
-    storeFor(this).set(key, String(value))
+    storeFor(this).set(key, value)
   }
   Storage.prototype.removeItem = function (key: string): void {
     storeFor(this).delete(key)
@@ -64,7 +68,7 @@ if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'fu
     return [...storeFor(this).keys()][index] ?? null
   }
   Object.defineProperty(Storage.prototype, 'length', {
-    get() { return storeFor(this).size },
+    get() { return storeFor(this as object).size },
     configurable: true,
   })
 
@@ -84,16 +88,22 @@ if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'fu
 // Source: 02-RESEARCH.md Pitfall 1 / Code Examples; verified against
 // github.com/jestjs/jest/issues/13010 and github.com/jsdom/jsdom/issues/3294.
 if (typeof HTMLDialogElement !== 'undefined') {
+  // Reason: jsdom may not implement showModal; guard ensures polyfill is only applied when missing.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!HTMLDialogElement.prototype.showModal) {
     HTMLDialogElement.prototype.showModal = function () {
       this.open = true
     }
   }
+  // Reason: jsdom may not implement show; guard ensures polyfill is only applied when missing.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!HTMLDialogElement.prototype.show) {
     HTMLDialogElement.prototype.show = function () {
       this.open = true
     }
   }
+  // Reason: jsdom may not implement close; guard ensures polyfill is only applied when missing.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!HTMLDialogElement.prototype.close) {
     HTMLDialogElement.prototype.close = function (returnValue?: string) {
       this.open = false
@@ -107,6 +117,8 @@ if (typeof HTMLDialogElement !== 'undefined') {
 // Default `matches: false` keeps the suite running under "motion ALLOWED" semantics.
 // Reduced-motion tests override with `vi.spyOn(window, 'matchMedia').mockReturnValue(...)`.
 // Source: 02-RESEARCH.md Pitfall 2 / Code Examples; mantine.dev/guides/vitest pattern.
+// Reason: jsdom always defines window, but the guards are kept for environments where this setup may run outside jsdom.
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (typeof window !== 'undefined' && !window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -126,6 +138,8 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 // AudioContext polyfill — jsdom 29.1.1 does not implement Web Audio.
 // Source: 03-RESEARCH.md Code Examples (lines 585-649); verified against
 // github.com/jsdom/jsdom/issues/2900.
+// Reason: jsdom always defines window, but the guards are kept for environments where this setup may run outside jsdom.
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (typeof window !== 'undefined' && !window.AudioContext) {
   class FakeAudioParam {
     value = 0
@@ -173,6 +187,8 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
     get currentTime() {
       return performance.now() / 1000 - this._start
     }
+    // Reason: constructor accepts AudioContextOptions to match the real AudioContext API signature; the parameter is intentionally unused in the fake.
+    // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) {}
     createOscillator() {
       return new FakeOscillatorNode()
@@ -184,6 +200,8 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
       return new FakeBiquadFilterNode()
     }
 
+    // Reason: async signature matches AudioContext.resume() API contract; conditional throw is the meaningful async behavior (simulates rejected DOMException on iOS Safari).
+    // eslint-disable-next-line @typescript-eslint/require-await
     resume = vi.fn(async () => {
       if (this._resumeRejection !== null) {
         const err = new DOMException(this._resumeRejection.message, this._resumeRejection.name)
@@ -196,10 +214,14 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
       this.state = 'running'
       this._fireStateChange()
     })
+    // Reason: async signature matches AudioContext.suspend() API contract; no real async work in the fake.
+    // eslint-disable-next-line @typescript-eslint/require-await
     suspend = vi.fn(async () => {
       this.state = 'suspended'
       this._fireStateChange()
     })
+    // Reason: async signature matches AudioContext.close() API contract; no real async work in the fake.
+    // eslint-disable-next-line @typescript-eslint/require-await
     close = vi.fn(async () => {
       this.state = 'closed'
       this._fireStateChange()
@@ -262,12 +284,18 @@ if (typeof navigator !== 'undefined' && !('wakeLock' in navigator)) {
   class FakeWakeLockSentinel extends EventTarget {
     type: WakeLockType = 'screen'
     released = false
+    // Reason: onrelease matches the WakeLockSentinel.onrelease DOM property signature which uses any for the handler return type.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onrelease: ((this: WakeLockSentinel, ev: Event) => any) | null = null
 
+    // Reason: async signature matches WakeLockSentinel.release() API contract; no real async work in the fake.
+    // eslint-disable-next-line @typescript-eslint/require-await
     async release(): Promise<void> {
       if (this.released) return
       this.released = true
       const event = new Event('release')
+      // Reason: this is cast to WakeLockSentinel to match the onrelease callback's `this` type; FakeWakeLockSentinel structurally matches.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       if (this.onrelease) this.onrelease.call(this as unknown as WakeLockSentinel, event)
       this.dispatchEvent(event)
     }
@@ -277,6 +305,8 @@ if (typeof navigator !== 'undefined' && !('wakeLock' in navigator)) {
     writable: true,
     configurable: true, // allow per-test vi.stubGlobal / Object.defineProperty override (D-09 failure-path tests)
     value: {
+      // Reason: async signature matches WakeLock.request() API contract; the parameter is intentionally unused in the fake.
+      // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
       request: vi.fn(async (_type?: WakeLockType) => new FakeWakeLockSentinel()),
     },
   })

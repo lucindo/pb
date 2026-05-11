@@ -72,7 +72,7 @@ describe('coerceSettings (D-15)', () => {
     // Prototype-pollution mitigation: we only read three known keys, never spread `raw`
     // into an object we use as a prototype. Test that a __proto__ key in the raw doesn't
     // propagate to the returned object.
-    const polluted = JSON.parse('{"bpm":4,"ratio":"40:60","durationMinutes":10,"__proto__":{"polluted":true}}')
+    const polluted: unknown = JSON.parse('{"bpm":4,"ratio":"40:60","durationMinutes":10,"__proto__":{"polluted":true}}')
     const out = coerceSettings(polluted) as unknown as Record<string, unknown>
     expect(out.polluted).toBeUndefined()
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
@@ -108,16 +108,17 @@ describe('loadSettings / saveSettings round-trip', () => {
       stats: { totalSessions: 3, totalElapsedSeconds: 120, lastSessionAtMs: 1000, lastSessionDurationSeconds: 60 },
     }))
     saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
-    const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!)
-    expect(raw.mute).toBe(true)
-    expect(raw.stats.totalSessions).toBe(3)
+    // Reason: STATE_KEY is always present after saveSettings; non-null asserted by storage contract.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
+    expect(raw).toMatchObject({ mute: true, stats: { totalSessions: 3 } })
   })
 
   it('does not throw when underlying setItem throws (D-16)', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })
-    expect(() => saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 })).not.toThrow()
+    expect(() => { saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 }) }).not.toThrow()
   })
 
   it('falls back to defaults when stored JSON is corrupt (D-17)', () => {
@@ -141,8 +142,9 @@ describe('loadMute / saveMute round-trip', () => {
   it('preserves settings + stats fields when saving mute (envelope merge)', () => {
     saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
     saveMute(true)
-    const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!)
-    expect(raw.settings).toEqual({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
-    expect(raw.mute).toBe(true)
+    // Reason: STATE_KEY is always present after saveMute; non-null asserted by storage contract.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
+    expect(raw).toMatchObject({ settings: { bpm: 4, ratio: '40:60', durationMinutes: 5 }, mute: true })
   })
 })

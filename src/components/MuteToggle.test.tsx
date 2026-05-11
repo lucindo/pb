@@ -120,7 +120,10 @@ describe('MuteToggle', () => {
     )
     const svg = container.querySelector('svg')
     expect(svg).not.toBeNull()
+    // Reason: svg non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(svg!.querySelectorAll('path').length).toBe(1)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(svg!.querySelectorAll('polyline').length).toBe(1)
   })
 
