@@ -938,24 +938,24 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
 
 **These assumptions should be confirmed by the planner.** A1 in particular has a non-trivial implementation impact and should either be (a) elevated to a planner decision, or (b) re-routed to discuss-phase if the planner is uncertain.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **D-08 closure-staleness resolution (A1 in Assumptions Log)**
+1. **D-08 closure-staleness resolution (A1 in Assumptions Log)** — **RESOLVED:** planner picked inside-`setState((currentState) => ...)` updater form per 10-01-PLAN Task 1 action (e).
    - What we know: D-08 says "at the top of the rAF tick callback, BEFORE the setState call". This can be implemented two ways (lexical vs. inside-updater). Lexical fails the D-13 "snapshot advances" test; inside-updater succeeds.
    - What's unclear: Whether the discuss-phase intended the lexical reading.
    - Recommendation: Planner treats this as a Claude's-discretion implementation detail and picks the inside-updater form. If planner is uncertain, escalate to discuss-phase before the engine task lands.
 
-2. **runningSnapshotRef null-out site (A2 in Assumptions Log)**
+2. **runningSnapshotRef null-out site (A2 in Assumptions Log)** — **RESOLVED:** hook owns null-out on transition-out-of-running; App.tsx:462 null-out deleted per 10-01-PLAN Task 1 + Task 3.
    - What we know: App.tsx:462 currently nulls the ref. Under D-06 the hook owns the ref. Both keep-or-move are valid.
    - What's unclear: CONTEXT doesn't explicitly say.
    - Recommendation: Hook handles it on transition-out-of-running (more consistent with D-06 "owner of state owns the writer"). Remove App.tsx:462 null-out. Test in D-13 already locks "nulled on transition out".
 
-3. **D-13 file extension drift**
+3. **D-13 file extension drift** — **RESOLVED:** plan EXTENDS existing `useSessionEngine.test.tsx` in a new `describe` block; no `.ts` file created (frontmatter `files_modified` lists `.tsx`).
    - What we know: CONTEXT D-13 / D-20 / canonical_refs all say `useSessionEngine.test.ts` is NEW. Reality: `useSessionEngine.test.tsx` already exists with 5 tests.
    - What's unclear: Whether the CONTEXT author missed the existing file or intended a new `.ts` file alongside.
    - Recommendation: Plan treats D-13 as EXTEND of the existing `.tsx` file. Append new tests in a separate `describe` block. Do NOT create a parallel `.ts` file — would split the engine's contract across two files and violate Phase 9 D-14 co-location precedent.
 
-4. **HOOKS-05 lint regression risk (A3 in Assumptions Log)**
+4. **HOOKS-05 lint regression risk (A3 in Assumptions Log)** — **RESOLVED:** Task 3 action (e) specifies mitigation order — run `npm run lint` after dep tightening; on trip, const-extract `state.completedAtMs` first, annotated `// Reason:` disable as last resort (Phase 7 D-04).
    - What we know: HEAD's leave-running cleanup body reads `state.completedAtMs`. Tightening deps to `[state.status, ...]` might trip exhaustive-deps.
    - What's unclear: Whether eslint-plugin-react-hooks 7.1.1 narrows correctly on the discriminated union.
    - Recommendation: Plan-checker runs lint after the App.tsx task. If trip: option A (extract completedAtMs const) is the cleanest fix; option C (annotated disable) is the fallback per Phase 7 D-04.
