@@ -71,7 +71,7 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
   3. App-level `storage` event listener refreshes the stats display when another tab writes the envelope key; UI stays consistent across tabs in a manual two-window test.
   4. Existing 363/363 tests still pass; new tests cover read-preserve, write-refuse-downgrade, and cross-tab refresh.
 **Plans**: 2 plans (wave 1 → wave 2; Plan 02 depends on Plan 01 because App.tsx storage listener relies on the post-Plan-01 adapter contracts)
-  - [ ] 08-01-PLAN.md — Storage adapter contract: STORAGE-01 readEnvelope D-01 spread-and-override + STORAGE-02 writeEnvelope D-04a nested-try-catch downgrade refusal + WR-07 comment update in stats.ts (wave 1, 3 tasks)
+  - [x] 08-01-PLAN.md — Storage adapter contract: STORAGE-01 readEnvelope D-01 spread-and-override + STORAGE-02 writeEnvelope D-04a nested-try-catch downgrade refusal + WR-07 comment update in stats.ts (wave 1, 3 tasks)
   - [ ] 08-02-PLAN.md — Cross-tab UI refresh listener: STORAGE-03 App.tsx useEffect([]) `window` storage listener + STORAGE-03 cross-tab refresh & D-06a key-filter test cases in App.persistence.test.tsx (wave 2, depends on 08-01, 2 tasks)
 
 ### Phase 9: Audio + Wake Lock Lifecycle Hardening
