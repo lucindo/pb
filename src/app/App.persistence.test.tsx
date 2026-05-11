@@ -124,16 +124,16 @@ describe('LOCL-01 — persistence on change', () => {
 // ---------------------------------------------------------------------------
 describe('LOCL-02 — stats record on each end path', () => {
   it('records a session when timed completion fires (D-01 completion bypass)', async () => {
-    seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 1 } })
+    seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 5 } })
     render(<App />)
     await startAndAdvancePastLeadIn()
-    // Run past 60 seconds (1 minute timed session) — the engine flips to 'complete'.
-    // Advance an extra minute to ensure the surrounding cycle finishes (Phase 3 fix).
-    await advanceTime(2 * 60_000)
+    // Run past 5 minutes — the engine flips to 'complete'.
+    // Advance an extra minute so the surrounding cycle finishes (Phase 3 fix).
+    await advanceTime(6 * 60_000)
     const env = readEnvelope()
     expect(env?.stats?.totalSessions).toBe(1)
-    // elapsed is at least 60s for a 1-min session
-    expect(env?.stats?.totalElapsedSeconds).toBeGreaterThanOrEqual(60)
+    // elapsed is at least 300s for a 5-min session
+    expect(env?.stats?.totalElapsedSeconds).toBeGreaterThanOrEqual(300)
     expect(env?.stats?.lastSessionAtMs).toEqual(expect.any(Number))
   })
 

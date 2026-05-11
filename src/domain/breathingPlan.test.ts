@@ -27,9 +27,8 @@ describe('supported breathing settings', () => {
     expect(RATIO_OPTIONS).toEqual(['50:50', '40:60', '30:70', '20:80'])
   })
 
-  it('supports 1 minute plus 5 through 60 minute durations plus open-ended', () => {
+  it('supports 5 through 60 minute durations plus open-ended', () => {
     expect(DURATION_OPTIONS).toEqual([
-      1,
       5,
       10,
       15,

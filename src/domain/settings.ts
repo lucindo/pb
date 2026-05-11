@@ -26,7 +26,6 @@ export const BPM_OPTIONS = [
 export const RATIO_OPTIONS = ['50:50', '40:60', '30:70', '20:80'] as const satisfies readonly RatioLabel[]
 
 export const DURATION_OPTIONS = [
-  1,
   5,
   10,
   15,
