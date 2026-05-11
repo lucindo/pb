@@ -54,8 +54,8 @@ describe('LEARN_CONTENT link contract', () => {
     expect(LEARN_CONTENT.links.book.url).toBe('https://amzn.to/3RTAVqi')
   })
 
-  it('book label is "Book"', () => {
-    expect(LEARN_CONTENT.links.book.label).toBe('Book')
+  it('book label is the Mastering Meditation pointer (2026-05-11 user rename)', () => {
+    expect(LEARN_CONTENT.links.book.label).toBe('"Mastering Meditation" book')
   })
 
   it('youtubeChannel label is "YouTube channel" (LEARN-01)', () => {

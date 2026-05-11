@@ -108,7 +108,7 @@ describe('LearnDialog — external link security', () => {
 
   it('the Book link has target="_blank", rel="noopener noreferrer", and locked href (D-12)', () => {
     renderDialog({ open: true })
-    const link = screen.getByRole('link', { name: 'Book' })
+    const link = screen.getByRole('link', { name: '"Mastering Meditation" book' })
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     expect(link).toHaveAttribute('href', 'https://amzn.to/3RTAVqi')

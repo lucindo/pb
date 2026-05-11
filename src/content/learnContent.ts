@@ -56,7 +56,7 @@ export const LEARN_CONTENT: LearnContent = {
       url: 'https://www.meditativemellows.com/',
     },
     book: {
-      label: 'Book',
+      label: '"Mastering Meditation" book',
       url: 'https://amzn.to/3RTAVqi',
     },
     patreon: {
