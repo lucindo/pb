@@ -316,3 +316,78 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
   })
 })
+
+// ---------------------------------------------------------------------------
+// STORAGE-03 — Cross-tab stats refresh via storage event
+// ---------------------------------------------------------------------------
+describe('STORAGE-03 — cross-tab stats refresh', () => {
+  it('refreshes stats footer when another tab writes the envelope', async () => {
+    render(<App />)
+    // Negative initial assertion — footer hidden because totalSessions === 0 (D-09 gating).
+    expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument()
+
+    // Construct the new envelope JSON and reuse for both setItem and dispatchEvent newValue.
+    const newEnvelope = JSON.stringify({
+      version: 1,
+      stats: {
+        totalSessions: 5,
+        totalElapsedSeconds: 300,
+        lastSessionAtMs: new Date('2026-05-09').getTime(),
+        lastSessionDurationSeconds: 60,
+      },
+    })
+
+    // CRITICAL ORDERING (RESEARCH Pitfall 2): setItem BEFORE dispatchEvent — the listener
+    // calls loadStats() which reads disk synchronously; the new payload MUST be on disk
+    // before the handler fires or loadStats() returns stale/zero data.
+    window.localStorage.setItem(STATE_KEY, newEnvelope)
+
+    // Note: omit `storageArea` from StorageEventInit — jsdom's IDL conversion
+    // rejects `window.localStorage` (`parameter 2 has member 'storageArea' that
+    // is not of type 'Storage'`). `key` and `newValue` are sufficient for the
+    // handler's `e.key === STATE_KEY` filter; `oldValue: null` is included to
+    // match the cleared-storage semantics from the spec.
+    // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside (same pattern as advanceTime at line 51).
+    // eslint-disable-next-line @typescript-eslint/require-await
+    await act(async () => {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: STATE_KEY,
+        newValue: newEnvelope,
+        oldValue: null,
+      }))
+    })
+
+    // Footer becomes visible after the listener-fired re-render.
+    expect(screen.getByText(/5 sessions/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument()
+  })
+
+  it('ignores storage events for unrelated keys (D-06a key filter)', async () => {
+    seedEnvelope({
+      stats: {
+        totalSessions: 3,
+        totalElapsedSeconds: 180,
+        lastSessionAtMs: new Date('2026-05-09').getTime(),
+        lastSessionDurationSeconds: 60,
+      },
+    })
+    render(<App />)
+    // Initial mount-time loadStats() populated the footer.
+    expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
+
+    // Dispatch a storage event for an UNRELATED key — note: do NOT setItem first;
+    // the listener must rely solely on the e.key === STATE_KEY filter to ignore it.
+    // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside (same pattern as advanceTime at line 51).
+    // eslint-disable-next-line @typescript-eslint/require-await
+    await act(async () => {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'some-other-key',
+        newValue: JSON.stringify({ totalSessions: 99 }),
+      }))
+    })
+
+    // Footer STILL shows 3 sessions; the unrelated event was filtered out (D-06a).
+    expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
+    expect(screen.queryByText(/99 sessions/)).not.toBeInTheDocument()
+  })
+})
