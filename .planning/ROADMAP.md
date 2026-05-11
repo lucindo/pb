@@ -135,7 +135,12 @@ Plans:
   2. User can access curated links to selected HRV breathing explanation videos.
   3. User can read a brief in-app explanation of resonance-style breathing and the app's timing rules.
   4. User sees copy that frames the app as guided breathing practice, not medical advice or diagnosis.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 06-01-PLAN.md — [BLOCKING] Gather deferred Forrest URLs (channel, website, hero video + title, 0–5 key videos + titles) from the user and stamp them into `06-URLS.md`; book URL pre-locked at `https://amzn.to/3RTAVqi`.
+- [ ] 06-02-PLAN.md — Create `src/content/learnContent.ts` typed content asset with drafted three-section explainer prose (locked phrase `inspired by Forrest's teachings` in section 3) + five-item link record + contract tests.
+- [ ] 06-03-PLAN.md — Implement `src/components/LearnDialog.tsx` (native `<dialog>` clone of `ResetStatsDialog` — three explainer sections + link block + two disclaimer micro-lines + Close button with default focus) + D-19 unit tests (Esc/backdrop close, default focus on Close, every link `target="_blank" rel="noopener noreferrer"`, locked phrase + disclaimer copy assertions).
+- [ ] 06-04-PLAN.md — Create `src/components/LearnAnchor.tsx` (page-level fixed top-right `Learn` button — D-04 44×44 padding floor + D-21 focus-visible ring + D-03 aria-disabled + JSX-layer no-op click during session view) with D-18 invariant tests, then wire `<LearnAnchor>` + `<LearnDialog>` + `learnDialogOpen` state into `src/app/App.tsx`.
 **UI hint**: yes
 
 ## Progress
@@ -151,4 +156,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Local Memory & Practice Stats | 4/4 | Complete    | 2026-05-10 |
 | 5. Mobile Hands-Off Resilience | 4/4 | Complete (S2 Android UAT carried forward) | 2026-05-10 |
 | 5.1. Hands-Off Resilience Polish | 3/4 | In Progress|  |
-| 6. Learning & Claim-Safe Positioning | 0/TBD | Not started | - |
+| 6. Learning & Claim-Safe Positioning | 0/4 | Not started | - |
