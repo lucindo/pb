@@ -1,0 +1,167 @@
+import { useEffect, useRef, type MouseEventHandler } from 'react'
+
+import { LEARN_CONTENT } from '../content/learnContent'
+
+// CONTEXT.md D-05: native <dialog> with imperative showModal/close.
+// D-07: every external link carries target="_blank" rel="noopener noreferrer".
+// D-08: three-section explainer in fixed order (hrv → timing → forrest).
+// D-11: locked phrase "inspired by Forrest's teachings" in forrest section.
+// D-14: two disclaimer micro-lines inline (not in learnContent.ts).
+// D-15: disclaimer copy lives ONLY inside this modal — not on the main screen.
+// Deviation D-12 amendment: six link keys rendered in order:
+//   youtubeChannel, website, book, patreon, heroVideo, then keyVideos[].
+
+export interface LearnDialogProps {
+  open: boolean
+  onClose(): void
+}
+
+export function LearnDialog({ open, onClose }: LearnDialogProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Imperative open/close so the browser sets up <dialog>'s top-layer + inert behavior.
+  // D-05: default focus on Close button — never on a Forrest link.
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (open && !dialog.open) {
+      dialog.showModal()
+      closeButtonRef.current?.focus()
+    } else if (!open && dialog.open) {
+      dialog.close()
+    }
+  }, [open])
+
+  // Esc fires `cancel` (preventable) then `close`. We handle `cancel` and call onClose.
+  // Pitfall 5 mitigation: preventDefault to avoid double-fire of close.
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const handleCancel = (event: Event) => {
+      event.preventDefault()
+      onClose()
+    }
+    dialog.addEventListener('cancel', handleCancel)
+    return () => {
+      dialog.removeEventListener('cancel', handleCancel)
+    }
+  }, [onClose])
+
+  // Click on the dialog itself (backdrop area) -> close.
+  // Click on a child (the inner panel) -> ignored.
+  const handleBackdropClick: MouseEventHandler<HTMLDialogElement> = (event) => {
+    if (event.target === dialogRef.current) {
+      onClose()
+    }
+  }
+
+  const { explainer, links } = LEARN_CONTENT
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="learn-dialog-title"
+      onClick={handleBackdropClick}
+      className="modal-fade m-auto max-w-sm rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+    >
+      <div className="grid gap-5 p-6 sm:p-7">
+        <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-slate-950">About this practice</h2>
+
+        {/* D-08: three explainer sections in fixed order */}
+        <div className="grid gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">{explainer.hrv.title}</h3>
+            <p className="text-base leading-6 text-slate-700">{explainer.hrv.body}</p>
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">{explainer.timing.title}</h3>
+            <p className="text-base leading-6 text-slate-700">{explainer.timing.body}</p>
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">{explainer.forrest.title}</h3>
+            <p className="text-base leading-6 text-slate-700">{explainer.forrest.body}</p>
+          </div>
+        </div>
+
+        {/* D-12 / D-07: link block — six keys in fixed order per D-12 amendment.
+            Render order: youtubeChannel, website, book, patreon, heroVideo, keyVideos[].
+            Every <a> carries target="_blank" rel="noopener noreferrer" (T-06-07 mitigation). */}
+        <div className="grid gap-2">
+          <a
+            href={links.youtubeChannel.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          >
+            {links.youtubeChannel.label}
+          </a>
+          <a
+            href={links.website.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          >
+            {links.website.label}
+          </a>
+          <a
+            href={links.book.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          >
+            {links.book.label}
+          </a>
+          {/* D-12 amendment: patreon is the 4th key, between book and heroVideo */}
+          <a
+            href={links.patreon.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          >
+            {links.patreon.label}
+          </a>
+          <a
+            href={links.heroVideo.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          >
+            {links.heroVideo.label}
+          </a>
+          {links.keyVideos.map((video) => (
+            <a
+              key={video.url}
+              href={video.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {video.label}
+            </a>
+          ))}
+        </div>
+
+        {/* D-14: two disclaimer micro-lines inline (per CONTEXT.md §Established Patterns).
+            D-15: these lines appear ONLY here — not on the main breathing screen. */}
+        <p className="text-sm text-[var(--color-breathing-muted)]">
+          This is guided breathing practice — not medical advice.
+        </p>
+        <p className="text-xs text-[var(--color-breathing-muted)]">
+          Independent project. Not affiliated with Forrest Knutson.
+        </p>
+
+        {/* T-06-08 mitigation: default focus lands here (Close), not on any link.
+            Prevents accidental Enter dispatching navigation on a Forrest link. */}
+        <div className="flex justify-end">
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            className="min-h-12 rounded-full border border-teal-200 bg-white px-5 py-2 text-base font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+          >Close</button>
+        </div>
+      </div>
+    </dialog>
+  )
+}
