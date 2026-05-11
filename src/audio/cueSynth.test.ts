@@ -114,7 +114,8 @@ describe('cueSynth', () => {
     scheduleTick(ac, 1.0, ac.destination)
 
     expect(oscillators).toHaveLength(1)
-    expect(oscillators[0].type).toBe('square')
+    // Reason: length asserted by toHaveLength(1) immediately above.
+    expect(oscillators[0]!.type).toBe('square')
   })
 
   it('scheduleTick is much shorter than bowl cues', () => {
@@ -155,9 +156,12 @@ describe('cueSynth', () => {
     scheduleInCue(ac, 1.0, ac.destination)
 
     expect(filters).toHaveLength(1)
-    expect(filters[0].type).toBe('lowpass')
-    expect(filters[0].frequency.value).toBe(3000)
-    expect(filters[0].Q.value).toBe(0.5)
+    // Reason: length asserted by toHaveLength(1) immediately above.
+    expect(filters[0]!.type).toBe('lowpass')
+    // Reason: length asserted by toHaveLength(1) above.
+    expect(filters[0]!.frequency.value).toBe(3000)
+    // Reason: length asserted by toHaveLength(1) above.
+    expect(filters[0]!.Q.value).toBe(0.5)
   })
 
   it('peakGain is well below 1.0 to leave headroom', () => {
