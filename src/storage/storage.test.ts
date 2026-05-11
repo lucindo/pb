@@ -86,6 +86,15 @@ describe('writeEnvelope', () => {
     const env = readEnvelope()
     expect(env.version).toBe(2)
     expect(env.settings).toEqual({ bpm: 4 })
+    // STORAGE-01 / D-01: unknown top-level fields survive the read (positive
+    // forward-compat coverage). Type-cast required because Envelope.prefs is
+    // not statically declared — the forward-compat surface is runtime-only
+    // by design (RESEARCH RQ-4 Option b). Without this assertion a regression
+    // to a pick-only-known-keys readEnvelope (Pitfall 3) would not be caught
+    // by the existing post-write disk-dump check because that check only
+    // proves the write was refused, not that the read preserved the field.
+    expect((env as unknown as Record<string, unknown>).prefs)
+      .toEqual({ theme: 'dark' })
     // STORAGE-02 / D-04a: disk version 2 > STATE_VERSION 1 → write refused.
     // The caller's `version: 1` does NOT require an `as any` cast because
     // Envelope.version is widened to `number` (Task 1).
