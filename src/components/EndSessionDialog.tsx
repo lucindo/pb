@@ -2,8 +2,8 @@ import { useEffect, useRef, type MouseEventHandler } from 'react'
 
 export interface EndSessionDialogProps {
   open: boolean
-  onConfirm(): void
-  onCancel(): void
+  onConfirm(this: void): void
+  onCancel(this: void): void
 }
 
 export function EndSessionDialog({ open, onConfirm, onCancel }: EndSessionDialogProps) {

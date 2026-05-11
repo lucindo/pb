@@ -13,7 +13,7 @@ import { LEARN_CONTENT } from '../content/learnContent'
 
 export interface LearnDialogProps {
   open: boolean
-  onClose(): void
+  onClose(this: void): void
 }
 
 export function LearnDialog({ open, onClose }: LearnDialogProps) {

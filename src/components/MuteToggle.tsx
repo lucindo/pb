@@ -14,7 +14,7 @@ export interface MuteToggleProps {
    *  refresh-arrow glyph + aria-label 'Resume audio'. Priority: audioAvailable=false
    *  outranks; muted is ignored in label and aria-pressed is undefined. */
   needsResume?: boolean
-  onToggle(): void
+  onToggle(this: void): void
 }
 
 export function MuteToggle({ muted, audioAvailable, needsResume, onToggle }: MuteToggleProps) {

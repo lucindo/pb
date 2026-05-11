@@ -11,8 +11,8 @@ import { SettingsStepper } from './SettingsStepper'
 export interface SettingsFormProps {
   settings: SessionSettings
   isRunning: boolean
-  onChange(settings: SessionSettings): void
-  onExtendDuration(durationMinutes: number): void
+  onChange(this: void, settings: SessionSettings): void
+  onExtendDuration(this: void, durationMinutes: number): void
 }
 
 function formatBpm(value: number): string {

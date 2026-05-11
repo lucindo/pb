@@ -2,8 +2,8 @@ import { useEffect, useRef, type MouseEventHandler } from 'react'
 
 export interface ResetStatsDialogProps {
   open: boolean
-  onConfirm(): void
-  onCancel(): void
+  onConfirm(this: void): void
+  onCancel(this: void): void
 }
 
 export function ResetStatsDialog({ open, onConfirm, onCancel }: ResetStatsDialogProps) {

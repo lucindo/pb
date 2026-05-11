@@ -3,7 +3,7 @@ export interface SettingsStepperProps<T extends string | number> {
   value: T
   options: readonly T[]
   formatValue?: (value: T) => string
-  onChange(value: T): void
+  onChange(this: void, value: T): void
   disabled?: boolean
   disableDecrease?: boolean
   disableIncrease?: boolean
