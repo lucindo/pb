@@ -278,7 +278,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     })
   })
 
-  it('runningSnapshotRef.current is populated while running and nulled on transition out (HOOKS-02 D-06/D-07/D-08)', () => {
+  it('runningSnapshotRef.current is populated while running and persists across the transition out (HOOKS-02 D-06/D-07/D-08)', () => {
     const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
 
     // Idle baseline — the hook hasn't written to the ref yet.
@@ -300,14 +300,32 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     // captures the latest known elapsed inside the setState updater per D-08;
     // ≥ 900 keeps the assertion robust against the ~16ms per-frame quantum).
     expect(snap?.lastElapsedMs).toBeGreaterThanOrEqual(900)
+    const snapKey = snap?.key
 
-    // End the session — the rAF effect's early-return branch nulls the ref
-    // on transition out of running (D-06).
+    // End the session — the hook does NOT null the ref on transition out
+    // (hook effects fire BEFORE consumer effects; nulling here would clobber
+    // the value before App's leave-running cleanup reads it). The snapshot
+    // persists unchanged across the transition.
     act(() => {
       result.current.end()
     })
 
-    expect(result.current.runningSnapshotRef.current).toBeNull()
+    const snapAfterEnd = result.current.runningSnapshotRef.current
+    expect(snapAfterEnd).not.toBeNull()
+    expect(snapAfterEnd?.key).toBe(snapKey)
+
+    // Re-starting the session overwrites the ref on the first rAF tick.
+    act(() => {
+      result.current.start()
+    })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+    const snapAfterRestart = result.current.runningSnapshotRef.current
+    expect(snapAfterRestart).not.toBeNull()
+    // New session = new startedAtMs = new key. The stale snapshot from the
+    // first session has been overwritten.
+    expect(snapAfterRestart?.key).not.toBe(snapKey)
 
     unmount()
   })

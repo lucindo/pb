@@ -20,6 +20,13 @@ import {
  * persists across the transition out of `running` so the App-level
  * leave-running cleanup effect can compute elapsed without re-narrowing the
  * discriminated union.
+ *
+ * Lifetime: written once per rAF tick (from inside the setState updater, per
+ * D-08) while status is `running`; persists unchanged after the transition
+ * out of running (the hook does NOT null on transition because consumer
+ * effects fire AFTER hook effects and need to read the snapshot). The
+ * snapshot is overwritten on the next session's first rAF tick. Consumers
+ * idempotently dedupe via the `key` field (= startedAtMs).
  */
 export interface RunningSnapshot {
   key: string
@@ -43,9 +50,12 @@ export interface SessionEngine {
   liveFrame: SessionFrame | null
   /**
    * Phase 10 HOOKS-02 (D-06/D-07/D-08): running-session snapshot owned by the
-   * engine, written from inside the rAF tick setState updater. Consumed by
-   * App's leave-running cleanup. Read `.current` synchronously; refs are
-   * stable — do NOT put in effect dep arrays.
+   * engine, written from inside the rAF tick setState updater while status is
+   * `running`. Persists unchanged across the transition out of running so
+   * consumer effects (App's leave-running cleanup) can read the last known
+   * elapsed values. Overwritten on the next session's first rAF tick.
+   * Read `.current` synchronously; refs are stable — do NOT put in effect
+   * dep arrays.
    */
   runningSnapshotRef: RefObject<RunningSnapshot | null>
   setSelectedSettings(this: void, settings: SessionSettings): void
@@ -68,12 +78,16 @@ export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETT
 
   useEffect(() => {
     if (state.status !== 'running') {
-      // HOOKS-02 / D-06: null the snapshot on transition out of running so a
-      // subsequent idle render starts from a clean ref. The leave-running
-      // cleanup in App.tsx reads runningSnapshotRef.current synchronously
-      // BEFORE this branch fires (effect-cleanup vs new-effect ordering), so
-      // the stats-write path still observes the populated snapshot.
-      runningSnapshotRef.current = null
+      // HOOKS-02 / D-06: DO NOT null the snapshot here. Hook effects (custom-
+      // hook useEffects) run BEFORE consumer-component useEffects when both
+      // hooks are called in the same component, so nulling on transition out
+      // would clobber `runningSnapshotRef.current` BEFORE App's leave-running
+      // cleanup effect read it. The snapshot persists across the transition
+      // out of running and is overwritten on the next session's first rAF
+      // tick (the inside-updater write in `tick` below). App.tsx's
+      // `recordedSessionKeyRef` dedupes idempotently via the snapshot's
+      // `key` (= startedAtMs), so reading a stale snapshot on a subsequent
+      // idle render is safe — the stats write only fires on a fresh key.
       return undefined
     }
 
@@ -150,10 +164,7 @@ export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETT
   const phaseKey = state.status === 'running' ? state.lastFrame.phase : null
   const currentFrame = useMemo<SessionFrame | null>(
     () => (state.status === 'running' ? state.lastFrame : null),
-    // The useMemo body reads `state.lastFrame` only when `state.status === 'running'`;
-    // its identity is fully determined by `state.status`, `cycleIndex`, and `phase`
-    // (primitives only). `state` itself is intentionally NOT a dep — that would defeat
-    // the phase-boundary identity contract by re-memoizing per rAF.
+    // Reason: the useMemo body reads `state.lastFrame` only when `state.status === 'running'`; its identity is fully determined by `state.status`, `cycleIndex`, and `phase` (primitives surfaced as `cycleKey`/`phaseKey` above). Adding `state` to the dep array would defeat the per-phase-stable identity contract (D-03) by re-memoizing on every rAF tick. The Variant B local-narrowing is itself the safe-harbor; the disable is annotated per Phase 7 D-04 / Phase 10 D-19.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.status, cycleKey, phaseKey],
   )
