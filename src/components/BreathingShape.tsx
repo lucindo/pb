@@ -77,19 +77,6 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
         className="orb-ring--outer absolute rounded-full border-solid"
         style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
-      {/* D-04: inner reference ring at MIN_SCALE boundary.
-          WR-03: position explicitly with left/top + translate centering rather
-          than relying on implicit grid auto-positioning of an absolutely-positioned
-          child, which is genuinely ambiguous in the spec for absolutely-positioned
-          grid items and is rendered inconsistently by older Safari. */}
-      <span
-        aria-hidden="true"
-        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
-        style={{
-          width: `${MIN_SCALE * 100}%`,
-          height: `${MIN_SCALE * 100}%`,
-        }}
-      />
       {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07).
           Phase 5.1 Plan 04 D-20 + post-UAT hotfix: drop `inset-0` and use explicit
           four-edge anchoring (left/right/top/bottom) so Safari Desktop sizes the
@@ -126,6 +113,25 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           className="orb-layer--out absolute inset-0 rounded-full"
         />
       </div>
+      {/* D-04 + 260510-tc9 Bug 1: inner reference ring at MIN_SCALE boundary.
+          Rendered AFTER the orb so it sits on top of the opaque gradient fill
+          rather than behind it — the previous DOM order placed the ring below
+          the orb body, where it was occluded at every scale (no visible cue for
+          Out-phase arrival). With the ring on top, orb-edge approaches a fixed
+          visible inner ring as Out progresses (mirroring the outer-ring cue on
+          In) and coincides at MIN_SCALE = phase boundary.
+          WR-03: position explicitly with left/top + translate centering rather
+          than relying on implicit grid auto-positioning of an absolutely-positioned
+          child, which is genuinely ambiguous in the spec for absolutely-positioned
+          grid items and is rendered inconsistently by older Safari. */}
+      <span
+        aria-hidden="true"
+        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
+        style={{
+          width: `${MIN_SCALE * 100}%`,
+          height: `${MIN_SCALE * 100}%`,
+        }}
+      />
       {/* D-03: phase label centered inside the orb at large display size */}
       <span
         className="relative z-10 text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl"
@@ -172,15 +178,6 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
         className="orb-ring--outer absolute rounded-full border-solid"
         style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
-      {/* Inner reference ring (Phase 2 D-04) */}
-      <span
-        aria-hidden="true"
-        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
-        style={{
-          width: `${MIN_SCALE * 100}%`,
-          height: `${MIN_SCALE * 100}%`,
-        }}
-      />
       {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
           is rendered (no Out crossfade) so the lead-in feels like a still pool
           of water awaiting the first breath. Phase 5.1 Plan 04 D-20 + D-22 +
@@ -204,6 +201,17 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
           className="orb-layer--in absolute inset-0 rounded-full"
         />
       </div>
+      {/* Inner reference ring (Phase 2 D-04 + 260510-tc9 Bug 1) — rendered AFTER
+          the orb so it sits on top of the opaque gradient fill. D-22 mirror of
+          BreathingShapeBody. */}
+      <span
+        aria-hidden="true"
+        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
+        style={{
+          width: `${MIN_SCALE * 100}%`,
+          height: `${MIN_SCALE * 100}%`,
+        }}
+      />
       {/* D-14: digit in the same large-display position as the In/Out label,
           one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
           so the countdown reads as dominant. */}
