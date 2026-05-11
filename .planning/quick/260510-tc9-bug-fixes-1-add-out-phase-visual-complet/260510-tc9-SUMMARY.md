@@ -213,3 +213,31 @@ Commit `836f6e4`.
 - Bug 2: ready for re-UAT at BPM 5.5 / 4.0 / 3.5 / 2.0 / 1.0 — listen for
   audible sustain through entire phase and clean handoff at flip (no audible
   decay-tail bleeding into next strike).
+
+---
+
+## Iteration 3 — Post-UAT (2026-05-11)
+
+UAT iteration 2 surfaced 3 issues with the now-on-top inner ring:
+1. Out phase: ring visible but low contrast against the blue gradient fill (pale-blue on pale-blue).
+2. In phase: ring drawn on top of teal fill, distracting — In already has the outer-ring cue.
+3. Lead-in countdown (digit): ring visible on the still teal pre-state orb, "weird."
+
+Fix (CSS-only): inner ring is hidden by default (opacity 0), revealed only via
+`[data-phase='out']`. 400ms ease-in-out matches the orb-layer crossfade — ring
+appears in lockstep with orb teal → blue, recedes on the next In flip. Lead-in
+has no `data-phase` on root, so the ring stays hidden through the countdown.
+
+Color shifted from pale blue (low contrast) to deep indigo at moderate alpha
+(`rgb(30 58 138 / 0.4)` = Out-text color at 0.4) — reads clearly against the
+light-blue Out gradient. Indigo is paired exclusively with Out fill, so no
+clash with the In teal.
+
+Reduced-motion preserves the transition, mirroring the orb-layer--out contract
+(D-07): the fade-in IS the Out indicator when the orb is locked at MID_SCALE.
+
+Commit: pending.
+
+### Verification
+- vitest: 318/318 passing (no test changes — DOM structure + class names unchanged)
+- tsc --noEmit: clean
