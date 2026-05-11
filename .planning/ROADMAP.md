@@ -55,7 +55,10 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
   2. `eslint.config.js` extends `tseslint.configs.strictTypeChecked` with `parserOptions.project` wired for type-aware rules; `npm run lint` exits 0 with all resulting errors fixed inline.
   3. `react-hooks/exhaustive-deps` is enforced at `error` level; every remaining `// eslint-disable` for that rule is annotated with justification (or removed).
   4. `npm run build` exits 0 and the full Vitest suite (363/363 at milestone start) continues to pass with no behavior change.
-**Plans**: TBD
+**Plans**: 3 plans (waves 1 → 2 → 3, file-overlap-safe)
+  - [ ] 07-01-PLAN.md — tsconfig strict landing (BUILD-01); add `strict`/`noUncheckedIndexedAccess`/`noImplicitReturns` to both tsconfigs and fix the 12 surfaced TS2532/TS18048 errors in 4 test files (wave 1, 2 tasks)
+  - [ ] 07-02-PLAN.md — ESLint strictTypeChecked + projectService preset upgrade (BUILD-02); fix all 226 surfaced lint errors inline (64 production + 162 test) by rule-batched passes (wave 2, depends on 07-01, 5 tasks)
+  - [ ] 07-03-PLAN.md — react-hooks/exhaustive-deps `error` override + D-04 `// Reason:` annotation audit (BUILD-03); annotate App.tsx surviving disables and the new usePrefersReducedMotion.ts set-state-in-effect fire (wave 3, depends on 07-02, 2 tasks)
 
 ### Phase 8: Storage Forward-Compat & Cross-Tab UI Sync
 **Goal**: Make the localStorage envelope safe to read/write across schema bumps and keep stats UI consistent when a second tab writes the envelope.
@@ -128,7 +131,7 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 | 5. Mobile Hands-Off Resilience                     | v1.0      | 4/4            | Complete    | 2026-05-10 |
 | 5.1. Hands-Off Resilience Polish                   | v1.0      | 5/5            | Complete    | 2026-05-10 |
 | 6. Learning & Claim-Safe Positioning               | v1.0      | 4/4            | Complete    | 2026-05-11 |
-| 7. Strict Type & Lint Baseline                     | v1.0.1    | 0/0            | Planning    | -          |
+| 7. Strict Type & Lint Baseline                     | v1.0.1    | 0/3            | Planned     | -          |
 | 8. Storage Forward-Compat & Cross-Tab UI Sync      | v1.0.1    | 0/0            | Not started | -          |
 | 9. Audio + Wake Lock Lifecycle Hardening           | v1.0.1    | 0/0            | Not started | -          |
 | 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 0/0            | Not started | -          |
