@@ -168,34 +168,68 @@ describe('cueSynth', () => {
     expect(peakArg).toBeLessThanOrEqual(0.25)
   })
 
-  // 260510-tc9 Bug 2 — phase-duration-scaled decay (Direction A).
-  // When phaseDurationSec is provided, the effective decayTimeConstant is
-  // clamp(defaultTau, phaseDurationSec / PERCEPTUAL_DECAY_DIVISOR, MAX_TAU)
-  // with PERCEPTUAL_DECAY_DIVISOR = 3 and MAX_TAU = 6.
+  // 260510-tc9 Bug 2 (iteration 2) — sustain-to-floor envelope for long phases.
+  // Onset character (PEAK_GAIN, defaultDecayTau) is preserved; the decay target
+  // is non-zero when phase > 3 × τ, and a hard fade-out at phase end avoids the
+  // sustain bleeding into the next strike.
+  const IN_PEAK_GAIN = 0.18 // mirrors cueSynth PEAK_GAIN
+  const IN_DEFAULT_TAU = 1.4
+  const OUT_DEFAULT_TAU = 1.8
+  const SUSTAIN_FLOOR = IN_PEAK_GAIN * 0.15
 
-  it('scheduleInCue with phaseDurationSec=10 stretches τ to ≈ 3.33 (10/3)', () => {
+  it('scheduleInCue with no phaseDurationSec keeps original decay target NEAR_SILENCE and original τ', () => {
     const ac = createAc()
-    const handle = scheduleInCue(ac, 1.0, ac.destination, 10)
+    const handle = scheduleInCue(ac, 1.0, ac.destination)
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
-    // setTargetAtTime(target, startTime, timeConstant) — assert timeConstant ≈ 10/3.
-    const call = setTarget.mock.calls[0] as [number, number, number] | undefined
-    expect(call).toBeDefined()
-    expect(call?.[2]).toBeCloseTo(10 / 3, 5)
+    // Only the original decay call — no phase-end fade.
+    expect(setTarget).toHaveBeenCalledTimes(1)
+    expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, IN_DEFAULT_TAU)
   })
 
-  it('scheduleInCue with phaseDurationSec=2 clamps to default τ (1.4) — short phases must not get a thinner cue than baseline', () => {
+  it('scheduleInCue with phaseDurationSec=2 (short phase) keeps original τ and target ≈ 0 — natural silence lands inside the phase', () => {
+    // Natural perceptual silence for In is 3 × 1.4 = 4.2 s. A 2 s phase ends
+    // before that, so the cue must NOT switch into sustain-to-floor mode.
     const ac = createAc()
     const handle = scheduleInCue(ac, 1.0, ac.destination, 2)
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
-    // 2/3 ≈ 0.667 < default 1.4 → clamped UP to 1.4.
-    expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, 1.4)
+    expect(setTarget).toHaveBeenCalledTimes(1)
+    expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, IN_DEFAULT_TAU)
   })
 
-  it('scheduleOutCue with phaseDurationSec=30 clamps to MAX_TAU = 6', () => {
+  it('scheduleInCue with phaseDurationSec=10 decays toward SUSTAIN_FLOOR (not zero) using ORIGINAL τ — strike onset character preserved', () => {
+    const ac = createAc()
+    const handle = scheduleInCue(ac, 1.0, ac.destination, 10)
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    const decayCall = setTarget.mock.calls[0] as [number, number, number]
+    expect(decayCall[0]).toBeCloseTo(SUSTAIN_FLOOR, 5)
+    expect(decayCall[1]).toBeCloseTo(1.005, 5) // when + STRIKE_RAMP_OFFSET
+    expect(decayCall[2]).toBeCloseTo(IN_DEFAULT_TAU, 5) // ORIGINAL τ, not stretched
+  })
+
+  it('scheduleInCue with phaseDurationSec=10 schedules a hard fade-out 0.2 s before phase end', () => {
+    const ac = createAc()
+    const handle = scheduleInCue(ac, 1.0, ac.destination, 10)
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    // Second setTargetAtTime call: target ≈ 0 at (when + phaseDuration - 0.2) with fast τ.
+    expect(setTarget).toHaveBeenCalledTimes(2)
+    const fadeCall = setTarget.mock.calls[1] as [number, number, number]
+    expect(fadeCall[0]).toBeCloseTo(0.0001, 5)
+    expect(fadeCall[1]).toBeCloseTo(1.0 + 10 - 0.2, 5)
+    expect(fadeCall[2]).toBeCloseTo(0.05, 5)
+  })
+
+  it('scheduleOutCue with phaseDurationSec=30 (BPM=1) sustains at floor for the full phase — no MAX_TAU silence cliff', () => {
+    // The previous τ-stretch implementation went silent before flip at BPM=1
+    // because exponential decay to 0 has no audible floor. This regression
+    // case asserts the new envelope holds an audible floor regardless of
+    // phase length.
     const ac = createAc()
     const handle = scheduleOutCue(ac, 1.0, ac.destination, 30)
     const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
-    // 30/3 = 10 > MAX_TAU 6 → clamped DOWN to 6.
-    expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, 6)
+    const decayCall = setTarget.mock.calls[0] as [number, number, number]
+    expect(decayCall[0]).toBeCloseTo(SUSTAIN_FLOOR, 5)
+    expect(decayCall[2]).toBeCloseTo(OUT_DEFAULT_TAU, 5) // unchanged from baseline
+    // cleanupAt extends to phase end (not just τ × TAIL_MULTIPLIER).
+    expect(handle.cleanupAt).toBeGreaterThan(1.0 + 30)
   })
 })

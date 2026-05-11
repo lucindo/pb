@@ -27,26 +27,33 @@ const TAIL_MULTIPLIER = 5 // stop oscillators after ~5*timeConstant
 const TAIL_PADDING_SEC = 0.1 // tiny extra to avoid asymptote clip
 const CLEANUP_PADDING_SEC = 0.2 // extra wallclock margin before nodes are GC-able
 
-// 260510-tc9 Bug 2 — phase-duration-scaled decay (Direction A from the bug brief).
+// 260510-tc9 Bug 2 — sustain-to-floor envelope for long phases.
 //
-// Problem: setTargetAtTime is exponential decay (audible ~3×τ). With τ = 1.4/1.8 s
-// the bowl cue is perceptually silent after ~4–5 s. At BPM ≤ 3.5 each phase is
-// ≥ 5 s, so the user hears silence before the next phase boundary — the cue
-// stops being a hands-off arrival marker.
+// Problem: setTargetAtTime is exponential decay toward 0 (audible ~3×τ). With
+// τ = 1.4/1.8 s the bowl cue is perceptually silent after ~4–5 s. At BPM ≤ 3.5
+// each phase is ≥ 5 s, so a sound-only follower hears silence before the next
+// phase boundary — the cue stops being a hands-off arrival marker.
 //
-// Fix: when the caller supplies a phaseDurationSec, stretch τ so 3×τ ≈ the phase
-// length (cue stays audible right up to the flip). Cap at MAX_TAU so even at
-// 1 BPM (60 s phase) the perceptual tail (~3×τ = 18 s) does not extend past
-// the next boundary as a drone — the next strike cuts in well before then.
+// First-iteration fix stretched τ to match phase length; UAT showed it changed
+// the perceived character of the strike (early-body felt "stronger / getting
+// louder") AND still went silent at BPM=1 because exponential decay to 0 has
+// no audible floor at long phase durations.
 //
-// Direction A was chosen over B (sustain pad — doubles synth surface area),
-// C (re-strike — rhythmic events break the one-strike-per-phase metaphor), and
-// D (per-phase envelope curve — more code with no perceptual gain over A).
+// Final fix: keep the ORIGINAL τ (preserves the strike onset character) but
+// decay toward a non-zero floor when the phase is long enough that natural
+// decay would die before the flip. A short, hard fade-out runs in the last
+// PHASE_END_FADE_OUT_LEAD_SEC of the phase so the floor doesn't bleed into
+// the next strike.
 //
-// Back-compat: when phaseDurationSec is undefined, behavior is byte-identical
-// to the pre-Bug-2 implementation (default τ used end-to-end).
-const PERCEPTUAL_DECAY_DIVISOR = 3 // 3×τ ≈ -26 dB ≈ perceptual silence threshold
-const MAX_TAU = 6 // 3×MAX_TAU = 18 s — past longest valid phase (~12 s at 5 BPM 40:60), drone-safe
+// When phase ≤ PERCEPTUAL_SILENCE_TAU_MULT × defaultDecayTau (perceptual
+// silence already lands within the phase — high-BPM regime), behavior is
+// byte-identical to the pre-Bug-2 implementation: target 0.0001, oscillators
+// run for τ × TAIL_MULTIPLIER.
+const PERCEPTUAL_SILENCE_TAU_MULT = 3 // 3×τ ≈ -26 dB ≈ perceptual silence
+const SUSTAIN_FLOOR_RATIO = 0.15 // ≈ -16 dB below peak — quiet but clearly audible
+const PHASE_END_FADE_OUT_TAU = 0.05 // setTargetAtTime τ for the boundary fade (≈ 150 ms perceptual)
+const PHASE_END_FADE_OUT_LEAD_SEC = 0.2 // start fade this many seconds before phase end
+const NEAR_SILENCE = 0.0001 // setTargetAtTime can't ramp to true zero
 
 // Tick (lead-in): perceptually distinct from bowl cues per D-15.
 // Square wave through a low-pass filter, very short envelope.
@@ -72,16 +79,13 @@ function scheduleBowlCue(
   defaultDecayTau: number,
   phaseDurationSec?: number,
 ): CueHandle {
-  // 260510-tc9 Bug 2: stretch the decay envelope to the phase length when a
-  // duration is supplied; otherwise behavior is byte-identical to the original.
-  // Clamp BOTH ways:
-  //   - lower clamp at defaultDecayTau prevents short phases (e.g. 2 s) from
-  //     making the cue THINNER than baseline (would defeat the purpose).
-  //   - upper clamp at MAX_TAU keeps very long phases (1 BPM) from droning.
-  const effectiveTau =
-    phaseDurationSec === undefined
-      ? defaultDecayTau
-      : Math.min(MAX_TAU, Math.max(defaultDecayTau, phaseDurationSec / PERCEPTUAL_DECAY_DIVISOR))
+  // 260510-tc9 Bug 2: when the phase outlasts natural perceptual silence, decay
+  // toward a non-zero sustain floor (audible until the flip) and fade that
+  // floor out in the last PHASE_END_FADE_OUT_LEAD_SEC of the phase. Onset
+  // character (PEAK_GAIN, defaultDecayTau) is preserved either way.
+  const naturalSilenceAt = defaultDecayTau * PERCEPTUAL_SILENCE_TAU_MULT
+  const needsSustain =
+    phaseDurationSec !== undefined && phaseDurationSec > naturalSilenceAt
 
   // Low-pass filter — softens the partial stack and removes hiss.
   const filter = audioCtx.createBiquadFilter()
@@ -92,11 +96,23 @@ function scheduleBowlCue(
   // Master envelope GainNode — strike-and-decay (D-01).
   const envelope = audioCtx.createGain()
   envelope.gain.setValueAtTime(PEAK_GAIN, when)
-  envelope.gain.setTargetAtTime(0.0001, when + STRIKE_RAMP_OFFSET, effectiveTau)
+  const decayTarget = needsSustain ? PEAK_GAIN * SUSTAIN_FLOOR_RATIO : NEAR_SILENCE
+  envelope.gain.setTargetAtTime(decayTarget, when + STRIKE_RAMP_OFFSET, defaultDecayTau)
 
-  // Stop oscillators + GC cleanup both scale with effectiveTau so a stretched
-  // decay does not get truncated by a baseline-length tail.
-  const stopAt = when + effectiveTau * TAIL_MULTIPLIER + TAIL_PADDING_SEC
+  let stopAt: number
+  let cleanupAt: number
+  if (needsSustain && phaseDurationSec !== undefined) {
+    // Hard fade-out in the last lead window so the floor does not bleed into
+    // the next phase's strike.
+    const phaseEnd = when + phaseDurationSec
+    const fadeStart = phaseEnd - PHASE_END_FADE_OUT_LEAD_SEC
+    envelope.gain.setTargetAtTime(NEAR_SILENCE, fadeStart, PHASE_END_FADE_OUT_TAU)
+    stopAt = phaseEnd + TAIL_PADDING_SEC
+    cleanupAt = phaseEnd + CLEANUP_PADDING_SEC
+  } else {
+    stopAt = when + defaultDecayTau * TAIL_MULTIPLIER + TAIL_PADDING_SEC
+    cleanupAt = when + defaultDecayTau * TAIL_MULTIPLIER + CLEANUP_PADDING_SEC
+  }
 
   for (const partial of PARTIALS) {
     const osc = audioCtx.createOscillator()
@@ -119,7 +135,7 @@ function scheduleBowlCue(
   return {
     envelope,
     scheduledAt: when,
-    cleanupAt: when + effectiveTau * TAIL_MULTIPLIER + CLEANUP_PADDING_SEC,
+    cleanupAt,
   }
 }
 
