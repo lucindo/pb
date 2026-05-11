@@ -99,7 +99,8 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
   3. `useSessionEngine.currentFrame` returns the same memoized frame object across renders within the same `cycleIndex:phase`; a separate `liveFrame` (or equivalent) carries per-rAF `phaseProgress` for `BreathingShape`.
   4. The rAF loop's `cancelled` short-circuit runs at the top of `tick()` so an extra rAF firing after teardown returns immediately; the `App.tsx:80-82` ref-updater effect declares explicit `[session.currentFrame]` deps and passes `react-hooks/exhaustive-deps`.
   5. No regressions in the existing 363/363 suite; boundary cues still fire exactly once per phase transition (locked by existing tests and any added identity-stability tests).
-**Plans**: TBD
+**Plans**: 1 plan (single wave, single plan per CONTEXT D-16; engine-first task ordering per D-17 with three sequential tasks inside the plan)
+  - [ ] 10-01-PLAN.md — Single plan covering all five HOOKS-* requirements: Task 1 useSessionEngine (HOOKS-03 currentFrame memo + liveFrame split + HOOKS-04 top-of-tick cancel-guard + HOOKS-02 runningSnapshotRef ref-write inside rAF setState updater + EXTEND useSessionEngine.test.tsx); Task 2 useAudioCues (HOOKS-01 mutedRef on top of muted state + drop muted from start/reconstructEngine deps + EXTEND useAudioCues.test.tsx); Task 3 App.tsx (DELETE local runningSnapshotRef + DELETE running-snapshot effect at :412-420 + HOOKS-02 tighten cleanup deps to [state.status, ...] + D-05 BreathingShape & SessionReadout migration to session.liveFrame + HOOKS-05 verify sessionFrameRef updater at :81-84 passive)
 
 ### Phase 11: Domain, UI Contracts & Accessibility
 **Goal**: Tighten small contracts at the domain/UI/a11y boundary so invalid inputs throw at the boundary, dialog state cannot drift into the session view, and `MuteToggle` carries semantically correct attributes in resume mode.
@@ -139,6 +140,6 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 | 7. Strict Type & Lint Baseline                     | v1.0.1    | 4/4            | Complete    | 2026-05-11 |
 | 8. Storage Forward-Compat & Cross-Tab UI Sync      | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 9. Audio + Wake Lock Lifecycle Hardening           | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
-| 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 0/0            | Not started | -          |
+| 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 0/1            | Planned     | -          |
 | 11. Domain, UI Contracts & Accessibility           | v1.0.1    | 0/0            | Not started | -          |
 | 12. Assets, Content & Hygiene Cleanup              | v1.0.1    | 0/0            | Not started | -          |
