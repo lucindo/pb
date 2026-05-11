@@ -94,9 +94,19 @@ export default function App() {
   //   the existing `inSessionView` gating; D-10).
   // - UI-SPEC §"Interaction Contract — STORAGE-03 Cross-Tab Stats Refresh"
   //   locks the decorative-update behavior: no aria-live, no animation,
-  //   no flash. The cleared-storage case (`e.newValue === null`) falls
-  //   through naturally: `loadStats() -> coerceStats(undefined) -> ZERO_STATS`
-  //   -> footer hides via the existing `totalSessions > 0` gating.
+  //   no flash. The removeItem(STATE_KEY) case from another tab arrives as
+  //   `e.key === STATE_KEY` with `e.newValue === null` and falls through
+  //   naturally: `loadStats() -> coerceStats(undefined) -> ZERO_STATS` ->
+  //   footer hides via the existing `totalSessions > 0` gating. A cross-tab
+  //   `localStorage.clear()` is NOT covered by this listener: per the
+  //   WHATWG Storage spec it dispatches with `e.key === null`, which the
+  //   `e.key === STATE_KEY` filter rejects. This is an accepted gap —
+  //   `clear()` from other tabs is rare in practice (typically only
+  //   DevTools) and explicitly out of Phase 8 scope (UI-SPEC §"Edge
+  //   cases — locked behavior" only locks the `e.newValue === null` row,
+  //   i.e. the `removeItem(STATE_KEY)` case; the cross-tab `clear()` row
+  //   is intentionally absent). The footer will catch up on the next
+  //   mount of this tab.
   // Empty deps `[]` are correct — `setStats` is stable from useState,
   // and `loadStats` + `STATE_KEY` are module-level imports.
   useEffect(() => {
