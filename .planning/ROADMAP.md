@@ -33,8 +33,8 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 
 ### 🛠️ v1.0.1 Code Review Patch (in progress)
 
-- [ ] **Phase 7: Strict Type & Lint Baseline** — Enable `tsconfig` `strict` + `@typescript-eslint` strict-type-checked + audit `exhaustive-deps` enforcement; fix all resulting compiler/lint errors inline.
-- [ ] **Phase 8: Storage Forward-Compat & Cross-Tab UI Sync** — Preserve on-disk envelope version, refuse downgrade, listen for cross-tab `storage` events.
+- [x] **Phase 7: Strict Type & Lint Baseline** (4/4 plans) — completed 2026-05-11 — Enable `tsconfig` `strict` + `@typescript-eslint` strict-type-checked + audit `exhaustive-deps` enforcement; fix all resulting compiler/lint errors inline.
+- [x] **Phase 8: Storage Forward-Compat & Cross-Tab UI Sync** (2/2 plans) — completed 2026-05-11 — Preserve on-disk envelope version, refuse downgrade, listen for cross-tab `storage` events.
 - [x] **Phase 9: Audio + Wake Lock Lifecycle Hardening** (2/2 plans) — completed 2026-05-11 — Reconstruction generation counter, boundary-cue clamp, lead-in null-on-closed, per-cue node disconnect, defensive state-change handler, dead `'starting'` removal, wake-lock in-flight guard.
 - [ ] **Phase 10: Hooks Identity & Effect Hygiene** — `mutedRef` to stabilize `start`/`reconstructEngine`; status-only deps on App rAF effects; per-phase frame identity in `useSessionEngine`; rAF cancel-guard ordering; explicit ref-updater deps.
 - [ ] **Phase 11: Domain, UI Contracts & Accessibility** — Boundary validation in `extendTimedSession`, `SessionReadout` lead-in placeholder contract, symmetric auto-close for Learn/Reset dialogs in-session, `MuteToggle` resume-mode a11y attributes.
@@ -136,8 +136,8 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 | 5. Mobile Hands-Off Resilience                     | v1.0      | 4/4            | Complete    | 2026-05-10 |
 | 5.1. Hands-Off Resilience Polish                   | v1.0      | 5/5            | Complete    | 2026-05-10 |
 | 6. Learning & Claim-Safe Positioning               | v1.0      | 4/4            | Complete    | 2026-05-11 |
-| 7. Strict Type & Lint Baseline                     | v1.0.1    | 0/4            | Planned     | -          |
-| 8. Storage Forward-Compat & Cross-Tab UI Sync      | v1.0.1    | 0/2            | Planned     | -          |
+| 7. Strict Type & Lint Baseline                     | v1.0.1    | 4/4            | Complete    | 2026-05-11 |
+| 8. Storage Forward-Compat & Cross-Tab UI Sync      | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 9. Audio + Wake Lock Lifecycle Hardening           | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 0/0            | Not started | -          |
 | 11. Domain, UI Contracts & Accessibility           | v1.0.1    | 0/0            | Not started | -          |
