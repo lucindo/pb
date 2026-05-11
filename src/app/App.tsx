@@ -202,6 +202,7 @@ export default function App() {
   // local-state update is the documented React pattern for "subscribe + reflect".
   useEffect(() => {
     if (state.status !== 'running' && endDialogOpen) {
+      // Reason: subscribe-and-reflect — endDialogOpen mirrors external session.status; setting local state from this trigger effect is the documented React pattern for "subscribe + reflect".
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setEndDialogOpen(false)
     }
@@ -387,6 +388,7 @@ export default function App() {
       // `appPhase !== 'idle'` guard in onStartClick.
       void audioStop()
       void wakeLockRelease() // Phase 5 D-07: single-write release site (D-08 idempotent)
+      // Reason: subscribe-and-reflect — appPhase resets to 'idle' when session leaves running; this effect is the single write site per D-16 Phase 4 invariant.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAppPhase('idle')
       clearLeadInTimeouts()

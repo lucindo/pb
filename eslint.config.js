@@ -26,6 +26,7 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      'react-hooks/exhaustive-deps': 'error', // BUILD-03: upgrade from recommended-default 'warn'
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // Allow `this: void` parameter type in interface method declarations (needed for unbound-method fix pattern).
       '@typescript-eslint/no-invalid-void-type': ['error', { allowAsThisParameter: true }],
