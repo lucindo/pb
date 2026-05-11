@@ -26,7 +26,7 @@ Land strict TypeScript and strict-type-checked ESLint as the compiler- and linte
 
 ### react-hooks disable audit policy
 - **D-04:** Audit every existing `// eslint-disable-next-line react-hooks/*` in the codebase. Each surviving disable MUST be preceded by (or carry on the same line) a `// Reason: …` annotation naming the invariant being protected (e.g., the Phase 5+ intentional `set-state-in-effect` cases). Unjustified disables are removed.
-- **D-05:** Do NOT add a project-level enforcement rule that flags un-annotated `eslint-disable` comments in this phase. Annotation policy is documented in CONTEXT/PLAN and enforced via code review for v1.0.1. Self-enforcement (custom ESLint rule) can ship in v1.1 if drift appears.
+- **D-05 [informational]:** Do NOT add a project-level enforcement rule that flags un-annotated `eslint-disable` comments in this phase. Annotation policy is documented in CONTEXT/PLAN and enforced via code review for v1.0.1. Self-enforcement (custom ESLint rule) can ship in v1.1 if drift appears.
 
 ### noUncheckedIndexedAccess blast radius
 - **D-06:** Enable `noUncheckedIndexedAccess: true` together with the rest of strict (no scope-check or staged-rollout gate). REQUIREMENTS.md locks the flag; fix every site inline.
