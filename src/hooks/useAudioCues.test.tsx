@@ -644,7 +644,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     expect(constructed).toBe(initialConstructed + 1)
     // onReanchorRequired must have been invoked with the new AC's currentTime.
     expect(reanchorSpy).toHaveBeenCalledTimes(1)
-    expect(typeof reanchorSpy.mock.calls[0][0]).toBe('number')
+    // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    expect(typeof reanchorSpy.mock.calls[0]![0]).toBe('number')
 
     await act(async () => { await result.current.stop() })
     unmount()
@@ -754,7 +755,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     expect(constructed).toBe(initialConstructed + 1)
     // Re-anchor callback fired with new AC's currentTime (D-35).
     expect(reanchorSpy).toHaveBeenCalledTimes(1)
-    expect(typeof reanchorSpy.mock.calls[0][0]).toBe('number')
+    // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    expect(typeof reanchorSpy.mock.calls[0]![0]).toBe('number')
 
     await act(async () => { await result.current.stop() })
     unmount()

@@ -145,8 +145,10 @@ describe('App — audio cues (Phase 3)', () => {
     expect(scheduleOutSpy).toHaveBeenCalled()
     const [firstCallArgs] = scheduleOutSpy.mock.calls
     // firstCallArgs is [audioCtx, audioTime, destination]. Verify audioTime is finite + positive.
-    expect(typeof firstCallArgs[1]).toBe('number')
-    expect(firstCallArgs[1]).toBeGreaterThan(0)
+    // Reason: length asserted by toHaveBeenCalled() immediately above.
+    expect(typeof firstCallArgs![1]).toBe('number')
+    // Reason: length asserted by toHaveBeenCalled() above.
+    expect(firstCallArgs![1]).toBeGreaterThan(0)
   })
 
   // -- Test 8: AC.close called when modal-confirm End fires (timed session) -----

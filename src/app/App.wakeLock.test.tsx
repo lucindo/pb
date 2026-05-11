@@ -61,7 +61,8 @@ describe('App — wake lock (Phase 5)', () => {
 
     await startAndAdvancePastLeadIn()
     expect(requestSpy).toHaveBeenCalledTimes(1)
-    const sentinel = await requestSpy.mock.results[0].value as WakeLockSentinel
+    // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
@@ -75,7 +76,8 @@ describe('App — wake lock (Phase 5)', () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
     await startAndAdvancePastLeadIn()
-    const sentinel = await requestSpy.mock.results[0].value as WakeLockSentinel
+    // Reason: startAndAdvancePastLeadIn triggers exactly one wakeLock.request; results[0] is guaranteed populated.
+    const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
@@ -95,7 +97,8 @@ describe('App — wake lock (Phase 5)', () => {
     fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
-    const sentinel = await requestSpy.mock.results[0].value as WakeLockSentinel
+    // Reason: startAndAdvancePastLeadIn triggers exactly one wakeLock.request; results[0] is guaranteed populated.
+    const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
     // Advance past 5-min duration + a 1-min cycle clearance buffer (mirrors App.audio Test 10).
@@ -115,7 +118,8 @@ describe('App — wake lock (Phase 5)', () => {
     expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
 
     // Sentinel may or may not have resolved yet; capture defensively.
-    const sentinel = await requestSpy.mock.results[0].value as WakeLockSentinel
+    // Reason: Start session click triggers exactly one wakeLock.request; results[0] is populated by this point.
+    const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
     // Cancel-during-lead-in: button label is locked to 'Start session' (Phase 2 W4).
