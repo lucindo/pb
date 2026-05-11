@@ -151,7 +151,10 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
     cancelAndHoldAtTime = vi.fn()
   }
 
-  class FakeAudioNode {
+  // AUDIO-04 D-14: FakeAudioNode inherits from EventTarget so osc.addEventListener('ended', ...)
+  // works in tests — OscillatorNode is an EventTarget in real browsers and cueSynth attaches
+  // { once: true } 'ended' listeners for automatic node-graph cleanup.
+  class FakeAudioNode extends EventTarget {
     connect = vi.fn().mockReturnThis()
     disconnect = vi.fn()
   }

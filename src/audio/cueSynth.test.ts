@@ -245,6 +245,102 @@ describe('cueSynth', () => {
     expect(fadeCall[2]).toBeCloseTo(0.05, 5)
   })
 
+  it('scheduleBowlCue / scheduleInCue attaches once: true ended listeners that disconnect each osc + partialGain exactly once (AUDIO-04)', () => {
+    const ac = createAc()
+    const oscillators: OscillatorNode[] = []
+    const allGains: GainNode[] = []
+    const allFilters: BiquadFilterNode[] = []
+
+    const realCreateOsc = ac.createOscillator.bind(ac)
+    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
+      const osc = realCreateOsc()
+      oscillators.push(osc)
+      return osc
+    })
+
+    const realCreateGain = ac.createGain.bind(ac)
+    vi.spyOn(ac, 'createGain').mockImplementation(() => {
+      const gain = realCreateGain()
+      allGains.push(gain)
+      return gain
+    })
+
+    const realCreateFilter = ac.createBiquadFilter.bind(ac)
+    vi.spyOn(ac, 'createBiquadFilter').mockImplementation(() => {
+      const f = realCreateFilter()
+      allFilters.push(f)
+      return f
+    })
+
+    scheduleInCue(ac, 1.0, ac.destination)
+
+    // From cueSynth.ts construction order:
+    //   1. filter = createBiquadFilter()         → allFilters[0]
+    //   2. envelope = createGain()               → allGains[0]
+    //   Loop for each of 3 PARTIALS:
+    //   3/5/7. osc = createOscillator()          → oscillators[0..2]
+    //   4/6/8. partialGain = createGain()        → allGains[1..3]
+    const capturedFilter = allFilters[0]
+    const capturedEnvelope = allGains[0]
+    const partialGains = allGains.slice(1) // [1..3] = the 3 per-partial gain nodes
+
+    expect(oscillators).toHaveLength(3)
+    expect(partialGains).toHaveLength(3)
+
+    // Dispatch 'ended' on each osc — { once: true } ensures disconnect fires exactly once.
+    for (let i = 0; i < oscillators.length; i++) {
+      const osc = oscillators[i]
+      const pg = partialGains[i]
+      // Reason: length asserted by toHaveLength(3) above; loop bounds guarantee valid index.
+      if (osc === undefined || pg === undefined) continue
+
+      osc.dispatchEvent(new Event('ended'))
+
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(osc.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(pg.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+
+      // Second dispatch: { once: true } removes the listener after first call.
+      // Dispatching 'ended' again must NOT trigger a second disconnect.
+      osc.dispatchEvent(new Event('ended'))
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(osc.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1) // still 1, not 2
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(pg.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1) // still 1, not 2
+    }
+
+    // Dispatch 'ended' on the LAST osc — shared filter+envelope listener fires.
+    // (Already dispatched above in the loop, so filter+envelope should be disconnected by now.)
+    // Reason: length asserted by toHaveLength(3) above; last element access is safe.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const lastOsc = oscillators[oscillators.length - 1]!
+    // The last osc's 'ended' event was already dispatched in the loop above.
+    // Verify filter and envelope disconnect were called exactly once.
+    expect(capturedFilter).toBeDefined()
+    expect(capturedEnvelope).toBeDefined()
+    if (capturedFilter !== undefined) {
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(capturedFilter.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+    }
+    if (capturedEnvelope !== undefined) {
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(capturedEnvelope.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+    }
+
+    // Re-dispatch 'ended' on the last osc again — { once: true } means the shared listener
+    // is already removed; filter+envelope disconnect should NOT be called a second time.
+    lastOsc.dispatchEvent(new Event('ended'))
+    if (capturedFilter !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(capturedFilter.disconnect as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1) // still 1
+    }
+  })
+
   it('scheduleOutCue with phaseDurationSec=30 (BPM=1) sustains at floor for the full phase — no MAX_TAU silence cliff', () => {
     // The previous τ-stretch implementation went silent before flip at BPM=1
     // because exponential decay to 0 has no audible floor. This regression
