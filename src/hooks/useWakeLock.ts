@@ -30,6 +30,8 @@ export interface UseWakeLock {
 export function useWakeLock(): UseWakeLock {
   const sentinelRef = useRef<WakeLockSentinel | null>(null)
   const wasAcquiredRef = useRef<boolean>(false)
+  const requestInFlightRef = useRef<boolean>(false)              // WAKELOCK-01: concurrent-request gate.
+  const releaseCalledDuringRequestRef = useRef<boolean>(false)   // WAKELOCK-01: release-during-await signal.
 
   const request = useCallback(async (): Promise<void> => {
     // D-09: silent fallback when API absent (RESEARCH Pitfall 4 — non-optional in types
@@ -37,8 +39,17 @@ export function useWakeLock(): UseWakeLock {
     if (!('wakeLock' in navigator)) return
     // D-08: idempotent — skip if already holding a fresh sentinel
     if (sentinelRef.current !== null) return
+    // WAKELOCK-01: second concurrent caller no-ops while first await is pending.
+    if (requestInFlightRef.current) return
     try {
+      requestInFlightRef.current = true
       const sentinel = await navigator.wakeLock.request('screen')
+      // WAKELOCK-01: release()/unmount ran during the await; discard the freshly-acquired sentinel.
+      if (releaseCalledDuringRequestRef.current) {
+        releaseCalledDuringRequestRef.current = false
+        void sentinel.release().catch(() => undefined)
+        return
+      }
       sentinelRef.current = sentinel
       wasAcquiredRef.current = true
       // Sentinel's own 'release' event is the canonical "lock is gone" signal.
@@ -51,15 +62,19 @@ export function useWakeLock(): UseWakeLock {
           sentinelRef.current = null
           // Do NOT clear wasAcquiredRef — D-04 keeps it true for visibilitychange re-acquire.
         }
-      })
+      }, { once: true })
     } catch {
       // D-09: silently absorb NotAllowedError, SecurityError (insecure context),
       // synchronous throws from older stubs. Bare catch — no err.name branching
       // (RESEARCH Pitfall 3 / Anti-pattern "Re-implementing rejection codes").
+    } finally {
+      requestInFlightRef.current = false
     }
   }, [])
 
   const release = useCallback(async (): Promise<void> => {
+    // WAKELOCK-01: if request() is awaiting, signal post-await to discard.
+    if (requestInFlightRef.current) releaseCalledDuringRequestRef.current = true
     // Synchronous-null-then-async-close mirrors useAudioCues.stop() (useAudioCues.ts:123-135).
     // wasAcquiredRef cleared synchronously to halt visibility re-acquires (D-04 inverse).
     wasAcquiredRef.current = false
@@ -87,6 +102,8 @@ export function useWakeLock(): UseWakeLock {
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
+      // WAKELOCK-01: unmount-during-await orphans the in-flight sentinel; signal post-await to discard.
+      if (requestInFlightRef.current) releaseCalledDuringRequestRef.current = true
       // Pitfall 6: unmount-cleanup race against in-flight request(). Synchronously
       // null the sentinel ref BEFORE the await on release() so a fast new request()
       // arriving during the unmount window doesn't see a half-released sentinel.

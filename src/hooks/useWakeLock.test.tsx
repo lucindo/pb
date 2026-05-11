@@ -223,4 +223,135 @@ describe('useWakeLock', () => {
     await Promise.resolve()
     expect(requestSpy).toHaveBeenCalledTimes(1)
   })
+
+  it('WAKELOCK-01: second concurrent request() no-ops while first is pending', async () => {
+    let resolveFn!: (sentinel: WakeLockSentinel) => void
+    const pendingPromise = new Promise<WakeLockSentinel>((resolve) => { resolveFn = resolve })
+    const requestSpy = vi.spyOn(navigator.wakeLock, 'request').mockReturnValueOnce(pendingPromise)
+
+    const { result, unmount } = renderHook(() => useWakeLock())
+
+    // Fire request() twice without awaiting — second should no-op.
+    void result.current.request()
+    void result.current.request()
+
+    // Only one wakeLock.request('screen') call should have been made.
+    expect(requestSpy).toHaveBeenCalledTimes(1)
+
+    // Resolve the pending promise with a real FakeWakeLockSentinel so the hook can store it.
+    const fakeSentinel: WakeLockSentinel = {
+      released: false,
+      type: 'screen',
+      onrelease: null,
+      release: vi.fn(() => Promise.resolve()),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
+    }
+    await act(async () => {
+      resolveFn(fakeSentinel)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // After resolution, a subsequent release() should call sentinel.release exactly once
+    // (proving the sentinel was stored — not orphaned).
+    await act(async () => {
+      await result.current.release()
+    })
+    // Reason: fakeSentinel.release is a vi.fn; unbound-method suppressed.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(fakeSentinel.release as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+
+    unmount()
+  })
+
+  it('WAKELOCK-01: release() during pending request() orphans the fresh sentinel', async () => {
+    let resolveFn!: (sentinel: WakeLockSentinel) => void
+    const pendingPromise = new Promise<WakeLockSentinel>((resolve) => { resolveFn = resolve })
+    vi.spyOn(navigator.wakeLock, 'request').mockReturnValueOnce(pendingPromise)
+
+    const { result, unmount } = renderHook(() => useWakeLock())
+
+    // Fire request() without awaiting.
+    void result.current.request()
+
+    // Fire release() synchronously — sets releaseCalledDuringRequestRef.
+    void result.current.release()
+
+    // Resolve the pending promise with a spy-able sentinel.
+    const fakeSentinel: WakeLockSentinel = {
+      released: false,
+      type: 'screen',
+      onrelease: null,
+      release: vi.fn(() => Promise.resolve()),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
+    }
+    await act(async () => {
+      resolveFn(fakeSentinel)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // Post-await orphan path: sentinel.release() should have been called exactly once.
+    // Reason: fakeSentinel.release is a vi.fn; unbound-method suppressed.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(fakeSentinel.release as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+
+    // The assignment branch did NOT run — sentinel.addEventListener('release', ...) NOT called.
+    // Reason: fakeSentinel.addEventListener is a vi.fn; unbound-method suppressed.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(fakeSentinel.addEventListener as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+
+    // sentinelRef should be null — a subsequent release() is a no-op (release count stays at 1).
+    await act(async () => {
+      await result.current.release()
+    })
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(fakeSentinel.release as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1) // still 1
+
+    unmount()
+  })
+
+  it('WAKELOCK-01: unmount during pending request() orphans the fresh sentinel', async () => {
+    let resolveFn!: (sentinel: WakeLockSentinel) => void
+    const pendingPromise = new Promise<WakeLockSentinel>((resolve) => { resolveFn = resolve })
+    vi.spyOn(navigator.wakeLock, 'request').mockReturnValueOnce(pendingPromise)
+
+    const { result, unmount } = renderHook(() => useWakeLock())
+
+    // Fire request() without awaiting.
+    void result.current.request()
+
+    // Unmount instead of release() — triggers unmount cleanup which sets releaseCalledDuringRequestRef.
+    unmount()
+
+    // Resolve the pending promise with a spy-able sentinel.
+    const fakeSentinel: WakeLockSentinel = {
+      released: false,
+      type: 'screen',
+      onrelease: null,
+      release: vi.fn(() => Promise.resolve()),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
+    }
+    await act(async () => {
+      resolveFn(fakeSentinel)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // Post-await orphan path: sentinel.release() should have been called exactly once.
+    // Reason: fakeSentinel.release is a vi.fn; unbound-method suppressed.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(fakeSentinel.release as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1)
+
+    // The assignment branch did NOT run — sentinel.addEventListener('release', ...) NOT called.
+    // Reason: fakeSentinel.addEventListener is a vi.fn; unbound-method suppressed.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(fakeSentinel.addEventListener as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+  })
 })
