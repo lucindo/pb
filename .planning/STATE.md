@@ -70,6 +70,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Phase 7 verified complete; Phase 8 awaits `/gsd-discuss-phase 8`.
+- `2026-05-11-missing-favicon-404-in-console` — ui — index.html references `/favicon.svg` but no asset shipped → 404 in console (cosmetic).
 
 ### Blockers/Concerns
 
