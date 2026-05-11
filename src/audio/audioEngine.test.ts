@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { BreathingPlan } from '../domain/breathingPlan'
-import { createAudioEngine } from './audioEngine'
+import { createAudioEngine, SAFE_LEAD_SEC } from './audioEngine'
 import * as cueSynth from './cueSynth'
 import type { CueHandle } from './cueSynth'
 
@@ -105,6 +105,10 @@ describe('audioEngine', () => {
     const firstInCueTime = engine.scheduleLeadIn(7, samplePlan)
     expect(firstInCueTime).toBe(10)
     await engine.close()
+  })
+
+  it('SAFE_LEAD_SEC export equals 0.005 (D-03 single-source-of-truth)', () => {
+    expect(SAFE_LEAD_SEC).toBe(0.005)
   })
 
   it('scheduleNextCue with newPhase=in calls scheduleInCue at the requested audioTime', async () => {
@@ -252,6 +256,13 @@ describe('audioEngine', () => {
     expect(inSpy).not.toHaveBeenCalled()
   })
 
+  it('scheduleLeadIn returns null when engine is closed (AUDIO-03)', async () => {
+    const engine = await createAudioEngine()
+    await engine.close()
+    const result = engine.scheduleLeadIn(0, samplePlan)
+    expect(result).toBeNull()
+  })
+
   it('engine.now() returns audioCtx.currentTime', async () => {
     let probeTime = 0
     class ProbeAC {
@@ -275,6 +286,58 @@ describe('audioEngine', () => {
     const engine = await createAudioEngine()
     probeTime = 42.5
     expect(engine.now()).toBe(42.5)
+    await engine.close()
+  })
+
+  it('scheduleNextCue clamps past audioTime to currentTime + SAFE_LEAD_SEC (AUDIO-02)', async () => {
+    const probeTime = 10
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      get currentTime() { return probeTime }
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const { handle: stubHandle } = makeMockCueHandle()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue').mockReturnValue(stubHandle)
+    const engine = await createAudioEngine()
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 9.5, phaseDurationSec: 4 })
+    // audioTime 9.5 < currentTime(10) + SAFE_LEAD_SEC(0.005) → clamped to 10.005
+    expect(inSpy.mock.calls[0]?.[1]).toBeCloseTo(probeTime + SAFE_LEAD_SEC, 9)
+    await engine.close()
+  })
+
+  it('scheduleNextCue passes future audioTime verbatim (no clamp) (AUDIO-02)', async () => {
+    const probeTime = 10
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      get currentTime() { return probeTime }
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const { handle: stubHandle } = makeMockCueHandle()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue').mockReturnValue(stubHandle)
+    const engine = await createAudioEngine()
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 12, phaseDurationSec: 4 })
+    // audioTime 12 > currentTime(10) + SAFE_LEAD_SEC(0.005) → passes verbatim
+    expect(inSpy.mock.calls[0]?.[1]).toBe(12)
     await engine.close()
   })
 
