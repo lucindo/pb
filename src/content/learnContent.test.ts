@@ -62,8 +62,8 @@ describe('LEARN_CONTENT link contract', () => {
     expect(LEARN_CONTENT.links.youtubeChannel.label).toBe('YouTube channel')
   })
 
-  it('website label is "Website"', () => {
-    expect(LEARN_CONTENT.links.website.label).toBe('Website')
+  it('website label is "Website/Trainings" (2026-05-11 user rename)', () => {
+    expect(LEARN_CONTENT.links.website.label).toBe('Website/Trainings')
   })
 
   it('patreon label is "Patreon" (D-12 execute-time amendment)', () => {

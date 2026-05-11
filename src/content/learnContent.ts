@@ -52,7 +52,7 @@ export const LEARN_CONTENT: LearnContent = {
       url: 'https://www.youtube.com/@ForrestKnutson',
     },
     website: {
-      label: 'Website',
+      label: 'Website/Trainings',
       url: 'https://www.meditativemellows.com/',
     },
     book: {
