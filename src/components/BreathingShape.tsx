@@ -101,7 +101,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           // Desktop flickers without this; Safari/Chromium auto-promote).
           // Order matters: translate3d first so it establishes the 3D
           // context, scale applies inside it.
-          transform: `translate3d(0,0,0) scale(${orbScale})`,
+          transform: `translate3d(0,0,0) scale(${String(orbScale)})`,
         }}
       >
         <span
@@ -128,8 +128,8 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
         aria-hidden="true"
         className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
         style={{
-          width: `${MIN_SCALE * 100}%`,
-          height: `${MIN_SCALE * 100}%`,
+          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
+          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
         }}
       />
       {/* D-03: phase label centered inside the orb at large display size */}
@@ -163,7 +163,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
   return (
     <div
       role="img"
-      aria-label={`Lead-in: ${digit}`}
+      aria-label={`Lead-in: ${String(digit)}`}
       className="relative mx-auto my-12 grid place-items-center"
       style={{
         width: 'var(--orb-size)',
@@ -193,7 +193,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
           top: 0,
           bottom: 0,
           // GPU promotion (see BreathingShapeBody comment above).
-          transform: `translate3d(0,0,0) scale(${MID_SCALE})`,
+          transform: `translate3d(0,0,0) scale(${String(MID_SCALE)})`,
         }}
       >
         <span
@@ -208,8 +208,8 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
         aria-hidden="true"
         className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
         style={{
-          width: `${MIN_SCALE * 100}%`,
-          height: `${MIN_SCALE * 100}%`,
+          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
+          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
         }}
       />
       {/* D-14: digit in the same large-display position as the In/Out label,

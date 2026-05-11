@@ -29,13 +29,13 @@ const HOURS_FLIP_THRESHOLD_HOURS = 1.05
 export function formatTotalMinutes(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60)
   const hours = totalSeconds / 3600
-  if (hours < HOURS_FLIP_THRESHOLD_HOURS) return `${minutes} min`
+  if (hours < HOURS_FLIP_THRESHOLD_HOURS) return `${String(minutes)} min`
   return `${hours.toFixed(1)} hours`
 }
 
 // D-06: singular "1 session", else "N sessions"
 export function formatSessionCount(count: number): string {
-  return count === 1 ? '1 session' : `${count} sessions`
+  return count === 1 ? '1 session' : `${String(count)} sessions`
 }
 
 // D-05: "May 7" current year; "May 7, 2025" other year.
@@ -49,7 +49,7 @@ export function formatLastSessionDate(atMs: number, now: () => number = Date.now
 
 // D-07: integer minutes via floor (e.g. 9:55 session -> "9 min").
 export function formatLastSessionDuration(durationSeconds: number): string {
-  return `${Math.floor(durationSeconds / 60)} min`
+  return `${String(Math.floor(durationSeconds / 60))} min`
 }
 
 // D-08: "Last: May 7 · 10 min" — null when stats has no last-session data.
