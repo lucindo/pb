@@ -54,8 +54,11 @@ export interface UseAudioCues {
   /** Toggle mute. Pass true to mute, false to unmute. */
   setMuted(muted: boolean): void
   /** Notify a phase boundary at audioTime — the engine schedules the In or Out cue.
-   *  App.tsx calls this as it transitions cycleIndex/phase. */
-  notifyPhaseBoundary(args: { newPhase: 'in' | 'out'; audioTime: number }): void
+   *  App.tsx calls this as it transitions cycleIndex/phase. `phaseDurationSec` is
+   *  the length of the UPCOMING phase (derived from plan.inhaleMs / plan.exhaleMs);
+   *  the engine forwards it to cueSynth so the bowl-cue decay envelope stretches
+   *  with the phase length at low BPM (260510-tc9 Bug 2). */
+  notifyPhaseBoundary(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
   /** Returns audioCtx.currentTime, or null if AC unavailable. App.tsx uses this for
    *  the dual-anchor (Pitfall 2). */
   audioNow(): number | null
@@ -319,7 +322,7 @@ export function useAudioCues(
   }, [])
 
   const notifyPhaseBoundary = useCallback(
-    (args: { newPhase: 'in' | 'out'; audioTime: number }): void => {
+    (args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void => {
       engineRef.current?.scheduleNextCue(args)
     },
     [],

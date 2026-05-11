@@ -108,7 +108,7 @@ describe('audioEngine', () => {
   it('scheduleNextCue with newPhase=in calls scheduleInCue at the requested audioTime', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
     const engine = await createAudioEngine()
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5 })
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
     expect(inSpy).toHaveBeenCalledTimes(1)
     expect(inSpy.mock.calls[0]?.[1]).toBe(5)
     await engine.close()
@@ -117,9 +117,22 @@ describe('audioEngine', () => {
   it('scheduleNextCue with newPhase=out calls scheduleOutCue at the requested audioTime', async () => {
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
     const engine = await createAudioEngine()
-    engine.scheduleNextCue({ newPhase: 'out', audioTime: 5.5 })
+    engine.scheduleNextCue({ newPhase: 'out', audioTime: 5.5, phaseDurationSec: 6.54 })
     expect(outSpy).toHaveBeenCalledTimes(1)
     expect(outSpy.mock.calls[0]?.[1]).toBe(5.5)
+    await engine.close()
+  })
+
+  // 260510-tc9 Bug 2: engine forwards phaseDurationSec as the 4th positional arg
+  // to scheduleInCue / scheduleOutCue (matches cueSynth signature: ac, when, dest, phaseDurationSec).
+  it('scheduleNextCue forwards phaseDurationSec as the 4th arg to scheduleInCue/scheduleOutCue', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+    const engine = await createAudioEngine()
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.scheduleNextCue({ newPhase: 'out', audioTime: 9.36, phaseDurationSec: 6.54 })
+    expect(inSpy.mock.calls[0]?.[3]).toBeCloseTo(4.36, 5)
+    expect(outSpy.mock.calls[0]?.[3]).toBeCloseTo(6.54, 5)
     await engine.close()
   })
 
@@ -128,8 +141,8 @@ describe('audioEngine', () => {
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
     const engine = await createAudioEngine()
     engine.setMuted(true)
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5 })
-    engine.scheduleNextCue({ newPhase: 'out', audioTime: 6 })
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.scheduleNextCue({ newPhase: 'out', audioTime: 6, phaseDurationSec: 6.54 })
     expect(inSpy).not.toHaveBeenCalled()
     expect(outSpy).not.toHaveBeenCalled()
     await engine.close()
@@ -233,7 +246,7 @@ describe('audioEngine', () => {
     const engine = await createAudioEngine()
     await engine.close()
     inSpy.mockClear()
-    expect(() => engine.scheduleNextCue({ newPhase: 'in', audioTime: 5 })).not.toThrow()
+    expect(() => engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })).not.toThrow()
     expect(inSpy).not.toHaveBeenCalled()
   })
 

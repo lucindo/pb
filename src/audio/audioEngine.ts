@@ -28,8 +28,13 @@ export interface AudioEngine {
   /** Schedule the 3-2-1 lead-in: ticks at startAudioTime + 0/+1/+2 s, first In cue at startAudioTime + 3 s.
    *  Returns the audioTime of the first In cue (= startAudioTime + 3). */
   scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number
-  /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue at the given audioTime if not muted. */
-  scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number }): void
+  /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue
+   *  at the given audioTime if not muted. `phaseDurationSec` is the length of the
+   *  UPCOMING phase (in / out) in seconds; cueSynth uses it to stretch the bowl
+   *  decay envelope so the cue stays audible through the entire phase at low BPM
+   *  (260510-tc9 Bug 2). The boundary scheduler in App.tsx derives this from
+   *  plan.inhaleMs / plan.exhaleMs. */
+  scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
   /** Toggle mute. Mid-cue: applies a soft fade-out to the active cue's envelope.
    *  Mid-phase unmute: does NOT fire a make-up cue (D-08). */
   setMuted(muted: boolean): void
@@ -139,9 +144,7 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
   }
 
   const engine: AudioEngine = {
-    scheduleLeadIn(startAudioTime: number, _plan: BreathingPlan): number {
-      // _plan reserved for future per-plan lead-in adaptation (D-14 currently fixes 3 s).
-      void _plan
+    scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number {
       const firstInCueTime = startAudioTime + LEAD_IN_DURATION_SEC
       if (closed) return firstInCueTime
       if (muted) return firstInCueTime
@@ -152,19 +155,25 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
       activeCues.add(scheduleTick(audioCtx, startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
       activeCues.add(scheduleTick(audioCtx, startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
       // First In cue at +3 (numerals replaced by the In phase label at t=0; bowl strikes).
-      activeCues.add(scheduleInCue(audioCtx, firstInCueTime, audioCtx.destination))
+      // 260510-tc9 Bug 2: pass the upcoming In-phase duration so the decay envelope
+      // stretches with the phase length at low BPM (App.tsx boundary scheduler does
+      // the same for every subsequent cue).
+      const firstInPhaseDurationSec = plan.inhaleMs / 1000
+      activeCues.add(scheduleInCue(audioCtx, firstInCueTime, audioCtx.destination, firstInPhaseDurationSec))
 
       return firstInCueTime
     },
 
-    scheduleNextCue({ newPhase, audioTime }: { newPhase: 'in' | 'out'; audioTime: number }): void {
+    scheduleNextCue({ newPhase, audioTime, phaseDurationSec }: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void {
       if (closed) return
       if (muted) return // D-08 unmute-waits-for-boundary; if currently muted, skip this cue.
       pruneExpiredCues()
+      // 260510-tc9 Bug 2: forward phaseDurationSec as the 4th arg so cueSynth
+      // can stretch the decay envelope to the phase length.
       const cue =
         newPhase === 'in'
-          ? scheduleInCue(audioCtx, audioTime, audioCtx.destination)
-          : scheduleOutCue(audioCtx, audioTime, audioCtx.destination)
+          ? scheduleInCue(audioCtx, audioTime, audioCtx.destination, phaseDurationSec)
+          : scheduleOutCue(audioCtx, audioTime, audioCtx.destination, phaseDurationSec)
       activeCues.add(cue)
     },
 
