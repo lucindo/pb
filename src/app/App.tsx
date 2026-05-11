@@ -27,6 +27,7 @@ import {
   recordSession,
   resetStats,
   ZERO_STATS,
+  STATE_KEY,
   type PersistedStats,
 } from '../storage'
 import type { SessionSettings } from '../domain/settings'
@@ -80,6 +81,36 @@ export default function App() {
   useEffect(() => {
     sessionFrameRef.current = session.currentFrame
   }, [session.currentFrame])
+
+  // STORAGE-03: cross-tab stats refresh via the `window` 'storage' event.
+  // - D-05: stats-only refresh — settings and mute are NOT re-read cross-tab.
+  // - D-06: the 'storage' event is the SOLE refresh trigger — no `focus`,
+  //   no `visibilitychange`, no `BroadcastChannel`, no poll.
+  // - D-06a: filter on the STATE_KEY identity so events for unrelated
+  //   localStorage keys never trigger a re-read; register once at mount,
+  //   clean up on unmount.
+  // - WR-08 posture: `setStats` is React-state-only — no domain side
+  //   effects, so mid-session firings are tolerated (footer is hidden via
+  //   the existing `inSessionView` gating; D-10).
+  // - UI-SPEC §"Interaction Contract — STORAGE-03 Cross-Tab Stats Refresh"
+  //   locks the decorative-update behavior: no aria-live, no animation,
+  //   no flash. The cleared-storage case (`e.newValue === null`) falls
+  //   through naturally: `loadStats() -> coerceStats(undefined) -> ZERO_STATS`
+  //   -> footer hides via the existing `totalSessions > 0` gating.
+  // Empty deps `[]` are correct — `setStats` is stable from useState,
+  // and `loadStats` + `STATE_KEY` are module-level imports.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent): void => {
+      if (e.key === STATE_KEY) {
+        setStats(loadStats())
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number) => {
     const elapsedMs = sessionFrameRef.current?.elapsedMs ?? 0
     // D-35: write the new AC currentTime (offset by session-elapsed) to the
