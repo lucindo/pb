@@ -27,12 +27,15 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
     if (!dialog) return
     if (open && !dialog.open) {
       dialog.showModal()
-      // Reset scroll to the top so the dialog opens at its first content row
-      // (without this, focusing Close at the bottom auto-scrolls the dialog).
       dialog.scrollTop = 0
-      // preventScroll: true keeps the focus on Close (T-06-08) without forcing
-      // the dialog to scroll the button into view.
       closeButtonRef.current?.focus({ preventScroll: true })
+      // iOS Safari does not always honor preventScroll: true and ends up
+      // auto-scrolling the bottom Close button into view, leaving the
+      // dialog opened mid-content. Reset scrollTop again on the next paint
+      // so the re-scroll loses to our reset.
+      requestAnimationFrame(() => {
+        if (dialog.scrollTop !== 0) dialog.scrollTop = 0
+      })
     } else if (!open && dialog.open) {
       dialog.close()
     }
