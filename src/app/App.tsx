@@ -492,7 +492,7 @@ export default function App() {
             HRV practice
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Coherence Breathing
+            HRV Breathing
           </h1>
           <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
         </div>
