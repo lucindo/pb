@@ -38,9 +38,12 @@
      A pale-blue ring on a pale-blue background is perceptually invisible (UAT
      screenshot iter 2). Inner ring is only visible during the Out phase via the
      [data-phase='out'] gate below, so the indigo is paired exclusively with the
-     blue gradient — no clash with the In teal gradient. */
+     blue gradient — no clash with the In teal gradient.
+     Iter 4: dropped from indigo-900 / 0.4 to blue-500 / 0.35 — indigo at 0.4
+     read as a hard dark line against the calm pastel palette; blue-500 keeps
+     the readability while sitting softer against the Out gradient. */
   --color-ring-outer: rgb(153 246 228 / 0.6);
-  --color-ring-inner: rgb(30 58 138 / 0.4);
+  --color-ring-inner: rgb(59 130 246 / 0.35);
 
   /* Phase 2 modal token (consumed by Plan 04) */
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
