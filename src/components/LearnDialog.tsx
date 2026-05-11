@@ -93,61 +93,73 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
         </div>
 
         {/* D-12 / D-07: link block — six keys in fixed order per D-12 amendment.
-            Render order: youtubeChannel, website, book, patreon, heroVideo, keyVideos[].
-            Every <a> carries target="_blank" rel="noopener noreferrer" (T-06-07 mitigation). */}
-        <div className="grid gap-2">
-          <a
-            href={links.youtubeChannel.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
-            {links.youtubeChannel.label}
-          </a>
-          <a
-            href={links.website.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
-            {links.website.label}
-          </a>
-          <a
-            href={links.book.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
-            {links.book.label}
-          </a>
-          {/* D-12 amendment: patreon is the 4th key, between book and heroVideo */}
-          <a
-            href={links.patreon.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
-            {links.patreon.label}
-          </a>
-          <a
-            href={links.heroVideo.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
-            {links.heroVideo.label}
-          </a>
-          {links.keyVideos.map((video) => (
+            Grouped into two titled sub-sections (2026-05-11, user-approved layout):
+            - 'Forrest Knutson Resources': youtubeChannel, website, book, patreon
+            - 'Selected HRV Breathing Videos': heroVideo, keyVideos[]
+            Render order within each section preserves D-12. Every <a> carries
+            target="_blank" rel="noopener noreferrer" (T-06-07 mitigation). */}
+        <div>
+          <h3 className="text-base font-semibold text-slate-900">Forrest Knutson Resources</h3>
+          <div className="mt-1 grid gap-2">
             <a
-              key={video.url}
-              href={video.url}
+              href={links.youtubeChannel.url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
             >
-              {video.label}
+              {links.youtubeChannel.label}
             </a>
-          ))}
+            <a
+              href={links.website.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {links.website.label}
+            </a>
+            <a
+              href={links.book.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {links.book.label}
+            </a>
+            {/* D-12 amendment: patreon is the 4th key, between book and heroVideo */}
+            <a
+              href={links.patreon.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {links.patreon.label}
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-base font-semibold text-slate-900">Selected HRV Breathing Videos</h3>
+          <div className="mt-1 grid gap-2">
+            <a
+              href={links.heroVideo.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {links.heroVideo.label}
+            </a>
+            {links.keyVideos.map((video) => (
+              <a
+                key={video.url}
+                href={video.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              >
+                {video.label}
+              </a>
+            ))}
+          </div>
         </div>
 
         {/* D-14 amendment (2026-05-10, user-approved): the medical-advice
