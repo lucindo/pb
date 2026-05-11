@@ -3,7 +3,7 @@
 // Phase 4 D-16/D-17: silent-fallback envelope adapter for localStorage.
 // Mirrors src/audio/audioEngine.ts's D-10 posture: every risky op is wrapped in
 // try { } catch { } and the catch swallows ALL errors. Caller continues with
-// in-memory defaults. NO console.warn in production (D-17 says it is "acceptable
+// in-memory defaults. NO warn/log in production (D-17 says it is "acceptable
 // but not required"); gate on `import.meta.env.DEV` if you add it (Open Question 1).
 
 // WR-05: dual-versioning convention.
@@ -41,7 +41,14 @@ export interface StorageDeps {
 }
 
 export interface Envelope {
-  version: typeof STATE_VERSION
+  // STORAGE-01: widened from `typeof STATE_VERSION` (literal 1) to `number` so
+  // readEnvelope can surface an on-disk version > STATE_VERSION when a newer
+  // build (v2+) has written to the same key from another tab. EMPTY_ENVELOPE
+  // still compiles because STATE_VERSION (`1 as const`) is assignable to number.
+  // Per RESEARCH RQ-4 Option b, no `[k: string]: unknown` index signature is
+  // added — D-01 carries forward-compat via the runtime `...p` spread, not the
+  // static type. The static surface remains the four known fields.
+  version: number
   settings?: unknown
   mute?: unknown
   stats?: unknown
@@ -56,16 +63,35 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
     if (raw === null) return { ...EMPTY_ENVELOPE }
     const parsed: unknown = JSON.parse(raw)
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      // CR-01: pick ONLY the three known subtree keys; drop everything else
-      // (unknown / drifted / oversized fields injected via DevTools or future-schema
-      // drift). The downstream coercers (coerceSettings / coerceMute / coerceStats)
-      // do per-field validation on each subtree before consumers read it. By NOT
-      // spreading `parsed`, we ensure save-after-load is idempotent for valid data
-      // and discards drift instead of re-persisting it (D-15 invariant for the
-      // round-trip semantics — bad fields are dropped, not re-saved).
+      // STORAGE-01 / D-01: forward-compatible read.
+      //   - Spread `p` FIRST so unknown top-level fields written by a future
+      //     build (e.g. a v2 envelope's new top-level subtree) survive the
+      //     round-trip. Earlier code (CR-01) picked only the known subtree
+      //     keys — that silently discarded forward-compatible fields and broke
+      //     the "newer build wrote here, older build is reading" invariant we
+      //     now lock with STORAGE-02 on the write side.
+      //   - Then override `version` with the on-disk numeric value (or fall
+      //     back to STATE_VERSION when absent / non-numeric) using
+      //     `Number.isFinite` per RESEARCH §"Recommended Implementation
+      //     Approach". The override pins `version` to the disk value so the
+      //     downstream writeEnvelope guard (D-04a / STORAGE-02) can detect a
+      //     future-schema envelope and refuse to downgrade it.
+      //   - Then re-surface the four known subtree fields so the static
+      //     Envelope type stays accurate even after the spread.
+      //   - D-02 invariant: subtree coercers (coerceSettings / coerceMute /
+      //     coerceStats in src/storage/{settings,mute,stats}.ts) still strip
+      //     unknown sub-keys downstream — forward-compat is top-level ONLY.
+      //   - Pitfall 3: do NOT revert to a pick-only-known-keys return shape;
+      //     that breaks STORAGE-01 contract and the storage.test.ts
+      //     "preserves on-disk version when reading" case will fail.
       const p = parsed as Record<string, unknown>
+      const onDiskVersion =
+        typeof p.version === 'number' && Number.isFinite(p.version)
+          ? p.version
+          : STATE_VERSION
       return {
-        version: STATE_VERSION,
+        ...p,
+        version: onDiskVersion,
         settings: p.settings,
         mute: p.mute,
         stats: p.stats,
@@ -81,6 +107,44 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
 export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
   const storage = deps.storage ?? window.localStorage
   try {
+    // STORAGE-02 / D-04a: inline re-read guards against the cross-tab race
+    // where another tab running a NEWER build (v2+) wrote a future-schema
+    // envelope between this tab's caller-side read and this write. The guard
+    // refuses to silently downgrade by overwriting that envelope with v1
+    // data, which would corrupt the newer tab's view on its next read.
+    //
+    // D-03: silent refusal — no warn, no DEV-mode branch, no toast.
+    // A debugging developer cannot distinguish refusal from a D-16 quota
+    // failure; both yield "RAM state authoritative, disk may not have
+    // synced" semantics for the running app (WR-08 posture).
+    //
+    // Scope: this addresses the CROSS-tab newer-version race only. The
+    // in-tab WR-07 increment race (concurrent recordSession calls in the
+    // same tab) remains documented v1.x debt — STORAGE-03 handles only the
+    // UI consistency half of cross-tab sync.
+    //
+    // Pitfall 1: the inner re-read MUST live in its OWN nested try/catch.
+    // If the inner getItem throws (Safari ITP / private mode) and we let
+    // the outer D-16 catch swallow it, the entire write is silently skipped
+    // — wrong outcome. The guard must be fail-open: when we cannot read the
+    // disk version, assume STATE_VERSION and proceed with the write.
+    let currentVersion: number = STATE_VERSION
+    try {
+      const raw = storage.getItem(STATE_KEY)
+      if (raw !== null) {
+        const parsed: unknown = JSON.parse(raw)
+        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          const v = (parsed as Record<string, unknown>).version
+          if (typeof v === 'number' && Number.isFinite(v)) currentVersion = v
+        }
+      }
+    } catch {
+      // D-17 posture: treat throw/corrupt as "no version info"; proceed.
+    }
+    if (currentVersion > STATE_VERSION) return
+    // D-04: this build stamps STATE_VERSION on every successful write.
+    // Caller-passed `env.version` is structurally ignored (the spread is
+    // overridden by the explicit `version: STATE_VERSION` key).
     const payload = JSON.stringify({ ...env, version: STATE_VERSION })
     storage.setItem(STATE_KEY, payload)
   } catch {
