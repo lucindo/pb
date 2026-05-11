@@ -7,6 +7,8 @@ import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
 import { StatsFooter } from '../components/StatsFooter'
 import { ResetStatsDialog } from '../components/ResetStatsDialog'
+import { LearnAnchor } from '../components/LearnAnchor'
+import { LearnDialog } from '../components/LearnDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -48,6 +50,7 @@ export default function App() {
   const session = useSessionEngine(initialSettings)
   const { state } = session
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
+  const [learnDialogOpen, setLearnDialogOpen] = useState<boolean>(false)
   // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
   // - audioAnchorRef.current = the firstInAudioTime returned by audioStart (deterministic
   //   on the audio clock — WR-01) → null if AC unavailable (D-10 fallback)
@@ -342,6 +345,18 @@ export default function App() {
     setResetDialogOpen(false)
   }, [])
 
+  // Phase 6 LEARN-01/LEARN-04: open the Learn modal from the corner anchor.
+  // D-03 defense in depth: even though the anchor is aria-disabled during session view,
+  // gate state mutation here too (the anchor's JSX-layer no-op is the first gate).
+  const onLearnClick = useCallback(() => {
+    if (inSessionView) return
+    setLearnDialogOpen(true)
+  }, [inSessionView])
+
+  const onLearnClose = useCallback(() => {
+    setLearnDialogOpen(false)
+  }, [])
+
   // Phase 4 LOCL-02: keep runningSnapshotRef fresh on every render while running.
   // Reads state.startedAtMs and state.lastFrame.elapsedMs (both available only on
   // RunningSessionState — discriminated-union narrowing on `state.status === 'running'`
@@ -466,6 +481,10 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_var(--color-breathing-bg-edge))] px-4 py-6 text-slate-900 sm:px-6 sm:py-8">
+      {/* Phase 6 D-01/D-03: corner anchor — persistent across all session states,
+          positioned outside the centered breathing card section (page-level fixed element).
+          Disabled (not hidden) during lead-in and running (D-03 disable-not-hide). */}
+      <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
       <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-center text-center sm:min-h-[calc(100vh-4rem)]">
         <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-teal-700">
           HRV practice
@@ -543,6 +562,9 @@ export default function App() {
         onConfirm={confirmReset}
         onCancel={cancelReset}
       />
+      {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
+          opened from the corner anchor in idle state only (D-03/D-05). */}
+      <LearnDialog open={learnDialogOpen} onClose={onLearnClose} />
     </main>
   )
 }
