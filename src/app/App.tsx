@@ -481,26 +481,21 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_var(--color-breathing-bg-edge))] px-4 py-6 text-slate-900 sm:px-6 sm:py-8">
-      {/* Phase 6 D-01/D-03: corner anchor — persistent across all session states,
-          positioned outside the centered breathing card section (page-level fixed element).
-          Disabled (not hidden) during lead-in and running (D-03 disable-not-hide). */}
-      <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
       <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-center text-center sm:min-h-[calc(100vh-4rem)]">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-teal-700">
-          HRV practice
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-          HRV breathing timer
-        </h1>
-        {/* Hide page description for the entire session view (lead-in + running)
-            so the screen stops shifting between countdown and the first In phase
-            and the orb + End-session button stay above the fold on mobile. */}
-        {!inSessionView && (
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">
-            Choose a calm, supported timing pattern, then start a continuous inhale
-            and exhale session with no pauses.
+        {/* Phase 6 D-01/D-03: Learn anchor — persistent across all session states,
+            positioned at the column top-right (moved from page-level fixed on
+            2026-05-10 per user layout request). Wrapper provides position:relative
+            anchor for the absolute-positioned button. Disabled (not hidden) during
+            lead-in and running (D-03 disable-not-hide). */}
+        <div className="relative w-full">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-teal-700">
+            HRV practice
           </p>
-        )}
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            HRV breathing timer
+          </h1>
+          <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
+        </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           <BreathingShape
@@ -543,9 +538,13 @@ export default function App() {
           >
             {audio.audioStatus === 'needs-resume' ? 'Audio paused, tap to resume' : ''}
           </div>
+          {/* D-15 amendment (2026-05-10, user-approved): the main-screen helper
+              line was replaced with the medical-advice disclaimer. Original D-15
+              locked NO disclaimer copy outside the Learn modal; the amendment
+              relaxes that decision and surfaces LEARN-04 framing on the practice
+              screen too. The phrase matches D-14's modal-only line verbatim. */}
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            Timing stays local to this browser and continuously alternates In and Out with no
-            pause segment.
+            This is guided breathing practice — not medical advice.
           </p>
         </div>
         {!inSessionView && stats.totalSessions > 0 && (
