@@ -14,7 +14,30 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Shipped:** v1.0 MVP (2026-05-11) — 7 phases, 30 plans, ~9,032 LOC TypeScript/TSX/CSS, 363/363 Vitest tests pass.
 
-**Next milestone (planning):** v1.1 — Appearance/Settings umbrella (themes, audio timbres, visual variants, language), PWA install + app icon, BPM stretch session, plus v1.0 → v1.1 carry-forwards.
+**In progress:** v1.0.1 Code Review Patch — fix-only patch landing all 26 findings from full-codebase deep review (REVIEW.md). No new features.
+
+**Next milestone (queued, deferred):** v1.1 — Appearance/Settings umbrella (themes, audio timbres, visual variants, language), PWA install + app icon, BPM stretch session, plus v1.0 → v1.1 carry-forwards. Runs after v1.0.1 ships.
+
+## Current Milestone: v1.0.1 Code Review Patch
+
+**Goal:** Land all 26 findings from full-codebase deep review (REVIEW.md) — 5 Critical, 12 Warning, 9 Info — without changing user-facing behavior or shipping new features.
+
+**Target fixes:**
+- **Build/types** — Enable `tsconfig` `strict` + `@typescript-eslint` `strictTypeChecked` + verify `react-hooks/exhaustive-deps` enforcement
+- **Assets** — Fix favicon absolute path under Vite `base: '/hrv/'`
+- **Storage** — Preserve on-disk envelope version; refuse downgrade; cross-tab `storage` event sync
+- **Audio** — Reconstruction generation counter; clamp boundary cue audio time; `scheduleLeadIn` null-on-closed; per-cue node disconnect; defensive `handleStateChange`; remove dead `'starting'` enum
+- **Wake Lock** — In-flight request lock
+- **Hooks** — `useAudioCues.start` mute via ref; split `currentFrame` identity per-phase vs per-frame; status-only deps on App rAF effects; tick cancel-guard ordering; explicit ref-updater deps
+- **Domain** — Explicit `DurationOption` validation in `extendTimedSession`
+- **UI contracts** — `SessionReadout` lead-in placeholder contract; symmetric auto-close for Learn/Reset dialogs in-session
+- **A11y** — `MuteToggle` role + describedby when `needsResume`
+- **Content** — Replace `amzn.to` short-URL or disclose affiliate
+- **Hygiene** — Remove unused `audioNow` from hook return; extract shared `isValid<X>` predicates; document `formatLastSessionDate` test-only seam
+
+**Source spec:** `REVIEW.md` (full-codebase deep review, 2026-05-11 — 5 Critical / 12 Warning / 9 Info / 26 total).
+
+**Constraint:** 363/363 tests pass at v1.0 close — patch must not regress. Enabling `strict` likely surfaces latent compiler errors that must be fixed inline.
 
 ## Requirements
 
@@ -36,7 +59,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Active
 
-(Cleared after v1.0 ship. v1.1 active requirements will be set by `/gsd-new-milestone`.)
+v1.0.1 patch — all requirements live in `.planning/REQUIREMENTS.md` keyed `BUILD-/ASSETS-/STORAGE-/AUDIO-/WAKELOCK-/HOOKS-/DOMAIN-/UI-/A11Y-/CONTENT-/HYGIENE-*`. Each maps 1:1 to one or more REVIEW.md findings (CR-/WR-/IN-).
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -111,5 +134,22 @@ Normal user-selected options:
 | LearnAnchor D-18 disable-not-hide contract (Phase 6) | Anchor visible+disabled during running session preserves layout invariant | ✓ Validated Phase 6 |
 | Locked `inspired by Forrest's teachings` phrase + two-line disclaimer (Phase 6, D-12) | Claim-safe positioning resistant to copy drift across plans | ✓ Validated Phase 6 |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-05-11 after v1.0 MVP milestone shipped*
+*Last updated: 2026-05-11 — v1.0.1 Code Review Patch milestone opened*
