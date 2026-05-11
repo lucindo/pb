@@ -171,3 +171,45 @@ None. Plan executed exactly as written:
 - FOUND: commit `999eb8a` in git log
 - `npx vitest run`: 316/316 passing (baseline 312 + 4 new)
 - `npx tsc --noEmit`: clean (exit 0)
+
+---
+
+## Iteration 2 — Post-UAT (2026-05-11)
+
+User UAT after iteration 1 surfaced two regressions:
+
+**Bug 1 still visible** — screenshot showed orb at min-scale Out with no inner-ring cue.
+Root cause was deeper than CSS stroke weight: the inner ring rendered BEFORE the orb
+host in the DOM, so the opaque (opacity: 1) `.orb-layer--in` / `.orb-layer--out`
+gradients occluded it at every orb scale. Equalising border-width / alpha could not
+make an occluded element visible.
+
+Fix: move the inner ring AFTER `.orb` in both `BreathingShapeBody` and the lead-in
+mirror so it draws on top. Orb-edge now visibly approaches a fixed inner ring as
+Out progresses; orb-edge coincides with the ring at MIN_SCALE = phase boundary
+(symmetric to outer-ring cue on In). Commit `8b3e7d4`.
+
+**Bug 2 character change + BPM=1 silence** — τ-stretch made the early-body
+perceptually louder than baseline ("feels stronger / getting louder in the
+beginning"), and at BPM=1 (30 s phase) the cue still went silent before the flip
+because exponential decay toward 0 has no audible floor regardless of τ.
+
+Fix: revert τ-stretch (keeps original onset character) and switch the decay TARGET
+when phase > 3 × defaultDecayTau:
+- decay toward `PEAK_GAIN × 0.15` (≈ -16 dB sustain floor) instead of 0
+- hard fade-out (τ = 0.05 s, ≈150 ms perceptual) starts 0.2 s before phase end so
+  the floor does not bleed into the next strike
+- oscillators run to phase boundary + tail padding
+
+Short phases (high BPM) take the original code path — byte-identical to baseline.
+Commit `836f6e4`.
+
+### Verification
+- vitest: 318/318 passing (+2 new tests, replaced 3 stretch-tests with 5 floor tests)
+- tsc --noEmit: clean
+
+### Status
+- Bug 1: ready for re-UAT (orb body Out phase, all browsers)
+- Bug 2: ready for re-UAT at BPM 5.5 / 4.0 / 3.5 / 2.0 / 1.0 — listen for
+  audible sustain through entire phase and clean handoff at flip (no audible
+  decay-tail bleeding into next strike).

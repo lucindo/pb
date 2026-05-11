@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 Phase: 6
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-05-11 - Completed quick task 260510-tc9: Bug fixes (orb Out-phase visual cue + audio cue duration scaling)
+Last activity: 2026-05-11 - Iterated quick task 260510-tc9 post-UAT (orb DOM-order fix + audio sustain-to-floor envelope)
 
 Progress: [█████████░] 92%
 
