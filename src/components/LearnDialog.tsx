@@ -68,7 +68,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
       ref={dialogRef}
       aria-labelledby="learn-dialog-title"
       onClick={handleBackdropClick}
-      className="modal-fade m-auto w-[calc(100vw-2rem)] max-w-lg rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
         <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-slate-950">About this practice</h2>
@@ -97,7 +97,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             href={links.youtubeChannel.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {links.youtubeChannel.label}
           </a>
@@ -105,7 +105,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             href={links.website.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {links.website.label}
           </a>
@@ -113,7 +113,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             href={links.book.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {links.book.label}
           </a>
@@ -122,7 +122,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             href={links.patreon.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {links.patreon.label}
           </a>
@@ -130,7 +130,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             href={links.heroVideo.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {links.heroVideo.label}
           </a>
@@ -140,18 +140,16 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
               href={video.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-sm text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
             >
               {video.label}
             </a>
           ))}
         </div>
 
-        {/* D-14: two disclaimer micro-lines inline (per CONTEXT.md §Established Patterns).
-            D-15: these lines appear ONLY here — not on the main breathing screen. */}
-        <p className="text-sm text-[var(--color-breathing-muted)]">
-          This is guided breathing practice — not medical advice.
-        </p>
+        {/* D-14 amendment (2026-05-10, user-approved): the medical-advice
+            micro-line was moved from this modal to the main breathing card
+            (D-15 amendment). Only the affiliation micro-line remains here. */}
         <p className="text-xs text-[var(--color-breathing-muted)]">
           Independent project. Not affiliated with Forrest Knutson.
         </p>

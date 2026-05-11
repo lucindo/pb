@@ -43,11 +43,13 @@ describe('LearnDialog — open state default focus + locked copy', () => {
     expect(screen.getByText(/inspired by Forrest's teachings/)).toBeInTheDocument()
   })
 
-  it('renders the locked medical-advice sentence (D-14 #1)', () => {
+  it('does NOT render the medical-advice sentence inside the modal (D-14 amendment 2026-05-10)', () => {
+    // D-14 was amended: the medical-advice micro-line moved to the main breathing
+    // card (D-15 amendment). Only the affiliation micro-line stays in the modal.
     renderDialog({ open: true })
     expect(
-      screen.getByText('This is guided breathing practice — not medical advice.'),
-    ).toBeInTheDocument()
+      screen.queryByText('This is guided breathing practice — not medical advice.'),
+    ).not.toBeInTheDocument()
   })
 
   it('renders the locked affiliation micro-line (D-14 #2)', () => {
