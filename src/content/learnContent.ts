@@ -39,11 +39,11 @@ export const LEARN_CONTENT: LearnContent = {
     },
     timing: {
       title: 'How this app times your breath',
-      body: 'This app guides one continuous inhale and exhale, with no pause held between them. You choose a slow rate under seven breaths per minute, and for uneven patterns the exhale is always the longer side. The on-screen orb and the optional bowl-like tones simply mark where you are in each breath — the timing itself does the work.',
+      body: 'This app guides one continuous inhale and exhale, with no pause held between them. You choose a slow rate under seven breaths per minute, and for uneven patterns the exhale is always the longer side. The on-screen orb and the optional bowl-like tones simply mark where you are in each breath.',
     },
     forrest: {
       title: 'Who is Forrest Knutson',
-      body: "Forrest Knutson is a teacher who has shared HRV breathing practice for many years on YouTube. This is an independent web app inspired by Forrest's teachings, made so anyone can follow a calm paced breath from a browser. The links below point to his channel, his site, and a hand-picked starting video.",
+      body: "Forrest Knutson is a teacher who has shared HRV breathing practice for many years on YouTube. This is an independent web app inspired by Forrest's teachings, made so anyone can follow a calm paced breath from a browser. The links below point to his channel, his site, and hand-picked starting videos.",
     },
   },
   links: {
