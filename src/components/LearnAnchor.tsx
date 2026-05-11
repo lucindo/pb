@@ -21,11 +21,27 @@ export function LearnAnchor({ disabled, onClick }: LearnAnchorProps) {
       aria-disabled={disabled || undefined}
       aria-label={disabled ? 'Learn (unavailable during session)' : 'Learn'}
       onClick={disabled ? undefined : onClick}
-      className={`absolute right-0 top-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 ${
+      className={`absolute right-0 top-0 inline-flex min-h-[44px] items-center gap-1.5 rounded-full border bg-white/70 px-4 py-2 text-sm font-semibold shadow-sm backdrop-blur-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
         disabled
-          ? 'cursor-not-allowed text-[var(--color-breathing-muted)]'
-          : 'text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)]'
+          ? 'cursor-not-allowed border-slate-200 text-[var(--color-breathing-muted)]'
+          : 'border-teal-200 text-teal-800 hover:bg-teal-50 active:bg-teal-100'
       }`}
-    >Learn</button>
+    >
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H10v15H5.5A2.5 2.5 0 0 1 3 15.5V5.5Z" />
+        <path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H14v15h4.5A2.5 2.5 0 0 0 21 15.5V5.5Z" />
+      </svg>
+      Learn
+    </button>
   )
 }
