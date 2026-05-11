@@ -2,11 +2,7 @@
 // machine (status + audioAvailable + muted) and the imperative API consumed
 // by App.tsx in Plan 04.
 //
-// State machine: 'idle' → 'lead-in' (success) | 'failed' (D-10).
-//   - 'idle' is the initial and post-stop() resting state.
-//   - 'lead-in' is the post-success state (the lead-in cues are scheduled
-//     and the first In bowl will strike at +3 s).
-//   - 'failed' is the D-10 visuals-only fallback path; audioAvailable=false.
+// State machine: 'idle' → 'lead-in' (success) | 'failed' (D-10 Plan 06).
 //
 // muted defaults to the optional `initialMuted` parameter (Phase 4 D-14 / LOCL-01)
 // or to false (Phase 3 D-07: first-visit audio is ON) when the parent does not
@@ -84,6 +80,10 @@ export function useAudioCues(
   // (matching the JSDoc contract on start()) instead of a fresh "now + 3" projection
   // that drifts from the actual scheduled cue time.
   const firstInCueTimeRef = useRef<number | null>(null)
+  // AUDIO-01: monotonic counter; bumped on every reconstruct, stop, and unmount;
+  // checked post-await to detect cancellation. Layered ON TOP of the existing
+  // synchronous-null pattern (Pitfall 1 — do NOT remove synchronous-null).
+  const reconstructGenerationRef = useRef<number>(0)
   const [status, setStatus] = useState<AudioStatus>('idle')
   // Phase 4 D-14 / LOCL-01: persisted mute preference is restored at construction time
   // when the parent supplies it. When `initialMuted` is undefined, fall back to the
@@ -113,6 +113,12 @@ export function useAudioCues(
   // The cast accepts WebKit's 'interrupted' superset (D-37).
   const handleStateChange = useCallback(
     (state: AudioContextState | 'interrupted'): void => {
+      // AUDIO-05 D-04 / D-06: defensive single gate at top — protects ANY future branch
+      // that reads engineRef.current. Deferred reshape (D-05 → v1.x).
+      const engine = engineRef.current
+      if (engine === null) return
+      // engine is available for future branches that need the non-null value.
+      void engine
       if (state === 'running') {
         visibilityResumeAttemptedRef.current = false
         setAudioStatus('ok')
@@ -138,6 +144,12 @@ export function useAudioCues(
   // leak AudioContexts. Browsers cap concurrent ACs (~6 in Chrome) before refusing new ones.
   useEffect(() => {
     return () => {
+      // AUDIO-01: invalidate any in-flight reconstruct.
+      // Reason: reading .current inside cleanup is intentional — the ref always holds
+      // the latest counter value at cleanup time; the rule's warning about stale .current
+      // does not apply to a monotonic counter that is only ever mutated, never captured for later reads.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ++reconstructGenerationRef.current
       const engine = engineRef.current
       if (engine !== null) {
         void engine.close()
@@ -201,6 +213,8 @@ export function useAudioCues(
         // session.start(performance.now()) for the dual-clock alignment.
         const startAudioTime = engine.now()
         const firstInCueTime = engine.scheduleLeadIn(startAudioTime, plan)
+        // AUDIO-03: closed engine — defense-in-depth, fall through to failure.
+        if (firstInCueTime === null) { setAudioAvailable(false); setStatus('failed'); return null }
         firstInCueTimeRef.current = firstInCueTime // WR-05
         setStatus('lead-in')
         setAudioAvailable(true)
@@ -218,6 +232,8 @@ export function useAudioCues(
   )
 
   const stop = useCallback(async (): Promise<void> => {
+    // AUDIO-01: invalidate any in-flight reconstruct.
+    ++reconstructGenerationRef.current
     // Null engineRef synchronously BEFORE awaiting close — otherwise a fast
     // start() arriving during the close window hits the defensive guard in
     // start() and returns from a closing AudioContext, leaving engineRef
@@ -251,11 +267,15 @@ export function useAudioCues(
   // Old engine is closed AFTER the new AC is constructed (fire-and-forget;
   // close needs no gesture).
   const reconstructEngine = useCallback(async (): Promise<void> => {
+    // AUDIO-01: stamp this reconstruct's generation token.
+    const gen = ++reconstructGenerationRef.current
     const oldEngine = engineRef.current
     const currentMuted = muted
     // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting —
     // mirrors stop()'s posture so a fast call into setMuted() during the window
     // does not deref a closing AC.
+    // Pitfall 1: DO NOT remove — the synchronous-null is preserved ON TOP of the
+    // generation counter (both patterns address different races).
     engineRef.current = null
     firstInCueTimeRef.current = null
 
@@ -268,6 +288,13 @@ export function useAudioCues(
       if (oldEngine !== null) void oldEngine.close()
       setAudioStatus('unavailable')
       setAudioAvailable(false)
+      return
+    }
+
+    // AUDIO-01: bail if stop() / unmount / a newer reconstruct ran during the await.
+    if (gen !== reconstructGenerationRef.current) {
+      void newEngine.close()
+      if (oldEngine !== null) void oldEngine.close()
       return
     }
 
