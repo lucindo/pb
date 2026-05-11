@@ -78,7 +78,9 @@ export function recordSession(
   // opening a cross-tab race window: a second tab could write between the
   // two reads, and we'd compute next.totalSessions from stale stats while
   // merging with fresh settings/mute. Collapsing to one read closes that
-  // window for in-tab correctness (cross-tab sync is still a v2 concern).
+  // window for in-tab correctness.
+  // Cross-tab concurrent ends lose one increment — documented v1.x work;
+  // UI consistency restored via the STORAGE-03 storage-event listener in App.tsx.
   const env = readEnvelope(deps)
   const stats = coerceStats(env.stats)
   // D-01: count if elapsed >= 30s OR isComplete (completion bypasses threshold)
