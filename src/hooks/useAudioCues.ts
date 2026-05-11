@@ -89,6 +89,17 @@ export function useAudioCues(
   // when the parent supplies it. When `initialMuted` is undefined, fall back to the
   // Phase 3 D-07 first-visit default (muted=false / audio ON).
   const [muted, setMutedState] = useState<boolean>(initialMuted ?? false)
+  // HOOKS-01 / D-11: mute state mirrored into a ref so callbacks that read mute
+  // (start, reconstructEngine) drop `muted` from their useCallback dep arrays
+  // without losing access to the current value. Layered ON TOP of the existing
+  // useState [muted, setMutedState] above — does NOT replace it (the React
+  // state is still the UI-binding source for MuteToggle and the LOCL-01
+  // persistence path). Mirrors the onReanchorRequiredRef pattern at lines
+  // 106-109 and the AUDIO-01 reconstructGenerationRef posture at line 86.
+  const mutedRef = useRef<boolean>(initialMuted ?? false)
+  useEffect(() => {
+    mutedRef.current = muted
+  }, [muted])
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
 
   // Plan 06 D-34: high-level audio-path health surface.
@@ -204,10 +215,12 @@ export function useAudioCues(
       try {
         const engine = await createAudioEngine({ onStateChange: handleStateChange })
         engineRef.current = engine
-        // Carry the React mute state through to the freshly-built engine in case the user
-        // toggled mute before clicking Start (the engine defaults to muted=false too,
-        // but this keeps the two state holders in sync at handoff time).
-        engine.setMuted(muted)
+        // HOOKS-01 / D-11: read mute from mutedRef so `start` does NOT depend on
+        // the React `muted` state. The ref-mirror effect above keeps the ref in
+        // sync with the React state before any subsequent callback observation;
+        // this drops `muted` from `start`'s useCallback dep array and keeps the
+        // callback identity stable across setMuted toggles.
+        engine.setMuted(mutedRef.current)
         // D-09 + D-13 + D-14: schedule the lead-in. Anchor at engine.now() — the
         // audioCtx.currentTime instant of lead-in start, which App.tsx co-anchors with
         // session.start(performance.now()) for the dual-clock alignment.
@@ -228,7 +241,7 @@ export function useAudioCues(
         return null
       }
     },
-    [muted, handleStateChange],
+    [handleStateChange],
   )
 
   const stop = useCallback(async (): Promise<void> => {
@@ -270,7 +283,13 @@ export function useAudioCues(
     // AUDIO-01: stamp this reconstruct's generation token.
     const gen = ++reconstructGenerationRef.current
     const oldEngine = engineRef.current
-    const currentMuted = muted
+    // HOOKS-01 / D-11: capture mute synchronously from the ref BEFORE any await.
+    // Same posture as the original `const currentMuted = muted` capture — the
+    // value is locked at this point in the gesture-attached chain so a mute
+    // toggle that fires during the await does not race the replay. Reading
+    // from mutedRef removes `muted` from this useCallback's dep array
+    // (callback identity stays stable across setMuted toggles).
+    const currentMuted = mutedRef.current
     // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting —
     // mirrors stop()'s posture so a fast call into setMuted() during the window
     // does not deref a closing AC.
@@ -322,7 +341,7 @@ export function useAudioCues(
     visibilityResumeAttemptedRef.current = false
     setAudioStatus('ok')
     setAudioAvailable(true)
-  }, [muted, handleStateChange])
+  }, [handleStateChange])
 
   // Plan 06 D-34: public resume() — invoked from the App.tsx mute-button click
   // handler when audioStatus === 'needs-resume'. The click IS a user gesture

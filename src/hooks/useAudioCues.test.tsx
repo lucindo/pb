@@ -1019,3 +1019,108 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     unmount()
   })
 })
+
+// Phase 10 HOOKS-01 callback identity contract.
+// Locks the mutedRef-on-top-of-muted-state posture (D-11): toggling `setMuted`
+// MUST NOT churn the identity of `start` or `resume` callbacks. With `muted`
+// removed from their useCallback dep arrays and the value read from the
+// ref-mirror at call time, downstream `useCallback`s in App.tsx that include
+// `audio.start` in deps no longer cascade re-creates on every mute toggle.
+describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
+  // Inline SpyableAC matching the Phase 5.1 describe block (lines 337-360).
+  // The class is duplicated here rather than hoisted to module scope to avoid
+  // touching the existing test geography; this block is strictly additive.
+  class SpyableAC {
+    state: AudioContextState = 'running'
+    sampleRate = 44100
+    destination = {}
+    private _start = performance.now() / 1000
+    get currentTime() { return performance.now() / 1000 - this._start }
+    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
+    // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
+    constructor(_options?: AudioContextOptions) {}
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async resume(): Promise<void> { this.state = 'running' }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async suspend(): Promise<void> { this.state = 'suspended' }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async close(): Promise<void> { this.state = 'closed' }
+    addEventListener = vi.fn()
+    removeEventListener = vi.fn()
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('start callback identity is stable across setMuted toggle (HOOKS-01 D-11)', () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    const startBefore = result.current.start
+
+    act(() => {
+      result.current.setMuted(true)
+    })
+
+    // After the React state update, the mute-mirror effect fires synchronously
+    // (within the same act flush) and writes `mutedRef.current = true`. The
+    // `start` useCallback no longer depends on `muted`, so its identity is
+    // preserved across the render.
+    const startAfterMute = result.current.start
+
+    act(() => {
+      result.current.setMuted(false)
+    })
+
+    const startAfterUnmute = result.current.start
+
+    expect(startAfterMute).toBe(startBefore)
+    expect(startAfterUnmute).toBe(startBefore)
+
+    unmount()
+  })
+
+  it('resume callback is stable across setMuted (proxy for reconstructEngine identity) (HOOKS-01 D-11)', () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    const resumeBefore = result.current.resume
+
+    act(() => {
+      result.current.setMuted(true)
+    })
+
+    // `resume` depends on `reconstructEngine`, which itself no longer depends
+    // on `muted` (D-11). The reconstruction path reads mutedRef.current at
+    // call time. Identity stable.
+    const resumeAfterMute = result.current.resume
+
+    expect(resumeAfterMute).toBe(resumeBefore)
+
+    unmount()
+  })
+
+  it('baseline: handleStateChange identity unchanged across setMuted (regression guard)', () => {
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    // `start` depends ONLY on `handleStateChange` after D-11. If
+    // `handleStateChange` identity ever churns across setMuted (it should not
+    // — its useCallback deps are `[]`), this proxy assertion would fail.
+    const startBefore = result.current.start
+
+    act(() => {
+      result.current.setMuted(true)
+    })
+
+    expect(result.current.start).toBe(startBefore)
+
+    unmount()
+  })
+})

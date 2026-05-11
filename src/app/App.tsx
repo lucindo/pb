@@ -171,16 +171,14 @@ export default function App() {
   // Read by Task 1b boundary effect.
   const lastBoundaryKeyRef = useRef<string | null>(null)
 
-  // Phase 4 LOCL-02: capture the running session's startedAtMs + lastElapsedMs
-  // each render WHILE running, so the cleanup effect (which fires AFTER the
-  // transition out of running) can compute elapsed without losing the previous
-  // startedAtMs to the discriminated union narrowing. Updated by the snapshot
-  // effect below; READ by the cleanup effect.
-  const runningSnapshotRef = useRef<{
-    key: string
-    startedAtMs: number
-    lastElapsedMs: number
-  } | null>(null)
+  // Phase 10 HOOKS-02 (D-06): the running-snapshot ref formerly declared here
+  // is now owned by useSessionEngine (writes happen inside the rAF tick's
+  // setState updater per D-08 — RESEARCH Pitfall 1 closure-staleness fix).
+  // The App-level cleanup effect reads `session.runningSnapshotRef.current`
+  // synchronously below. Old code path: local useRef + per-render effect at
+  // App.tsx:412-420 that wrote on every state change while running. New path:
+  // engine-owned writer fires once per rAF tick from inside the setState
+  // updater, eliminating the per-render React-effect overhead.
 
   // Pitfall 1 idempotency guard: keyed on state.startedAtMs (unique per session
   // generation since performance.now() does not repeat). Prevents the cleanup
@@ -404,27 +402,26 @@ export default function App() {
     setLearnDialogOpen(false)
   }, [])
 
-  // Phase 4 LOCL-02: keep runningSnapshotRef fresh on every render while running.
-  // Reads state.startedAtMs and state.lastFrame.elapsedMs (both available only on
-  // RunningSessionState — discriminated-union narrowing on `state.status === 'running'`
-  // is required for TypeScript). The snapshot is consumed by the cleanup effect on
-  // transition out of running.
-  useEffect(() => {
-    if (state.status === 'running') {
-      runningSnapshotRef.current = {
-        key: String(state.startedAtMs),
-        startedAtMs: state.startedAtMs,
-        lastElapsedMs: state.lastFrame.elapsedMs,
-      }
-    }
-  }, [state])
-
   // D-11 + D-16: when the session reaches 'complete', the last cue tail naturally rings out
   // (cues already scheduled in the audio thread; AC.close() resolves after they finish).
   // Reset appPhase to 'idle' so the orb stops rendering the last frame, and clear the dual anchors.
   // The setState below is intentional: state.status is owned by useSessionEngine and its
   // 'complete' transition is the external trigger we synchronise with — exactly the
   // "subscribe to external state" effect pattern React recommends.
+  //
+  // Phase 10 HOOKS-02 (D-09) — Pitfall 3 mitigation Option A (const-extract):
+  // tightening deps from `[state, ...]` to `[state.status, ...]` causes
+  // react-hooks/exhaustive-deps to flag `state.completedAtMs` (read inside the
+  // narrowed `state.status === 'complete'` branch) and
+  // `session.runningSnapshotRef` (refs accessed via an object property are
+  // not auto-detected as stable). Hoisting both to local consts narrows the
+  // dep array to genuinely effect-triggering primitives + a stable ref local
+  // (refs to refs are exempt from exhaustive-deps when bound to a local) and
+  // avoids introducing a new eslint-disable. The `completedAtMs` value is
+  // `null` outside the 'complete' branch — the narrowing inside the effect
+  // body uses `isComplete` to decide which value to consume.
+  const completedAtMs = state.status === 'complete' ? state.completedAtMs : null
+  const runningSnapshotRefStable = session.runningSnapshotRef
   useEffect(() => {
     if (state.status !== 'running') {
       // Covers BOTH 'complete' (timed end-of-session) and 'idle' (manual End,
@@ -442,26 +439,38 @@ export default function App() {
       planRef.current = null
       lastBoundaryKeyRef.current = null
 
-      // Phase 4 LOCL-02: single write site for stats (Pitfall 1).
+      // Phase 4 LOCL-02 + Phase 10 HOOKS-02 (D-06/D-09): single write site for
+      // stats (Pitfall 1). Reads the running-snapshot ref now owned by
+      // useSessionEngine — the hook writes from inside its rAF tick's setState
+      // updater (D-08) and nulls the ref on the transition-out-of-running
+      // branch of its rAF effect. App-side no-longer null the ref here; the
+      // engine owns null-out.
       // - For 'complete': elapsed = state.completedAtMs - snap.startedAtMs (sample-accurate)
       // - For 'idle' (manual End): elapsed = snap.lastElapsedMs (last rAF reading; <16ms stale)
       // The snap-null guard handles cancel-during-lead-in (D-03 / Pitfall 2): when the user
-      // never entered 'running', runningSnapshotRef was never populated and we skip the write.
+      // never entered 'running', the engine never populated the snapshot and we skip the write.
       // The recordedSessionKeyRef guard makes the write idempotent per session — protects
       // against React re-running the effect under StrictMode or dep-drift.
-      const snap = runningSnapshotRef.current
+      const snap = runningSnapshotRefStable.current
       if (snap !== null && recordedSessionKeyRef.current !== snap.key) {
         const isComplete = state.status === 'complete'
-        const elapsedMs = isComplete
-          ? state.completedAtMs - snap.startedAtMs
-          : snap.lastElapsedMs
+        const elapsedMs =
+          isComplete && completedAtMs !== null
+            ? completedAtMs - snap.startedAtMs
+            : snap.lastElapsedMs
         const updated = recordSession(elapsedMs, isComplete)
         setStats(updated)
         recordedSessionKeyRef.current = snap.key
       }
-      runningSnapshotRef.current = null
     }
-  }, [state, audioStop, wakeLockRelease, clearLeadInTimeouts])
+    // HOOKS-02 D-09: depend on `state.status` (primitive) — NOT the full
+    // `state` object. The effect fires once per status-transition-out-of-running
+    // instead of every rAF (the per-rAF state-object identity churn was the
+    // root cause of the App-level effect re-running on every animation frame).
+    // `completedAtMs` is a hoisted const narrowed via discriminated union;
+    // `runningSnapshotRefStable` is a stable ref bound to a local so
+    // exhaustive-deps can detect its ref-shape.
+  }, [state.status, completedAtMs, runningSnapshotRefStable, audioStop, wakeLockRelease, clearLeadInTimeouts])
 
   // Phase 3 D-12 + Pitfall 2 dual-anchor invariant: 1-cue lookahead.
   // On every cycleIndex/phase transition in SessionFrame, schedule the corresponding In/Out cue
@@ -553,11 +562,11 @@ export default function App() {
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           <BreathingShape
-            frame={appPhase === 'running' ? session.currentFrame : null}
+            frame={appPhase === 'running' ? session.liveFrame : null}
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
           />
           <SessionReadout
-            frame={leadInPlaceholderFrame ?? session.currentFrame}
+            frame={leadInPlaceholderFrame ?? session.liveFrame}
             // During lead-in, the underlying state.status may still be 'complete'
             // from the prior session (session.start() doesn't fire until t3).
             // Override to 'idle' so SessionReadout renders the placeholder
