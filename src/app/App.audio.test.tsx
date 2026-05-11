@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 import * as cueSynth from '../audio/cueSynth'
+import { SAFE_LEAD_SEC } from '../audio/audioEngine'
 
 // The MuteToggle has three possible accessible names per state — match any.
 function muteButton() {
@@ -330,7 +331,114 @@ describe('App — audio cues (Phase 3)', () => {
 
     expect(muteButton()).toHaveAttribute('aria-pressed', 'true')
   })
+
+  // -- AUDIO-02: caller-side clamp tests (Phase 9 Plan 02) --------------------
+
+  // Test 15: caller-side clamp — audioTime is clamped to audio.audioNow() + SAFE_LEAD_SEC
+  it('AUDIO-02: App boundary effect clamps audioTime to audio.audioNow() + SAFE_LEAD_SEC (caller-side)', async () => {
+    const tracker = installTrackedAC()
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+
+    // We are now in running. Override the AC's currentTime to a large value
+    // so that audioAnchor + boundaryStartMs/1000 yields a PAST value relative to
+    // the fake currentTime. The clamp must lift it to currentTime + SAFE_LEAD_SEC.
+    // Set currentTime to a large value (100 s) so any computed audioTime is in the past.
+    const FAKE_CURRENT_TIME = 100
+    // Reason: tracker.instances is AnyAC[] for test-double access to override currentTime.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const liveAC = tracker.instances[tracker.instances.length - 1]
+    Object.defineProperty(liveAC, 'currentTime', { get: () => FAKE_CURRENT_TIME, configurable: true })
+
+    scheduleOutSpy.mockClear()
+
+    // Advance to the first Out boundary (inhaleMs ≈ 4363 ms at default BPM 5.5).
+    await act(async () => {
+      vi.advanceTimersByTime(5000)
+      await Promise.resolve()
+    })
+
+    // scheduleOutCue should have been called at least once.
+    expect(scheduleOutSpy).toHaveBeenCalled()
+    // The 2nd argument to scheduleOutCue is the audioTime.
+    // Reason: length asserted by toHaveBeenCalled() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const audioTimeArg = scheduleOutSpy.mock.calls[0]![1]
+    // The caller-side clamp must have lifted it to at least currentTime + SAFE_LEAD_SEC.
+    expect(audioTimeArg).toBeGreaterThanOrEqual(FAKE_CURRENT_TIME + SAFE_LEAD_SEC - 1e-9)
+
+    tracker.restore()
+  })
+
+  // Test 16: paired no-clamp case — audioTime already future, passes verbatim
+  it('AUDIO-02: App boundary effect passes audioTime verbatim when already > now() + SAFE_LEAD_SEC', async () => {
+    const tracker = installTrackedAC()
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+
+    // Keep currentTime at its natural (small) value (0 or close to 0 — FakeAudioContext starts at 0
+    // but advances with performance.now()/1000; with vi.useFakeTimers it stays near 0).
+    // The computed audioTime (audioAnchor + boundaryStartMs/1000 ≈ 3 + 4.36 ≈ 7.36 s)
+    // is much greater than currentTime (≈ 0) + SAFE_LEAD_SEC (0.005), so no clamp occurs.
+    scheduleOutSpy.mockClear()
+
+    // Reason: tracker.instances is AnyAC[]; unsafe-assignment on AnyAC[] index.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const lastAC: { currentTime: number } = tracker.instances[tracker.instances.length - 1]
+    const naturalTime = lastAC.currentTime
+
+    await act(async () => {
+      vi.advanceTimersByTime(5000)
+      await Promise.resolve()
+    })
+
+    expect(scheduleOutSpy).toHaveBeenCalled()
+    // Reason: length asserted by toHaveBeenCalled() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const audioTimeArg = scheduleOutSpy.mock.calls[0]![1]
+    // The audioTime must NOT have been clamped — it's already well above the threshold.
+    // The un-clamped value is audioAnchor + boundaryStartMs/1000. Since currentTime ≈ naturalTime
+    // (small), the clamp threshold is naturalTime + 0.005, far below the scheduled audioTime.
+    expect(audioTimeArg).toBeGreaterThan(naturalTime + SAFE_LEAD_SEC)
+    // And the value should NOT equal the clamped minimum (it should be larger).
+    // We can't assert exact equality to the pre-clamp audioTime because we don't have direct
+    // access to audioAnchor. Instead assert it's comfortably above the clamp threshold.
+    expect(audioTimeArg).toBeGreaterThan(1) // audioTime must be > 1 s (anchor ~3 + boundary ~4)
+
+    tracker.restore()
+  })
 })
+
+// Helper: wrap the FakeAudioContext from vitest.setup.ts so we can track each
+// constructed instance. Used in both 'App — audio cues' and 'Plan 06 D-42' describe blocks.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyAC = any
+function installTrackedAC(): { instances: AnyAC[]; constructed: () => number; restore: () => void } {
+  const instances: AnyAC[] = []
+  const OrigAC = window.AudioContext
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const TrackAC: any = function (this: AnyAC, opts: AudioContextOptions | undefined) {
+    // Reason: invoking the original AudioContext constructor via dynamic wrapper; unsafe-* on any-typed wrapper is intentional in this test tracker.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const inst = new (OrigAC as any)(opts)
+    instances.push(inst)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return inst
+  }
+  // Reason: linking prototype chain for constructor tracking; unsafe-member-access is intentional in this test helper.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  TrackAC.prototype = OrigAC.prototype
+  vi.stubGlobal('AudioContext', TrackAC)
+  return {
+    instances,
+    constructed: () => instances.length,
+    restore: () => vi.unstubAllGlobals(),
+  }
+}
 
 describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)', () => {
   beforeEach(() => {
@@ -347,36 +455,6 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
   // The FakeAudioContext install from vitest.setup.ts is the AC used during these tests.
   // We reach the live instance via window.AudioContext.prototype after render — the engine's
   // audioCtx is constructed inside createAudioEngine() called by useAudioCues.start().
-
-  // Helper: wrap the FakeAudioContext from vitest.setup.ts so we can track each
-  // constructed instance (FakeAudioContext exposes resume / _simulateInterrupted /
-  // _simulateResumeReject / dispatchStateChange as instance properties — they are
-  // not on the prototype, so vi.spyOn(prototype, 'resume') fails. We override the
-  // resume / _simulateResumeReject / instance state directly after construction).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type AnyAC = any
-  function installTrackedAC(): { instances: AnyAC[]; constructed: () => number; restore: () => void } {
-    const instances: AnyAC[] = []
-    const OrigAC = window.AudioContext
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const TrackAC: any = function (this: AnyAC, opts: AudioContextOptions | undefined) {
-      // Reason: invoking the original AudioContext constructor via dynamic wrapper; unsafe-* on any-typed wrapper is intentional in this test tracker.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-      const inst = new (OrigAC as any)(opts)
-      instances.push(inst)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return inst
-    }
-    // Reason: linking prototype chain for constructor tracking; unsafe-member-access is intentional in this test helper.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    TrackAC.prototype = OrigAC.prototype
-    vi.stubGlobal('AudioContext', TrackAC)
-    return {
-      instances,
-      constructed: () => instances.length,
-      restore: () => vi.unstubAllGlobals(),
-    }
-  }
 
   it("D-42 (1): needsResume morphs MuteToggle aria-label to 'Resume audio' when audioStatus transitions", async () => {
     const tracker = installTrackedAC()
