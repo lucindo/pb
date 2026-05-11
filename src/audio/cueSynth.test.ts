@@ -167,4 +167,35 @@ describe('cueSynth', () => {
     const peakArg = setValue.mock.calls[0]?.[0] as number
     expect(peakArg).toBeLessThanOrEqual(0.25)
   })
+
+  // 260510-tc9 Bug 2 — phase-duration-scaled decay (Direction A).
+  // When phaseDurationSec is provided, the effective decayTimeConstant is
+  // clamp(defaultTau, phaseDurationSec / PERCEPTUAL_DECAY_DIVISOR, MAX_TAU)
+  // with PERCEPTUAL_DECAY_DIVISOR = 3 and MAX_TAU = 6.
+
+  it('scheduleInCue with phaseDurationSec=10 stretches τ to ≈ 3.33 (10/3)', () => {
+    const ac = createAc()
+    const handle = scheduleInCue(ac, 1.0, ac.destination, 10)
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    // setTargetAtTime(target, startTime, timeConstant) — assert timeConstant ≈ 10/3.
+    const call = setTarget.mock.calls[0] as [number, number, number] | undefined
+    expect(call).toBeDefined()
+    expect(call?.[2]).toBeCloseTo(10 / 3, 5)
+  })
+
+  it('scheduleInCue with phaseDurationSec=2 clamps to default τ (1.4) — short phases must not get a thinner cue than baseline', () => {
+    const ac = createAc()
+    const handle = scheduleInCue(ac, 1.0, ac.destination, 2)
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    // 2/3 ≈ 0.667 < default 1.4 → clamped UP to 1.4.
+    expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, 1.4)
+  })
+
+  it('scheduleOutCue with phaseDurationSec=30 clamps to MAX_TAU = 6', () => {
+    const ac = createAc()
+    const handle = scheduleOutCue(ac, 1.0, ac.destination, 30)
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    // 30/3 = 10 > MAX_TAU 6 → clamped DOWN to 6.
+    expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, 6)
+  })
 })
