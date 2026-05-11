@@ -22,12 +22,13 @@
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { scheduleInCue, scheduleOutCue, scheduleTick, type CueHandle } from './cueSynth'
 
-export type AudioStatus = 'idle' | 'starting' | 'lead-in' | 'failed'
+export type AudioStatus = 'idle' | 'lead-in' | 'failed'
 
 export interface AudioEngine {
   /** Schedule the 3-2-1 lead-in: ticks at startAudioTime + 0/+1/+2 s, first In cue at startAudioTime + 3 s.
-   *  Returns the audioTime of the first In cue (= startAudioTime + 3). */
-  scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number
+   *  Returns the audioTime of the first In cue (= startAudioTime + 3), or null when the engine
+   *  is closed — AUDIO-03. */
+  scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null
   /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue
    *  at the given audioTime if not muted. `phaseDurationSec` is the length of the
    *  UPCOMING phase (in / out) in seconds; cueSynth uses it to stretch the bowl
@@ -78,6 +79,11 @@ export const LEAD_IN_TICK_INTERVAL_SEC = 1.0
 export const LEAD_IN_DURATION_SEC = 3.0
 export const LEAD_IN_TICK_INTERVAL_MS = LEAD_IN_TICK_INTERVAL_SEC * 1000
 export const LEAD_IN_DURATION_MS = LEAD_IN_DURATION_SEC * 1000
+/** Minimum scheduling lead ahead of audioCtx.currentTime for any cue dispatch.
+ *  AUDIO-02 D-03: exported as single source of truth — App.tsx imports this symbol for the
+ *  caller-side clamp (Plan 02); audioEngine.scheduleNextCue uses it for the callee-side clamp.
+ *  No duplicated literals; both clamp sites derive from this constant. */
+export const SAFE_LEAD_SEC = 0.005
 
 function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
   const now = audioCtx.currentTime
@@ -146,9 +152,9 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
   }
 
   const engine: AudioEngine = {
-    scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number {
+    scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null {
       const firstInCueTime = startAudioTime + LEAD_IN_DURATION_SEC
-      if (closed) return firstInCueTime
+      if (closed) return null // AUDIO-03: closed engine has no meaningful projection.
       if (muted) return firstInCueTime
 
       // 3 ticks at +0/+1/+2 (D-14 lead-in). Track each so mid-lead-in mute can
@@ -170,12 +176,14 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
       if (closed) return
       if (muted) return // D-08 unmute-waits-for-boundary; if currently muted, skip this cue.
       pruneExpiredCues()
+      // AUDIO-02 D-01/D-02 callee-side clamp.
+      const clampedAudioTime = Math.max(audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
       // 260510-tc9 Bug 2: forward phaseDurationSec as the 4th arg so cueSynth
       // can stretch the decay envelope to the phase length.
       const cue =
         newPhase === 'in'
-          ? scheduleInCue(audioCtx, audioTime, audioCtx.destination, phaseDurationSec)
-          : scheduleOutCue(audioCtx, audioTime, audioCtx.destination, phaseDurationSec)
+          ? scheduleInCue(audioCtx, clampedAudioTime, audioCtx.destination, phaseDurationSec)
+          : scheduleOutCue(audioCtx, clampedAudioTime, audioCtx.destination, phaseDurationSec)
       activeCues.add(cue)
     },
 

@@ -341,7 +341,8 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
     // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) {}
-    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // AUDIO-04: addEventListener added so cueSynth's { once: true } 'ended' listener registration succeeds.
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
     createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
@@ -461,7 +462,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) { constructed += 1; SpyableAC.lastInstance = this }
-    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // AUDIO-04: addEventListener added so cueSynth's { once: true } 'ended' listener registration succeeds.
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
     createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // Reason: async required to match AudioContext.resume() Promise<void> signature; conditional throw produces a rejected promise without await.

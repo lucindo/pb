@@ -2,10 +2,8 @@
 // machine (status + audioAvailable + muted) and the imperative API consumed
 // by App.tsx in Plan 04.
 //
-// State machine: 'idle' → 'starting' → 'lead-in' (success) | 'failed' (D-10).
+// State machine: 'idle' → 'lead-in' (success) | 'failed' (D-10).
 //   - 'idle' is the initial and post-stop() resting state.
-//   - 'starting' is the transient between start() being called and the AC
-//     promise resolving (visible to the UI as a brief "preparing" state).
 //   - 'lead-in' is the post-success state (the lead-in cues are scheduled
 //     and the first In bowl will strike at +3 s).
 //   - 'failed' is the D-10 visuals-only fallback path; audioAvailable=false.
@@ -189,7 +187,8 @@ export function useAudioCues(
       if (existing !== null) {
         return firstInCueTimeRef.current
       }
-      setStatus('starting')
+      // D-08 (AUDIO-06): 'starting' literal removed from AudioStatus union (Plan 01).
+      // Transition goes 'idle' → 'lead-in' (success) | 'failed' directly.
       try {
         const engine = await createAudioEngine({ onStateChange: handleStateChange })
         engineRef.current = engine
