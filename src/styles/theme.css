@@ -33,11 +33,14 @@
   --color-orb-out-text: #1e3a8a;
 
   /* Phase 2 reference ring tokens (D-04).
-     260510-tc9 Bug 1: bumped inner alpha from 0.45 → 0.6 to match outer so the
-     Out-phase shrink has a perceptually comparable arrival cue to the In-phase grow.
-     Hues (teal outer, blue inner) preserved — they aid In/Out semantic distinction. */
+     260510-tc9 Bug 1 (iter 3): inner ring uses the deep Out-text indigo at moderate
+     alpha so the ring reads clearly against the light-blue Out gradient fill.
+     A pale-blue ring on a pale-blue background is perceptually invisible (UAT
+     screenshot iter 2). Inner ring is only visible during the Out phase via the
+     [data-phase='out'] gate below, so the indigo is paired exclusively with the
+     blue gradient — no clash with the In teal gradient. */
   --color-ring-outer: rgb(153 246 228 / 0.6);
-  --color-ring-inner: rgb(191 219 254 / 0.6);
+  --color-ring-inner: rgb(30 58 138 / 0.4);
 
   /* Phase 2 modal token (consumed by Plan 04) */
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
@@ -90,13 +93,24 @@
   border-width: 1.5px;
 }
 
-/* 260510-tc9 Bug 1: equalize inner ring weight with outer ring so Out-phase shrink
-   has a comparable arrival cue. Both border-width and color alpha now match the outer
-   ring (was 1px / alpha 0.45 — read as a weak background detail on the smaller
-   circumference). */
+/* 260510-tc9 Bug 1 (iter 3): inner reference ring is the Out-phase arrival cue.
+   - Hidden by default (opacity 0) so it does not distract during In phase or the
+     3-2-1 lead-in countdown (where there is no data-phase attribute on root).
+   - Fades in/out at the same 400ms ease-in-out as the orb-layer phase crossfade
+     (see .orb-layer--in / .orb-layer--out), so the ring appears in lockstep with
+     the orb shifting from teal to blue and recedes back during the next In flip.
+   - Reduced-motion: the transition is intentionally PRESERVED, mirroring the
+     orb-layer--out reduced-motion contract (D-07) — the fade-in IS the phase
+     indicator when the orb is locked at MID_SCALE. */
 .orb-ring--inner {
   border-color: var(--color-ring-inner);
   border-width: 1.5px;
+  opacity: 0;
+  transition: opacity 400ms ease-in-out;
+}
+
+[data-phase='out'] .orb-ring--inner {
+  opacity: 1;
 }
 
 /* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.
