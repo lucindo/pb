@@ -269,8 +269,8 @@ export default function App() {
     // WR-04: drive these from the shared LEAD_IN_TICK_INTERVAL_MS / LEAD_IN_DURATION_MS
     // exports so a future tweak to the lead-in length stays in lockstep across the
     // visual countdown, the audio ticks, and the audio anchor.
-    const t1 = window.setTimeout(() => setLeadInDigit(2), 1 * LEAD_IN_TICK_INTERVAL_MS)
-    const t2 = window.setTimeout(() => setLeadInDigit(1), 2 * LEAD_IN_TICK_INTERVAL_MS)
+    const t1 = window.setTimeout(() => { setLeadInDigit(2) }, 1 * LEAD_IN_TICK_INTERVAL_MS)
+    const t2 = window.setTimeout(() => { setLeadInDigit(1) }, 2 * LEAD_IN_TICK_INTERVAL_MS)
     const t3 = window.setTimeout(() => {
       // t=0: lead-in done. Switch to running. SESS-05: session.start() is called HERE,
       // not at the original Start button-press. The session clock begins now.
@@ -437,7 +437,7 @@ export default function App() {
     }
     const frame = session.currentFrame
     if (frame === null) return
-    const key = `${frame.cycleIndex}:${frame.phase}`
+    const key = `${String(frame.cycleIndex)}:${frame.phase}`
     if (lastBoundaryKeyRef.current === key) return
     lastBoundaryKeyRef.current = key
 
@@ -520,12 +520,12 @@ export default function App() {
           />
           <SessionControls
             status={state.status}
-            onStart={onStartClick}
+            onStart={() => { void onStartClick() }}
             onEnd={requestEnd}
             muted={audio.muted}
             audioAvailable={audio.audioAvailable}
             needsResume={audio.audioStatus === 'needs-resume'}
-            onMuteToggle={onMuteOrResumeClick}
+            onMuteToggle={() => { void onMuteOrResumeClick() }}
           />
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
               Lives at the App level (discretion #6) so the announcement fires once on

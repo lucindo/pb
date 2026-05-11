@@ -20,7 +20,7 @@ import {
 
 export interface StatsFooterProps {
   stats: PersistedStats
-  onResetClick(): void
+  onResetClick(this: void): void
 }
 
 export function StatsFooter({ stats, onResetClick }: StatsFooterProps) {

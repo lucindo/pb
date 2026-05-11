@@ -3,8 +3,8 @@ import { MuteToggle } from './MuteToggle'
 
 export interface SessionControlsProps {
   status: SessionStatus
-  onStart(): void
-  onEnd(): void
+  onStart(this: void): void
+  onEnd(this: void): void
   // Phase 3 (D-05): inline mute toggle next to the primary action.
   // OPTIONAL — when ANY of the three new audio props is undefined, the legacy
   // single-button layout is rendered instead. This keeps the Phase 1/2 App tests
@@ -17,7 +17,7 @@ export interface SessionControlsProps {
    *  click handler at the App level dispatches audio.resume() synchronously
    *  inside the gesture chain before flipping mute (D-31/D-33). */
   needsResume?: boolean
-  onMuteToggle?(): void
+  onMuteToggle?(this: void): void
 }
 
 export function SessionControls({

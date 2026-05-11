@@ -21,10 +21,10 @@ import { useCallback, useEffect, useRef } from 'react'
 export interface UseWakeLock {
   /** Request a screen wake lock. Fire-and-forget per D-02 (App.tsx uses void). Silently absorbs
    *  absent API (D-09) and any rejection. Idempotent if already held (D-08). */
-  request(): Promise<void>
+  request(this: void): Promise<void>
   /** Release the held wake lock. Idempotent — no-op when no sentinel is held (D-08). Clears
    *  wasAcquiredRef so visibility re-acquires stop firing (D-04 inverse). */
-  release(): Promise<void>
+  release(this: void): Promise<void>
 }
 
 export function useWakeLock(): UseWakeLock {

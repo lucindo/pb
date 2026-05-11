@@ -14,10 +14,10 @@ import {
 export interface SessionEngine {
   state: SessionState
   currentFrame: SessionFrame | null
-  setSelectedSettings(settings: SessionSettings): void
-  start(): void
-  end(): void
-  extendDuration(durationMinutes: number): void
+  setSelectedSettings(this: void, settings: SessionSettings): void
+  start(this: void): void
+  end(this: void): void
+  extendDuration(this: void, durationMinutes: number): void
 }
 
 export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETTINGS): SessionEngine {

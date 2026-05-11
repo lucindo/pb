@@ -11,7 +11,7 @@
 
 export interface LearnAnchorProps {
   disabled: boolean
-  onClick(): void
+  onClick(this: void): void
 }
 
 export function LearnAnchor({ disabled, onClick }: LearnAnchorProps) {

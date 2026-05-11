@@ -11,16 +11,16 @@ import { SettingsStepper } from './SettingsStepper'
 export interface SettingsFormProps {
   settings: SessionSettings
   isRunning: boolean
-  onChange(settings: SessionSettings): void
-  onExtendDuration(durationMinutes: number): void
+  onChange(this: void, settings: SessionSettings): void
+  onExtendDuration(this: void, durationMinutes: number): void
 }
 
 function formatBpm(value: number): string {
-  return `${value} BPM`
+  return `${String(value)} BPM`
 }
 
 function formatDuration(value: DurationOption): string {
-  return value === 'open-ended' ? 'Open-ended' : `${value} min`
+  return value === 'open-ended' ? 'Open-ended' : `${String(value)} min`
 }
 
 export function SettingsForm({
@@ -57,13 +57,13 @@ export function SettingsForm({
             value={settings.bpm}
             options={BPM_OPTIONS}
             formatValue={formatBpm}
-            onChange={(bpm) => updateSettings({ bpm })}
+            onChange={(bpm) => { updateSettings({ bpm }) }}
           />
           <SettingsStepper<RatioLabel>
             label="Ratio"
             value={settings.ratio}
             options={RATIO_OPTIONS}
-            onChange={(ratio) => updateSettings({ ratio })}
+            onChange={(ratio) => { updateSettings({ ratio }) }}
           />
         </>
       )}

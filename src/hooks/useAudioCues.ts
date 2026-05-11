@@ -48,20 +48,20 @@ export interface UseAudioCues {
   /** Called from the Start session click handler (user gesture). Awaits AC creation. May fail
    *  → audioAvailable=false, status='failed'. Returns the audioTime of the first In cue
    *  (or null if AC failed). */
-  start(plan: BreathingPlan): Promise<number | null>
+  start(this: void, plan: BreathingPlan): Promise<number | null>
   /** Called when session ends. Closes AC (D-11). Resets status to 'idle'. */
-  stop(): Promise<void>
+  stop(this: void): Promise<void>
   /** Toggle mute. Pass true to mute, false to unmute. */
-  setMuted(muted: boolean): void
+  setMuted(this: void, muted: boolean): void
   /** Notify a phase boundary at audioTime — the engine schedules the In or Out cue.
    *  App.tsx calls this as it transitions cycleIndex/phase. `phaseDurationSec` is
    *  the length of the UPCOMING phase (derived from plan.inhaleMs / plan.exhaleMs);
    *  the engine forwards it to cueSynth so the bowl-cue decay envelope stretches
    *  with the phase length at low BPM (260510-tc9 Bug 2). */
-  notifyPhaseBoundary(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
+  notifyPhaseBoundary(this: void, args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
   /** Returns audioCtx.currentTime, or null if AC unavailable. App.tsx uses this for
    *  the dual-anchor (Pitfall 2). */
-  audioNow(): number | null
+  audioNow(this: void): number | null
   /** Plan 06 D-34: see AudioStatusFlag JSDoc. App.tsx reads this to drive
    *  MuteToggle's needsResume prop. */
   audioStatus: AudioStatusFlag
@@ -71,7 +71,7 @@ export interface UseAudioCues {
    *  (close + new createAudioEngine + setMuted replay + re-anchor signal) if
    *  resume cannot recover the AC. All chained synchronously inside the click
    *  handler so the iOS gesture context spans both calls (Pitfall 2). */
-  resume(): Promise<void>
+  resume(this: void): Promise<void>
 }
 
 export function useAudioCues(
