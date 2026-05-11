@@ -28,6 +28,8 @@ describe('LearnDialog — closed state', () => {
 describe('LearnDialog — open state default focus + locked copy', () => {
   it('opens with focus on Close button (D-05 default-focus-on-non-link safety)', () => {
     renderDialog({ open: true })
+    // Reason: cast documents that getByRole returns HTMLDialogElement; TS infers HTMLElement but dialog.open requires HTMLDialogElement.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const dialog = screen.getByRole('dialog', { name: 'About this practice' }) as HTMLDialogElement
     expect(dialog.open).toBe(true)
     expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
@@ -63,6 +65,8 @@ describe('LearnDialog — open state default focus + locked copy', () => {
 describe('LearnDialog — Esc + backdrop close paths', () => {
   it('Esc (dialog cancel event) invokes onClose via preventDefault path', () => {
     const { onClose, container } = renderDialog({ open: true })
+    // Reason: dialog element is always present when open=true; querySelector('dialog') is guaranteed non-null.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const dialog = container.querySelector('dialog')!
     fireEvent(dialog, new Event('cancel', { cancelable: true }))
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -70,6 +74,8 @@ describe('LearnDialog — Esc + backdrop close paths', () => {
 
   it('clicking the backdrop (event.target === dialog itself) invokes onClose', () => {
     const { onClose, container } = renderDialog({ open: true })
+    // Reason: dialog element is always present when open=true; querySelector('dialog') is guaranteed non-null.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const dialog = container.querySelector('dialog')!
     fireEvent.click(dialog, { target: dialog })
     expect(onClose).toHaveBeenCalledTimes(1)

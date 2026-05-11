@@ -127,7 +127,10 @@ describe('running session display', () => {
       return !(child as HTMLElement).hasAttribute('aria-hidden') && child.textContent === 'In'
     }) as HTMLElement | undefined
     expect(label).toBeDefined()
+    // Reason: label non-null asserted by expect().toBeDefined() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(label!.className).toMatch(/text-5xl/)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(label!.className).toMatch(/font-semibold/)
   })
 
@@ -140,10 +143,14 @@ describe('running session display', () => {
     expect(scaleHost).not.toBeNull()
     // Default matchMedia mock has matches: false; phaseProgress at start is 0
     // → liveScale for 'in' = MIN_SCALE = 0.58.
+    // Reason: scaleHost non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(scaleHost!.style.transform).toContain('scale(0.58')
   })
 
   it('holds the orb at fixed mid-scale (0.79) when reduced-motion is preferred (D-06)', async () => {
+    // Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     vi.spyOn(window, 'matchMedia').mockReturnValue({
       matches: true,
       media: '(prefers-reduced-motion: reduce)',
@@ -161,9 +168,12 @@ describe('running session display', () => {
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
     expect(shape).toHaveAttribute('data-phase', 'in')
     const scaleHost = shape.querySelector<HTMLElement>('.orb')
+    expect(scaleHost).not.toBeNull()
     // Phase 5.1 Plan 04 post-UAT: transform is `translate3d(0,0,0) scale(...)`
     // (translate3d added for Firefox GPU promotion). The scale(0.79) substring
     // is the assertion that matters — D-06 fixed mid-scale invariant.
+    // Reason: scaleHost non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(scaleHost!.style.transform).toMatch(/^translate3d\(0(?:px)?,\s*0(?:px)?,\s*0(?:px)?\)\s+scale\(0\.79\)$/)
   })
 })

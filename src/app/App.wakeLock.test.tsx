@@ -62,6 +62,7 @@ describe('App — wake lock (Phase 5)', () => {
     await startAndAdvancePastLeadIn()
     expect(requestSpy).toHaveBeenCalledTimes(1)
     // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
@@ -77,6 +78,7 @@ describe('App — wake lock (Phase 5)', () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
     // Reason: startAndAdvancePastLeadIn triggers exactly one wakeLock.request; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
@@ -98,6 +100,7 @@ describe('App — wake lock (Phase 5)', () => {
 
     await startAndAdvancePastLeadIn()
     // Reason: startAndAdvancePastLeadIn triggers exactly one wakeLock.request; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
@@ -119,6 +122,7 @@ describe('App — wake lock (Phase 5)', () => {
 
     // Sentinel may or may not have resolved yet; capture defensively.
     // Reason: Start session click triggers exactly one wakeLock.request; results[0] is populated by this point.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 

@@ -49,6 +49,8 @@ describe('EndSessionDialog (component-level)', () => {
   it('opens with focus on Keep going when open=true', () => {
     renderDialog({ open: true })
 
+    // Reason: cast documents that getByRole returns HTMLDialogElement; TS infers HTMLElement but dialog.open requires HTMLDialogElement.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const dialog = screen.getByRole('dialog', { name: 'End this session?' }) as HTMLDialogElement
     expect(dialog.open).toBe(true)
     expect(screen.getByRole('button', { name: 'Keep going' })).toHaveFocus()

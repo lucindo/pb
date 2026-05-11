@@ -146,8 +146,10 @@ describe('App — audio cues (Phase 3)', () => {
     const [firstCallArgs] = scheduleOutSpy.mock.calls
     // firstCallArgs is [audioCtx, audioTime, destination]. Verify audioTime is finite + positive.
     // Reason: length asserted by toHaveBeenCalled() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(typeof firstCallArgs![1]).toBe('number')
     // Reason: length asserted by toHaveBeenCalled() above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(firstCallArgs![1]).toBeGreaterThan(0)
   })
 
@@ -273,6 +275,8 @@ describe('App — audio cues (Phase 3)', () => {
   it('renders lead-in numerals visuals-only when AudioContext construction fails (D-10)', async () => {
     vi.stubGlobal(
       'AudioContext',
+      // Reason: test double for AudioContext API; class syntax is required for new invocation in vi.stubGlobal context.
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class {
         constructor() {
           throw new Error('AudioContext construction blocked')
@@ -356,11 +360,15 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     const OrigAC = window.AudioContext
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const TrackAC: any = function (this: AnyAC, opts: AudioContextOptions | undefined) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: invoking the original AudioContext constructor via dynamic wrapper; unsafe-* on any-typed wrapper is intentional in this test tracker.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const inst = new (OrigAC as any)(opts)
       instances.push(inst)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return inst
     }
+    // Reason: linking prototype chain for constructor tracking; unsafe-member-access is intentional in this test helper.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     TrackAC.prototype = OrigAC.prototype
     vi.stubGlobal('AudioContext', TrackAC)
     return {
@@ -376,8 +384,12 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     await startAndAdvancePastLeadIn()
     // After start, the engine holds the AC. Arm an InvalidStateError rejection on
     // the next resume() call — the visibility handler will trigger that resume.
+    // Reason: tracker.instances is AnyAC[] for test-double access to _simulate* methods; unsafe-* on any-typed AC test double is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const live = tracker.instances[tracker.instances.length - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     live._simulateInterrupted()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     live._simulateResumeReject('InvalidStateError')
 
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
@@ -404,8 +416,12 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     const tracker = installTrackedAC()
     render(<App />)
     await startAndAdvancePastLeadIn()
+    // Reason: tracker.instances is AnyAC[] for test-double access to _simulate* methods; unsafe-* on any-typed AC test double is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const first = tracker.instances[tracker.instances.length - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateInterrupted()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateResumeReject('InvalidStateError')
 
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
@@ -441,8 +457,12 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     render(<App />)
     await startAndAdvancePastLeadIn()
     // Drive to needs-resume on the first AC.
+    // Reason: tracker.instances is AnyAC[] for test-double access to _simulate* methods; unsafe-* on any-typed AC test double is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const first = tracker.instances[tracker.instances.length - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateInterrupted()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateResumeReject('InvalidStateError')
 
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
@@ -455,6 +475,7 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
 
     // On click: engine.resume() rejects again (we re-arm rejection), then the hook
     // escalates to reconstruction → a new AC is constructed by the tracker.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateResumeReject('InvalidStateError')
 
     await act(async () => {
@@ -484,8 +505,12 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     const tracker = installTrackedAC()
     render(<App />)
     await startAndAdvancePastLeadIn()
+    // Reason: tracker.instances is AnyAC[] for test-double access to _simulate* methods; unsafe-* on any-typed AC test double is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const first = tracker.instances[tracker.instances.length - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateInterrupted()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateResumeReject('InvalidStateError')
 
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
@@ -496,6 +521,7 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     })
     const beforeCount = tracker.constructed()
     // Click: engine.resume() rejects, hook escalates to reconstruction.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     first._simulateResumeReject('InvalidStateError')
     await act(async () => {
       fireEvent.click(muteButton())

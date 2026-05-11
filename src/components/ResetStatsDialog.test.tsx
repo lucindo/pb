@@ -28,6 +28,8 @@ describe('ResetStatsDialog — closed state', () => {
 describe('ResetStatsDialog — open state (D-12 locked copy + default focus)', () => {
   it('opens with focus on Keep button (D-12 default-focus-on-cancel safety)', () => {
     renderDialog({ open: true })
+    // Reason: cast documents that getByRole returns HTMLDialogElement; TS infers HTMLElement but dialog.open requires HTMLDialogElement.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const dialog = screen.getByRole('dialog', { name: 'Reset practice stats?' }) as HTMLDialogElement
     expect(dialog.open).toBe(true)
     expect(screen.getByRole('button', { name: 'Keep' })).toHaveFocus()
@@ -56,6 +58,8 @@ describe('ResetStatsDialog — open state (D-12 locked copy + default focus)', (
 
   it('Esc (dialog cancel event) invokes onCancel via preventDefault path', () => {
     const { onCancel, container } = renderDialog({ open: true })
+    // Reason: dialog element is always present when open=true; querySelector('dialog') is guaranteed non-null.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const dialog = container.querySelector('dialog')!
     fireEvent(dialog, new Event('cancel', { cancelable: true }))
     expect(onCancel).toHaveBeenCalledTimes(1)
@@ -63,6 +67,8 @@ describe('ResetStatsDialog — open state (D-12 locked copy + default focus)', (
 
   it('clicking the backdrop (event.target === dialog itself) invokes onCancel', () => {
     const { onCancel, container } = renderDialog({ open: true })
+    // Reason: dialog element is always present when open=true; querySelector('dialog') is guaranteed non-null.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const dialog = container.querySelector('dialog')!
     fireEvent.click(dialog, { target: dialog })
     expect(onCancel).toHaveBeenCalledTimes(1)

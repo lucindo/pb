@@ -14,6 +14,8 @@ describe('usePrefersReducedMotion', () => {
   })
 
   it('returns true when matchMedia.matches is true at mount', () => {
+    // Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     vi.spyOn(window, 'matchMedia').mockReturnValue({
       matches: true,
       media: '(prefers-reduced-motion: reduce)',
@@ -32,6 +34,8 @@ describe('usePrefersReducedMotion', () => {
   it('subscribes via addEventListener("change", ...) and cleans up on unmount', () => {
     const addSpy = vi.fn()
     const removeSpy = vi.fn()
+    // Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     vi.spyOn(window, 'matchMedia').mockReturnValue({
       matches: false,
       media: '(prefers-reduced-motion: reduce)',
@@ -61,6 +65,8 @@ describe('usePrefersReducedMotion', () => {
       // First call (during useState initializer): matches=false.
       // Subsequent calls (inside the mount effect): matches=true.
       const matches = callCount > 1
+      // Reason: cast documents the intended stub shape; the return type annotation is inferred from the spy signature.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       return {
         matches,
         media,
@@ -81,6 +87,8 @@ describe('usePrefersReducedMotion', () => {
 
   it('updates when the matchMedia change event fires', () => {
     let captured: ((event: MediaQueryListEvent) => void) | null = null
+    // Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     vi.spyOn(window, 'matchMedia').mockReturnValue({
       matches: false,
       media: '(prefers-reduced-motion: reduce)',

@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react'
-
 import type { SessionFrame } from '../domain/sessionMath'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 
@@ -62,7 +60,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
       style={{
         width: 'var(--orb-size)',
         height: 'var(--orb-size)',
-      } as CSSProperties}
+      }}
     >
       {/* D-04 + Phase 5.1 D-10/D-12: outer reference ring at MAX_SCALE boundary.
           The 1.5px border (theme.css `.orb-ring--outer { border-width: 1.5px }`) lives
@@ -168,7 +166,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       style={{
         width: 'var(--orb-size)',
         height: 'var(--orb-size)',
-      } as CSSProperties}
+      }}
     >
       {/* Outer reference ring (Phase 2 D-04 + Phase 5.1 D-10/D-12).
           Mirrors BreathingShapeBody above — both render sites must match

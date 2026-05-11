@@ -53,7 +53,9 @@ describe('writeEnvelope', () => {
     writeEnvelope({ version: STATE_VERSION, settings: { bpm: 4 } })
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
-    expect(JSON.parse(raw!)).toMatchObject({ version: 1, settings: { bpm: 4 } })
+    // Reason: raw non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(JSON.parse(raw!) as unknown).toMatchObject({ version: 1, settings: { bpm: 4 } })
   })
 
   it('silently absorbs QuotaExceededError on setItem (D-16)', () => {
@@ -62,19 +64,21 @@ describe('writeEnvelope', () => {
       e.name = 'QuotaExceededError'
       throw e
     })
-    expect(() => writeEnvelope({ version: STATE_VERSION })).not.toThrow()
+    expect(() => { writeEnvelope({ version: STATE_VERSION }) }).not.toThrow()
   })
 
   it('silently absorbs SecurityError on setItem (D-16 — Safari ITP / private mode)', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('SecurityError')
     })
-    expect(() => writeEnvelope({ version: STATE_VERSION, mute: true })).not.toThrow()
+    expect(() => { writeEnvelope({ version: STATE_VERSION, mute: true }) }).not.toThrow()
   })
 
   it('always re-stamps version: 1 even if a caller passes a wrong version', () => {
     writeEnvelope({ version: STATE_VERSION, settings: { bpm: 4 } })
-    const raw = window.localStorage.getItem(STATE_KEY)!
-    expect(JSON.parse(raw).version).toBe(1)
+    // Reason: STATE_KEY is always present after writeEnvelope; non-null asserted by storage contract.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rawStr = window.localStorage.getItem(STATE_KEY)!
+    expect(JSON.parse(rawStr) as unknown).toMatchObject({ version: 1 })
   })
 })

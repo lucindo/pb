@@ -121,6 +121,8 @@ export function useAudioCues(
       } else if (state === 'closed') {
         setAudioStatus('unavailable')
       } else if (
+        // Reason: explicit state check documents the WebKit-specific 'interrupted' state-machine branch (D-37); TS narrowing here is incidental to the documentation purpose.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         (state === 'suspended' || state === 'interrupted') &&
         visibilityResumeAttemptedRef.current
       ) {
@@ -258,7 +260,7 @@ export function useAudioCues(
     engineRef.current = null
     firstInCueTimeRef.current = null
 
-    let newEngine: AudioEngine | null = null
+    let newEngine: AudioEngine
     try {
       newEngine = await createAudioEngine({ onStateChange: handleStateChange })
     } catch {

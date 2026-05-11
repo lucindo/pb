@@ -41,6 +41,8 @@ describe('useAudioCues', () => {
     })
 
     expect(firstInCueTime).not.toBeNull()
+    // Reason: firstInCueTime non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(firstInCueTime!).toBeGreaterThanOrEqual(3)
     expect(result.current.status).toBe('lead-in')
     expect(result.current.audioAvailable).toBe(true)
@@ -54,6 +56,8 @@ describe('useAudioCues', () => {
   it('start(plan) on AudioContext failure → status=failed, audioAvailable=false (D-10), returns null', async () => {
     vi.stubGlobal(
       'AudioContext',
+      // Reason: test stub — constructor-only class simulates a browser that denies AudioContext.
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class {
         constructor() {
           throw new Error('blocked')
@@ -177,6 +181,8 @@ describe('useAudioCues', () => {
     // Failure path → audioNow returns null.
     vi.stubGlobal(
       'AudioContext',
+      // Reason: test stub — constructor-only class simulates a browser that denies AudioContext.
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class {
         constructor() {
           throw new Error('blocked')
@@ -332,12 +338,18 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     destination = {}
     private _start = performance.now() / 1000
     get currentTime() { return performance.now() / 1000 - this._start }
+    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
+    // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) {}
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
+    // eslint-disable-next-line @typescript-eslint/require-await
     async resume(): Promise<void> { this.state = 'running' }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async suspend(): Promise<void> { this.state = 'suspended' }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async close(): Promise<void> { this.state = 'closed' }
     addEventListener = vi.fn()
     removeEventListener = vi.fn()
@@ -446,10 +458,14 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     private _listeners = new Map<string, Set<EventListener>>()
     private _resumeRejection: { name: string; message: string } | null = null
     get currentTime() { return performance.now() / 1000 - this._start }
+    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) { constructed += 1; SpyableAC.lastInstance = this }
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; conditional throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     async resume(): Promise<void> {
       if (this._resumeRejection !== null) {
         const err = new DOMException(this._resumeRejection.message, this._resumeRejection.name)
@@ -461,7 +477,10 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       this.state = 'running'
       this._fireStateChange()
     }
+    // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
+    // eslint-disable-next-line @typescript-eslint/require-await
     async suspend(): Promise<void> { this.state = 'suspended'; this._fireStateChange() }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async close(): Promise<void> { this.state = 'closed'; this._fireStateChange() }
     _simulateSuspend(): void { this.state = 'suspended'; this._fireStateChange() }
     _simulateInterrupted(): void { this.state = 'interrupted'; this._fireStateChange() }
@@ -534,6 +553,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // state to 'interrupted' AND arm the rejection BEFORE the visibility-handler call.
     // The engine's audioCtx is encapsulated; we use vi.spyOn(SpyableAC.prototype, 'resume')
     // with mockImplementationOnce to model the iOS-Safari path.
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
       // Simulate the iOS path: state was 'interrupted', resume rejects, transitions to 'suspended'.
       this.state = 'interrupted'
@@ -575,7 +596,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // in handleStateChange is removed (D-41 contract).
     vi.spyOn(SpyableAC.prototype, 'dispatchStateChange').mockImplementationOnce(function (this: SpyableAC) {
       this.state = 'closed'
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: accessing private _listeners map through any cast to simulate state-change dispatch in closed spy.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       for (const l of (this as any)._listeners.get('statechange') ?? []) l(new Event('statechange'))
     })
 
@@ -612,6 +634,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     await act(async () => { await result.current.start(samplePlan) })
     const initialConstructed = constructed
     // Drive audioStatus to 'needs-resume' via the same path as D-41 (c).
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
       this.state = 'interrupted'
       this.dispatchStateChange()
@@ -630,6 +654,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
 
     // Now invoke the public resume() — it should call engine.resume() (rejects again),
     // then reconstructEngine() → close old + new SpyableAC + setMuted + onReanchorRequired.
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
       void this
       const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
@@ -645,6 +671,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // onReanchorRequired must have been invoked with the new AC's currentTime.
     expect(reanchorSpy).toHaveBeenCalledTimes(1)
     // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(typeof reanchorSpy.mock.calls[0]![0]).toBe('number')
 
     await act(async () => { await result.current.stop() })
@@ -658,6 +685,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     await act(async () => { await result.current.start(samplePlan) })
     expect(result.current.muted).toBe(true)
     // Drive audioStatus to 'needs-resume'.
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
       this.state = 'interrupted'
       this.dispatchStateChange()
@@ -673,6 +702,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       await Promise.resolve()
     })
     // Public resume() — first call rejects, escalates to reconstruction.
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
       void this
       throw new DOMException('Failed', 'InvalidStateError')
@@ -725,6 +756,8 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
 
     // Drive audioStatus to 'needs-resume' via the visibility-handler optimistic
     // resume() rejecting (matches the device-confirmed Plan 06 Task 8 trace).
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
       this.state = 'interrupted'
       this.dispatchStateChange()
@@ -756,6 +789,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // Re-anchor callback fired with new AC's currentTime (D-35).
     expect(reanchorSpy).toHaveBeenCalledTimes(1)
     // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(typeof reanchorSpy.mock.calls[0]![0]).toBe('number')
 
     await act(async () => { await result.current.stop() })

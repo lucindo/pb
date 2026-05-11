@@ -24,7 +24,7 @@ export function SettingsStepper<T extends string | number>({
   const canIncrease = selectedIndex >= 0 && selectedIndex < options.length - 1
 
   const changeBy = (offset: -1 | 1) => {
-    const nextValue = options[selectedIndex + offset]
+    const nextValue = options.at(selectedIndex + offset)
     if (nextValue !== undefined) {
       onChange(nextValue)
     }

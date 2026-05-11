@@ -112,7 +112,7 @@ describe('resetStats (D-11)', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })
-    expect(() => resetStats()).not.toThrow()
+    expect(() => { resetStats() }).not.toThrow()
   })
 })
 

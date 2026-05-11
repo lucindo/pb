@@ -32,9 +32,10 @@ function seedEnvelope(opts: SeedOpts = {}) {
   }))
 }
 
-function readEnvelope() {
+function readEnvelope(): Record<string, unknown> | null {
   const raw = window.localStorage.getItem(STATE_KEY)
-  return raw ? JSON.parse(raw) : null
+  // Reason: test helper reads raw localStorage; shape validated by downstream test assertions.
+  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
 }
 
 async function startAndAdvancePastLeadIn() {
@@ -47,6 +48,8 @@ async function startAndAdvancePastLeadIn() {
 }
 
 async function advanceTime(ms: number) {
+  // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     vi.advanceTimersByTime(ms)
   })
@@ -99,11 +102,11 @@ describe('LOCL-01 — restoration on mount', () => {
 describe('LOCL-01 — persistence on change', () => {
   it('persists mute toggle to localStorage (D-14)', async () => {
     render(<App />)
-    expect(readEnvelope()?.mute).not.toBe(true)
+    expect(readEnvelope()?.['mute']).not.toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Mute audio cues' }))
     await act(async () => { await Promise.resolve() })
     // After toggle, mute=true is persisted
-    expect(readEnvelope()?.mute).toBe(true)
+    expect(readEnvelope()).toMatchObject({ mute: true })
   })
 
   it('persists settings change via the stepper interaction (LOCL-01)', async () => {
@@ -113,9 +116,8 @@ describe('LOCL-01 — persistence on change', () => {
     fireEvent.click(within(bpmGroup).getByRole('button', { name: 'Decrease BPM' }))
     await act(async () => { await Promise.resolve() })
     const env = readEnvelope()
-    expect(env?.settings).toBeDefined()
     // After one decrease from 5.5, bpm should be 5
-    expect(env?.settings?.bpm).toBe(5)
+    expect(env).toMatchObject({ settings: { bpm: 5 } })
   })
 })
 
@@ -131,10 +133,11 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Advance an extra minute so the surrounding cycle finishes (Phase 3 fix).
     await advanceTime(6 * 60_000)
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions).toBe(1)
+    expect(env).toMatchObject({ stats: { totalSessions: 1 } })
     // elapsed is at least 300s for a 5-min session
-    expect(env?.stats?.totalElapsedSeconds).toBeGreaterThanOrEqual(300)
-    expect(env?.stats?.lastSessionAtMs).toEqual(expect.any(Number))
+    const stats = env?.['stats'] as Record<string, unknown> | undefined
+    expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(300)
+    expect(stats?.['lastSessionAtMs']).toEqual(expect.any(Number))
   })
 
   it('records a session on manual End when elapsed >= 30s (D-04 + D-01 threshold)', async () => {
@@ -147,8 +150,9 @@ describe('LOCL-02 — stats record on each end path', () => {
     await act(async () => { await Promise.resolve() })
     // Open-ended: no modal. End fires directly. Stats written in cleanup effect.
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions).toBe(1)
-    expect(env?.stats?.totalElapsedSeconds).toBeGreaterThanOrEqual(35)
+    expect(env).toMatchObject({ stats: { totalSessions: 1 } })
+    const stats = env?.['stats'] as Record<string, unknown> | undefined
+    expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(35)
   })
 
   it('does NOT record a sub-30s manual End (D-01 threshold)', async () => {
@@ -159,7 +163,8 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     await act(async () => { await Promise.resolve() })
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions ?? 0).toBe(0)
+    const sessions = (env?.['stats'] as Record<string, unknown> | undefined)?.['totalSessions'] as number | undefined
+    expect(sessions ?? 0).toBe(0)
   })
 
   it('does NOT record on cancel-during-lead-in (D-03 / Pitfall 2)', async () => {
@@ -174,7 +179,8 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await advanceTime(0)
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions ?? 0).toBe(0)
+    const sessions2 = (env?.['stats'] as Record<string, unknown> | undefined)?.['totalSessions'] as number | undefined
+    expect(sessions2 ?? 0).toBe(0)
   })
 
   it('does NOT double-write when cleanup effect fires after manual End (Pitfall 1)', async () => {
@@ -187,7 +193,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // recordedSessionKeyRef prevents double-write via idempotency key.
     await advanceTime(100)
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions).toBe(1)  // exactly one, not two (Pitfall 1)
+    expect(env).toMatchObject({ stats: { totalSessions: 1 } })  // exactly one, not two (Pitfall 1)
   })
 })
 
@@ -274,15 +280,14 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
 
     // Stats subtree is zero (D-11 — resetStats() clears only stats)
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions).toBe(0)
-    expect(env?.stats?.totalElapsedSeconds).toBe(0)
-    expect(env?.stats?.lastSessionAtMs).toBeNull()
-
+    expect(env).toMatchObject({
+      stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null },
+    })
     // Settings + mute survive (D-11)
-    expect(env?.settings?.bpm).toBe(4)
-    expect(env?.settings?.ratio).toBe('50:50')
-    expect(env?.settings?.durationMinutes).toBe(5)
-    expect(env?.mute).toBe(true)
+    expect(env).toMatchObject({
+      settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 },
+      mute: true,
+    })
 
     // Footer disappears (totalSessions=0 → D-09 hides it)
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument()
@@ -306,7 +311,7 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
 
     // Stats unchanged
     const env = readEnvelope()
-    expect(env?.stats?.totalSessions).toBe(3)
+    expect(env).toMatchObject({ stats: { totalSessions: 3 } })
     // Footer still present
     expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
   })

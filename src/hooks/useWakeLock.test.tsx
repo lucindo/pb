@@ -84,6 +84,8 @@ describe('useWakeLock', () => {
     await act(async () => {
       await result.current.request()
     })
+    // Reason: request() was awaited successfully above; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
     await act(async () => {
@@ -99,6 +101,8 @@ describe('useWakeLock', () => {
     await act(async () => {
       await result.current.request()
     })
+    // Reason: request() was awaited successfully above; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     // Dispatch a 'release' event directly to simulate OS-initiated release.
     await act(async () => {
@@ -121,6 +125,8 @@ describe('useWakeLock', () => {
     await act(async () => {
       await result.current.request()
     })
+    // Reason: request() was awaited successfully above; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     // Release the sentinel to clear sentinelRef while wasAcquiredRef stays true (D-04).
     await act(async () => {
@@ -163,6 +169,8 @@ describe('useWakeLock', () => {
     await act(async () => {
       await result.current.request()
     })
+    // Reason: request() was awaited successfully above; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     // Release the sentinel so visibilitychange can trigger a re-acquire.
     await act(async () => {
@@ -197,6 +205,8 @@ describe('useWakeLock', () => {
     await act(async () => {
       await result.current.request()
     })
+    // Reason: request() was awaited successfully above; results[0] is guaranteed populated.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
     unmount()

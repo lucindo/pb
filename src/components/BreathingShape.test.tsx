@@ -60,6 +60,8 @@ describe('BreathingShape', () => {
     const { container } = render(<BreathingShape frame={null} leadInDigit={1} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
+    // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(orb!.getAttribute('style')).toContain('scale(0.79)')
   })
 
@@ -67,7 +69,10 @@ describe('BreathingShape', () => {
     const { container } = render(<BreathingShape frame={null} leadInDigit={3} />)
     const root = container.querySelector('[role="img"]')
     expect(root).not.toBeNull()
+    // Reason: root non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(root!.getAttribute('data-phase')).toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(root!.getAttribute('data-progress')).toBeNull()
   })
 
@@ -75,6 +80,8 @@ describe('BreathingShape', () => {
     const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
     const digit = container.querySelector('span.text-7xl')
     expect(digit).not.toBeNull()
+    // Reason: digit non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(digit!.textContent).toBe('2')
   })
 })
@@ -100,6 +107,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
+      // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(orb!).not.toHaveClass('inset-0')
     })
 
@@ -107,6 +116,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
+      // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = orb!.getAttribute('style') ?? ''
       // jsdom serializes React's `left: 0` as `left: 0px` for length props.
       // Four-edge form (not `width: 100%`) — percent dims froze Safari's
@@ -124,6 +135,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
+      // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = orb!.getAttribute('style') ?? ''
       expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale\(/)
     })
@@ -132,6 +145,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const outer = container.querySelector('.orb-ring--outer')
       expect(outer).not.toBeNull()
+      // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = outer!.getAttribute('style') ?? ''
       expect(style).toMatch(/left:\s*-1\.5px/)
       expect(style).toMatch(/top:\s*-1\.5px/)
@@ -146,6 +161,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const outer = container.querySelector('.orb-ring--outer')
       expect(outer).not.toBeNull()
+      // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(outer!).not.toHaveClass('inset-0')
     })
 
@@ -153,10 +170,16 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={sampleFrame} />)
       const inner = container.querySelector('.orb-ring--inner')
       expect(inner).not.toBeNull()
+      // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(inner!).toHaveClass('left-1/2')
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(inner!).toHaveClass('top-1/2')
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(inner!).toHaveClass('-translate-x-1/2')
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(inner!).toHaveClass('-translate-y-1/2')
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = inner!.getAttribute('style') ?? ''
       // 58% = MIN_SCALE * 100; jsdom may serialize 0.58*100 as 57.99...% due to
       // floating-point — match the leading digits rather than the exact value.
@@ -176,6 +199,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
+      // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(orb!).not.toHaveClass('inset-0')
     })
 
@@ -183,6 +208,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
+      // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = orb!.getAttribute('style') ?? ''
       expect(style).toMatch(/left:\s*0(px)?\b/)
       expect(style).toMatch(/right:\s*0(px)?\b/)
@@ -196,6 +223,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
+      // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = orb!.getAttribute('style') ?? ''
       expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale\(0\.79\)/)
     })
@@ -204,6 +233,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const outer = container.querySelector('.orb-ring--outer')
       expect(outer).not.toBeNull()
+      // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = outer!.getAttribute('style') ?? ''
       expect(style).toMatch(/left:\s*-1\.5px/)
       expect(style).toMatch(/top:\s*-1\.5px/)
@@ -216,6 +247,8 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const outer = container.querySelector('.orb-ring--outer')
       expect(outer).not.toBeNull()
+      // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(outer!).not.toHaveClass('inset-0')
     })
 
@@ -223,8 +256,12 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
       const inner = container.querySelector('.orb-ring--inner')
       expect(inner).not.toBeNull()
+      // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(inner!).toHaveClass('left-1/2')
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(inner!).toHaveClass('top-1/2')
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const style = inner!.getAttribute('style') ?? ''
       // 58% = MIN_SCALE * 100; jsdom may serialize 0.58*100 as 57.99...% due to
       // floating-point — match the leading digits rather than the exact value.
