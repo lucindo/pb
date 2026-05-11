@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 Phase: 6
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-05-10
+Last activity: 2026-05-11 - Completed quick task 260510-tc9: Bug fixes (orb Out-phase visual cue + audio cue duration scaling)
 
 Progress: [█████████░] 92%
 
@@ -71,6 +71,12 @@ None yet.
 - Generated audio quality needs subjective mobile/headphone testing during Phase 3.
 - Wake Lock support is browser-dependent and must remain a progressive enhancement in Phase 5.
 - Forrest links/copy need careful review to avoid implied endorsement or protected asset reuse in Phase 6.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260510-tc9 | Bug fixes: orb Out-phase visual cue parity + audio bowl-cue decay scaled to phase duration (low-BPM gong cutoff) | 2026-05-11 | TBD | [260510-tc9-bug-fixes-1-add-out-phase-visual-complet](./quick/260510-tc9-bug-fixes-1-add-out-phase-visual-complet/) |
 
 ## Deferred Items
 
