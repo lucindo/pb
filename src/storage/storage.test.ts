@@ -74,11 +74,53 @@ describe('writeEnvelope', () => {
     expect(() => { writeEnvelope({ version: STATE_VERSION, mute: true }) }).not.toThrow()
   })
 
-  it('always re-stamps version: 1 even if a caller passes a wrong version', () => {
-    writeEnvelope({ version: STATE_VERSION, settings: { bpm: 4 } })
-    // Reason: STATE_KEY is always present after writeEnvelope; non-null asserted by storage contract.
+  it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
+    // Seed a v2 envelope (simulates a future schema written by a newer build
+    // in another tab). `prefs` is the forward-compat probe — STORAGE-01's
+    // D-01 spread must let it survive the readEnvelope round-trip.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 2, settings: { bpm: 4 }, prefs: { theme: 'dark' },
+    }))
+    // STORAGE-01: readEnvelope returns the on-disk numeric version (2),
+    // NOT STATE_VERSION (1). The known settings subtree round-trips.
+    const env = readEnvelope()
+    expect(env.version).toBe(2)
+    expect(env.settings).toEqual({ bpm: 4 })
+    // STORAGE-02 / D-04a: disk version 2 > STATE_VERSION 1 → write refused.
+    // The caller's `version: 1` does NOT require an `as any` cast because
+    // Envelope.version is widened to `number` (Task 1).
+    writeEnvelope({ version: 1, settings: { bpm: 5 } })
+    // Disk unchanged: the refused write left the v2 envelope intact.
+    const rawAfter = window.localStorage.getItem(STATE_KEY)
+    expect(rawAfter).not.toBeNull()
+    // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const rawStr = window.localStorage.getItem(STATE_KEY)!
-    expect(JSON.parse(rawStr) as unknown).toMatchObject({ version: 1 })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 2, settings: { bpm: 4 } })
+  })
+
+  it('writeEnvelope refuses to overwrite a future-version on-disk envelope (STORAGE-02)', () => {
+    // Seed a v2-only envelope (no known subtrees) to isolate the version guard.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 2 }))
+    // Caller attempts to land 99-session stats on top of the v2 envelope.
+    // The 99-session probe gives the negative assertion something concrete
+    // to test — if the guard fails, the stats subtree appears on disk.
+    writeEnvelope({
+      version: 1,
+      stats: {
+        totalSessions: 99,
+        totalElapsedSeconds: 0,
+        lastSessionAtMs: null,
+        lastSessionDurationSeconds: null,
+      },
+    })
+    // D-03 silent refusal: disk envelope unchanged at version: 2.
+    const rawAfter = window.localStorage.getItem(STATE_KEY)
+    expect(rawAfter).not.toBeNull()
+    // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 2 })
+    // Negative: 99-session probe was NOT written.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(JSON.parse(rawAfter!) as unknown).not.toMatchObject({ stats: { totalSessions: 99 } })
   })
 })

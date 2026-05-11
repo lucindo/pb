@@ -4,8 +4,8 @@ milestone: v1.0.1
 milestone_name: Code Review Patch
 status: executing
 stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-05-11T18:05:58.668Z"
-last_activity: 2026-05-11 -- Phase 08 planning complete
+last_updated: "2026-05-11T18:08:53.547Z"
+last_activity: 2026-05-11 -- Phase 08 execution started
 progress:
   total_phases: 6
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 — v1.0.1 milestone opened)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 08 — storage-forward-compat-&-cross-tab-ui-sync
+**Current focus:** Phase 08 — storage-forward-compat-cross-tab-ui-sync
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-11 -- Phase 08 planning complete
+Phase: 08 (storage-forward-compat-cross-tab-ui-sync) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 08
+Last activity: 2026-05-11 -- Phase 08 execution started
 
 **Milestone invariant:** `npm run test` must keep passing 363/363 Vitest tests at every phase boundary. `npm run build` and `tsc --noEmit` must exit 0. No new user-facing features.
 
