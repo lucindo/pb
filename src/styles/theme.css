@@ -32,9 +32,12 @@
   --color-orb-in-text: #134e4a;
   --color-orb-out-text: #1e3a8a;
 
-  /* Phase 2 reference ring tokens (D-04) */
+  /* Phase 2 reference ring tokens (D-04).
+     260510-tc9 Bug 1: bumped inner alpha from 0.45 → 0.6 to match outer so the
+     Out-phase shrink has a perceptually comparable arrival cue to the In-phase grow.
+     Hues (teal outer, blue inner) preserved — they aid In/Out semantic distinction. */
   --color-ring-outer: rgb(153 246 228 / 0.6);
-  --color-ring-inner: rgb(191 219 254 / 0.45);
+  --color-ring-inner: rgb(191 219 254 / 0.6);
 
   /* Phase 2 modal token (consumed by Plan 04) */
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
@@ -87,9 +90,13 @@
   border-width: 1.5px;
 }
 
+/* 260510-tc9 Bug 1: equalize inner ring weight with outer ring so Out-phase shrink
+   has a comparable arrival cue. Both border-width and color alpha now match the outer
+   ring (was 1px / alpha 0.45 — read as a weak background detail on the smaller
+   circumference). */
 .orb-ring--inner {
   border-color: var(--color-ring-inner);
-  border-width: 1px;
+  border-width: 1.5px;
 }
 
 /* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.
