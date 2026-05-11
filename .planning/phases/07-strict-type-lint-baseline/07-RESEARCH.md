@@ -624,7 +624,7 @@ Based on empirical error counts:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`no-misused-promises` in JSX prop callbacks**
    - What we know: `onStart={onStartClick}` (async) passed to `SessionControlsProps.onStart: () => void` fires the rule. Fix options: void-wrapper in JSX, or widen prop type.
