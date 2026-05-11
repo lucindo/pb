@@ -117,4 +117,36 @@ Carried into v1.1 — see `PROJECT.md` "Next milestone" section:
 
 ## Traceability
 
-(Filled by roadmap — each REQ-ID will be assigned to exactly one phase.)
+Each REQ-ID maps to exactly one phase in `ROADMAP.md`. Coverage: **27/27 (100%)**.
+
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| BUILD-01 | Phase 7 — Strict Type & Lint Baseline | Pending |
+| BUILD-02 | Phase 7 — Strict Type & Lint Baseline | Pending |
+| BUILD-03 | Phase 7 — Strict Type & Lint Baseline | Pending |
+| STORAGE-01 | Phase 8 — Storage Forward-Compat & Cross-Tab UI Sync | Pending |
+| STORAGE-02 | Phase 8 — Storage Forward-Compat & Cross-Tab UI Sync | Pending |
+| STORAGE-03 | Phase 8 — Storage Forward-Compat & Cross-Tab UI Sync | Pending |
+| AUDIO-01 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| AUDIO-02 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| AUDIO-03 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| AUDIO-04 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| AUDIO-05 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| AUDIO-06 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| WAKELOCK-01 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
+| HOOKS-01 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
+| HOOKS-02 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
+| HOOKS-03 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
+| HOOKS-04 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
+| HOOKS-05 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
+| DOMAIN-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
+| UI-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
+| UI-02 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
+| A11Y-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
+| ASSETS-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
+| CONTENT-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
+| HYGIENE-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
+| HYGIENE-02 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
+| HYGIENE-03 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
+
+**Phase totals:** 7 → 3 / 8 → 3 / 9 → 7 / 10 → 5 / 11 → 4 / 12 → 5  =  27.

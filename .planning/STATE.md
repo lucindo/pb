@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0.1
 milestone_name: Code Review Patch
 status: planning
-last_updated: "2026-05-11T04:47:33.471Z"
+last_updated: "2026-05-11T05:30:00.000Z"
 last_activity: 2026-05-11
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,23 +17,28 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-09)
+See: .planning/PROJECT.md (updated 2026-05-11 — v1.0.1 milestone opened)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 06 — learning-claim-safe-positioning
+**Current focus:** Phase 7 — Strict Type & Lint Baseline (foundation for the rest of the v1.0.1 patch)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 7 — Strict Type & Lint Baseline
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-11 — Milestone v1.0.1 started
+Status: planning
+Last activity: 2026-05-11 — v1.0.1 roadmap created (Phases 7–12, 27/27 REQ-IDs mapped)
+
+**Milestone invariant:** `npm run test` must keep passing 363/363 Vitest tests at every phase boundary. `npm run build` and `tsc --noEmit` must exit 0. No new user-facing features.
+
+**Next action:** `/gsd-plan-phase 7`
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 21
+- Total plans completed (v1.0): 30
+- Total plans completed (v1.0.1): 0
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -46,6 +51,7 @@ Last activity: 2026-05-11 — Milestone v1.0.1 started
 | Phase 05.1 P04 | 15m | 2 tasks | 2 files |
 | 05.1 | 5 | - | - |
 | 06 | 4 | - | - |
+| 7 (v1.0.1) | 0 | - | - |
 
 ## Accumulated Context
 
@@ -54,21 +60,19 @@ Last activity: 2026-05-11 — Milestone v1.0.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- **[v1.0.1 sequencing]** Phase 7 (strict TS + strict-type-checked ESLint) lands FIRST so latent null/index/return errors surface once and are fixed inline — all subsequent v1.0.1 phases write code against the strict baseline.
+- **[v1.0.1 scoping]** Fix-only patch. No new user-facing features. 27 REQ-IDs map 1:1 to the 26 findings in REVIEW.md (5 Critical / 12 Warning / 9 Info). Cross-tab `recordSession` increment race itself is documented v1.x debt; STORAGE-03 covers UI consistency only.
 - v1 remains local-only with no accounts, backend sync, medical claims, biofeedback, PWA/offline scope, or protected Forrest assets without permission.
 - The session experience must be driven by one accurate continuous inhale/exhale clock; visuals and audio consume that derived state.
-- The first release prioritizes one excellent calm visual/audio guide over multiple themes, sound packs, or advanced custom patterns.
-- [Phase 2] Single abstract orb + In/Out label is the visual guide; OS `prefers-reduced-motion` is sole switch with fixed mid-scale + gradient crossfade as substitute cue.
-- [Phase 2] Native `<dialog>` element drives the End-session confirmation; only timed sessions raise the modal (open-ended sessions end directly).
 
 ### Pending Todos
 
-None yet.
+None yet — Phase 7 awaits `/gsd-plan-phase 7`.
 
 ### Blockers/Concerns
 
-- Generated audio quality needs subjective mobile/headphone testing during Phase 3.
-- Wake Lock support is browser-dependent and must remain a progressive enhancement in Phase 5.
-- Forrest links/copy need careful review to avoid implied endorsement or protected asset reuse in Phase 6.
+- **BUILD-01 risk:** Enabling `strict` + `noUncheckedIndexedAccess` is expected to surface latent compiler errors throughout the codebase. Phase 7 absorbs those fixes inline; budget accordingly.
+- **Cross-phase coupling:** Phase 9 (audio/wake-lock) and Phase 10 (hooks) both touch `useAudioCues.ts` and `App.tsx`. Roadmap sequences Phase 9 → Phase 10 so identity/effect hygiene lands on top of the post-hardening lifecycle code.
 
 ### Quick Tasks Completed
 
@@ -88,18 +92,19 @@ Items acknowledged and carried forward from previous milestone close:
 | v1.x carry-forward | S2 Android Chrome wake lock real-device UAT (Phase 5, 05-04-UAT-LOG.md Gap 1) | Physical device unavailable | 2026-05-11 v1.0 close |
 | v1.x carry-forward | iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3, Open Question 5 / Assumption A6) | No mitigation planned for v1 | 2026-05-11 v1.0 close |
 | v1.x candidate | Inner-ring UX symmetry (Issue B, Phase 5.1) | Separate planning candidate | 2026-05-11 v1.0 close |
+| v1.x debt | Cross-tab `recordSession` increment race (WR-07 root) — STORAGE-03 covers UI consistency only | Documented in REQUIREMENTS.md v1.0.1 Out of Scope | 2026-05-11 v1.0.1 planning |
 | procedural | Phase 5 lacks VERIFICATION.md (functional coverage rolled into 5.1 UAT Task 4 cross-browser sweep) | Artifact gap only; coverage intact | 2026-05-11 v1.0 close |
 | procedural | Phase 02/03 VERIFICATION.md status "human_needed" (all perceptual + UAT items closed via 5.1 Task 4 sweep) | Statuses not re-flipped to passed | 2026-05-11 v1.0 close |
 
-**Audit reference:** `.planning/milestones/v1.0-MILESTONE-AUDIT.md` (after archive).
+**Audit reference:** `.planning/milestones/v1.0-MILESTONE-AUDIT.md`.
 
 ## Session Continuity
 
-Last session: 2026-05-11T03:00:00.000Z
-Stopped at: Phase 6 plans complete (4 plans, verification passed)
-Resume file: .planning/phases/06-learning-claim-safe-positioning/06-01-PLAN.md
-Next command: `/gsd-execute-phase 06` (Wave 1 = URL hand-off checkpoint; Waves 2–4 = content asset → LearnDialog → LearnAnchor + App wire-up)
+Last session: 2026-05-11T05:30:00.000Z
+Stopped at: v1.0.1 roadmap created — Phases 7–12 defined, 27/27 REQ-IDs mapped, awaiting plan-phase for Phase 7
+Resume file: .planning/ROADMAP.md
+Next command: `/gsd-plan-phase 7` (Strict Type & Lint Baseline — BUILD-01/02/03)
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- `/gsd-plan-phase 7` to decompose Strict Type & Lint Baseline into executable plans.
