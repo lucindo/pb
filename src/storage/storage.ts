@@ -76,11 +76,12 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
       //     Approach". The override pins `version` to the disk value so the
       //     downstream writeEnvelope guard (D-04a / STORAGE-02) can detect a
       //     future-schema envelope and refuse to downgrade it.
-      //   - The static `as Envelope` cast widens `Record<string, unknown>` to
-      //     the Envelope shape; the spread already carries the four known
-      //     subtree fields through when present on disk, and absent fields
-      //     stay absent (no `undefined`-valued own-property is introduced —
-      //     the post-spread shape matches EMPTY_ENVELOPE for first-load reads).
+      //   - The `version: onDiskVersion` override anchors the return shape
+      //     to Envelope (`version: number` is the one required field); the
+      //     spread already carries the four known subtree fields through
+      //     when present on disk, and absent fields stay absent (no
+      //     `undefined`-valued own-property is introduced — the post-spread
+      //     shape matches EMPTY_ENVELOPE for first-load reads).
       //   - D-02 invariant: subtree coercers (coerceSettings / coerceMute /
       //     coerceStats in src/storage/{settings,mute,stats}.ts) still strip
       //     unknown sub-keys downstream — forward-compat is top-level ONLY.
@@ -92,7 +93,7 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
         typeof p.version === 'number' && Number.isFinite(p.version)
           ? p.version
           : STATE_VERSION
-      return { ...p, version: onDiskVersion } as Envelope
+      return { ...p, version: onDiskVersion }
     }
     return { ...EMPTY_ENVELOPE }
   } catch {
