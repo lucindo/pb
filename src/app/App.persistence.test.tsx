@@ -375,19 +375,58 @@ describe('STORAGE-03 — cross-tab stats refresh', () => {
     // Initial mount-time loadStats() populated the footer.
     expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
 
-    // Dispatch a storage event for an UNRELATED key — note: do NOT setItem first;
-    // the listener must rely solely on the e.key === STATE_KEY filter to ignore it.
+    // WR-01 (Phase 8 REVIEW Option A): mutate STATE_KEY's value on disk to a
+    // 99-sessions envelope AFTER mount, BEFORE dispatching the unrelated-key
+    // event. The handler reads disk via loadStats() — NOT e.newValue — so the
+    // disk state must change to give the negative assertion something concrete
+    // to test. Without this step the test would pass for any of three broken
+    // listener implementations (filter removed, listener removed entirely,
+    // setStats stubbed to no-op) because the disk-side stats never change.
+    const unrelatedDiskEnvelope = JSON.stringify({
+      version: 1,
+      stats: {
+        totalSessions: 99,
+        totalElapsedSeconds: 0,
+        lastSessionAtMs: null,
+        lastSessionDurationSeconds: null,
+      },
+    })
+    window.localStorage.setItem(STATE_KEY, unrelatedDiskEnvelope)
+
+    // Dispatch a storage event for an UNRELATED key. The listener must rely
+    // solely on the e.key === STATE_KEY filter to ignore it; if the filter
+    // is broken, loadStats() would now return 99 and the assertion below
+    // would fail.
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside (same pattern as advanceTime at line 51).
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'some-other-key',
-        newValue: JSON.stringify({ totalSessions: 99 }),
+        newValue: 'irrelevant',
       }))
     })
 
     // Footer STILL shows 3 sessions; the unrelated event was filtered out (D-06a).
     expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
     expect(screen.queryByText(/99 sessions/)).not.toBeInTheDocument()
+
+    // Positive control — dispatch the SAME-shape event but with e.key === STATE_KEY.
+    // This proves (a) the 99-sessions envelope was on disk all along (so the
+    // negative branch was meaningful, not vacuous) and (b) the listener fires
+    // and re-reads via loadStats() when the key DOES match the filter.
+    // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    await act(async () => {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: STATE_KEY,
+        newValue: unrelatedDiskEnvelope,
+        oldValue: null,
+      }))
+    })
+
+    // Now the footer reflects the disk state — proves the filter (and ONLY
+    // the filter) gated the earlier re-read.
+    expect(screen.getByText(/99 sessions/)).toBeInTheDocument()
+    expect(screen.queryByText(/3 sessions/)).not.toBeInTheDocument()
   })
 })
