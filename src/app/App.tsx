@@ -17,6 +17,7 @@ import { getSessionFrame } from '../domain/sessionMath'
 import {
   LEAD_IN_DURATION_MS,
   LEAD_IN_TICK_INTERVAL_MS,
+  SAFE_LEAD_SEC,
 } from '../audio/audioEngine'
 import {
   loadSettings,
@@ -195,6 +196,10 @@ export default function App() {
   const audioStop = audio.stop
   const audioStart = audio.start
   const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
+  // Phase 9 AUDIO-02: stable reference for the boundary effect's caller-side clamp.
+  // audio.audioNow is a useCallback([]) — identity is stable; hoisted to avoid
+  // re-firing the boundary effect on every render (same pattern as audioNotifyPhaseBoundary).
+  const audioAudioNow = audio.audioNow
   // useWakeLock returns a fresh object literal each render but `request`/`release`
   // are useCallback([])-stable. Hoist the same way as audio (App.tsx:114-122) so the
   // state.status !== 'running' cleanup effect can depend on `wakeLockRelease` without
@@ -503,6 +508,13 @@ export default function App() {
     // Convert to audio-clock time using the dual anchor captured at lead-in completion.
     const audioTime = audioAnchor + boundaryStartMs / 1000
 
+    // AUDIO-02 D-01/D-02 caller-side clamp. Pitfall 5: audio.audioNow() returns
+    // number | null — null in the window between engine close and audioAnchor clear.
+    // Skip the schedule entirely when null (engine-side clamp is the safety net at the callee).
+    const liveAudioNow = audioAudioNow()
+    if (liveAudioNow === null) return
+    const clampedAudioTime = Math.max(audioTime, liveAudioNow + SAFE_LEAD_SEC)
+
     // 260510-tc9 Bug 2: pass the UPCOMING phase's duration so the bowl-cue decay
     // envelope stretches with the phase length at low BPM (avoids silent tail
     // before the next boundary at BPM ≤ 3.5). The engine + cueSynth clamp the
@@ -511,8 +523,8 @@ export default function App() {
     const phaseDurationSec =
       (frame.phase === 'in' ? plan.inhaleMs : plan.exhaleMs) / 1000
 
-    audioNotifyPhaseBoundary({ newPhase: frame.phase, audioTime, phaseDurationSec })
-  }, [appPhase, session.currentFrame, audioNotifyPhaseBoundary])
+    audioNotifyPhaseBoundary({ newPhase: frame.phase, audioTime: clampedAudioTime, phaseDurationSec })
+  }, [appPhase, session.currentFrame, audioNotifyPhaseBoundary, audioAudioNow])
 
   // Cleanup pending lead-in timeouts on unmount (Pitfall 3 leak guard).
   useEffect(() => {
