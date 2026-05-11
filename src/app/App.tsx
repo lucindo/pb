@@ -446,7 +446,15 @@ export default function App() {
     // Convert to audio-clock time using the dual anchor captured at lead-in completion.
     const audioTime = audioAnchor + boundaryStartMs / 1000
 
-    audioNotifyPhaseBoundary({ newPhase: frame.phase, audioTime })
+    // 260510-tc9 Bug 2: pass the UPCOMING phase's duration so the bowl-cue decay
+    // envelope stretches with the phase length at low BPM (avoids silent tail
+    // before the next boundary at BPM ≤ 3.5). The engine + cueSynth clamp the
+    // value so default short-phase cues are unchanged and very long phases
+    // do not drone.
+    const phaseDurationSec =
+      (frame.phase === 'in' ? plan.inhaleMs : plan.exhaleMs) / 1000
+
+    audioNotifyPhaseBoundary({ newPhase: frame.phase, audioTime, phaseDurationSec })
   }, [appPhase, session.currentFrame, audioNotifyPhaseBoundary])
 
   // Cleanup pending lead-in timeouts on unmount (Pitfall 3 leak guard).
