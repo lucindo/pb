@@ -16,14 +16,23 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Audit:** PASSED 27/27 requirements at `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md`. Cross-phase integration clean (6/6 wiring points WIRED). All E2E flows (5/5) complete. `tsc/lint/build` exit 0 at HEAD.
 
-**Next milestone (queued, planned):** v1.1 — Appearance/Settings umbrella (themes/CUST-01, audio timbres/CUST-02, visual variants/CUST-03, language/I18N-01), PWA install + app icon (PWA-01), BPM stretch session (PATT-02), plus v1.x carry-forwards. Start via `/gsd-new-milestone`.
+**In flight:** v1.1 Customization — kicked off 2026-05-12. Scope: inner-ring UX symmetry (carry-forward warm-up) + customization umbrella (themes/CUST-01, audio timbres/CUST-02, visual variants/CUST-03, language/I18N-01).
 
-## Next Milestone Goals (v1.1)
+## Current Milestone: v1.1 Customization
 
-- **Customization umbrella:** themes (CUST-01), audio timbres (CUST-02), visual variants (CUST-03), language switching (I18N-01) — leverages existing section-keyed `learnContent.ts` shape.
-- **PWA install:** Web App Manifest + service worker for installable home-screen experience (PWA-01) — favicon already lands under `/hrv/` base in v1.0.1.
-- **BPM stretch session:** Practice mode that gently extends low-end BPM during a session (PATT-02) — dual-anchor audio scheduling from v1.0 is forward-compatible.
-- **v1.x carry-forwards:** iOS Safari mid-page audio recovery, Firefox Desktop orb scale flicker, S2 Android Chrome wake lock UAT, iOS Pitfall 6 phone-call interrupted state, inner-ring UX symmetry.
+**Goal:** Add user-facing customization (themes, audio timbres, visual variants, language) on top of the v1.0.1 strict baseline, starting with inner-ring UX symmetry as a low-risk warm-up.
+
+**Target features:**
+- Inner-ring UX symmetry (Phase 5.1 carry-forward — small, low-risk warm-up before customization).
+- Themes (CUST-01) — theme switching.
+- Audio timbres (CUST-02) — alternate cue voices in `cueSynth`.
+- Visual variants (CUST-03) — alternate orb/visual styles.
+- Language switching (I18N-01) — leverages section-keyed `learnContent.ts` shape.
+
+**Deferred from earlier v1.1 plan:**
+- PWA install (PWA-01) — Web App Manifest + service worker.
+- BPM stretch session (PATT-02).
+- iOS Safari mid-page audio recovery, Firefox orb scale flicker, S2 Android Chrome wake lock UAT, iOS Pitfall 6 phone-call interrupted state.
 
 ## Requirements
 
@@ -56,7 +65,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Active
 
-v1.1 — start via `/gsd-new-milestone`; requirements will be captured fresh during milestone questioning.
+v1.1 Customization — requirements being defined (2026-05-12). See `.planning/REQUIREMENTS.md` once written.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -162,4 +171,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-12 after v1.0.1 milestone — Code Review Patch shipped*
+*Last updated: 2026-05-12 — v1.1 Customization milestone kicked off*
