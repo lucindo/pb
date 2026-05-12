@@ -1,10 +1,11 @@
 ---
 phase: 8
 slug: storage-forward-compat-cross-tab-ui-sync
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: verified
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-11
+verified: 2026-05-12
 ---
 
 # Phase 8 — Validation Strategy
@@ -38,10 +39,10 @@ created: 2026-05-11
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 08-01-01 | 01 | 1 | STORAGE-01 | — | `readEnvelope` preserves on-disk numeric `version`; top-level forward-compat fields survive round-trip | unit | `npx vitest run src/storage/storage.test.ts` | ✅ | ⬜ pending |
-| 08-01-02 | 01 | 1 | STORAGE-02 | — | `writeEnvelope` returns void / leaves disk untouched when on-disk `version > STATE_VERSION`; silent (no console.warn) | unit | `npx vitest run src/storage/storage.test.ts` | ✅ | ⬜ pending |
-| 08-02-01 | 02 | 2 | STORAGE-03 | — | App `storage` event listener calls `setStats(loadStats())` only when `e.key === STATE_KEY`; cleanup on unmount | unit (jsdom) | `npx vitest run src/app/App.persistence.test.tsx` | ✅ | ⬜ pending |
-| 08-02-02 | 02 | 2 | STORAGE-03 | — | Manual two-window cross-tab UI refresh stays consistent | manual | (see Manual-Only Verifications) | n/a | ⬜ pending |
+| 08-01-01 | 01 | 1 | STORAGE-01 | — | `readEnvelope` preserves on-disk numeric `version`; top-level forward-compat fields survive round-trip | unit | `npx vitest run src/storage/storage.test.ts` | ✅ | ✅ green |
+| 08-01-02 | 01 | 1 | STORAGE-02 | — | `writeEnvelope` returns void / leaves disk untouched when on-disk `version > STATE_VERSION`; silent (no console.warn) | unit | `npx vitest run src/storage/storage.test.ts` | ✅ | ✅ green |
+| 08-02-01 | 02 | 2 | STORAGE-03 | — | App `storage` event listener calls `setStats(loadStats())` only when `e.key === STATE_KEY`; cleanup on unmount | unit (jsdom) | `npx vitest run src/app/App.persistence.test.tsx` | ✅ | ✅ green |
+| 08-02-02 | 02 | 2 | STORAGE-03 | — | Manual two-window cross-tab UI refresh stays consistent | manual | (see Manual-Only Verifications) | n/a | ✅ green (08-HUMAN-UAT.md status: complete) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,11 +64,23 @@ created: 2026-05-11
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (N/A — none required)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (N/A — none required)
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-05-12
+
+---
+
+## Validation Audit 2026-05-12
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+Retroactive audit at HEAD (commit 172f1eb). Phase 8 shipped per 08-VERIFICATION.md (status: passed, score: 12/12). All 3 REQ-IDs (STORAGE-01/02/03) have automated vitest coverage; +3 cases delivered (363 → 366 baseline). The cross-tab manual gate (08-HUMAN-UAT.md) is `status: complete, passed: 1`. Full suite at HEAD: 400/400. nyquist_compliant flipped true; status flipped verified.

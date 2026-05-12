@@ -1,10 +1,11 @@
 ---
 phase: 9
 slug: audio-wake-lock-lifecycle-hardening
-status: draft
-nyquist_compliant: false
+status: verified
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-05-11
+verified: 2026-05-12
 ---
 
 # Phase 9 — Validation Strategy
@@ -90,6 +91,18 @@ No new test files. All assertions co-locate per D-14 across 5 existing files: `a
 - [x] Wave 0 covers all MISSING references (none — no gaps)
 - [x] No watch-mode flags
 - [x] Feedback latency < 30 s per task
-- [ ] `nyquist_compliant: true` set in frontmatter after plan-checker confirms per-task table alignment
+- [x] `nyquist_compliant: true` set in frontmatter after plan-checker confirms per-task table alignment
 
-**Approval:** pending (set to `approved YYYY-MM-DD` after plan-checker PASS)
+**Approval:** approved 2026-05-12
+
+---
+
+## Validation Audit 2026-05-12
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+Retroactive audit at HEAD (commit 172f1eb). Phase 9 shipped per 09-VERIFICATION.md (status: passed, score: 7/7). All 7 REQ-IDs (AUDIO-01..06 + WAKELOCK-01) have automated vitest coverage delivered (366 → 381 baseline; +15 cases across audioEngine.test.ts, cueSynth.test.ts, useAudioCues.test.tsx, useWakeLock.test.tsx, App.audio.test.tsx — exactly matching the per-REQ table above). Full suite at HEAD: 400/400. nyquist_compliant flipped true; status flipped verified.
