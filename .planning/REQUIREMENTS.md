@@ -145,7 +145,7 @@ Each REQ-ID maps to exactly one phase in `ROADMAP.md`. Coverage: **27/27 (100%)*
 | A11Y-01 | Phase 11 — Domain, UI Contracts & Accessibility | Complete |
 | ASSETS-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
 | CONTENT-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
-| HYGIENE-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
+| HYGIENE-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Overtaken (by Phase 9 AUDIO-02) |
 | HYGIENE-02 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
 | HYGIENE-03 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
 
