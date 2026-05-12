@@ -38,7 +38,7 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 - [x] **Phase 9: Audio + Wake Lock Lifecycle Hardening** (2/2 plans) — completed 2026-05-11 — Reconstruction generation counter, boundary-cue clamp, lead-in null-on-closed, per-cue node disconnect, defensive state-change handler, dead `'starting'` removal, wake-lock in-flight guard.
 - [x] **Phase 10: Hooks Identity & Effect Hygiene** — `mutedRef` to stabilize `start`/`reconstructEngine`; status-only deps on App rAF effects; per-phase frame identity in `useSessionEngine`; rAF cancel-guard ordering; explicit ref-updater deps. *(verification gaps_found 2026-05-11 — see 10-VERIFICATION.md; awaiting gap closure)* (completed 2026-05-12)
 - [x] **Phase 11: Domain, UI Contracts & Accessibility** (1/1 plans) — completed 2026-05-12 — Boundary validation in `extendTimedSession`, `SessionReadout` lead-in placeholder contract, symmetric auto-close for Learn/Reset dialogs in-session, `MuteToggle` resume-mode a11y attributes.
-- [ ] **Phase 12: Assets, Content & Hygiene Cleanup** — Favicon `%BASE_URL%` fix, `amzn.to` link disclosure/canonicalization, prune dead `audioNow` from hook return, share `isValid<X>` predicates across validators, document `formatLastSessionDate` test-only seam.
+- [x] **Phase 12: Assets, Content & Hygiene Cleanup** — Favicon `%BASE_URL%` fix, `amzn.to` link disclosure/canonicalization, prune dead `audioNow` from hook return, share `isValid<X>` predicates across validators, document `formatLastSessionDate` test-only seam. (completed 2026-05-12)
 
 ### 📋 v1.1 (planned, deferred)
 
@@ -144,4 +144,4 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 | 9. Audio + Wake Lock Lifecycle Hardening           | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 2/2 | Complete    | 2026-05-12 |
 | 11. Domain, UI Contracts & Accessibility           | v1.0.1    | 1/1            | Complete    | 2026-05-12 |
-| 12. Assets, Content & Hygiene Cleanup              | v1.0.1    | 0/0            | Not started | -          |
+| 12. Assets, Content & Hygiene Cleanup              | v1.0.1    | 1/1 | Complete   | 2026-05-12 |
