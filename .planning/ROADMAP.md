@@ -75,7 +75,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   2. `isValidTheme`, `isValidTimbre`, `isValidVariant`, and `isValidLocale` predicates live in `src/domain/settings.ts` alongside existing `isValidBpm`/`isValidRatio`/`isValidDuration`; each rejects unknown values and accepts all valid enum members.
   3. `coerceTheme`, `coerceTimbre`, `coerceVariant`, and `coerceLocale` functions fall back to their respective `DEFAULT_*` constants when the stored value fails the predicate (non-throwing; same pattern as existing `coerceSettings`).
   4. All new predicates and coercers have Vitest coverage; `tsc && lint && build && test` exit 0.
-**Plans**: 1 plan (single plan / single wave / three commits per D-13)
+**Plans**: 1 plan (single plan / single wave / three commits per D-13) — COMPLETE (plan 01: b4563aa, b156d03, 784c215)
 
 ### Phase 15: SettingsDialog Shell
 **Goal**: A gear control in the idle/stopped view opens a native `<dialog>` settings panel that hosts stub pickers for all four customization dimensions, enforcing the `inSessionView` disable contract before any feature picker is wired.
