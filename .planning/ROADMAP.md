@@ -87,7 +87,11 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. All four picker placeholders (theme, timbre, variant, language) render inside the dialog with stub labels and are visually disabled while `inSessionView` is true.
   4. The dialog pattern follows the native `<dialog>` + locked-copy conventions of `ResetStatsDialog` / `LearnDialog`; no new library dependency is introduced.
   5. `tsc && lint && build && test` exit 0.
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 15-01-PLAN.md — SettingsAnchor (gear trigger button, 44×44, aria-disabled in session)
+  - [ ] 15-02-PLAN.md — Four picker stubs (Theme/Variant/Timbre/Language; loadPrefs read-only)
+  - [ ] 15-03-PLAN.md — SettingsDialog shell (native <dialog>, Esc/backdrop/Close, picker disable threading)
+  - [ ] 15-04-PLAN.md — App.tsx integration + phase close (state/callbacks/JSX + REQUIREMENTS/STATE/ROADMAP/SUMMARY)
 **UI hint**: yes
 
 ### Phase 16: Themes
