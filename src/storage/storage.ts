@@ -52,6 +52,10 @@ export interface Envelope {
   settings?: unknown
   mute?: unknown
   stats?: unknown
+  // Phase 14 D-11: static type acknowledges the runtime forward-compat already proven
+  // by the prefs probe at storage.test.ts:79-99. `unknown` mirrors settings/mute/stats;
+  // coercer narrows at the boundary. Avoids storage→domain typed circular import.
+  prefs?: unknown
 }
 
 const EMPTY_ENVELOPE: Envelope = { version: STATE_VERSION }
