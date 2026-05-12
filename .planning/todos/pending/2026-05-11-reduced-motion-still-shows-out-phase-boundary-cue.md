@@ -2,6 +2,7 @@
 created: 2026-05-11T17:35:00.000Z
 title: Reduced motion still shows out-phase boundary cue
 area: ui
+resolves_phase: 13
 files:
   - src/components/BreathingShape.tsx:114-132
   - src/styles/theme.css:106-154
