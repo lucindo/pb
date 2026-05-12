@@ -45,7 +45,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 ### 📋 v1.1 Customization (planned)
 
 - [x] **Phase 13: Inner-Ring UX Symmetry** - Reduced-motion inner-ring suppression — `.orb-layer--out` crossfade restored as sole substitute phase cue (completed 2026-05-12)
-- [ ] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions
+- [x] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions (completed 2026-05-12)
 - [ ] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract
 - [ ] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
@@ -159,7 +159,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 11. Domain, UI Contracts & Accessibility | v1.0.1 | 1/1 | Complete | 2026-05-12 |
 | 12. Assets, Content & Hygiene Cleanup | v1.0.1 | 1/1 | Complete | 2026-05-12 |
 | 13. Inner-Ring UX Symmetry | v1.1 | 1/1 | Complete   | 2026-05-12 |
-| 14. Prefs Foundation | v1.1 | 0/1 | Not started | - |
+| 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
 | 15. SettingsDialog Shell | v1.1 | 0/? | Not started | - |
 | 16. Themes | v1.1 | 0/? | Not started | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
