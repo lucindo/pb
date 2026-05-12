@@ -442,9 +442,17 @@ export default function App() {
       // Phase 4 LOCL-02 + Phase 10 HOOKS-02 (D-06/D-09): single write site for
       // stats (Pitfall 1). Reads the running-snapshot ref now owned by
       // useSessionEngine — the hook writes from inside its rAF tick's setState
-      // updater (D-08) and nulls the ref on the transition-out-of-running
-      // branch of its rAF effect. App-side no-longer null the ref here; the
-      // engine owns null-out.
+      // updater (D-08). The engine does NOT null the snapshot on the
+      // transition-out-of-running branch of its rAF effect: hook useEffects
+      // fire BEFORE consumer-component useEffects, so nulling on transition
+      // out would clobber `runningSnapshotRef.current` BEFORE this leave-
+      // running cleanup effect could read it (see useSessionEngine.ts:79-91).
+      // The snapshot therefore PERSISTS across the transition out and is
+      // overwritten on the next session's first rAF tick (the in-updater
+      // write inside the engine's `tick`). Reading a stale snapshot on a
+      // subsequent idle render is safe — the recordedSessionKeyRef guard
+      // below dedupes idempotently via the snapshot's `key` so the stats
+      // write only fires on a fresh key.
       // - For 'complete': elapsed = state.completedAtMs - snap.startedAtMs (sample-accurate)
       // - For 'idle' (manual End): elapsed = snap.lastElapsedMs (last rAF reading; <16ms stale)
       // The snap-null guard handles cancel-during-lead-in (D-03 / Pitfall 2): when the user
