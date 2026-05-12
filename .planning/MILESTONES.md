@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.0.1 Code Review Patch (Shipped: 2026-05-12)
+
+**Phases completed:** 6 phases, 12 plans, 17 tasks
+
+**Key accomplishments:**
+
+- strictTypeChecked + projectService landed; 48 production ESLint errors eliminated across unbound-method (24), restrict-template-expressions (16), no-confusing-void-expression (6), and no-misused-promises (2) rule clusters via type-signature annotations, template-literal wrapping, JSX bracing, and void-wrappers
+- 1. [Rule 2 - Missing] BreathingShape.tsx — redundant `as CSSProperties` casts
+- react-hooks/exhaustive-deps explicitly overridden to error level in eslint.config.js; all three surviving set-state-in-effect disables in src/ annotated with D-04 // Reason: policy lines; Phase 7 milestone complete
+- `readEnvelope` preserves on-disk numeric `version` and propagates unknown top-level fields via D-01 spread-then-override; `writeEnvelope` refuses to overwrite a future-version on-disk envelope via D-04a's nested-try-catch inline re-read; STORAGE-01/02 contracts locked with two Vitest cases.
+- App.tsx now registers a `window` 'storage' event listener at mount that calls `setStats(loadStats())` when another same-origin tab writes the envelope (filtered by `e.key === STATE_KEY`); D-06a key filter, D-06 single-trigger, D-05 stats-only scope locked by two new Vitest cases; full suite at 366 tests passing.
+- 1. [Rule 3 - Build Blocker] Removed setStatus('starting') in useAudioCues.ts
+- 1. [Rule 3 — Blocking Issue] BreathingShape + SessionReadout consumer migration moved into Task 1
+- 1. [Rule 3 — Blocking Issue] Task 2 muted-state setup added before render
+- One-liner:
+- Five-task cleanup landing the last v1.0.1 patch — favicon ships under Vite base-path, amzn.to short URL replaced with Forrest's verbatim amazon.com /dp/B0CCFWP4W8 canonical, predicate duplication eliminated via domain/storage extraction (9 new tests), JSDoc seam for formatLastSessionDate, and HYGIENE-01 closed as Overtaken-by-Phase-9-AUDIO-02 in two cross-cited docs.
+
+---
+
 ## v1.0 MVP (Shipped: 2026-05-11)
 
 **Delivered:** A hands-off HRV breathing webapp with accurate session timing, polished accessible visual guide, optional generated audio cues, local memory + practice stats, mobile wake-lock resilience, and a claim-safe Forrest Knutson learning surface.

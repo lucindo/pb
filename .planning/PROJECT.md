@@ -4,7 +4,7 @@
 
 HRV Breathing WebApp is a simple, calming web app for following Forrest Knutson-style HRV breathing sessions on mobile and desktop browsers. It gives users configurable breath timing, a polished accessible inhale/exhale visual guide, soft generated audio cues, mobile hands-off wake-lock behavior, local memory + practice stats, and a claim-safe Learn surface linking to Forrest Knutson's YouTube content and explanations.
 
-v1.0 shipped 2026-05-11 as an inspired redesign rather than a clone of the existing iPhone/Android Resonant Breathing app — immediately useful for people who already follow Forrest's teachings while remaining understandable to general meditators who arrive without that background.
+v1.0 shipped 2026-05-11 as an inspired redesign rather than a clone of the existing iPhone/Android Resonant Breathing app — immediately useful for people who already follow Forrest's teachings while remaining understandable to general meditators who arrive without that background. v1.0.1 shipped 2026-05-12, landing all 27 fix requirements from the 2026-05-11 deep code review without changing user-facing behavior beyond a favicon, an honest book-link hover, and elimination of audio race conditions.
 
 ## Core Value
 
@@ -12,36 +12,24 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ## Current State
 
-**Shipped:** v1.0 MVP (2026-05-11) — 7 phases, 30 plans, ~9,032 LOC TypeScript/TSX/CSS, 363/363 Vitest tests pass.
+**Shipped:** v1.0.1 Code Review Patch (2026-05-12) — 6 patch phases (07–12), 12 plans, 17 tasks, 143 commits, 409/409 Vitest tests pass (363 → 409). HEAD `3bdb69b`. Codebase ~10,925 LOC TS/TSX in `src/`.
 
-**In progress:** v1.0.1 Code Review Patch — fix-only patch landing all 26 findings from full-codebase deep review (REVIEW.md). No new features. Phase 7 complete (strict TS + `strictTypeChecked` ESLint + `react-hooks/exhaustive-deps: error` baseline — BUILD-01/02/03). Phase 8 complete (storage forward-compat, downgrade refusal, cross-tab stats refresh — STORAGE-01/02/03; 366/366 tests; manual two-window UAT pending in `08-HUMAN-UAT.md`). Phase 10 complete (hooks identity & effect hygiene — mutedRef, currentFrame/liveFrame split, runningSnapshotRef ownership move into engine, top-of-tick cancel-guard, status-primitive cleanup deps; HOOKS-01..05; 391/391 tests; real-iPhone UAT passed).
+**Audit:** PASSED 27/27 requirements at `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md`. Cross-phase integration clean (6/6 wiring points WIRED). All E2E flows (5/5) complete. `tsc/lint/build` exit 0 at HEAD.
 
-**Next milestone (queued, deferred):** v1.1 — Appearance/Settings umbrella (themes, audio timbres, visual variants, language), PWA install + app icon, BPM stretch session, plus v1.0 → v1.1 carry-forwards. Runs after v1.0.1 ships.
+**Next milestone (queued, planned):** v1.1 — Appearance/Settings umbrella (themes/CUST-01, audio timbres/CUST-02, visual variants/CUST-03, language/I18N-01), PWA install + app icon (PWA-01), BPM stretch session (PATT-02), plus v1.x carry-forwards. Start via `/gsd-new-milestone`.
 
-## Current Milestone: v1.0.1 Code Review Patch
+## Next Milestone Goals (v1.1)
 
-**Goal:** Land all 26 findings from full-codebase deep review (REVIEW.md) — 5 Critical, 12 Warning, 9 Info — without changing user-facing behavior or shipping new features.
-
-**Target fixes:**
-- **Build/types** — Enable `tsconfig` `strict` + `@typescript-eslint` `strictTypeChecked` + verify `react-hooks/exhaustive-deps` enforcement
-- **Assets** — Fix favicon absolute path under Vite `base: '/hrv/'`
-- **Storage** — Preserve on-disk envelope version; refuse downgrade; cross-tab `storage` event sync
-- **Audio** — Reconstruction generation counter; clamp boundary cue audio time; `scheduleLeadIn` null-on-closed; per-cue node disconnect; defensive `handleStateChange`; remove dead `'starting'` enum
-- **Wake Lock** — In-flight request lock
-- **Hooks** — `useAudioCues.start` mute via ref; split `currentFrame` identity per-phase vs per-frame; status-only deps on App rAF effects; tick cancel-guard ordering; explicit ref-updater deps
-- **Domain** — Explicit `DurationOption` validation in `extendTimedSession`
-- **UI contracts** — `SessionReadout` lead-in placeholder contract; symmetric auto-close for Learn/Reset dialogs in-session
-- **A11y** — `MuteToggle` role + describedby when `needsResume`
-- **Content** — Replace `amzn.to` short-URL or disclose affiliate
-- **Hygiene** — Remove unused `audioNow` from hook return; extract shared `isValid<X>` predicates; document `formatLastSessionDate` test-only seam
-
-**Source spec:** `REVIEW.md` (full-codebase deep review, 2026-05-11 — 5 Critical / 12 Warning / 9 Info / 26 total).
-
-**Constraint:** 363/363 tests pass at v1.0 close — patch must not regress. Enabling `strict` likely surfaces latent compiler errors that must be fixed inline.
+- **Customization umbrella:** themes (CUST-01), audio timbres (CUST-02), visual variants (CUST-03), language switching (I18N-01) — leverages existing section-keyed `learnContent.ts` shape.
+- **PWA install:** Web App Manifest + service worker for installable home-screen experience (PWA-01) — favicon already lands under `/hrv/` base in v1.0.1.
+- **BPM stretch session:** Practice mode that gently extends low-end BPM during a session (PATT-02) — dual-anchor audio scheduling from v1.0 is forward-compatible.
+- **v1.x carry-forwards:** iOS Safari mid-page audio recovery, Firefox Desktop orb scale flicker, S2 Android Chrome wake lock UAT, iOS Pitfall 6 phone-call interrupted state, inner-ring UX symmetry.
 
 ## Requirements
 
 ### Validated
+
+**v1.0 core experience (validated 2026-05-09 → 2026-05-11):**
 
 - [x] User can choose breaths per minute from 1 to 7 in 0.5 increments. Validated in Phase 1.
 - [x] User can choose inhale/exhale ratio from 50:50, 40:60, 30:70, and 20:80. Validated in Phase 1.
@@ -57,9 +45,18 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] User can access a prominent learning section with links to Forrest Knutson's YouTube channel and curated HRV breathing explanation videos. Validated in Phase 6 (LearnAnchor + LearnDialog with locked claim-safe copy).
 - [x] User sees copy that frames the app as guided breathing practice, not medical advice or diagnosis. Validated in Phase 6 (locked `inspired by Forrest's teachings` phrase + two-line disclaimer).
 
+**v1.0.1 patch fixes (validated 2026-05-11 → 2026-05-12 — all 27 REQ-IDs satisfied; see `.planning/milestones/v1.0.1-REQUIREMENTS.md` for full traceability):**
+
+- [x] **BUILD-01/02/03 (Phase 7)** — `tsconfig` `strict` + `noUncheckedIndexedAccess` + `noImplicitReturns` + ESLint `strictTypeChecked` + `react-hooks/exhaustive-deps: error`. 48 production lint errors fixed inline; D-04 `// Reason:` annotation policy established.
+- [x] **STORAGE-01/02/03 (Phase 8)** — Forward-compat envelope read (preserves on-disk `version`, spreads unknown fields), refuse-downgrade write (nested-try-catch inline re-read), cross-tab `storage` event listener filtered by `STATE_KEY`.
+- [x] **AUDIO-01..06 + WAKELOCK-01 (Phase 9)** — Reconstruction generation counter, caller-side past-time clamp, lead-in null-on-closed, per-cue oscillator disconnect, state-change null-guard, dead `'starting'` removal, wake-lock in-flight + release-during-await guards.
+- [x] **HOOKS-01..05 (Phase 10)** — `mutedRef` to stabilize `start`/`reconstructEngine`, status-primitive deps on App rAF effects, per-phase frame identity in `useSessionEngine`, rAF cancel-guard ordering, explicit ref-updater deps.
+- [x] **DOMAIN-01 + UI-01/02 + A11Y-01 (Phase 11)** — `extendTimedSession` boundary validation, `SessionReadout` lead-in placeholder contract, symmetric auto-close for Learn/Reset dialogs in-session, `MuteToggle` resume-mode `role`/`aria-describedby`.
+- [x] **ASSETS-01 + CONTENT-01 + HYGIENE-01/02/03 (Phase 12)** — Favicon `%BASE_URL%` swap + new `public/favicon.svg`, canonical amazon.com `/dp/B0CCFWP4W8` book URL, `isValid<X>` predicate relocation from `storage` to `domain/settings` (+ 9 new domain tests), `formatLastSessionDate` test-only-seam JSDoc, HYGIENE-01 docs-only flip to "Overtaken by Phase 9 AUDIO-02" (caller-side clamp depends on `audio.audioNow`).
+
 ### Active
 
-v1.0.1 patch — all requirements live in `.planning/REQUIREMENTS.md` keyed `BUILD-/ASSETS-/STORAGE-/AUDIO-/WAKELOCK-/HOOKS-/DOMAIN-/UI-/A11Y-/CONTENT-/HYGIENE-*`. Each maps 1:1 to one or more REVIEW.md findings (CR-/WR-/IN-).
+v1.1 — start via `/gsd-new-milestone`; requirements will be captured fresh during milestone questioning.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -68,6 +65,7 @@ v1.0.1 patch — all requirements live in `.planning/REQUIREMENTS.md` keyed `BUI
 - [ ] S2 Android Chrome wake lock real-device UAT (Phase 5 Plan 04 — physical device unavailable).
 - [ ] iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3 Open Question 5).
 - [ ] Inner-ring UX symmetry (Issue B, Phase 5.1) — separate planning candidate.
+- [ ] Phase 12 `VALIDATION.md` + `SECURITY.md` retroactive close (advisory; threat model inlined in `12-01-PLAN.md`).
 
 ### Out of Scope
 
@@ -95,9 +93,9 @@ Normal user-selected options:
 - Inhale/exhale ratio: 50:50, 40:60, 30:70, 20:80.
 - Session time: 5 to 60 minutes, step 5, plus unlimited/uncapped.
 
-**Tech stack:** React 18 + Vite + TypeScript + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/`, hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope. Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement.
+**Tech stack:** React 18 + Vite + TypeScript (strict + `strictTypeChecked`) + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/` (includes `isValidBpm`/`isValidRatio`/`isValidDuration` shared predicates since v1.0.1), hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope (forward-compat read + refuse-downgrade write + cross-tab listener since v1.0.1). Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement with in-flight + release-during-await guards.
 
-**Codebase size at v1.0 ship:** ~9,032 LOC in `src/` (TS/TSX/CSS); 363/363 Vitest tests across 27 files.
+**Codebase size at v1.0.1 ship:** ~10,925 LOC in `src/` (TS/TSX); 409/409 Vitest tests across 29 files. Production bundle `dist/assets/index-*.js` ≈ 231 KB (≈70 KB gzip).
 
 ## Constraints
 
@@ -108,6 +106,7 @@ Normal user-selected options:
 - **Branding:** Forrest links and educational references are prominent, but logo usage depends on available rights or supplied assets.
 - **Language:** English UI for v1, but future internationalization should remain possible (architecture: section-keyed content shape in `learnContent.ts`).
 - **Tone:** Calm and non-medical — avoid health claims, diagnostic language, or overstated benefits.
+- **Strict baseline (since v1.0.1):** `tsconfig` `strict` + ESLint `strictTypeChecked` + `react-hooks/exhaustive-deps: error` are the compiler-enforced floor for all future code. Per-commit green-gate (`tsc/lint/build/test`) is the v1.0.1 D-09/D-15 invariant carried forward.
 
 ## Key Decisions
 
@@ -122,17 +121,28 @@ Normal user-selected options:
 | English first while keeping multilingual support possible later | English is enough for v1, but future multi-language support is expected | ✓ Validated v1.0 — section-keyed `learnContent.ts` shape ready for I18N-01 |
 | Treat Forrest logo/assets as permission-dependent | Honor Forrest's material without assuming rights to protected branding | ✓ Validated v1.0 — text + link references only, no logo reuse |
 | Single abstract orb as visual guide (D-01, Phase 2) | One excellent default beats multiple animation styles | ✓ Validated Phase 2 |
-| OS `prefers-reduced-motion` is sole switch (D-05); fixed mid-scale orb + gradient crossfade as substitute cue (D-06/D-07, Phase 2) | Honors OS accessibility preference without an in-app override; chromatic delta carries phase signal | ✓ Validated Phase 2 |
+| OS `prefers-reduced-motion` is sole switch (D-05); fixed mid-scale orb + gradient crossfade (D-06/D-07, Phase 2) | Honors OS accessibility preference without an in-app override | ✓ Validated Phase 2 |
 | Native `<dialog>` for End-session modal with locked copy (D-10/D-11, Phase 2) | Browser-managed top-layer + focus trap; locked strings prevent copy drift | ✓ Validated Phase 2 (pattern reused by ResetStatsDialog + LearnDialog) |
-| Fluid clamp() orb sizing + 44×44 hit-area floor + focus-visible rings (D-15/D-17/D-18/D-21, Phase 2) | Mobile-first responsive without media-query churn; WCAG target size + keyboard-only operation | ✓ Validated Phase 2 |
-| FakeAudioContext polyfill in vitest.setup.ts (Phase 3) | Lets pure cueSynth + scheduler test under jsdom without flakey real audio | ✓ Validated Phase 3 — reused by audioEngine tests + Phase 5.1 reconstruction tests |
-| Dual-anchor audio scheduling (Phase 3, D-13/D-14) | Lock cue alignment to session-clock anchors; survives BPM changes (forward-compat for PATT-02) | ✓ Validated Phase 3 + reused Phase 5.1 reconstruction |
+| Fluid clamp() orb sizing + 44×44 hit-area floor + focus-visible rings (D-15/D-17/D-18/D-21, Phase 2) | Mobile-first responsive without media-query churn; WCAG target size | ✓ Validated Phase 2 |
+| FakeAudioContext polyfill in vitest.setup.ts (Phase 3) | Lets pure cueSynth + scheduler test under jsdom without flakey real audio | ✓ Validated Phase 3 — reused everywhere since |
+| Dual-anchor audio scheduling (Phase 3, D-13/D-14) | Lock cue alignment to session-clock anchors; survives BPM changes | ✓ Validated Phase 3 + reused Phase 5.1 reconstruction |
 | Silent-fallback localStorage envelope + per-field coercers (Phase 4, D-09) | Safari Private Browsing + corrupted-data resilience | ✓ Validated Phase 4 |
 | Wake Lock two-ref pattern + match-pair sentinel guard (Phase 5, D-08) | Prevents stale-ref release when visibility re-acquire races with manual end | ✓ Validated Phase 5 |
-| Phase 5.1 INSERTED for hands-off resilience polish | Plan 05-04 real-device UAT exposed iOS audio + Safari visual gaps that block trustworthy hands-off use | ✓ Validated 5.1 — iOS engine reconstruction + Safari explicit-positioning fix shipped |
-| Clone-don't-extract Dialog pattern (Phase 4 ResetStatsDialog, Phase 6 LearnDialog) | Locked-copy contracts cheaper to verify per-clone than to abstract | ✓ Validated v1.0 — three dialogs all stable |
+| Phase 5.1 INSERTED for hands-off resilience polish | Plan 05-04 real-device UAT exposed iOS audio + Safari visual gaps | ✓ Validated 5.1 |
+| Clone-don't-extract Dialog pattern (Phase 4/6) | Locked-copy contracts cheaper to verify per-clone than to abstract | ✓ Validated v1.0 |
 | LearnAnchor D-18 disable-not-hide contract (Phase 6) | Anchor visible+disabled during running session preserves layout invariant | ✓ Validated Phase 6 |
 | Locked `inspired by Forrest's teachings` phrase + two-line disclaimer (Phase 6, D-12) | Claim-safe positioning resistant to copy drift across plans | ✓ Validated Phase 6 |
+| Strict TS + `strictTypeChecked` ESLint as v1.0.1 baseline (Phase 7) | Every later patch phase writes against the compiler floor; latent errors surface once | ✓ Validated v1.0.1 — held through 6 phases, 143 commits |
+| `react-hooks/exhaustive-deps: error` with `// Reason:` annotation policy (Phase 7 D-04) | Disables must justify themselves; new disables cannot land silently | ✓ Validated v1.0.1 — six pre-existing disables annotated, zero new since |
+| Per-commit green-gate (`tsc && lint && build && test`) invariant (Phase 7 D-09 / Phase 11 D-17 / Phase 12 D-15) | Catches regressions at the boundary; bisect-friendly | ✓ Validated v1.0.1 — every commit green |
+| Envelope spread-then-override (Phase 8 D-01) + refuse-downgrade (D-04a) | Forward-compat for v1.1 schema bumps without losing unknown fields | ✓ Validated Phase 8 |
+| Reconstruction generation counter (Phase 9 AUDIO-01) | Eliminates use-after-stop race on async engine reconstruction | ✓ Validated Phase 9 |
+| Caller-side past-time clamp (Phase 9 AUDIO-02) — depends on `audio.audioNow` export | Pitfall 5: belt-and-suspenders against negative scheduling | ✓ Validated Phase 9 + made HYGIENE-01 in Phase 12 a docs-only "Overtaken" flip |
+| `mutedRef` ref-based mute (Phase 10 HOOKS-01) | Stabilizes `start`/`reconstructEngine` identity across mute toggles | ✓ Validated Phase 10 |
+| `extendTimedSession` boundary validation throws on out-of-range (Phase 11 DOMAIN-01) | Caller contract is now the single source of truth for duration validity | ✓ Validated Phase 11 |
+| Shared `isValid<X>` predicates in `domain/settings.ts` (Phase 12 HYGIENE-02) | Eliminates allow-list duplication between `validateSettings` (throws) and `coerceSettings` (fallback) | ✓ Validated Phase 12 |
+| HYGIENE-01 "Overtaken" docs-only flip (Phase 12 D-01/D-02) | Phase 9 AUDIO-02 caller-side clamp DEPENDS on `audio.audioNow` — literal removal would break the contract | ✓ Validated Phase 12 — docs flip + REVIEW.md addendum |
+| Favicon `%BASE_URL%` HTML substitution (Phase 12 D-04) | Survives any future Vite `base` change without an HTML edit | ✓ Validated Phase 12 |
 
 ## Evolution
 
@@ -152,4 +162,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — Phase 10 (Hooks Identity & Effect Hygiene) complete*
+*Last updated: 2026-05-12 after v1.0.1 milestone — Code Review Patch shipped*

@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0.1
 milestone_name: Code Review Patch
-status: executing
+status: Awaiting next milestone
 stopped_at: Phase 12 context gathered
-last_updated: "2026-05-12T03:59:30.872Z"
-last_activity: 2026-05-12 -- Phase 12 planning complete
+last_updated: "2026-05-12T13:06:59.176Z"
+last_activity: 2026-05-12 — Milestone v1.0.1 completed and archived
 progress:
   total_phases: 6
   completed_phases: 6
@@ -25,14 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 — v1.0.1 milestone opened)
 
 ## Current Position
 
-Phase: 11
-Plan: 11-01 — Complete (4 commits: 2f6b54f, e6a6ddb, 2296b08, ac5e446)
-Status: Ready to execute
-Last activity: 2026-05-12 -- Phase 12 planning complete
-
-**Milestone invariant:** `npm run test` must keep passing 363/363 Vitest tests at every phase boundary. `npm run build` and `tsc --noEmit` must exit 0. No new user-facing features. (Phase 11 boundary: 400/400 — green.)
-
-**Next action:** `/gsd-verify-phase 11` → then `/gsd-discuss-phase 12`
+Phase: Milestone v1.0.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-12 — Milestone v1.0.1 completed and archived
 
 ## Performance Metrics
 
@@ -113,5 +109,4 @@ Next command: `/gsd-verify-phase 11`
 
 ## Operator Next Steps
 
-- `/gsd-verify-phase 11` to verify goal achievement for Phase 11.
-- `/gsd-discuss-phase 12` afterwards (Assets, Content & Hygiene Cleanup — ASSETS-01/CONTENT-01/HYGIENE-01..03).
+- Start the next milestone with /gsd-new-milestone
