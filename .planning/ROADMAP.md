@@ -141,6 +141,6 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 | 7. Strict Type & Lint Baseline                     | v1.0.1    | 4/4            | Complete    | 2026-05-11 |
 | 8. Storage Forward-Compat & Cross-Tab UI Sync      | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 9. Audio + Wake Lock Lifecycle Hardening           | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
-| 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 2/2 | Complete   | 2026-05-12 |
+| 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 2/2 | Complete    | 2026-05-12 |
 | 11. Domain, UI Contracts & Accessibility           | v1.0.1    | 0/0            | Not started | -          |
 | 12. Assets, Content & Hygiene Cleanup              | v1.0.1    | 0/0            | Not started | -          |

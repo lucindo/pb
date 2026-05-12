@@ -56,15 +56,15 @@ All requirements derive from `REVIEW.md` (full-codebase deep review, 2026-05-11 
 
 ## Hooks / Effect Hygiene
 
-- [ ] **HOOKS-01**: `useAudioCues.start()` and `reconstructEngine` read mute state via a `mutedRef` (updated by an effect on `[muted]`) so their `useCallback` deps no longer include `muted` — `onStartClick` identity stabilizes across mute toggles.
+- [x] **HOOKS-01**: `useAudioCues.start()` and `reconstructEngine` read mute state via a `mutedRef` (updated by an effect on `[muted]`) so their `useCallback` deps no longer include `muted` — `onStartClick` identity stabilizes across mute toggles.
   Source: WR-03.
-- [ ] **HOOKS-02**: The App effect that cleans up audio/wake-lock/lead-in on leaving `running` depends on `state.status` (and other primitives) — not `state`. The running-snapshot writer is moved off React effects (ref-write from inside `useSessionEngine` or via `useEvent`-style stable callback).
+- [x] **HOOKS-02**: The App effect that cleans up audio/wake-lock/lead-in on leaving `running` depends on `state.status` (and other primitives) — not `state`. The running-snapshot writer is moved off React effects (ref-write from inside `useSessionEngine` or via `useEvent`-style stable callback).
   Source: WR-04.
-- [ ] **HOOKS-03**: `useSessionEngine.currentFrame` returns the same memoized frame object across renders within the same `cycleIndex:phase`. A separate `liveFrame` (or equivalent) carries per-rAF `phaseProgress` for `BreathingShape` consumers that need it.
+- [x] **HOOKS-03**: `useSessionEngine.currentFrame` returns the same memoized frame object across renders within the same `cycleIndex:phase`. A separate `liveFrame` (or equivalent) carries per-rAF `phaseProgress` for `BreathingShape` consumers that need it.
   Source: WR-05.
-- [ ] **HOOKS-04**: `useSessionEngine`'s rAF loop short-circuits on `cancelled` at the top of `tick()` so an extra rAF firing after teardown returns immediately.
+- [x] **HOOKS-04**: `useSessionEngine`'s rAF loop short-circuits on `cancelled` at the top of `tick()` so an extra rAF firing after teardown returns immediately.
   Source: WR-06.
-- [ ] **HOOKS-05**: The `sessionFrameRef`-updater effect at `App.tsx:80-82` declares explicit deps `[session.currentFrame]` (no missing dep array) and passes `react-hooks/exhaustive-deps`.
+- [x] **HOOKS-05**: The `sessionFrameRef`-updater effect at `App.tsx:80-82` declares explicit deps `[session.currentFrame]` (no missing dep array) and passes `react-hooks/exhaustive-deps`.
   Source: IN-01.
 
 ## Domain
@@ -134,11 +134,11 @@ Each REQ-ID maps to exactly one phase in `ROADMAP.md`. Coverage: **27/27 (100%)*
 | AUDIO-05 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
 | AUDIO-06 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
 | WAKELOCK-01 | Phase 9 — Audio + Wake Lock Lifecycle Hardening | Pending |
-| HOOKS-01 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
-| HOOKS-02 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
-| HOOKS-03 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
-| HOOKS-04 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
-| HOOKS-05 | Phase 10 — Hooks Identity & Effect Hygiene | Pending |
+| HOOKS-01 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
+| HOOKS-02 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
+| HOOKS-03 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
+| HOOKS-04 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
+| HOOKS-05 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
 | DOMAIN-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
 | UI-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
 | UI-02 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
