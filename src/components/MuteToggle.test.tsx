@@ -12,6 +12,7 @@ function renderToggle(props: Partial<MuteToggleProps> = {}) {
       muted={props.muted ?? false}
       audioAvailable={props.audioAvailable ?? true}
       needsResume={props.needsResume}
+      resumeHintId={props.resumeHintId ?? 'mute-toggle-resume-hint'}
       onToggle={onToggle}
     />,
   )
@@ -92,7 +93,7 @@ describe('MuteToggle', () => {
 
   it('renders a speaker SVG when muted=false (3 path elements) and a speaker-with-slash SVG when muted=true (2 line elements)', () => {
     const { container: containerOn, unmount: unmountOn } = render(
-      <MuteToggle muted={false} audioAvailable={true} onToggle={vi.fn()} />,
+      <MuteToggle muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" onToggle={vi.fn()} />,
     )
     const svgOn = containerOn.querySelector('svg')
     expect(svgOn).not.toBeNull()
@@ -100,7 +101,7 @@ describe('MuteToggle', () => {
     unmountOn()
 
     const { container: containerOff } = render(
-      <MuteToggle muted={true} audioAvailable={true} onToggle={vi.fn()} />,
+      <MuteToggle muted={true} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" onToggle={vi.fn()} />,
     )
     const svgOff = containerOff.querySelector('svg')
     expect(svgOff).not.toBeNull()
@@ -116,7 +117,7 @@ describe('MuteToggle', () => {
 
   it('renders a refresh-arrow ResumeIcon (1 path + 1 polyline) when needsResume=true', () => {
     const { container } = render(
-      <MuteToggle needsResume={true} muted={false} audioAvailable={true} onToggle={vi.fn()} />,
+      <MuteToggle needsResume={true} muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" onToggle={vi.fn()} />,
     )
     const svg = container.querySelector('svg')
     expect(svg).not.toBeNull()
@@ -138,5 +139,18 @@ describe('MuteToggle', () => {
     const button = screen.getByRole('button', { name: 'Audio unavailable in this browser' })
     expect(button.getAttribute('aria-label')).toBe('Audio unavailable in this browser')
     expect(button).toBeDisabled()
+  })
+
+  // A11Y-01 tests (Phase 11): aria-describedby conditional on needsResume.
+  it('needsResume=true → button has aria-describedby set to resumeHintId', () => {
+    renderToggle({ needsResume: true, resumeHintId: 'x', audioAvailable: true })
+    const button = screen.getByRole('button', { name: 'Resume audio' })
+    expect(button).toHaveAttribute('aria-describedby', 'x')
+  })
+
+  it('needsResume=false → button has NO aria-describedby attribute', () => {
+    renderToggle({ needsResume: false, resumeHintId: 'x', muted: false, audioAvailable: true })
+    const button = screen.getByRole('button', { name: 'Mute audio cues' })
+    expect(button).not.toHaveAttribute('aria-describedby')
   })
 })

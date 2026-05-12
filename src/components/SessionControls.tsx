@@ -17,6 +17,11 @@ export interface SessionControlsProps {
    *  click handler at the App level dispatches audio.resume() synchronously
    *  inside the gesture chain before flipping mute (D-31/D-33). */
   needsResume?: boolean
+  /** A11Y-01: forwarded verbatim to MuteToggle.resumeHintId. App owns the id
+   *  string (the aria-live resume-hint region lives at the App level). Optional
+   *  on this interface to preserve backward compatibility with legacy-layout
+   *  callers that never render MuteToggle. */
+  resumeHintId?: string
   onMuteToggle?(this: void): void
 }
 
@@ -27,6 +32,7 @@ export function SessionControls({
   muted,
   audioAvailable,
   needsResume,
+  resumeHintId,
   onMuteToggle,
 }: SessionControlsProps) {
   const isRunning = status === 'running'
@@ -69,6 +75,7 @@ export function SessionControls({
         muted={muted}
         audioAvailable={audioAvailable}
         needsResume={needsResume}
+        resumeHintId={resumeHintId ?? ''}
         onToggle={onMuteToggle}
       />
     </div>

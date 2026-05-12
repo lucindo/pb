@@ -14,10 +14,16 @@ export interface MuteToggleProps {
    *  refresh-arrow glyph + aria-label 'Resume audio'. Priority: audioAvailable=false
    *  outranks; muted is ignored in label and aria-pressed is undefined. */
   needsResume?: boolean
+  /** A11Y-01: id of the App-level aria-live resume-hint region. When needsResume
+   *  is true, aria-describedby is set to this id so screen readers announce the
+   *  hint text. When needsResume is false, aria-describedby is omitted to avoid
+   *  empty-content announcements (the live region text is the empty string when
+   *  not in needs-resume mode). */
+  resumeHintId: string
   onToggle(this: void): void
 }
 
-export function MuteToggle({ muted, audioAvailable, needsResume, onToggle }: MuteToggleProps) {
+export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, onToggle }: MuteToggleProps) {
   // Plan 06 D-32: label priority — unavailable > needsResume > muted/unmuted.
   // Phase 3 D-10 'unavailable' takes highest priority and outranks needsResume because
   // in practice the hook's audioStatus state machine makes them mutually exclusive
@@ -35,6 +41,7 @@ export function MuteToggle({ muted, audioAvailable, needsResume, onToggle }: Mut
     <button
       type="button"
       aria-pressed={needsResume ? undefined : muted}
+      aria-describedby={needsResume ? resumeHintId : undefined}
       aria-label={label}
       title={label}
       disabled={!audioAvailable}

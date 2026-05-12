@@ -610,6 +610,7 @@ export default function App() {
             muted={audio.muted}
             audioAvailable={audio.audioAvailable}
             needsResume={audio.audioStatus === 'needs-resume'}
+            resumeHintId="mute-toggle-resume-hint"
             onMuteToggle={() => { void onMuteOrResumeClick() }}
           />
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
@@ -617,6 +618,7 @@ export default function App() {
               transition, not on every MuteToggle re-render. Empty string when not in
               needs-resume mode — React's reconciler suppresses no-op updates. */}
           <div
+            id="mute-toggle-resume-hint"
             role="status"
             aria-live="polite"
             className="sr-only"
