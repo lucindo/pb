@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-11 — v1.0.1 milestone opened)
+See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 queued)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 11 verified → Phase 12 (assets/hygiene cleanup)
+**Current focus:** v1.0.1 archived; planning next milestone (v1.1 — Appearance/Settings umbrella, PWA install, BPM stretch, v1.x carry-forwards)
 
 ## Current Position
 
