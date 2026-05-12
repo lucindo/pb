@@ -6,31 +6,14 @@
 // discard the rest of the envelope.
 
 import {
-  BPM_OPTIONS,
-  RATIO_OPTIONS,
-  DURATION_OPTIONS,
   DEFAULT_SETTINGS,
+  isValidBpm,
+  isValidRatio,
+  isValidDuration,
   type SessionSettings,
-  type RatioLabel,
-  type DurationOption,
 } from '../domain/settings'
 
 import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
-
-function isValidBpm(v: unknown): v is number {
-  return typeof v === 'number' && Number.isFinite(v) && (BPM_OPTIONS as readonly number[]).includes(v)
-}
-
-function isValidRatio(v: unknown): v is RatioLabel {
-  return typeof v === 'string' && (RATIO_OPTIONS as readonly string[]).includes(v)
-}
-
-function isValidDuration(v: unknown): v is DurationOption {
-  if (v === 'open-ended') return true
-  return typeof v === 'number'
-    && Number.isFinite(v)
-    && (DURATION_OPTIONS as readonly DurationOption[]).includes(v)
-}
 
 export function coerceSettings(raw: unknown): SessionSettings {
   const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
