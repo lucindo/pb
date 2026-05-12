@@ -575,12 +575,8 @@ export default function App() {
           />
           <SessionReadout
             frame={leadInPlaceholderFrame ?? session.liveFrame}
-            // During lead-in, the underlying state.status may still be 'complete'
-            // from the prior session (session.start() doesn't fire until t3).
-            // Override to 'idle' so SessionReadout renders the placeholder
-            // Remaining chip instead of pinning the stale "Session complete"
-            // headline + hiding the timer.
-            status={appPhase === 'lead-in' ? 'idle' : state.status}
+            status={state.status}
+            isLeadInPlaceholder={appPhase === 'lead-in'}
             message={state.status === 'complete' && !inSessionView ? state.message : undefined}
           />
           <SettingsForm
