@@ -47,6 +47,49 @@ export const DEFAULT_SETTINGS: SessionSettings = {
   durationMinutes: 10,
 }
 
+// Phase 14 D-01: v1.1 customization enum surfaces — predicates are FINAL;
+// downstream phases (16/17/18/19) only add UI/CSS/audio wiring and do NOT re-edit.
+
+export type ThemeId = 'light' | 'dark' | 'system' | 'moss' | 'slate' | 'dusk'
+
+export const THEME_OPTIONS = ['light', 'dark', 'system', 'moss', 'slate', 'dusk'] as const satisfies readonly ThemeId[]
+
+export function isValidTheme(v: unknown): v is ThemeId {
+  return typeof v === 'string' && (THEME_OPTIONS as readonly string[]).includes(v)
+}
+
+export const DEFAULT_THEME: ThemeId = 'system'
+
+export type TimbreId = 'bowl' | 'bell' | 'sine' | 'chime'
+
+export const TIMBRE_OPTIONS = ['bowl', 'bell', 'sine', 'chime'] as const satisfies readonly TimbreId[]
+
+export function isValidTimbre(v: unknown): v is TimbreId {
+  return typeof v === 'string' && (TIMBRE_OPTIONS as readonly string[]).includes(v)
+}
+
+export const DEFAULT_TIMBRE: TimbreId = 'bowl'
+
+export type VisualVariantId = 'orb' | 'square' | 'ring'
+
+export const VARIANT_OPTIONS = ['orb', 'square', 'ring'] as const satisfies readonly VisualVariantId[]
+
+export function isValidVariant(v: unknown): v is VisualVariantId {
+  return typeof v === 'string' && (VARIANT_OPTIONS as readonly string[]).includes(v)
+}
+
+export const DEFAULT_VARIANT: VisualVariantId = 'orb'
+
+export type LocaleId = 'en' | 'pt-BR'
+
+export const LOCALE_OPTIONS = ['en', 'pt-BR'] as const satisfies readonly LocaleId[]
+
+export function isValidLocale(v: unknown): v is LocaleId {
+  return typeof v === 'string' && (LOCALE_OPTIONS as readonly string[]).includes(v)
+}
+
+export const DEFAULT_LOCALE: LocaleId = 'en'
+
 export function isValidBpm(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && (BPM_OPTIONS as readonly number[]).includes(v)
 }
