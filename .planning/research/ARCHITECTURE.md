@@ -1,372 +1,461 @@
 # Architecture Research
 
-**Domain:** HRV breathing / guided breathing web app  
-**Researched:** 2026-05-08  
-**Confidence:** HIGH for browser architecture primitives; MEDIUM for domain-specific product structure because “HRV breathing app” conventions are inferred from common guided-session app patterns rather than a single formal standard.
+**Domain:** HRV breathing webapp — v1.1 Customization integration
+**Researched:** 2026-05-12
+**Confidence:** HIGH — based on direct codebase inspection of all source files at HEAD `3bdb69b`
 
-## Standard Architecture
+## Integration Overview
 
-### System Overview
-
-For v1, structure the app as a local-only, client-side application with one authoritative session clock. Do **not** split timing across independent UI timers, CSS-only animations, and audio timers. The safest structure is: settings produce a breathing plan; the session engine derives current phase from elapsed monotonic time; visuals and audio subscribe to that derived phase.
+v1.1 adds five customization features to the existing v1.0.1 baseline. Each maps to a specific set of integration points. The baseline architecture is not restructured — v1.1 extends it.
 
 ```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                              UI Layer                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ SettingsForm │  │ SessionScreen│  │ StatsPanel   │  │ ResourceLinks│  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────────────┘  │
-│         │                 │                 │                            │
-├─────────┴─────────────────┴─────────────────┴────────────────────────────┤
-│                         Application State Layer                           │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────────────────┐ │
-│  │ Settings Store  │ │ Session Store   │ │ Local Stats Store           │ │
-│  │ BPM, ratio, etc │ │ idle/running... │ │ completed minutes/sessions  │ │
-│  └────────┬────────┘ └────────┬────────┘ └─────────────┬───────────────┘ │
-├───────────┴───────────────────┴────────────────────────┴─────────────────┤
-│                              Domain Layer                                 │
-│  ┌──────────────────────┐  ┌────────────────────┐  ┌───────────────────┐ │
-│  │ Breathing Plan       │  │ Session Engine     │  │ Completion Rules  │ │
-│  │ BPM→cycle durations  │  │ elapsed→phase      │  │ save stats/end    │ │
-│  └──────────┬───────────┘  └─────────┬──────────┘  └───────────────────┘ │
-├─────────────┴────────────────────────┴────────────────────────────────────┤
-│                          Browser Services Layer                           │
-│  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐ ┌────────────┐ │
-│  │ Animation Loop │ │ Audio Scheduler│ │ Persistence    │ │ Wake Lock  │ │
-│  │ requestAnim... │ │ Web Audio API  │ │ localStorage   │ │ optional   │ │
-│  └────────────────┘ └────────────────┘ └────────────────┘ └────────────┘ │
-└───────────────────────────────────────────────────────────────────────────┘
+EXISTING (v1.0.1)                          v1.1 ADDITIONS
+─────────────────────────────────────────────────────────────────────
+src/domain/          (pure math, untouched) ← No v1.1 domain changes
+src/hooks/
+  useSessionEngine   (untouched)
+  useAudioCues       (timbre ref injection)  ← CUST-02
+  useWakeLock        (untouched)
+  usePrefersReducedMotion (untouched)
+src/components/
+  BreathingShape     (variant dispatch)      ← CUST-03 + inner-ring fix
+  SettingsForm       (unchanged)
+  + NEW: SettingsDialog                     ← new: customization UI surface
+src/audio/
+  cueSynth           (new timbre presets)    ← CUST-02
+  audioEngine        (timbre plumbing)       ← CUST-02
+src/content/
+  learnContent       (section-keyed, unchanged for v1.1)
+  + NEW: uiStrings                          ← I18N-01
+src/storage/
+  storage            (prefs?: unknown field) ← additive envelope change
+  settings           (unchanged)
+  stats              (unchanged)
+  + NEW: prefs                              ← CUST-01/02/03/I18N-01
+src/styles/
+  theme.css          (new theme blocks)      ← CUST-01
+src/app/
+  App                (prefs wiring)          ← CUST-01/02/03/I18N-01
 ```
 
-### Component Responsibilities
+## Feature-by-Feature Integration Points
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| `SettingsForm` | Validates and edits BPM, inhale/exhale ratio, session duration, mute, and future display preferences. | Controlled UI bound to a typed settings model; writes only through settings actions. |
-| `BreathingPlan` | Converts user settings into deterministic cycle math: cycle length, inhale length, exhale length, total target duration, and cue times. | Pure functions with unit tests; no DOM, audio, or storage access. |
-| `SessionEngine` | Owns session lifecycle and derives `elapsedMs`, `cycleIndex`, `phase`, `phaseProgress`, and remaining time from a monotonic start timestamp. | Hook/service using `requestAnimationFrame`; timestamp-based, not interval-count-based. |
-| `BreathingAnimation` | Renders calm inhale/exhale guidance from derived phase progress. | SVG/CSS transforms or Canvas driven by engine state; should be replaceable without changing timing logic. |
-| `AudioCueService` | Produces optional soft gong/bowl-like cues at phase boundaries. | Web Audio API graph: oscillator/noise/buffer source → gain envelope/filter/reverb-ish shaping → destination. |
-| `PersistenceService` | Saves settings and local stats. | Small `localStorage` adapter with schema versioning and safe fallback if storage fails. |
-| `StatsService` | Records completed sessions/minutes locally; ignores partial sessions unless product explicitly decides otherwise. | Pure stats update functions plus persistence adapter. |
-| `WakeLockService` | Best-effort screen-awake support during active sessions. | Feature-detected Screen Wake Lock API; release on stop; reacquire on visibility return when possible. |
-| `ForrestLinks` | Presents prominent external links without entangling session logic. | Static content/config module; avoid remote scripts or embedded trackers in v1. |
+### Warm-up: Inner-Ring UX Symmetry
 
-## Recommended Project Structure
+Issue B carry-forward from Phase 5.1: the outer ring appears at `MAX_SCALE` as the "In phase arrival" visual cue, but the inner ring appears throughout the Out phase rather than appearing precisely at `MIN_SCALE` (the Out-phase arrival point). The fix is contained entirely in `src/components/BreathingShape.tsx`.
 
-```text
-src/
-├── app/                  # App shell, routing-free layout, providers
-│   └── App.tsx
-├── components/           # Presentational UI components
-│   ├── BreathingAnimation.tsx
-│   ├── SessionControls.tsx
-│   ├── SettingsForm.tsx
-│   ├── StatsPanel.tsx
-│   └── ResourceLinks.tsx
-├── domain/               # Pure breathing/session/stat rules
-│   ├── breathingPlan.ts
-│   ├── sessionMath.ts
-│   ├── settings.ts
-│   └── stats.ts
-├── hooks/                # UI-facing orchestration hooks
-│   ├── useSessionEngine.ts
-│   ├── useSettings.ts
-│   └── useWakeLock.ts
-├── services/             # Browser API wrappers
-│   ├── audioCueService.ts
-│   ├── persistenceService.ts
-│   └── wakeLockService.ts
-├── styles/               # Global tokens, responsive layout, animation styling
-│   └── theme.css
-└── tests/                # Domain-heavy tests first; browser-service tests with mocks
-    ├── breathingPlan.test.ts
-    └── sessionMath.test.ts
+**Files touched:**
+- `src/components/BreathingShape.tsx` — adjust inner-ring rendering or positioning so the ring appearance coincides with orb edge reaching `MIN_SCALE`
+- `src/styles/theme.css` — possibly adjust `.orb-ring--inner` CSS rule if the fix requires a timing or opacity change
+
+**What to preserve:**
+- `[data-phase='out'] .orb-ring--inner { opacity: 1 }` CSS gate must remain (or equivalent)
+- `BreathingShapeLeadIn` must mirror any `BreathingShapeBody` change per the existing D-22 invariant
+- The `left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2` centering pattern (WR-03 — spec-safe across older Safari)
+
+**Risk:** LOW — isolated to one component, no hook or domain changes.
+
+---
+
+### CUST-01: Theme System
+
+**Approach:** Tailwind v4 `@theme` block per-theme override inside `src/styles/theme.css` plus a `data-theme` attribute on `<html>`. No external theme-provider library. This is the natural extension of the existing token system — the `@theme {}` block already defines all visual tokens, and `[data-theme='dark'] { ... }` blocks rebind them.
+
+**Why `data-theme` attribute over class-based or React Context:**
+- The existing `@theme {}` block is a single-root token definition. `[data-theme='dark']` selector overrides slot cleanly into the existing CSS structure.
+- Attribute lives on `<html>` and all CSS consumers inherit it automatically — zero React re-renders for visual token changes.
+- Tailwind v4 is CSS-first (no `tailwind.config.js` in this project) and CSS custom property inheritance is native.
+
+**Files touched:**
+- `src/styles/theme.css` — add `[data-theme='dark'] { ... }` blocks (and any additional named themes) that rebind `--color-breathing-bg`, `--color-breathing-accent`, `--color-orb-*`, `--color-ring-*` tokens
+- `src/storage/prefs.ts` (NEW) — `loadPrefs`, `savePrefs`, `coercePrefs`
+- `src/storage/storage.ts` — `Envelope` interface gets `prefs?: unknown` field
+- `src/app/App.tsx` — read `loadPrefs()` at mount; set `document.documentElement.dataset.theme` reactively on prefs change; write `savePrefs()` on change
+- `src/components/SettingsDialog.tsx` (NEW) — theme picker
+- `src/components/BreathingShape.tsx` — zero changes; already reads from CSS variables exclusively
+
+**No changes to:** `src/domain/`, `src/hooks/`, `src/audio/`, `src/content/`
+
+---
+
+### CUST-02: Audio Timbre System
+
+**Approach:** Extend `cueSynth.ts` with timbre-dispatch functions above the existing `scheduleInCue`/`scheduleOutCue`/`scheduleTick`. The existing functions are preserved unchanged — the dispatch layer adds a selection indirection keyed by `TimbreId`.
+
+**Files touched:**
+- `src/audio/cueSynth.ts` — add `scheduleInCueForTimbre(timbre: TimbreId, audioCtx, when, destination, phaseDurationSec?)` and `scheduleOutCueForTimbre` dispatch functions. Bowl (`'bowl'`) routes to existing `scheduleInCue`/`scheduleOutCue`. A new `'chime'` timbre uses a simpler sine wave with a shorter decay. `'none'` returns a synthetic no-op `CueHandle` with a past `cleanupAt`.
+- `src/audio/audioEngine.ts` — `createAudioEngine` receives a `timbre: TimbreId` option (default `'bowl'`). `scheduleLeadIn` and `scheduleNextCue` forward the timbre to cueSynth dispatch.
+- `src/hooks/useAudioCues.ts` — add `timbreRef = useRef<TimbreId>('bowl')` alongside `mutedRef`. Thread timbre through `start(plan, timbre)` and replay `timbreRef.current` in `reconstructEngine` (same pattern as `mutedRef`).
+- `src/app/App.tsx` — pass `prefs.timbre` to `audio.start(plan, prefs.timbre)` in `onStartClick`.
+
+**Mid-session timbre change contract:**
+Timbre is fixed at session start — do not allow live switching. Reasons: switching mid-session would require either AudioContext reconstruction (breaks dual-anchor, forces a new lead-in) or parallel audio graphs (unjustified complexity). The UX contract: disable the timbre picker in SettingsDialog while `inSessionView` is true (same pattern as BPM/ratio inputs in `SettingsForm`). The preference is stored immediately so the user can see the selection; it applies on the next `audio.start()`.
+
+**Reconstruction contract:** `reconstructEngine` in `useAudioCues.ts` currently captures `mutedRef.current` synchronously before any `await`. Add the same capture for `timbreRef.current`:
+```typescript
+const currentTimbre = timbreRef.current  // captured before any await
+// ...
+newEngine = await createAudioEngine({ timbre: currentTimbre, onStateChange: handleStateChange })
 ```
+This ensures the reconstructed engine uses the session's original timbre, not any prefs change the user may have made since session start.
 
-### Structure Rationale
+**CueHandle contract is unchanged:** All timbres return `{ envelope, scheduledAt, cleanupAt }`. The `'none'` timbre returns a synthetic handle with `cleanupAt = when - 1` (immediately expired, pruned on first `pruneExpiredCues` call).
 
-- **`domain/`:** Keep timing and ratio math pure. This is the highest-risk area because subtle drift or rounding errors directly break the core promise of accurate guidance.
-- **`services/`:** Browser APIs have quirks: Web Audio requires user activation in many autoplay contexts; wake lock can be rejected or released; localStorage can block and may be cleared in private mode. Isolating adapters makes failure handling explicit.
-- **`hooks/`:** The app needs a thin orchestration layer between pure math and UI rendering. Hooks can start/stop sessions, subscribe to animation frames, call audio cues, and persist completions without polluting components.
-- **`components/`:** Keep UI calm and replaceable. Animation design can iterate independently if it only consumes `{ phase, phaseProgress, cycleIndex }`.
+---
 
-## Architectural Patterns
+### CUST-03: Visual Variant System
 
-### Pattern 1: Single Authoritative Session Clock
+**Approach:** `BreathingShape` dispatches to a variant component based on a new `variant` prop. All variants receive the same `SessionFrame` contract — no variant owns its own timing.
 
-**What:** Store `startedAt`, `pausedAccumulatedMs`, and `now`/`elapsedMs`; derive all current breathing state from elapsed time and the breathing plan.
+**Files touched:**
+- `src/components/BreathingShape.tsx` — top-level `BreathingShape` receives `variant: VisualVariantId` prop (defaulting to `'orb'`) and dispatches to `BreathingShapeOrb` (current `BreathingShapeBody`, renamed) or new variant components. `BreathingShapeLeadIn` is shared across all variants (or each variant provides its own lead-in sub-component for the lead-in digit case).
+- `src/app/App.tsx` — pass `prefs.variant` to `<BreathingShape variant={prefs.variant} ... />`
 
-**When to use:** Always for session guidance. This prevents separate intervals from drifting apart.
+**Invariant — no variant owns timing:** All variants MUST derive their animation from `frame.phaseProgress` passed as a prop or CSS custom property. CSS animations on a variant are only for decorative effects (shimmer, color pulse) that do not need to be phase-accurate; phase-accurate motion is always JS-driven via the `liveFrame` rAF loop. This prevents the "multiple competing timers" anti-pattern.
 
-**Trade-offs:** Slightly more math up front, but far easier to test and correct than mutable phase counters.
+**`usePrefersReducedMotion` hook:** Each animated variant subscribes to this hook per the existing pattern. The hook mounts only when there is an active frame, so subscription cost is proportional to usage.
 
-**Example:**
+**CSS tokens:** Variants read from the same `--color-orb-*` / `--color-ring-*` tokens in `theme.css`. New variant-specific tokens go in the same `@theme {}` block — no separate CSS files.
+
+**No hook changes:** `useSessionEngine`, `useAudioCues`, `useWakeLock` are untouched.
+
+---
+
+### I18N-01: Language Switching
+
+**Approach:** Add `src/content/uiStrings.ts` parallel to `learnContent.ts`. The `learnContent.ts` section-keyed shape (already I18N-ready per v1.0 D-12) is the model: a locale-keyed record of typed string objects.
+
+**Files touched:**
+- `src/content/uiStrings.ts` (NEW) — `UI_STRINGS` record keyed by `LocaleId`. Covers: button labels, dialog copy, stats labels, settings labels, disclaimer text, aria labels.
+- `src/content/learnContent.ts` — no changes for v1.1 (English-only; locale-keying is deferred until a second locale lands).
+- `src/components/` — components receive string props or a locale-strings slice from App
+- `src/app/App.tsx` — selects `UI_STRINGS[prefs.locale]` and passes string objects to children
+
+**RTL deferred:** The `dir` attribute on `<html>` is the extension point. No RTL layout changes in v1.1.
+
+**No runtime i18n framework at v1.1:** At English-plus-one-locale stage, the typed record pattern from `learnContent.ts` is sufficient and zero-overhead. Add a framework (e.g., `react-i18next`) when locale count exceeds ~3 or pluralization/interpolation becomes needed. The typed-record call sites (`strings.button.start`) migrate to `t('button.start')` mechanically.
+
+**Prop-drilling vs Context:** Prop-drill the locale strings from App for v1.1. A `LocaleContext` is appropriate when 3+ deep component trees need access; at v1.1 scope most string consumers are direct children of App or one level down.
+
+---
+
+### Settings UI Surface (SettingsDialog)
+
+All four CUST/I18N features need a user-accessible UI. The v1.0.1 dialog pattern is clone-not-extract (`native <dialog>` + `modal-fade` class). `SettingsDialog` follows this pattern exactly.
+
+**Files touched:**
+- `src/components/SettingsDialog.tsx` (NEW) — native `<dialog>` with `modal-fade`; contains theme picker, timbre picker, variant picker, locale picker; `onClose` callback pattern identical to `LearnDialog`
+- `src/app/App.tsx` — adds `settingsDialogOpen` state, `onSettingsClick`/`onSettingsClose` handlers; renders `<SettingsDialog prefs={prefs} onPrefsChange={setPrefs} open={...} onClose={...} />`; settings anchor disabled during `inSessionView` per D-03 disable-not-hide contract
+- A settings trigger button or icon in the UI, positioned analogously to `LearnAnchor`
+
+**During-session behavior:** SettingsDialog is disabled/hidden during `inSessionView`. Theme and locale changes apply immediately (CSS attr swap, string swap — no session-lifecycle dependency). Timbre and variant changes are stored immediately but the picker controls show a "applies next session" annotation or are disabled while running.
+
+---
+
+## Prefs Data Model
+
+All four features share one prefs object stored as the `prefs` subtree of the existing envelope. One read, one write, one coercer, one type.
 
 ```typescript
-type Phase = "inhale" | "exhale";
+// src/storage/prefs.ts
 
-type Plan = {
-  cycleMs: number;
-  inhaleMs: number;
-  exhaleMs: number;
-};
+export type ThemeId = 'default' | 'dark'          // expand as themes land
+export type TimbreId = 'bowl' | 'chime' | 'none'
+export type VisualVariantId = 'orb' | 'ring-pulse' | 'minimal'
+export type LocaleId = 'en'                        // expand per I18N-01
 
-export function getSessionFrame(elapsedMs: number, plan: Plan) {
-  const cyclePosition = elapsedMs % plan.cycleMs;
-  const cycleIndex = Math.floor(elapsedMs / plan.cycleMs);
-  const phase: Phase = cyclePosition < plan.inhaleMs ? "inhale" : "exhale";
-  const phaseElapsed = phase === "inhale"
-    ? cyclePosition
-    : cyclePosition - plan.inhaleMs;
-  const phaseDuration = phase === "inhale" ? plan.inhaleMs : plan.exhaleMs;
+export interface UserPrefs {
+  theme: ThemeId
+  timbre: TimbreId
+  variant: VisualVariantId
+  locale: LocaleId
+}
 
-  return {
-    cycleIndex,
-    phase,
-    phaseProgress: Math.min(1, phaseElapsed / phaseDuration),
-    cycleProgress: cyclePosition / plan.cycleMs,
-  };
+export const DEFAULT_PREFS: UserPrefs = {
+  theme: 'default',
+  timbre: 'bowl',
+  variant: 'orb',
+  locale: 'en',
 }
 ```
 
-### Pattern 2: Timestamp-Based Animation Loop
+## Envelope Schema Strategy
 
-**What:** Use `requestAnimationFrame` for visual updates, and calculate progress from the callback timestamp or `performance.now()` delta rather than incrementing by a fixed frame amount.
+**No STATE_KEY or STATE_VERSION bump needed for v1.1.**
 
-**When to use:** For the breathing animation and visible countdown.
-
-**Trade-offs:** `requestAnimationFrame` can pause in background tabs, but this is acceptable because state is recomputed from elapsed time when visible again. Audio scheduling should not depend on every animation frame firing.
-
-**Example:**
+The existing D-01 spread-then-override in `readEnvelope` preserves unknown top-level fields:
 
 ```typescript
-function startLoop(startedAt: number, onFrame: (elapsedMs: number) => void) {
-  let rafId: number | null = null;
-
-  const tick = (timestamp: DOMHighResTimeStamp) => {
-    onFrame(timestamp - startedAt);
-    rafId = requestAnimationFrame(tick);
-  };
-
-  rafId = requestAnimationFrame(tick);
-  return () => rafId !== null && cancelAnimationFrame(rafId);
-}
+return { ...p, version: onDiskVersion }
 ```
 
-### Pattern 3: Evented Boundary Cues, Not Continuous Audio
+Adding `prefs?: unknown` to the `Envelope` TypeScript interface is sufficient. The runtime already round-trips unknown fields. The write path stamps `STATE_VERSION = 1` on every write — the prefs subtree is carried along transparently.
 
+**Backward compatibility (v1.0.1 client reads v1.1 envelope):** The v1.0.1 `coerceSettings`/`coerceMute`/`coerceStats` only look at their respective subtrees; `prefs` is silently ignored. Settings and stats survive intact.
 
-**What:** Trigger generated audio cues only at inhale/exhale/session boundaries. Keep breathing guidance primarily visual, with audio optional and muted by default or clearly toggleable.
+**Forward compatibility (v1.1 client reads v1.0.1 envelope):** `prefs` is absent, so `coercePrefs(undefined)` returns `DEFAULT_PREFS`. No migration needed.
 
-**When to use:** For soft gongs/bowls without licensed assets.
+**Acceptable risk:** If a v1.0.1 browser overwrites a v1.1-written envelope, the `prefs` subtree is dropped (the v1.0.1 write path does not carry `prefs`). This is acceptable for v1.1: prefs are preferences (non-critical), and the next v1.1 read reconstructs from `DEFAULT_PREFS`.
 
-**Trade-offs:** Generated synthesis avoids asset licensing and downloads, but realistic bowl sounds require careful envelopes/filters. If v1 synthesis feels poor, use simpler pleasant chimes rather than over-engineering with sample libraries.
+**Anti-pattern to avoid:** Do NOT store prefs under a separate localStorage key (e.g., `hrv:prefs:v1`). That bypasses the STORAGE-01/02 forward-compat and refuse-downgrade guards, and the STORAGE-03 cross-tab listener only filters on `STATE_KEY`.
 
-**Example:**
+**If a future v1.2 feature requires a non-additive schema change** (e.g., renaming a prefs key), bump `STATE_VERSION` then and add migration logic in `readEnvelope` per the WR-05 dual-versioning convention documented in `storage.ts`.
 
-```typescript
-function playCue(context: AudioContext, when = context.currentTime) {
-  const osc = new OscillatorNode(context, { type: "sine", frequency: 432 });
-  const gain = new GainNode(context, { gain: 0 });
-  const filter = new BiquadFilterNode(context, { type: "lowpass", frequency: 1400 });
+## System Overview — v1.1 Architecture
 
-  gain.gain.setValueAtTime(0, when);
-  gain.gain.linearRampToValueAtTime(0.08, when + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, when + 2.5);
-
-  osc.connect(filter).connect(gain).connect(context.destination);
-  osc.start(when);
-  osc.stop(when + 2.6);
-}
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          UI Layer                                │
+│  BreathingShape(variant)   SettingsDialog   LearnDialog/others  │
+│  driven by liveFrame       prefs pickers    (unchanged v1.0)    │
+├─────────────────────────────────────────────────────────────────┤
+│                       App.tsx (orchestrator)                    │
+│  session + audio + prefs + dialog state                         │
+│  document.documentElement.dataset.theme = prefs.theme           │
+│  UI_STRINGS[prefs.locale] → passed to children                 │
+├─────────────────────────────────────────────────────────────────┤
+│                    Hooks Layer                                   │
+│  useSessionEngine    useAudioCues(timbre)    useWakeLock         │
+│  (unchanged)         timbreRef added         (unchanged)        │
+├─────────────────────────────────────────────────────────────────┤
+│                    Audio Layer                                   │
+│  cueSynth: scheduleInCueForTimbre / scheduleOutCueForTimbre     │
+│  audioEngine: createAudioEngine({ timbre, onStateChange })      │
+├─────────────────────────────────────────────────────────────────┤
+│              Domain Layer (UNTOUCHED)                           │
+│  breathingPlan  sessionMath  sessionController  settings        │
+├─────────────────────────────────────────────────────────────────┤
+│                   Storage Layer                                  │
+│  storage.ts: Envelope { version, settings?, mute?, stats?,      │
+│              prefs? }   ← prefs?: unknown field added           │
+│  prefs.ts (NEW): UserPrefs, coercePrefs, loadPrefs, savePrefs  │
+│  settings.ts  stats.ts  format.ts  (unchanged)                 │
+├─────────────────────────────────────────────────────────────────┤
+│              Content + Style Layer                              │
+│  theme.css: @theme {} + [data-theme='dark'] {} blocks          │
+│  uiStrings.ts (NEW): UI_STRINGS[locale]                        │
+│  learnContent.ts (unchanged for v1.1)                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Pattern 4: Best-Effort Capability Adapters
+## Data Flow Changes
 
-**What:** Treat audio, wake lock, and storage as optional browser capabilities with explicit failure states.
+### Prefs Load/Save Flow
 
-**When to use:** Mobile browser app where uninterrupted hands-off sessions matter, but APIs may be unavailable or blocked.
-
-**Trade-offs:** More fallback UI, but fewer broken sessions.
-
-## Data Flow
-
-### Session Setup Flow
-
-```text
-[User edits settings]
+```
+App mount
     ↓
-[SettingsForm]
-    ↓ validates and normalizes
-[Settings Store]
-    ├──→ [PersistenceService] → [localStorage]
-    └──→ [BreathingPlan] → derived cycle/phase durations preview
-```
-
-### Active Session Flow
-
-```text
-[User taps Start]
+loadPrefs() → coercePrefs(envelope.prefs) → DEFAULT_PREFS if absent
     ↓
-[SessionControls]
+prefs state = { theme, timbre, variant, locale }
+    ├──→ document.documentElement.dataset.theme = prefs.theme  (CSS gate)
+    ├──→ UI_STRINGS[prefs.locale] selected → passed to components
+    ├──→ prefs.variant passed to <BreathingShape variant={...} />
+    └──→ prefs.timbre available for audio.start() at next session start
+
+User changes preference in SettingsDialog
     ↓
-[Session Store: running + startedAt]
-    ├──→ [WakeLockService request]
-    ├──→ [AudioCueService unlock/resume if sound enabled]
-    └──→ [SessionEngine requestAnimationFrame loop]
-              ↓ elapsed time
-          [sessionMath.getSessionFrame]
-              ↓ derived phase state
-          ┌───────────────┬────────────────┬───────────────────┐
-          ↓               ↓                ↓
- [BreathingAnimation] [Countdown/Labels] [Boundary Cue Detector]
-                                           ↓
-                                     [AudioCueService]
+onPrefsChange(next) → setPrefs(next) → savePrefs(next) → writeEnvelope
+    ├──→ Theme: document.documentElement.dataset.theme = next.theme (immediate)
+    ├──→ Locale: UI_STRINGS[next.locale] re-selected (immediate)
+    └──→ Timbre / variant: stored; applies at next session start only
 ```
 
-### Completion Flow
+### Timbre Session-Start Flow
 
-```text
-[SessionEngine detects elapsed >= configured duration]
+```
+onStartClick (user gesture)
     ↓
-[Session Store: completed]
-    ├──→ [StatsService update completed sessions/minutes]
-    │       ↓
-    │   [PersistenceService] → [localStorage]
-    ├──→ [AudioCueService optional final cue]
-    └──→ [WakeLockService release]
+audio.start(plan, prefs.timbre)
+    ↓
+useAudioCues: timbreRef.current = timbre (captured synchronously)
+    ↓
+createAudioEngine({ timbre, onStateChange })
+    ↓
+scheduleLeadIn → scheduleInCueForTimbre(timbre, ...)
+scheduleNextCue → dispatch to cueSynth by timbre
+    ↓
+[iOS lock-screen fires mid-session]
+    ↓
+reconstructEngine reads timbreRef.current (stable for session duration)
+    → new createAudioEngine({ timbre: timbreRef.current, ... })
 ```
 
-### State Management
+### Theme Data Flow
 
-```text
-[Settings Store] ─────┐
-                      ├──→ [Derived BreathingPlan] ──→ [SessionEngine]
-[Session Store] ──────┘                                  ↓
-          ↑                                       [Derived Frame State]
-          │                                              ↓
-    [UI Actions] ←────────────────────── [UI Components + Audio/Wake effects]
-
-[Stats Store] ←── [Completion Event only] ── [SessionEngine]
+```
+prefs.theme change
+    ↓
+document.documentElement.dataset.theme = next.theme
+    ↓
+CSS: [data-theme='dark'] rebinds --color-breathing-bg, --color-orb-*, etc.
+    ↓
+All components pick up new values via CSS variable inheritance
+    ↓ (zero React re-renders for visual token changes)
 ```
 
-### Key Data Flows
+## Dual-Anchor + Reconstruction Contract Safety
 
-1. **Settings persistence:** UI change → validation → settings store → localStorage. Settings should be persisted immediately but safely; invalid values never reach the store.
-2. **Timing derivation:** session start timestamp + plan → elapsed time → phase/progress. No component should independently decide when inhale/exhale starts.
-3. **Audio cueing:** derived phase boundary crossing → cue event → Web Audio graph. Audio service should not own breathing state.
-4. **Stats recording:** completion event → stats update → localStorage. Avoid recording continuously every frame.
-5. **Wake lock lifecycle:** start → request; visibility change → possibly reacquire; stop/complete → release.
+The Phase 3 dual-anchor scheduler and Phase 5.1 reconstruction contracts are preserved unchanged by all v1.1 features:
+
+- **Theme changes:** CSS-only. No audio or engine interaction.
+- **Visual variant changes:** React render output only. No timing or audio path.
+- **Locale/language changes:** String swaps. No timing or audio path.
+- **Timbre changes:** Captured at session start. Reconstruction reads `timbreRef.current` (stable for session duration) using the same synchronous-before-await capture as `mutedRef.current`.
+
+The one new reconstruction obligation: `reconstructEngine` must capture and replay `timbreRef.current` the same way it already captures and replays `mutedRef.current`. This is a three-line addition — see the timbre section above.
 
 ## Suggested Build Order
 
-1. **Domain timing model first**
-   - Build `settings`, `breathingPlan`, and `sessionMath` with tests for BPM 1-7, 0.5 increments, ratios, finite durations, and unlimited mode.
-   - Dependency: none. This unlocks every later component.
-2. **Basic session engine without polish**
-   - Implement start/pause/resume/stop/complete using timestamp-based elapsed time.
-   - Dependency: domain timing model.
-3. **Minimal visual guidance**
-   - Render text labels and a simple shape using derived `phaseProgress`.
-   - Dependency: session engine. Do this before advanced animation so timing can be user-tested early.
-4. **Settings UI + persistence**
-   - Connect controls to validated settings and localStorage schema.
-   - Dependency: domain settings model; can proceed in parallel with basic visuals after timing math is stable.
-5. **Generated audio cues**
-   - Add Web Audio service and boundary detector; handle mute and audio unlock on user gesture.
-   - Dependency: session engine phase boundary events.
-6. **Local stats**
-   - Record only completed sessions/minutes; display basic totals/streak-like local summaries only if they stay claim-free.
-   - Dependency: completion event.
-7. **Polish, responsive layout, and wake lock**
-   - Improve animation, mobile ergonomics, reduced-motion handling, and best-effort wake lock.
-   - Dependency: stable session UX. Wake lock should not be on the critical path because support/rejection varies.
-8. **Resource links and content/legal review**
-   - Add Forrest Knutson links and claim-safe language.
-   - Dependency: static content; can happen late, but legal/product wording should be reviewed before launch.
+### Phase A — Inner-ring UX symmetry (warm-up)
 
-## Scaling Considerations
+Smallest change, no new architecture, validates green-gate posture before the broader v1.1 changes. Issue B is a genuine UX bug.
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-1k users | Static client app hosted on a CDN or simple static host. No backend, no accounts, no analytics required. |
-| 1k-100k users | Add service worker/offline caching only if reliability demand emerges. Keep stats local. Monitor bundle size and mobile performance. |
-| 100k+ users | Still no backend needed for core product. Consider optional privacy-preserving telemetry only with explicit product decision; avoid undermining local-only promise. |
+1. Investigate exact inner-ring arrival timing in `src/components/BreathingShape.tsx`
+2. Fix inner-ring coincidence with orb edge at `MIN_SCALE`; mirror in `BreathingShapeLeadIn` (D-22)
+3. Possibly adjust `.orb-ring--inner` CSS in `src/styles/theme.css`
+4. Green-gate: `tsc && lint && build && test`
 
-### Scaling Priorities
+### Phase B — Envelope schema + prefs foundation
 
-1. **First bottleneck:** Mobile UX/performance, not server load. Optimize animation compositing and reduce main-thread work during sessions.
-2. **Second bottleneck:** Audio consistency across browsers. Keep the audio graph simple and degrade gracefully to no sound.
-3. **Third bottleneck:** Product complexity. Adding accounts, cloud stats, wearable HRV sensors, or medical-style outcomes would change architecture and regulatory/privacy risk; defer.
+All four customization features write to `prefs`. Establishing the type, coercer, load/save, and `DEFAULT_PREFS` first means CUST-01/02/03/I18N-01 each build against a stable foundation.
 
-## Anti-Patterns
+1. Add `prefs?: unknown` to `Envelope` in `src/storage/storage.ts`
+2. Create `src/storage/prefs.ts`: `UserPrefs`, `DEFAULT_PREFS`, `coercePrefs`, `loadPrefs`, `savePrefs`
+3. Re-export from `src/storage/index.ts`
+4. Wire `loadPrefs()` at App mount (no UI yet — just prefs state)
+5. Tests: `src/storage/prefs.test.ts` — coerce fallback, round-trip, forward-compat with missing `prefs` field
 
-### Anti-Pattern 1: Multiple Competing Timers
+### Phase C — Settings UI surface (SettingsDialog)
 
-**What people do:** Use `setInterval` for countdown, CSS animation durations for visuals, and separate timeouts for sounds.  
-**Why it's wrong:** Small drift accumulates; pause/resume becomes inconsistent; users notice when sound and visual breath cues disagree.  
-**Do this instead:** Derive all session state from a single elapsed-time model and let UI/audio subscribe to phase boundary events.
+The dialog shell is needed before per-feature toggles can be tested end-to-end. Build with stub pickers first.
 
-### Anti-Pattern 2: Frame-Counting Instead of Timestamp Math
+1. `src/components/SettingsDialog.tsx` — native `<dialog>` with `modal-fade`, stub controls
+2. App.tsx wiring: `settingsDialogOpen` state, open/close handlers, disabled during `inSessionView`
+3. Settings trigger button in the UI
+4. Prefs write path: SettingsDialog callbacks → App `setPrefs` → `savePrefs`
 
-**What people do:** Increment progress by `1 / 60` or assume every animation frame arrives at 60Hz.  
-**Why it's wrong:** Modern displays commonly use 75/120/144Hz; browsers pause animation frames in background tabs; high-refresh screens make fixed increments run too fast.  
-**Do this instead:** Use `requestAnimationFrame` timestamps or `performance.now()` deltas.
+### Phase D — Theme tokens (CUST-01)
 
-### Anti-Pattern 3: Browser APIs Embedded Directly in Components
+CSS-only change with immediate visual feedback. Low risk of breaking existing tests.
 
-**What people do:** Call `localStorage`, `AudioContext`, and `navigator.wakeLock` directly from UI components.  
-**Why it's wrong:** Error handling becomes scattered, tests become brittle, and unsupported-browser behavior is inconsistent.  
-**Do this instead:** Wrap each API in a small service with feature detection and typed return states.
+1. Define `ThemeId` type in `src/storage/prefs.ts` (add to Phase B work)
+2. Add theme token blocks to `src/styles/theme.css`
+3. App.tsx reactive effect: `document.documentElement.dataset.theme = prefs.theme`
+4. SettingsDialog: theme picker controls wired to prefs
 
-### Anti-Pattern 4: Overbuilding Biofeedback Architecture in v1
+### Phase E — Visual variants (CUST-03)
 
-**What people do:** Add camera pulse detection, wearable integrations, cloud accounts, or HRV scoring before the guided session loop is excellent.  
-**Why it's wrong:** The stated v1 value is hands-off guided breathing; sensors/accounts introduce privacy, accuracy, support, and possible medical-claims complexity.  
-**Do this instead:** Build a precise, local-only breathing session app. Leave sensor integrations as a future architecture spike.
+Component-only change. Builds on prefs foundation and SettingsDialog. No audio changes.
 
-### Anti-Pattern 5: Medicalized Copy or Stats Coupled to Health Claims
+1. Rename `BreathingShapeBody` → `BreathingShapeOrb` (the default variant)
+2. Add `variant` prop to `BreathingShape` public interface
+3. Implement 1–2 additional variants driven by `frame.phaseProgress`
+4. App.tsx: pass `prefs.variant` to `<BreathingShape>`
+5. SettingsDialog: variant picker
 
-**What people do:** Name stats “HRV improvement,” “therapy minutes,” or imply diagnosis/treatment.  
-**Why it's wrong:** It conflicts with the project constraint to avoid medical claims and raises user-trust/regulatory risk.  
-**Do this instead:** Keep stats descriptive: sessions completed, minutes practiced, preferred settings.
+### Phase F — Audio timbres (CUST-02)
 
-## Integration Points
+Most technically involved because of the reconstruction replay requirement.
 
-### External Services
+1. Add `scheduleInCueForTimbre`/`scheduleOutCueForTimbre` dispatch to `src/audio/cueSynth.ts`
+2. Implement at least one additional timbre (e.g., `'chime'`)
+3. Add `timbre` option to `createAudioEngine` in `src/audio/audioEngine.ts`
+4. Add `timbreRef` to `useAudioCues`; thread timbre through `start()` and `reconstructEngine()`
+5. App.tsx: pass `prefs.timbre` to `audio.start(plan, prefs.timbre)` in `onStartClick`
+6. SettingsDialog: timbre picker
+7. Tests: add timbre-dispatch unit tests in `src/audio/cueSynth.test.ts`
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Forrest Knutson content | Static external links opened normally | Prefer simple links over embedded third-party widgets; avoids tracking/scripts and asset licensing issues. |
-| Hosting/CDN | Static app deployment | Core app has no server dependency. HTTPS is required for wake lock and generally expected for modern browser capabilities. |
+### Phase G — Language switching (I18N-01)
 
-### Browser APIs
+Widest surface area (touches every rendered string) but lowest technical risk. Do this last so string refactoring does not conflict with structural changes from earlier phases.
 
-| API | Integration Pattern | Notes |
-|-----|---------------------|-------|
-| `requestAnimationFrame` | Animation loop service/hook | Official MDN docs note callbacks generally match display refresh and may pause in background tabs; use timestamp math. |
-| Web Audio API | Audio service | Official MDN docs describe modular audio graphs and precise scheduling; use `AudioContext`, oscillator/source nodes, filters, and gain envelopes. |
-| Web Storage API / `localStorage` | Persistence adapter | MDN notes localStorage persists by origin but is synchronous and private-mode data may be cleared at close. Keep payloads tiny. |
-| Screen Wake Lock API | Optional capability adapter | MDN marks it Baseline 2025 and secure-context only; requests can be rejected or released, so UI must tolerate absence. |
+1. Create `src/content/uiStrings.ts` with `UI_STRINGS` record keyed by `LocaleId`
+2. Audit all hardcoded strings in components
+3. Thread locale strings from App
+4. SettingsDialog: locale picker
+5. Tests: each locale entry is complete and non-empty
 
-### Internal Boundaries
+## Component Responsibilities — v1.1 Changes
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| UI ↔ Domain | Function calls and typed view models | Domain remains pure and framework-independent. |
-| SessionEngine ↔ Animation | Derived frame state subscription | Animation never mutates timing state. |
-| SessionEngine ↔ AudioCueService | Boundary events (`inhaleStart`, `exhaleStart`, `sessionEnd`) | Audio does not run the session. |
-| SessionEngine ↔ StatsService | Completion event | Prevent duplicate writes with idempotent completion handling. |
-| Stores ↔ PersistenceService | Serialized schema with version | Enables migration if future i18n/preferences expand settings. |
-| Session lifecycle ↔ WakeLockService | Start/stop/visibility events | Wake lock is best-effort; session must continue if unavailable. |
+| Component | v1.0.1 Responsibility | v1.1 Change |
+|-----------|----------------------|-------------|
+| `BreathingShape` | Dispatch to body/lead-in | Dispatch by `variant` prop; inner-ring fix |
+| `BreathingShapeBody` | Single orb implementation | Renamed `BreathingShapeOrb`; behavior unchanged |
+| `SettingsDialog` (NEW) | n/a | Theme / timbre / variant / locale pickers |
+| `App.tsx` | Session orchestration | Prefs state; theme attr setter; timbre pass-through |
+| `cueSynth.ts` | Bowl cue generation | Timbre dispatch table added above existing functions |
+| `audioEngine.ts` | Stateful AC lifecycle | `timbre` option on `createAudioEngine` |
+| `useAudioCues.ts` | Audio hook | `timbreRef` added; timbre threaded through `start`/`reconstructEngine` |
+| `storage/prefs.ts` (NEW) | n/a | `UserPrefs` type, coerce, load, save |
+| `storage/storage.ts` | Envelope r/w | `prefs?: unknown` field added to `Envelope` interface |
+| `content/uiStrings.ts` (NEW) | n/a | Locale-keyed UI string records |
+| `styles/theme.css` | Single default token set | Per-theme override blocks |
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Mid-Session Timbre Switch
+
+**What goes wrong:** Applying a timbre change immediately mid-session requires either AudioContext reconstruction (breaks dual-anchor, forces a new lead-in) or a parallel audio graph (unjustified complexity).
+
+**Prevention:** Disable the timbre picker in SettingsDialog while `inSessionView` is true, mirroring how BPM/ratio controls are disabled in `SettingsForm`. Store the selection immediately; apply at next `audio.start()`.
+
+### Anti-Pattern 2: Theme Provider React Context
+
+**What goes wrong:** A `ThemeContext` with a React Provider causes all subscribed components to re-render on theme change — unnecessary because theme tokens are CSS variables that components already read via `var(--token)`.
+
+**Prevention:** Use `document.documentElement.dataset.theme` to gate CSS `[data-theme]` selectors. React state holds the selected `ThemeId` for persistence and picker binding; the DOM attribute is the CSS mechanism. No React Context needed.
+
+### Anti-Pattern 3: Separate I18N Framework for v1.1
+
+**What goes wrong:** Adding `react-i18next` or `formatjs` at English-plus-one-locale stage adds ~50 KB bundle weight, build configuration, and a new mental model for what is a typed-record lookup.
+
+**Prevention:** Use the `learnContent.ts` section-keyed pattern extended to UI strings. The migration path is mechanical: `strings.button.start` call sites become `t('button.start')` when a framework is warranted.
+
+### Anti-Pattern 4: Visual Variant Owns Its Own Timer
+
+**What goes wrong:** A variant using CSS `animation-duration` tied to BPM creates a second competing timer. At 5.5 BPM the phase is ~5.45 s; a hardcoded `5s` animation drifts immediately and users notice when visual and audio cues diverge.
+
+**Prevention:** All variants MUST derive phase-accurate motion from `frame.phaseProgress` (prop or CSS custom property `--phase-progress`). CSS animations on variants are only for decorative effects that do not need to be phase-accurate.
+
+### Anti-Pattern 5: Prefs in a Separate localStorage Key
+
+**What goes wrong:** A separate key (e.g., `hrv:prefs:v1`) bypasses the STORAGE-01/02 forward-compat and refuse-downgrade guards, and requires a second STORAGE-03 cross-tab listener.
+
+**Prevention:** Store all prefs inside the existing `STATE_KEY` envelope under the `prefs` subtree. The D-01 spread-then-override in `readEnvelope` handles additive top-level fields transparently.
+
+## Modified Files Summary
+
+| File | Change | Risk |
+|------|--------|------|
+| `src/components/BreathingShape.tsx` | Inner-ring fix; variant dispatch | LOW |
+| `src/styles/theme.css` | Theme override blocks; possibly inner-ring CSS | LOW |
+| `src/audio/cueSynth.ts` | Timbre dispatch table | MEDIUM |
+| `src/audio/audioEngine.ts` | `timbre` option on `createAudioEngine` | MEDIUM |
+| `src/hooks/useAudioCues.ts` | `timbreRef`; thread timbre through `start`/`reconstructEngine` | MEDIUM |
+| `src/storage/storage.ts` | Add `prefs?: unknown` to `Envelope` | LOW |
+| `src/storage/index.ts` | Re-export `prefs.ts` | LOW |
+| `src/app/App.tsx` | Prefs state; theme attr setter; timbre pass-through; SettingsDialog wiring | MEDIUM |
+
+## New Files
+
+| File | Purpose |
+|------|---------|
+| `src/storage/prefs.ts` | `UserPrefs` type, `coercePrefs`, `loadPrefs`, `savePrefs` |
+| `src/components/SettingsDialog.tsx` | Native `<dialog>` with preference pickers |
+| `src/content/uiStrings.ts` | Locale-keyed UI string records |
+
+## Untouched Files
+
+`src/domain/` (all), `src/hooks/useSessionEngine.ts`, `src/hooks/useWakeLock.ts`, `src/hooks/usePrefersReducedMotion.ts`, `src/storage/settings.ts`, `src/storage/stats.ts`, `src/storage/format.ts`, `src/content/learnContent.ts`, `src/components/SettingsForm.tsx`, `src/components/SettingsStepper.tsx`, `src/components/SessionControls.tsx`, `src/components/SessionReadout.tsx`, `src/components/StatsFooter.tsx`, `src/components/LearnAnchor.tsx`, `src/components/LearnDialog.tsx`, `src/components/ResetStatsDialog.tsx`, `src/components/EndSessionDialog.tsx`, `src/main.tsx`
 
 ## Sources
 
-- MDN, `Window.requestAnimationFrame()` — Baseline widely available; callbacks generally match display refresh; paused in background tabs; timestamp should be used to avoid high-refresh speed errors. Last modified 2025-12-26. https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
-- MDN, Web Audio API — Baseline widely available; audio operations happen inside an `AudioContext` with modular audio-node routing; supports precise timing/scheduling. Last modified 2026-05-06. https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
-- MDN, Web Storage API — Baseline widely available; `localStorage` persists by origin; operations are synchronous; private browsing treats localStorage like sessionStorage. Last modified 2025-02-22. https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API
-- MDN, Screen Wake Lock API — Baseline 2025; secure-context only; requests may be rejected or automatically released; reacquire on visibility changes if needed. Last modified 2025-07-03. https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API
+- Direct codebase inspection at HEAD `3bdb69b`: `src/styles/theme.css`, `src/storage/storage.ts`, `src/audio/cueSynth.ts`, `src/audio/audioEngine.ts`, `src/hooks/useAudioCues.ts`, `src/components/BreathingShape.tsx`, `src/app/App.tsx`, `src/content/learnContent.ts`, `src/domain/settings.ts`, `src/storage/settings.ts`, `src/storage/index.ts`, `src/index.css`, `vite.config.ts`, `package.json`
+- `.planning/PROJECT.md` — v1.1 milestone scope, envelope D-01 spread-then-override decision, strict baseline invariants, WR-05 dual-versioning convention
+- `.planning/milestones/v1.0-research/ARCHITECTURE.md` — v1.0 architecture intent (historical context)
+- Tailwind CSS v4 CSS-first configuration — `@tailwindcss/vite ^4.3.0` in `package.json`; no `tailwind.config.js` file confirms v4 CSS-first mode; `@theme {}` and per-selector override blocks are the v4 token mechanism
 
 ---
-*Architecture research for: HRV breathing / guided breathing web app*  
-*Researched: 2026-05-08*
+*Architecture research for: HRV breathing webapp v1.1 customization integration*
+*Researched: 2026-05-12*

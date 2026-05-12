@@ -1,154 +1,410 @@
-# Stack Research
+# Stack Research — v1.1 Customization Additions
 
-**Domain:** Responsive HRV breathing / guided breathing web app
-**Researched:** 2026-05-08
-**Confidence:** HIGH for web platform stack and versions; MEDIUM for “standard 2025” ecosystem fit because this is a small consumer wellness app rather than a framework-prescribed domain.
+**Domain:** HRV breathing web app — customization layer (themes, audio timbres, visual variants, i18n)
+**Researched:** 2026-05-12
+**Baseline:** React 18→19 + Vite 8 + TypeScript strict + Tailwind CSS 4.3.0 + Web Audio API + Vitest (shipped, do not re-research)
+**Scope:** Stack ADDITIONS and DECISIONS for v1.1 only. Everything in this doc layers on top of the v1.0.1 green-gate baseline.
+**Overall Confidence:** HIGH for Tailwind v4 theming (official docs + verified pattern); HIGH for audio timbre (native Web Audio, no deps); MEDIUM-HIGH for i18n (Lingui 6.0 is very new, known Vite integration friction)
 
-## Recommended Stack
+---
 
-### Core Technologies
+## 1. Themes (CUST-01)
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| React | 19.2.6 | Component UI for session screen, settings, history, and learning hub | Use React because the app needs polished stateful UI but not server rendering. React 19 is current on npm and Context7 shows official docs for React 19.2.0. **Confidence: HIGH.** |
-| TypeScript | 6.0.3 | Typed session math, settings schema, storage records, and audio/animation APIs | Precise timing apps benefit from explicit units and discriminated session states. Use branded/helper types for `seconds`, `bpm`, `ratio`, and `phase`. **Confidence: HIGH.** |
-| Vite | 8.0.11 | Build tool and dev server for a static SPA | Use Vite instead of a full-stack framework because this app is local-only, has no accounts, and can be deployed as static files. Context7 docs verify Vite’s React/TypeScript pattern and strict TS config. **Confidence: HIGH.** |
-| @vitejs/plugin-react | 6.0.1 | React integration for Vite | Official Vite React plugin is the standard path for React + Vite. Keep config minimal. **Confidence: HIGH.** |
-| Tailwind CSS | 4.3.0 | Responsive styling, calming design tokens, dark mode, spacing/typography | Tailwind v4 with the official Vite plugin is a fast zero-runtime way to build responsive UI without adopting a component framework. Official Tailwind docs verify Vite integration via `@tailwindcss/vite`; npm reports 4.3.0 current. **Confidence: HIGH.** |
-| @tailwindcss/vite | 4.3.0 | Tailwind compiler integration | Tailwind’s docs call the Vite plugin the most seamless integration path. **Confidence: HIGH.** |
-| Native Web Audio API | Browser baseline; no npm package | Generated gong/bowl-like cues, envelopes, filters, gain, and precise cue scheduling | Use Web Audio directly. MDN verifies it is widely available and supports high-precision, low-latency timing, oscillators, buffers, filters, gain nodes, and scheduled parameters. This avoids unlicensed assets and avoids overweight music libraries. **Confidence: HIGH.** |
-| Native `requestAnimationFrame` + `performance.now()` / RAF timestamp | Browser baseline; no npm package | Smooth synchronized breathing animation | Use RAF for visual updates and derive animation phase from a monotonic session clock, not React render cadence. MDN warns to use timestamps so animations do not run faster on high-refresh screens. **Confidence: HIGH.** |
-| Native localStorage + IndexedDB | Browser baseline; no npm package for localStorage; Dexie optional below | Local-only persisted settings and history | Persist settings through Zustand/localStorage. Use IndexedDB only if history/export grows beyond simple totals. This matches the no-account/no-backend constraint. **Confidence: HIGH.** |
+### Decision: `@theme inline` + `@layer base` per-theme CSS variable overrides, switched via `data-theme` on `<html>`
 
-### Supporting Libraries
+**No new npm dependency required.**
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| zustand | 5.0.13 | App/session/settings state | Use for global app state and persisted settings. Context7 verifies `persist` middleware with versioned migrations to localStorage. Avoid putting the high-frequency timer tick in React/Zustand state; store session config/status only. **Confidence: HIGH.** |
-| zod | 4.4.3 | Runtime validation for settings/history migrations | Use to validate localStorage/IndexedDB data before accepting it. This prevents corrupted user settings from breaking session start. **Confidence: HIGH for fit; version from npm.** |
-| react-router | 7.15.0 | Client-side routes: `/`, `/session`, `/settings`, `/history`, `/learn` | Use if the learning hub and settings/history should have shareable URLs. If v1 is a single-screen app with modal panels, defer this. **Confidence: MEDIUM.** |
-| motion | 12.38.0 | Non-critical UI transitions and route/panel polish | Use Motion for buttons, panels, onboarding, and learning hub transitions. Do **not** use it as the authoritative breath timing engine; authoritative progress should come from the session clock. Context7 verifies the current Motion React import pattern from `motion/react`. **Confidence: MEDIUM-HIGH.** |
-| dexie | 4.4.2 | IndexedDB wrapper for session history | Use only if storing per-session history records, streaks, exports, or future richer analytics. Context7 verifies schema definitions and transactions. For v1 with only totals/recent sessions, localStorage may be enough. **Confidence: HIGH for IndexedDB use; MEDIUM for necessity.** |
-| lucide-react | 1.14.0 | Small SVG icon set | Use for accessible UI icons: mute, settings, timer, history, info, external links. Avoid icon-heavy UI; breathing screen should remain calm. **Confidence: MEDIUM.** |
-| @fontsource/inter | 5.2.8 | Self-hosted UI font | Use if the design wants a reliable, readable sans-serif without third-party font requests. Keeps privacy/local-only posture cleaner than loading Google Fonts. **Confidence: MEDIUM.** |
-| vite-plugin-pwa | 1.3.0 | Optional installable/offline app | Defer unless offline installability is explicitly in scope. Add later for service worker caching of static assets and docs pages. **Confidence: MEDIUM.** |
+Tailwind v4 (already installed at 4.3.0) is CSS-first. Theme switching uses two directives already available in the existing `src/styles/theme.css` + `src/index.css` setup:
 
-### Development Tools
+| Directive | Role |
+|-----------|------|
+| `@theme inline` | Declares semantic tokens as CSS custom property aliases. The `inline` keyword makes generated utilities reference the aliased var at the *use site*, not the declaration site — required for runtime reassignment to propagate correctly. |
+| `@layer base [data-theme="X"] { ... }` | Overrides the aliased CSS vars per named palette. No utility class changes needed in TSX. |
+| `@custom-variant dark (...)` | Wires the `dark:` Tailwind variant to the `data-theme="dark"` attribute if dark:utility classes are used. Not needed if all theme tokens are fully semantic and never use `dark:` inline. |
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| Vitest 4.1.5 | Unit tests for breathing math, ratio conversion, phase transitions, storage migrations | Prioritize deterministic tests for `bpm -> cycleMs`, inhale/exhale split, unlimited sessions, pause/resume, and cue schedule. |
-| Playwright 1.59.1 | Browser/E2E tests across Chromium/WebKit/Firefox | Important for mobile Safari behavior, audio unlock after user gesture, responsive layout, and long-running session stability. |
-| @testing-library/react 16.3.2 | Component tests | Use for settings forms, validation errors, and learning hub link rendering. Do not test timer precision through React component tests. |
-| jsdom 29.1.1 | DOM environment for Vitest | Good for UI/storage tests; mock Web Audio and RAF explicitly. |
-| ESLint 10.3.0 | Static analysis | Use strict TypeScript, React hooks rules, accessibility linting if configured. |
-| Prettier 3.8.3 | Formatting | Keep formatting automated; no domain-specific caveats. |
-| axe-core 4.11.4 | Accessibility checks | Use with Playwright or component tests to catch color contrast, labels, and dialog issues. |
+**Pattern (verified against official Tailwind v4 docs + multiple community posts):**
 
-## Installation
+```css
+/* src/styles/theme.css — extends existing @theme block */
 
-```bash
-# Scaffold
-npm create vite@latest hrv-breathing -- --template react-ts
-cd hrv-breathing
+/* Step 1: declare primitive palette (keep existing colors as defaults) */
+@theme {
+  /* existing tokens preserved */
+  --color-breathing-bg: #f2fbf7;
+  --color-breathing-accent: #0f766e;
+  /* ... rest unchanged */
+}
 
-# Core
-npm install react@19.2.6 react-dom@19.2.6 zustand@5.0.13 zod@4.4.3
-npm install tailwindcss@4.3.0 @tailwindcss/vite@4.3.0
+/* Step 2: declare semantic aliases via @theme inline */
+@theme inline {
+  --color-surface: var(--theme-surface);
+  --color-accent:  var(--theme-accent);
+  --color-text:    var(--theme-text);
+  /* orb gradient tokens mapped the same way */
+}
 
-# Routing / polish / optional storage
-npm install react-router@7.15.0 motion@12.38.0 dexie@4.4.2 lucide-react@1.14.0 @fontsource/inter@5.2.8
+/* Step 3: define per-theme values in @layer base */
+@layer base {
+  /* default / light */
+  :root, [data-theme="light"] {
+    --theme-surface: #f2fbf7;
+    --theme-accent:  #0f766e;
+    --theme-text:    #0f172a;
+  }
 
-# Dev dependencies
-npm install -D vite@8.0.11 @vitejs/plugin-react@6.0.1 typescript@6.0.3 vitest@4.1.5 playwright@1.59.1 @testing-library/react@16.3.2 jsdom@29.1.1 eslint@10.3.0 prettier@3.8.3 axe-core@4.11.4
+  [data-theme="dark"] {
+    --theme-surface: #0f172a;
+    --theme-accent:  #2dd4bf;
+    --theme-text:    #f1f5f9;
+  }
+
+  [data-theme="dusk"] {         /* example third palette */
+    --theme-surface: #1e1b2e;
+    --theme-accent:  #a78bfa;
+    --theme-text:    #e2e8f0;
+  }
+}
 ```
 
-Minimal `vite.config.ts` pattern:
+```tsx
+// Theme switching — zero React library needed
+function setTheme(name: 'light' | 'dark' | 'dusk') {
+  document.documentElement.setAttribute('data-theme', name)
+  localStorage.setItem('theme', name)
+}
+```
+
+**Why `data-theme` attribute, not `.dark` class:**
+- The project already uses `data-phase` attributes for orb state gating. `data-theme` is consistent with that idiom.
+- Avoids CSS specificity fights between class-based selectors and Tailwind utilities.
+- Supports N palettes (not just binary dark/light) without adding more class names.
+- The Tailwind v4 official docs show `[data-theme=dark]` as an explicit first-class example.
+
+**Why `@theme inline`, not plain `@theme`:**
+The Tailwind v4 docs distinguish: plain `@theme` resolves variable references at the *definition* site (`:root`), so overriding the underlying CSS var in `@layer base` has no effect on the utility class output. `@theme inline` substitutes the variable *reference* directly into the utility's generated CSS, meaning `[data-theme="dark"]` overrides propagate correctly at runtime. This is the critical correctness requirement for multi-palette switching.
+
+**FOUC prevention (no flash of wrong theme on load):**
+```html
+<!-- index.html — inline script before </head> prevents FOUC -->
+<script>
+  (function(){
+    var t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+```
+This is the same pattern as the existing localStorage envelope — no React dependency, fires synchronously before paint.
+
+**TypeScript for theme names:**
+```ts
+// src/domain/theme.ts  (pure domain — no React imports)
+export type ThemeName = 'light' | 'dark' | 'dusk'
+export const THEME_NAMES: readonly ThemeName[] = ['light', 'dark', 'dusk']
+export function isValidTheme(v: unknown): v is ThemeName {
+  return THEME_NAMES.includes(v as ThemeName)
+}
+```
+Follows the existing `isValidBpm` / `isValidRatio` pattern in `src/domain/settings.ts`. Plugs into the localStorage coerce-and-fallback envelope naturally.
+
+**No new npm packages needed for theming.**
+
+---
+
+## 2. Audio Timbres (CUST-02)
+
+### Decision: Oscillator preset objects — pure Web Audio, zero new dependencies
+
+The existing `cueSynth.ts` already implements a sophisticated multi-partial bowl synthesis engine with sustain-floor logic and per-cue disconnect cleanup. Audio timbre switching means offering alternative synthesis "recipes" that the same scheduling API (`scheduleInCue`, `scheduleOutCue`) can dispatch to.
+
+**Architecture: preset record + dispatcher**
 
 ```ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+// src/audio/timbres.ts  — pure, zero React imports
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-})
+export type TimbreName = 'bowl' | 'sine' | 'bell'
+
+export interface TimbrePreset {
+  readonly name: TimbreName
+  readonly label: string         // display name for settings UI
+  readonly fundamentalHzIn: number
+  readonly fundamentalHzOut: number
+  readonly partials: ReadonlyArray<{ ratio: number; gain: number }>
+  readonly decayTauIn: number    // setTargetAtTime time constant — inhale
+  readonly decayTauOut: number   // exhale
+  readonly filterFreqHz: number
+  readonly filterQ: number
+  readonly peakGain: number
+  readonly oscillatorType: OscillatorType  // 'sine' | 'triangle' | 'sawtooth' | 'square'
+  readonly periodicWave?: { real: Float32Array; imag: Float32Array } // custom waveform
+}
+
+export const TIMBRE_PRESETS: Readonly<Record<TimbreName, TimbrePreset>> = {
+  bowl: {
+    name: 'bowl',
+    label: 'Singing bowl',
+    fundamentalHzIn: 440,         // A4
+    fundamentalHzOut: 220,        // A3
+    partials: [
+      { ratio: 1.0,  gain: 1.0 },
+      { ratio: 2.76, gain: 0.4 },
+      { ratio: 5.4,  gain: 0.15 },
+    ],
+    decayTauIn: 1.4,
+    decayTauOut: 1.8,
+    filterFreqHz: 3000,
+    filterQ: 0.5,
+    peakGain: 0.18,
+    oscillatorType: 'sine',
+  },
+  sine: {
+    name: 'sine',
+    label: 'Soft tone',
+    fundamentalHzIn: 528,         // slightly different pitch feel
+    fundamentalHzOut: 264,
+    partials: [{ ratio: 1.0, gain: 1.0 }],  // pure sine, no overtones
+    decayTauIn: 0.8,
+    decayTauOut: 1.2,
+    filterFreqHz: 8000,
+    filterQ: 0.3,
+    peakGain: 0.15,
+    oscillatorType: 'sine',
+  },
+  bell: {
+    name: 'bell',
+    label: 'Bell',
+    fundamentalHzIn: 523,         // C5
+    fundamentalHzOut: 261,        // C4
+    partials: [
+      { ratio: 1.0,  gain: 1.0 },
+      { ratio: 2.0,  gain: 0.6 },
+      { ratio: 3.0,  gain: 0.25 },
+      { ratio: 4.16, gain: 0.1 },  // inharmonic partial — bell character
+    ],
+    decayTauIn: 0.6,
+    decayTauOut: 0.9,
+    filterFreqHz: 6000,
+    filterQ: 1.2,
+    peakGain: 0.14,
+    oscillatorType: 'sine',
+  },
+}
+
+export const DEFAULT_TIMBRE: TimbreName = 'bowl'
+
+export function isValidTimbre(v: unknown): v is TimbreName {
+  return Object.keys(TIMBRE_PRESETS).includes(v as string)
+}
 ```
 
-## Alternatives Considered
+**Why oscillator presets, not a sample bank:**
+- Zero asset pipeline additions. No `public/audio/*.mp3` files, no fetch/decode overhead, no licensing questions.
+- Fully consistent with the v1.0 decision: "Use built-in tones with mute support. Avoid sourcing audio assets" (D-04).
+- Preset parameters (fundamentals, partials, decay) are pure data — testable with `FakeAudioContext`.
+- The existing `scheduleBowlCue` function already receives `fundamentalHz` and `decayTau` — it can be parameterized to accept a `TimbrePreset` with minimal surgery.
+- `PeriodicWave` / `createPeriodicWave()` is available for future custom waveforms (bell character via inharmonic partials uses it at the oscillator level), but all proposed presets work with `OscillatorType: 'sine'` + partial stacking, which the existing engine already does.
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| React + Vite static SPA | Next.js / Remix / React Router framework mode | Use a full-stack/meta-framework only if the product later needs server rendering, accounts, payments, content CMS, or SEO-heavy editorial pages. For v1 it adds deployment and mental overhead without solving timing/audio needs. |
-| Tailwind CSS v4 | CSS Modules | Use CSS Modules if the design is tiny and the team dislikes utility classes. Tailwind is faster for responsive polish and design tokens. |
-| Native Web Audio API | Tone.js | Use Tone.js only if the app becomes a richer musical/sequencer product. For soft inhale/exhale cues, native oscillators/gain/filter envelopes are simpler, smaller, and easier to schedule exactly. |
-| Native Web Audio API | howler.js | Use howler only for playback of licensed audio files. This project wants generated cues and no protected assets, so howler is unnecessary. |
-| RAF + deterministic clock | CSS-only keyframes | Use CSS keyframes for decorative loops only. For configurable BPM/ratios/unlimited duration and audio sync, derive phase from JS monotonic time. |
-| Zustand | Redux Toolkit | Use Redux only if the app grows into complex multi-domain workflows with devtools-heavy debugging needs. Zustand is enough for settings/session/history state. |
-| localStorage + optional Dexie | Backend database / Supabase / Firebase | Use a backend only if accounts, cross-device sync, or clinician dashboards become requirements. v1 explicitly says local-only/no accounts. |
-| Static TypeScript content for learning hub | Headless CMS / MDX pipeline | Use CMS/MDX later if non-developers need frequent content edits. For v1, a typed array of links/descriptions is safer and simpler. |
+**Integration points:**
+1. `cueSynth.ts`: accept optional `TimbrePreset` arg; fall back to current bowl constants.
+2. `useAudioCues.ts`: pass preset from settings.
+3. `src/domain/settings.ts`: add `timbre: TimbreName` field; extend `isValidTimbre` + `coerceSettings`.
+4. `src/storage/`: extend envelope schema version (bump major version triggers refuse-downgrade guard).
+5. Settings UI: `SettingsForm.tsx` adds a segmented control or `<select>` for timbre choice.
 
-## What NOT to Use
+**No new npm packages needed for audio timbres.**
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `setInterval` / `setTimeout` as the authoritative session clock | Timer callbacks drift, are throttled, and do not align with display refresh. Long sessions need elapsed-time-derived phase, not incremented counters. | Store `sessionStartTime` and compute phase from `performance.now()`/RAF timestamp; schedule audio with `AudioContext.currentTime`. |
-| React state updates every frame as the timing source | React rendering is not a real-time clock. Re-render pressure can cause visual jank and stale timing. | Imperative RAF loop writes CSS custom properties or refs; React stores config/status only. |
-| Pre-recorded gong/bowl samples from the web | Licensing risk and larger bundle; user explicitly wants no unlicensed protected assets. | Generate soft cues with Web Audio oscillators, gain envelopes, filters, optional convolver only if using self-generated impulse buffers. |
-| ScriptProcessorNode | MDN marks it deprecated and notes main-thread performance problems. | Use basic Web Audio nodes for v1; use AudioWorklet only if custom synthesis later requires off-main-thread DSP. |
-| Heavy canvas/WebGL engines | Overkill for a calm breathing orb; can hurt battery and accessibility. | CSS/SVG transforms driven by RAF; use Canvas only if a specific visual concept requires it. |
-| Full backend/auth stack | Violates local-only/no-accounts constraint and introduces privacy/security scope. | Static hosting plus local browser storage. |
-| Medical/HRV analytics SDKs | Increases regulatory/claims risk and conflicts with “guided breathing” v1 scope. | Basic local stats: sessions completed, minutes practiced, last-used settings; include non-medical copy. |
-| Google Analytics or invasive telemetry | Privacy mismatch for a meditation/breathing tool and not needed for local-only MVP. | No analytics in v1, or optional privacy-preserving aggregate analytics only after explicit product decision. |
+---
 
-## Stack Patterns by Variant
+## 3. Visual Variants (CUST-03)
 
-**If v1 is the simplest possible static app:**
-- Use React + Vite + TypeScript + Tailwind + Zustand persist + native Web Audio + RAF.
-- Store settings and aggregate stats in localStorage, with Zod validation.
-- Defer Dexie, PWA, and React Router until history/learn pages need real routes.
+### Decision: SVG/CSS component variants selected by a `visualVariant` setting — zero new animation libraries
 
-**If v1 includes a dedicated learning hub and local session history:**
-- Add React Router for `/learn` and `/history`.
-- Add Dexie for per-session records: `{ id, startedAt, durationSeconds, bpm, ratio, completed, muted }`.
-- Keep educational content as typed static data with external links to Forrest Knutson content; do not scrape/embed protected media.
+The current orb (`BreathingShape.tsx`) is a single CSS/SVG orb driven by inline `transform: scale(...)` from the RAF loop. Visual variants means offering 2–3 different visual component implementations that the session screen swaps by prop or setting.
 
-**If offline/installable app becomes important:**
-- Add `vite-plugin-pwa` after core behavior is stable.
-- Cache only app shell and static learning content; avoid service-worker complexity during timing/audio implementation.
+**Architecture: variant lookup + lazy-loaded components**
 
-## Version Compatibility
+```ts
+// src/domain/visualVariant.ts
+export type VisualVariantName = 'orb' | 'ring' | 'bar'
+export const VISUAL_VARIANT_NAMES: readonly VisualVariantName[] = ['orb', 'ring', 'bar']
+export function isValidVisualVariant(v: unknown): v is VisualVariantName {
+  return VISUAL_VARIANT_NAMES.includes(v as VisualVariantName)
+}
+```
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| React 19.2.6 | @vitejs/plugin-react 6.0.1, Vite 8.0.11 | Current npm versions. Use the Vite React TS template and avoid SSR assumptions. |
-| Vite 8.0.11 | TypeScript 6.0.3 | Context7 Vite docs show strict TS config using `moduleResolution: "bundler"`, `jsx: "react-jsx"`, and DOM libs. |
-| Tailwind CSS 4.3.0 | @tailwindcss/vite 4.3.0, Vite 8.0.11 | Official Tailwind docs verify Vite plugin integration: install both packages, add `tailwindcss()` to Vite plugins, import `@import "tailwindcss";`. |
-| Zustand 5.0.13 | React 19.2.6 | Zustand persist middleware supports localStorage keys, versioning, and migrations. Use migrations for settings schema changes. |
-| Dexie 4.4.2 | Browser IndexedDB | Use schema versioning from the start if storing session history. Avoid IndexedDB for tiny settings. |
-| Motion 12.38.0 | React 19.2.6 | Import React APIs from `motion/react`. Use only for non-authoritative animations. |
-| Playwright 1.59.1 | Chromium/WebKit/Firefox | Essential to validate mobile Safari-ish WebKit behavior for audio unlock and long sessions. |
+```tsx
+// Session screen — variant dispatch
+const VisualComponent = {
+  orb:  BreathingShape,      // existing — no change
+  ring: BreathingRing,       // new concentric-rings variant
+  bar:  BreathingBar,        // new horizontal breath-bar variant
+}[visualVariant]
+```
 
-## Domain-Specific Implementation Notes
+Each variant receives the same `{ progress: number; phase: 'in' | 'out'; reducedMotion: boolean }` prop interface that `BreathingShape` already uses. The RAF loop, phase clock, and session engine are unchanged — only the visual consumer changes.
 
-1. **Timing engine:** calculate `cycleMs = 60_000 / bpm`, then split by ratio. For 1–7 BPM by 0.5 and ratios 50:50/40:60/30:70/20:80, all phase boundaries should be derived from elapsed monotonic time, not accumulated intervals.
-2. **Audio cues:** create/resume `AudioContext` only after a user gesture. Generate cues with `OscillatorNode`/`GainNode`/`BiquadFilterNode`; schedule envelopes against `audioContext.currentTime` slightly ahead of boundaries.
-3. **Visual sync:** RAF loop reads the same session clock and sets CSS variables like `--breath-progress`, `--phase-progress`, `--phase-name`. SVG/CSS transforms render the orb/ring.
-4. **Storage:** settings go through Zustand persist + Zod. Session history can start as localStorage aggregate stats; move to Dexie if per-session records are required.
-5. **Accessibility:** include mute, reduced motion support, visible text cues, high contrast, keyboard controls, and no audio autoplay. Respect `prefers-reduced-motion` by simplifying animation while preserving timing cues.
+**Why no animation library (Motion/Framer):**
+- The existing orb uses zero animation libraries and passes the green-gate with 409 tests. Adding Motion would increase bundle from ~70 KB gzip toward ~130+ KB gzip.
+- CSS transitions + inline `transform` driven by RAF is the proven pattern. New variants follow it identically.
+- Motion would require wrapping RAF-driven state changes in `useAnimationFrame` or similar, fighting the existing architecture.
+
+**No new npm packages needed for visual variants.** (If a future variant genuinely requires spring physics or complex sequencing, `motion` 12.x is already listed as an alternative in v1.0 research.)
+
+---
+
+## 4. Language Switching (I18N-01)
+
+### Decision: Roll-your-own section-keyed dispatcher — no i18n library for v1.1
+
+**Summary:** The existing `learnContent.ts` shape (section-keyed, TypeScript-typed, statically bundled) is already the right foundation for v1.1 multi-language support. Adding an i18n library for v1.1 has more cost than benefit given the app's content profile.
+
+**Recommendation: extend the existing section-keyed pattern, no new library.**
+
+The app has two categories of user-visible strings:
+
+| String category | Examples | v1.1 approach |
+|----------------|----------|---------------|
+| UI chrome (short, stable) | "Inhale", "Exhale", "Mute", "Settings", "Start", BPM labels | Typed `strings.ts` content file, keyed by locale + key |
+| Long-form explainer text | LearnDialog sections (hrv, timing, forrest) | Already in `learnContent.ts` section-keyed shape; extend with a per-locale map |
+
+**Pattern:**
+
+```ts
+// src/content/strings.ts
+export type LocaleKey = 'en' // add 'es' | 'pt' | 'ja' etc. as new locales ship
+
+export interface UiStrings {
+  readonly inhale: string
+  readonly exhale: string
+  readonly mute: string
+  readonly unmute: string
+  readonly settings: string
+  readonly startSession: string
+  // ... etc
+}
+
+export const UI_STRINGS: Readonly<Record<LocaleKey, UiStrings>> = {
+  en: {
+    inhale: 'Inhale',
+    exhale: 'Exhale',
+    mute: 'Mute',
+    // ...
+  },
+}
+
+// src/content/learnContent.ts — already section-keyed
+// Add: export const LEARN_CONTENT_BY_LOCALE: Record<LocaleKey, LearnContent> = { en: LEARN_CONTENT }
+```
+
+```ts
+// src/domain/locale.ts
+export type LocaleName = 'en'
+export const LOCALE_NAMES: readonly LocaleName[] = ['en']
+export function isValidLocale(v: unknown): v is LocaleName { ... }
+
+// src/hooks/useLocale.ts
+export function useLocale(): { locale: LocaleName; setLocale: (l: LocaleName) => void } { ... }
+```
+
+**Why not react-i18next (i18next v26.1.0 + react-i18next v17.0.7):**
+- Combined gzipped bundle: ~22 kB added to the bundle (i18next ~15 kB + react-i18next ~7 kB). Current bundle is ~70 kB gzip. That is a ~31% bundle increase for infrastructure v1.1 does not need.
+- The i18next HTTP backend, pluralization engine, namespace system, and interpolation features are not used by this app. The app has ~30 UI strings and 3 static explainer sections. There is nothing to interpolate, no pluralization, no lazy loading.
+- react-i18next requires `initReactI18next`, an `I18nProvider` wrapper, and string-keyed `t()` calls throughout — all of which need to thread through strict TypeScript type declarations. This is higher integration cost than typed content files for this content volume.
+- The i18next ecosystem adds `// eslint-disable` pressure on hooks rules (async `init`, `i18n.changeLanguage` side effects) that conflicts with the `react-hooks/exhaustive-deps: error` invariant.
+
+**Why not Lingui 6.0.1 (the bundle-size winner at ~3 kB runtime):**
+- Lingui requires a **build-time extraction + compilation step** (`lingui extract` + `lingui compile`). This adds a CI script and a `lingui.config.ts` to the project. The per-commit green-gate would need to include `lingui compile` — or the compiled catalogs must be checked in.
+- Lingui v6 (released May 2026) is very new. Known Vite friction: the `@lingui/babel-plugin-lingui-macro` must be threaded through `@vitejs/plugin-react`'s `babel.plugins` option; the SWC path has open issues with `.ts`/`.mjs` files. Both paths require non-trivial Vite config surgery.
+- The `Trans` macro and `useLingui()` hook require wrapping components — changing every string-bearing component in the codebase is a wide diff at high risk of introducing lint/type regressions across 409 passing tests.
+- For 3 locales and ~30 keys, the macro + catalog compilation workflow is significant infrastructure for minimal gain.
+- **Use Lingui if:** the app ever ships 5+ locales, requires translator-friendly PO/XLIFF workflows, or needs ICU plural/gender messages. At that point the extraction workflow pays for itself.
+
+**Why not React-intl / FormatJS:**
+- 17.8 kB gzip, similar complexity as i18next, same "too big for this problem" conclusion.
+
+**Roll-your-own correctness guarantees (the things i18n libraries provide):**
+- **Type safety:** TypeScript enforces that every `LocaleName` has a full `UiStrings` record at compile time via `Record<LocaleName, UiStrings>`. Missing keys are compile errors.
+- **Fallback:** `LocaleName` union is narrow; unknown locale values are coerced to `'en'` via the same `isValidLocale` + coerce pattern used for BPM/ratio.
+- **Reactivity:** a `useState<LocaleName>` in App (or a minimal Zustand slice) drives re-renders; no provider wrapping needed beyond what React already provides.
+- **localStorage persistence:** same envelope as settings — already versioned, forward-compatible.
+
+**When to revisit:** When a second real locale ships with actual translations. At that point, evaluate Lingui first (smallest runtime, best translator workflow).
+
+---
+
+## 5. New Packages Summary
+
+| Package | Version | Purpose | Condition |
+|---------|---------|---------|-----------|
+| *none* | — | All v1.1 customization is achievable with zero new runtime dependencies | All four features (themes, timbres, visual variants, i18n) use existing Tailwind v4, Web Audio API, and React patterns |
+
+**Net new runtime dependencies: 0.**
+
+---
+
+## 6. What NOT to Add
+
+| Avoid | Why | Instead |
+|-------|-----|---------|
+| `react-i18next` + `i18next` | +22 kB gzip for a problem solvable with typed content files | Roll-your-own `strings.ts` section-keyed dispatcher |
+| `@lingui/react` + build pipeline | Lingui v6 is brand-new; Vite integration has known friction; catalog compilation adds CI complexity; overkill for ≤3 locales | Same roll-your-own approach; revisit for 5+ locales |
+| `motion` / `framer-motion` | +60 kB gzip; fights the existing RAF+inline-transform architecture | CSS transitions + RAF loop (same as v1.0) |
+| Tone.js | +200 kB+ gzip; designed for musical sequencers; overkill for cue synthesis | Native `OscillatorNode` + `GainNode` presets (same as v1.0) |
+| Audio sample files (mp3/ogg) | Asset pipeline, licensing, fetch/decode latency, size | Oscillator preset parameters; pure Web Audio synthesis |
+| `next-themes` | A React library for Next.js app theming; not applicable to Vite SPA | `data-theme` attribute + `localStorage` in a ~15-line vanilla TS module |
+| Tailwind `darkMode: 'class'` (v3 config) | Does not exist in Tailwind v4; v4 is CSS-first | `@custom-variant dark` in CSS (no config file) |
+| Separate `tailwind.config.ts` for themes | Tailwind v4 replaced `tailwind.config.js` with `@theme` in CSS | Extend `src/styles/theme.css` with `@theme inline` + `@layer base` blocks |
+| New test framework or additional test utilities | 409 tests pass under Vitest + jsdom + FakeAudioContext polyfill | Extend existing setup; `TimbrePreset` objects test as pure data with existing FakeAudioContext |
+
+---
+
+## 7. Integration Points with Strict Baseline
+
+All additions must hold `tsc && lint && build && test` green at every commit (D-09/D-15 invariant).
+
+| Addition | Strict TS notes | Hook-rules notes |
+|----------|-----------------|------------------|
+| `domain/theme.ts` | Pure value types, `readonly` arrays, narrow union — no issues | No hooks |
+| `domain/locale.ts` | Same pattern | No hooks |
+| `domain/visualVariant.ts` | Same pattern | No hooks |
+| `audio/timbres.ts` | `Float32Array` types for `periodicWave` if used; `OscillatorType` is already typed by `lib.dom.d.ts` | No hooks |
+| `content/strings.ts` | `Readonly<Record<LocaleKey, UiStrings>>` — exhaustiveness checked at compile time | No hooks |
+| `useLocale.ts` | `useState` + `localStorage` read in init (one-time); `setLocale` is a stable callback if wrapped in `useCallback` — `exhaustive-deps` will require it | Must satisfy `react-hooks/exhaustive-deps: error` |
+| Theme `data-theme` setter | Vanilla TS, not a hook | N/A |
+| Settings schema extension | New fields must go through `isValid*` + `coerceSettings`; version bump triggers refuse-downgrade guard on old storage | Storage envelope already handles new unknown fields via spread |
+| `FakeAudioContext` in tests | New `TimbrePreset` data objects test as plain POJOs; `scheduleBowlCue` refactored to accept preset already covered by existing FakeAudioContext mock | No changes to test polyfill needed |
+
+---
+
+## 8. Version Reference
+
+| Technology | Version | Status | Source |
+|------------|---------|--------|--------|
+| Tailwind CSS | 4.3.0 (installed) | Current as of 2026-05-09 | npm |
+| @tailwindcss/vite | 4.3.0 (installed) | Matches Tailwind | npm |
+| React | 19.x (installed) | Baseline | shipped |
+| Vite | 8.x (installed) | Baseline | shipped |
+| TypeScript | 6.x (installed) | Baseline | shipped |
+| Web Audio API | Browser baseline | No npm package; Baseline Widely Available per MDN | MDN |
+| @lingui/react | 6.0.1 | NOT USED in v1.1 — documented for future reference | npm |
+| react-i18next | 17.0.7 | NOT USED in v1.1 — documented for future reference | npm |
+| i18next | 26.1.0 | NOT USED in v1.1 — documented for future reference | npm |
+
+---
 
 ## Sources
 
-- Context7 `/facebook/react/v19_2_0` — React current docs/ref behavior; refs should be accessed outside render for imperative timing loops. **Confidence: HIGH.**
-- Context7 `/vitejs/vite/v8.0.10` — Vite React/TypeScript configuration and strict compiler options. **Confidence: HIGH.**
-- Tailwind official docs, “Installing Tailwind CSS with Vite” — verified `tailwindcss` + `@tailwindcss/vite` plugin setup. https://tailwindcss.com/docs/installation/using-vite **Confidence: HIGH.**
-- MDN Web Audio API — verified wide availability, audio graph model, oscillators/gain/filters, high-precision low-latency timing, and ScriptProcessorNode deprecation. https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API **Confidence: HIGH.**
-- MDN `requestAnimationFrame()` — verified timestamp-based animation, high-refresh warning, and background throttling caveat. https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame **Confidence: HIGH.**
-- Context7 `/pmndrs/zustand/v5.0.12` — verified persist middleware, localStorage key, versioning, migration patterns. **Confidence: HIGH.**
-- Context7 `/websites/dexie` — verified IndexedDB schema/transaction patterns. **Confidence: HIGH.**
-- Context7 `/websites/motion_dev` — verified Motion React `motion` component and animation prop model. **Confidence: MEDIUM-HIGH.**
-- npm registry checks on 2026-05-08 — verified package versions: React 19.2.6, Vite 8.0.11, TypeScript 6.0.3, Tailwind 4.3.0, Zustand 5.0.13, Zod 4.4.3, Dexie 4.4.2, Motion 12.38.0, Playwright 1.59.1. **Confidence: HIGH for version numbers.**
+- Tailwind CSS v4 official docs, Dark Mode — `@custom-variant` syntax for `data-theme` attribute. https://tailwindcss.com/docs/dark-mode **Confidence: HIGH.**
+- Tailwind CSS v4 official docs, Theme Variables — `@theme` vs `@theme inline` distinction, runtime CSS variable resolution. https://tailwindcss.com/docs/theme **Confidence: HIGH.**
+- Multi-theme CSS variable pattern with `@layer base` per `[data-theme]`: https://medium.com/@kevstrosky/theme-colors-with-tailwind-css-v4-0-and-next-themes-dark-light-custom-mode-36dca1e20419 **Confidence: MEDIUM-HIGH** (verified against official @theme inline docs).
+- Custom multi-variant pattern: https://dev.to/vrauuss_softwares/-create-custom-themes-in-tailwind-css-v4-custom-variant-12-2nf0 **Confidence: MEDIUM** (community article, consistent with official docs).
+- simonswiss.com Tailwind v4 multi-theme strategy — semantic token separation: https://simonswiss.com/posts/tailwind-v4-multi-theme **Confidence: MEDIUM-HIGH.**
+- Tailwind CSS GitHub Discussion #15600 — `@theme inline` correctness for runtime variable override: https://github.com/tailwindlabs/tailwindcss/discussions/15600 **Confidence: HIGH** (official repo discussion, Tailwind maintainers participate).
+- MDN Web Audio API `createPeriodicWave()` — Fourier coefficient API, browser support (Baseline Widely Available since April 2021): https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createPeriodicWave **Confidence: HIGH.**
+- MDN OscillatorNode — `type` property and `setPeriodicWave()`: https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode **Confidence: HIGH.**
+- react-i18next + i18next bundle size (~22 kB gzip combined): Bundlephobia + multiple 2026 comparisons. https://bundlephobia.com/package/react-i18next + https://bundlephobia.com/package/i18next **Confidence: MEDIUM** (Bundlephobia page rendered JS not extractable; estimate from multiple secondary sources consistent).
+- Lingui v6.0.1 React + Vite setup: https://lingui.dev/tutorials/setup-react **Confidence: HIGH** (official docs). Vite integration friction (TypeScript + macro compilation): https://github.com/lingui/js-lingui/issues/2236 **Confidence: MEDIUM** (open issue).
+- npm version checks 2026-05-12: `@lingui/react` 6.0.1, `react-i18next` 17.0.7, `i18next` 26.1.0, `tailwindcss` 4.3.0 **Confidence: HIGH** (direct npm registry queries).
 
 ---
-*Stack research for: HRV breathing / guided breathing web app*
-*Researched: 2026-05-08*
+*Stack research for: HRV breathing web app — v1.1 customization layer*
+*Researched: 2026-05-12*

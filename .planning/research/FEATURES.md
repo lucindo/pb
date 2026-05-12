@@ -1,213 +1,235 @@
-# Feature Research
+# Feature Research — v1.1 Customization
 
-**Domain:** HRV breathing / guided paced-breathing web app
-**Researched:** 2026-05-08
-**Confidence:** HIGH for mainstream guided-breathing features; MEDIUM for HRV-biofeedback features because v1 is intentionally sensorless/local-only.
+**Domain:** HRV breathing / guided paced-breathing web app — customization layer
+**Researched:** 2026-05-12
+**Confidence:** HIGH for theme and audio timbre UX patterns (multiple verified sources); MEDIUM for visual variant UX (fewer direct comparisons at this scope level); MEDIUM for i18n UX patterns (general-web evidence is solid; meditation-specific evidence is thinner).
+
+> **Scope note:** v1.0 table stakes (timing engine, orb, audio cues, stats, wake lock, Learn surface)
+> are already shipped and validated. This file covers only the four v1.1 target features plus the
+> inner-ring UX symmetry warm-up. References to v1.0 code are dependency callouts, not re-research.
+
+---
 
 ## Feature Landscape
 
 ### Table Stakes (Users Expect These)
 
-Features users assume exist. Missing these = product feels incomplete.
+These are the minimum behaviors users assume each customization feature has. Missing them means the
+feature feels unfinished or untrustworthy.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Immediate start / pause / resume session | Guided-breathing apps are used in moments of stress, meditation, sleep prep, or practice; users expect to begin without account setup or deep navigation. | LOW | Make the default path one tap: choose remembered settings, press Start. Tap/click anywhere to pause is common and useful. |
-| Accurate inhale/exhale timing | The product's core promise is paced breathing; poor timing or drift breaks trust. Competitors emphasize timed inhales/exhales/holds and user reviews complain when interval cues misfire. | MEDIUM | Use a monotonic clock and derive phase from elapsed time rather than chaining timers. Validate long sessions for drift. |
-| Breathing pacer visual | A visual expanding/contracting ball/circle is a standard guided-breathing pattern; The Breathing App and iBreathe both center on simple visuals users can follow. | MEDIUM | Needs polished animation, no jank, clear phase affordance, and reduced-motion support. |
-| Optional audio cues | Users often practice eyes-closed or in low-light settings. Reviews praise gentle tones and criticize jarring dings or repetitive voice prompts. | MEDIUM | Generated gong/bowl-like cues fit v1. Include mute and volume control; avoid licensed samples. |
-| Configurable breathing rate | HRV/resonance apps commonly target roughly 5-7 breaths/min and generic apps allow custom intervals; this product specifically needs 1-7 BPM in 0.5 increments. | MEDIUM | Core settings UI. BPM must update both visual and audio guidance predictably. |
-| Configurable inhale/exhale ratio | Resonance breathing and calming protocols often use balanced or elongated exhale patterns; The Breathing App recently added personal ratios as a highly requested feature. | MEDIUM | v1 ratios 50:50, 40:60, 30:70, 20:80 are enough for Forrest-style practice without complex custom holds. |
-| Session duration presets plus unlimited | iBreathe added infinite cycles; reviews for The Breathing App ask for longer durations. Users expect short sessions and longer meditation sessions. | LOW | v1 5-60 minutes plus unlimited is table stakes for this niche. Include elapsed/remaining display, with option to hide during practice later. |
-| Saved local settings | Users repeat the same personal cadence. A calming app should not require reconfiguration every session. | LOW | LocalStorage is sufficient; no account needed. Save BPM, ratio, duration, sound/mute, theme if added. |
-| Session completion and basic stats | Habit apps commonly show streaks, mindful minutes, history, or achievements; even a local-only app should reassure users that practice was recorded. | MEDIUM | v1 can track sessions completed, minutes practiced, last session, and current streak locally. Avoid gamification that disrupts calm. |
-| Mobile-first responsive design | Competitors are primarily mobile apps; this web app must feel good on phones and desktop browsers. | MEDIUM | Large tap targets, portrait/landscape support, safe-area handling, no tiny sliders as the only input method. |
-| Background/screen-lock resilience guidance | Users repeatedly request breathing to continue with screen off/background audio. On the web this is constrained, but uninterrupted sessions are core value. | HIGH | v1 should prevent sleep where possible with Wake Lock when available, degrade gracefully, and explain limitations. Full PWA/background audio can come later. |
-| Calm, low-friction UI | Top user praise for iBreathe and The Breathing App centers on simplicity/no clutter; clutter makes the product feel less calming. | MEDIUM | Settings should be available but visually subordinate to the session. No popups at completion. |
-| Accessibility basics | Breathing apps rely on visual/audio cues; accessible alternatives are necessary. iBreathe explicitly lists VoiceOver, larger text, dark interface, and not relying on color alone. | MEDIUM | Provide semantic controls, keyboard support, visible focus, text phase labels, reduced motion, high contrast, and audio-independent visual cues. |
-| Non-medical wellness positioning | Competitors often make strong claims, but this project should avoid medical claims. Users still expect a brief explanation of what the practice is. | LOW | Use wellness language: “guided HRV/resonance-style breathing practice,” not treatment for anxiety, blood pressure, insomnia, etc. |
-| Attribution / Forrest Knutson links | This app is explicitly for Forrest Knutson-style sessions; users need context and a route to original teaching. | LOW | Prominent external links; no embedded protected content or copied assets without permission. |
+| Feature | Why Expected | Complexity | v1.1 Notes |
+|---------|--------------|------------|------------|
+| Theme persists across sessions | Users set a theme once and expect it to survive a page reload, browser close, and revisit. Any app that resets to the default every session feels broken. | LOW | Extend existing `Envelope` in `storage/storage.ts`; add `theme?: string` field. Coerce on read like existing `settings`/`mute` fields. |
+| Theme respects OS dark/light preference as a default | System dark mode is widely expected as a first-class default in 2026. Breathing apps in particular are used in dark environments at night. | LOW | Detect `prefers-color-scheme` with `matchMedia`; apply `system` as the shipping default. Requires named CSS custom-property tokens to exist for both modes. |
+| Audio timbre cue sounds like the named timbre | If the UI says "Bowl" the sound must be recognizably bowl-like; if it says "Bell" it must have the attack character of a bell. Mislabeled timbres destroy trust. | MEDIUM | Each timbre is a distinct synthesized preset in `cueSynth.ts`. Parameters (fundamental Hz, partial ratios, decay constant, oscillator waveform) fully define the character. No samples required. |
+| Selected timbre persists | Same expectation as theme: choose once, remember forever. | LOW | Add `timbre?: string` to `Envelope`. Coerce with a valid-timbre allowlist guard like the existing `isValidBpm`/`isValidRatio` pattern in `domain/settings.ts`. |
+| Visual variant matches the label | If the label says "Orb" the user sees an orb; "Square" should produce a square. | LOW | Scoped to the `BreathingShape.tsx` component plus a variant-router. The outer session layout, ring positions, and data-phase attributes are unchanged. |
+| Selected visual variant persists | Same persistence expectation. | LOW | Add `visualVariant?: string` to `Envelope`. Coerce on read. |
+| Language setting persists and applies immediately | Users who choose a non-default language expect it to hold across sessions. In-session language switching should not interrupt the running breath loop. | LOW | Add `language?: string` to `Envelope`. The session engine and timing are language-independent — only UI labels and `learnContent.ts` are affected. |
+| Settings surface is reachable without touching the running session | Users must be able to preview customization options at any time, including before starting a session, without accidentally pausing or ending a session. | LOW | The existing SettingsForm is rendered only in the idle/stopped state. Customization pickers live in the same settings panel — no new surface needed unless scope expands. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that set the product apart. Not required for all breathing apps, but valuable for this project.
+Features that go beyond the expected baseline and distinguish this app in the crowded breathing space.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Forrest Knutson-style HRV breathing presets | Most competitors are broad stress/sleep/focus apps; a focused Forrest-style resonance practice is more useful to this audience than 100 generic classes. | LOW | Provide opinionated defaults matching project scope, with links to Forrest content for learning. |
-| Ultra-simple no-account, local-only privacy | Breathwrk, Elite HRV, and many health apps collect or link data; The Breathing App highlights no account/no ads/data-not-collected. Privacy can be a strong trust signal. | LOW | Keep stats local, explain “your breathing history stays on this device.” No analytics by default unless explicitly chosen later. |
-| Fine-grained BPM 1-7 by 0.5 | Many breathing apps expose interval seconds or presets; this niche wants breath-per-minute control for resonance/HRV practice. | MEDIUM | Make BPM primary, not hidden behind inhale/exhale seconds. Display derived inhale/exhale lengths. |
-| Exhale-biased Forrest-style ratios | Generic apps often focus on box, 4-7-8, or broad custom patterns; a small set of exhale-lengthening ratios supports parasympathetic-oriented practice without overwhelming users. | LOW | v1 ratio set is enough; custom ratios/holds can wait. |
-| Generated soft gong/bowl cues synchronized with visuals | Users value non-jarring audio and eyes-closed practice. Generated audio avoids licensing and can be perfectly aligned to phase changes. | MEDIUM | Use Web Audio synthesis; test startup unlock behavior on iOS Safari. |
-| Hands-off uninterrupted session mode | The core value is following a session comfortably after starting. This can beat content-heavy apps that require navigation, subscriptions, or class selection. | HIGH | Combine Wake Lock, large full-screen session view, no accidental controls, and robust timing. |
-| Browser-first cross-device access | Most polished competitors are native mobile apps. A high-quality web app works on desktop meditation setups and phones without app-store install. | MEDIUM | PWA install can be v1.x; responsive web is v1. |
-| Minimal local practice analytics | Gives encouragement without accounts, leaderboards, or health-data integrations. | MEDIUM | Minutes, sessions, streak, and maybe favorite settings. Avoid over-measuring HRV without sensors. |
-| Session ambience/themes | A polished, calm animation and subtle color themes can differentiate without adding cognitive load. | MEDIUM | Keep optional; do not delay core timing/audio. |
-| “Practice notes” or intention prompt after session | Local-only journaling could deepen meditation practice without medicalization or cloud storage. | MEDIUM | Defer until core stats work; optional and private. |
-| PWA offline install | Breathwrk lists offline access; The Breathing App supports background/screen-off native behavior. A PWA can reduce friction and improve reliability. | MEDIUM | v1.x candidate after core browser behavior is stable. |
-| Import/export local stats/settings | Privacy-conscious users may value portability without accounts. | MEDIUM | JSON export/import later; useful if no cloud sync. |
+| Feature | Value Proposition | Complexity | v1.1 Notes |
+|---------|-------------------|------------|------------|
+| Named calm-palette themes beyond light/dark | Apps like Lungy offer 20 themes; Breathwrk adjusts palette by time of day. Named themes ("Moss", "Slate", "Dusk") let users associate the app with a personal mood without the complexity of custom color pickers. | MEDIUM | Implement as CSS-custom-property token sets on `:root[data-theme='moss']` etc. Each theme overrides the full `--color-breathing-*` and `--color-orb-*` token set from `theme.css`. Three to five themes is the right count: enough choice, no decision paralysis. |
+| Fully synthesized alternate timbres — no sample files | Lungy and iBreathe use recorded samples. Generating all timbres from Web Audio API partials keeps the bundle unchanged and eliminates licensing risk. | MEDIUM | `cueSynth.ts` already follows a `scheduleBowlCue(fundamentalHz, decayTau, partials)` pattern. Each new timbre is a named `TimbrePreset` constant (different Hz, different waveform, different partial stack). Thin wrapper; no architectural change. |
+| Alternate visual style that works under reduced-motion | A non-orb variant (e.g. a breathing square or expanding ring) that is legible at MID_SCALE constant size works equally well for reduced-motion users — the variant itself can be the differentiation rather than the scale animation. | MEDIUM | `BreathingShape.tsx` routes on `frame.phase` and the `visualVariant` prop. Each variant is a self-contained component that receives the same `SessionFrame` input. Outer structure (rings, data-phase, scale math) remains unchanged unless the variant explicitly opts out. |
+| Language switching without a page reload | Many web i18n implementations require a reload to swap bundles. If language switching is instant (swap string constants in React state), it feels more native-app-like and reinforces the local-first, zero-server positioning. | MEDIUM | Viable because the content corpus is small. English strings are already mostly inline; the Learn surface strings are section-keyed in `learnContent.ts`. A locale constant + a locale-keyed string map achieves instant switching without a framework. |
+| Inner-ring symmetry (warm-up) | The inner ring currently appears only during the Out phase (Out-phase arrival cue). Making it symmetric — a ring appears during In phase at the outer boundary, and during Out phase at the inner boundary — creates a satisfying mirror that rewards attention without adding controls or cognitive load. | LOW | Pure CSS + `BreathingShape.tsx` change. Adds `orb-ring--in-arrival` that fades in only at `[data-phase='in']`. Mirrors the existing `[data-phase='out'] .orb-ring--inner` pattern. |
 
-### Anti-Features (Commonly Requested, Often Problematic)
+### Anti-Features (Explicitly Out of Scope)
 
-Features that seem good but create problems.
+Features that appear adjacent to customization but must be rejected to preserve the project's core value.
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Accounts, cloud sync, social profiles | Users may want cross-device history and reminders. | Violates local-only constraint, adds privacy/security burden, and slows v1. | Local settings/stats; later optional export/import or PWA backup instructions. |
-| Real HRV measurement without a proper sensor | “HRV breathing” sounds like it should show HRV metrics. | Phone/browser camera or watch integrations can be inaccurate or unavailable; medical-adjacent claims increase risk. HeartMath and Elite HRV rely on dedicated sensors for accurate HRV/coherence. | Position v1 as paced HRV/resonance-style breathing guidance, not HRV measurement. Add optional sensor research later if needed. |
-| Medical claims or treatment protocols | Competitors market anxiety, blood pressure, sleep, HRV, and wellness outcomes. | Regulatory/trust risk and outside project scope. | Use educational, non-diagnostic wording; cite Forrest links and general practice context without promises. |
-| Large content library/classes | Breathwrk differentiates with 100+ exercises/classes and daily content. | Content production is expensive and distracts from accurate hands-off Forrest-style practice. | Curated minimal presets and external links to Forrest Knutson content. |
-| Voice coaching in v1 | Some users like guided classes and coaches. | Requires scriptwriting, localization, audio quality, and can become annoying for repeated sessions. | Simple text labels plus optional generated cues; consider optional voice packs much later. |
-| Haptics/vibration as core guidance | Native breathing apps use haptics and watch vibration. | Web vibration support is inconsistent and can feel intrusive; desktop unavailable. | Treat as future progressive enhancement, not core. |
-| Wearable integrations / Apple Health / Google Fit | Users of health apps expect mindful minutes and HR/HRV tracking. | Requires native APIs or platform-specific work; conflicts with no-account/simple web v1. | Local stats now; export or Health integration only if native/PWA scope changes. |
-| Gamification, leaderboards, rankings | Habit apps use streaks/levels to increase retention. | Can make practice performance-oriented and less calming; social features require accounts. | Gentle local stats only; no competitive framing. |
-| Ads, upsells, tip prompts after sessions | Monetization pattern seen in app stores. | User reviews explicitly call post-session prompts stressful and opposite to breathing app intent. | No interruptions in or immediately after sessions; if monetized later, use a quiet support link outside practice flow. |
-| Hyper-custom ratio/hold editor in v1 | Power users ask for arbitrary holds and multi-set programs. | Adds UI complexity and testing matrix before core BPM/ratio app is validated. | Ship fixed Forrest-style ratios first; add advanced mode later if requested. |
-| Licensed music/singing bowl samples | Polished audio can improve practice. | Licensing risk and larger asset footprint. | Generate soft tones with Web Audio or use clearly licensed/open assets only after review. |
+| Anti-Feature | Why Requested | Why Problematic | Alternative |
+|--------------|---------------|-----------------|-------------|
+| Custom color picker / user-defined themes | Power users often want "their" color. | Custom pickers are complex UI, increase test surface, can produce low-contrast or inaccessible combos that violate WCAG, and shift focus from breathing to tinkering. Breaks the "calm" contract. | Offer 3-5 curated named themes that are pre-tested for contrast. Leave the picker to v2+ if demand is validated. |
+| Gamification: streaks, badges, level-up for sessions | Users familiar with Headspace/Calm expect retention mechanics. Research shows streaks in meditation apps frequently become a source of anxiety rather than motivation (MetaFilter survey, Smartico analysis). | Directly conflicts with PROJECT.md Out of Scope: "Streaks, leaderboards, achievements, social sharing, or gamified pressure — history should stay simple and calm." | Keep the existing neutral stats: total sessions, total minutes, last session. That gives encouragement without performance pressure. |
+| Social sharing of session results | "Share your session" is a common app feature. | Requires no account, no cloud, no social graph — all out of scope. Sharing a screenshot is always possible without app support. | No action needed. |
+| Theme auto-switch by time of day | Breathwrk does time-aware palettes. | Adds complexity (clock polling, edge cases at midnight, DST), no direct user request surfaced, and reduces user control of the environment they've chosen. | "System" mode (prefers-color-scheme) already handles the common day/night shift. Named themes are chosen explicitly. |
+| Audio volume slider | Users often ask for fine-grained volume control. | PEAK_GAIN (0.18) in `cueSynth.ts` is already conservative and well below headroom limit. A volume slider requires an extra gain node in the signal chain, a persistent value, and UI surface that adds nothing for most users. Mobile OS volume controls handle the rest. | Mute toggle (already shipped). Optional future consideration only if user-reported audio-too-loud complaints emerge. |
+| Per-phase audio timbre (different sound for In vs. Out) | "Make the In sound different from the Out sound" is a natural extension. | In/Out are already distinguished by fundamental frequency: A4 (440 Hz) In vs. A3 (220 Hz) Out — the pitch difference IS the timbre distinction. Adding per-phase picker doubles the UI surface for minimal gain. | One session-wide timbre preset. The Hz distinction is preserved within any timbre by continuing the A4/A3 fundamental split. |
+| Animated transition when switching visual variants | Smooth cross-fade between orb and breathing square. | The session engine drives the animation through `requestAnimationFrame`. A cross-fade between two competing animation loops risks frame-identity collision and rAF cancellation complexity. | Switch variants only from the settings panel (idle state only). No mid-session variant switching in v1.1. |
+| Language switching during an active session | Swap language while breathing. | Causes a UI re-render of all string content mid-session, potentially disrupting focus. No practical need — language choice is set-and-forget. | Language applies on next session start. Display language can switch immediately in the UI, but the decision is confirmed before a session begins. |
+| In-app audio preview / playback button for timbres | "Play sample" to audition each timbre before selecting. | Requires user gesture to unlock AudioContext (existing iOS constraint). A preview button in the settings panel is a second gesture path separate from session-start unlock and risks duplicating the audio engine bootstrap complexity. | Show the timbre name with a short descriptor ("Bell — bright attack, fast fade" vs. "Bowl — warm strike, long sustain"). Name + description is sufficient for 3-4 timbres. |
+| Unlicensed asset-based timbres (OGG/MP3 samples) | Higher fidelity bowls from bundled samples. | Licensing risk; bundle size jump; asset management; no offline-first guarantee without service worker. | Stay synthesized via Web Audio API. The existing cueSynth bowl is already rated positively in UAT. Alternate synthesized timbres expand choice without any of these costs. |
+| Medical or therapeutic framing for customization | "Teal theme for focus, blue for sleep, amber for anxiety relief." | Medical claims are explicitly out of scope. Color-mood associations are speculative. | Name themes by palette character (Moss, Slate, Dusk) not by claimed outcome. |
+
+---
 
 ## Feature Dependencies
 
 ```
-Accurate timing engine
-    ├──requires──> Session state model (idle/running/paused/complete)
-    ├──enables──> Breathing pacer visual
-    ├──enables──> Generated audio cues
-    ├──enables──> Duration countdown / unlimited mode
-    └──enables──> Reliable local stats
+Envelope (storage/storage.ts)
+    ├──extends──> Theme persistence (add `theme?: string`)
+    ├──extends──> Timbre persistence (add `timbre?: string`)
+    ├──extends──> Visual variant persistence (add `visualVariant?: string`)
+    └──extends──> Language persistence (add `language?: string`)
 
-BPM + ratio settings
-    ├──requires──> Validation and derived phase durations
-    ├──drives──> Timing engine
-    ├──drives──> Visual animation
-    └──drives──> Audio cue schedule
+domain/settings.ts predicate pattern
+    ├──mirrors──> isValidTheme() — allowlist guard for stored theme value
+    ├──mirrors──> isValidTimbre() — allowlist guard for stored timbre value
+    ├──mirrors──> isValidVisualVariant() — allowlist guard
+    └──mirrors──> isValidLanguage() — allowlist guard
 
-Responsive session UI
-    ├──requires──> Accessible controls
-    ├──enhances──> Hands-off uninterrupted session mode
-    └──enables──> Mobile/desktop launch quality
+storage/settings.ts coercer pattern
+    ├──mirrors──> coerceTheme() — non-throwing, falls back to DEFAULT_THEME
+    ├──mirrors──> coerceTimbre() — non-throwing, falls back to DEFAULT_TIMBRE
+    ├──mirrors──> coerceVisualVariant() — non-throwing, falls back to DEFAULT_VISUAL_VARIANT
+    └──mirrors──> coerceLanguage() — non-throwing, falls back to DEFAULT_LANGUAGE
 
-Local persistence
-    ├──enables──> Saved settings
-    ├──enables──> Basic stats
-    └──enables──> Future export/import
+cueSynth.ts (CUST-02)
+    ├──requires──> scheduleInCue / scheduleOutCue remain the public API
+    ├──adds──> TimbrePreset type (name, in-params, out-params)
+    └──adds──> scheduleInCue(ctx, when, dest, phaseDuration, preset)
+                 — default preset = existing BOWL behavior (zero regression)
 
-Generated audio cues
-    ├──requires──> User gesture audio unlock
-    ├──requires──> Timing engine
-    └──conflicts──> Silent/autoplay assumptions on mobile browsers
+BreathingShape.tsx (CUST-03)
+    ├──requires──> SessionFrame (unchanged — all variants consume same input)
+    ├──adds──> visualVariant prop (string union)
+    └──adds──> variant-router that delegates to variant-specific sub-components
 
-Wake Lock / uninterrupted mode
-    ├──requires──> Running session lifecycle
-    └──enhances──> Hands-off practice
+learnContent.ts (I18N-01)
+    ├──already has──> section-keyed shape (hrv, timing, forrest) — i18n-stable by design
+    └──adds──> locale-keyed map: { en: LEARN_CONTENT, es: LEARN_CONTENT_ES, ... }
 
-Medical/HRV measurement claims
-    └──conflicts──> Sensorless local-only v1
+theme.css (CUST-01)
+    ├──already has──> --color-breathing-*, --color-orb-* token set
+    └──adds──> [data-theme='moss'], [data-theme='slate'], [data-theme='dusk'] token overrides
+
+Inner-ring UX symmetry (warm-up, no feature flag)
+    ├──requires──> BreathingShape.tsx — add [data-phase='in'] .orb-ring--outer fade-in rule
+    └──purely──> CSS + minimal JSX change; no storage, no settings model touch
 ```
 
 ### Dependency Notes
 
-- **Accurate timing engine is the first implementation dependency:** almost every visible feature depends on it, and timing defects are the fastest way to break product trust.
-- **BPM/ratio settings must precede animation and audio polish:** the animation and cue scheduler should consume one canonical phase-duration model.
-- **Local persistence unlocks both convenience and stats:** implement saved settings first, then session history; both can share a small storage abstraction.
-- **Wake Lock depends on session lifecycle:** acquire only while running, release on pause/complete/unload, and show fallback copy where unsupported.
-- **Audio requires mobile-browser care:** generated cues should start only after a user gesture and should degrade gracefully if AudioContext fails.
-- **Avoid HRV measurement until a sensor strategy exists:** otherwise the roadmap risks inaccurate metrics, medical-adjacent claims, and large architecture changes.
+- **Storage schema bumps for all four customization fields are safe:** the existing `Envelope` `spread-then-override` read pattern (STORAGE-01) and `refuse-downgrade` write guard (STORAGE-02) remain valid. New optional fields on the envelope require only coercer functions and valid-value guards — the same pattern as `settings`/`mute`/`stats`.
+- **cueSynth.ts is the chokepoint for CUST-02:** the `scheduleBowlCue` private function accepts `fundamentalHz` and `defaultDecayTau` already. A `TimbrePreset` struct that bundles those parameters is a minimal addition. The existing BOWL preset becomes the default, preserving byte-identical behavior when no preset is specified.
+- **BreathingShape.tsx is the chokepoint for CUST-03:** the component already accepts `frame` (SessionFrame) and `leadInDigit`. Adding a `visualVariant` prop and a router is low-risk because the orb implementation is already fully encapsulated in `BreathingShapeBody`. Variant sub-components are new siblings, not modifications.
+- **learnContent.ts is already i18n-structured:** the `hrv`/`timing`/`forrest` section keys were explicitly designed as "i18n-stable identifiers for future locale swap" (comment at line 2 of `learnContent.ts`). Adding a locale map `{ en: LEARN_CONTENT }` and shipping one additional locale (Spanish is the highest-value second language for a global English-content yoga/breathing audience) is the minimal I18N-01 implementation.
+- **Inner-ring symmetry has zero dependency risk:** it is a pure CSS + JSX addition to `BreathingShape.tsx`. It does not touch the storage model, the audio engine, the settings domain, or the timing engine. It is a warm-up task precisely because of this isolation.
+- **Theme switching must not use Tailwind `dark:` class variants:** the existing `theme.css` uses CSS custom properties under `@theme { }` (Tailwind v4 convention). Named themes should follow the same custom-property pattern on a `[data-theme]` attribute on `<html>` or the app root — not Tailwind class variants, which would require rewriting all consumer classes.
 
-## MVP Definition
+---
 
-### Launch With (v1)
+## v1.1 Feature Set
 
-Minimum viable product — what's needed to validate the concept.
+### Ship in v1.1
 
-- [ ] One-tap start/pause/resume/end session — essential for stress-free use.
-- [ ] Accurate BPM/ratio timing engine — core product promise.
-- [ ] BPM selector from 1-7 in 0.5 increments — required project scope and niche differentiation.
-- [ ] Ratio selector: 50:50, 40:60, 30:70, 20:80 — required project scope.
-- [ ] Duration selector: 5-60 minutes plus unlimited — required project scope and table stakes.
-- [ ] Polished synchronized breathing animation — users need visual guidance.
-- [ ] Optional generated soft gong/bowl-like audio cues with mute — users need eyes-closed guidance without protected assets.
-- [ ] Responsive mobile/desktop layout — web app must work where users actually practice.
-- [ ] Local saved settings — repeated practice should not require setup.
-- [ ] Basic local stats: sessions, minutes, last session, streak — enough feedback without accounts.
-- [ ] Accessibility basics: keyboard controls, labels, reduced motion, non-color phase indicators — necessary for inclusive launch.
-- [ ] Forrest Knutson links and non-medical disclaimer — required positioning and scope control.
-- [ ] Wake Lock attempt + fallback messaging — supports “hands-off uninterrupted” value within browser constraints.
+These are the four milestone features plus the warm-up.
 
-### Add After Validation (v1.x)
+- [x] **Inner-ring UX symmetry** — Add `[data-phase='in']` CSS rule mirroring the existing `[data-phase='out'] .orb-ring--inner` pattern. Also applies the outer ring fade-in on In to create symmetric arrival cues. Pure CSS + BreathingShape.tsx. Zero storage touch. Low-risk warm-up.
+- [ ] **CUST-01: Theme switching** — Light / Dark / System (OS default) + 2-3 named palette themes. Picker in SettingsForm. Persisted to `Envelope.theme`. Applied via `data-theme` attribute on root. CSS custom-property token overrides in `theme.css`.
+- [ ] **CUST-02: Audio timbres** — 3-4 named synthesized presets (Bowl, Bell, Sine, Chime). Default = existing Bowl (zero regression). `TimbrePreset` struct in `cueSynth.ts`. Persisted to `Envelope.timbre`. Picker in SettingsForm.
+- [ ] **CUST-03: Visual variants** — 2-3 named visual styles for the session guide (Orb/default, Square, Ring). Each variant consumes `SessionFrame` unchanged. Persisted to `Envelope.visualVariant`. Picker in SettingsForm.
+- [ ] **I18N-01: Language switching** — EN default + 1 additional locale (Spanish recommended). Locale-keyed string map for UI labels and `learnContent.ts` sections. Persisted to `Envelope.language`. Picker in SettingsForm or a dedicated header control. No framework dependency (custom hook + string map).
 
-Features to add once core is working.
+### Defer to v1.x
 
-- [ ] PWA install/offline support — add when browser experience is stable and repeat usage is proven.
-- [ ] More audio timbres and volume envelope controls — add if users practice eyes-closed frequently.
-- [ ] Theme/ambience options — add if visual polish is valued, but keep the core uncluttered.
-- [ ] Export/import settings and stats — add for privacy-conscious cross-device portability.
-- [ ] Optional practice notes — add if users want reflective meditation support.
-- [ ] Advanced display options: hide countdown/cycles, dim controls, full-screen mode — add based on session feedback.
-- [ ] Gentle reminders via browser notifications — only if users ask; must be opt-in and non-intrusive.
+- [ ] PWA install / service worker (PWA-01) — deferred from earlier v1.1 plan; independent of customization.
+- [ ] Additional locales beyond EN+ES — add only if usage data or explicit requests surface.
+- [ ] Additional visual variants beyond 3 — same trigger.
+- [ ] Audio preview button — only if user confusion about timbre names is reported.
+- [ ] Import/export of local settings (JSON) — useful for privacy-conscious users, not v1.1 priority.
 
-### Future Consideration (v2+)
+### Future (v2+)
 
-Features to defer until product-market fit is established.
+- [ ] Custom color picker / user-defined themes — after named themes are validated.
+- [ ] Per-phase audio configuration — only if the single-timbre model proves insufficient.
+- [ ] Platform health integrations — Apple Health, Google Fit.
+- [ ] Sensor-based HRV biofeedback.
 
-- [ ] Advanced custom pattern editor with holds/multi-set programs — useful for power users but not needed for Forrest-style v1.
-- [ ] Sensor-based HRV/coherence biofeedback — requires dedicated research, device compatibility, accuracy validation, and careful claims.
-- [ ] Health platform integrations — likely requires native wrappers or complex platform APIs.
-- [ ] i18n/localization — future-friendly architecture now, translations later.
-- [ ] Optional guided voice packs — defer until content and localization strategy exist.
-- [ ] Native mobile/watch apps — defer until web product has validated demand.
+---
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Accurate timing engine | HIGH | MEDIUM | P1 |
-| Start/pause/resume/end session | HIGH | LOW | P1 |
-| BPM 1-7 by 0.5 | HIGH | MEDIUM | P1 |
-| Inhale/exhale ratios | HIGH | MEDIUM | P1 |
-| Duration/unlimited mode | HIGH | LOW | P1 |
-| Breathing animation | HIGH | MEDIUM | P1 |
-| Generated audio cues + mute | HIGH | MEDIUM | P1 |
-| Responsive design | HIGH | MEDIUM | P1 |
-| Saved local settings | HIGH | LOW | P1 |
-| Basic local stats | MEDIUM | MEDIUM | P1 |
-| Forrest links + disclaimer | MEDIUM | LOW | P1 |
-| Accessibility basics | HIGH | MEDIUM | P1 |
-| Wake Lock / fallback | MEDIUM | MEDIUM | P1 |
-| PWA install/offline | MEDIUM | MEDIUM | P2 |
-| Audio timbre/volume options | MEDIUM | MEDIUM | P2 |
-| Themes/ambience | MEDIUM | MEDIUM | P2 |
-| Export/import | LOW | MEDIUM | P2 |
-| Practice notes | LOW | MEDIUM | P2 |
-| Reminders | MEDIUM | MEDIUM | P3 |
-| Advanced custom patterns/holds | MEDIUM | HIGH | P3 |
-| HRV sensor biofeedback | HIGH | HIGH | P3 |
-| Health integrations | MEDIUM | HIGH | P3 |
-| Voice coaching/classes | MEDIUM | HIGH | P3 |
+| Inner-ring UX symmetry | LOW-MEDIUM | LOW | P0 (warm-up, land first) |
+| CUST-01: Theme (light/dark/system) | HIGH | LOW | P1 |
+| CUST-01: Named palette themes (2-3) | MEDIUM | MEDIUM | P1 |
+| CUST-02: Audio timbres (Bowl + 2-3 more) | MEDIUM | MEDIUM | P1 |
+| CUST-03: Visual variants (Orb + 1-2 more) | MEDIUM | MEDIUM | P1 |
+| I18N-01: Language switching (EN + ES) | MEDIUM | MEDIUM | P1 |
+| Storage schema extension for all 4 fields | HIGH (enabler) | LOW | P0 (prerequisite) |
+| isValid<X> / coerce<X> guards for new fields | HIGH (correctness) | LOW | P0 (prerequisite) |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
+- P0: Must land before feature work (infrastructure)
+- P1: Ship in v1.1
+- P2: After v1.1 validation
+- P3: v2+
 
-## Competitor Feature Analysis
+---
 
-| Feature | iBreathe | The Breathing App | Breathwrk | HeartMath / Elite HRV | Our Approach |
-|---------|----------|-------------------|-----------|-----------------------|--------------|
-| Core positioning | Simple customizable breathing, reminders, Apple Health, multi-device apps. | Minimal resonance breathing with ratios, sounds, background/screen-off use, no account/no ads. | Broad breathwork platform: exercises, classes, coaches, habits, streaks, Peloton content. | HRV/coherence biofeedback with sensors, readiness metrics, live charts, programs. | Focused Forrest-style paced HRV breathing web app; no accounts, no sensor claims. |
-| Timing customization | Custom intervals, 0.5-second resolution, infinite cycles, multiple sets. | Personal ratios, inhale/exhale 1-30s and holds 0-90s. | Customizable duration, voice, sounds, haptics; many protocols/classes. | Personal resonance frequency pacer and biofeedback programs. | BPM-first 1-7 by 0.5 plus selected inhale/exhale ratios; avoid arbitrary editor in v1. |
-| Guidance modalities | Visual, audio, haptics, Apple Watch; singing bowl option added. | Visual breathing ball, warm/bright sound, screen-off/background audio. | Sounds, visuals, haptics, breath coaches, video/instructor classes. | Visual/audio pacer plus real-time HRV/coherence feedback. | Polished animation + generated gong/bowl cues; no voice/haptics required for v1. |
-| Stats/habits | Reminders, Apple Health mindful minutes, iCloud sync, watch. | Simple/free core; subscription for premium; privacy-first no data collection claim. | Streaks, levels, habits, daily classes, tests. | Morning readiness, HRV metrics, tags, charts, exports, teams. | Local-only basic stats; no accounts, streak pressure, or health integrations in v1. |
-| Background/uninterrupted use | Added background breathing in 2025 after user demand. | Background/screen-off sound is highlighted and repeatedly restored/improved. | Offline access; native app context. | Sensor sessions in native apps. | Best-effort browser uninterrupted mode with Wake Lock and graceful limitations. |
-| Monetization/product scope | Free with ads/premium/tips; reviews note post-session tip prompts can feel intrusive. | Free core plus subscription for advanced features. | Subscription / Peloton membership. | Hardware + app subscription/content ecosystem. | Keep v1 calm and uncluttered; no interruptive monetization or account funnel. |
+## Competitor Customization Analysis
+
+| Dimension | iBreathe | Lungy | Breathwrk | The Breathing App | Our v1.1 Approach |
+|-----------|----------|-------|-----------|-------------------|-------------------|
+| Themes | Dark interface (accessibility note); no named palette themes | 20 themes (generative visual styles, not color palettes) | Time-aware bright/muted palette | No theme control | Light / Dark / System + 3 named calm palettes |
+| Audio timbre options | 4 interval indicator sounds (not described in detail) | Real-time generative audio, not swappable timbres | Multiple preset sounds | One warm/bright sound | 3-4 synthesized presets: Bowl (default), Bell, Sine, Chime |
+| Visual style options | Single breathing shape | 20 real-time generative visuals (3D, particle) | Multiple animations | Single breathing ball | 2-3 static variants: Orb (default), Square, Ring |
+| Language support | English only (iOS system locale not surfaced in search) | Not surfaced | Not surfaced | English only | EN (default) + ES in v1.1 |
+| Settings persistence | Yes (iOS app conventions) | Yes | Yes | Yes | Yes — all four fields added to existing Envelope |
+| In-session customization | Some settings adjustable mid-session | Visual selectable before session | Not mid-session in free tier | Not mid-session | No mid-session variant/language switching in v1.1 |
+
+---
+
+## Implementation Dependency Map for Roadmap
+
+This section summarizes which v1.0 code surfaces each feature touches, to inform phase sequencing.
+
+### CUST-01: Themes
+- **Touches:** `src/styles/theme.css` (new `[data-theme]` token blocks), `src/app/App.tsx` (apply `data-theme` attr to root), `src/components/SettingsForm.tsx` (theme picker), `src/storage/storage.ts` (Envelope field), `src/storage/settings.ts` (coerceTheme), `src/domain/settings.ts` (isValidTheme, DEFAULT_THEME).
+- **Does NOT touch:** timing engine, audio engine, session controller, stats.
+- **Risk:** Tailwind v4 `@theme` block interaction — new token overrides must follow the same CSS custom-property convention, not Tailwind class variants.
+
+### CUST-02: Audio Timbres
+- **Touches:** `src/audio/cueSynth.ts` (TimbrePreset type + preset constants + updated `scheduleInCue`/`scheduleOutCue` signatures), `src/hooks/useAudioCues.ts` (pass active preset through), `src/components/SettingsForm.tsx` (timbre picker), storage chain (Envelope + coerceTimbre + isValidTimbre).
+- **Does NOT touch:** lookaheadScheduler logic, audioEngine.ts reconstruction, mute toggle, wake lock.
+- **Risk:** FakeAudioContext test polyfill — any new oscillator node type used by alternate timbres must be supported or stubbed in `vitest.setup.ts`.
+
+### CUST-03: Visual Variants
+- **Touches:** `src/components/BreathingShape.tsx` (visualVariant prop + variant router + new variant sub-components), `src/components/SettingsForm.tsx` (variant picker), storage chain.
+- **Does NOT touch:** session engine, audio, timing, stats.
+- **Risk:** Each new variant must handle `leadInDigit` (the 3-2-1 countdown orb path) and `reducedMotion` correctly. The orb handles both; new variants must follow the same contract.
+
+### I18N-01: Language Switching
+- **Touches:** `src/content/learnContent.ts` (locale-keyed map), new `src/i18n/strings.ts` (or equivalent) for UI label strings, `src/components/LearnDialog.tsx` (consume locale strings), `src/components/SettingsForm.tsx` (language picker), storage chain (Envelope + coerceLanguage + isValidLanguage).
+- **Does NOT touch:** timing engine, audio, visual animation, stats model.
+- **Risk:** `learnContent.ts` strings for the Spanish locale require accurate translation. Machine translation is acceptable for v1.1 with a disclaimer-to-self; a native-speaker review is preferred before wider promotion.
+
+### Inner-Ring UX Symmetry (warm-up)
+- **Touches:** `src/styles/theme.css` (new `[data-phase='in'] .orb-ring--outer` opacity rule), `src/components/BreathingShape.tsx` (confirm `data-phase='in'` already set — it is, in the existing `data-phase={frame.phase}` attribute).
+- **Does NOT touch:** anything else.
+- **Risk:** Negligible. The In-phase outer-ring fade-in mirrors the exact CSS pattern of the Out-phase inner-ring fade-in. Only new CSS selector, no JS change required.
+
+---
 
 ## Sources
 
-- Apple App Store: iBreathe – Relax and Breathe. Core features include simple UI, predefined/custom exercises, reminders, Apple Health, iCloud sync, Apple Watch, lock screen widget; release notes include 0.5-second intervals, infinite cycles, singing bowl signal, background breathing, haptics, and accessibility. HIGH confidence. https://apps.apple.com/us/app/ibreathe-relax-and-breathe/id1296605806
-- Apple App Store: The Breathing App: Calm Daily. Describes resonance breathing at 5-7 breaths/min, personal ratios, minimalist design, calming sounds, screen-off/background support, no ads/account, data-not-collected privacy label; reviews praise simple visuals/audio and request Health integration/longer sessions. HIGH confidence. https://apps.apple.com/us/app/the-breathing-app-calm-daily/id1285982210
-- Breathwrk official site and App Store listing. Describes 50-100+ exercises/classes, stress/sleep/focus/energy categories, sounds/visuals/haptics/coaches, reminders, streaks/levels, Apple Health, offline access, lung score/exhale tests, Peloton integration. HIGH confidence for Breathwrk feature set; LOW confidence for its medical-style claims as product guidance. https://www.breathwrk.com/ and https://apps.apple.com/us/app/breathwrk-breathing-exercises/id1481804500
-- HeartMath Inner Balance Coherence Plus official product page. Describes HRV sensor, real-time coherence score every 5 seconds, app content/courses, 500 Hz sensor, Bluetooth/USB-C compatibility, and sensor requirement for accurate HRV. HIGH confidence. https://store.heartmath.com/innerbalance
-- Apple App Store: Elite HRV: Wellness & Fitness. Describes sensor-required HRV tracking, morning readiness, ANS balance, guided breathing, live HRV biofeedback, resonance/coherence breathing pacer, audio/visual pacer, personal resonance frequency, tags/export/integrations. HIGH confidence. https://apps.apple.com/us/app/elite-hrv-wellness-fitness/id868829970
+- Apple App Store: iBreathe – Relax and Breathe — feature set including 4 sound options, dark interface, dark mode. HIGH confidence. https://apps.apple.com/us/app/ibreathe-relax-and-breathe/id1296605806
+- Jade Lizard Software (iBreathe developer site) — confirms ultra-minimal design philosophy. HIGH confidence. https://www.jadelizardsoftware.com/ibreathe
+- Lungy app (App Store + press) — 20 generative visual themes, real-time synthesis, game-engine-driven. MEDIUM confidence (press coverage, not direct docs). https://www.lungy.app/ and https://apps.apple.com/us/app/lungy-breathing-health/id1545223887
+- It's Nice That — Lungy design coverage confirming generative graphics and sound. MEDIUM confidence. https://www.itsnicethat.com/news/pi-a-lungy-digital-160123
+- Breathwrk (official site + App Store) — time-aware palette, multiple animations, multiple sounds. HIGH confidence for feature set. https://www.breathwrk.com/
+- Purrweb Meditation App Design guide — UX patterns for calm apps, soft shapes, minimal controls. MEDIUM confidence (design consultancy synthesis). https://www.purrweb.com/blog/designing-a-meditation-app-tips-step-by-step-guide/
+- Enso Meditation Timer (App Store) — 12 exclusive synthesized chimes, IAP for additional bells. HIGH confidence for audio timbre count norms. https://apps.apple.com/us/app/ens%C5%8D-meditation-timer-bell/id840637879
+- SmartInterface Design Patterns — language selector UX best practices. HIGH confidence (Vitaly Friedman / Smashing editorial). https://smart-interface-design-patterns.com/articles/language-selector/
+- Smashing Magazine — language selector design patterns (placement, naming, no-reload patterns). HIGH confidence. https://www.smashingmagazine.com/2022/05/designing-better-language-selector/
+- InTheMoment app — multilingual meditation app analysis, notes on instant language switching UX. MEDIUM confidence. https://inthemoment.app/articles/meditation-app-multiple-languages
+- Tailwind CSS dark mode docs — class-based vs. media-query-based dark mode. HIGH confidence (official docs). https://tailwindcss.com/docs/dark-mode
+- Medium: Multi-theme UI with Tailwind v4 and React — CSS custom property token override pattern for named themes. MEDIUM confidence (community tutorial, verified against Tailwind v4 docs). https://medium.com/render-beyond/build-a-flawless-multi-theme-ui-using-new-tailwind-css-v4-react-dca2b3c95510
+- Smartico — gamification in mental wellness apps, streaks as anxiety source. MEDIUM confidence (industry analysis). https://www.smartico.ai/blog-post/gamification-mental-wellness-apps
+- MetaFilter: "Meditation app that's not gamified" — user community expressing preference for non-gamified calm apps. MEDIUM confidence (community anecdote, multiple respondents). https://ask.metafilter.com/386087/Meditation-app-thats-not-gamified
+- MDN Web Docs: Web Audio API Advanced Techniques — PeriodicWave for custom bell synthesis, parameter scheduling. HIGH confidence (official). https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
+- Big Human: Mindfulness App Design Trends 2026 — soft palettes, reduced visual complexity, calming animations. MEDIUM confidence (agency analysis). https://www.bighuman.com/blog/trends-in-mindfulness-app-design
 
 ---
-*Feature research for: HRV breathing / guided paced-breathing web app*
-*Researched: 2026-05-08*
+
+*Feature research for: HRV breathing app — v1.1 Customization milestone*
+*Researched: 2026-05-12*
