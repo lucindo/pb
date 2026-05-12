@@ -1,70 +1,47 @@
 ---
 phase: 10-hooks-identity-effect-hygiene
-verified: 2026-05-11T22:56:00Z
-status: gaps_found
-score: 4/5 must-haves verified
+verified: 2026-05-11T21:30:00Z
+status: human_needed
+score: 5/5 must-haves verified
 overrides_applied: 0
-gaps:
-  - truth: "App.tsx:81-84 sessionFrameRef updater retains explicit [session.currentFrame] deps; semantics preserved post-Phase-10"
-    status: failed
-    reason: |
-      Pre-Phase-10, `session.currentFrame` was per-rAF — `sessionFrameRef.current.elapsedMs`
-      was the live session-elapsed time. Phase 10 D-03 changed `currentFrame` to per-phase-stable
-      identity (memo keyed on `[state.status, cycleKey, phaseKey]`), so `currentFrame` is now
-      the frozen frame object captured at the last phase boundary — `elapsedMs` equals the
-      elapsed at phase START, not at the current rAF tick.
-
-      `onAudioReanchorRequired` at App.tsx:125-132 reads `sessionFrameRef.current?.elapsedMs`
-      as the live offset:
-
-          const elapsedMs = sessionFrameRef.current?.elapsedMs ?? 0
-          audioAnchorRef.current = newAudioAnchor - elapsedMs / 1000
-
-      The verbose comment at lines 70-80 makes the intent explicit: subtract the LIVE
-      session-elapsed visual offset so subsequent boundary math lands at the new AC's
-      currentTime. With per-phase-stale elapsedMs, `audioAnchorRef.current` is set TOO FAR
-      IN THE PAST by `(T_live - T_phase_start)` — up to one phase duration (~4.4s inhale or
-      ~6.5s exhale at default BPM 5.5 / 40:60 ratio). Downstream boundary effect then
-      schedules cues `(T_live - T_phase_start)` seconds late on the new AC clock.
-
-      The plan's PATTERNS.md justified keeping `sessionFrameRef` on `currentFrame` solely by
-      analyzing the boundary effect's dep array consumer (which reads cycleIndex/phase only),
-      missing the `onAudioReanchorRequired` consumer that needs live `elapsedMs`. The lint
-      gate (HOOKS-05 surface contract) passes — `[session.currentFrame]` deps still pass
-      `react-hooks/exhaustive-deps` — but the data-flow semantics broke on the iOS
-      reconstruction path. The 390/390 Vitest baseline does not catch this: the existing
-      D-42 (4) re-anchor test at App.audio.test.tsx:579-612 asserts only that a new AC was
-      constructed, NOT that the resulting `audioAnchorRef` value yields a correct scheduled
-      audio time for the next boundary.
-
-      Success Criterion #4 of the phase goal includes "App.tsx:80-82 ref-updater effect
-      declares explicit [session.currentFrame] deps and passes react-hooks/exhaustive-deps"
-      — the surface lint contract passed, but the semantic regression introduced by feeding
-      a per-phase-stale frame through the sessionFrameRef → onAudioReanchorRequired chain
-      breaks Plan 06's audio re-anchor math (Pitfall 2 dual-anchor invariant).
-    artifacts:
-      - path: src/app/App.tsx:81-84
-        issue: |
-          `sessionFrameRef` mirrors `session.currentFrame` (per-phase-stable post-D-03).
-          `onAudioReanchorRequired` at :125-132 consumes `sessionFrameRef.current.elapsedMs`
-          as a live value — now stale by up to one phase duration after mid-phase
-          engine reconstruction.
-    missing:
-      - "Switch sessionFrameRef to mirror `session.liveFrame` (per-rAF, fresh elapsedMs) since `onAudioReanchorRequired` is the consumer that needs live values. The boundary effect at App.tsx:489-536 already reads `session.currentFrame` directly (line 494), so removing sessionFrameRef from the currentFrame chain is safe."
-      - "Add a regression test in App.audio.test.tsx that drives engine reconstruction at a known mid-phase elapsed time, then asserts the next-boundary `audioTime` argument passed to `audio.notifyPhaseBoundary` matches the new AC's currentTime within an epsilon (i.e., verify the elapsedMs offset is correct)."
+re_verification:
+  previous_status: gaps_found
+  previous_score: 4/5
+  gaps_closed:
+    - "App.tsx:81-84 sessionFrameRef updater semantics preserved post-Phase-10 (CR-01 BLOCKER) — switched to mirror session.liveFrame; live elapsedMs restored to onAudioReanchorRequired chain"
+    - "useSessionEngine.test.tsx cancel-guard test hardened with vi.spyOn(console, 'error') + positive not.toHaveBeenCalledWith(stringContaining('unmounted')) + explicit consoleErrorSpy.mockRestore() (WR-01 WARNING)"
+    - "App.tsx:442-455 leave-running cleanup comment block updated to match engine-persists-on-transition-out lifecycle; stale 'engine owns null-out' claim removed (WR-02 WARNING)"
+  gaps_remaining: []
+  regressions: []
+  new_tests_added:
+    - "src/app/App.audio.test.tsx:616-763 — CR-01 regression test asserts reconstruct-path audioAnchor math within ±0.05s of newAC.currentTime + remainingPhaseMs/1000; teeth verified by scratch revert (1.76s diff)"
 human_verification:
-  - test: "Real-iPhone audio-cue-timing after reconstruction"
-    expected: "Lock device mid-session; unlock; the next In/Out cue plays at the visual phase boundary, not 1-5 seconds late."
-    why_human: "iOS Safari's AC suspend/interrupt → resume → reconstruct path requires real iOS Safari (Plan 06 Task 8 UAT cycle 2 captured a similar real-device-only regression). Vitest/jsdom cannot reproduce the iOS audio session state transitions."
+  - test: "Real-iPhone audio-cue-timing after reconstruction (carry-forward from prior VERIFICATION.md)"
+    expected: "On real iOS Safari: start a session, lock the device for ~10s mid-session, unlock and tap the mute button to trigger reconstruction. The next In/Out cue plays at the visual phase boundary (within ~50ms perceptual tolerance), NOT 1-5 seconds late."
+    why_human: "iOS Safari AudioContext suspend/interrupt → resume → reconstruct path requires real iOS Safari device. jsdom + FakeAudioContext exercise the construction surface but cannot reproduce the iOS audio session state transitions that drive the original Plan 06 UAT bug. With CR-01 closed (sessionFrameRef now sources from session.liveFrame), automated coverage proves the math is correct against the FakeAudioContext clock — but real-device validation remains the canonical sign-off. Surfaces via /gsd-audit-uat after phase completion."
 ---
 
-# Phase 10: Hooks Identity & Effect Hygiene — Verification Report
+# Phase 10: Hooks Identity & Effect Hygiene — Verification Report (Re-verification)
 
 **Phase Goal:** Stabilize callback identity in useAudioCues and stop App-level rAF effects from re-running every animation frame, by splitting per-phase vs per-frame frame identity and switching effects to status-primitive deps.
 
-**Verified:** 2026-05-11T22:56:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-05-11T21:30:00Z
+**Status:** human_needed (all automated truths VERIFIED; one carry-forward real-device UAT item)
+**Re-verification:** Yes — after Plan 10-02 gap closure (previous run: gaps_found, 4/5)
+
+## Re-verification Summary
+
+Plan 10-02 closed three verifier-surfaced items from the prior VERIFICATION.md:
+
+| Prior gap | Closure | Evidence |
+|-----------|---------|----------|
+| CR-01 BLOCKER — sessionFrameRef sourced from per-phase-stable `session.currentFrame`, breaking `onAudioReanchorRequired` re-anchor math | App.tsx:81/83/84 switched to `session.liveFrame` (per-rAF, live `elapsedMs`); new App.audio.test.tsx:616-763 regression test locks the audioAnchor math within 0.05s epsilon | Scratch-revert produces 1.76s diff (well above epsilon); restored fix yields PASS |
+| WR-01 WARNING — cancel-guard test had no positive assertion guarding against silent regression | useSessionEngine.test.tsx:272/298-300/305 — vi.spyOn(console, 'error') + expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.stringContaining('unmounted')) + mockRestore() | Direct grep + test passes; note: SUMMARY documents React 18 removed the unmounted warning, so the spy serves as defense-in-depth |
+| WR-02 WARNING — stale "engine owns null-out" comment | App.tsx:442-455 comment block rewritten to match engine-persists-on-transition-out lifecycle; cross-references useSessionEngine.ts:79-91 | `grep -c "engine owns null-out" src/app/App.tsx` returns 0; new comment present with "DOES NOT null", "PERSISTS across the transition", "see useSessionEngine.ts:79-91" |
+
+The prior `gaps_found` status (Truth #4 FAILED) is flipped to VERIFIED. All 5 truths now VERIFIED.
+
+The prior `human_verification` item (real-iPhone audio cue timing post-reconstruction) is preserved — it remains a real-device-only test that automated jsdom coverage cannot replicate. Because that item is still present, status is `human_needed` (per Step 9 decision tree: passed status is invalid when human items exist).
 
 ## Goal Achievement
 
@@ -72,36 +49,38 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | useAudioCues.start() and reconstructEngine read mute via mutedRef; start callback identity stable across setMuted toggles | VERIFIED | `mutedRef` declared at useAudioCues.ts:99; sync effect at :100-102; `start` reads `mutedRef.current` at :223 with deps `[handleStateChange]` at :244; `reconstructEngine` reads `mutedRef.current` at :292 with deps `[handleStateChange]` at :344. Tests at useAudioCues.test.tsx:1061-1107 assert `===` stability. Vitest passes. |
-| 2 | App leave-running cleanup effect depends on [state.status, ...] not [state, ...]; running-snapshot writer moves off React effects | VERIFIED | App.tsx:425-473 leave-running cleanup has deps `[state.status, completedAtMs, runningSnapshotRefStable, audioStop, wakeLockRelease, clearLeadInTimeouts]`. Local `runningSnapshotRef` declaration at HEAD lines 179-183 is DELETED (verified — grep returns 0). Running-snapshot effect at HEAD lines 412-420 is DELETED. Engine owns writer at useSessionEngine.ts:115-119 inside setState updater. |
-| 3 | useSessionEngine.currentFrame returns same memoized frame across renders within same cycleIndex:phase; separate liveFrame carries per-rAF phaseProgress | VERIFIED | `currentFrame` useMemo at useSessionEngine.ts:165-170 with primitives-only deps `[state.status, cycleKey, phaseKey]` (Variant B local-narrow per CONTEXT D-03 fallback). `liveFrame` direct read at :175. Tests at useSessionEngine.test.tsx:156-251 lock identity stability (currentFrame `===` within phase, changes at boundary, liveFrame churns per rAF). BreathingShape and SessionReadout consume `session.liveFrame` at App.tsx:565 and :569. |
-| 4 | rAF loop's cancelled short-circuit runs at top of tick(); App.tsx:80-82 ref-updater retains explicit [session.currentFrame] deps and passes react-hooks/exhaustive-deps | FAILED | Cancel-guard `if (cancelled) return` IS the first statement of tick() at useSessionEngine.ts:102 — VERIFIED part. App.tsx:81-84 sessionFrameRef updater retains `[session.currentFrame]` deps and passes lint — VERIFIED part. BUT (CR-01 BLOCKER): the per-phase-stable currentFrame change makes `sessionFrameRef.current.elapsedMs` go stale at phase-start values, breaking `onAudioReanchorRequired`'s re-anchor math (App.tsx:125-132) by up to one phase duration on iOS reconstruction. The lint contract is preserved but the data-flow semantics regressed. See gap detail below. |
-| 5 | No regressions in existing suite; boundary cues fire exactly once per phase transition | VERIFIED (with caveat) | Full Vitest suite 390/390 passes (baseline 381 + 9 new identity tests). `npm run lint` exits 0. `tsc --noEmit -p tsconfig.app.json` exits 0. `npm run build` exits 0. App.audio.test.tsx (21 tests) passes — boundary cues fire exactly once per phase per `lastBoundaryKeyRef` gate. Caveat: existing tests do not exercise elapsedMs-sensitive re-anchor math (CR-01 surfaces a regression NOT covered by the existing suite). |
+| 1 | `useAudioCues.start()` and `reconstructEngine` read mute via `mutedRef`; `start` callback identity stable across `setMuted` toggles (HOOKS-01) | VERIFIED | `mutedRef = useRef<boolean>(initialMuted ?? false)` at useAudioCues.ts:99; sync effect at :100-102 (`mutedRef.current = muted` on `[muted]`); `engine.setMuted(mutedRef.current)` at :223 inside `start` with deps `[handleStateChange]` only; `const currentMuted = mutedRef.current` at :292 inside `reconstructEngine`. 3 identity-stability tests in useAudioCues.test.tsx (start ===, resume ===, baseline regression). |
+| 2 | App leave-running cleanup depends on `[state.status, ...]` not `[state, ...]`; running-snapshot writer moves off React effects (HOOKS-02) | VERIFIED | App.tsx:481 deps `[state.status, completedAtMs, runningSnapshotRefStable, audioStop, wakeLockRelease, clearLeadInTimeouts]`. Local `runningSnapshotRef` declaration (HEAD :179-183) DELETED. Running-snapshot effect (HEAD :412-420) DELETED. Engine owns the writer at useSessionEngine.ts:115-119 inside `setState((currentState) => ...)` updater (Pitfall 1 closure-staleness resolved). |
+| 3 | `useSessionEngine.currentFrame` returns same memoized frame across renders within same cycleIndex:phase; separate `liveFrame` carries per-rAF `phaseProgress` (HOOKS-03) | VERIFIED | `currentFrame` useMemo at useSessionEngine.ts:165-170 with primitives-only deps `[state.status, cycleKey, phaseKey]` (Variant B local-narrow). `liveFrame` direct read at :175 (`state.status === 'running' ? state.lastFrame : null`). BreathingShape consumes `session.liveFrame` at App.tsx:573; SessionReadout at :577. 4 identity tests in useSessionEngine.test.tsx (stable within phase, changes at boundary, liveFrame churns per rAF, liveFrame.phaseProgress advances). |
+| 4 | rAF loop's `cancelled` short-circuit at top of `tick()`; App.tsx:81-84 ref-updater retains explicit deps and passes `react-hooks/exhaustive-deps` (HOOKS-04 + HOOKS-05) | VERIFIED | `if (cancelled) return` is the first statement of `tick()` at useSessionEngine.ts:102. App.tsx:81-84 sessionFrameRef updater declares `[session.liveFrame]` (post-Plan-10-02 CR-01 fix): the deps are explicit and pass exhaustive-deps; `npm run lint` exits 0. **Semantic contract restored** (CR-01 closed) — sessionFrameRef now mirrors `session.liveFrame` (per-rAF live `elapsedMs`), so `onAudioReanchorRequired` at App.tsx:125-132 reads the LIVE session-elapsed value, restoring Plan 06 dual-anchor math. The literal-vs-semantic repair of HOOKS-05 is complete: the surface lint contract holds AND the data-flow semantics are correct. |
+| 5 | No regressions in existing suite; boundary cues fire exactly once per phase transition; CR-01 audioAnchor math locked by regression test | VERIFIED | Full Vitest suite 391/391 passes (390 baseline + 1 new CR-01 regression test). `npm run lint` exits 0. `npx tsc --noEmit -p tsconfig.app.json` exits 0. `npm run build` exits 0. App.audio.test.tsx (22 tests) passes — boundary cues fire exactly once per phase per `lastBoundaryKeyRef` gate at App.tsx:505. CR-01 regression test asserts `Math.abs(audioTime - (capturedAcNow + expectedRemainingMs/1000)) < 0.05` at App.audio.test.tsx:759; verifier-side scratch revert of App.tsx:81/83/84 yields 1.76s diff (test FAILS), restoring the fix yields PASS — teeth confirmed. |
 
-**Score:** 4/5 truths verified. Truth #4 partially failed via CR-01 — the lint/structural contract holds, but the semantic data-flow contract regressed.
+**Score:** 5/5 truths verified.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
-|---------|----------|--------|---------|
-| `src/hooks/useSessionEngine.ts` | New `liveFrame` field, `runningSnapshotRef` field, exported `RunningSnapshot` type, primitives-only currentFrame deps, top-of-tick cancel-guard, snapshot ref-write inside setState updater | VERIFIED | All present. `export interface RunningSnapshot` at :31; `liveFrame: SessionFrame \| null` at :50; `runningSnapshotRef: RefObject<RunningSnapshot \| null>` at :60; `useRef<RunningSnapshot \| null>(null)` at :77; `if (cancelled) return` at :102 (top of tick); snapshot ref-write at :115-119 inside `setState((currentState) => ...)` updater (Pitfall 1 resolved — reads `currentState.startedAtMs` and `currentState.lastFrame.elapsedMs`, not outer-closure `state`); `currentFrame` useMemo at :165-170 with deps `[state.status, cycleKey, phaseKey]`; `liveFrame` direct read at :175. |
-| `src/hooks/useSessionEngine.ts` (RunningSnapshot export) | exported RunningSnapshot type for App-side consumption | VERIFIED | `export interface RunningSnapshot { key: string; startedAtMs: number; lastElapsedMs: number }` at :31-35. |
-| `src/hooks/useAudioCues.ts` | mutedRef mirroring muted state; start and reconstructEngine read mutedRef.current; deps drop muted | VERIFIED | `const mutedRef = useRef<boolean>(initialMuted ?? false)` at :99. Sync effect at :100-102 (`useEffect(() => { mutedRef.current = muted }, [muted])`). `engine.setMuted(mutedRef.current)` at :223 inside `start`. `const currentMuted = mutedRef.current` at :292 inside `reconstructEngine`. Deps `[handleStateChange]` only on both useCallbacks (:244 and :344). |
-| `src/hooks/useSessionEngine.test.tsx` | EXTENDED with 5-6 identity tests in new describe block | VERIFIED | New `describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', ...)` at :146-332 with 6 tests. The 5 existing tests at :22-137 are preserved verbatim. |
-| `src/hooks/useAudioCues.test.tsx` | EXTENDED with 2-3 callback-identity tests | VERIFIED | New `describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', ...)` at :1029-end with 3 tests (start identity, resume identity, baseline regression guard). All 28 existing tests preserved. |
-| `src/app/App.tsx` | Local runningSnapshotRef + running-snapshot effect DELETED; cleanup effect at :464 reads session.runningSnapshotRef and depends on [state.status, ...]; BreathingShape + SessionReadout consume session.liveFrame; sessionFrameRef updater unchanged | VERIFIED (with semantic regression — see Truth #4) | Local `runningSnapshotRef = useRef<{...}>(null)` at HEAD :179-183 — DELETED (grep returns 0). Running-snapshot effect at HEAD :412-420 — DELETED. Cleanup effect at :425-473 reads `runningSnapshotRefStable.current` (`= session.runningSnapshotRef`) with deps `[state.status, completedAtMs, runningSnapshotRefStable, audioStop, wakeLockRelease, clearLeadInTimeouts]` (Pitfall 3 Option A const-extract applied). BreathingShape `frame={appPhase === 'running' ? session.liveFrame : null}` at :565. SessionReadout `frame={leadInPlaceholderFrame ?? session.liveFrame}` at :569. sessionFrameRef updater at :81-84 untouched (passes lint, but feeds stale elapsedMs to onAudioReanchorRequired — CR-01). |
+|----------|----------|--------|---------|
+| `src/hooks/useSessionEngine.ts` | `RunningSnapshot` export, `liveFrame` field, `runningSnapshotRef` field, primitives-only currentFrame deps, top-of-tick cancel-guard, snapshot ref-write inside setState updater | VERIFIED | `export interface RunningSnapshot` at :31-35; `liveFrame: SessionFrame \| null` at :50; `runningSnapshotRef: RefObject<RunningSnapshot \| null>` at :60; `useRef<RunningSnapshot \| null>(null)` at :77; `if (cancelled) return` at :102 (top of tick); snapshot ref-write at :115-119 inside `setState((currentState) => ...)` updater reading `currentState.startedAtMs` and `currentState.lastFrame.elapsedMs` (Pitfall 1 resolved); `currentFrame` useMemo at :165-170 deps `[state.status, cycleKey, phaseKey]`; `liveFrame` direct read at :175. Unchanged from prior VERIFICATION (10-01). |
+| `src/hooks/useAudioCues.ts` | mutedRef mirroring muted state; start and reconstructEngine read mutedRef.current; deps drop muted | VERIFIED | `mutedRef = useRef<boolean>(initialMuted ?? false)` at :99; sync effect at :100-102; `engine.setMuted(mutedRef.current)` at :223 inside `start`; `const currentMuted = mutedRef.current` at :292 inside `reconstructEngine`. Deps `[handleStateChange]` on both useCallbacks. Unchanged from prior VERIFICATION (10-01). |
+| `src/hooks/useSessionEngine.test.tsx` | EXTENDED with identity tests + cancel-guard test hardened (Plan 10-02 WR-01) | VERIFIED | New `describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', ...)` at :146-332 with 6 tests preserved from 10-01. Cancel-guard test at :253-306 HARDENED in Plan 10-02: `consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})` at :272, `expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.stringContaining('unmounted'))` at :298-300, `consoleErrorSpy.mockRestore()` at :305. Inline comment at :256-271 documents the React 18 nuance (defense-in-depth posture). |
+| `src/hooks/useAudioCues.test.tsx` | EXTENDED with callback-identity tests | VERIFIED | New describe block at :1029+ with 3 tests (start identity, resume identity, baseline regression guard). All 28 existing tests preserved. Unchanged from prior VERIFICATION (10-01). |
+| `src/app/App.tsx` | Local runningSnapshotRef + effect DELETED; cleanup at :425 reads session.runningSnapshotRef and depends on [state.status, ...]; BreathingShape + SessionReadout consume session.liveFrame; sessionFrameRef sources from session.liveFrame (Plan 10-02 CR-01); cleanup comment matches engine-persists semantics (Plan 10-02 WR-02) | VERIFIED | Local `runningSnapshotRef` declaration DELETED (verified: grep returns 0). Running-snapshot effect DELETED. Cleanup at :425-481 reads `runningSnapshotRefStable.current` (= session.runningSnapshotRef) with the hoisted-primitives dep array. BreathingShape `frame={appPhase === 'running' ? session.liveFrame : null}` at :573. SessionReadout `frame={leadInPlaceholderFrame ?? session.liveFrame}` at :577. **CR-01 fix:** sessionFrameRef at :81-84 now mirrors `session.liveFrame` (3 occurrences: useRef call, updater body assignment, deps). **WR-02 fix:** cleanup comment at :442-455 rewritten — "engine does NOT null", "PERSISTS across the transition", cross-reference to useSessionEngine.ts:79-91. |
+| `src/app/App.audio.test.tsx` | NEW CR-01 regression test (Plan 10-02) | VERIFIED | New test at :616-763, name contains "CR-01 (Phase 10 gap closure)". Drives ~45% into inhale via `createBreathingPlan(DEFAULT_SETTINGS).inhaleMs * 0.45`; mirrors D-42 (4) reconstruction trigger (`_simulateInterrupted` → `_simulateResumeReject` → visibilitychange → click muteButton); synchronous AC clock capture inside `scheduleOutCue.mockImplementation`; assertion `Math.abs(audioTime - expectedAudioTime) < 0.05` at :759. expectedRemainingMs derived from the audio clock itself (`acNowAtBoundary - capturedAcNow`) — annotated in test comment at :633-641 explaining the audio-clock-derived shape sidesteps jsdom-fake-timer-rAF aliasing. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|----|--------|---------|
-| useSessionEngine.ts rAF tick | runningSnapshotRef.current | ref-write inside setState updater BEFORE completeIfNeeded return | WIRED | Line 115-119 inside `setState((currentState) => { ... })` updater after the `if (currentState.status !== 'running') return currentState` narrowing, before `return completeIfNeeded(currentState, performance.now())`. Value source is `currentState`, NOT outer-closure `state` (Pitfall 1 resolved). |
-| App.tsx leave-running cleanup | session.runningSnapshotRef.current | synchronous read inside effect body via runningSnapshotRefStable local | WIRED | Line 454: `const snap = runningSnapshotRefStable.current` (where `runningSnapshotRefStable = session.runningSnapshotRef` is hoisted at :424). Read inside the `if (state.status !== 'running')` branch. |
-| useAudioCues.ts start | mutedRef.current | engine.setMuted(mutedRef.current); useCallback deps = [handleStateChange] | WIRED | Line 223: `engine.setMuted(mutedRef.current)`. Deps `[handleStateChange]` at :244. |
-| useAudioCues.ts reconstructEngine | mutedRef.current | const currentMuted = mutedRef.current; useCallback deps = [handleStateChange] | WIRED | Line 292: `const currentMuted = mutedRef.current`. Deps `[handleStateChange]` at :344. |
-| App.tsx:565 BreathingShape | session.liveFrame | frame={appPhase === 'running' ? session.liveFrame : null} | WIRED | Verified — exact match at :565. |
-| App.tsx:569 SessionReadout | session.liveFrame | frame={leadInPlaceholderFrame ?? session.liveFrame} | WIRED | Verified — exact match at :569. |
-| App.tsx:81-84 sessionFrameRef | session.currentFrame (per design) | useRef + useEffect mirror with deps [session.currentFrame] | WIRED but SEMANTICALLY BROKEN | The wiring exists and passes lint. BUT post-Phase-10, `session.currentFrame.elapsedMs` is frozen at phase start, not live. `onAudioReanchorRequired` at :125-132 consumes `sessionFrameRef.current.elapsedMs` AS IF LIVE → re-anchor math off by up to one phase duration after iOS reconstruction. See CR-01 in gap detail. |
+| useSessionEngine.ts rAF tick | runningSnapshotRef.current | ref-write inside setState updater BEFORE completeIfNeeded | WIRED | Lines 115-119 inside `setState((currentState) => { ... })` updater after the `if (currentState.status !== 'running') return currentState` narrowing. Value source is `currentState` (NOT outer-closure `state`). |
+| App.tsx leave-running cleanup | session.runningSnapshotRef.current | synchronous read via `runningSnapshotRefStable` local | WIRED | Line 462: `const snap = runningSnapshotRefStable.current` (where `runningSnapshotRefStable = session.runningSnapshotRef` is hoisted before the effect). Read inside the `state.status !== 'running'` branch. |
+| useAudioCues.ts start | mutedRef.current | `engine.setMuted(mutedRef.current)`; deps `[handleStateChange]` | WIRED | Line 223; deps locked at :244. |
+| useAudioCues.ts reconstructEngine | mutedRef.current | `const currentMuted = mutedRef.current`; deps `[handleStateChange]` | WIRED | Line 292; deps locked at :344. |
+| App.tsx:573 BreathingShape | session.liveFrame | `frame={appPhase === 'running' ? session.liveFrame : null}` | WIRED | Verified — exact match at :573. |
+| App.tsx:577 SessionReadout | session.liveFrame | `frame={leadInPlaceholderFrame ?? session.liveFrame}` | WIRED | Verified — exact match at :577. |
+| App.tsx:81-84 sessionFrameRef | session.liveFrame (per-rAF live elapsedMs) | useRef + useEffect mirror with deps `[session.liveFrame]` | WIRED + SEMANTICALLY CORRECT (CR-01 closed) | The 3 lines now reference `session.liveFrame` (post-Plan-10-02 fix). The downstream consumer `onAudioReanchorRequired` at :125-132 reads `sessionFrameRef.current?.elapsedMs` and gets LIVE per-rAF elapsedMs — the dual-anchor invariant (Plan 06 Task 8 kitchen-sink) is restored. |
+| App.tsx:125-132 onAudioReanchorRequired | audioAnchorRef.current | `audioAnchorRef.current = newAudioAnchor - elapsedMs / 1000` | WIRED | Now consumes live `elapsedMs` (post-CR-01 fix). The verbose comment at App.tsx:71-80 ("subtract the session-elapsed visual offset") is now factually accurate against the implementation. |
+| App.tsx:502 boundary effect | session.currentFrame (direct read, NOT via sessionFrameRef) | `const frame = session.currentFrame` | WIRED | This consumer benefits from per-phase memoization (fires once per phase boundary, not per rAF). Unaffected by the CR-01 fix because it reads `currentFrame` directly. |
 
 ### Data-Flow Trace (Level 4)
 
@@ -109,100 +88,87 @@ human_verification:
 |----------|--------------|--------|-------------------|--------|
 | BreathingShape | session.liveFrame | useSessionEngine.ts:175 direct read of `state.lastFrame` when running | YES (per-rAF) | FLOWING |
 | SessionReadout | session.liveFrame | useSessionEngine.ts:175 direct read of `state.lastFrame` when running | YES (per-rAF) | FLOWING |
-| App leave-running cleanup snap | runningSnapshotRefStable.current (= session.runningSnapshotRef.current) | useSessionEngine.ts:115-119 ref-write inside setState updater from `currentState` | YES (live currentState, NOT outer-closure state — Pitfall 1 resolved) | FLOWING |
-| onAudioReanchorRequired elapsedMs | sessionFrameRef.current.elapsedMs (= session.currentFrame.elapsedMs) | useSessionEngine.ts:165-170 useMemo memoized to FIRST `state.lastFrame` of phase | NO (frozen at phase start, not live) | DISCONNECTED — CR-01 |
+| App leave-running cleanup `snap` | runningSnapshotRefStable.current (= session.runningSnapshotRef.current) | useSessionEngine.ts:115-119 inside-updater ref-write from `currentState` | YES (live currentState, NOT outer-closure `state` — Pitfall 1 resolved) | FLOWING |
+| onAudioReanchorRequired `elapsedMs` | sessionFrameRef.current.elapsedMs (= session.liveFrame.elapsedMs) | useSessionEngine.ts:175 direct read of state.lastFrame.elapsedMs per rAF | YES (per-rAF live, post-CR-01 fix) | FLOWING (was DISCONNECTED in prior verification) |
+| App.audio.test.tsx CR-01 test `audioTime` | scheduleOutSpy.mock.calls[0][1] | engine.scheduleNextCue → cueSynth.scheduleOutCue, second arg = audioTime = audioAnchor + boundaryStartMs/1000 | YES (real audio clock from FakeAudioContext) | FLOWING |
+
+The previously-DISCONNECTED `onAudioReanchorRequired elapsedMs` data-flow is now FLOWING. The CR-01 regression test locks this flow with an executable assertion.
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |---------|---------|--------|--------|
-| Full Vitest suite | `npm run test -- --run` | 390 passed (27 files) | PASS |
+| Full Vitest suite | `npm run test -- --run` | 391 passed (27 files) | PASS |
 | ESLint | `npm run lint` | exit 0 | PASS |
 | TypeScript strict | `npx tsc --noEmit -p tsconfig.app.json` | exit 0 | PASS |
-| Production build | `npm run build` | built in 110ms | PASS |
-| currentFrame identity stable test | `npx vitest run src/hooks/useSessionEngine.test.tsx -t "currentFrame identity is stable"` | 1 passed | PASS |
-| start callback identity test | `npx vitest run src/hooks/useAudioCues.test.tsx -t "start callback identity is stable"` | 1 passed | PASS |
-| rAF cancel-guard test | `npx vitest run src/hooks/useSessionEngine.test.tsx -t "rAF cancel-guard"` | 1 passed | PASS |
-| Boundary-cue exactly-once | `npx vitest run src/app/App.audio.test.tsx` | 21 passed | PASS |
+| Production build | `npm run build` | built in 115ms | PASS |
+| CR-01 regression test | `npx vitest run src/app/App.audio.test.tsx -t "CR-01"` | 1 passed | PASS |
+| CR-01 regression teeth-check (revert App.tsx:81-84 to session.currentFrame) | `npx vitest run src/app/App.audio.test.tsx -t "CR-01"` after revert | 1 FAILED — diff 1.764s, expected < 0.05 | TEETH CONFIRMED (revert restored to fix) |
+| Cancel-guard hardened test | `npx vitest run src/hooks/useSessionEngine.test.tsx -t "rAF cancel-guard"` | 1 passed | PASS |
+| Boundary-cue exactly-once | `npx vitest run src/app/App.audio.test.tsx` | 22 passed (was 21; +1 new CR-01 test) | PASS |
+
+### Probe Execution
+
+Phase 10 is a hooks/refactor phase with no `scripts/*/tests/probe-*.sh` declared in either plan. No probes apply.
+
+| Probe | Command | Result | Status |
+|-------|---------|--------|--------|
+| (no probes declared) | n/a | n/a | n/a |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |------------|------------|-------------|--------|----------|
-| HOOKS-01 | 10-01-PLAN.md | useAudioCues.start() and reconstructEngine read mute via mutedRef; useCallback deps no longer include muted; onStartClick identity stabilizes across mute toggles | SATISFIED | mutedRef at useAudioCues.ts:99; start at :223 with deps [handleStateChange]; reconstructEngine at :292 with deps [handleStateChange]; 3 identity-stability tests at useAudioCues.test.tsx:1061-1107. |
-| HOOKS-02 | 10-01-PLAN.md | App cleanup effect depends on state.status (and primitives), not state. Running-snapshot writer moved off React effects (ref-write from inside useSessionEngine) | SATISFIED | Cleanup deps at App.tsx:473 `[state.status, completedAtMs, runningSnapshotRefStable, audioStop, wakeLockRelease, clearLeadInTimeouts]`. Engine-owned writer at useSessionEngine.ts:115-119 inside setState updater. Local runningSnapshotRef + per-render effect DELETED. |
-| HOOKS-03 | 10-01-PLAN.md | useSessionEngine.currentFrame same memoized object within cycleIndex:phase; separate liveFrame for per-rAF phaseProgress | SATISFIED | useMemo at useSessionEngine.ts:165-170 deps `[state.status, cycleKey, phaseKey]`; liveFrame at :175. 4 identity tests at useSessionEngine.test.tsx (stable within phase, changes at boundary, liveFrame churns per rAF, liveFrame.phaseProgress advances). |
-| HOOKS-04 | 10-01-PLAN.md | rAF loop short-circuits on `cancelled` at top of tick() | SATISFIED | `if (cancelled) return` at useSessionEngine.ts:102 (first statement of tick body). Cancel-guard test at useSessionEngine.test.tsx:253-279 (WR-01 caveat: the test exercises the path but does not assert console.error absence — see warning below). |
-| HOOKS-05 | 10-01-PLAN.md | sessionFrameRef-updater effect declares explicit deps [session.currentFrame] and passes react-hooks/exhaustive-deps | SATISFIED (lint contract) / BLOCKED (semantic) | App.tsx:81-84 unchanged from HEAD; `npm run lint` exits 0. BUT (CR-01): per-phase-stable currentFrame breaks the data-flow contract that `onAudioReanchorRequired` (App.tsx:125-132) relied on. The lint surface contract is preserved; the implicit semantic contract is regressed. |
+| HOOKS-01 | 10-01-PLAN.md | useAudioCues.start() and reconstructEngine read mute via mutedRef; deps no longer include muted; onStartClick identity stabilizes across mute toggles | SATISFIED | mutedRef at useAudioCues.ts:99; start at :223 deps `[handleStateChange]`; reconstructEngine at :292 deps `[handleStateChange]`; 3 identity-stability tests at useAudioCues.test.tsx:1061+. |
+| HOOKS-02 | 10-01-PLAN.md | App cleanup depends on state.status (and primitives), not state. Running-snapshot writer moved off React effects | SATISFIED | Cleanup deps at App.tsx:481 `[state.status, completedAtMs, runningSnapshotRefStable, audioStop, wakeLockRelease, clearLeadInTimeouts]`. Engine-owned writer at useSessionEngine.ts:115-119 inside setState updater. Local ref + per-render effect DELETED. |
+| HOOKS-03 | 10-01-PLAN.md | useSessionEngine.currentFrame same memoized object within cycleIndex:phase; separate liveFrame for per-rAF phaseProgress | SATISFIED | useMemo at useSessionEngine.ts:165-170 deps `[state.status, cycleKey, phaseKey]`; liveFrame at :175. 4 identity tests in useSessionEngine.test.tsx. |
+| HOOKS-04 | 10-01-PLAN.md | rAF loop short-circuits on `cancelled` at top of tick() | SATISFIED | `if (cancelled) return` at useSessionEngine.ts:102 (first statement). Cancel-guard test at useSessionEngine.test.tsx:253-306 HARDENED with positive console.error absence assertion + mockRestore (WR-01 closed). |
+| HOOKS-05 | 10-01-PLAN.md / 10-02-PLAN.md | sessionFrameRef-updater effect declares explicit deps and passes react-hooks/exhaustive-deps | SATISFIED (lint + semantic) | App.tsx:81-84 sessionFrameRef updater declares explicit deps `[session.liveFrame]` (post-Plan-10-02 CR-01 fix; REQUIREMENTS.md literal wording said `[session.currentFrame]` but semantic intent — "explicit deps that pass exhaustive-deps" — is preserved AND the data-flow semantics are correct: `onAudioReanchorRequired` now reads live elapsedMs). `npm run lint` exits 0. Lint contract holds AND data-flow contract holds. |
 
-All 5 HOOKS requirement IDs accounted for. HOOKS-05 satisfies the literal wording (deps explicit + lint passes) but the underlying intent (`sessionFrameRef` continues to surface useful values to downstream consumers) is undermined by HOOKS-03's per-phase memoization. CR-01 is the consequence.
+All 5 HOOKS-* requirement IDs accounted for. No orphaned requirements (REQUIREMENTS.md maps these IDs to Phase 10 only).
+
+**Note on HOOKS-05 wording discrepancy (not a gap):** REQUIREMENTS.md:67 specifies the literal `[session.currentFrame]` form, but Plan 10-02 changed the source to `[session.liveFrame]` to close CR-01. The requirement's SEMANTIC intent — "the sessionFrameRef-updater effect declares explicit deps (no missing dep array) and passes react-hooks/exhaustive-deps" — is preserved verbatim (the deps are still explicit; lint passes; the data-flow consumer `onAudioReanchorRequired` now receives correct live values). The literal-vs-semantic repair is documented in 10-02-PLAN.md and 10-VERIFICATION.md (prior run). This deviation was the explicit purpose of Plan 10-02; it is not a coverage gap.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| src/app/App.tsx | 81-84, 125-132 | Stale-data anti-pattern: `sessionFrameRef` now mirrors the per-phase-stable `session.currentFrame`, but `onAudioReanchorRequired` reads `sessionFrameRef.current.elapsedMs` as if it were live. The per-phase memoization froze a value that a downstream consumer still treats as live. | BLOCKER (CR-01) | After mid-phase iOS reconstruction, the dual-anchor math computes `audioAnchor = newAC.now() - (T_phase_start / 1000)` instead of `newAC.now() - (T_live / 1000)`. Subsequent boundary cues schedule at `audioTime = audioAnchor + boundaryStartMs/1000` — late by up to one phase duration (~4-6s at default settings). |
-| src/hooks/useSessionEngine.test.tsx | 253-279 | Negative-assertion-by-absence: the cancel-guard test exercises the post-unmount rAF path but has no positive assertion that React's "setState on unmounted component" error was not emitted. Vitest does NOT fail tests on console.error by default. | WARNING (WR-01 from review) | Regression that removes `if (cancelled) return` at useSessionEngine.ts:102 would silently leave this test green — defeating HOOKS-04's regression lock. Recommend wiring `vi.spyOn(console, 'error')` + assertion. |
-| src/app/App.tsx | 442-447 | Stale comment: leave-running cleanup comment says "the engine owns null-out" — but the engine deliberately does NOT null on transition out (see useSessionEngine.ts:79-91 commentary). | WARNING (WR-02 from review) | Misleads future maintainers about snapshot lifecycle. Implementation chose persistence for hook-vs-consumer effect-ordering reasons (deviation from CONTEXT D-13 test 6 wording); the App-side comment was not updated to match. |
-| src/hooks/useAudioCues.ts | 208-212 | Latent failure-recovery gap (pre-existing): if a previous lifecycle left `engineRef.current` non-null while `audioAvailable === false` / `status === 'failed'`, a second `start()` returns stale `firstInCueTimeRef.current` without recovering status. Phase 10 callback-identity changes do not introduce this; review WR-03 surfaces it as in-window. | INFO (WR-03 from review — pre-existing) | Defensive cleanup recommended but out of Phase 10 scope. |
-| src/hooks/useSessionEngine.ts | 124-139 | Defensive `if (!cancelled)` re-check after setState relies on "synchronous-commit" assumption with no test coverage. Either reachable (needs a test) or dead code with eslint-disable noise. | INFO (WR-04 from review) | Code quality / testability concern. |
-| src/hooks/useAudioCues.test.tsx | 337-360, 451-507, 1033-1054 | `SpyableAC` test double duplicated 3 times in the same file | INFO (IN-02 from review) | Compounding tech debt; track for v1.x. |
+| src/app/App.tsx | (none in scope of Phase 10) | (none) | n/a | The prior CR-01 anti-pattern (stale-data via per-phase frozen elapsedMs) is RESOLVED in Plan 10-02. The prior WR-02 stale comment is REPLACED. No new anti-patterns introduced. |
+| src/hooks/useSessionEngine.test.tsx | (none in scope of Phase 10) | (none) | n/a | The prior WR-01 negative-assertion-by-absence is RESOLVED with positive `not.toHaveBeenCalledWith(expect.stringContaining('unmounted'))` + mockRestore at :298-305. |
+| src/hooks/useAudioCues.ts | 208-212 | Latent failure-recovery gap (pre-existing) | INFO (WR-03; out of scope) | Pre-existing, not introduced by Phase 10. Tracked for future cleanup phase (per 10-02 plan §threat_model T-10-02-05 accept). |
+| src/hooks/useSessionEngine.ts | 124-139 | Defensive `if (!cancelled)` recheck after setState relies on synchronous-commit assumption with no direct test coverage | INFO (WR-04; out of scope) | Code quality concern; not goal-violating. Carried forward from prior verification. |
+| src/hooks/useAudioCues.test.tsx | 337-360, 451-507, 1033-1054 | `SpyableAC` test double duplicated 3 times | INFO (IN-02; out of scope) | Tech debt for a v1.x cleanup phase. Acknowledged in 10-REVIEW.md (clean status). |
 
-### Code-Review BLOCKER Inspection: CR-01
+No BLOCKER or WARNING anti-patterns remain in scope of Phase 10. The three INFO items (WR-03, WR-04, IN-02) are explicitly deferred per Plan 10-02 threat model.
 
-**Finding type:** REAL goal-violating regression (NOT a theoretical concern covered by existing tests).
+### Code-Review Status (10-REVIEW.md, refreshed)
 
-**Evidence trace:**
+| Severity | Count | Notes |
+|----------|-------|-------|
+| Critical | 0 | (was 1 — CR-01; RESOLVED) |
+| Warning | 0 | (was 2 — WR-01, WR-02; RESOLVED) |
+| Info | 1 | IN-02 (duplicated SpyableAC); pre-existing tech debt; deferred |
+| **Total** | **1** | **status: clean** |
 
-1. **Pre-Phase-10 contract:** `session.currentFrame` was computed with deps `[state]` — recomputed on every state update (which means every rAF tick during running). `sessionFrameRef.current.elapsedMs` therefore reflected the live session-elapsed time within ≤16ms latency.
-
-2. **Phase 10 D-03 change:** `currentFrame` useMemo at useSessionEngine.ts:165-170 now keyed on `[state.status, cycleKey, phaseKey]`. The body returns `state.lastFrame` (a fresh object created per rAF in sessionController). The memo holds the reference of the FIRST `state.lastFrame` it saw at the current cycleIndex:phase and refuses to update until cycleIndex or phase changes. So `currentFrame.elapsedMs` is the elapsed value at the moment the phase started, NOT the current rAF elapsed.
-
-3. **Consumer that needs live values:** `onAudioReanchorRequired` at App.tsx:125-132 reads `sessionFrameRef.current?.elapsedMs ?? 0` and subtracts `elapsedMs / 1000` from `newAudioAnchor` to compute the audioAnchor offset. The verbose comment at App.tsx:70-80 makes the intent explicit — "subtract the session-elapsed visual offset so the formula yields audioTime ≈ newAC.currentTime at the upcoming boundary." That requires LIVE elapsed.
-
-4. **Other consumer (boundary effect):** App.tsx:494 reads `session.currentFrame` directly (not via sessionFrameRef), and the boundary effect only consumes `frame.cycleIndex` and `frame.phase` (not elapsedMs). The boundary effect is unaffected by the per-phase freezing — actually benefits from it (fires once per phase boundary instead of per rAF).
-
-5. **Existing test coverage gap:** D-42 (4) at App.audio.test.tsx:579-612 verifies a new AC is constructed on reconstruction but does NOT assert correct audioAnchor / audioTime computation. No test in the 390-test suite exercises elapsedMs-sensitive re-anchor math.
-
-6. **PATTERNS.md design defect:** The plan document justifies keeping `sessionFrameRef` on `currentFrame` based solely on the boundary effect's dep array, missing the `onAudioReanchorRequired` consumer entirely. This is documentation drift the verifier surfaced via Level 4 data-flow trace.
-
-7. **Quantitative impact:** At default settings (BPM 5.5, ratio 40:60): inhaleMs ≈ 4363ms, exhaleMs ≈ 6545ms. Reconstruction mid-phase yields up to ~6.5s of audio-cue lateness — clearly perceptible. The bug fires on the iOS reconstruction path (Plan 06 D-31/D-33/D-35) which is real-iPhone-only behavior; jsdom Vitest cannot exercise it.
-
-**Why this is BLOCKER not WARNING:**
-- It's a definite data-flow regression, not a "theoretical" concern.
-- The failure mode breaks Plan 06's hard-fought audio-visual sync (kitchen-sink offset fix landed 2026-05-10).
-- The fix is trivial: change `session.currentFrame` to `session.liveFrame` on App.tsx:81, 83, 84 (since the boundary effect already reads `session.currentFrame` directly, the sessionFrameRef chain has only one consumer: `onAudioReanchorRequired`, which needs live elapsedMs).
-- The plan goal explicitly says "No regressions in existing suite" — but the gap here is that the existing suite has NO COVERAGE for the elapsedMs-sensitive code path, so the goal's "no regression" criterion is unverifiable without the new regression test the review recommends.
-
-**Fix per review (App.tsx:81-84):**
-
-```ts
-const sessionFrameRef = useRef(session.liveFrame)
-useEffect(() => {
-  sessionFrameRef.current = session.liveFrame
-}, [session.liveFrame])
-```
-
-Plus a new test that drives reconstruction mid-phase and asserts the next-boundary `audioTime` lands within an epsilon of the new AC's currentTime + expectedRemaining.
+Plan 10-02 closed all in-scope CR/WR items. The remaining INFO item is acknowledged tech debt.
 
 ### Human Verification Required
 
-1. **Real-iPhone audio-cue-timing after reconstruction**
+1. **Real-iPhone audio-cue-timing after reconstruction (carry-forward from prior verification)**
    - **Test:** Start a session on real iOS Safari. Mid-session (e.g., 30 seconds in), lock the device for ~10 seconds. Unlock. Tap the mute button to trigger reconstruction (the click chains `audio.resume()` which escalates to reconstruction per Plan 06 D-33).
    - **Expected:** The next In/Out cue plays at the visual phase boundary (within ~50ms perceptual tolerance), NOT 1-5 seconds late.
-   - **Why human:** iOS Safari AC suspend/interrupt → resume → reconstruct path requires real iOS Safari device. jsdom and FakeAudioContext do not reproduce the iOS audio session state transitions that drive the bug.
+   - **Why human:** iOS Safari AC suspend/interrupt → resume → reconstruct path requires real iOS Safari device. jsdom + FakeAudioContext exercise the construction surface and let the CR-01 regression test verify the math against a deterministic clock, but cannot reproduce the iOS audio session state transitions that drive the original Plan 06 UAT-cycle-2 bug. With CR-01 closed (sessionFrameRef sources from session.liveFrame), the automated regression test proves the audio-anchor math is correct against the FakeAudioContext clock to within 0.05s; real-device validation remains the canonical sign-off pre-release.
 
 ### Gaps Summary
 
-Phase 10 lands all five HOOKS-* requirement IDs at the surface level — every must_have artifact exists, is substantive, is wired, and the four per-commit gates (tsc + lint + build + Vitest 390/390) all exit 0. The plan's documented success criteria are individually checkable and 4 of 5 pass cleanly.
+**No gaps.** All 5 truths VERIFIED, all artifacts present and substantive, all key links wired with correct data-flow, all 4 quality gates exit 0, all 5 HOOKS-* requirements SATISFIED.
 
-However, the code-review found a **real semantic regression (CR-01)** that the existing 390-test suite does not catch: the per-phase memoization of `session.currentFrame` (correct in itself per D-03) freezes the `elapsedMs` field that `onAudioReanchorRequired` (App.tsx:125-132) consumes via `sessionFrameRef`. On the iOS reconstruction path (Plan 06 D-31/D-33/D-35), the audioAnchor offset is now miscomputed by up to one phase duration, causing audio cues to fire seconds late on the new AC. The PATTERNS.md design rationale missed this consumer; the lint gate (HOOKS-05) passes because the deps remain explicit, but the data flowing through the chain regressed.
+Plan 10-02 closed the three previously-flagged items (CR-01 BLOCKER + WR-01 + WR-02 WARNINGs) and added the CR-01 regression test that locks the audio-anchor math against future regression of the same shape. Teeth verified by scratch-revert (the test FAILS with a 1.76s diff when source is reverted to `session.currentFrame`, confirming it isn't vacuous).
 
-The fix is mechanical (switch sessionFrameRef to mirror `session.liveFrame`) and aligns with Phase 10's own design intent: `liveFrame` was introduced precisely as the per-rAF surface for consumers that need fresh elapsedMs. The plan got 4/5 of its consumer-migration calls correct; this is the missed 5th.
-
-Recommend NOT proceeding to a next phase until CR-01 is closed with the App.tsx:81-84 fix and a regression test that asserts the re-anchor math directly.
+The status is `human_needed` rather than `passed` because the carry-forward real-iPhone UAT item from the prior verification is preserved per the verification request — it represents real-device behavior (iOS Safari audio session interrupt/resume/reconstruct path) that automated coverage in jsdom cannot replicate. This item will surface via `/gsd-audit-uat` after phase completion (the standard pattern for real-device-only validations).
 
 ---
 
-_Verified: 2026-05-11T22:56:00Z_
+_Verified: 2026-05-11T21:30:00Z_
 _Verifier: Claude (gsd-verifier)_
+_Re-verification: Yes — closes prior gaps_found verdict (4/5) after Plan 10-02 ships_
