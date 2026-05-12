@@ -37,7 +37,7 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 - [x] **Phase 8: Storage Forward-Compat & Cross-Tab UI Sync** (2/2 plans) — completed 2026-05-11 — Preserve on-disk envelope version, refuse downgrade, listen for cross-tab `storage` events.
 - [x] **Phase 9: Audio + Wake Lock Lifecycle Hardening** (2/2 plans) — completed 2026-05-11 — Reconstruction generation counter, boundary-cue clamp, lead-in null-on-closed, per-cue node disconnect, defensive state-change handler, dead `'starting'` removal, wake-lock in-flight guard.
 - [x] **Phase 10: Hooks Identity & Effect Hygiene** — `mutedRef` to stabilize `start`/`reconstructEngine`; status-only deps on App rAF effects; per-phase frame identity in `useSessionEngine`; rAF cancel-guard ordering; explicit ref-updater deps. *(verification gaps_found 2026-05-11 — see 10-VERIFICATION.md; awaiting gap closure)* (completed 2026-05-12)
-- [ ] **Phase 11: Domain, UI Contracts & Accessibility** — Boundary validation in `extendTimedSession`, `SessionReadout` lead-in placeholder contract, symmetric auto-close for Learn/Reset dialogs in-session, `MuteToggle` resume-mode a11y attributes.
+- [ ] **Phase 11: Domain, UI Contracts & Accessibility** (0/1 plans) — Boundary validation in `extendTimedSession`, `SessionReadout` lead-in placeholder contract, symmetric auto-close for Learn/Reset dialogs in-session, `MuteToggle` resume-mode a11y attributes.
 - [ ] **Phase 12: Assets, Content & Hygiene Cleanup** — Favicon `%BASE_URL%` fix, `amzn.to` link disclosure/canonicalization, prune dead `audioNow` from hook return, share `isValid<X>` predicates across validators, document `formatLastSessionDate` test-only seam.
 
 ### 📋 v1.1 (planned, deferred)
@@ -62,7 +62,7 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
   - [x] 07-04-PLAN.md — react-hooks/exhaustive-deps `error` override + D-04 `// Reason:` annotation audit (BUILD-03); annotate the 2 surviving App.tsx set-state-in-effect disables and the new usePrefersReducedMotion.ts set-state-in-effect fire (wave 4, depends on 07-03, 2 tasks)
 
 ### Phase 8: Storage Forward-Compat & Cross-Tab UI Sync
-**Goal**: Make the localStorage envelope safe to read/write across schema bumps and keep stats UI consistent when a second tab writes the envelope.
+**Goal**: Make the localStorage envelope safe to read/write across schema bumps and keep stats UI consistent when a second tab writes the envelope key.
 **Depends on**: Phase 7 (writes against strict-typed baseline)
 **Requirements**: STORAGE-01, STORAGE-02, STORAGE-03
 **Success Criteria** (what must be TRUE):
@@ -113,7 +113,8 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
   3. `LearnDialog` and `ResetStatsDialog` cannot remain open while `inSessionView` is true; an App-level effect force-closes both on the transition; manual test confirms no visual change in the normal flow.
   4. `MuteToggle` removes `aria-pressed` and links `aria-describedby` to the App-level `aria-live` resume hint when `needsResume` is true; Testing Library asserts the attributes in both states.
   5. Full Vitest suite passes; new tests lock the domain throw, the readout contract, and the a11y attributes.
-**Plans**: TBD
+**Plans**: 1 plan (wave 1, single plan per D-13 — files barely overlap; App.tsx multi-touch lands at non-overlapping line ranges; four ordered task groups commit independently with the per-commit green-gate per D-17)
+  - [ ] 11-01-PLAN.md — All four REQ-IDs in one plan, four ordered task groups: Task 1 DOMAIN-01 sessionController.ts allowlist throw + sessionController.test.ts new case (D-01/D-02/D-03); Task 2 UI-01 SessionReadout isLeadInPlaceholder prop + NEW SessionReadout.test.tsx (3-4 cases) + App.tsx 576-585 wiring (D-04/D-05/D-06); Task 3 UI-02 new App-level subscribe-and-reflect useEffect on [inSessionView] mirroring the EndSessionDialog template at App.tsx:247-253 + App.dialog.test.tsx 2 new WR-09 cases (D-07/D-08/D-09); Task 4 A11Y-01 MuteToggle resumeHintId required prop + conditional aria-describedby + SessionControls plumbing + App.tsx id="mute-toggle-resume-hint" + resumeHintId="mute-toggle-resume-hint" forward + MuteToggle.test.tsx 2 new cases (D-10/D-11/D-12) (wave 1, 4 tasks; per-commit tsc/lint/build/vitest green-gate per D-17)
 
 ### Phase 12: Assets, Content & Hygiene Cleanup
 **Goal**: Ship the non-behavioural cleanup items — favicon base-path fix, affiliate-link honesty, removal of dead API surface, shared validation predicates, and JSDoc on the test-only seam.
@@ -142,5 +143,5 @@ Requirements: `.planning/milestones/v1.0-REQUIREMENTS.md`
 | 8. Storage Forward-Compat & Cross-Tab UI Sync      | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 9. Audio + Wake Lock Lifecycle Hardening           | v1.0.1    | 2/2            | Complete    | 2026-05-11 |
 | 10. Hooks Identity & Effect Hygiene                | v1.0.1    | 2/2 | Complete    | 2026-05-12 |
-| 11. Domain, UI Contracts & Accessibility           | v1.0.1    | 0/0            | Not started | -          |
+| 11. Domain, UI Contracts & Accessibility           | v1.0.1    | 0/1            | Planned     | -          |
 | 12. Assets, Content & Hygiene Cleanup              | v1.0.1    | 0/0            | Not started | -          |
