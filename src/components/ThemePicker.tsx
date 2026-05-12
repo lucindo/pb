@@ -5,7 +5,7 @@
 // D-02: accepts exactly { disabled: boolean }; self-reads loadPrefs() — no value prop.
 // D-04: stub renders label + current stored value as read-only text (`Theme: system`).
 // D-06: zero write-path calls at Phase 15 — read-only stub only.
-// D-18: locked stub format `Theme: {prefs.theme}` — verbatim, no display-mapping function.
+// D-18: locked stub format — `Label: value` verbatim, no display-mapping function.
 
 import { loadPrefs } from '../storage/prefs'
 
