@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
 status: planning
-last_updated: "2026-05-12T13:23:35.195Z"
+last_updated: "2026-05-12T00:00:00.000Z"
 last_activity: 2026-05-12
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,40 +17,40 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 queued)
+See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** v1.0.1 archived; planning next milestone (v1.1 — Appearance/Settings umbrella, PWA install, BPM stretch, v1.x carry-forwards)
+**Current focus:** v1.1 Customization — roadmap defined (Phases 13–19); ready for Phase 13 planning.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 13 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-12 — Milestone v1.1 started
+Status: Roadmap complete; awaiting `/gsd-plan-phase 13`
+Last activity: 2026-05-12 — v1.1 roadmap created (7 phases, 29 requirements mapped)
+
+Progress: ░░░░░░░░░░ 0% (0/7 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
 - Total plans completed (v1.0): 30
-- Total plans completed (v1.0.1): 0
-- Average duration: N/A
-- Total execution time: 0.0 hours
+- Total plans completed (v1.0.1): 12
+- Average duration: N/A (v1.1 not started)
+- Total execution time: 0.0 hours (v1.1)
 
-**By Phase:**
+**By Phase (v1.1):**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| Phase 04-local-memory-practice-stats P03 | 10 | 3 tasks | 4 files |
-| 04 | 4 | - | - |
-| Phase 05.1 P04 | 15m | 2 tasks | 2 files |
-| 05.1 | 5 | - | - |
-| 06 | 4 | - | - |
-| 7 (v1.0.1) | 0 | - | - |
-| 07 | 4 | - | - |
-| 08 | 2 | - | - |
-| 10 | 2 | - | - |
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 13. Inner-Ring UX Symmetry | TBD | Not started |
+| 14. Prefs Foundation | TBD | Not started |
+| 15. SettingsDialog Shell | TBD | Not started |
+| 16. Themes | TBD | Not started |
+| 17. Visual Variants | TBD | Not started |
+| 18. Audio Timbres | TBD | Not started |
+| 19. Language Switching | TBD | Not started |
 
 ## Accumulated Context
 
@@ -59,21 +59,25 @@ Last activity: 2026-05-12 — Milestone v1.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- **[v1.0.1 sequencing]** Phase 7 (strict TS + strict-type-checked ESLint) lands FIRST so latent null/index/return errors surface once and are fixed inline — all subsequent v1.0.1 phases write code against the strict baseline.
-- **[v1.0.1 scoping]** Fix-only patch. No new user-facing features. 27 REQ-IDs map 1:1 to the 26 findings in REVIEW.md (5 Critical / 12 Warning / 9 Info). Cross-tab `recordSession` increment race itself is documented v1.x debt; STORAGE-03 covers UI consistency only.
-- v1 remains local-only with no accounts, backend sync, medical claims, biofeedback, PWA/offline scope, or protected Forrest assets without permission.
-- The session experience must be driven by one accurate continuous inhale/exhale clock; visuals and audio consume that derived state.
+- **[v1.1 phase ordering]** Smallest-blast-radius-first sequencing: Phase 13 (pure CSS warm-up) → Phase 14 (storage/domain foundation) → Phase 15 (dialog shell) → Phase 16 (themes, CSS-only, smallest surface) → Phase 17 (render-only variants) → Phase 18 (audio timbres, highest technical risk) → Phase 19 (i18n, widest string surface, last to minimize structural conflicts).
+- **[D-12 locked-copy override]** I18N-06: Forrest claim-safe copy IS routed through the translation pipeline (user decision overriding research recommendation). Phase 19 must ship a guardrail mechanism (translation-key allowlist or locked-copy review checklist) so future locale contributions cannot silently weaken D-12 positioning.
+- **[Next-session-only swap]** Timbre and Variant pickers are disabled while `inSessionView`. No mid-session swap. Captured at session start.
+- **[Zero net-new runtime deps]** All v1.1 features achieved with existing Tailwind v4, Web Audio API, React, and TypeScript patterns. No `npm install` permitted.
+- **[Per-commit green-gate]** `tsc && lint && build && test` must exit 0 at every commit (D-09/D-15 invariant carried forward from v1.0.1).
+- **[Roll-your-own i18n]** No i18n library for v1.1. Typed `Record<LocaleId, UiStrings>` content file + locale-keyed `learnContent.ts` map. Revisit Lingui only if 5+ locales ship.
+- **[PT-BR machine translation]** I18N-07 machine translation with `// TODO: native-speaker review` flag is acceptable for v1.1 ship; native review is a v1.x carry-forward.
+- **[Bowl default byte-identical]** TIMBRE-02: Default timbre = `'bowl'`. Users who never open SettingsDialog hear zero audio change from v1.0.1.
 
 ### Pending Todos
 
-- Phase 7 verified complete; Phase 8 awaits `/gsd-discuss-phase 8`.
-- `2026-05-11-missing-favicon-404-in-console` — ui — index.html references `/favicon.svg` but no asset shipped → 404 in console (cosmetic).
-- `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — ui — Out-phase inner reference ring still rendered under reduced motion (minor; violates D-06/D-07 reduced-motion contract).
+- Phase 13 planning: `/gsd-plan-phase 13`
+- Carry-forward from v1.0.1: `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — note: Phase 13 (WARMUP-01) adds In-phase inner ring; verify this does not worsen the out-phase boundary cue reduced-motion issue.
 
 ### Blockers/Concerns
 
-- **Phase 7 resolved:** `strict` + `noUncheckedIndexedAccess` + `strictTypeChecked` ESLint landed; 226 errors fixed inline; 363/363 vitest + lint exit 0 maintained.
-- **Cross-phase coupling:** Phase 9 (audio/wake-lock) and Phase 10 (hooks) both touch `useAudioCues.ts` and `App.tsx`. Roadmap sequences Phase 9 → Phase 10 so identity/effect hygiene lands on top of the post-hardening lifecycle code.
+None at roadmap creation. Technical risk flags:
+- **Phase 18 (highest risk):** `timbreRef` + reconstruction replay interaction with AUDIO-01 generation counter. Phase sequenced after prefs + dialog foundation to isolate failure mode.
+- **Phase 19 (widest surface):** I18N string surface touches every visible label; sequenced last to avoid structural conflicts with theme/variant/timbre changes in Phases 16–18.
 
 ### Quick Tasks Completed
 
@@ -87,25 +91,28 @@ Items acknowledged and carried forward from previous milestone close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| v2 | Pause/resume, inhale/exhale preview, volume control, recent-session list, Wake Lock fallback explanation, PWA/offline, themes, biofeedback, localization, advanced patterns | Tracked in REQUIREMENTS.md v2 | v1 roadmap creation |
 | v1.x carry-forward | iOS Safari mid-page audio recovery after lock/unlock (Override SC1, user-signed 2026-05-10 — OS-level audio session loss) | Reconstruction infrastructure ships; works on non-iOS engines | 2026-05-11 v1.0 close |
 | v1.x carry-forward | Firefox Desktop orb scale-animation flicker (Override FF-01, user-signed 2026-05-10 — root remedy needs CSS keyframes) | Multiple mitigations attempted; ship as-is | 2026-05-11 v1.0 close |
 | v1.x carry-forward | S2 Android Chrome wake lock real-device UAT (Phase 5, 05-04-UAT-LOG.md Gap 1) | Physical device unavailable | 2026-05-11 v1.0 close |
 | v1.x carry-forward | iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3, Open Question 5 / Assumption A6) | No mitigation planned for v1 | 2026-05-11 v1.0 close |
-| v1.x candidate | Inner-ring UX symmetry (Issue B, Phase 5.1) | Separate planning candidate | 2026-05-11 v1.0 close |
+| v1.x carry-forward | Per-locale `learnContent.ts` native-speaker review for PT-BR (I18N-07) | Machine translation ships with TODO flag | v1.1 scoping |
+| v2 | PWA install (PWA-01) — Web App Manifest + service worker | Out of v1.1 scope; revisit after customization milestone validation | v1.1 scoping |
+| v2 | BPM stretch session (PATT-02) | Out of v1.1 scope; revisit post-customization | v1.1 scoping |
 | v1.x debt | Cross-tab `recordSession` increment race (WR-07 root) — STORAGE-03 covers UI consistency only | Documented in REQUIREMENTS.md v1.0.1 Out of Scope | 2026-05-11 v1.0.1 planning |
-| procedural | Phase 5 lacks VERIFICATION.md (functional coverage rolled into 5.1 UAT Task 4 cross-browser sweep) | Artifact gap only; coverage intact | 2026-05-11 v1.0 close |
-| procedural | Phase 02/03 VERIFICATION.md status "human_needed" (all perceptual + UAT items closed via 5.1 Task 4 sweep) | Statuses not re-flipped to passed | 2026-05-11 v1.0 close |
+| procedural | Phase 5 lacks VERIFICATION.md | Artifact gap only; coverage intact via 5.1 UAT Task 4 | 2026-05-11 v1.0 close |
+| procedural | Phase 02/03 VERIFICATION.md status "human_needed" (all items closed via 5.1 Task 4 sweep) | Statuses not re-flipped | 2026-05-11 v1.0 close |
 
-**Audit reference:** `.planning/milestones/v1.0-MILESTONE-AUDIT.md`.
+**Audit references:**
+- `.planning/milestones/v1.0-MILESTONE-AUDIT.md` — PASSED 23/23
+- `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md` — PASSED 27/27
 
 ## Session Continuity
 
-Last session: 2026-05-12T03:18:34.976Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-assets-content-hygiene-cleanup/12-CONTEXT.md
-Next command: `/gsd-verify-phase 11`
+Last session: 2026-05-12
+Stopped at: v1.1 roadmap creation (Phases 13–19 defined, 29/29 requirements mapped)
+Resume file: .planning/ROADMAP.md
+Next command: `/gsd-plan-phase 13`
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Begin Phase 13 with `/gsd-plan-phase 13`

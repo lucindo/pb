@@ -92,45 +92,45 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Which phases cover which requirements. Filled by roadmapper.
+Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WARMUP-01 | TBD | Pending |
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| INFRA-03 | TBD | Pending |
-| INFRA-04 | TBD | Pending |
-| THEME-01 | TBD | Pending |
-| THEME-02 | TBD | Pending |
-| THEME-03 | TBD | Pending |
-| THEME-04 | TBD | Pending |
-| THEME-05 | TBD | Pending |
-| TIMBRE-01 | TBD | Pending |
-| TIMBRE-02 | TBD | Pending |
-| TIMBRE-03 | TBD | Pending |
-| TIMBRE-04 | TBD | Pending |
-| TIMBRE-05 | TBD | Pending |
-| VARIANT-01 | TBD | Pending |
-| VARIANT-02 | TBD | Pending |
-| VARIANT-03 | TBD | Pending |
-| VARIANT-04 | TBD | Pending |
-| VARIANT-05 | TBD | Pending |
-| VARIANT-06 | TBD | Pending |
-| VARIANT-07 | TBD | Pending |
-| I18N-01 | TBD | Pending |
-| I18N-02 | TBD | Pending |
-| I18N-03 | TBD | Pending |
-| I18N-04 | TBD | Pending |
-| I18N-05 | TBD | Pending |
-| I18N-06 | TBD | Pending |
-| I18N-07 | TBD | Pending |
+| WARMUP-01 | Phase 13 | Pending |
+| INFRA-01 | Phase 14 | Pending |
+| INFRA-02 | Phase 14 | Pending |
+| INFRA-03 | Phase 14 | Pending |
+| INFRA-04 | Phase 15 | Pending |
+| THEME-01 | Phase 16 | Pending |
+| THEME-02 | Phase 16 | Pending |
+| THEME-03 | Phase 16 | Pending |
+| THEME-04 | Phase 16 | Pending |
+| THEME-05 | Phase 16 | Pending |
+| TIMBRE-01 | Phase 18 | Pending |
+| TIMBRE-02 | Phase 18 | Pending |
+| TIMBRE-03 | Phase 18 | Pending |
+| TIMBRE-04 | Phase 18 | Pending |
+| TIMBRE-05 | Phase 18 | Pending |
+| VARIANT-01 | Phase 17 | Pending |
+| VARIANT-02 | Phase 17 | Pending |
+| VARIANT-03 | Phase 17 | Pending |
+| VARIANT-04 | Phase 17 | Pending |
+| VARIANT-05 | Phase 17 | Pending |
+| VARIANT-06 | Phase 17 | Pending |
+| VARIANT-07 | Phase 17 | Pending |
+| I18N-01 | Phase 19 | Pending |
+| I18N-02 | Phase 19 | Pending |
+| I18N-03 | Phase 19 | Pending |
+| I18N-04 | Phase 19 | Pending |
+| I18N-05 | Phase 19 | Pending |
+| I18N-06 | Phase 19 | Pending |
+| I18N-07 | Phase 19 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 29 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 29
+- Mapped to phases: 29/29
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-12 — milestone v1.1 Customization defined*
+*Last updated: 2026-05-12 — traceability complete (29/29 mapped to Phases 13–19)*
