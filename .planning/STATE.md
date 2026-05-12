@@ -4,8 +4,8 @@ milestone: v1.1
 milestone_name: Customization
 status: executing
 stopped_at: Phase 13 context gathered
-last_updated: "2026-05-12T15:59:02.308Z"
-last_activity: 2026-05-12 -- Phase 13 planning complete
+last_updated: "2026-05-12T16:04:29.225Z"
+last_activity: 2026-05-12 -- Phase 13 execution started
 progress:
   total_phases: 7
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** v1.1 Customization — roadmap defined (Phases 13–19); ready for Phase 13 planning.
+**Current focus:** Phase 13 — inner-ring-ux-symmetry
 
 ## Current Position
 
-Phase: Phase 13 (not started)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-12 -- Phase 13 planning complete
+Phase: 13 (inner-ring-ux-symmetry) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 13
+Last activity: 2026-05-12 -- Phase 13 execution started
 
 Progress: ░░░░░░░░░░ 0% (0/7 phases complete)
 
@@ -72,7 +72,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Phase 13 planning: `/gsd-plan-phase 13`
-- Carry-forward from v1.0.1: `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — note: Phase 13 (WARMUP-01) adds In-phase inner ring; verify this does not worsen the out-phase boundary cue reduced-motion issue.
+- Carry-forward from v1.0.1: `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — RESOLVED directly by Phase 13 (WARMUP-01 reframed as reduced-motion `.orb-ring--inner { display: none }`; no separate verification step). Todo moves to `.planning/todos/completed/` on phase close per 13-CONTEXT.md D-09.
 
 ### Blockers/Concerns
 
