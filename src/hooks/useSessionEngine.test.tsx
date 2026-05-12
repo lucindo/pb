@@ -253,6 +253,24 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   it('rAF cancel-guard: tick after teardown is a no-op (HOOKS-04 D-10)', () => {
     const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
 
+    // WR-01 (Plan 10-02): turn the implicit negative-by-absence assertion
+    // into an explicit positive one. Vitest does NOT fail tests on uncaught
+    // console.error by default. Note: React 18 silently no-ops setState-on-
+    // unmounted (the React 17 "Can't perform a React state update on an
+    // unmounted component" warning was removed) — so a regression that
+    // removed BOTH the top-of-tick cancel-guard AND the cleanup's
+    // cancelAnimationFrame would still not necessarily emit a console.error.
+    // The spy + positive assertion here remains valuable as defense-in-depth:
+    // it locks the LOCAL invariant "no unexpected console.error is emitted
+    // from this hook's rAF lifecycle" so any React (or future linting layer)
+    // warning that DOES surface — e.g. an `act()` complaint about state
+    // updates outside an act block, or a future re-introduction of the
+    // unmounted warning — becomes a test failure instead of silent
+    // tolerance. The mockImplementation(() => {}) swallows the output so a
+    // real regression's warning does not pollute test runner output; the
+    // spy still records calls so the assertion can read them.
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
     act(() => {
       result.current.start()
     })
@@ -269,13 +287,22 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     // After unmount, the effect cleanup ran (cancelled=true; cancelAnimationFrame
     // fired). A subsequent advanceTimersByTime that surfaces any in-flight rAF
     // callback must short-circuit at the top-of-tick `if (cancelled) return`
-    // guard — no setState observed, no act() warning emitted. The negative
-    // assertion is implicit via clean test runner output; this test's value is
-    // exercising the code path under fake timers so a regression that removed
-    // the guard would surface as a console.error from React.
+    // guard — no setState observed, no React "setState on unmounted component"
+    // console.error emitted. The positive assertion below locks the
+    // negative-by-absence into a directly testable invariant. The substring
+    // match 'unmounted' is robust to React minor-version wording variants.
     act(() => {
       vi.advanceTimersByTime(1_000)
     })
+
+    expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('unmounted'),
+    )
+
+    // Explicit restore — this file's afterEach does not call
+    // vi.restoreAllMocks(), so the spy would otherwise persist into
+    // subsequent tests in the same describe block.
+    consoleErrorSpy.mockRestore()
   })
 
   it('runningSnapshotRef.current is populated while running and persists across the transition out (HOOKS-02 D-06/D-07/D-08)', () => {

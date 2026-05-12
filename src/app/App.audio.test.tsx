@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import * as cueSynth from '../audio/cueSynth'
 import { SAFE_LEAD_SEC } from '../audio/audioEngine'
+import { createBreathingPlan } from '../domain/breathingPlan'
+import { DEFAULT_SETTINGS } from '../domain/settings'
 
 // The MuteToggle has three possible accessible names per state — match any.
 function muteButton() {
@@ -609,6 +611,155 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     // Reconstruction must have constructed a new AudioContext.
     expect(tracker.constructed()).toBeGreaterThan(beforeCount)
     tracker.restore()
+  })
+
+  it("CR-01 (Phase 10 gap closure): reconstruction at mid-phase re-anchors using LIVE session-elapsed, not phase-start-frozen elapsed", async () => {
+    // Plan 10-02 CR-01 regression lock. With sessionFrameRef sourced from
+    // session.liveFrame (per-rAF, fresh elapsedMs), the audio-anchor offset
+    // computed in onAudioReanchorRequired uses the LIVE session-elapsed value.
+    // The math at the next Out boundary then yields:
+    //
+    //   audioAnchor       = newAC.currentTime_at_reconstruction - elapsed_at_reconstruction/1000
+    //   audioTime         = audioAnchor + inhaleMs/1000
+    //                     = newAC.currentTime_at_reconstruction + (inhaleMs - elapsed_at_reconstruction)/1000
+    //                     = capturedAcNow + expectedRemainingMs/1000
+    //
+    // If sessionFrameRef regresses to session.currentFrame (per-phase-stable,
+    // elapsedMs frozen at phase start = 0), then audioAnchor = newAC.currentTime
+    // and audioTime = capturedAcNow + inhaleMs/1000 — off by
+    // elapsedMs_at_reconstruction/1000 (~1.96s at the 45%-of-inhale derivation
+    // point). The 0.05s epsilon comfortably rejects that regression shape.
+    //
+    // expectedRemainingMs is measured directly from the audio clock
+    // (capturedAcNowAtBoundary - capturedAcNowAtReconstruction) instead of
+    // derived from `plan.inhaleMs - elapsedAtReconstructionMs` literals.
+    // This sidesteps the jsdom-fake-timer-rAF aliasing where the actual
+    // session.liveFrame.elapsedMs captured into sessionFrameRef at the last
+    // rAF tick before reconstruction can differ from the target advance by
+    // up to ~100ms — measuring the elapsed via the same audio clock that
+    // sources newAC.currentTime keeps the epsilon math invariant of that
+    // aliasing.
+    //
+    // Start with persisted muted=true so the post-reconstruction
+    // persistedSetMuted(!audio.muted) inside the mute-button click handler
+    // flips muted=false. That way the engine schedules cues after
+    // reconstruction (the engine's scheduleNextCue early-returns when muted,
+    // and reconstruction preserves muted across the new engine per D-35b).
+    window.localStorage.setItem('hrv:state:v1', JSON.stringify({ version: 1, mute: true }))
+    const tracker = installTrackedAC()
+
+    // Capture newAC.currentTime SYNCHRONOUSLY at the moment scheduleOutCue is
+    // called (inside the engine's scheduleNextCue stack frame). Reading
+    // mock.calls[0][0].currentTime AFTER the spy returns would drift because
+    // the AC clock is live — we need a snapshot at invocation time.
+    const originalScheduleOutCue = cueSynth.scheduleOutCue
+    let acNowAtBoundary: number | null = null
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue').mockImplementation((ctx, time, dest, durSec) => {
+      if (acNowAtBoundary === null) acNowAtBoundary = ctx.currentTime
+      return originalScheduleOutCue(ctx, time, dest, durSec)
+    })
+
+    // Derive the mid-phase reconstruction target from the production
+    // breathing-plan helper (not hardcoded literals) so the test stays
+    // robust to BPM/ratio defaults.
+    const plan = createBreathingPlan(DEFAULT_SETTINGS)
+    const elapsedAtReconstructionMs = Math.round(plan.inhaleMs * 0.45)
+
+    render(<App />)
+    await startAndAdvancePastLeadIn()
+
+    // Drive ~45% into the inhale phase BEFORE triggering reconstruction.
+    await act(async () => {
+      vi.advanceTimersByTime(elapsedAtReconstructionMs)
+      await Promise.resolve()
+    })
+
+    // Set up the reconstruction trigger pattern from D-42 (4): interrupt,
+    // arm a resume rejection so visibilitychange escalates to needs-resume,
+    // then arm another rejection so the click-on-mute escalates to
+    // reconstruction (the recovery path always reconstructs per Plan 06 D-33).
+    // Reason: tracker.instances is AnyAC[] for test-double access; unsafe-* on any-typed AC test double is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const first = tracker.instances[tracker.instances.length - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    first._simulateInterrupted()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    first._simulateResumeReject('InvalidStateError')
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // Arm one more rejection so the click-driven engine.resume() also rejects
+    // and the hook escalates to reconstruction.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    first._simulateResumeReject('InvalidStateError')
+
+    const beforeCount = tracker.constructed()
+    await act(async () => {
+      fireEvent.click(muteButton())
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    // Sanity: reconstruction happened (a fresh AC was constructed). Without
+    // this, the new audioAnchor was never written and the assertion below
+    // would test the wrong code path.
+    expect(tracker.constructed()).toBeGreaterThan(beforeCount)
+
+    // Capture the freshly-constructed AC's currentTime IMMEDIATELY after
+    // reconstruction completes. Under fake timers the FakeAudioContext's
+    // currentTime is `performance.now()/1000 - _start`; reading it here
+    // (before any further vi.advanceTimersByTime) is sample-accurate to
+    // the reconstruction event-loop turn — the await chain that triggered
+    // reconstruction does not advance performance.now() so this read
+    // captures the same AC clock value the reanchor callback read inside
+    // useAudioCues.reconstructEngine via `newEngine.now()`.
+    // Reason: tracker.instances is AnyAC[]; unsafe-assignment on AnyAC[] index.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const newAC: { currentTime: number } = tracker.instances[tracker.instances.length - 1]
+    const capturedAcNow = newAC.currentTime
+
+    // Clear out-cue calls observed during reconstruction setup (none expected
+    // pre-boundary, but guard so we observe only the next-boundary call).
+    scheduleOutSpy.mockClear()
+    acNowAtBoundary = null
+
+    // Advance past the inhale boundary so the boundary effect fires and
+    // schedules the Out cue at audioTime = audioAnchor + inhaleMs/1000.
+    // Use a generous margin so the boundary tick is observed even if the
+    // session-elapsed-at-reconstruction differs slightly from the target
+    // (rAF aliasing under fake timers — see header comment).
+    await act(async () => {
+      vi.advanceTimersByTime(plan.inhaleMs - elapsedAtReconstructionMs + 200)
+      await Promise.resolve()
+    })
+
+    expect(scheduleOutSpy).toHaveBeenCalled()
+    expect(acNowAtBoundary).not.toBeNull()
+    // The 2nd argument to scheduleOutCue is the scheduled audioTime (after
+    // both the App-side caller clamp AND the engine-side callee clamp; the
+    // clamp can lift audioTime by at most SAFE_LEAD_SEC = 0.005s, well
+    // within the 0.05s epsilon).
+    // Reason: length asserted by toHaveBeenCalled() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const audioTime = scheduleOutSpy.mock.calls[0]![1]
+    // expectedRemainingMs is computed FROM THE AUDIO CLOCK: the difference
+    // between the new AC's currentTime at the boundary (captured
+    // synchronously inside the spy) and its currentTime at reconstruction
+    // (captured immediately after the click act). This is the actual elapsed
+    // between reconstruction and boundary, measured by the same clock the
+    // reanchor math uses — invariant under any rAF aliasing in the session
+    // clock vs. the audio clock.
+    // Reason: not-null asserted via expect above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const expectedRemainingMs = (acNowAtBoundary! - capturedAcNow) * 1000
+    const expectedAudioTime = capturedAcNow + expectedRemainingMs / 1000
+    expect(Math.abs(audioTime - expectedAudioTime)).toBeLessThan(0.05)
+
+    tracker.restore()
+    window.localStorage.removeItem('hrv:state:v1')
   })
 
   it("D-42 (5): plain resume success does NOT re-anchor (D-06 preserved)", async () => {
