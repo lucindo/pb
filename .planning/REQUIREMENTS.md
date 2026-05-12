@@ -17,9 +17,9 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 
 ### Infrastructure: Prefs Foundation
 
-- [ ] **INFRA-01**: `Envelope` schema is extended with an optional `prefs` field carrying customization choices, using the existing D-01 spread-then-override write pattern so unknown fields from concurrent newer builds are preserved.
-- [ ] **INFRA-02**: `isValidTheme` / `isValidTimbre` / `isValidVariant` / `isValidLocale` allowlist predicates live in `src/domain/settings.ts` next to the existing `isValidBpm`/`isValidRatio`/`isValidDuration` predicates.
-- [ ] **INFRA-03**: `coerceTheme` / `coerceTimbre` / `coerceVariant` / `coerceLocale` non-throwing coercers live in `src/storage/` and fall back to `DEFAULT_*` constants when stored value fails the predicate.
+- [x] **INFRA-01**: `Envelope` schema is extended with an optional `prefs` field carrying customization choices, using the existing D-01 spread-then-override write pattern so unknown fields from concurrent newer builds are preserved.
+- [x] **INFRA-02**: `isValidTheme` / `isValidTimbre` / `isValidVariant` / `isValidLocale` allowlist predicates live in `src/domain/settings.ts` next to the existing `isValidBpm`/`isValidRatio`/`isValidDuration` predicates.
+- [x] **INFRA-03**: `coerceTheme` / `coerceTimbre` / `coerceVariant` / `coerceLocale` non-throwing coercers live in `src/storage/` and fall back to `DEFAULT_*` constants when stored value fails the predicate.
 - [ ] **INFRA-04**: A new `SettingsDialog` opens from a gear control in the idle/stopped view, follows the native `<dialog>` + locked-copy pattern of `ResetStatsDialog` / `LearnDialog`, and hosts the four customization pickers (theme, timbre, variant, language).
 
 ### Themes (CUST-01)
@@ -97,9 +97,9 @@ Which phases cover which requirements.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | WARMUP-01 | Phase 13 | Pending |
-| INFRA-01 | Phase 14 | Pending |
-| INFRA-02 | Phase 14 | Pending |
-| INFRA-03 | Phase 14 | Pending |
+| INFRA-01 | Phase 14 | Done |
+| INFRA-02 | Phase 14 | Done |
+| INFRA-03 | Phase 14 | Done |
 | INFRA-04 | Phase 15 | Pending |
 | THEME-01 | Phase 16 | Pending |
 | THEME-02 | Phase 16 | Pending |
@@ -133,4 +133,4 @@ Which phases cover which requirements.
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-12 — traceability complete (29/29 mapped to Phases 13–19)*
+*Last updated: 2026-05-12 — Phase 14 INFRA-01/02/03 traceability flipped to Done*
