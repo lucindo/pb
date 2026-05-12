@@ -14,7 +14,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Shipped:** v1.0 MVP (2026-05-11) — 7 phases, 30 plans, ~9,032 LOC TypeScript/TSX/CSS, 363/363 Vitest tests pass.
 
-**In progress:** v1.0.1 Code Review Patch — fix-only patch landing all 26 findings from full-codebase deep review (REVIEW.md). No new features. Phase 7 complete (strict TS + `strictTypeChecked` ESLint + `react-hooks/exhaustive-deps: error` baseline — BUILD-01/02/03). Phase 8 complete (storage forward-compat, downgrade refusal, cross-tab stats refresh — STORAGE-01/02/03; 366/366 tests; manual two-window UAT pending in `08-HUMAN-UAT.md`).
+**In progress:** v1.0.1 Code Review Patch — fix-only patch landing all 26 findings from full-codebase deep review (REVIEW.md). No new features. Phase 7 complete (strict TS + `strictTypeChecked` ESLint + `react-hooks/exhaustive-deps: error` baseline — BUILD-01/02/03). Phase 8 complete (storage forward-compat, downgrade refusal, cross-tab stats refresh — STORAGE-01/02/03; 366/366 tests; manual two-window UAT pending in `08-HUMAN-UAT.md`). Phase 10 complete (hooks identity & effect hygiene — mutedRef, currentFrame/liveFrame split, runningSnapshotRef ownership move into engine, top-of-tick cancel-guard, status-primitive cleanup deps; HOOKS-01..05; 391/391 tests; real-iPhone UAT passed).
 
 **Next milestone (queued, deferred):** v1.1 — Appearance/Settings umbrella (themes, audio timbres, visual variants, language), PWA install + app icon, BPM stretch session, plus v1.0 → v1.1 carry-forwards. Runs after v1.0.1 ships.
 
@@ -152,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — Phase 8 (Storage Forward-Compat & Cross-Tab UI Sync) complete*
+*Last updated: 2026-05-11 — Phase 10 (Hooks Identity & Effect Hygiene) complete*
