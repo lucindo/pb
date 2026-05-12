@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EndSessionDialog } from '../components/EndSessionDialog'
+import { STATE_KEY } from '../storage'
 import App from './App'
 
 // Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
@@ -285,5 +286,71 @@ describe('end-session confirmation modal (App integration)', () => {
       expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
       expect(screen.getByText('Session complete')).toBeVisible()
     })
+  })
+})
+
+// UI-02 / WR-09: dialogs that are open when the user starts a session must
+// auto-close once the session view becomes active. Two cases mirror the WR-01
+// auto-close template above — same fake-timer setup, same startAndAdvancePastLeadIn
+// trigger, same `queryByRole('dialog') not in document` assertion shape.
+describe('WR-09 in-session dialog auto-close', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('auto-closes LearnDialog when the session starts underneath it (WR-09)', async () => {
+    render(<App />)
+
+    // Open the Learn modal before starting (LearnAnchor's accessible name is "Learn"
+    // when not disabled — see LearnAnchor.tsx:22). The dialog itself is labelled
+    // by its h2 "About this practice" — see LearnDialog.tsx:77.
+    fireEvent.click(screen.getByRole('button', { name: 'Learn' }))
+    expect(screen.getByRole('dialog', { name: 'About this practice' })).toBeVisible()
+
+    // Start the session — inSessionView flips to true on appPhase = 'lead-in'.
+    await startAndAdvancePastLeadIn()
+
+    // The LearnDialog must auto-close on the inSessionView transition.
+    expect(
+      screen.queryByRole('dialog', { name: 'About this practice' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('auto-closes ResetStatsDialog when the session starts underneath it (WR-09)', async () => {
+    // ResetStatsDialog is triggered from StatsFooter, which only renders when
+    // stats.totalSessions > 0. Seed the envelope so the Reset button is visible.
+    window.localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({
+        version: 1,
+        stats: {
+          totalSessions: 3,
+          totalElapsedSeconds: 180,
+          lastSessionAtMs: null,
+          lastSessionDurationSeconds: null,
+        },
+      }),
+    )
+
+    render(<App />)
+
+    // Open the Reset stats modal before starting (visible "Reset" text on the button).
+    // The dialog itself is labelled by its h2 "Reset practice stats?" — see
+    // ResetStatsDialog.tsx:61.
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
+    expect(screen.getByRole('dialog', { name: 'Reset practice stats?' })).toBeVisible()
+
+    // Start the session — inSessionView flips to true on appPhase = 'lead-in'.
+    await startAndAdvancePastLeadIn()
+
+    // The ResetStatsDialog must auto-close on the inSessionView transition.
+    expect(
+      screen.queryByRole('dialog', { name: 'Reset practice stats?' }),
+    ).not.toBeInTheDocument()
   })
 })

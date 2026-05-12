@@ -252,6 +252,24 @@ export default function App() {
     }
   }, [state.status, endDialogOpen])
 
+  // WR-09: Auto-close LearnDialog and ResetStatsDialog when the session view
+  // becomes active. Without this, a dialog that was open during an appPhase
+  // transition to 'lead-in' could float over the session view for an arbitrary
+  // window. The onLearnClick open-guard (App.tsx:396-399) is the first line of
+  // defense; this effect is the second for any race where the dialog is already
+  // open when inSessionView flips. onResetClick has no symmetric open-guard
+  // because the Reset button lives in StatsFooter which is hidden when
+  // inSessionView is true — this reactive close catches the impossible-by-UI
+  // race anyway.
+  useEffect(() => {
+    if (inSessionView) {
+      // Reason: subscribe-and-reflect — dialog visibility mirrors external inSessionView; setting local state from this trigger effect is the documented React pattern, identical posture to the EndSessionDialog auto-close at App.tsx:247-253 (WR-01).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLearnDialogOpen(false)
+      setResetDialogOpen(false)
+    }
+  }, [inSessionView])
+
   const clearLeadInTimeouts = useCallback(() => {
     for (const id of leadInTimeoutsRef.current) {
       window.clearTimeout(id)
