@@ -39,6 +39,7 @@ export function formatSessionCount(count: number): string {
 }
 
 // D-05: "May 7" current year; "May 7, 2025" other year.
+/** @param now Test-only seam — production callers always omit this; tests pass a pinned `() => number` to drive the same-year vs other-year branch coverage in `format.test.ts`. */
 export function formatLastSessionDate(atMs: number, now: () => number = Date.now): string {
   const d = new Date(atMs)
   const today = new Date(now())

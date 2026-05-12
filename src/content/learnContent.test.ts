@@ -50,8 +50,8 @@ describe('LEARN_CONTENT locked copy contract', () => {
 })
 
 describe('LEARN_CONTENT link contract', () => {
-  it('book URL is exactly the locked value https://amzn.to/3RTAVqi (D-12 item 3)', () => {
-    expect(LEARN_CONTENT.links.book.url).toBe('https://amzn.to/3RTAVqi')
+  it('book URL is the canonical amazon.com /dp/B0CCFWP4W8 URL (CONTENT-01 D-05)', () => {
+    expect(LEARN_CONTENT.links.book.url).toBe('https://www.amazon.com/Mastering-Meditation-Eight-Steps-Beginner-ebook/dp/B0CCFWP4W8?sr=8-1&linkId=1a5a2958fc89bdb6769b54d0bc9a4d17&language=en_US')
   })
 
   it('book label is the Mastering Meditation pointer (2026-05-11 user rename)', () => {

@@ -47,16 +47,36 @@ export const DEFAULT_SETTINGS: SessionSettings = {
   durationMinutes: 10,
 }
 
+export function isValidBpm(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v) && (BPM_OPTIONS as readonly number[]).includes(v)
+}
+
+export function isValidRatio(v: unknown): v is RatioLabel {
+  return typeof v === 'string' && (RATIO_OPTIONS as readonly string[]).includes(v)
+}
+
+export function isValidDuration(v: unknown): v is DurationOption {
+  if (v === 'open-ended') return true
+  return typeof v === 'number'
+    && Number.isFinite(v)
+    && (DURATION_OPTIONS as readonly DurationOption[]).includes(v)
+}
+
 export function validateSettings(settings: SessionSettings): SessionSettings {
-  if (!(BPM_OPTIONS as readonly number[]).includes(settings.bpm)) {
+  if (!isValidBpm(settings.bpm)) {
     throw new RangeError(`Unsupported BPM: ${String(settings.bpm)}`)
   }
 
-  if (!RATIO_OPTIONS.includes(settings.ratio)) {
+  if (!isValidRatio(settings.ratio)) {
+    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
+    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
+    // is preserved verbatim (D-09 byte-identical message format) so the runtime string
+    // ("Unsupported ratio: 99:1" for an upstream-cast offending value) remains correct.
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
   }
 
-  if (!(DURATION_OPTIONS as readonly DurationOption[]).includes(settings.durationMinutes)) {
+  if (!isValidDuration(settings.durationMinutes)) {
     throw new RangeError(`Unsupported duration: ${String(settings.durationMinutes)}`)
   }
 

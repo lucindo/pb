@@ -117,7 +117,7 @@ describe('LearnDialog — external link security', () => {
     const link = screen.getByRole('link', { name: '"Mastering Meditation" book' })
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
-    expect(link).toHaveAttribute('href', 'https://amzn.to/3RTAVqi')
+    expect(link).toHaveAttribute('href', 'https://www.amazon.com/Mastering-Meditation-Eight-Steps-Beginner-ebook/dp/B0CCFWP4W8?sr=8-1&linkId=1a5a2958fc89bdb6769b54d0bc9a4d17&language=en_US')
   })
 
   it('the Patreon link is rendered with correct label, href, target, and rel (D-12 amendment)', () => {
