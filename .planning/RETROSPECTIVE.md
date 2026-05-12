@@ -61,6 +61,58 @@
 
 ---
 
+## Milestone: v1.0.1 — Code Review Patch
+
+**Shipped:** 2026-05-12
+**Phases:** 6 (07–12) | **Plans:** 12 | **Tasks:** 17 | **Commits:** 143
+
+### What Was Built
+
+Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning / 9 Info) mapped to 27 REQ-IDs. Phase 7 landed strict TS + ESLint `strictTypeChecked` + `react-hooks/exhaustive-deps: error` as the compiler floor for the rest of the milestone. Phase 8 made the localStorage envelope forward-compatible and refuse-downgrade, plus a cross-tab `storage` listener for live stats sync. Phase 9 eliminated audio + wake-lock race conditions (reconstruction generation counter, caller-side past-time clamp, lead-in null-on-closed, oscillator disconnect, state-change null-guard, dead `'starting'` removal, wake-lock in-flight guard). Phase 10 stabilized hook identity (`mutedRef`, status-primitive deps, per-phase frame identity, cancel-guard ordering). Phase 11 tightened domain + UI contracts + accessibility (`extendTimedSession` boundary validation, `SessionReadout` lead-in placeholder, symmetric auto-close, `MuteToggle` resume-mode a11y). Phase 12 cleaned assets + content + hygiene (favicon under Vite base, canonical amazon URL, `isValid<X>` predicate relocation, `formatLastSessionDate` JSDoc, HYGIENE-01 docs-only flip).
+
+### What Worked
+
+- **Strict baseline first (Phase 7) → every later phase wrote against it.** Latent compiler/lint errors surfaced once during Phase 7 and were fixed inline; no later phase had to "re-discover" them. The D-04 `// Reason:` annotation policy made `react-hooks/exhaustive-deps` disables auditable.
+- **Per-commit green-gate (`tsc && lint && build && test`) as D-09/D-15 invariant.** Every commit boundary in the milestone exited 0 on all four gates. Made `git bisect` trustworthy and caught two task-2 deviations (`never`-template lint, Vitest `--reporter=basic` flag) at the boundary instead of post-merge.
+- **Worktree isolation + sequential dispatch.** Phase 12 plan-01 ran in a worktree with all five tasks committed atomically and rescued cleanly via the standard merge path.
+- **Audit before close.** Re-running `/gsd-audit-milestone` before `/gsd-complete-milestone` caught the staleness of the prior audit (pre Phase 11 verify, pre Phase 12) and surfaced 13 trace-row docs lag without blocking — the closeout sweep handled them implicitly during archival.
+- **Cross-phase invariant call-out in CONTEXT (Phase 12 D-01/D-02).** HYGIENE-01 would have been a foot-gun (literal `audioNow` removal breaks the Phase 9 AUDIO-02 clamp). The CONTEXT decision to flip docs-only and add a REVIEW.md addendum preserved correctness while still closing the finding.
+
+### What Was Inefficient
+
+- **Trace row docs lag for Phase 7/8/9.** REQUIREMENTS.md rows stayed "Pending" through six phases despite VERIFICATION.md = passed. Caught only by milestone-close audit. **Fix:** verify-phase should flip trace rows as standard closeout (Phase 11 / Phase 12 did this; earlier phases did not).
+- **REVIEW.md committed late.** The 441-line deep-review file was untracked through Phase 11 and only got committed in Phase 12 Task 1 alongside the §IN-02 addendum. Triggered an `untracked working tree files would be overwritten by merge` block during the Phase 12 worktree merge. **Fix:** commit large reference docs as soon as they're authored, not lazy-add at the end.
+- **Phase 12 VALIDATION.md + SECURITY.md not generated.** Threat model was inlined in the plan (sufficient — block-on-high gate satisfied) but standalone files would have been better artifact discipline. Carried forward as advisory tech debt.
+- **Single-plan phases (11, 12) with single-wave structure.** Wave/parallelization machinery added overhead vs. payoff; could have run as `--interactive` inline executor.
+
+### Patterns Established
+
+- **`// Reason:` annotation policy** for any `eslint-disable react-hooks/exhaustive-deps` line — every disable cites the deviation rule.
+- **Spread-then-override read + refuse-downgrade write** for forward-compat localStorage envelopes (Phase 8 D-01 / D-04a). Forward-port to v1.1 schema bumps.
+- **Caller-side past-time clamp** for Web Audio scheduling (Phase 9 AUDIO-02) — Pitfall 5 belt-and-suspenders pattern.
+- **Reconstruction generation counter** for async resource lifecycle hooks (Phase 9 AUDIO-01) — applicable to any async-engine-rebuild scenario.
+- **`mutedRef` ref-stability pattern** (Phase 10 HOOKS-01) — generalizes to "stable hook return when stateful behavior is read-mostly."
+- **Shared predicate extraction at domain layer** (Phase 12 HYGIENE-02) — `validateSettings` (throws) and `coerceSettings` (fallback) cousins share `isValid<X>` predicates without duplicating allow-lists.
+- **HYGIENE-01 docs-only flip pattern** (Phase 12 D-01/D-02) — when a review finding becomes overtaken by a later-shipped contract, close it in docs with cross-citation, not via code removal.
+- **`%BASE_URL%` favicon HTML substitution** (Phase 12 D-04) — survives any future Vite `base` change without an HTML edit.
+
+### Key Lessons
+
+1. **Strict baseline early pays compounding interest.** Six phases × ~25 commits each × zero re-discovered TS/lint errors = real velocity.
+2. **Audit before complete-milestone.** Re-running the audit after late phases avoids stale "gaps_found" blocking the close.
+3. **Verify-phase should own trace-row flips.** Don't defer to milestone close — flip at phase boundary so audit is reliable mid-milestone.
+4. **Doc commits are not free.** Untracked reference docs cause worktree merge friction. Commit them when you author them.
+5. **Cross-phase invariants need CONTEXT-level annotation.** Phase 12 HYGIENE-01 would have regressed Phase 9 AUDIO-02 without the explicit D-01/D-02 carve-out. Worth the 200-word context detour.
+6. **Single-plan phases work well as `--interactive`.** Wave/parallelization is overhead when there's nothing to parallelize.
+
+### Cost Observations
+
+- Sessions: 3 (discuss → plan → execute, plus mid-milestone phase-11 verify)
+- Notable: Phase 12 plan execution (5 task groups + green-gate × 5 + SUMMARY) ran in ~10 minutes wall-clock with a single executor agent.
+- Test growth: 363 → 409 (+46 cases) for zero behavior change beyond the favicon + book URL hover.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -68,13 +120,17 @@
 | Milestone | Phases | Plans | Key Change |
 |-----------|--------|-------|------------|
 | v1.0 | 7 | 30 | Established phase/plan/wave structure, decimal-phase insertion pattern, pre-close audit workflow |
+| v1.0.1 | 6 | 12 | Strict TS + ESLint baseline as compiler floor; per-commit green-gate as invariant; `// Reason:` policy for hook-deps disables; worktree-mode merge protocol shaken out (untracked-file merge gotcha) |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Test Files | LOC (src/) |
 |-----------|-------|------------|------------|
 | v1.0 | 363/363 pass | 27 | ~9,032 |
+| v1.0.1 | 409/409 pass | 29 | ~10,925 |
 
 ### Top Lessons (Verified Across Milestones)
 
-(Single-milestone — cross-validation pending v1.1.)
+1. **Decimal-phase insertion handles emergent scope** — Phase 5.1 (v1.0) and Phase 12 HYGIENE-01 docs-only flip (v1.0.1) both proved that mid-milestone reality can be honored without forcing literal-text adherence to the original ROADMAP.
+2. **Pre-close audit is non-negotiable** — both v1.0 and v1.0.1 caught real or apparent gaps before archival. v1.0.1 specifically demonstrated that stale audits can mislead; re-running is cheap.
+3. **Cross-phase invariants must be made explicit in CONTEXT** — Phase 12 HYGIENE-01 → Phase 9 AUDIO-02 dependency would have caused a regression without the D-01/D-02 carve-out.
