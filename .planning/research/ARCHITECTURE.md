@@ -18,7 +18,7 @@ src/hooks/
   useWakeLock        (untouched)
   usePrefersReducedMotion (untouched)
 src/components/
-  BreathingShape     (variant dispatch)      ← CUST-03 + inner-ring fix
+  BreathingShape     (variant dispatch)      ← CUST-03 + inner-ring fix [2026-05-12 update] The "inner-ring fix" is reduced-motion suppression in theme.css only; no BreathingShape.tsx edit. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01.
   SettingsForm       (unchanged)
   + NEW: SettingsDialog                     ← new: customization UI surface
 src/audio/
@@ -54,6 +54,8 @@ Issue B carry-forward from Phase 5.1: the outer ring appears at `MAX_SCALE` as t
 - The `left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2` centering pattern (WR-03 — spec-safe across older Safari)
 
 **Risk:** LOW — isolated to one component, no hook or domain changes.
+
+[2026-05-12 update] Issue B was reduced-motion-only in actual user UAT (2026-05-12); normal-motion inner-ring behavior is correct as-is. Fix is one CSS rule in `theme.css` `@media (prefers-reduced-motion: reduce)`, not BreathingShape.tsx. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01 / D-03.
 
 ---
 
@@ -316,6 +318,8 @@ Smallest change, no new architecture, validates green-gate posture before the br
 3. Possibly adjust `.orb-ring--inner` CSS in `src/styles/theme.css`
 4. Green-gate: `tsc && lint && build && test`
 
+[2026-05-12 update] Scope reduced — no timing investigation needed, no BreathingShape.tsx edit. One CSS rule (`.orb-ring--inner { display: none }`) under `@media (prefers-reduced-motion: reduce)` is the complete implementation. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
+
 ### Phase B — Envelope schema + prefs foundation
 
 All four customization features write to `prefs`. Establishing the type, coercer, load/save, and `DEFAULT_PREFS` first means CUST-01/02/03/I18N-01 each build against a stable foundation.
@@ -380,7 +384,7 @@ Widest surface area (touches every rendered string) but lowest technical risk. D
 
 | Component | v1.0.1 Responsibility | v1.1 Change |
 |-----------|----------------------|-------------|
-| `BreathingShape` | Dispatch to body/lead-in | Dispatch by `variant` prop; inner-ring fix |
+| `BreathingShape` | Dispatch to body/lead-in | Dispatch by `variant` prop; inner-ring fix [2026-05-12 update] Inner-ring fix lives in `theme.css`, not `BreathingShape.tsx`. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01. |
 | `BreathingShapeBody` | Single orb implementation | Renamed `BreathingShapeOrb`; behavior unchanged |
 | `SettingsDialog` (NEW) | n/a | Theme / timbre / variant / locale pickers |
 | `App.tsx` | Session orchestration | Prefs state; theme attr setter; timbre pass-through |
@@ -428,7 +432,7 @@ Widest surface area (touches every rendered string) but lowest technical risk. D
 
 | File | Change | Risk |
 |------|--------|------|
-| `src/components/BreathingShape.tsx` | Inner-ring fix; variant dispatch | LOW |
+| `src/components/BreathingShape.tsx` | Inner-ring fix; variant dispatch | LOW [2026-05-12 update] BreathingShape.tsx receives no Phase 13 edit; `theme.css` carries the reduced-motion suppression change. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01. |
 | `src/styles/theme.css` | Theme override blocks; possibly inner-ring CSS | LOW |
 | `src/audio/cueSynth.ts` | Timbre dispatch table | MEDIUM |
 | `src/audio/audioEngine.ts` | `timbre` option on `createAudioEngine` | MEDIUM |

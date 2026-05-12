@@ -38,7 +38,7 @@ Features that go beyond the expected baseline and distinguish this app in the cr
 | Fully synthesized alternate timbres — no sample files | Lungy and iBreathe use recorded samples. Generating all timbres from Web Audio API partials keeps the bundle unchanged and eliminates licensing risk. | MEDIUM | `cueSynth.ts` already follows a `scheduleBowlCue(fundamentalHz, decayTau, partials)` pattern. Each new timbre is a named `TimbrePreset` constant (different Hz, different waveform, different partial stack). Thin wrapper; no architectural change. |
 | Alternate visual style that works under reduced-motion | A non-orb variant (e.g. a breathing square or expanding ring) that is legible at MID_SCALE constant size works equally well for reduced-motion users — the variant itself can be the differentiation rather than the scale animation. | MEDIUM | `BreathingShape.tsx` routes on `frame.phase` and the `visualVariant` prop. Each variant is a self-contained component that receives the same `SessionFrame` input. Outer structure (rings, data-phase, scale math) remains unchanged unless the variant explicitly opts out. |
 | Language switching without a page reload | Many web i18n implementations require a reload to swap bundles. If language switching is instant (swap string constants in React state), it feels more native-app-like and reinforces the local-first, zero-server positioning. | MEDIUM | Viable because the content corpus is small. English strings are already mostly inline; the Learn surface strings are section-keyed in `learnContent.ts`. A locale constant + a locale-keyed string map achieves instant switching without a framework. |
-| Inner-ring symmetry (warm-up) | The inner ring currently appears only during the Out phase (Out-phase arrival cue). Making it symmetric — a ring appears during In phase at the outer boundary, and during Out phase at the inner boundary — creates a satisfying mirror that rewards attention without adding controls or cognitive load. | LOW | Pure CSS + `BreathingShape.tsx` change. Adds `orb-ring--in-arrival` that fades in only at `[data-phase='in']`. Mirrors the existing `[data-phase='out'] .orb-ring--inner` pattern. |
+| Inner-ring symmetry (warm-up) | The inner ring currently appears only during the Out phase (Out-phase arrival cue). Making it symmetric — a ring appears during In phase at the outer boundary, and during Out phase at the inner boundary — creates a satisfying mirror that rewards attention without adding controls or cognitive load. | LOW | Pure CSS + `BreathingShape.tsx` change. Adds `orb-ring--in-arrival` that fades in only at `[data-phase='in']`. Mirrors the existing `[data-phase='out'] .orb-ring--inner` pattern. [2026-05-12 update] Symmetric-cue framing rejected at discuss-phase; actual scope is reduced-motion `.orb-ring--inner { display: none }`. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01. |
 
 ### Anti-Features (Explicitly Out of Scope)
 
@@ -105,13 +105,15 @@ Inner-ring UX symmetry (warm-up, no feature flag)
     └──purely──> CSS + minimal JSX change; no storage, no settings model touch
 ```
 
+[2026-05-12 update] The rule add shown above (`[data-phase='in'] .orb-ring--outer` fade-in) was rejected; actual implementation is reduced-motion `.orb-ring--inner { display: none }` inside the existing `@media (prefers-reduced-motion: reduce)` block. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
+
 ### Dependency Notes
 
 - **Storage schema bumps for all four customization fields are safe:** the existing `Envelope` `spread-then-override` read pattern (STORAGE-01) and `refuse-downgrade` write guard (STORAGE-02) remain valid. New optional fields on the envelope require only coercer functions and valid-value guards — the same pattern as `settings`/`mute`/`stats`.
 - **cueSynth.ts is the chokepoint for CUST-02:** the `scheduleBowlCue` private function accepts `fundamentalHz` and `defaultDecayTau` already. A `TimbrePreset` struct that bundles those parameters is a minimal addition. The existing BOWL preset becomes the default, preserving byte-identical behavior when no preset is specified.
 - **BreathingShape.tsx is the chokepoint for CUST-03:** the component already accepts `frame` (SessionFrame) and `leadInDigit`. Adding a `visualVariant` prop and a router is low-risk because the orb implementation is already fully encapsulated in `BreathingShapeBody`. Variant sub-components are new siblings, not modifications.
 - **learnContent.ts is already i18n-structured:** the `hrv`/`timing`/`forrest` section keys were explicitly designed as "i18n-stable identifiers for future locale swap" (comment at line 2 of `learnContent.ts`). Adding a locale map `{ en: LEARN_CONTENT }` and shipping one additional locale (Spanish is the highest-value second language for a global English-content yoga/breathing audience) is the minimal I18N-01 implementation.
-- **Inner-ring symmetry has zero dependency risk:** it is a pure CSS + JSX addition to `BreathingShape.tsx`. It does not touch the storage model, the audio engine, the settings domain, or the timing engine. It is a warm-up task precisely because of this isolation.
+- **Inner-ring symmetry has zero dependency risk:** it is a pure CSS + JSX addition to `BreathingShape.tsx`. It does not touch the storage model, the audio engine, the settings domain, or the timing engine. It is a warm-up task precisely because of this isolation. [2026-05-12 update] Implementation is pure CSS only (no JSX addition); a single rule inside the existing `@media (prefers-reduced-motion: reduce)` block with no BreathingShape.tsx edit. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
 - **Theme switching must not use Tailwind `dark:` class variants:** the existing `theme.css` uses CSS custom properties under `@theme { }` (Tailwind v4 convention). Named themes should follow the same custom-property pattern on a `[data-theme]` attribute on `<html>` or the app root — not Tailwind class variants, which would require rewriting all consumer classes.
 
 ---
@@ -122,7 +124,7 @@ Inner-ring UX symmetry (warm-up, no feature flag)
 
 These are the four milestone features plus the warm-up.
 
-- [x] **Inner-ring UX symmetry** — Add `[data-phase='in']` CSS rule mirroring the existing `[data-phase='out'] .orb-ring--inner` pattern. Also applies the outer ring fade-in on In to create symmetric arrival cues. Pure CSS + BreathingShape.tsx. Zero storage touch. Low-risk warm-up.
+- [x] **Inner-ring UX symmetry** — Add `[data-phase='in']` CSS rule mirroring the existing `[data-phase='out'] .orb-ring--inner` pattern. Also applies the outer ring fade-in on In to create symmetric arrival cues. Pure CSS + BreathingShape.tsx. Zero storage touch. Low-risk warm-up. [2026-05-12 update] Feature shipped as reduced-motion `.orb-ring--inner` suppression; the symmetric-arrival framing is annotated here but not implemented. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01.
 - [ ] **CUST-01: Theme switching** — Light / Dark / System (OS default) + 2-3 named palette themes. Picker in SettingsForm. Persisted to `Envelope.theme`. Applied via `data-theme` attribute on root. CSS custom-property token overrides in `theme.css`.
 - [ ] **CUST-02: Audio timbres** — 3-4 named synthesized presets (Bowl, Bell, Sine, Chime). Default = existing Bowl (zero regression). `TimbrePreset` struct in `cueSynth.ts`. Persisted to `Envelope.timbre`. Picker in SettingsForm.
 - [ ] **CUST-03: Visual variants** — 2-3 named visual styles for the session guide (Orb/default, Square, Ring). Each variant consumes `SessionFrame` unchanged. Persisted to `Envelope.visualVariant`. Picker in SettingsForm.
@@ -149,7 +151,7 @@ These are the four milestone features plus the warm-up.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Inner-ring UX symmetry | LOW-MEDIUM | LOW | P0 (warm-up, land first) |
+| Inner-ring UX symmetry | LOW-MEDIUM | LOW | P0 (warm-up, land first) [2026-05-12 update] Priority/value/cost unchanged; scope reduced to one CSS rule per `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03. |
 | CUST-01: Theme (light/dark/system) | HIGH | LOW | P1 |
 | CUST-01: Named palette themes (2-3) | MEDIUM | MEDIUM | P1 |
 | CUST-02: Audio timbres (Bowl + 2-3 more) | MEDIUM | MEDIUM | P1 |
@@ -207,6 +209,8 @@ This section summarizes which v1.0 code surfaces each feature touches, to inform
 - **Touches:** `src/styles/theme.css` (new `[data-phase='in'] .orb-ring--outer` opacity rule), `src/components/BreathingShape.tsx` (confirm `data-phase='in'` already set — it is, in the existing `data-phase={frame.phase}` attribute).
 - **Does NOT touch:** anything else.
 - **Risk:** Negligible. The In-phase outer-ring fade-in mirrors the exact CSS pattern of the Out-phase inner-ring fade-in. Only new CSS selector, no JS change required.
+
+[2026-05-12 update] "Touches" reduced to `src/styles/theme.css` only — no `BreathingShape.tsx` edit (BreathingShape.tsx is listed in 13-CONTEXT.md canonical_refs "Source NOT edited"). Actual rule is `.orb-ring--inner { display: none }` inside the existing `@media (prefers-reduced-motion: reduce)` block; risk unchanged. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
 
 ---
 

@@ -13,7 +13,7 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 
 ### Warm-up: Inner-Ring UX Symmetry
 
-- [ ] **WARMUP-01**: User sees a symmetric inner-ring arrival cue at both In-phase and Out-phase boundaries of the orb (mirrors existing `[data-phase='out'] .orb-ring--inner` pattern; pure CSS + minor `BreathingShape.tsx` change; no storage/audio/timing touch).
+- [ ] **WARMUP-01**: Under `prefers-reduced-motion: reduce`, the inner reference ring (`.orb-ring--inner`) is not rendered — `.orb-layer--out` opacity crossfade alone carries the substitute phase indicator (D-07). Pure CSS change in `src/styles/theme.css` `@media (prefers-reduced-motion: reduce)` block; no TSX, storage, audio, timing touch.
 
 ### Infrastructure: Prefs Foundation
 
