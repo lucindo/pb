@@ -44,7 +44,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 
 ### 📋 v1.1 Customization (planned)
 
-- [ ] **Phase 13: Inner-Ring UX Symmetry** - Pure CSS + minimal TSX warm-up; symmetric arrival cue at both In and Out phase boundaries
+- [ ] **Phase 13: Inner-Ring UX Symmetry** - Reduced-motion inner-ring suppression — `.orb-layer--out` crossfade restored as sole substitute phase cue
 - [ ] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions
 - [ ] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract
 - [ ] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes
@@ -55,12 +55,12 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 ## Phase Details
 
 ### Phase 13: Inner-Ring UX Symmetry
-**Goal**: The orb shows a symmetric inner-ring arrival cue at both the In-phase and Out-phase boundaries, completing the visual polish carry-forward from Phase 5.1.
+**Goal**: Under `prefers-reduced-motion: reduce`, the inner reference ring (`.orb-ring--inner`) is no longer rendered — the `.orb-layer--out` opacity crossfade remains the sole reduced-motion phase indicator (D-07 preserved).
 **Depends on**: Phase 12 (v1.0.1 baseline — all phases complete)
 **Requirements**: WARMUP-01
 **Success Criteria** (what must be TRUE):
-  1. An inner-ring arrival cue animates at the In-phase start boundary (mirroring the existing `[data-phase='out'] .orb-ring--inner` pattern).
-  2. The existing Out-phase inner-ring behavior is pixel-identical to the v1.0.1 baseline (zero regression).
+  1. Under `prefers-reduced-motion: reduce`, the inner reference ring is not drawn in any state (Out, In, lead-in).
+  2. Out-phase inner-ring behavior under **normal motion** is pixel-identical to v1.0.1 baseline (only the reduced-motion branch changes).
   3. The change touches only CSS and `BreathingShape.tsx`; no storage, audio, timing, or hook files are modified.
   4. `tsc && lint && build && test` exit 0 after the change (per-commit green-gate maintained).
 **Plans**: TBD
