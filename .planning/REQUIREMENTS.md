@@ -69,19 +69,19 @@ All requirements derive from `REVIEW.md` (full-codebase deep review, 2026-05-11 
 
 ## Domain
 
-- [ ] **DOMAIN-01**: `extendTimedSession` validates `durationMinutes` against `DURATION_OPTIONS` at the boundary (explicit throw OR narrow parameter type to `DurationOption`) rather than discovering invalidity via thrown `RangeError` inside `createBreathingPlan`.
+- [x] **DOMAIN-01**: `extendTimedSession` validates `durationMinutes` against `DURATION_OPTIONS` at the boundary (explicit throw OR narrow parameter type to `DurationOption`) rather than discovering invalidity via thrown `RangeError` inside `createBreathingPlan`.
   Source: WR-01.
 
 ## UI Contracts
 
-- [ ] **UI-01**: `SessionReadout` has an explicit contract for the lead-in placeholder case (idle status + non-null frame): either a `'lead-in'` value on `status` or an `isLeadInPlaceholder` prop, with the contract documented in `SessionReadoutProps` JSDoc and tested.
+- [x] **UI-01**: `SessionReadout` has an explicit contract for the lead-in placeholder case (idle status + non-null frame): either a `'lead-in'` value on `status` or an `isLeadInPlaceholder` prop, with the contract documented in `SessionReadoutProps` JSDoc and tested.
   Source: WR-08.
-- [ ] **UI-02**: `LearnDialog` and `ResetStatsDialog` cannot remain open when the session view becomes active. App-level effect closes both on `inSessionView` transition.
+- [x] **UI-02**: `LearnDialog` and `ResetStatsDialog` cannot remain open when the session view becomes active. App-level effect closes both on `inSessionView` transition.
   Source: WR-09.
 
 ## Accessibility
 
-- [ ] **A11Y-01**: `MuteToggle` carries semantically correct attributes when `needsResume` is true: `aria-pressed` removed, `aria-describedby` linked to the App-level `aria-live` resume hint region (or equivalent). Verified by Testing Library assertions.
+- [x] **A11Y-01**: `MuteToggle` carries semantically correct attributes when `needsResume` is true: `aria-pressed` removed, `aria-describedby` linked to the App-level `aria-live` resume hint region (or equivalent). Verified by Testing Library assertions.
   Source: IN-06.
 
 ## Content
@@ -139,10 +139,10 @@ Each REQ-ID maps to exactly one phase in `ROADMAP.md`. Coverage: **27/27 (100%)*
 | HOOKS-03 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
 | HOOKS-04 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
 | HOOKS-05 | Phase 10 — Hooks Identity & Effect Hygiene | Complete |
-| DOMAIN-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
-| UI-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
-| UI-02 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
-| A11Y-01 | Phase 11 — Domain, UI Contracts & Accessibility | Pending |
+| DOMAIN-01 | Phase 11 — Domain, UI Contracts & Accessibility | Complete |
+| UI-01 | Phase 11 — Domain, UI Contracts & Accessibility | Complete |
+| UI-02 | Phase 11 — Domain, UI Contracts & Accessibility | Complete |
+| A11Y-01 | Phase 11 — Domain, UI Contracts & Accessibility | Complete |
 | ASSETS-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
 | CONTENT-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
 | HYGIENE-01 | Phase 12 — Assets, Content & Hygiene Cleanup | Pending |
