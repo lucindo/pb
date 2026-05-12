@@ -92,4 +92,10 @@ describe('session lifecycle controller', () => {
     const openEnded = startSession({ ...baseSettings, durationMinutes: 'open-ended' }, 0)
     expect(() => extendTimedSession(openEnded, 60)).toThrow(RangeError)
   })
+
+  it('throws RangeError for a finite durationMinutes not in DURATION_OPTIONS (D-01 allowlist boundary)', () => {
+    const running = startSession({ ...baseSettings, durationMinutes: 10 }, 0)
+    // 7 is finite but not in DURATION_OPTIONS (which contains 5,10,15,...,60,'open-ended')
+    expect(() => extendTimedSession(running, 7)).toThrow(RangeError)
+  })
 })

@@ -2,7 +2,8 @@ import type { BreathingPlan } from './breathingPlan'
 import { createBreathingPlan } from './breathingPlan'
 import type { SessionFrame } from './sessionMath'
 import { getSessionFrame } from './sessionMath'
-import type { SessionSettings } from './settings'
+import type { DurationOption, SessionSettings } from './settings'
+import { DURATION_OPTIONS } from './settings'
 
 export type SessionStatus = 'idle' | 'running' | 'complete'
 
@@ -62,6 +63,10 @@ export function extendTimedSession(
 ): RunningSessionState {
   if (state.lockedSettings.durationMinutes === 'open-ended') {
     throw new RangeError('Open-ended sessions cannot be converted while running')
+  }
+
+  if (!(DURATION_OPTIONS as readonly DurationOption[]).includes(durationMinutes)) {
+    throw new RangeError('durationMinutes must be one of DURATION_OPTIONS')
   }
 
   if (!Number.isFinite(durationMinutes) || durationMinutes <= state.lockedSettings.durationMinutes) {
