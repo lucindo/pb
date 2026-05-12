@@ -78,10 +78,10 @@ export default function App() {
   // deltas growing 9s → 26s → 57s). Subtract the session-elapsed visual offset so the
   // formula yields audioTime ≈ newAC.currentTime at the upcoming boundary — i.e., the
   // next cue plays at the right perceptual moment relative to the next visual phase.
-  const sessionFrameRef = useRef(session.currentFrame)
+  const sessionFrameRef = useRef(session.liveFrame)
   useEffect(() => {
-    sessionFrameRef.current = session.currentFrame
-  }, [session.currentFrame])
+    sessionFrameRef.current = session.liveFrame
+  }, [session.liveFrame])
 
   // STORAGE-03: cross-tab stats refresh via the `window` 'storage' event.
   // - D-05: stats-only refresh — settings and mute are NOT re-read cross-tab.
