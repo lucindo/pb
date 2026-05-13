@@ -1,10 +1,11 @@
 ---
 phase: 16
 slug: themes
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-12
+reviewed_at: 2026-05-12
 requirements:
   - THEME-01
   - THEME-02
