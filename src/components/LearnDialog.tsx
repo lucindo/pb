@@ -80,16 +80,16 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
         <div className="grid gap-4">
           <div>
             <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.hrv.title}</h3>
-            <p className="text-base leading-6 text-[var(--color-breathing-accent-strong)]">{explainer.hrv.body}</p>
+            <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{explainer.hrv.body}</p>
           </div>
           <div>
             <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.timing.title}</h3>
-            <p className="text-base leading-6 text-[var(--color-breathing-accent-strong)]">{explainer.timing.body}</p>
+            <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{explainer.timing.body}</p>
           </div>
           <div>
             <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
             {explainer.forrest.body.split('\n\n').map((paragraph, idx) => (
-              <p key={idx} className="text-base leading-6 text-[var(--color-breathing-accent-strong)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
+              <p key={idx} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
             ))}
           </div>
         </div>
