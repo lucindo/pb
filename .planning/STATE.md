@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
 status: executing
-stopped_at: Phase 16 UI-SPEC approved
-last_updated: "2026-05-13T02:40:26.930Z"
-last_activity: 2026-05-13 -- Phase 16 planning complete
+stopped_at: Phase 16 themes complete
+last_updated: "2026-05-13T00:10:00.000Z"
+last_activity: 2026-05-13 -- Phase 16 complete
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 6
-  percent: 60
+  completed_plans: 10
+  percent: 57
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 15 — settingsdialog-shell
+**Current focus:** Phase 17 — visual-variants
 
 ## Current Position
 
-Phase: 16
+Phase: 17
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-13 -- Phase 16 planning complete
+Status: Ready to plan
+Last activity: 2026-05-13 -- Phase 16 complete
 
-Progress: ███░░░░░░░ 29% (2/7 phases complete)
+Progress: ████░░░░░░ 57% (4/7 phases complete)
 
 ## Performance Metrics
 
@@ -47,8 +47,8 @@ Progress: ███░░░░░░░ 29% (2/7 phases complete)
 |-------|-------|--------|
 | 13. Inner-Ring UX Symmetry | 1 | Complete |
 | 14. Prefs Foundation | 1 | Complete |
-| 15. SettingsDialog Shell | TBD | Not started |
-| 16. Themes | TBD | Not started |
+| 15. SettingsDialog Shell | 4 | Complete |
+| 16. Themes | 4 | Complete |
 | 17. Visual Variants | TBD | Not started |
 | 18. Audio Timbres | TBD | Not started |
 | 19. Language Switching | TBD | Not started |
@@ -111,11 +111,11 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-13T02:10:17.153Z
-Stopped at: Phase 16 UI-SPEC approved
-Resume file: .planning/phases/16-themes/16-UI-SPEC.md
-Next command: Phase 15 (SettingsDialog Shell) planning
+Last session: 2026-05-13T00:10:00.000Z
+Stopped at: Phase 16 themes complete
+Resume file: .planning/phases/16-themes/16-SUMMARY.md
+Next command: Phase 17 (Visual Variants) planning
 
 ## Operator Next Steps
 
-- Begin Phase 15 (SettingsDialog Shell) planning: `/gsd-plan-phase 15`
+- Begin Phase 17 (Visual Variants) planning: `/gsd-plan-phase 17`

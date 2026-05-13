@@ -47,7 +47,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 13: Inner-Ring UX Symmetry** - Reduced-motion inner-ring suppression — `.orb-layer--out` crossfade restored as sole substitute phase cue (completed 2026-05-12)
 - [x] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions (completed 2026-05-12)
 - [x] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract (completed 2026-05-13)
-- [ ] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes
+- [x] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes (completed 2026-05-13)
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
@@ -108,7 +108,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   - [x] 16-01-PLAN.md — theme.css token overrides (Light @theme + Dark/Moss/Slate/Dusk [data-theme] blocks) + THEME-05 contrast guard test
   - [x] 16-02-PLAN.md — useTheme orchestrator hook + useThemeChoice picker setter hook + hook tests
   - [x] 16-03-PLAN.md — index.html FOUC inline script + storage.ts SYNC comment
-  - [ ] 16-04-PLAN.md — ThemePicker radiogroup UI + App.tsx useTheme wire-up + phase close (REQUIREMENTS/STATE/ROADMAP/SUMMARY) + human visual checkpoint
+  - [x] 16-04-PLAN.md — ThemePicker radiogroup UI + App.tsx useTheme wire-up + phase close
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
@@ -169,7 +169,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 13. Inner-Ring UX Symmetry | v1.1 | 1/1 | Complete   | 2026-05-12 |
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
 | 15. SettingsDialog Shell | v1.1 | 4/4 | Complete    | 2026-05-13 |
-| 16. Themes | v1.1 | 3/4 | In Progress|  |
+| 16. Themes | v1.1 | 4/4 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |

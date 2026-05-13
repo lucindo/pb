@@ -24,11 +24,11 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 
 ### Themes (CUST-01)
 
-- [ ] **THEME-01**: User can choose between **Light**, **Dark**, and **System** modes from the SettingsDialog.
-- [ ] **THEME-02**: `System` mode follows the OS `prefers-color-scheme` media query automatically (no manual override required).
-- [ ] **THEME-03**: User can choose among 3 curated named palette themes (e.g. Moss / Slate / Dusk) in addition to Light/Dark/System, each implemented as a `[data-theme='name']` CSS-custom-property override block in `src/styles/theme.css`.
-- [ ] **THEME-04**: Selected theme persists across reloads via `Envelope.prefs.theme` and applies before first paint (FOUC-prevention inline script in `index.html`).
-- [ ] **THEME-05**: Every shipped theme preserves the reduced-motion phase-cue contrast contract — the `.orb-layer--in` / `.orb-layer--out` opacity-crossfade hues must remain perceptually distinguishable under `prefers-reduced-motion: reduce` for every theme.
+- [x] **THEME-01**: User can choose between **Light**, **Dark**, and **System** modes from the SettingsDialog.
+- [x] **THEME-02**: `System` mode follows the OS `prefers-color-scheme` media query automatically (no manual override required).
+- [x] **THEME-03**: User can choose among 3 curated named palette themes (e.g. Moss / Slate / Dusk) in addition to Light/Dark/System, each implemented as a `[data-theme='name']` CSS-custom-property override block in `src/styles/theme.css`.
+- [x] **THEME-04**: Selected theme persists across reloads via `Envelope.prefs.theme` and applies before first paint (FOUC-prevention inline script in `index.html`).
+- [x] **THEME-05**: Every shipped theme preserves the reduced-motion phase-cue contrast contract — the `.orb-layer--in` / `.orb-layer--out` opacity-crossfade hues must remain perceptually distinguishable under `prefers-reduced-motion: reduce` for every theme.
 
 ### Audio Timbres (CUST-02)
 
@@ -101,11 +101,11 @@ Which phases cover which requirements.
 | INFRA-02 | Phase 14 | Done |
 | INFRA-03 | Phase 14 | Done |
 | INFRA-04 | Phase 15 | Done |
-| THEME-01 | Phase 16 | Pending |
-| THEME-02 | Phase 16 | Pending |
-| THEME-03 | Phase 16 | Pending |
-| THEME-04 | Phase 16 | Pending |
-| THEME-05 | Phase 16 | Pending |
+| THEME-01 | Phase 16 | Done |
+| THEME-02 | Phase 16 | Done |
+| THEME-03 | Phase 16 | Done |
+| THEME-04 | Phase 16 | Done |
+| THEME-05 | Phase 16 | Done |
 | TIMBRE-01 | Phase 18 | Pending |
 | TIMBRE-02 | Phase 18 | Pending |
 | TIMBRE-03 | Phase 18 | Pending |
@@ -133,4 +133,4 @@ Which phases cover which requirements.
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-12 — Phase 15 INFRA-04 traceability flipped to Done*
+*Last updated: 2026-05-13 — Phase 16 THEME-01..05 traceability flipped to Done*
