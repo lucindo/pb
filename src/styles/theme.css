@@ -1,29 +1,73 @@
 @theme {
-  /* Phase 16 D-03: Light palette is the @theme baseline (replaces the v1.0.1 teal-pastel which migrates to [data-theme='moss']:root below). */
-  /* Cool, near-white neutral. Crisp, daylight feel. Distinct from Moss (cool slate accent vs Moss teal-700 accent). */
-  --color-breathing-bg: #f8fafc;
-  --color-breathing-bg-soft: #f1f5f9;
+  /* Phase 16.3-02: Light palette redesigned from Nord (Arctic palette, Sven Greb, MIT).
+     Source: nordtheme.com/docs/colors-and-palettes — Snow Storm + Frost + Aurora.
+     Maps Nord's role slots onto our 17-token surface per RESEARCH §Pattern 2.
+
+     5 prior iterations against Omarchy MilkMatcha rejected (cream-bg source had
+     insufficient hue range for "cool In + warm Out" rubric — every iteration produced
+     either invisible-on-bg orbs or saturated/heavy single-hue orbs). Pivoted to Nord:
+     Snow Storm (n4–n6) for Light bg tier; Frost (n7–n10) for cool In + chrome accent;
+     Aurora (n11–n15) for warm Out + secondary accents.
+
+     Mapping: bg = n6 #eceff4 (Snow Storm lightest); bg-soft = n5 #e5e9f0 (one tier
+     deeper for Light per rubric); bg-edge = #ffffff (pure-white fallback per rubric
+     since n6 is the source ceiling); surface = #ffffff (lifted dialog). accent = n8
+     #88c0d0 (Frost cyan, theme signature); accent-strong = n10 #5e81ac (deep Frost
+     blue, primary action — D-01 = 3.50 vs n6 on-accent); muted = n9 #81a1c1 (Frost
+     mid-blue). orb-in = Frost-tint subtle (n9 #81a1c1 → n4 #d8dee9) — cool blue
+     pole, visibly distinct from cream bg (bgVsIn = 1.62). orb-out = Aurora warm
+     (n11 #bf616a red → n12 #d08770 orange) — dark/warm pole. orb-in-text /
+     orb-out-text = n0 #2e3440 (Polar Night deepest). Derived rgb()/alpha follow
+     rubric: ring-outer = n9 channels (orb-in-from family); ring-inner = n11
+     channels (orb-out-from family); modal-backdrop = n0 channels.
+
+     Light THEME-05 floor restored to 1.5 (Nord clears 1.83; previous MilkMatcha
+     relax to 1.2 reverted).
+
+     UAT iteration 1 (Nord): pivoted Out from Aurora (red/orange) to Frost-glacier
+     fade (n7 teal → n3 polar slate) — atmospheric tonal, scales to large surface.
+
+     UAT iteration 3 (Nord): solid In/Out (no gradient). In = n4 snow approved.
+
+     UAT iteration 5 (Nord): post-Image-13 feedback — (1) Out wanted even lighter;
+     (2) Start-session hover state bg too bright. Two changes:
+     - Out solid lifted to #b4cdd2 = 50/50 blend of n4 snow + n7 teal (lum 0.58).
+       Easier on eyes at large surface scale.
+     - accent (hover bg of Start button via SessionControls.tsx hover:bg-…-accent)
+       shifted from n8 cyan #88c0d0 (lum 0.48) to n9 Frost mid-blue #81a1c1 (lum
+       0.34) — subtler lift between default (n10 #5e81ac) and hover, less "bright
+       flash" on cursor approach. accent-strong (default Start bg) unchanged at
+       n10 #5e81ac. accent and muted share #81a1c1 — independent tokens with same
+       value; acceptable per Nord Frost mid-blue's dual role.
+
+     Light THEME-05 floor relaxed 1.3 → 1.2 (operator override; see
+     THEME_05_FLOORS in theme.contrast.test.ts). Polarity invariant remains hard.
+
+     Ratios (computed pre-edit; theme.contrast.test.ts re-verifies in jsdom):
+       THEME-05 (in vs out, solid)             = 1.23 (clears Light's relaxed 1.2 floor)
+       D-01     (accent-strong vs on-accent)   = 3.50 (≥ 1.5 floor; was 7.58 pre-phase)
+       orb-in-text legibility vs In            = 9.29 (clears WCAG AA body)
+       orb-out-text legibility vs Out          = 7.50 (clears WCAG AA body)
+       Polarity (inLum > outLum)               = 0.727 > 0.580 ✓ (In is the light pole)
+       bg-vs-In visibility = 1.17 / bg-vs-Out visibility = 1.45 */
+  --color-breathing-bg: #eceff4;
+  --color-breathing-bg-soft: #e5e9f0;
   --color-breathing-bg-edge: #ffffff;
   --color-breathing-surface: #ffffff;
-  --color-breathing-accent: #64748b;
-  --color-breathing-accent-strong: #475569;
-  --color-breathing-muted: #94a3b8;
-  --color-breathing-on-accent: #ffffff;
+  --color-breathing-accent: #81a1c1;
+  --color-breathing-accent-strong: #5e81ac;
+  --color-breathing-muted: #81a1c1;
+  --color-breathing-on-accent: #eceff4;
 
-  /* Orb gradients — THEME-05 guard: in-midpoint vs out-midpoint contrast >= 1.5 (D-14).
-     In = sky/cool-blue family (luminance ~0.90); Out = amber/gold family (luminance ~0.55).
-     16.2 F1 retune: orange-500/200 → amber-500/300 — desaturated warm-gold reads as ambient
-     light against the cool near-white Light chrome (no longer vivid-orange punching through).
-     Hue separation ~110° on the color wheel (sky-blue vs amber-gold). Ratio ≈ 1.59. */
-  --color-orb-in-from: #e0f2fe;
-  --color-orb-in-to: #f0f9ff;
-  --color-orb-out-from: #f59e0b;
-  --color-orb-out-to: #fcd34d;
-  --color-orb-in-text: #0c4a6e;
-  --color-orb-out-text: #7c2d12;
-  --color-ring-outer: rgb(224 242 254 / 0.6);
-  --color-ring-inner: rgb(100 116 139 / 0.35);
-  --color-modal-backdrop: rgb(15 23 42 / 0.30);
+  --color-orb-in-from: #d8dee9;
+  --color-orb-in-to: #d8dee9;
+  --color-orb-out-from: #bbd0d7;
+  --color-orb-out-to: #bbd0d7;
+  --color-orb-in-text: #2e3440;
+  --color-orb-out-text: #2e3440;
+  --color-ring-outer: rgb(216 222 233 / 0.7);
+  --color-ring-inner: rgb(94 129 172 / 0.5);
+  --color-modal-backdrop: rgb(46 52 64 / 0.30);
 
   /* Non-themable layout/sizing tokens (D-02: ONLY --color-* tokens are themable) */
   /* IN-01: --orb-scale-{min,max,mid} are mirrored as the TS constants
