@@ -64,9 +64,11 @@
 /* Phase 16 D-04: Moss palette — the v1.0.1 calm teal-pastel.
    Chrome tokens (bg, surface, accent, muted) are byte-identical to the v1.0.1 @theme baseline (D-03).
    Orb-in tokens are byte-identical to v1.0.1.
-   Note: Orb-out adjusted from v1.0.1 (#bfdbfe/#eef2ff) to (#3b82f6/#bfdbfe) to satisfy the
-   THEME-05 >= 1.5 luminance contrast floor (original out-midpoint was too close in luminance to
-   in-midpoint: ratio ~1.087 < 1.5). All 15 other tokens remain byte-identical. Ratio ≈ 1.94. */
+   16.2 F4 retune: orb-out shifted out of the blue family (#3b82f6/#bfdbfe was vivid-blue clashing
+   with the moss green chrome) into the emerald family (#047857/#6ee7b7) — green-on-green via slight
+   hue separation (emerald-700 vs the chrome's teal-700 accent #0f766e). orb-out-text follows the
+   hue shift (blue-900 #1e3a8a → emerald-950 #022c22) to stay legible on the new green midpoint.
+   Ratio ≈ 2.36. */
 [data-theme='moss']:root {
   --color-breathing-bg: #f2fbf7;
   --color-breathing-bg-soft: #e4f6ef;
@@ -78,10 +80,10 @@
   --color-breathing-on-accent: #ffffff;
   --color-orb-in-from: #99f6e4;
   --color-orb-in-to: #ecfdf5;
-  --color-orb-out-from: #3b82f6;
-  --color-orb-out-to: #bfdbfe;
+  --color-orb-out-from: #047857;
+  --color-orb-out-to: #6ee7b7;
   --color-orb-in-text: #134e4a;
-  --color-orb-out-text: #1e3a8a;
+  --color-orb-out-text: #022c22;
   --color-ring-outer: rgb(153 246 228 / 0.6);
   --color-ring-inner: rgb(59 130 246 / 0.35);
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
