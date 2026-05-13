@@ -91,8 +91,12 @@
 
 /* Phase 16 D-04: Slate palette — cool blue-gray neutrals, indigo accent.
    Background: slate-50/slate-100/slate-200 family. Accent: indigo-600 (#4f46e5).
-   Orb-in = blue-50/blue-100 (very light, luminance ~0.86); Orb-out = indigo-500/indigo-300 (vivid, luminance ~0.31).
-   Same cool-blue family, contrast carried by luminance step. Ratio ≈ 2.56. */
+   16.2 F5 retune: orb-out shifted from vivid indigo (#6366f1/#a5b4fc) to desaturated neutral
+   slate-600/slate-400 (#475569/#94a3b8) — reads as ambient chrome shadow rather than a competing
+   accent against the indigo-600 chrome accent. orb-out-text follows the hue shift (indigo-950
+   #1e1b4b → slate-950 #020617) to stay legible on the deeper slate-grey midpoint.
+   Orb-in = blue-50/blue-100 (very light, luminance ~0.86); Orb-out = slate-600/slate-400 (luminance ~0.20).
+   Ratio ≈ 3.68. */
 [data-theme='slate']:root {
   --color-breathing-bg: #f1f5f9;
   --color-breathing-bg-soft: #e2e8f0;
@@ -104,10 +108,10 @@
   --color-breathing-on-accent: #ffffff;
   --color-orb-in-from: #eff6ff;
   --color-orb-in-to: #dbeafe;
-  --color-orb-out-from: #6366f1;
-  --color-orb-out-to: #a5b4fc;
+  --color-orb-out-from: #475569;
+  --color-orb-out-to: #94a3b8;
   --color-orb-in-text: #1e3a8a;
-  --color-orb-out-text: #1e1b4b;
+  --color-orb-out-text: #020617;
   --color-ring-outer: rgb(239 246 255 / 0.7);
   --color-ring-inner: rgb(99 102 241 / 0.40);
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
