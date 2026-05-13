@@ -151,7 +151,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. Changes touch ONLY `src/styles/theme.css` orb-{in,out}-{from,to,text} CSS custom properties; no `.tsx` files modified.
   4. `tsc && lint && build && test` exit 0; `theme.no-hardcoded-classes.test.ts` guard remains green.
 **Plans**: 2 plans
-  - [ ] 16.2-01-PLAN.md — Retune Light/Moss/Slate Out + Dusk In/Out gradients (closes F1/F4/F5/F6/F7); THEME-05 ≥ 1.5 contrast guard re-verified
+  - [x] 16.2-01-PLAN.md — Retune Light/Moss/Slate Out + Dusk In/Out gradients (closes F1/F4/F5/F6/F7); THEME-05 ≥ 1.5 contrast guard re-verified (completed 2026-05-13 — 4 commits 565581a/fffa7ac/5eb446e/cc58998; ratios Light 1.59, Dark 4.85, Moss 2.36, Slate 3.68, Dusk 1.85)
   - [ ] 16.2-02-PLAN.md — Per-palette manual UAT (5/5 approval gate) + phase close (STATE/ROADMAP/SUMMARY updates)
 **UI hint**: yes
 
