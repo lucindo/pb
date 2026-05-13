@@ -21,10 +21,10 @@ export function LearnAnchor({ disabled, onClick }: LearnAnchorProps) {
       aria-disabled={disabled || undefined}
       aria-label={disabled ? 'Learn (unavailable during session)' : 'Learn'}
       onClick={disabled ? undefined : onClick}
-      className={`absolute right-0 top-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-full border bg-white/70 px-2.5 py-2 text-sm font-semibold shadow-sm backdrop-blur-sm transition sm:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
+      className={`absolute right-0 top-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-full border bg-[var(--color-breathing-surface)]/70 px-2.5 py-2 text-sm font-semibold shadow-sm backdrop-blur-sm transition sm:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
         disabled
-          ? 'cursor-not-allowed border-slate-200 text-[var(--color-breathing-muted)]'
-          : 'border-teal-200 text-teal-800 hover:bg-teal-50 active:bg-teal-100'
+          ? 'cursor-not-allowed border-[var(--color-breathing-muted)] text-[var(--color-breathing-muted)]'
+          : 'border-[var(--color-breathing-accent)] text-[var(--color-breathing-accent-strong)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'
       }`}
     >
       <svg
