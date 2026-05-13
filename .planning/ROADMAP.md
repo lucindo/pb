@@ -150,7 +150,9 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   2. THEME-05 ≥ 1.5 luminance contrast guard holds across all 5 palettes after retune (`theme.contrast.test.ts` exits 0).
   3. Changes touch ONLY `src/styles/theme.css` orb-{in,out}-{from,to,text} CSS custom properties; no `.tsx` files modified.
   4. `tsc && lint && build && test` exit 0; `theme.no-hardcoded-classes.test.ts` guard remains green.
-**Plans**: TBD
+**Plans**: 2 plans
+  - [ ] 16.2-01-PLAN.md — Retune Light/Moss/Slate Out + Dusk In/Out gradients (closes F1/F4/F5/F6/F7); THEME-05 ≥ 1.5 contrast guard re-verified
+  - [ ] 16.2-02-PLAN.md — Per-palette manual UAT (5/5 approval gate) + phase close (STATE/ROADMAP/SUMMARY updates)
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
