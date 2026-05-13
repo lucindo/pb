@@ -759,26 +759,18 @@ export function useThemeChoice(): { theme: ThemeId; setTheme: (next: ThemeId) =>
 
 **Note:** None of these assumptions are about user requirements or compliance — all are technical/empirical claims verified in this session.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Per-theme hex values (~85 hexes) — picked at PLAN.md time**
+1. **Per-theme hex values (~85 hexes) — picked at PLAN.md time** — RESOLVED: planner picks at PLAN time, verified against THEME-05 contrast test.
    - What we know: Moss = byte-identical copy of the current `@theme` values at `src/styles/theme.css:1-50` (locked). Light must be visually distinct from Moss (cool/neutral, not teal-pastel). Dark must satisfy ≥ 1.5 luminance contrast at the orb-in vs orb-out midpoint (the perceptual challenge — both halves of dark mode live in low-luminance space). Slate + Dusk are creative latitude.
    - What's unclear: the exact palette. This is a design exercise rather than a research question, and CONTEXT.md D-04 explicitly defers it to the planner.
    - Recommendation: Planner picks values in PLAN.md and verifies contrast ≥ 1.5 against the THEME-05 test before committing. Each palette ships 17 `--color-*` tokens — see existing `src/styles/theme.css:1-50` for the full list. Starting points the planner can adapt: Tailwind's slate/zinc scales for Dark; Tailwind's emerald + neutral for a Light cool-neutral; the existing teal-pastel for Moss; Tailwind's blue-gray + indigo for Slate; Tailwind's purple/amber for Dusk.
 
-2. **Picker UI shape (radio buttons / `<select>` / segmented control)**
-   - What we know: The SettingsDialog hosts 4 pickers in source order Theme → Variant → Timbre → Language (Phase 15 D-10). All four pickers must visually cohere. The existing `SettingsForm` uses `SettingsStepper` (decrement/increment buttons + central output) for ordinal numeric settings (BPM, Ratio, Duration). Theme is not ordinal — 6 unrelated palettes.
-   - What's unclear: the optimal control type. Recommendation in §"Picker UI Shape Recommendation" below.
-   - Recommendation: Radio-like button group with `role='radiogroup'` + `aria-checked` semantics.
+2. **Picker UI shape (radio buttons / `<select>` / segmented control)** — RESOLVED: radio-like button group with `role='radiogroup'` + `aria-checked` semantics. Coheres with SettingsDialog's 4 pickers (Theme → Variant → Timbre → Language per Phase 15 D-10); Theme is not ordinal so SettingsStepper pattern doesn't fit.
 
-3. **`useThemeChoice` co-location — separate file vs inline in ThemePicker**
-   - What we know: CONTEXT.md A-02 leaves this open.
-   - What's unclear: separate `src/hooks/useThemeChoice.ts` vs `function useThemeChoice() { ... }` inside `ThemePicker.tsx`.
-   - Recommendation: **Separate file** (`src/hooks/useThemeChoice.ts`). Three reasons: (a) hook can be unit-tested via `renderHook` without rendering the picker UI; (b) consistent with the codebase pattern — every other hook is in `src/hooks/` (no inline hooks pattern anywhere); (c) Phase 17/18/19 will likely mirror this pattern for `useVariantChoice` / `useTimbreChoice` / `useLocaleChoice` — locking it now in `src/hooks/` is cheaper than refactoring later.
+3. **`useThemeChoice` co-location — separate file vs inline in ThemePicker** — RESOLVED: **Separate file** (`src/hooks/useThemeChoice.ts`). Reasons: (a) hook can be unit-tested via `renderHook` without rendering picker UI; (b) consistent with codebase pattern — every other hook lives in `src/hooks/`; (c) Phase 17/18/19 will mirror this for `useVariantChoice` / `useTimbreChoice` / `useLocaleChoice`.
 
-4. **Visual styling of the `disabled` state for the picker**
-   - What we know: Phase 15 D-02 contract — `disabled: boolean` is the only prop. Current stub uses `text-[var(--color-breathing-muted)]` for the label when disabled.
-   - What's unclear: how the active radio-button-group renders when disabled. Recommendation: each button gets `disabled` attr + `opacity-45 cursor-not-allowed` (matching `SettingsStepper.tsx:45`) when picker is disabled. The selected button keeps its visual highlight (so users see what's currently selected even while disabled).
+4. **Visual styling of the `disabled` state for the picker** — RESOLVED: each button gets `disabled` attr + `opacity-45 cursor-not-allowed` (matching `SettingsStepper.tsx:45`) when picker is disabled. Selected button keeps its visual highlight so users see current selection while disabled.
 
 ## Environment Availability
 

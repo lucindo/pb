@@ -104,7 +104,11 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. After a page reload, the previously selected theme is applied before React hydration (FOUC-prevention inline script in `index.html`; no visible flash of default theme).
   4. Under `prefers-reduced-motion: reduce`, the `.orb-layer--in` and `.orb-layer--out` opacity-crossfade hues remain perceptually distinguishable for every shipped theme (reduced-motion contrast contract preserved, per THEME-05).
   5. Zero new npm dependencies are introduced; `tsc && lint && build && test` exit 0.
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 16-01-PLAN.md — theme.css token overrides (Light @theme + Dark/Moss/Slate/Dusk [data-theme] blocks) + THEME-05 contrast guard test
+  - [ ] 16-02-PLAN.md — useTheme orchestrator hook + useThemeChoice picker setter hook + hook tests
+  - [ ] 16-03-PLAN.md — index.html FOUC inline script + storage.ts SYNC comment
+  - [ ] 16-04-PLAN.md — ThemePicker radiogroup UI + App.tsx useTheme wire-up + phase close (REQUIREMENTS/STATE/ROADMAP/SUMMARY) + human visual checkpoint
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
@@ -165,7 +169,8 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 13. Inner-Ring UX Symmetry | v1.1 | 1/1 | Complete   | 2026-05-12 |
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
 | 15. SettingsDialog Shell | v1.1 | 4/4 | Complete    | 2026-05-13 |
-| 16. Themes | v1.1 | 0/? | Not started | - |
+| 16. Themes | v1.1 | 0/4 | Not started | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
+</content>
