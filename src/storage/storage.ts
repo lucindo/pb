@@ -32,6 +32,8 @@
 // public load*/save* API where possible. Tests that DO use STATE_KEY directly
 // are seeding fixtures (App.persistence.test.tsx, storage.test.ts) — those are
 // expected to migrate together with the constant if it changes.
+// SYNC WITH index.html FOUC SCRIPT — when bumping the :v1 suffix, update the
+// hardcoded 'hrv:state:v1' string in index.html's <head> theme-resolve script.
 export const STATE_KEY = 'hrv:state:v1'
 export const STATE_VERSION = 1 as const
 
