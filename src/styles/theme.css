@@ -11,12 +11,14 @@
   --color-breathing-on-accent: #ffffff;
 
   /* Orb gradients — THEME-05 guard: in-midpoint vs out-midpoint contrast >= 1.5 (D-14).
-     In = sky/cool-blue family (luminance ~0.90); Out = orange/warm-peach family (luminance ~0.40).
-     Hue separation ~130° on the color wheel (sky-blue vs orange). Ratio ≈ 1.78. */
+     In = sky/cool-blue family (luminance ~0.90); Out = amber/gold family (luminance ~0.55).
+     16.2 F1 retune: orange-500/200 → amber-500/300 — desaturated warm-gold reads as ambient
+     light against the cool near-white Light chrome (no longer vivid-orange punching through).
+     Hue separation ~110° on the color wheel (sky-blue vs amber-gold). Ratio ≈ 1.59. */
   --color-orb-in-from: #e0f2fe;
   --color-orb-in-to: #f0f9ff;
-  --color-orb-out-from: #f97316;
-  --color-orb-out-to: #fed7aa;
+  --color-orb-out-from: #f59e0b;
+  --color-orb-out-to: #fcd34d;
   --color-orb-in-text: #0c4a6e;
   --color-orb-out-text: #7c2d12;
   --color-ring-outer: rgb(224 242 254 / 0.6);
