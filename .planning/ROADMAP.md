@@ -88,8 +88,8 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   4. The dialog pattern follows the native `<dialog>` + locked-copy conventions of `ResetStatsDialog` / `LearnDialog`; no new library dependency is introduced.
   5. `tsc && lint && build && test` exit 0.
 **Plans**: 4 plans
-  - [ ] 15-01-PLAN.md — SettingsAnchor (gear trigger button, 44×44, aria-disabled in session)
-  - [ ] 15-02-PLAN.md — Four picker stubs (Theme/Variant/Timbre/Language; loadPrefs read-only)
+  - [x] 15-01-PLAN.md — SettingsAnchor (gear trigger button, 44×44, aria-disabled in session)
+  - [x] 15-02-PLAN.md — Four picker stubs (Theme/Variant/Timbre/Language; loadPrefs read-only)
   - [ ] 15-03-PLAN.md — SettingsDialog shell (native <dialog>, Esc/backdrop/Close, picker disable threading)
   - [ ] 15-04-PLAN.md — App.tsx integration + phase close (state/callbacks/JSX + REQUIREMENTS/STATE/ROADMAP/SUMMARY)
 **UI hint**: yes
@@ -164,7 +164,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 12. Assets, Content & Hygiene Cleanup | v1.0.1 | 1/1 | Complete | 2026-05-12 |
 | 13. Inner-Ring UX Symmetry | v1.1 | 1/1 | Complete   | 2026-05-12 |
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
-| 15. SettingsDialog Shell | v1.1 | 0/? | Not started | - |
+| 15. SettingsDialog Shell | v1.1 | 2/4 | In Progress|  |
 | 16. Themes | v1.1 | 0/? | Not started | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
