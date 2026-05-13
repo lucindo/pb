@@ -13,6 +13,7 @@ import { SettingsAnchor } from '../components/SettingsAnchor'
 import { SettingsDialog } from '../components/SettingsDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
+import { useTheme } from '../hooks/useTheme'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame } from '../domain/sessionMath'
@@ -135,6 +136,7 @@ export default function App() {
   }, [])
   const audio = useAudioCues(initialMute, onAudioReanchorRequired) // Phase 3 + Plan 06 D-35
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
+  useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
   const [appPhase, setAppPhase] = useState<AppPhase>('idle')
