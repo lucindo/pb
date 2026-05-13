@@ -159,4 +159,10 @@ Commits exist:
 
 Green-gate at Task 3 commit: tsc (0 errors) + lint (0 errors) + build (success) + test (492/492 pass).
 
-Task 4 (human visual checkpoint) is outstanding — phase is NOT marked fully complete until the checkpoint is approved.
+Task 4 (human visual checkpoint) — APPROVED 2026-05-13.
+
+## Human Verification Result (2026-05-13)
+
+**Verdict:** APPROVED (functional). All 11 verification steps pass: FOUC absent on first paint, live OS-dark/light flip works, 6-button 3×2 grid renders, click swaps palette + persists, in-session gating disables picker, cross-tab sync fires, contrast visually distinguishable.
+
+**Aesthetic feedback:** "All themes extremely ugly." Carry-forward — not blocking ship of THEME-01..05 (functional contract satisfied + automated WCAG ≥ 1.5 guard holds). Tracked in `.planning/todos/pending/2026-05-13-themes-aesthetic-refresh.md` for v1.x palette refresh. Plan 01's Moss orb-out token deviation (1.087 → 1.94) is one signal that the v1.0.1 baseline was tuned for the OLD viewport, not the new 6-palette cascade — a coordinated palette redesign pass is the right fix.
