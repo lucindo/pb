@@ -148,4 +148,19 @@ describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
     // D-14 floor: WCAG luminance contrast >= 1.5
     expect(ratio).toBeGreaterThanOrEqual(1.5)
   })
+
+  it('accent-strong vs on-accent contrast ratio is >= 1.5 (D-01)', () => {
+    // Phase 16.1 D-01: new --color-breathing-on-accent token is the foreground role
+    // when sitting on a --color-breathing-accent-strong background (e.g. primary
+    // action button in SessionControls). The ≥ 1.5 floor matches THEME-05.
+    if (themeId === 'light') {
+      delete document.documentElement.dataset.theme
+    } else {
+      document.documentElement.dataset.theme = themeId
+    }
+    const accentStrong = readToken('--color-breathing-accent-strong')
+    const onAccent = readToken('--color-breathing-on-accent')
+    const ratio = contrastRatio(accentStrong, onAccent)
+    expect(ratio).toBeGreaterThanOrEqual(1.5)
+  })
 })
