@@ -168,7 +168,14 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. THEME-UI-01 hardcoded-class guard remains green (`theme.no-hardcoded-classes.test.ts` exits 0 — no .tsx files touched).
   4. Per-palette UAT approval — 5/5 perceptual gate (the perceptual gate deferred from 16.2 is satisfied here against curated palettes, not ad-hoc retunes).
   5. `tsc && lint && build && test` exit 0 at every commit boundary (per-commit green-gate).
-**Plans**: TBD
+**Plans**: 7 plans
+  - [ ] 16.3-01-PLAN.md — Wave 0 preflight: pre-phase baseline (5 palette ratios + per-block md5) + mapping rubric dry-run worked example (Catppuccin Frappé → Dark default)
+  - [ ] 16.3-02-PLAN.md — Light palette redesign from operator-named open-source design system (interactive; autonomous: false)
+  - [ ] 16.3-03-PLAN.md — Dark palette redesign from operator-named open-source design system (interactive; autonomous: false)
+  - [ ] 16.3-04-PLAN.md — Moss palette redesign from operator-named open-source design system (interactive; closes 16.2-01 ring-inner harmonization carry-forward; autonomous: false)
+  - [ ] 16.3-05-PLAN.md — Slate palette redesign from operator-named open-source design system (interactive; closes 16.2-01 ring-inner harmonization carry-forward; autonomous: false)
+  - [ ] 16.3-06-PLAN.md — Dusk palette redesign from operator-named open-source design system (interactive; coupled In+Out tune; autonomous: false)
+  - [ ] 16.3-07-PLAN.md — Phase close: 16.3-SUMMARY.md + STATE/ROADMAP updates
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
