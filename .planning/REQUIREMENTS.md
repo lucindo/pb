@@ -30,6 +30,10 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 - [x] **THEME-04**: Selected theme persists across reloads via `Envelope.prefs.theme` and applies before first paint (FOUC-prevention inline script in `index.html`).
 - [x] **THEME-05**: Every shipped theme preserves the reduced-motion phase-cue contrast contract — the `.orb-layer--in` / `.orb-layer--out` opacity-crossfade hues must remain perceptually distinguishable under `prefers-reduced-motion: reduce` for every theme.
 
+### Theme UI Token Migration (THEME-UI-01)
+
+- [ ] **THEME-UI-01**: All user-facing TSX components reference `--color-breathing-*` tokens (or descendants thereof) for theme-shifting surfaces; no production `.tsx` references hardcoded `text-slate-*` / `bg-slate-*` / `border-slate-*` / `text-teal-*` / `bg-teal-*` / `border-teal-*` / `text-white` / `bg-white` / `text-black` / `bg-black` literal Tailwind classes (verified via grep on `src/**/*.tsx` excluding `*.test.tsx`). Destructive-danger styles (`bg-red-*`, `text-white` on destructive primary) are explicitly excluded — red conveys danger semantics and is intentionally palette-independent.
+
 ### Audio Timbres (CUST-02)
 
 - [ ] **TIMBRE-01**: User can choose among 4 named synthesized timbre presets (**Bowl** = default = current behavior, **Bell**, **Sine**, **Chime**) from the SettingsDialog.
@@ -106,6 +110,7 @@ Which phases cover which requirements.
 | THEME-03 | Phase 16 | Done |
 | THEME-04 | Phase 16 | Done |
 | THEME-05 | Phase 16 | Done |
+| THEME-UI-01 | Phase 16.1 | Pending |
 | TIMBRE-01 | Phase 18 | Pending |
 | TIMBRE-02 | Phase 18 | Pending |
 | TIMBRE-03 | Phase 18 | Pending |
@@ -127,10 +132,10 @@ Which phases cover which requirements.
 | I18N-07 | Phase 19 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 29 total
-- Mapped to phases: 29/29
+- v1.1 requirements: 30 total
+- Mapped to phases: 30/30
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-13 — Phase 16 THEME-01..05 traceability flipped to Done*
+*Last updated: 2026-05-13 — Phase 16.1 THEME-UI-01 inserted (Pending)*
