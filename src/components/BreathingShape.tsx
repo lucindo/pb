@@ -132,7 +132,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
       />
       {/* D-03: phase label centered inside the orb at large display size */}
       <span
-        className="relative z-10 text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl"
+        className="relative z-10 text-5xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-6xl"
         style={{
           color:
             frame.phase === 'in'
@@ -213,7 +213,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       {/* D-14: digit in the same large-display position as the In/Out label,
           one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
           so the countdown reads as dominant. */}
-      <span className="relative z-10 text-7xl font-semibold tracking-tight text-slate-900 sm:text-8xl">
+      <span className="relative z-10 text-7xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-8xl">
         {digit}
       </span>
     </div>

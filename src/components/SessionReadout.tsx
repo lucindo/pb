@@ -26,7 +26,7 @@ export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: 
     return (
       <section
         aria-label="Session readout"
-        className="mb-6 rounded-[1.75rem] border border-teal-100 bg-teal-50/80 p-5 text-center shadow-inner shadow-teal-900/5"
+        className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
       >
         <div
           role="status"
@@ -36,9 +36,9 @@ export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: 
         />
         <div
           aria-live="off"
-          className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-white/80 px-5 py-3 text-slate-900"
+          className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
         >
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
+          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
             {placeholderLabel}
           </span>
           <span className="font-mono text-2xl font-semibold">{placeholderValue}</span>
@@ -61,7 +61,7 @@ export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: 
   return (
     <section
       aria-label="Session readout"
-      className="mb-6 rounded-[1.75rem] border border-teal-100 bg-teal-50/80 p-5 text-center shadow-inner shadow-teal-900/5"
+      className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
     >
       <div
         role="status"
@@ -70,15 +70,15 @@ export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: 
         aria-atomic="true"
       >
         {message ? (
-          <p className="text-3xl font-semibold text-teal-900">{message}</p>
+          <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{message}</p>
         ) : null}
       </div>
       {showTimeChip ? (
         <div
           aria-live="off"
-          className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-white/80 px-5 py-3 text-slate-900"
+          className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
         >
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
+          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
             {timeLabel}
           </span>
           <span className="font-mono text-2xl font-semibold">{timeValue}</span>
