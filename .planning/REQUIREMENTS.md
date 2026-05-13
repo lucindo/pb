@@ -32,7 +32,7 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 
 ### Theme UI Token Migration (THEME-UI-01)
 
-- [ ] **THEME-UI-01**: All user-facing TSX components reference `--color-breathing-*` tokens (or descendants thereof) for theme-shifting surfaces; no production `.tsx` references hardcoded `text-slate-*` / `bg-slate-*` / `border-slate-*` / `text-teal-*` / `bg-teal-*` / `border-teal-*` / `text-white` / `bg-white` / `text-black` / `bg-black` literal Tailwind classes (verified via grep on `src/**/*.tsx` excluding `*.test.tsx`). Destructive-danger styles (`bg-red-*`, `text-white` on destructive primary) are explicitly excluded — red conveys danger semantics and is intentionally palette-independent.
+- [x] **THEME-UI-01**: All user-facing TSX components reference `--color-breathing-*` tokens (or descendants thereof) for theme-shifting surfaces; no production `.tsx` references hardcoded `text-slate-*` / `bg-slate-*` / `border-slate-*` / `text-teal-*` / `bg-teal-*` / `border-teal-*` / `text-white` / `bg-white` / `text-black` / `bg-black` literal Tailwind classes (verified via grep on `src/**/*.tsx` excluding `*.test.tsx`). Destructive-danger styles (`bg-red-*`, `shadow-red-*/*`) are explicitly excluded — red conveys danger semantics and is intentionally palette-independent; foreground on destructive red is `var(--color-breathing-on-accent)` per D-01.
 
 ### Audio Timbres (CUST-02)
 
@@ -110,7 +110,7 @@ Which phases cover which requirements.
 | THEME-03 | Phase 16 | Done |
 | THEME-04 | Phase 16 | Done |
 | THEME-05 | Phase 16 | Done |
-| THEME-UI-01 | Phase 16.1 | Pending |
+| THEME-UI-01 | Phase 16.1 | Done |
 | TIMBRE-01 | Phase 18 | Pending |
 | TIMBRE-02 | Phase 18 | Pending |
 | TIMBRE-03 | Phase 18 | Pending |
@@ -138,4 +138,4 @@ Which phases cover which requirements.
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-13 — Phase 16.1 THEME-UI-01 inserted (Pending)*
+*Last updated: 2026-05-13 — Phase 16.1 THEME-UI-01 flipped to Done at phase close*

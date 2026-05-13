@@ -48,7 +48,8 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions (completed 2026-05-12)
 - [x] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract (completed 2026-05-13)
 - [x] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes (completed 2026-05-13)
-- [ ] **Phase 16.1: UI Token Migration (INSERTED 2026-05-13)** - Migrate hardcoded `text-slate-*`/`bg-teal-*`/`border-teal-*`/`text-white`/`bg-white` classes across ~16 components (Start/Stop button, dialogs, stepper, pickers) to `var(--color-breathing-*)` tokens so theme swaps rebind the full UI, not just the ThemePicker selected option
+- [x] **Phase 16.1: UI Token Migration (INSERTED 2026-05-13)** - Migrate hardcoded `text-slate-*`/`bg-teal-*`/`border-teal-*`/`text-white`/`bg-white` classes across ~16 components (Start/Stop button, dialogs, stepper, pickers) to `var(--color-breathing-*)` tokens so theme swaps rebind the full UI, not just the ThemePicker selected option (completed 2026-05-13)
+- [ ] **Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)** - UAT carry-forward from 16.1 plan 06: re-tune orb In/Out gradients per palette — Light Out (#f97316 too saturated), Moss Out (#3b82f6 too vivid blue), Slate Out (#6366f1 too vivid indigo), Dusk In (#ede9fe → #faf5ff too bright), Dusk Out (#d97706 softening). Pure theme.css palette retune; no .tsx touch
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
@@ -125,12 +126,31 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   5. The accessibility surface (focus-visible rings, hit-area floors, aria-* attributes) is preserved across the migration — class composition changes only, not semantics.
 **Plans**: 7 plans
   - [x] 16.1-01-PLAN.md — Wave 0 preflight: THEME-UI-01 in REQUIREMENTS + D-02 alpha-modifier probe + D-01 `--color-breathing-on-accent` token (5 palettes) + contrast guard extension (accent-strong vs on-accent) + D-04 regression-guard scaffold (RED, skipped)
-  - [ ] 16.1-02-PLAN.md — Wave 1 dialog chrome (Group B): SettingsDialog + EndSessionDialog + ResetStatsDialog + LearnDialog tokenized (~22 occurrences); destructive red preserved
-  - [ ] 16.1-03-PLAN.md — Wave 1 pickers (Group D): ThemePicker (closes WR-01 unselectedClasses) + TimbrePicker + VariantPicker + LanguagePicker labels and ternaries
-  - [ ] 16.1-04-PLAN.md — Wave 1 anchors + stepper + mute (Group P-STATE): SettingsAnchor + LearnAnchor (Reference site C migration shape) + SettingsStepper + MuteToggle; 3 of 5 D-02 alpha sites
-  - [ ] 16.1-05-PLAN.md — Wave 1 page chrome (Group E): App.tsx (5 sites incl. card-surface alpha) + BreathingShape (phase label + lead-in digit) + SessionReadout (7 sites incl. 2 alpha)
-  - [ ] 16.1-06-PLAN.md — Wave 2 primary action (Group A): SessionControls Start/Stop both layouts; first D-01 `--color-breathing-on-accent` consumer; per-palette UAT checkpoint
-  - [ ] 16.1-07-PLAN.md — Wave 3 phase close: src/index.css D-03 + destructive text-white -> on-accent + guard test flip RED->GREEN + REQUIREMENTS/STATE/ROADMAP updates + SUMMARY
+  - [x] 16.1-02-PLAN.md — Wave 1 dialog chrome (Group B): SettingsDialog + EndSessionDialog + ResetStatsDialog + LearnDialog tokenized (~22 occurrences); destructive red preserved
+  - [x] 16.1-03-PLAN.md — Wave 1 pickers (Group D): ThemePicker (closes WR-01 unselectedClasses) + TimbrePicker + VariantPicker + LanguagePicker labels and ternaries
+  - [x] 16.1-04-PLAN.md — Wave 1 anchors + stepper + mute (Group P-STATE): SettingsAnchor + LearnAnchor (Reference site C migration shape) + SettingsStepper + MuteToggle; 3 of 5 D-02 alpha sites
+  - [x] 16.1-05-PLAN.md — Wave 1 page chrome (Group E): App.tsx (5 sites incl. card-surface alpha) + BreathingShape (phase label + lead-in digit) + SessionReadout (7 sites incl. 2 alpha)
+  - [x] 16.1-06-PLAN.md — Wave 2 primary action (Group A): SessionControls Start/Stop both layouts; first D-01 `--color-breathing-on-accent` consumer; per-palette UAT (approved post-remediation; F2+F3 fixed inline; F1/F4/F5/F6/F7 deferred to Phase 16.2)
+  - [x] 16.1-07-PLAN.md — Wave 3 phase close: src/index.css D-03 + destructive text-white -> on-accent + guard test flip RED->GREEN + REQUIREMENTS/STATE/ROADMAP updates + SUMMARY
+**UI hint**: yes
+
+### Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)
+**Goal**: Re-tune the per-palette orb In/Out gradient hex values in `src/styles/theme.css` so each palette's breathing-shape gradient feels visually integrated with its chrome — closing the 5 aesthetic findings raised in Phase 16.1 plan 06 per-palette UAT.
+**Depends on**: Phase 16.1
+**Requirements**: none (aesthetic polish — no new requirement; honors existing THEME-05 ≥ 1.5 contrast guard)
+**Reason for insertion**: Phase 16.1 plan 06 per-palette UAT raised 7 findings. 2 (F2 link-tier collision, F3 dark lead-in digit) were 16.1-caused and fixed inline. 5 (F1/F4/F5/F6/F7) are Phase 16 palette retuning, explicitly out of 16.1 scope per CONTEXT.md.
+**Findings to address:**
+  - F1 Light Out: `--color-orb-out-from: #f97316` / `to: #fed7aa` — too saturated vs soft light palette
+  - F4 Moss Out: `--color-orb-out-from: #3b82f6` / `to: #bfdbfe` — vivid blue clashes with moss greens
+  - F5 Slate Out: `--color-orb-out-from: #6366f1` / `to: #a5b4fc` — vivid indigo too strong vs slate-grey
+  - F6 Dusk In: `--color-orb-in-from: #ede9fe` / `to: #faf5ff` — near-white too bright vs deep purple
+  - F7 Dusk Out: `--color-orb-out-from: #d97706` / `to: #fcd34d` — better but room to soften
+**Success Criteria** (what must be TRUE):
+  1. Each palette's orb In/Out gradient feels integrated with its chrome tokens (per-palette manual UAT approval — 5/5 palettes).
+  2. THEME-05 ≥ 1.5 luminance contrast guard holds across all 5 palettes after retune (`theme.contrast.test.ts` exits 0).
+  3. Changes touch ONLY `src/styles/theme.css` orb-{in,out}-{from,to,text} CSS custom properties; no `.tsx` files modified.
+  4. `tsc && lint && build && test` exit 0; `theme.no-hardcoded-classes.test.ts` guard remains green.
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 17: Visual Variants

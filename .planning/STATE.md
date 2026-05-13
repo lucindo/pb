@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
-status: executing
-stopped_at: Completed 16.1-01-PLAN.md
-last_updated: "2026-05-13T04:43:15.078Z"
-last_activity: 2026-05-13
+status: planning
+stopped_at: Phase 16.1 UI Token Migration complete
+last_updated: "2026-05-13T12:30:00.000Z"
+last_activity: 2026-05-13 — Phase 16.1 complete; Phase 17 next
 progress:
-  total_phases: 8
-  completed_phases: 4
-  total_plans: 17
-  completed_plans: 12
+  total_phases: 9
+  completed_phases: 5
+  total_plans: 24
+  completed_plans: 17
   percent: 71
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 16.1 — UI Token Migration
+**Current focus:** Phase 17 — Visual Variants (CUST-03)
 
 ## Current Position
 
-Phase: 16.1 (UI Token Migration) — EXECUTING
-Plan: 2 of 7
-Status: Ready to execute
-Last activity: 2026-05-13
+Phase: 17 (Visual Variants)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-13 — Phase 16.1 closed
 
 Progress: [███████░░░] 71%
 
@@ -49,17 +49,19 @@ Progress: [███████░░░] 71%
 | 14. Prefs Foundation | 1 | Complete |
 | 15. SettingsDialog Shell | 4 | Complete |
 | 16. Themes | 4 | Complete |
-| 16.1. UI Token Migration | TBD | Not started (INSERTED) |
+| 16.1. UI Token Migration | 7 | Complete |
+| 16.2. Palette Aesthetic Refresh | TBD | Not started (INSERTED 2026-05-13 — Phase 16.1 UAT carry-forward) |
 | 17. Visual Variants | TBD | Not started |
 | 18. Audio Timbres | TBD | Not started |
 | 19. Language Switching | TBD | Not started |
-| Phase 16.1 P01 | 260 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
 - Phase 16.1 inserted after Phase 16: UI Token Migration — gap closure after Phase 16 human-verify surfaced 16+ components with hardcoded teal/slate Tailwind classes that don't rebind on data-theme swap (URGENT)
+- Phase 16.1 complete (2026-05-13) — 16 production .tsx files + index.css migrated to --color-breathing-* tokens; D-01 --color-breathing-on-accent added across 5 palettes; theme.no-hardcoded-classes.test.ts guard active (10 patterns); contrast guard extended with accent-strong vs on-accent iteration; 7 plans across 4 waves
+- Phase 16.2 inserted after Phase 16.1: Palette Aesthetic Refresh — UAT carry-forward from 16.1 plan 06 (5 findings: Light Out + Moss Out + Slate Out gradients over-saturated; Dusk In too bright; Dusk Out softening). Out of 16.1 scope per CONTEXT.md (palette retuning)
 
 ### Decisions
 
@@ -118,10 +120,10 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-13T04:43:15.072Z
-Stopped at: Completed 16.1-01-PLAN.md
-Resume file: None
-Next command: Phase 16.1 (UI Token Migration) planning — `/gsd-plan-phase 16.1`
+Last session: 2026-05-13T12:30:00.000Z
+Stopped at: Phase 16.1 UI Token Migration complete
+Resume file: .planning/phases/16.1-ui-token-migration/16.1-SUMMARY.md
+Next command: Phase 17 (Visual Variants) planning — `/gsd-plan-phase 17` OR Phase 16.2 (Palette Refresh) planning — `/gsd-plan-phase 16.2`
 
 ## Operator Next Steps
 
