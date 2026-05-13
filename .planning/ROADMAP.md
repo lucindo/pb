@@ -169,7 +169,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   4. Per-palette UAT approval — 5/5 perceptual gate (the perceptual gate deferred from 16.2 is satisfied here against curated palettes, not ad-hoc retunes).
   5. `tsc && lint && build && test` exit 0 at every commit boundary (per-commit green-gate).
 **Plans**: 7 plans
-  - [ ] 16.3-01-PLAN.md — Wave 0 preflight: pre-phase baseline (5 palette ratios + per-block md5) + mapping rubric dry-run worked example (Catppuccin Frappé → Dark default)
+  - [x] 16.3-01-PLAN.md — Wave 0 preflight: pre-phase baseline (5 palette ratios + per-block md5) + mapping rubric dry-run worked example (Catppuccin Frappé → Dark default)
   - [ ] 16.3-02-PLAN.md — Light palette redesign from operator-named open-source design system (interactive; autonomous: false)
   - [ ] 16.3-03-PLAN.md — Dark palette redesign from operator-named open-source design system (interactive; autonomous: false)
   - [ ] 16.3-04-PLAN.md — Moss palette redesign from operator-named open-source design system (interactive; closes 16.2-01 ring-inner harmonization carry-forward; autonomous: false)
@@ -239,7 +239,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16. Themes | v1.1 | 5/4 | Complete    | 2026-05-13 |
 | 16.1. UI Token Migration | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
-| 16.3. Thorough Theme Revision | v1.1 | 0/? | Not started (INSERTED 2026-05-13) | - |
+| 16.3. Thorough Theme Revision | v1.1 | 1/7 | In Progress|  |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
