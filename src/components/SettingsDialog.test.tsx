@@ -94,11 +94,13 @@ describe('SettingsDialog — open→close transition', () => {
 })
 
 describe('SettingsDialog — inSessionView picker disable threading', () => {
-  it('renders all four picker stub texts when open=true with inSessionView=true (Landmine 7)', () => {
+  it('renders all four pickers when open=true with inSessionView=true (Landmine 7)', () => {
     renderDialog({ open: true, inSessionView: true })
-    // All four pickers render with disabled styling — assert text is present
-    // (picker components self-render their labels; disabled={true} only changes text color)
-    expect(screen.getByText('Theme: system')).toBeInTheDocument()
+    // Phase 16: ThemePicker is now a real radiogroup; assert section label + disabled radiogroup.
+    // The Phase 15 stub text "Theme: system" is replaced by the real picker.
+    expect(screen.getByText('Theme')).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup')).toHaveAttribute('aria-disabled', 'true')
+    // Remaining picker stubs (Phase 17/18/19 not yet replaced) still render stub texts.
     expect(screen.getByText('Variant: orb')).toBeInTheDocument()
     expect(screen.getByText('Timbre: bowl')).toBeInTheDocument()
     expect(screen.getByText('Language: en')).toBeInTheDocument()
