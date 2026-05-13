@@ -164,7 +164,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 12. Assets, Content & Hygiene Cleanup | v1.0.1 | 1/1 | Complete | 2026-05-12 |
 | 13. Inner-Ring UX Symmetry | v1.1 | 1/1 | Complete   | 2026-05-12 |
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
-| 15. SettingsDialog Shell | v1.1 | 4/4 | Complete   | 2026-05-13 |
+| 15. SettingsDialog Shell | v1.1 | 4/4 | Complete    | 2026-05-13 |
 | 16. Themes | v1.1 | 0/? | Not started | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |

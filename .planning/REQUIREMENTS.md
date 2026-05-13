@@ -20,7 +20,7 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 - [x] **INFRA-01**: `Envelope` schema is extended with an optional `prefs` field carrying customization choices, using the existing D-01 spread-then-override write pattern so unknown fields from concurrent newer builds are preserved.
 - [x] **INFRA-02**: `isValidTheme` / `isValidTimbre` / `isValidVariant` / `isValidLocale` allowlist predicates live in `src/domain/settings.ts` next to the existing `isValidBpm`/`isValidRatio`/`isValidDuration` predicates.
 - [x] **INFRA-03**: `coerceTheme` / `coerceTimbre` / `coerceVariant` / `coerceLocale` non-throwing coercers live in `src/storage/` and fall back to `DEFAULT_*` constants when stored value fails the predicate.
-- [ ] **INFRA-04**: A new `SettingsDialog` opens from a gear control in the idle/stopped view, follows the native `<dialog>` + locked-copy pattern of `ResetStatsDialog` / `LearnDialog`, and hosts the four customization pickers (theme, timbre, variant, language).
+- [x] **INFRA-04**: A new `SettingsDialog` opens from a gear control in the idle/stopped view, follows the native `<dialog>` + locked-copy pattern of `ResetStatsDialog` / `LearnDialog`, and hosts the four customization pickers (theme, timbre, variant, language).
 
 ### Themes (CUST-01)
 
