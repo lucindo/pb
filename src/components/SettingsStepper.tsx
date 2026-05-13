@@ -33,16 +33,16 @@ export function SettingsStepper<T extends string | number>({
   return (
     <fieldset
       aria-label={label}
-      className="rounded-3xl border border-teal-100 bg-white/80 p-4 shadow-sm shadow-teal-900/5"
+      className="rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)]/80 p-4 shadow-sm shadow-teal-900/5"
     >
-      <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
+      <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
         {label}
       </legend>
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
           aria-label={`Decrease ${label}`}
-          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-2xl leading-none text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled || disableDecrease || !canDecrease}
           onClick={() => { changeBy(-1) }}
         >
@@ -50,14 +50,14 @@ export function SettingsStepper<T extends string | number>({
         </button>
         <output
           aria-live="polite"
-          className="min-w-32 rounded-2xl bg-teal-50 px-4 py-3 text-center text-2xl font-semibold text-slate-950"
+          className="min-w-32 rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
         >
           {formatValue(value)}
         </output>
         <button
           type="button"
           aria-label={`Increase ${label}`}
-          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-2xl leading-none text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-2xl leading-none text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled || disableIncrease || !canIncrease}
           onClick={() => { changeBy(1) }}
         >

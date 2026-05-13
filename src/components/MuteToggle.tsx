@@ -46,7 +46,7 @@ export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, o
       title={label}
       disabled={!audioAvailable}
       onClick={onToggle}
-      className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full border border-teal-200 bg-white text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+      className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
     >
       {needsResume ? <ResumeIcon /> : muted ? <SpeakerSlashIcon /> : <SpeakerIcon />}
     </button>
