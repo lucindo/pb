@@ -71,25 +71,25 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
       ref={dialogRef}
       aria-labelledby="learn-dialog-title"
       onClick={handleBackdropClick}
-      className="modal-fade m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
-        <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-slate-950">About this practice</h2>
+        <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">About this practice</h2>
 
         {/* D-08: three explainer sections in fixed order */}
         <div className="grid gap-4">
           <div>
-            <h3 className="text-base font-semibold text-slate-900">{explainer.hrv.title}</h3>
-            <p className="text-base leading-6 text-slate-700">{explainer.hrv.body}</p>
+            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.hrv.title}</h3>
+            <p className="text-base leading-6 text-[var(--color-breathing-accent-strong)]">{explainer.hrv.body}</p>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">{explainer.timing.title}</h3>
-            <p className="text-base leading-6 text-slate-700">{explainer.timing.body}</p>
+            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.timing.title}</h3>
+            <p className="text-base leading-6 text-[var(--color-breathing-accent-strong)]">{explainer.timing.body}</p>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">{explainer.forrest.title}</h3>
+            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
             {explainer.forrest.body.split('\n\n').map((paragraph, idx) => (
-              <p key={idx} className="text-base leading-6 text-slate-700 [&:not(:first-of-type)]:mt-2">{paragraph}</p>
+              <p key={idx} className="text-base leading-6 text-[var(--color-breathing-accent-strong)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
             ))}
           </div>
         </div>
@@ -101,7 +101,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             Render order within each section preserves D-12. Every <a> carries
             target="_blank" rel="noopener noreferrer" (T-06-07 mitigation). */}
         <div>
-          <h3 className="text-base font-semibold text-slate-900">Forrest Knutson Resources</h3>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">Forrest Knutson Resources</h3>
           <div className="mt-1 grid gap-2">
             <a
               href={links.youtubeChannel.url}
@@ -140,7 +140,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
         </div>
 
         <div>
-          <h3 className="text-base font-semibold text-slate-900">Selected HRV Breathing Videos</h3>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">Selected HRV Breathing Videos</h3>
           <div className="mt-1 grid gap-2">
             <a
               href={links.heroVideo.url}
@@ -178,7 +178,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="min-h-12 rounded-full border border-teal-200 bg-white px-5 py-2 text-base font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >Close</button>
         </div>
       </div>
