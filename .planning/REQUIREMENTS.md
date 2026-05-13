@@ -100,7 +100,7 @@ Which phases cover which requirements.
 | INFRA-01 | Phase 14 | Done |
 | INFRA-02 | Phase 14 | Done |
 | INFRA-03 | Phase 14 | Done |
-| INFRA-04 | Phase 15 | Pending |
+| INFRA-04 | Phase 15 | Done |
 | THEME-01 | Phase 16 | Pending |
 | THEME-02 | Phase 16 | Pending |
 | THEME-03 | Phase 16 | Pending |
@@ -133,4 +133,4 @@ Which phases cover which requirements.
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-12 — Phase 14 INFRA-01/02/03 traceability flipped to Done*
+*Last updated: 2026-05-12 — Phase 15 INFRA-04 traceability flipped to Done*

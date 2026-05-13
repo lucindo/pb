@@ -9,6 +9,8 @@ import { StatsFooter } from '../components/StatsFooter'
 import { ResetStatsDialog } from '../components/ResetStatsDialog'
 import { LearnAnchor } from '../components/LearnAnchor'
 import { LearnDialog } from '../components/LearnDialog'
+import { SettingsAnchor } from '../components/SettingsAnchor'
+import { SettingsDialog } from '../components/SettingsDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -53,6 +55,7 @@ export default function App() {
   const { state } = session
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
   const [learnDialogOpen, setLearnDialogOpen] = useState<boolean>(false)
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState<boolean>(false)
   // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
   // - audioAnchorRef.current = the firstInAudioTime returned by audioStart (deterministic
   //   on the audio clock — WR-01) → null if AC unavailable (D-10 fallback)
@@ -267,6 +270,8 @@ export default function App() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLearnDialogOpen(false)
       setResetDialogOpen(false)
+      // Reason: subscribe-and-reflect — settingsDialogOpen mirrors external inSessionView; same WR-09 pattern as setLearnDialogOpen/setResetDialogOpen.
+      setSettingsDialogOpen(false)
     }
   }, [inSessionView])
 
@@ -418,6 +423,18 @@ export default function App() {
 
   const onLearnClose = useCallback(() => {
     setLearnDialogOpen(false)
+  }, [])
+
+  // Phase 15 INFRA-04: open the Settings dialog from the gear anchor.
+  // D-08 defense in depth: even though the anchor is aria-disabled during session view,
+  // gate state mutation here too (the anchor's JSX-layer no-op is the first gate).
+  const onSettingsClick = useCallback(() => {
+    if (inSessionView) return
+    setSettingsDialogOpen(true)
+  }, [inSessionView])
+
+  const onSettingsClose = useCallback(() => {
+    setSettingsDialogOpen(false)
   }, [])
 
   // D-11 + D-16: when the session reaches 'complete', the last cue tail naturally rings out
@@ -583,6 +600,7 @@ export default function App() {
           <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             HRV Breathing
           </h1>
+          <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} />
           <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
         </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
@@ -651,6 +669,8 @@ export default function App() {
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}
       <LearnDialog open={learnDialogOpen} onClose={onLearnClose} />
+      {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/VariantPicker/TimbrePicker/LanguagePicker stubs. */}
+      <SettingsDialog open={settingsDialogOpen} onClose={onSettingsClose} inSessionView={inSessionView} />
     </main>
   )
 }
