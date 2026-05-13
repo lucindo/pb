@@ -48,6 +48,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions (completed 2026-05-12)
 - [x] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract (completed 2026-05-13)
 - [x] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes (completed 2026-05-13)
+- [ ] **Phase 16.1: UI Token Migration (INSERTED 2026-05-13)** - Migrate hardcoded `text-slate-*`/`bg-teal-*`/`border-teal-*`/`text-white`/`bg-white` classes across ~16 components (Start/Stop button, dialogs, stepper, pickers) to `var(--color-breathing-*)` tokens so theme swaps rebind the full UI, not just the ThemePicker selected option
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
@@ -109,6 +110,20 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   - [x] 16-02-PLAN.md — useTheme orchestrator hook + useThemeChoice picker setter hook + hook tests
   - [x] 16-03-PLAN.md — index.html FOUC inline script + storage.ts SYNC comment
   - [x] 16-04-PLAN.md — ThemePicker radiogroup UI + App.tsx useTheme wire-up + phase close
+**UI hint**: yes
+
+### Phase 16.1: UI Token Migration (INSERTED 2026-05-13)
+**Goal**: Hardcoded color classes across user-facing components are migrated from Tailwind utility colors (`text-slate-*`, `bg-teal-*`, `border-teal-*`, `text-white`, `bg-white`) to `data-theme`-aware `var(--color-breathing-*)` tokens so a theme swap rebinds the full interface — not just the ThemePicker selected option.
+**Depends on**: Phase 16
+**Requirements**: THEME-UI-01 (to be added to REQUIREMENTS.md during planning)
+**Reason for insertion**: Phase 16 human-verify checkpoint surfaced that data-theme swap leaves most UI elements visually unchanged because consumers reference fixed teal/slate Tailwind utilities instead of the new `--color-breathing-*` tokens. THEME-01..05 functional contracts pass, but user-perceived "theming" is broken. Inserted as gap closure before Phase 17 so visual variants build on a fully token-bound surface.
+**Success Criteria** (what must be TRUE):
+  1. Switching to Dark, Moss, Slate, or Dusk visibly rebinds the Start/Stop button, SettingsStepper, EndSessionDialog, ResetStatsDialog, LearnDialog, SettingsDialog chrome, ThemePicker unselected buttons, and other surveyed pickers — not just the ThemePicker selected option.
+  2. No production component references a literal `text-slate-[0-9]`, `bg-slate-[0-9]`, `border-slate-[0-9]`, `text-teal-[0-9]`, `bg-teal-[0-9]`, `border-teal-[0-9]`, `text-white`, `bg-white`, `text-black`, or `bg-black` Tailwind class (verified via grep on `src/**/*.tsx`).
+  3. All 5 concrete palettes (light, dark, moss, slate, dusk) continue to clear the THEME-05 ≥ 1.5 WCAG luminance contrast floor — no token re-tune regresses the existing automated guard.
+  4. Zero new npm dependencies; `tsc && lint && build && test` exit 0 at every commit boundary.
+  5. The accessibility surface (focus-visible rings, hit-area floors, aria-* attributes) is preserved across the migration — class composition changes only, not semantics.
+**Plans**: TBD (run `/gsd-plan-phase 16.1` to break down)
 **UI hint**: yes
 
 ### Phase 17: Visual Variants

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
-status: ready_to_plan
+status: planning
 stopped_at: Phase 16 themes complete
-last_updated: "2026-05-13T00:10:00.000Z"
-last_activity: 2026-05-13 -- Phase 16 complete
+last_updated: "2026-05-13T03:36:19.945Z"
+last_activity: 2026-05-13
 progress:
-  total_phases: 7
-  completed_phases: 5
+  total_phases: 8
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 10
-  percent: 71
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -21,11 +21,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 17 — visual-variants
+**Current focus:** Phase 16.1 — ui-token-migration (INSERTED 2026-05-13 from Phase 16 human-verify gap)
 
 ## Current Position
 
-Phase: 17
+Phase: 16.1
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-05-13
@@ -49,11 +49,16 @@ Progress: ████░░░░░░ 57% (4/7 phases complete)
 | 14. Prefs Foundation | 1 | Complete |
 | 15. SettingsDialog Shell | 4 | Complete |
 | 16. Themes | 4 | Complete |
+| 16.1. UI Token Migration | TBD | Not started (INSERTED) |
 | 17. Visual Variants | TBD | Not started |
 | 18. Audio Timbres | TBD | Not started |
 | 19. Language Switching | TBD | Not started |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 16.1 inserted after Phase 16: UI Token Migration — gap closure after Phase 16 human-verify surfaced 16+ components with hardcoded teal/slate Tailwind classes that don't rebind on data-theme swap (URGENT)
 
 ### Decisions
 
@@ -114,7 +119,7 @@ Items acknowledged and carried forward from previous milestone close:
 Last session: 2026-05-13T00:10:00.000Z
 Stopped at: Phase 16 themes complete
 Resume file: .planning/phases/16-themes/16-SUMMARY.md
-Next command: Phase 17 (Visual Variants) planning
+Next command: Phase 16.1 (UI Token Migration) planning — `/gsd-plan-phase 16.1`
 
 ## Operator Next Steps
 
