@@ -18,8 +18,8 @@ function seedPrefs(theme: string): void {
 }
 
 // Build a full matchMedia mock (eight-field shape including legacy addListener/removeListener).
-// Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+// The `as unknown as MediaQueryList` cast at the return is required because the stub only implements
+// the fields used by useTheme; the full MediaQueryList interface has additional properties.
 function makeMqlMock(
   matches: boolean,
   opts: {
@@ -79,9 +79,9 @@ describe('useTheme', () => {
     let captured: ((event: MediaQueryListEvent) => void) | null = null
     vi.spyOn(window, 'matchMedia').mockReturnValue(
       makeMqlMock(false, {
-        addEventListener: ((_type: string, listener: (event: MediaQueryListEvent) => void) => {
+        addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void): void => {
           captured = listener
-        }) as MediaQueryList['addEventListener'],
+        },
       }),
     )
     renderHook(() => useTheme())

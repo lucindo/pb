@@ -1,0 +1,92 @@
+// src/hooks/useTheme.ts
+//
+// Phase 16 Plan 02: App-side orchestrator hook that wires user theme choices
+// to document.documentElement.dataset.theme.
+//
+// Architecture:
+//   - Seeds React state from loadPrefs().theme at mount (Phase 14 D-17 coerce guarantees a valid ThemeId).
+//   - Apply effect (dep [theme]): writes data-theme directly for named themes; defers to
+//     the gated mql effect for 'system' (avoids double-write per S-01).
+//   - Gated mql effect (dep [theme]): attaches the matchMedia listener ONLY when state === 'system'
+//     (S-04 lifecycle). Re-seeds immediately on mount (IN-02) to close the stale-initial-state window.
+//   - Cross-tab 'storage' listener (empty deps): re-reads loadPrefs().theme on STATE_KEY writes (A-04).
+//   - Same-tab 'hrv:prefs-changed' listener (empty deps): re-reads loadPrefs().theme when key === 'theme'
+//     (A-03). This closes the gap that the native 'storage' event leaves open (fires only in other tabs).
+//
+// Note: useTheme does NOT call savePrefs — the picker-side useThemeChoice owns that path (A-01/A-02).
+
+import { useEffect, useState } from 'react'
+
+import { loadPrefs } from '../storage/prefs'
+import { STATE_KEY } from '../storage'
+import type { ThemeId } from '../domain/settings'
+
+const MQL_QUERY = '(prefers-color-scheme: dark)'
+
+export function useTheme(): { theme: ThemeId; setTheme: (next: ThemeId) => void } {
+  const [theme, setTheme] = useState<ThemeId>(() => loadPrefs().theme)
+
+  // Effect 1: Apply effect — write data-theme for named themes (dep [theme]).
+  // When theme === 'system', return early; the gated mql effect below owns the write (S-01).
+  useEffect(() => {
+    if (theme === 'system') return
+    document.documentElement.dataset.theme = theme
+  }, [theme])
+
+  // Effect 2: Gated mql effect — attach matchMedia listener only when state === 'system' (S-04).
+  // dep [theme] so React tears down the listener when the user switches from 'system' to a named theme.
+  useEffect(() => {
+    // S-04 gate: only attach the mql listener when we are in system mode.
+    if (theme !== 'system') return
+    // Reason: defensive guard for environments where matchMedia may be absent (e.g., jsdom without polyfill); typed as always-defined by DOM lib but absent in some test hosts.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!window.matchMedia) return
+    const mql = window.matchMedia(MQL_QUERY)
+    // IN-02: re-seed from the live MediaQueryList on mount to close the stale-initial-state window.
+    // Writing to documentElement.dataset.theme is NOT a setState call — it's a direct DOM write.
+    document.documentElement.dataset.theme = mql.matches ? 'dark' : 'light'
+    const onChange = (event: MediaQueryListEvent): void => {
+      document.documentElement.dataset.theme = event.matches ? 'dark' : 'light'
+    }
+    mql.addEventListener('change', onChange)
+    return () => {
+      mql.removeEventListener('change', onChange)
+    }
+  }, [theme])
+
+  // Effect 3: Cross-tab 'storage' listener (empty deps) — A-04.
+  // Mirrors App.tsx:116-126 STORAGE-03 pattern verbatim except for the handler body.
+  // Empty deps are correct: setTheme (from useState) is stable; loadPrefs and STATE_KEY are module-level.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent): void => {
+      if (e.key === STATE_KEY) {
+        setTheme(loadPrefs().theme)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
+  // Effect 4: Same-tab 'hrv:prefs-changed' CustomEvent listener (empty deps) — A-03.
+  // The native 'storage' event does NOT fire in the writing tab (Pitfall 4), so this custom
+  // event is the sole same-tab sync primitive from useThemeChoice back to App-side useTheme.
+  // Forward-compat: a payload without 'key' (undefined/null) is treated as "re-read all prefs"
+  // (Phase 17/18/19 will dispatch different keys for variant/timbre/locale on the same event name).
+  useEffect(() => {
+    const onPrefsChanged = (e: Event): void => {
+      if (!(e instanceof CustomEvent)) return
+      const detail = e.detail as { key?: string } | null
+      if (!detail || detail.key === 'theme' || detail.key === undefined) {
+        setTheme(loadPrefs().theme)
+      }
+    }
+    window.addEventListener('hrv:prefs-changed', onPrefsChanged)
+    return () => {
+      window.removeEventListener('hrv:prefs-changed', onPrefsChanged)
+    }
+  }, [])
+
+  return { theme, setTheme }
+}
