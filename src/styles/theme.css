@@ -8,6 +8,7 @@
   --color-breathing-accent: #64748b;
   --color-breathing-accent-strong: #475569;
   --color-breathing-muted: #94a3b8;
+  --color-breathing-on-accent: #ffffff;
 
   /* Orb gradients — THEME-05 guard: in-midpoint vs out-midpoint contrast >= 1.5 (D-14).
      In = sky/cool-blue family (luminance ~0.90); Out = orange/warm-peach family (luminance ~0.40).
@@ -46,6 +47,7 @@
   --color-breathing-accent: #2dd4bf;
   --color-breathing-accent-strong: #5eead4;
   --color-breathing-muted: #64748b;
+  --color-breathing-on-accent: #0f172a;
   --color-orb-in-from: #bae6fd;
   --color-orb-in-to: #7dd3fc;
   --color-orb-out-from: #0f766e;
@@ -71,6 +73,7 @@
   --color-breathing-accent: #0f766e;
   --color-breathing-accent-strong: #115e59;
   --color-breathing-muted: #64748b;
+  --color-breathing-on-accent: #ffffff;
   --color-orb-in-from: #99f6e4;
   --color-orb-in-to: #ecfdf5;
   --color-orb-out-from: #3b82f6;
@@ -94,6 +97,7 @@
   --color-breathing-accent: #4f46e5;
   --color-breathing-accent-strong: #3730a3;
   --color-breathing-muted: #94a3b8;
+  --color-breathing-on-accent: #ffffff;
   --color-orb-in-from: #eff6ff;
   --color-orb-in-to: #dbeafe;
   --color-orb-out-from: #6366f1;
@@ -117,6 +121,7 @@
   --color-breathing-accent: #fbbf24;
   --color-breathing-accent-strong: #f59e0b;
   --color-breathing-muted: #a78bfa;
+  --color-breathing-on-accent: #1e0550;
   --color-orb-in-from: #ede9fe;
   --color-orb-in-to: #faf5ff;
   --color-orb-out-from: #d97706;
