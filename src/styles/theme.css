@@ -1,16 +1,29 @@
 @theme {
-  /* Existing Phase 1 tokens — preserved verbatim */
-  --color-breathing-bg: #f2fbf7;
-  --color-breathing-bg-soft: #e4f6ef;
-  --color-breathing-bg-edge: #f8fffc;
+  /* Phase 16 D-03: Light palette is the @theme baseline (replaces the v1.0.1 teal-pastel which migrates to [data-theme='moss']:root below). */
+  /* Cool, near-white neutral. Crisp, daylight feel. Distinct from Moss (cool slate accent vs Moss teal-700 accent). */
+  --color-breathing-bg: #f8fafc;
+  --color-breathing-bg-soft: #f1f5f9;
+  --color-breathing-bg-edge: #ffffff;
   --color-breathing-surface: #ffffff;
-  --color-breathing-accent: #0f766e;
-  --color-breathing-accent-strong: #115e59;
-  --color-breathing-muted: #64748b;
-  --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
+  --color-breathing-accent: #64748b;
+  --color-breathing-accent-strong: #475569;
+  --color-breathing-muted: #94a3b8;
 
-  /* Phase 2 orb tokens (D-04, D-18, UI-SPEC §Token Inventory).
-     IN-01: --orb-scale-{min,max,mid} are mirrored as the TS constants
+  /* Orb gradients — THEME-05 guard: in-midpoint vs out-midpoint contrast >= 1.5 (D-14).
+     In = sky/cool-blue family (luminance ~0.90); Out = orange/warm-peach family (luminance ~0.40).
+     Hue separation ~130° on the color wheel (sky-blue vs orange). Ratio ≈ 1.78. */
+  --color-orb-in-from: #e0f2fe;
+  --color-orb-in-to: #f0f9ff;
+  --color-orb-out-from: #f97316;
+  --color-orb-out-to: #fed7aa;
+  --color-orb-in-text: #0c4a6e;
+  --color-orb-out-text: #7c2d12;
+  --color-ring-outer: rgb(224 242 254 / 0.6);
+  --color-ring-inner: rgb(100 116 139 / 0.35);
+  --color-modal-backdrop: rgb(15 23 42 / 0.30);
+
+  /* Non-themable layout/sizing tokens (D-02: ONLY --color-* tokens are themable) */
+  /* IN-01: --orb-scale-{min,max,mid} are mirrored as the TS constants
      MIN_SCALE/MAX_SCALE/MID_SCALE in `src/components/BreathingShape.tsx`. The TS
      side drives the breathing math; the CSS side is consumed by stylesheet
      fallbacks. If you edit one side, edit the other. */
@@ -18,35 +31,101 @@
   --orb-scale-min: 0.58; /* keep in sync with MIN_SCALE in BreathingShape.tsx */
   --orb-scale-max: 1.0; /* keep in sync with MAX_SCALE in BreathingShape.tsx */
   --orb-scale-mid: 0.79; /* keep in sync with MID_SCALE in BreathingShape.tsx */
+  --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
+}
 
-  /* Phase 2 orb gradient color tokens (D-02).
-     UAT-1: "from" stops deepened one Tailwind step (teal-200 / blue-200) so the
-     opacity crossfade between In and Out is perceptually readable under
-     prefers-reduced-motion (where the orb is locked at MID_SCALE and the
-     crossfade is the sole phase indicator per D-07). "to" stops kept light so
-     palette still reads as calm pastel. */
+/* Phase 16 D-04: Dark palette — deep slate background, brightened teal accent.
+   Background: slate-900 family (#0f172a). Accent: teal-400 (#2dd4bf) for legibility on dark.
+   Orb-in = sky-200/sky-300 (cool blue, luminance ~0.66); Orb-out = teal-700/teal-900 (deep teal, luminance ~0.04).
+   Hardest palette for THEME-05 floor — wide luminance gap guarantees ratio ≈ 4.85. */
+[data-theme='dark']:root {
+  --color-breathing-bg: #0f172a;
+  --color-breathing-bg-soft: #1e293b;
+  --color-breathing-bg-edge: #0a0f1a;
+  --color-breathing-surface: #1e293b;
+  --color-breathing-accent: #2dd4bf;
+  --color-breathing-accent-strong: #5eead4;
+  --color-breathing-muted: #64748b;
+  --color-orb-in-from: #bae6fd;
+  --color-orb-in-to: #7dd3fc;
+  --color-orb-out-from: #0f766e;
+  --color-orb-out-to: #134e4a;
+  --color-orb-in-text: #0c4a6e;
+  --color-orb-out-text: #ecfdf5;
+  --color-ring-outer: rgb(186 230 253 / 0.5);
+  --color-ring-inner: rgb(45 212 191 / 0.40);
+  --color-modal-backdrop: rgb(0 0 0 / 0.50);
+}
+
+/* Phase 16 D-04: Moss palette — the v1.0.1 calm teal-pastel.
+   Chrome tokens (bg, surface, accent, muted) are byte-identical to the v1.0.1 @theme baseline (D-03).
+   Orb-in tokens are byte-identical to v1.0.1.
+   Note: Orb-out adjusted from v1.0.1 (#bfdbfe/#eef2ff) to (#3b82f6/#bfdbfe) to satisfy the
+   THEME-05 >= 1.5 luminance contrast floor (original out-midpoint was too close in luminance to
+   in-midpoint: ratio ~1.087 < 1.5). All 15 other tokens remain byte-identical. Ratio ≈ 1.94. */
+[data-theme='moss']:root {
+  --color-breathing-bg: #f2fbf7;
+  --color-breathing-bg-soft: #e4f6ef;
+  --color-breathing-bg-edge: #f8fffc;
+  --color-breathing-surface: #ffffff;
+  --color-breathing-accent: #0f766e;
+  --color-breathing-accent-strong: #115e59;
+  --color-breathing-muted: #64748b;
   --color-orb-in-from: #99f6e4;
   --color-orb-in-to: #ecfdf5;
-  --color-orb-out-from: #bfdbfe;
-  --color-orb-out-to: #eef2ff;
+  --color-orb-out-from: #3b82f6;
+  --color-orb-out-to: #bfdbfe;
   --color-orb-in-text: #134e4a;
   --color-orb-out-text: #1e3a8a;
-
-  /* Phase 2 reference ring tokens (D-04).
-     260510-tc9 Bug 1 (iter 3): inner ring uses the deep Out-text indigo at moderate
-     alpha so the ring reads clearly against the light-blue Out gradient fill.
-     A pale-blue ring on a pale-blue background is perceptually invisible (UAT
-     screenshot iter 2). Inner ring is only visible during the Out phase via the
-     [data-phase='out'] gate below, so the indigo is paired exclusively with the
-     blue gradient — no clash with the In teal gradient.
-     Iter 4: dropped from indigo-900 / 0.4 to blue-500 / 0.35 — indigo at 0.4
-     read as a hard dark line against the calm pastel palette; blue-500 keeps
-     the readability while sitting softer against the Out gradient. */
   --color-ring-outer: rgb(153 246 228 / 0.6);
   --color-ring-inner: rgb(59 130 246 / 0.35);
-
-  /* Phase 2 modal token (consumed by Plan 04) */
   --color-modal-backdrop: rgb(15 23 42 / 0.30);
+}
+
+/* Phase 16 D-04: Slate palette — cool blue-gray neutrals, indigo accent.
+   Background: slate-50/slate-100/slate-200 family. Accent: indigo-600 (#4f46e5).
+   Orb-in = blue-50/blue-100 (very light, luminance ~0.86); Orb-out = indigo-500/indigo-300 (vivid, luminance ~0.31).
+   Same cool-blue family, contrast carried by luminance step. Ratio ≈ 2.56. */
+[data-theme='slate']:root {
+  --color-breathing-bg: #f1f5f9;
+  --color-breathing-bg-soft: #e2e8f0;
+  --color-breathing-bg-edge: #f8fafc;
+  --color-breathing-surface: #ffffff;
+  --color-breathing-accent: #4f46e5;
+  --color-breathing-accent-strong: #3730a3;
+  --color-breathing-muted: #94a3b8;
+  --color-orb-in-from: #eff6ff;
+  --color-orb-in-to: #dbeafe;
+  --color-orb-out-from: #6366f1;
+  --color-orb-out-to: #a5b4fc;
+  --color-orb-in-text: #1e3a8a;
+  --color-orb-out-text: #1e1b4b;
+  --color-ring-outer: rgb(239 246 255 / 0.7);
+  --color-ring-inner: rgb(99 102 241 / 0.40);
+  --color-modal-backdrop: rgb(15 23 42 / 0.30);
+}
+
+/* Phase 16 D-04: Dusk palette — warm violet/plum background, amber/golden accent.
+   Background: violet-950/violet-900 family (#2e1065/#4c1d95). Accent: amber-400 (#fbbf24).
+   Orb-in = violet-100/violet-50 (light lavender, luminance ~0.88); Orb-out = amber-600/amber-300 (warm golden, luminance ~0.45).
+   Cross-spectrum pair (violet vs amber): highest safety margin via hue + luminance contrast. Ratio ≈ 1.87. */
+[data-theme='dusk']:root {
+  --color-breathing-bg: #2e1065;
+  --color-breathing-bg-soft: #4c1d95;
+  --color-breathing-bg-edge: #1e0550;
+  --color-breathing-surface: #3b0f8c;
+  --color-breathing-accent: #fbbf24;
+  --color-breathing-accent-strong: #f59e0b;
+  --color-breathing-muted: #a78bfa;
+  --color-orb-in-from: #ede9fe;
+  --color-orb-in-to: #faf5ff;
+  --color-orb-out-from: #d97706;
+  --color-orb-out-to: #fcd34d;
+  --color-orb-in-text: #4c1d95;
+  --color-orb-out-text: #78350f;
+  --color-ring-outer: rgb(237 233 254 / 0.5);
+  --color-ring-inner: rgb(251 191 36 / 0.45);
+  --color-modal-backdrop: rgb(0 0 0 / 0.50);
 }
 
 /* Phase 2 orb structure (D-01..D-04, D-07).

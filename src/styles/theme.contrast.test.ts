@@ -4,6 +4,11 @@
 // D-13 / D-14 / D-15 / D-16: WCAG luminance contrast ratio >= 1.5 on the orb-in vs orb-out
 // midpoint colors, iterated over the 5 concrete themes (light, dark, moss, slate, dusk).
 
+// Reason: node:fs and node:path are available in the Vitest jsdom test environment.
+// tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
+// reference adds Node.js type coverage for this test-only file without altering tsconfig.app.json.
+/// <reference types="node" />
+
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -29,28 +34,30 @@ function relativeLuminance(r: number, g: number, b: number): number {
 function parseColorToRgb(value: string): [number, number, number] {
   const trimmed = value.trim()
 
-  // #rgb shorthand
+  // #rgb shorthand — access groups by index with ?? fallback for noUncheckedIndexedAccess
+  // (captures are string|undefined at the type level; the if-guard ensures exec() returned
+  // non-null so the named groups matched, meaning the fallback '' is never reached at runtime)
   const shortHexMatch = /^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.exec(trimmed)
   if (shortHexMatch) {
-    const [, r, g, b] = shortHexMatch
-    return [
-      parseInt(r + r, 16),
-      parseInt(g + g, 16),
-      parseInt(b + b, 16),
-    ]
+    const r = shortHexMatch[1] ?? ''
+    const g = shortHexMatch[2] ?? ''
+    const b = shortHexMatch[3] ?? ''
+    return [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)]
   }
 
   // #rrggbb full hex
   const fullHexMatch = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(trimmed)
   if (fullHexMatch) {
-    const [, r, g, b] = fullHexMatch
+    const r = fullHexMatch[1] ?? ''
+    const g = fullHexMatch[2] ?? ''
+    const b = fullHexMatch[3] ?? ''
     return [parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)]
   }
 
-  // rgb(r, g, b) with or without spaces (also handles no-comma space-separated)
-  const rgbMatch = /^rgb\(\s*(\d+)\s*[, ]\s*(\d+)\s*[, ]\s*(\d+)\s*\)$/.exec(trimmed)
+  // rgb(r, g, b) with or without spaces
+  const rgbMatch = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(trimmed)
   if (rgbMatch) {
-    return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])]
+    return [Number(rgbMatch[1] ?? '0'), Number(rgbMatch[2] ?? '0'), Number(rgbMatch[3] ?? '0')]
   }
 
   throw new Error(
@@ -86,7 +93,7 @@ function contrastRatio(
 // jsdom 29.1.1 does NOT recognize Tailwind v4's @theme at-rule (silently drops declarations).
 // Rewrite @theme { -> :root { before injection to make cascade work correctly.
 // Also, getComputedStyle(div).background returns var() UNRESOLVED in jsdom — read CSS variables
-// directly from documentElement instead (empirically verified in research session).
+// directly from documentElement instead (empirically verified in research session 2026-05-12).
 let styleEl: HTMLStyleElement
 
 beforeAll(() => {
