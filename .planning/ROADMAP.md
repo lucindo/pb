@@ -115,7 +115,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 ### Phase 16.1: UI Token Migration (INSERTED 2026-05-13)
 **Goal**: Hardcoded color classes across user-facing components are migrated from Tailwind utility colors (`text-slate-*`, `bg-teal-*`, `border-teal-*`, `text-white`, `bg-white`) to `data-theme`-aware `var(--color-breathing-*)` tokens so a theme swap rebinds the full interface — not just the ThemePicker selected option.
 **Depends on**: Phase 16
-**Requirements**: THEME-UI-01 (to be added to REQUIREMENTS.md during planning)
+**Requirements**: THEME-UI-01 (added to REQUIREMENTS.md by plan 16.1-01)
 **Reason for insertion**: Phase 16 human-verify checkpoint surfaced that data-theme swap leaves most UI elements visually unchanged because consumers reference fixed teal/slate Tailwind utilities instead of the new `--color-breathing-*` tokens. THEME-01..05 functional contracts pass, but user-perceived "theming" is broken. Inserted as gap closure before Phase 17 so visual variants build on a fully token-bound surface.
 **Success Criteria** (what must be TRUE):
   1. Switching to Dark, Moss, Slate, or Dusk visibly rebinds the Start/Stop button, SettingsStepper, EndSessionDialog, ResetStatsDialog, LearnDialog, SettingsDialog chrome, ThemePicker unselected buttons, and other surveyed pickers — not just the ThemePicker selected option.
@@ -123,7 +123,14 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. All 5 concrete palettes (light, dark, moss, slate, dusk) continue to clear the THEME-05 ≥ 1.5 WCAG luminance contrast floor — no token re-tune regresses the existing automated guard.
   4. Zero new npm dependencies; `tsc && lint && build && test` exit 0 at every commit boundary.
   5. The accessibility surface (focus-visible rings, hit-area floors, aria-* attributes) is preserved across the migration — class composition changes only, not semantics.
-**Plans**: TBD (run `/gsd-plan-phase 16.1` to break down)
+**Plans**: 7 plans
+  - [ ] 16.1-01-PLAN.md — Wave 0 preflight: THEME-UI-01 in REQUIREMENTS + D-02 alpha-modifier probe + D-01 `--color-breathing-on-accent` token (5 palettes) + contrast guard extension (accent-strong vs on-accent) + D-04 regression-guard scaffold (RED, skipped)
+  - [ ] 16.1-02-PLAN.md — Wave 1 dialog chrome (Group B): SettingsDialog + EndSessionDialog + ResetStatsDialog + LearnDialog tokenized (~22 occurrences); destructive red preserved
+  - [ ] 16.1-03-PLAN.md — Wave 1 pickers (Group D): ThemePicker (closes WR-01 unselectedClasses) + TimbrePicker + VariantPicker + LanguagePicker labels and ternaries
+  - [ ] 16.1-04-PLAN.md — Wave 1 anchors + stepper + mute (Group P-STATE): SettingsAnchor + LearnAnchor (Reference site C migration shape) + SettingsStepper + MuteToggle; 3 of 5 D-02 alpha sites
+  - [ ] 16.1-05-PLAN.md — Wave 1 page chrome (Group E): App.tsx (5 sites incl. card-surface alpha) + BreathingShape (phase label + lead-in digit) + SessionReadout (7 sites incl. 2 alpha)
+  - [ ] 16.1-06-PLAN.md — Wave 2 primary action (Group A): SessionControls Start/Stop both layouts; first D-01 `--color-breathing-on-accent` consumer; per-palette UAT checkpoint
+  - [ ] 16.1-07-PLAN.md — Wave 3 phase close: src/index.css D-03 + destructive text-white -> on-accent + guard test flip RED->GREEN + REQUIREMENTS/STATE/ROADMAP updates + SUMMARY
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
@@ -185,7 +192,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
 | 15. SettingsDialog Shell | v1.1 | 4/4 | Complete    | 2026-05-13 |
 | 16. Themes | v1.1 | 5/4 | Complete    | 2026-05-13 |
+| 16.1. UI Token Migration | v1.1 | 0/7 | Planned | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
-</content>
