@@ -19,7 +19,7 @@ export function ThemePicker({ disabled }: ThemePickerProps) {
 
   return (
     <div>
-      <p id="theme-picker-label" className="text-sm font-semibold text-slate-900">Theme</p>
+      <p id="theme-picker-label" className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">Theme</p>
       <div
         role="radiogroup"
         aria-labelledby="theme-picker-label"
@@ -30,7 +30,7 @@ export function ThemePicker({ disabled }: ThemePickerProps) {
           const selected = theme === id
           const label = id.charAt(0).toUpperCase() + id.slice(1)
           const selectedClasses = 'border-2 border-[var(--color-breathing-accent)] bg-[var(--color-breathing-bg-soft)] text-[var(--color-breathing-accent-strong)]'
-          const unselectedClasses = 'border border-teal-200 bg-white text-teal-800 hover:bg-teal-50 active:bg-teal-100'
+          const unselectedClasses = 'border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-accent-strong)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'
           const baseClasses = 'min-h-12 rounded-full px-3 py-2 text-sm font-semibold shadow-sm transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45'
 
           return (

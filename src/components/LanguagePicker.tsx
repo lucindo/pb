@@ -19,8 +19,8 @@ export function LanguagePicker({ disabled }: LanguagePickerProps) {
   const prefs = loadPrefs()
   return (
     <div>
-      <p className="text-sm font-semibold text-slate-900">Language</p>
-      <p className={`text-sm ${disabled ? 'text-[var(--color-breathing-muted)]' : 'text-slate-700'}`}>
+      <p className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">Language</p>
+      <p className={`text-sm ${disabled ? 'text-[var(--color-breathing-muted)]' : 'text-[var(--color-breathing-accent-strong)]'}`}>
         Language: {prefs.locale}
       </p>
     </div>
