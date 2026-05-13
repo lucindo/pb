@@ -74,10 +74,10 @@ export function SettingsDialog({ open, onClose, inSessionView }: SettingsDialogP
       ref={dialogRef}
       aria-labelledby="settings-dialog-title"
       onClick={handleBackdropClick}
-      className="modal-fade m-auto max-w-md rounded-3xl border border-teal-100 bg-white p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-auto max-w-md rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
-        <h2 id="settings-dialog-title" className="text-2xl font-semibold tracking-tight text-slate-950">Settings</h2>
+        <h2 id="settings-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">Settings</h2>
         {/* D-10: Theme → Variant → Timbre → Language order (Landmine 7: each receives disabled={inSessionView}) */}
         <ThemePicker disabled={inSessionView} />
         <VariantPicker disabled={inSessionView} />
@@ -88,7 +88,7 @@ export function SettingsDialog({ open, onClose, inSessionView }: SettingsDialogP
           <button
             type="button"
             onClick={onClose}
-            className="min-h-12 rounded-full border border-teal-200 bg-white px-5 py-2 text-base font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50 active:bg-teal-100 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >Close</button>
         </div>
       </div>
