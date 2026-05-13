@@ -81,28 +81,72 @@
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
 }
 
-/* Phase 16 D-04: Dark palette — deep slate background, brightened teal accent.
-   Background: slate-900 family (#0f172a). Accent: teal-400 (#2dd4bf) for legibility on dark.
-   Orb-in = sky-200/sky-300 (cool blue, luminance ~0.66); Orb-out = teal-700/teal-900 (deep teal, luminance ~0.04).
-   Hardest palette for THEME-05 floor — wide luminance gap guarantees ratio ≈ 4.85. */
+/* Phase 16.3-03: Dark palette redesigned from Nord (Sven Greb, MIT) — Polar Night flavor.
+   Source: nordtheme.com/docs/colors-and-palettes. Carries Plan 02 Light palette learnings:
+   solid In/Out (no gradient), soft Frost-family Out at large surface scale (not saturated
+   Aurora accents), restrained accent hover lift.
+
+   Mapping (RESEARCH §Pattern 2 — Dark flavor):
+     bg              = n0 #2e3440 (Polar Night darkest)
+     bg-soft         = n1 #3b4252 (one tier LIGHTER than bg — Dark lift convention)
+     bg-edge         = #000000 (pure-black fallback per rubric; no deeper Nord tone)
+     surface         = n1 #3b4252 (lifted dialog/card surface)
+     accent          = n8 #88c0d0 (Frost cyan — hover state, lighter lift)
+     accent-strong   = n9 #81a1c1 (Frost mid-blue — default Start, softer than full cyan
+                                    per Plan 02 hover-lift learning)
+     muted           = n3 #4c566a (mid Polar Night, secondary text on dark)
+     on-accent       = n0 #2e3440 (dark text on light Frost accent button)
+     orb In (solid)  = n7 #8fbcbb (Frost teal — atmospheric light pole on dark bg)
+     orb Out (solid) = n3 #4c566a (Polar Night mid — subtle dark pole)
+     orb-in-text     = n0 #2e3440 (dark text on light teal In)
+     orb-out-text    = n6 #eceff4 (Snow Storm — light text on dark Polar Out)
+     ring-outer      = n7 channels @ 0.5  (orb-in family per rubric)
+     ring-inner      = n4 Snow channels @ 0.4 (hue-contrast halo on dark Out — rubric flex
+                                    since n3 Polar channels would blend into Out)
+     modal-backdrop  = pure-black @ 0.5 (deepest backdrop)
+
+   UAT iteration 1: post-Image-14/16/17 feedback — three fixes:
+     (a) muted #4c566a (n3) had contrast 1.69 vs bg — labels and dialog body
+         text unreadable. Lifted to #a0a8b6 (derived 60% n4 Snow + 40% n3
+         Polar Night blend, lum 0.40). Contrast 5.36 clears WCAG AA body 4.5.
+     (b) orb-in #8fbcbb (n7 Frost teal, lum 0.45) felt slightly too bright at
+         large surface scale. Darkened to #7b9da3 (70% n7 teal + 30% n3 Polar
+         blend, lum 0.31). T05 vs Out drops 3.57 → 2.53; still clears 1.5.
+     (c) Start-button hover #88c0d0 (n8 cyan, lift 0.135 over accent-strong)
+         too bright. Softened to #85b1c9 (50/50 blend of n9+n8, lift halved to
+         0.066). ring-outer follows new orb-in channels.
+
+   Out of palette scope (deferred):
+     End-button red (Tailwind `bg-red-700` hardcoded in EndSessionDialog.tsx +
+     ResetStatsDialog.tsx) is not theme-tokenized — would require new
+     --color-destructive token (token names locked for Phase 16.3).
+
+   Ratios (post-iter-1; theme.contrast.test.ts re-verifies in jsdom):
+     THEME-05 (In solid vs Out solid)        = 2.53 (≥ 1.5 floor; was 4.85 pre-phase)
+     D-01     (accent-strong vs on-accent)   = 4.64 (≥ 1.5 floor)
+     muted vs bg                             = 5.36 (clears WCAG AA body 4.5)
+     orb-in-text legibility vs In            = 4.28 (clears WCAG AA body)
+     orb-out-text legibility vs Out          = 6.50 (clears WCAG AA body)
+     Polarity (inLum > outLum)               = 0.310 > 0.092 ✓ (In is the light pole)
+     bg-vs-In visibility                     = 4.28 / bg-vs-Out visibility = 1.75 */
 [data-theme='dark']:root {
-  --color-breathing-bg: #0f172a;
-  --color-breathing-bg-soft: #1e293b;
-  --color-breathing-bg-edge: #0a0f1a;
-  --color-breathing-surface: #1e293b;
-  --color-breathing-accent: #2dd4bf;
-  --color-breathing-accent-strong: #5eead4;
-  --color-breathing-muted: #64748b;
-  --color-breathing-on-accent: #0f172a;
-  --color-orb-in-from: #bae6fd;
-  --color-orb-in-to: #7dd3fc;
-  --color-orb-out-from: #0f766e;
-  --color-orb-out-to: #134e4a;
-  --color-orb-in-text: #0c4a6e;
-  --color-orb-out-text: #ecfdf5;
-  --color-ring-outer: rgb(186 230 253 / 0.5);
-  --color-ring-inner: rgb(45 212 191 / 0.40);
-  --color-modal-backdrop: rgb(0 0 0 / 0.50);
+  --color-breathing-bg: #2e3440;
+  --color-breathing-bg-soft: #3b4252;
+  --color-breathing-bg-edge: #000000;
+  --color-breathing-surface: #3b4252;
+  --color-breathing-accent: #85b1c9;
+  --color-breathing-accent-strong: #81a1c1;
+  --color-breathing-muted: #a0a8b6;
+  --color-breathing-on-accent: #2e3440;
+  --color-orb-in-from: #6e8993;
+  --color-orb-in-to: #6e8993;
+  --color-orb-out-from: #4c566a;
+  --color-orb-out-to: #4c566a;
+  --color-orb-in-text: #2e3440;
+  --color-orb-out-text: #eceff4;
+  --color-ring-outer: rgb(110 137 147 / 0.5);
+  --color-ring-inner: rgb(216 222 233 / 0.4);
+  --color-modal-backdrop: rgb(0 0 0 / 0.5);
 }
 
 /* Phase 16 D-04: Moss palette — the v1.0.1 calm teal-pastel.

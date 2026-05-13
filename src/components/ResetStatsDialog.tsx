@@ -73,7 +73,7 @@ export function ResetStatsDialog({ open, onConfirm, onCancel }: ResetStatsDialog
           <button
             type="button"
             onClick={onConfirm}
-            className="min-h-12 rounded-full bg-red-700 px-5 py-2 text-base font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-red-900/20 transition hover:bg-red-800 active:bg-red-900 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="min-h-12 rounded-full bg-[#bf616a] px-5 py-2 text-base font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-red-900/20 transition hover:bg-[#a85459] active:bg-[#92444c] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             Reset
           </button>
