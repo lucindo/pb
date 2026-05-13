@@ -49,7 +49,8 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract (completed 2026-05-13)
 - [x] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes (completed 2026-05-13)
 - [x] **Phase 16.1: UI Token Migration (INSERTED 2026-05-13)** - Migrate hardcoded `text-slate-*`/`bg-teal-*`/`border-teal-*`/`text-white`/`bg-white` classes across ~16 components (Start/Stop button, dialogs, stepper, pickers) to `var(--color-breathing-*)` tokens so theme swaps rebind the full UI, not just the ThemePicker selected option (completed 2026-05-13)
-- [ ] **Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)** - UAT carry-forward from 16.1 plan 06: re-tune orb In/Out gradients per palette — Light Out (#f97316 too saturated), Moss Out (#3b82f6 too vivid blue), Slate Out (#6366f1 too vivid indigo), Dusk In (#ede9fe → #faf5ff too bright), Dusk Out (#d97706 softening). Pure theme.css palette retune; no .tsx touch
+- [x] **Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)** - UAT carry-forward from 16.1 plan 06: re-tune orb In/Out gradients per palette — Light Out (#f97316 too saturated), Moss Out (#3b82f6 too vivid blue), Slate Out (#6366f1 too vivid indigo), Dusk In (#ede9fe → #faf5ff too bright), Dusk Out (#d97706 softening). Pure theme.css palette retune; no .tsx touch (completed 2026-05-13 — smoke + text-legibility UAT approved; perceptual aesthetic UAT deferred to Phase 16.3 thorough theme revision)
+- [ ] **Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)** - Interactive per-palette redesign sourcing each palette from a vetted open-source design system (e.g. Catppuccin Frappe for Dark; user-supplied reference per palette for Light/Moss/Slate/Dusk). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes. Per-palette task cadence + per-palette UAT before commit. Honors THEME-05 ≥ 1.5 contrast guard and THEME-UI-01 token-binding contract.
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
@@ -152,7 +153,22 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   4. `tsc && lint && build && test` exit 0; `theme.no-hardcoded-classes.test.ts` guard remains green.
 **Plans**: 2 plans
   - [x] 16.2-01-PLAN.md — Retune Light/Moss/Slate Out + Dusk In/Out gradients (closes F1/F4/F5/F6/F7); THEME-05 ≥ 1.5 contrast guard re-verified (completed 2026-05-13 — 4 commits 565581a/fffa7ac/5eb446e/cc58998; ratios Light 1.59, Dark 4.85, Moss 2.36, Slate 3.68, Dusk 1.85)
-  - [ ] 16.2-02-PLAN.md — Per-palette manual UAT (5/5 approval gate) + phase close (STATE/ROADMAP/SUMMARY updates)
+  - [x] 16.2-02-PLAN.md — Smoke + text-legibility UAT (perceptual aesthetic UAT deferred to Phase 16.3 per operator decision) + phase close (STATE/ROADMAP/SUMMARY updates) (completed 2026-05-13)
+**UI hint**: yes
+
+### Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)
+**Goal**: Replace each palette's chrome + orb tokens with a deliberately-curated palette grounded in a named open-source design system (one source reference per theme — user supplies, agent maps). Interactive theme-by-theme execution with per-palette UAT before commit.
+**Depends on**: Phase 16.2
+**Requirements**: none (aesthetic redesign — honors existing THEME-05 ≥ 1.5 contrast guard and THEME-UI-01 hardcoded-class guard)
+**Reason for insertion**: Phase 16.2 closed with automated contrast gates green but perceptual UAT deferred. Operator opted for a thorough redesign sourcing each palette from a vetted open-source design system rather than continuing ad-hoc ratio-driven tuning. Replaces 16.1/16.2 aesthetic results with intentional curated palettes.
+**Approach**: Interactive per-palette workflow. For each of 5 palettes (Light, Dark, Moss, Slate, Dusk) the operator names an open-source design-system reference (e.g. Catppuccin Frappe → Dark); the agent extracts the source palette via web fetch + research, maps chrome and orb tokens, runs THEME-05 contrast guard, presents a UAT smoke + visual integration check, then commits per-palette (B1 bisect cadence preserved from 16.2).
+**Success Criteria** (what must be TRUE):
+  1. Each palette's chrome + orb tokens are derived from a named open-source design system; the system + citation is recorded in the phase SUMMARY.
+  2. THEME-05 ≥ 1.5 luminance contrast guard holds across all 5 palettes (`theme.contrast.test.ts` exits 0).
+  3. THEME-UI-01 hardcoded-class guard remains green (`theme.no-hardcoded-classes.test.ts` exits 0 — no .tsx files touched).
+  4. Per-palette UAT approval — 5/5 perceptual gate (the perceptual gate deferred from 16.2 is satisfied here against curated palettes, not ad-hoc retunes).
+  5. `tsc && lint && build && test` exit 0 at every commit boundary (per-commit green-gate).
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
@@ -214,7 +230,9 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
 | 15. SettingsDialog Shell | v1.1 | 4/4 | Complete    | 2026-05-13 |
 | 16. Themes | v1.1 | 5/4 | Complete    | 2026-05-13 |
-| 16.1. UI Token Migration | v1.1 | 1/7 | In Progress|  |
+| 16.1. UI Token Migration | v1.1 | 7/7 | Complete | 2026-05-13 |
+| 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
+| 16.3. Thorough Theme Revision | v1.1 | 0/? | Not started (INSERTED 2026-05-13) | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
