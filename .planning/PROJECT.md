@@ -53,6 +53,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] User can recover from background → foreground audio interruptions via a gesture-attached resume affordance. Validated in Phase 5.1 (MuteToggle morph + engine reconstruction + dual-anchor re-anchor). *iOS Safari OS-level audio session loss → v1.x carry-forward.*
 - [x] User can access a prominent learning section with links to Forrest Knutson's YouTube channel and curated HRV breathing explanation videos. Validated in Phase 6 (LearnAnchor + LearnDialog with locked claim-safe copy).
 - [x] User sees copy that frames the app as guided breathing practice, not medical advice or diagnosis. Validated in Phase 6 (locked `inspired by Forrest's teachings` phrase + two-line disclaimer).
+- [x] User can switch among Light/Dark/System + 3 named palette themes; choice persists across reloads and applies before first paint. Validated in Phase 16 (THEME-01..05 — CSS token cascade + FOUC inline script + useTheme/useThemeChoice hooks + ThemePicker). *Full UI token migration (Start/Stop button + 15 other components) → Phase 16.1 gap closure. Aesthetic palette refresh → v1.x carry-forward.*
 
 **v1.0.1 patch fixes (validated 2026-05-11 → 2026-05-12 — all 27 REQ-IDs satisfied; see `.planning/milestones/v1.0.1-REQUIREMENTS.md` for full traceability):**
 
@@ -65,7 +66,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Active
 
-v1.1 Customization — requirements being defined (2026-05-12). See `.planning/REQUIREMENTS.md` once written.
+v1.1 Customization — Phases 13–16 complete (2026-05-13). Phase 16 themes shipped (THEME-01..05 validated). Phase 16.1 inserted for UI token migration (Start/Stop button + 15 other components carry hardcoded teal/slate classes that don't rebind on data-theme swap). Phases 17/18/19 (Visual Variants, Audio Timbres, Language Switching) remain.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
