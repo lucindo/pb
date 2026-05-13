@@ -46,7 +46,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 
 - [x] **Phase 13: Inner-Ring UX Symmetry** - Reduced-motion inner-ring suppression — `.orb-layer--out` crossfade restored as sole substitute phase cue (completed 2026-05-12)
 - [x] **Phase 14: Prefs Foundation** - Envelope `prefs?` field extension; `isValid*` / `coerce*` predicates for all four customization dimensions (completed 2026-05-12)
-- [ ] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract
+- [x] **Phase 15: SettingsDialog Shell** - Native `<dialog>` gear-triggered settings panel with stub pickers; `inSessionView` disable contract (completed 2026-05-13)
 - [ ] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
@@ -91,7 +91,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   - [x] 15-01-PLAN.md — SettingsAnchor (gear trigger button, 44×44, aria-disabled in session)
   - [x] 15-02-PLAN.md — Four picker stubs (Theme/Variant/Timbre/Language; loadPrefs read-only)
   - [x] 15-03-PLAN.md — SettingsDialog shell (native <dialog>, Esc/backdrop/Close, picker disable threading)
-  - [ ] 15-04-PLAN.md — App.tsx integration + phase close (state/callbacks/JSX + REQUIREMENTS/STATE/ROADMAP/SUMMARY)
+  - [x] 15-04-PLAN.md — App.tsx integration + phase close (state/callbacks/JSX + REQUIREMENTS/STATE/ROADMAP/SUMMARY)
 **UI hint**: yes
 
 ### Phase 16: Themes
@@ -164,7 +164,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 12. Assets, Content & Hygiene Cleanup | v1.0.1 | 1/1 | Complete | 2026-05-12 |
 | 13. Inner-Ring UX Symmetry | v1.1 | 1/1 | Complete   | 2026-05-12 |
 | 14. Prefs Foundation | v1.1 | 1/1 | Complete | 2026-05-12 |
-| 15. SettingsDialog Shell | v1.1 | 3/4 | In Progress|  |
+| 15. SettingsDialog Shell | v1.1 | 4/4 | Complete   | 2026-05-13 |
 | 16. Themes | v1.1 | 0/? | Not started | - |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
