@@ -588,7 +588,7 @@ export default function App() {
   }, [clearLeadInTimeouts])
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_var(--color-breathing-bg-edge))] px-4 py-6 text-slate-900 sm:px-6 sm:py-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_var(--color-breathing-bg-edge))] px-4 py-6 text-[var(--color-breathing-accent-strong)] sm:px-6 sm:py-8">
       <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-center text-center sm:min-h-[calc(100vh-4rem)]">
         {/* Phase 6 D-01/D-03: Learn anchor — persistent across all session states,
             positioned at the column top-right (moved from page-level fixed on
@@ -596,16 +596,16 @@ export default function App() {
             anchor for the absolute-positioned button. Disabled (not hidden) during
             lead-in and running (D-03 disable-not-hide). */}
         <div className="relative w-full">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-teal-700">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[var(--color-breathing-accent)]">
             HRV practice
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
             HRV Breathing
           </h1>
           <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} />
           <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
         </div>
-        <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
+        <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           <BreathingShape
             frame={appPhase === 'running' ? session.liveFrame : null}
@@ -650,7 +650,7 @@ export default function App() {
               locked NO disclaimer copy outside the Learn modal; the amendment
               relaxes that decision and surfaces LEARN-04 framing on the practice
               screen too. The phrase matches D-14's modal-only line verbatim. */}
-          <p className="mt-4 text-sm leading-6 text-slate-600">
+          <p className="mt-4 text-sm leading-6 text-[var(--color-breathing-muted)]">
             Guided breathing practice — not medical advice.
           </p>
         </div>
