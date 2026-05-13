@@ -92,7 +92,9 @@ describe('useThemeChoice', () => {
     window.removeEventListener('hrv:prefs-changed', spy)
 
     expect(spy).toHaveBeenCalledTimes(1)
-    const event = spy.mock.calls[0][0] as CustomEvent<{ key: string; value: string }>
+    // Reason: we asserted toHaveBeenCalledTimes(1) above; the array access is safe.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const event = spy.mock.calls[0]![0] as CustomEvent<{ key: string; value: string }>
     expect(event).toBeInstanceOf(CustomEvent)
     expect(event.detail.key).toBe('theme')
     expect(event.detail.value).toBe('dark')
