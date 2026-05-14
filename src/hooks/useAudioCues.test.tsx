@@ -153,8 +153,11 @@ describe('useAudioCues', () => {
     unmount()
   })
 
-  it('notifyPhaseBoundary({ newPhase: out, audioTime: 8 }) routes to scheduleOutCue', async () => {
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+  it('notifyPhaseBoundary({ newPhase: out, audioTime: 8 }) routes to scheduleOutCueForTimbre', async () => {
+    // Phase 18 Plan 03: engine dispatches via scheduleOutCueForTimbre (which forwards
+    // to the parameterized scheduleBowlCue). Old scheduleOutCue is preserved as a
+    // Bowl-only wrapper but the engine no longer calls it directly.
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {

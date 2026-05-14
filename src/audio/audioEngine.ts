@@ -20,7 +20,8 @@
 //     (useAudioCues) catches and falls back to visuals-only mode.
 
 import type { BreathingPlan } from '../domain/breathingPlan'
-import { scheduleInCue, scheduleOutCue, scheduleTick, type CueHandle } from './cueSynth'
+import { scheduleInCueForTimbre, scheduleOutCueForTimbre, scheduleTick, type CueHandle } from './cueSynth'
+import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
 
@@ -63,6 +64,10 @@ export interface AudioEngineOptions {
    *  (a) the wired addEventListener('statechange') — every transition;
    *  (b) the resume() catch when err.name === 'InvalidStateError' (D-38). */
   onStateChange?: (state: AudioContextState | 'interrupted') => void
+  /** Phase 18 D-08: timbre captured at session start; engine never re-reads prefs.
+   *  Caller passes the snapshot from useAudioCues.start(plan, timbre). No setter
+   *  is exposed — capture-at-construction is the only mutation path. */
+  timbre: TimbreId
 }
 
 // D-08: soft fade-out tail when muting mid-cue.
@@ -104,7 +109,7 @@ function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
 
 /** Create a new AudioContext + engine. MUST be called from a user-gesture path (D-09).
  *  Throws (rejects) if AudioContext construction fails (D-10 caller branch). */
-export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<AudioEngine> {
+export async function createAudioEngine(opts: AudioEngineOptions): Promise<AudioEngine> {
   // D-09: AudioContext is constructed here, which is invoked synchronously from the
   // Start session click handler in App.tsx (Plan 04). The browser autoplay policy MUST
   // see a fresh user-gesture chain or AC will start in 'suspended'.
@@ -140,6 +145,10 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
   // 2 and 3 audible after the user clicked Mute.
   const activeCues = new Set<CueHandle>()
   let muted = false // D-07: default false (audio ON on first visit)
+  // Phase 18 D-08: capture timbre once at construction. Immutable for this
+  // engine's lifetime — no setter exposed. scheduleLeadIn + scheduleNextCue
+  // forward this value to scheduleInCueForTimbre / scheduleOutCueForTimbre.
+  const sessionTimbre: TimbreId = opts.timbre
   let closed = false
 
   // Drop cues whose tails have already finished (cleanupAt < now). Keeps the Set
@@ -167,7 +176,7 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does
       // the same for every subsequent cue).
       const firstInPhaseDurationSec = plan.inhaleMs / 1000
-      activeCues.add(scheduleInCue(audioCtx, firstInCueTime, audioCtx.destination, firstInPhaseDurationSec))
+      activeCues.add(scheduleInCueForTimbre(audioCtx, firstInCueTime, audioCtx.destination, sessionTimbre, firstInPhaseDurationSec))
 
       return firstInCueTime
     },
@@ -182,8 +191,8 @@ export async function createAudioEngine(opts: AudioEngineOptions = {}): Promise<
       // can stretch the decay envelope to the phase length.
       const cue =
         newPhase === 'in'
-          ? scheduleInCue(audioCtx, clampedAudioTime, audioCtx.destination, phaseDurationSec)
-          : scheduleOutCue(audioCtx, clampedAudioTime, audioCtx.destination, phaseDurationSec)
+          ? scheduleInCueForTimbre(audioCtx, clampedAudioTime, audioCtx.destination, sessionTimbre, phaseDurationSec)
+          : scheduleOutCueForTimbre(audioCtx, clampedAudioTime, audioCtx.destination, sessionTimbre, phaseDurationSec)
       activeCues.add(cue)
     },
 
