@@ -48,10 +48,10 @@ export function VariantPicker({ disabled }: VariantPickerProps) {
               {/* Swatch primitive per variant (UI-SPEC §"Inline Shape Swatches"):
                   - Orb: span with orb-layer--in class + borderRadius 50%
                   - Square: span with orb-layer--in class + borderRadius 18%
-                  - Ring: SVG circle stroke (Pitfall 8 — radial-gradient invisible at 24px) */}
-              {id === 'ring' ? (
+                  - Diamond: SVG polygon (rotated square — 24×24 viewBox filled with accent color) */}
+              {id === 'diamond' ? (
                 <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" fill="none" stroke="var(--color-orb-in-from)" strokeWidth="4" />
+                  <polygon points="12,2 22,12 12,22 2,12" fill="var(--color-orb-in-from)" />
                 </svg>
               ) : (
                 <span className="block w-6 h-6 relative" aria-hidden="true">
