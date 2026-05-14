@@ -99,8 +99,9 @@ describe('SettingsDialog — inSessionView picker disable threading', () => {
     // Phase 16: ThemePicker is now a real radiogroup; assert section label.
     // The Phase 15 stub text "Theme: system" is replaced by the real picker.
     expect(screen.getByText('Theme')).toBeInTheDocument()
-    // Phase 17: VariantPicker is now a real radiogroup too — both Theme + Variant radiogroups
-    // have aria-disabled=true when inSessionView=true. Use getAllByRole since there are 2 radiogroups.
+    // Phase 17: VariantPicker is now a real radiogroup too.
+    // Phase 19: LanguagePicker is now a real radiogroup too — all 4 pickers (Theme + Variant + Timbre + Language)
+    // have aria-disabled=true when inSessionView=true. Use getAllByRole since there are now 4 radiogroups.
     const radiogroups = screen.getAllByRole('radiogroup')
     for (const rg of radiogroups) {
       expect(rg).toHaveAttribute('aria-disabled', 'true')
@@ -109,7 +110,7 @@ describe('SettingsDialog — inSessionView picker disable threading', () => {
     expect(screen.getByText('Variant')).toBeInTheDocument()
     // Phase 18: TimbrePicker stub text "Timbre: bowl" replaced by real picker section label.
     expect(screen.getByText('Timbre')).toBeInTheDocument()
-    // Remaining picker stub (Phase 19 not yet replaced) still renders stub text.
-    expect(screen.getByText('Language: en')).toBeInTheDocument()
+    // Phase 19: LanguagePicker stub text "Language: en" replaced by real picker section label.
+    expect(screen.getByText('Language')).toBeInTheDocument()
   })
 })
