@@ -36,6 +36,12 @@ import {
   type PersistedStats,
 } from '../storage'
 import type { SessionSettings, VisualVariantId } from '../domain/settings'
+// Phase 18 Plan 04 interim scaffold: useAudioCues.start now requires a TimbreId
+// (D-08 capture-at-Start). DEFAULT_TIMBRE preserves the v1.0.1 Bowl audio path
+// verbatim — TIMBRE-02 byte-identical proof holds across this transitional commit.
+// Plan 06 will replace this with a `loadPrefs().timbre` read inside onStartClick
+// (mirror of the `sessionVariantRef.current = liveVariant` snapshot site below).
+import { DEFAULT_TIMBRE } from '../domain/settings'
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
@@ -341,7 +347,9 @@ export default function App() {
     // D-09: AudioContext is constructed inside this user-gesture-derived chain.
     const plan = createBreathingPlan(state.selectedSettings)
     planRef.current = plan // stored for Task 1b boundary computation
-    const firstInAudioTime = await audioStart(plan)
+    // Phase 18 Plan 04 interim scaffold: pass DEFAULT_TIMBRE until Plan 06 threads
+    // the loadPrefs().timbre snapshot through this call site.
+    const firstInAudioTime = await audioStart(plan, DEFAULT_TIMBRE)
     // firstInAudioTime is null if AC failed (D-10) — visuals-only path.
     // The lead-in setTimeout chain still runs in either case so the visual countdown
     // is independent of audio availability.

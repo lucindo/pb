@@ -39,7 +39,7 @@ describe('useAudioCues', () => {
 
     let firstInCueTime: number | null = null
     await act(async () => {
-      firstInCueTime = await result.current.start(samplePlan)
+      firstInCueTime = await result.current.start(samplePlan, 'bowl')
     })
 
     expect(firstInCueTime).not.toBeNull()
@@ -70,7 +70,7 @@ describe('useAudioCues', () => {
 
     let res: number | null = 0
     await act(async () => {
-      res = await result.current.start(samplePlan)
+      res = await result.current.start(samplePlan, 'bowl')
     })
 
     expect(res).toBeNull()
@@ -101,7 +101,7 @@ describe('useAudioCues', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
 
     await act(async () => {
@@ -118,7 +118,7 @@ describe('useAudioCues', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
 
     act(() => {
@@ -136,7 +136,7 @@ describe('useAudioCues', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
 
     act(() => {
@@ -161,7 +161,7 @@ describe('useAudioCues', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
 
     outSpy.mockClear()
@@ -196,7 +196,7 @@ describe('useAudioCues', () => {
     )
     const fail = renderHook(() => useAudioCues())
     await act(async () => {
-      await fail.result.current.start(samplePlan)
+      await fail.result.current.start(samplePlan, 'bowl')
     })
     expect(fail.result.current.audioNow()).toBeNull()
     fail.unmount()
@@ -206,7 +206,7 @@ describe('useAudioCues', () => {
     // Success path → audioNow returns a number.
     const ok = renderHook(() => useAudioCues())
     await act(async () => {
-      await ok.result.current.start(samplePlan)
+      await ok.result.current.start(samplePlan, 'bowl')
     })
     expect(typeof ok.result.current.audioNow()).toBe('number')
     await act(async () => {
@@ -235,7 +235,7 @@ describe('useAudioCues', () => {
 
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
 
     unmount()
@@ -276,7 +276,7 @@ describe('useAudioCues', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
     expect(constructCount).toBe(1)
 
@@ -286,7 +286,7 @@ describe('useAudioCues', () => {
       void result.current.stop()
     })
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
     expect(constructCount).toBe(2)
 
@@ -317,10 +317,10 @@ describe('useAudioCues', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
 
     expect(constructCount).toBe(1)
@@ -373,7 +373,7 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     const resumeSpy = vi.spyOn(SpyableAC.prototype, 'resume')
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
     // Reset spy call count after start() which may call resume() internally (WR-06 path).
     resumeSpy.mockClear()
@@ -406,7 +406,7 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
     const resumeSpy = vi
       .spyOn(SpyableAC.prototype, 'resume')
@@ -431,7 +431,7 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     const resumeSpy = vi.spyOn(SpyableAC.prototype, 'resume')
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
     })
     resumeSpy.mockClear()
     Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
@@ -521,7 +521,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     // AC stays 'running'. Dispatch visibilitychange; resume() will succeed.
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
     await act(async () => {
@@ -538,7 +538,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
@@ -554,7 +554,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
 
     // Reach the live AC via the prototype trick: spy on resume to flip the instance
     // state to 'interrupted' AND arm the rejection BEFORE the visibility-handler call.
@@ -589,7 +589,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     // Pre-condition: post-start, audioStatus is 'ok'.
     expect(result.current.audioStatus).toBe('ok')
 
@@ -638,7 +638,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     vi.stubGlobal('AudioContext', SpyableAC)
     const reanchorSpy = vi.fn()
     const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     const initialConstructed = constructed
     // Drive audioStatus to 'needs-resume' via the same path as D-41 (c).
     // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
@@ -689,7 +689,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues(true /* initialMuted */, vi.fn()))
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     expect(result.current.muted).toBe(true)
     // Drive audioStatus to 'needs-resume'.
     // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
@@ -732,7 +732,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     vi.stubGlobal('AudioContext', SpyableAC)
     const reanchorSpy = vi.fn()
     const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     // Default SpyableAC.resume() succeeds — no rejection armed.
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
     await act(async () => {
@@ -758,7 +758,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     vi.stubGlobal('AudioContext', SpyableAC)
     const reanchorSpy = vi.fn()
     const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     const initialConstructed = constructed
 
     // Drive audioStatus to 'needs-resume' via the visibility-handler optimistic
@@ -851,7 +851,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
 
     // First call: start() resolves immediately with fakeFirstEngine.
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     expect(result.current.status).toBe('lead-in')
     expect(createCallCount).toBe(1)
 
@@ -912,7 +912,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
 
-    await act(async () => { await result.current.start(samplePlan) })
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
     expect(result.current.audioStatus).toBe('ok')
 
     // stop() — nulls engineRef synchronously.
@@ -976,7 +976,7 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     observedStatuses.push(result.current.status)
 
     await act(async () => {
-      await result.current.start(samplePlan)
+      await result.current.start(samplePlan, 'bowl')
       observedStatuses.push(result.current.status)
     })
     observedStatuses.push(result.current.status)
@@ -1009,7 +1009,7 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
 
     let res: number | null = 42 // sentinel non-null value to confirm it changes
     await act(async () => {
-      res = await result.current.start(samplePlan)
+      res = await result.current.start(samplePlan, 'bowl')
     })
 
     // Hook-side null propagation: scheduleLeadIn returned null → start() returns null.
@@ -1124,6 +1124,140 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
 
     expect(result.current.start).toBe(startBefore)
 
+    unmount()
+  })
+})
+
+// Phase 18 Plan 04 timbre capture + reconstruction (D-08 + D-11).
+//
+// Truth set:
+//  - start(plan, timbre) MUST construct the AudioEngine with the caller-passed timbre
+//    (D-08 capture-at-Start at the hook layer — engine receives the snapshot via
+//    createAudioEngine({ timbre, ... })).
+//  - reconstructEngine MUST reuse the original session timbre (timbreRef.current)
+//    even when storage has been mutated mid-session (D-11 invariant — capture-at-Start
+//    is the only mutation path; iOS visibility-suspend recovery never re-reads prefs).
+//  - start(samplePlan, 'bowl') MUST exercise the v1.0.1 Bowl byte-identical path —
+//    sanity check that the new timbre parameter does not perturb the default flow.
+describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11)', () => {
+  // Spyable AudioContext mirroring the Phase 5.1 / Plan 06 pattern (registry-backed
+  // statechange listeners + reconstruction-friendly resume()). Local to this block
+  // to avoid touching the existing test geography. Construction count is observed
+  // via createAudioEngine spy (mock.calls.length) — no separate counter needed here.
+  class SpyableAC {
+    static lastInstance: SpyableAC | null = null
+    static reset(): void { SpyableAC.lastInstance = null }
+    state: AudioContextState | 'interrupted' = 'running'
+    sampleRate = 44100
+    destination = {}
+    private _start = performance.now() / 1000
+    private _listeners = new Map<string, Set<EventListener>>()
+    get currentTime(): number { return performance.now() / 1000 - this._start }
+    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(_options?: AudioContextOptions) { SpyableAC.lastInstance = this }
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async resume(): Promise<void> { this.state = 'running'; this._fireStateChange() }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async suspend(): Promise<void> { this.state = 'suspended'; this._fireStateChange() }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async close(): Promise<void> { this.state = 'closed'; this._fireStateChange() }
+    addEventListener(type: string, listener: EventListener): void {
+      let set = this._listeners.get(type)
+      if (!set) { set = new Set(); this._listeners.set(type, set) }
+      set.add(listener)
+    }
+    removeEventListener(type: string, listener: EventListener): void {
+      this._listeners.get(type)?.delete(listener)
+    }
+    private _fireStateChange(): void {
+      const evt = new Event('statechange')
+      for (const l of this._listeners.get('statechange') ?? []) l(evt)
+    }
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('start(samplePlan, "bell") constructs the engine with timbre: "bell" (D-08)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    // Spy on the createAudioEngine factory to inspect the options object.
+    const createSpy = vi.spyOn(audioEngineModule, 'createAudioEngine')
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan, 'bell')
+    })
+    // D-08: the engine is constructed with exactly the caller-passed timbre.
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ timbre: 'bell', onStateChange: expect.any(Function) as unknown }),
+    )
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('reconstructEngine reuses timbreRef.current — ignores localStorage prefs change mid-session (D-11 invariant guard)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    // Spy on createAudioEngine to capture the second (reconstruction) call argument.
+    const createSpy = vi.spyOn(audioEngineModule, 'createAudioEngine')
+    const { result, unmount } = renderHook(() => useAudioCues(false, vi.fn()))
+
+    // 1. Session starts with 'bell' — timbreRef captured as 'bell' synchronously
+    //    BEFORE the createAudioEngine await.
+    await act(async () => {
+      await result.current.start(samplePlan, 'bell')
+    })
+    expect(createSpy.mock.calls[0]?.[0]).toMatchObject({ timbre: 'bell' })
+    const callsAfterStart = createSpy.mock.calls.length
+
+    // 2. Mutate localStorage's prefs.timbre to 'chime' mid-session. If the hook
+    //    re-read user prefs during reconstruction (D-11 violation), the new engine
+    //    would be constructed with 'chime'. The hook MUST NOT do this — it reads
+    //    timbreRef.current exclusively, which still holds 'bell'.
+    window.localStorage.setItem(
+      'hrv:state:v1',
+      JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'chime', variant: 'orb', locale: 'en' } }),
+    )
+
+    // 3. Trigger reconstruction via public resume() — which internally calls
+    //    reconstructEngine() per useAudioCues.ts:362 (the kitchen-sink fix path).
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    // 4. Reconstruction must have called createAudioEngine again — and with
+    //    timbre: 'bell' (the captured value), NOT 'chime' (the mid-session storage value).
+    expect(createSpy.mock.calls.length).toBeGreaterThan(callsAfterStart)
+    const reconstructCall = createSpy.mock.calls[createSpy.mock.calls.length - 1]
+    expect(reconstructCall?.[0]).toMatchObject({ timbre: 'bell' })
+
+    await act(async () => { await result.current.stop() })
+    window.localStorage.clear()
+    unmount()
+  })
+
+  it('start(samplePlan, "bowl") preserves v1.0.1 byte-identical behavior (TIMBRE-02 sanity)', async () => {
+    // Sanity check that passing 'bowl' explicitly does not perturb the v1.0.1 flow —
+    // firstInCueTime is still the deterministic engine.now() + 3 lead-in anchor.
+    const { result, unmount } = renderHook(() => useAudioCues())
+    let firstInCueTime: number | null = null
+    await act(async () => {
+      firstInCueTime = await result.current.start(samplePlan, 'bowl')
+    })
+    expect(firstInCueTime).not.toBeNull()
+    // Reason: non-null asserted by expect().not.toBeNull() immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(firstInCueTime!).toBeGreaterThanOrEqual(3)
+    expect(result.current.status).toBe('lead-in')
+    expect(result.current.audioAvailable).toBe(true)
+    await act(async () => { await result.current.stop() })
     unmount()
   })
 })
