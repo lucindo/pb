@@ -141,9 +141,9 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale\(/)
     })
 
-    it('`.orb-ring--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21)', () => {
+    it('`.shape-marker--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21)', () => {
       const { container } = render(<BreathingShape frame={sampleFrame} />)
-      const outer = container.querySelector('.orb-ring--outer')
+      const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -157,18 +157,18 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       expect(style).not.toMatch(/(^|;)\s*inset\s*:/)
     })
 
-    it('`.orb-ring--outer` does NOT have the Tailwind `inset-0` class (defensive, locks Plan 02 + Plan 04)', () => {
+    it('`.shape-marker--outer` does NOT have the Tailwind `inset-0` class (defensive, locks Plan 02 + Plan 04)', () => {
       const { container } = render(<BreathingShape frame={sampleFrame} />)
-      const outer = container.querySelector('.orb-ring--outer')
+      const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(outer!).not.toHaveClass('inset-0')
     })
 
-    it('`.orb-ring--inner` is unchanged from the WR-03 template (D-26 / D-11 guard)', () => {
+    it('`.shape-marker--inner` is unchanged from the WR-03 template (D-26 / D-11 guard)', () => {
       const { container } = render(<BreathingShape frame={sampleFrame} />)
-      const inner = container.querySelector('.orb-ring--inner')
+      const inner = container.querySelector('.shape-marker--inner')
       expect(inner).not.toBeNull()
       // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -229,9 +229,9 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       expect(style).toMatch(/transform:\s*(?:translate3d\([^)]+\)\s+)?scale\(0\.79\)/)
     })
 
-    it('lead-in `.orb-ring--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21 + D-22)', () => {
+    it('lead-in `.shape-marker--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21 + D-22)', () => {
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
-      const outer = container.querySelector('.orb-ring--outer')
+      const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -243,18 +243,18 @@ describe('BreathingShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24)'
       expect(style).not.toMatch(/(^|;)\s*inset\s*:/)
     })
 
-    it('lead-in `.orb-ring--outer` does NOT have the Tailwind `inset-0` class', () => {
+    it('lead-in `.shape-marker--outer` does NOT have the Tailwind `inset-0` class', () => {
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
-      const outer = container.querySelector('.orb-ring--outer')
+      const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(outer!).not.toHaveClass('inset-0')
     })
 
-    it('lead-in `.orb-ring--inner` is unchanged from the WR-03 template', () => {
+    it('lead-in `.shape-marker--inner` is unchanged from the WR-03 template', () => {
       const { container } = render(<BreathingShape frame={null} leadInDigit={2} />)
-      const inner = container.querySelector('.orb-ring--inner')
+      const inner = container.querySelector('.shape-marker--inner')
       expect(inner).not.toBeNull()
       // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
