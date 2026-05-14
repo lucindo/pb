@@ -389,6 +389,60 @@
   opacity: 1;
 }
 
+/* ============================================================
+   Phase 17 — Visual Variants
+   Per-variant geometric overrides on shared `.shape-marker--*`
+   and `.orb-layer--*` classes (D-13 token reuse + D-15 single
+   class hierarchy). Variant identity is geometric only — no
+   new color tokens (--color-orb-in/out-* reused across all 3
+   variants). The reduced-motion @media block below this section
+   owns the cross-variant suppression rules (.shape-marker--inner
+   display: none + .orb-layer crossfade preserved).
+   ============================================================ */
+
+/* D-05/D-15: Square variant — rounded-corner marker outlines
+   (planner-picked 18%; operator may revise after dev-server smoke). */
+[data-variant='square'] .shape-marker--outer {
+  border-radius: 18%;
+}
+[data-variant='square'] .shape-marker--inner {
+  border-radius: 18%;
+}
+
+/* D-06/D-15: Ring variant — thinner concentric markers
+   (1px vs orb's 1.5px so the rings do not compete with the body annulus). */
+[data-variant='ring'] .shape-marker--outer {
+  border-width: 1px;
+}
+[data-variant='ring'] .shape-marker--inner {
+  border-width: 1px;
+}
+
+/* D-06: Ring variant — hollow center via radial-gradient on the
+   shared `.orb-layer--in/--out` classes (Option D per RESEARCH).
+   The inner stop at 35% creates a transparent core; the body
+   annulus occupies 35%-100% of the body radius. Color tokens
+   --color-orb-in/out-from/to are reused VERBATIM from the linear
+   gradient — D-13 zero new tokens. */
+[data-variant='ring'] .orb-layer--in {
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 35%,
+    var(--color-orb-in-from) 36%,
+    var(--color-orb-in-to) 100%
+  );
+}
+[data-variant='ring'] .orb-layer--out {
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 35%,
+    var(--color-orb-out-from) 36%,
+    var(--color-orb-out-to) 100%
+  );
+}
+
 /* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.
    Uses @starting-style + display/overlay allow-discrete so the dialog fades
    from opacity:0 → 1 on showModal() and 1 → 0 on close(). Reduced-motion
