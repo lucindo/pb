@@ -14,6 +14,8 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Shipped:** v1.0.1 Code Review Patch (2026-05-12) — 6 patch phases (07–12), 12 plans, 17 tasks, 143 commits, 409/409 Vitest tests pass (363 → 409). HEAD `3bdb69b`. Codebase ~10,925 LOC TS/TSX in `src/`.
 
+**v1.1 in progress:** Phases 13–18 complete (audio-timbres landed 2026-05-14). 644/644 Vitest tests pass. Phase 19 (Language Switching) is the last feature phase before v1.1 ship.
+
 **Audit:** PASSED 27/27 requirements at `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md`. Cross-phase integration clean (6/6 wiring points WIRED). All E2E flows (5/5) complete. `tsc/lint/build` exit 0 at HEAD.
 
 **In flight:** v1.1 Customization — kicked off 2026-05-12. Scope: inner-ring UX symmetry (carry-forward warm-up) + customization umbrella (themes/CUST-01, audio timbres/CUST-02, visual variants/CUST-03, language/I18N-01).
@@ -172,4 +174,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-12 — v1.1 Customization milestone kicked off*
+*Last updated: 2026-05-14 — Phase 18 (Audio Timbres) complete*
