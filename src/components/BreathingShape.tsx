@@ -7,11 +7,12 @@
 // own lead-in vs Body internal dispatch. Unknown variant falls back to Orb
 // (default switch branch — defense in depth against cross-tab pollution of
 // Envelope.prefs.variant, though Phase 14 D-17 coerceVariant is the primary guard).
+// Phase 17 deviation: 'ring' replaced with 'diamond' (rotated-square geometry via clip-path).
 import type { SessionFrame } from '../domain/sessionMath'
 import type { VisualVariantId } from '../domain/settings'
 import { OrbShape } from './OrbShape'
 import { SquareShape } from './SquareShape'
-import { RingShape } from './RingShape'
+import { DiamondShape } from './DiamondShape'
 
 export interface BreathingShapeProps {
   variant?: VisualVariantId
@@ -30,8 +31,8 @@ export function BreathingShape({ variant = 'orb', frame, leadInDigit }: Breathin
   switch (variant) {
     case 'square':
       return <SquareShape frame={frame} leadInDigit={leadInDigit} />
-    case 'ring':
-      return <RingShape frame={frame} leadInDigit={leadInDigit} />
+    case 'diamond':
+      return <DiamondShape frame={frame} leadInDigit={leadInDigit} />
     case 'orb':
     default:
       return <OrbShape frame={frame} leadInDigit={leadInDigit} />
