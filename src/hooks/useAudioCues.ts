@@ -20,12 +20,11 @@ import {
   type AudioEngine,
   type AudioStatus,
 } from '../audio/audioEngine'
-// Phase 18 Plan 03 interim scaffold: AudioEngineOptions.timbre is now required (D-08).
-// Plan 04 will replace these defaulted call sites with a proper `timbreRef` capture
-// + `start(plan, timbre)` parameter (CONTEXT.md §Phase Boundary item 5). Defaulting
-// to DEFAULT_TIMBRE here preserves the v1.0.1 Bowl audio path verbatim — TIMBRE-02
-// byte-identical proof holds across this transitional commit.
-import { DEFAULT_TIMBRE } from '../domain/settings'
+// Phase 18 Plan 04: TimbreId is captured per-session via `start(plan, timbre)` and
+// stored synchronously into `timbreRef` BEFORE any await (D-08). DEFAULT_TIMBRE is
+// the ref's initial value — overwritten at the user's first Start click. The hook
+// NEVER reads user prefs for timbre — caller (App.tsx in Plan 06) owns the storage read.
+import { DEFAULT_TIMBRE, type TimbreId } from '../domain/settings'
 
 export type { AudioStatus }
 
@@ -47,8 +46,14 @@ export interface UseAudioCues {
   muted: boolean
   /** Called from the Start session click handler (user gesture). Awaits AC creation. May fail
    *  → audioAvailable=false, status='failed'. Returns the audioTime of the first In cue
-   *  (or null if AC failed). */
-  start(this: void, plan: BreathingPlan): Promise<number | null>
+   *  (or null if AC failed).
+   *
+   *  `timbre`: TimbreId captured at session start (D-08); engine uses this value for every
+   *  cue in the session including reconstruction (D-11) — App.tsx passes prefs.timbre
+   *  snapshot. The hook freezes the value into `timbreRef` BEFORE any await; a cross-tab
+   *  prefs mutation during the gesture chain or during a later iOS visibility-suspend
+   *  recovery NEVER leaks into the active session. */
+  start(this: void, plan: BreathingPlan, timbre: TimbreId): Promise<number | null>
   /** Called when session ends. Closes AC (D-11). Resets status to 'idle'. */
   stop(this: void): Promise<void>
   /** Toggle mute. Pass true to mute, false to unmute. */
@@ -106,6 +111,15 @@ export function useAudioCues(
   useEffect(() => {
     mutedRef.current = muted
   }, [muted])
+  // Phase 18 D-08: mirror of mutedRef's synchronous-pre-await capture posture for
+  // the session timbre. Set inside start(plan, timbre) BEFORE the first await; read
+  // inside reconstructEngine BEFORE any await (mirror of `currentMuted = mutedRef.current`
+  // at line 292). NO useEffect mirror needed — timbreRef is only ever set
+  // synchronously inside start() and read synchronously inside reconstructEngine().
+  // Unlike mutedRef, there is no React state that drives it; App.tsx passes the
+  // snapshot directly to start(). D-11: reconstruction NEVER re-reads user prefs —
+  // the session's first-Start choice is preserved across iOS visibility-suspend recovery.
+  const timbreRef = useRef<TimbreId>(DEFAULT_TIMBRE)
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
 
   // Plan 06 D-34: high-level audio-path health surface.
@@ -207,7 +221,7 @@ export function useAudioCues(
   }, [])
 
   const start = useCallback(
-    async (plan: BreathingPlan): Promise<number | null> => {
+    async (plan: BreathingPlan, timbre: TimbreId): Promise<number | null> => {
       // Defensive: if the hook user accidentally calls start() twice without stop(),
       // return the cached firstInCueTime from the ORIGINAL schedule (WR-05), not a
       // freshly-projected "now + 3" — those two values drift apart by the time
@@ -219,9 +233,13 @@ export function useAudioCues(
       // D-08 (AUDIO-06): 'starting' literal removed from AudioStatus union (Plan 01).
       // Transition goes 'idle' → 'lead-in' (success) | 'failed' directly.
       try {
-        // Phase 18 Plan 03 interim scaffold: hard-code DEFAULT_TIMBRE until Plan 04
-        // threads `timbre` through `start(plan, timbre)` and captures into `timbreRef`.
-        const engine = await createAudioEngine({ timbre: DEFAULT_TIMBRE, onStateChange: handleStateChange })
+        // Phase 18 D-08: synchronous pre-await capture — mirror of mutedRef posture
+        // (mutedRef-mirror effect + `mutedRef.current` read in reconstructEngine at
+        // line 292). The session's timbre is FROZEN here BEFORE the await so a
+        // cross-tab prefs mutation during the gesture chain or during the engine
+        // construction cannot leak into the active session (D-11 invariant).
+        timbreRef.current = timbre
+        const engine = await createAudioEngine({ timbre, onStateChange: handleStateChange })
         engineRef.current = engine
         // HOOKS-01 / D-11: read mute from mutedRef so `start` does NOT depend on
         // the React `muted` state. The ref-mirror effect above keeps the ref in
@@ -298,6 +316,14 @@ export function useAudioCues(
     // from mutedRef removes `muted` from this useCallback's dep array
     // (callback identity stays stable across setMuted toggles).
     const currentMuted = mutedRef.current
+    // Phase 18 D-11: capture session's original timbre BEFORE any await. Reconstruction
+    // NEVER re-reads user prefs for timbre — the session's first-Start choice is
+    // preserved across iOS visibility-suspend recovery. Mirror of `currentMuted`
+    // posture immediately above; if a cross-tab prefs change fires during the
+    // await below, the new engine still receives this captured value, NOT the
+    // fresh prefs value. (D-11 invariant — asserted by the
+    // "reconstructEngine reuses timbreRef.current" test below.)
+    const currentTimbre = timbreRef.current
     // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting —
     // mirrors stop()'s posture so a fast call into setMuted() during the window
     // does not deref a closing AC.
@@ -308,11 +334,9 @@ export function useAudioCues(
 
     let newEngine: AudioEngine
     try {
-      // Phase 18 Plan 03 interim scaffold: hard-code DEFAULT_TIMBRE. Plan 04 will
-      // replace this with `const currentTimbre = timbreRef.current` capture before
-      // the await — mirror of the `const currentMuted = mutedRef.current` posture
-      // at line 292. Reconstruction will then inherit the session's original timbre.
-      newEngine = await createAudioEngine({ timbre: DEFAULT_TIMBRE, onStateChange: handleStateChange })
+      // Phase 18 D-11: passes the session-captured timbre (NOT a fresh prefs read)
+      // to the new engine. The session's first-Start choice flows through reconstruction.
+      newEngine = await createAudioEngine({ timbre: currentTimbre, onStateChange: handleStateChange })
     } catch {
       // D-10 terminal fallback: createAudioEngine threw. Fire-and-forget close
       // the old engine (gesture already consumed by the failed construction).
