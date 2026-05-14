@@ -409,13 +409,11 @@
   border-radius: 18%;
 }
 
-/* Phase 17 deviation: Diamond variant — rotated-square via clip-path (Option A).
+/* Phase 17 deviation: Diamond variant — clip-path on host and gradient layers.
    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) clips the .orb host
    and its gradient layers into a 4-pointed diamond shape. The inline transform
    stack (translate3d + scale) is untouched — Safari scale-interpolation safe
    (see RingShape.tsx D-20 / Phase 5.1 Plan 04 hotfix comments).
-   Markers also receive the same clip-path so they trace the diamond outline
-   at MAX_SCALE (outer) and MIN_SCALE (inner) boundaries.
    D-13 zero new color tokens: linear-gradient reuses --color-orb-{in,out}-{from,to}. */
 [data-variant='diamond'] .orb {
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
@@ -426,11 +424,53 @@
 [data-variant='diamond'] .orb-layer--out {
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
-[data-variant='diamond'] .shape-marker--outer {
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-}
+
+/* Phase 17 deviation iteration 2: Diamond markers — inscribed rotated-square geometry.
+   Markers MUST NOT use clip-path: the clip-path keeps only the polygon interior,
+   and the 1.5px CSS border ring (which lives OUTSIDE the polygon's vertex-to-vertex
+   extent for a rectangle) is almost entirely clipped away, leaving four tiny specks
+   at the diamond vertices instead of a continuous outline.
+
+   Fix: model each marker as a normal square rotated 45° around its center.
+   A rotated square of side S has corner-to-center distance S × √2 / 2. To land marker
+   corners at the host diamond's vertex positions (outer edge midpoints at H/2 from
+   center for the outer marker, H × MIN_SCALE / 2 for the inner marker), plus the
+   existing 1.5px outward offset (Safari peak-inhale boundary fix), we set:
+     outer: S = (var(--orb-size) + 3px) / √2
+     inner: S = (var(--orb-size) × MIN_SCALE + 3px) / √2
+
+   The four-edge inset / percentage width+height inline styles are removed from
+   DiamondShape.tsx (Option Y); CSS owns all marker positioning for diamond.
+
+   border-radius: 0 overrides the rounded-full className (border-radius: 9999px) that
+   may be present on the marker spans. Without this reset the rotated border would
+   still have rounded corners. The inset: auto reset ensures the base .shape-marker--*
+   four-edge fallback (if any) is cancelled; transform provides all positioning. */
+[data-variant='diamond'] .shape-marker--outer,
 [data-variant='diamond'] .shape-marker--inner {
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  /* Cancel Orb/Square four-edge inset-based positioning */
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  /* Cancel rounded-full — markers must be square before rotation */
+  border-radius: 0;
+}
+
+[data-variant='diamond'] .shape-marker--outer {
+  /* Outer marker: corners at host diamond vertices + 1.5px outward.
+     Square side S = (orb-size + 3px) / √2 so rotated vertices reach
+     (orb-size + 3px) / 2 from center — 1.5px outside the orb edge midpoints. */
+  width: calc((var(--orb-size) + 3px) / 1.41421356);
+  height: calc((var(--orb-size) + 3px) / 1.41421356);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+[data-variant='diamond'] .shape-marker--inner {
+  /* Inner marker: corners at MIN_SCALE × host diamond vertices + 1.5px outward.
+     MIN_SCALE = 0.58 (mirrors TS MIN_SCALE in shapeConstants.ts). */
+  width: calc((var(--orb-size) * 0.58 + 3px) / 1.41421356);
+  height: calc((var(--orb-size) * 0.58 + 3px) / 1.41421356);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 /* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.

@@ -59,7 +59,7 @@ describe('DiamondShape', () => {
     expect(root).toHaveAttribute('data-variant', 'diamond')
   })
 
-  // Geometry: Diamond uses clip-path (Option A) — no rounded-full on .orb host
+  // Geometry: Diamond uses clip-path (Option A) on host/layers — no rounded-full on .orb host
   it('.orb div does NOT have rounded-full class (diamond shape via CSS clip-path, not border-radius)', () => {
     const { container } = render(<DiamondShape frame={sampleFrame} />)
     const orb = container.querySelector('.orb')
@@ -105,19 +105,21 @@ describe('DiamondShape', () => {
     expect(inner!.classList.contains('rounded-full')).toBe(false)
   })
 
-  // Anchoring: Phase 5.1 D-12 / D-20 / D-21 structural contract
-  it('.shape-marker--outer has explicit four-edge offsets (-1.5px) (D-21 + D-12)', () => {
+  // Anchoring: Phase 17 iteration 2 — diamond markers use CSS inscribed rotated-square
+  // geometry. No inline style is emitted on marker spans; CSS [data-variant='diamond']
+  // .shape-marker--outer/--inner owns all positioning (Option Y).
+  it('.shape-marker--outer has NO inline style (CSS owns diamond marker positioning, iteration 2)', () => {
     const { container } = render(<DiamondShape frame={sampleFrame} />)
     const outer = container.querySelector('.shape-marker--outer')
     expect(outer).not.toBeNull()
     // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const style = outer!.getAttribute('style') ?? ''
-    expect(style).toMatch(/left:\s*-1\.5px/)
-    expect(style).toMatch(/top:\s*-1\.5px/)
-    expect(style).toMatch(/right:\s*-1\.5px/)
-    expect(style).toMatch(/bottom:\s*-1\.5px/)
-    expect(style).not.toMatch(/(^|;)\s*inset\s*:/)
+    // No four-edge inset — CSS rule owns positioning for diamond variant
+    expect(style).not.toMatch(/left:\s*-1\.5px/)
+    expect(style).not.toMatch(/top:\s*-1\.5px/)
+    expect(style).not.toMatch(/right:\s*-1\.5px/)
+    expect(style).not.toMatch(/bottom:\s*-1\.5px/)
   })
 
   it('.orb div uses four-edge anchoring (left:0 right:0 top:0 bottom:0), NOT inset-0 (D-20)', () => {
@@ -137,18 +139,18 @@ describe('DiamondShape', () => {
     expect(orb!).not.toHaveClass('inset-0')
   })
 
-  // Inner marker dimensions
-  it('.shape-marker--inner width/height are MIN_SCALE*100% (same as Orb)', () => {
+  // Inner marker dimensions: Phase 17 iteration 2 — CSS owns width/height for diamond
+  it('.shape-marker--inner has NO inline width/height (CSS owns diamond marker sizing, iteration 2)', () => {
     const { container } = render(<DiamondShape frame={sampleFrame} />)
     const inner = container.querySelector('.shape-marker--inner')
     expect(inner).not.toBeNull()
     // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const style = inner!.getAttribute('style') ?? ''
-    // 58% = MIN_SCALE * 100; jsdom may serialize 0.58*100 as 57.99...% due to
-    // floating-point — match the leading digits rather than the exact value.
-    expect(style).toMatch(/width:\s*5[78](\.\d+)?%/)
-    expect(style).toMatch(/height:\s*5[78](\.\d+)?%/)
+    // No inline width/height — CSS [data-variant='diamond'] .shape-marker--inner
+    // owns sizing via calc((var(--orb-size) * 0.58 + 3px) / 1.41421356)
+    expect(style).not.toMatch(/width:\s*5[78](\.\d+)?%/)
+    expect(style).not.toMatch(/height:\s*5[78](\.\d+)?%/)
   })
 
   // Kinematics: GPU-promoted scale transform

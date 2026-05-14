@@ -21,16 +21,19 @@ export function DiamondShape({ frame, leadInDigit }: DiamondShapeProps) {
   return <DiamondBody frame={frame!} />
 }
 
-// Diamond geometry approach: Option A — clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)
-// applied on the .orb host (rotated-square / 4-pointed diamond). The clip-path is set via
-// CSS [data-variant='diamond'] .orb { clip-path: ... } in theme.css, so the inline transform
-// stack (translate3d + scale) is unchanged — this avoids polluting the Safari
-// scale-interpolation that Phase 5.1 Plan 04 fixed (D-20 / post-UAT hotfix).
-// The .shape-marker--outer and .shape-marker--inner spans also receive the same
-// clip-path override via [data-variant='diamond'] .shape-marker--{outer,inner} in theme.css
-// so the markers trace the diamond outline at MAX_SCALE and MIN_SCALE boundaries.
-// Markers retain their -1.5px four-edge inset; clip-path applies after positioning.
-// D-13 zero new color tokens: reuses linear-gradient(135deg, var(--color-orb-{in,out}-from), var(--color-orb-{in,out}-to)).
+// Diamond geometry approach: clip-path on the .orb host and gradient layers (Option A).
+// CSS [data-variant='diamond'] .orb { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) }
+// in theme.css clips the host to a 4-pointed diamond. The inline transform stack
+// (translate3d + scale) is unchanged — avoids polluting the Safari scale-interpolation
+// that Phase 5.1 Plan 04 fixed (D-20 / post-UAT hotfix).
+//
+// Markers use inscribed rotated-square geometry (iteration 2 fix):
+// clip-path CANNOT be used on markers — the polygon interior clips away most of the
+// 1.5px rectangular border, leaving only four tiny vertex specks. Instead, theme.css
+// renders markers as normal squares rotated 45°, sized so their corners land at the
+// host diamond's vertex positions (outer: orb-size boundary; inner: MIN_SCALE boundary).
+// Marker inline styles are NOT emitted here — CSS [data-variant='diamond'] owns all
+// marker positioning (Option Y). D-13 zero new color tokens.
 function DiamondBody({ frame }: { frame: SessionFrame }) {
   const reducedMotion = usePrefersReducedMotion()
 
@@ -55,20 +58,15 @@ function DiamondBody({ frame }: { frame: SessionFrame }) {
       }}
     >
       {/* D-04 + Phase 5.1 D-10/D-12: outer reference marker at MAX_SCALE boundary.
-          The 1.5px border (theme.css `.shape-marker--outer { border-width: 1.5px }`) lives
-          INSIDE the box under the global `border-box` sizing. With `inset-0` the border's
-          outer edge sat 1.5px inside the 100% container; the orb at scale(MAX_SCALE = 1.0)
-          fills the 100% container exactly, leaving a Safari-visible gap at peak inhale.
-          `inset: -1.5px` shifts the border-box outward by exactly the border width so the
-          border's outer edge meets the orb at scale(1.0) on Safari + Chromium + Firefox.
-          Mirror in DiamondLeadIn below — both render sites must match (D-12).
-          Phase 17 deviation: Diamond variant — `rounded-full` dropped; the
-          `[data-variant='diamond'] .shape-marker--outer { clip-path: polygon(...) }`
-          CSS rule (theme.css) applies the diamond clip. No border-radius class needed. */}
+          Phase 17 iteration 2: diamond markers use inscribed rotated-square geometry
+          (not clip-path). CSS [data-variant='diamond'] .shape-marker--outer owns all
+          positioning: center-anchored (left:50% top:50%), sized at (orb-size+3px)/√2,
+          rotated 45° so corners land at the host diamond's edge midpoints + 1.5px outward.
+          No inline style — CSS rule takes full control (Option Y).
+          Mirror in DiamondLeadIn below — both render sites must match (D-12). */}
       <span
         aria-hidden="true"
         className="shape-marker--outer absolute border-solid"
-        style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
       {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07).
           Phase 5.1 Plan 04 D-20 + post-UAT hotfix: drop `inset-0` and use explicit
@@ -105,17 +103,13 @@ function DiamondBody({ frame }: { frame: SessionFrame }) {
       </div>
       {/* D-04 + 260510-tc9 Bug 1: inner reference marker at MIN_SCALE boundary.
           Rendered AFTER the orb so it sits on top of the opaque gradient fill.
-          WR-03: position explicitly with left/top + translate centering.
-          Phase 17 deviation: Diamond variant — `rounded-full` dropped; the
-          `[data-variant='diamond'] .shape-marker--inner { clip-path: polygon(...) }`
-          CSS rule applies the diamond clip. */}
+          Phase 17 iteration 2: CSS [data-variant='diamond'] .shape-marker--inner owns
+          all positioning: center-anchored, sized at (orb-size×0.58+3px)/√2, rotated 45°
+          so corners land at MIN_SCALE diamond vertices + 1.5px outward. No inline style
+          — CSS rule takes full control (Option Y). */}
       <span
         aria-hidden="true"
-        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-solid"
-        style={{
-          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
-          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
-        }}
+        className="shape-marker--inner absolute border-solid"
       />
       {/* D-03: phase label centered inside the orb at large display size */}
       <span
@@ -157,13 +151,12 @@ function DiamondLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       }}
     >
       {/* Outer reference marker (Phase 2 D-04 + Phase 5.1 D-10/D-12).
-          Mirrors DiamondBody above — both render sites must match
-          or the Safari outer-ring gap reappears during the 3-2-1 countdown.
-          Phase 17 deviation: Diamond variant — `rounded-full` dropped; CSS clip-path handles shape. */}
+          Mirrors DiamondBody above — both render sites must match (D-12).
+          Phase 17 iteration 2: no inline style — CSS [data-variant='diamond']
+          .shape-marker--outer owns all positioning (inscribed rotated-square). */}
       <span
         aria-hidden="true"
         className="shape-marker--outer absolute border-solid"
-        style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
       {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
           is rendered (no Out crossfade). Phase 5.1 Plan 04 D-20 + D-22 +
@@ -187,15 +180,10 @@ function DiamondLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
       </div>
       {/* Inner reference marker (Phase 2 D-04 + 260510-tc9 Bug 1) — rendered AFTER
           the orb so it sits on top of the opaque gradient fill. D-22 mirror of
-          DiamondBody.
-          Phase 17 deviation: `rounded-full` dropped; CSS clip-path handles diamond shape. */}
+          DiamondBody. Phase 17 iteration 2: no inline style — CSS owns positioning. */}
       <span
         aria-hidden="true"
-        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-solid"
-        style={{
-          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
-          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
-        }}
+        className="shape-marker--inner absolute border-solid"
       />
       {/* D-14: digit in the same large-display position as the In/Out label,
           one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
