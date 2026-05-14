@@ -70,9 +70,9 @@ export function isValidTimbre(v: unknown): v is TimbreId {
 
 export const DEFAULT_TIMBRE: TimbreId = 'bowl'
 
-export type VisualVariantId = 'orb' | 'square' | 'ring'
+export type VisualVariantId = 'orb' | 'square' | 'diamond'
 
-export const VARIANT_OPTIONS = ['orb', 'square', 'ring'] as const satisfies readonly VisualVariantId[]
+export const VARIANT_OPTIONS = ['orb', 'square', 'diamond'] as const satisfies readonly VisualVariantId[]
 
 export function isValidVariant(v: unknown): v is VisualVariantId {
   return typeof v === 'string' && (VARIANT_OPTIONS as readonly string[]).includes(v)
