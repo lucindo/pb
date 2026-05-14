@@ -4,8 +4,9 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
-import type { VisualVariantId } from '../domain/settings'
+import type { TimbreId, VisualVariantId } from '../domain/settings'
 
 function settingGroup(name: string) {
   return screen.getByRole('group', { name })
@@ -450,5 +451,112 @@ describe('VARIANT-03 capture-at-session-start', () => {
 
     const leadInShape = screen.getByRole('img', { name: 'Lead-in: 3' })
     expect(leadInShape).toHaveAttribute('data-variant', 'square')
+  })
+})
+
+// TIMBRE-03 capture-at-Start integration tests (Phase 18 Plan 06).
+// Mirror of the VARIANT-03 capture-at-Start block above — seeds localStorage with a
+// chosen timbre BEFORE App renders, clicks Start, and asserts that the timbre threaded
+// through useAudioCues.start (→ createAudioEngine → scheduleInCueForTimbre) is the one
+// captured at Start, not any later mid-session mutation. The assertion target is the
+// 4th argument to cueSynth.scheduleInCueForTimbre — that's the timbre parameter the
+// engine receives at construction time (audioEngine.ts: sessionTimbre captured-once).
+
+function seedTimbre(timbre: TimbreId): void {
+  const envelope = {
+    version: 1,
+    prefs: { theme: 'system', timbre, variant: 'orb', locale: 'en' },
+  }
+  window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
+}
+
+describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not affect active session', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    window.localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+    window.localStorage.clear()
+  })
+
+  it('TIMBRE-03: captures timbre at Start; mid-session prefs change does not affect active session', async () => {
+    // (a) Pre-seed prefs.timbre='bell' BEFORE App renders. Phase 18 D-09/D-10: onStartClick
+    //     reads loadPrefs().timbre inside the user-gesture chain (mirror of sessionVariantRef
+    //     capture at line ~338 of App.tsx).
+    seedTimbre('bell')
+    // (b) Spy on the dispatch surface (scheduleInCueForTimbre). The engine calls this for
+    //     the lead-in's first In cue at audioEngine.ts:179 with the captured sessionTimbre.
+    //     The 4th argument (index 3) IS the timbre — D-08 capture-at-construction proof.
+    const scheduleInSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+
+    render(<App />)
+
+    // (c) Click Start; flush microtasks + advance past the 3 s lead-in so audioStart's
+    //     await resolves and scheduleInCueForTimbre is invoked from scheduleLeadIn.
+    await startAndAdvancePastLeadIn()
+
+    // (d) Verify: the FIRST scheduleInCueForTimbre call received timbre='bell' (the
+    //     Start-time snapshot), not any other value.
+    expect(scheduleInSpy).toHaveBeenCalled()
+    const firstCallArgs = scheduleInSpy.mock.calls[0]
+    // Reason: presence asserted by toHaveBeenCalled() above; firstCallArgs[3] is timbre.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(firstCallArgs![3]).toBe('bell')
+
+    // (e) Mid-session pref change: write prefs.timbre='chime' to localStorage and fire
+    //     the 'storage' event. This simulates a cross-tab pref change — if onStartClick
+    //     re-read loadPrefs() OR the engine re-read prefs during reconstruction (D-11
+    //     violation), subsequent cue scheduling would observe 'chime'. The captured
+    //     timbreRef.current inside useAudioCues must continue to dispatch 'bell'.
+    const chimeEnvelope = JSON.stringify({
+      version: 1,
+      prefs: { theme: 'system', timbre: 'chime', variant: 'orb', locale: 'en' },
+    })
+    act(() => {
+      window.localStorage.setItem(STATE_KEY, chimeEnvelope)
+      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: chimeEnvelope }))
+    })
+
+    // (f) Advance time past the first Out boundary (≈ 4.36 s into the running phase at
+    //     default BPM 5.5, 40:60 ratio). scheduleOutCueForTimbre fires next via
+    //     audioEngine.scheduleNextCue (line 194) with the captured sessionTimbre. Both
+    //     dispatch functions must continue to receive 'bell' for the duration of this
+    //     session — the mid-session change is ignored end-to-end.
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    await act(async () => {
+      vi.advanceTimersByTime(5000)
+      await Promise.resolve()
+    })
+
+    // (g) Every In cue scheduled so far must have used 'bell'. Likewise the Out cue.
+    for (const call of scheduleInSpy.mock.calls) {
+      expect(call[3]).toBe('bell')
+    }
+    if (scheduleOutSpy.mock.calls.length > 0) {
+      for (const call of scheduleOutSpy.mock.calls) {
+        expect(call[3]).toBe('bell')
+      }
+    }
+  })
+
+  it('TIMBRE-02 zero-regression at App layer — Bowl is the dispatched timbre when prefs.timbre is the DEFAULT_TIMBRE "bowl" (or absent from localStorage entirely)', async () => {
+    // No seedTimbre call — localStorage cleared in beforeEach; loadPrefs() coerces to DEFAULT_TIMBRE='bowl'.
+    const scheduleInSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+
+    render(<App />)
+
+    await startAndAdvancePastLeadIn()
+
+    // Bowl byte-identical proof at the App layer: a user who never opens SettingsDialog
+    // has prefs.timbre='bowl', so audioStart(plan, 'bowl') routes through the engine's
+    // bowl path verbatim — zero behavior change from v1.0.1.
+    expect(scheduleInSpy).toHaveBeenCalled()
+    const firstCallArgs = scheduleInSpy.mock.calls[0]
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(firstCallArgs![3]).toBe('bowl')
   })
 })
