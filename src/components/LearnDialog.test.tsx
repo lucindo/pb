@@ -144,7 +144,7 @@ describe('LearnDialog — external link security', () => {
 
   it('renders all keyVideos links with correct security attributes', () => {
     const { container } = renderDialog({ open: true })
-    const keyVideos = LEARN_CONTENT.links.keyVideos
+    const keyVideos = LEARN_CONTENT.en.links.keyVideos
     // Every key video link must carry both security attributes.
     keyVideos.forEach((video) => {
       const link = container.querySelector(`a[href="${video.url}"]`)

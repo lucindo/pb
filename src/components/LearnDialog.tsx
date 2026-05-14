@@ -1,11 +1,14 @@
 import { useEffect, useRef, type MouseEventHandler } from 'react'
 
 import { LEARN_CONTENT } from '../content/learnContent'
+import { LOCKED_COPY } from '../content/lockedCopy'
 
 // CONTEXT.md D-05: native <dialog> with imperative showModal/close.
 // D-07: every external link carries target="_blank" rel="noopener noreferrer".
 // D-08: three-section explainer in fixed order (hrv → timing → forrest).
-// D-11: locked phrase "inspired by Forrest's teachings" in forrest section.
+// Phase 19 D-03/D-04 stop-gap: locked Forrest phrase + affiliation now read from
+//   LOCKED_COPY.en (direct access); Plan 08 will swap .en stop-gap for prop-driven
+//   lockedCopy resolved via useLocale(). D-05/D-07/D-08/D-14/D-15 attribution below.
 // D-14: two disclaimer micro-lines inline (not in learnContent.ts).
 // D-15: disclaimer copy lives ONLY inside this modal — not on the main screen.
 // Deviation D-12 amendment: six link keys rendered in order:
@@ -64,7 +67,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
     }
   }
 
-  const { explainer, links } = LEARN_CONTENT
+  const { explainer, links } = LEARN_CONTENT.en
 
   return (
     <dialog
@@ -91,6 +94,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             {explainer.forrest.body.split('\n\n').map((paragraph, idx) => (
               <p key={idx} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
             ))}
+            <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{LOCKED_COPY.en.inspiredByForrest}</p>
           </div>
         </div>
 
@@ -168,7 +172,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             micro-line was moved from this modal to the main breathing card
             (D-15 amendment). Only the affiliation micro-line remains here. */}
         <p className="text-center text-xs text-[var(--color-breathing-muted)]">
-          Independent project. Not affiliated with Forrest Knutson.
+          {LOCKED_COPY.en.affiliationLine}
         </p>
 
         {/* T-06-08 mitigation: default focus lands here (Close), not on any link.
