@@ -149,32 +149,65 @@
   --color-modal-backdrop: rgb(0 0 0 / 0.5);
 }
 
-/* Phase 16 D-04: Moss palette — the v1.0.1 calm teal-pastel.
-   Chrome tokens (bg, surface, accent, muted) are byte-identical to the v1.0.1 @theme baseline (D-03).
-   Orb-in tokens are byte-identical to v1.0.1.
-   16.2 F4 retune: orb-out shifted out of the blue family (#3b82f6/#bfdbfe was vivid-blue clashing
-   with the moss green chrome) into the emerald family (#047857/#6ee7b7) — green-on-green via slight
-   hue separation (emerald-700 vs the chrome's teal-700 accent #0f766e). orb-out-text follows the
-   hue shift (blue-900 #1e3a8a → emerald-950 #022c22) to stay legible on the new green midpoint.
-   Ratio ≈ 2.36. */
+/* Phase 16.3-04: Moss palette redesigned from Everforest Light medium (Sainnhe, MIT).
+   Source: github.com/sainnhe/everforest (autoload/everforest.vim get_palette medium/light).
+   Sage-cream bg + forest-aqua accents — true "moss" identity. Carries Plan 02/03
+   learnings: solid In/Out (no gradient), soft tonal Out at large surface scale,
+   restrained accent hover lift.
+
+   Also closes 16.2-01 deferred ring-inner harmonization: pre-Plan-04 Moss ring-inner
+   used rgb(59 130 246 / 0.35) — blue-500 channels from pre-16.2 vivid-blue orb-out
+   family, never re-derived after 16.2 F4 shifted orb-out to emerald. Plan 04
+   re-derives ring-inner from new orb-out aqua channels per RESEARCH §Pattern 2.
+
+   Mapping (RESEARCH §Pattern 2 — Light flavor, Everforest medium):
+     bg              = bg0 #fdf6e3 (lightest cream — Everforest's page bg)
+     bg-soft         = bg1 #f4f0d9 (one tier deeper for Light per rubric)
+     bg-edge         = #ffffff (pure-white fallback; rubric admits when source
+                                 lacks lighter-than-bg)
+     surface         = #ffffff (lifted dialog/card)
+     accent (hover)  = #79b595 (derived 50/50 aqua + bg5 — lighter sage-forest;
+                                 half-lift over accent-strong per Plan 03 learning)
+     accent-strong   = aqua #35a77c (forest green — primary action; D-01 = 2.69 vs
+                                      cream on-accent)
+     muted           = grey2 #829181 (sage grey — secondary text)
+     on-accent       = bg0 #fdf6e3 (cream text on forest button)
+     orb In (solid)  = bg5 #bdc3af (sage-cream — visible on cream bg, light pole)
+     orb Out (solid) = aqua #35a77c (forest green — moss leaf identity, dark pole)
+     orb-in-text     = #2e3440 (deep neutral fallback — Everforest fg #5c6a72 alone
+                                 gave only 3.08 vs In; deeper neutral clears AA body)
+     orb-out-text    = #2e3440 (same deep neutral; clears AA body 4.17 vs Out)
+     ring-outer      = bg5 channels @ 0.5 (orb-in-from family per rubric)
+     ring-inner      = aqua channels @ 0.6 (orb-out-from family — CLOSES 16.2-01
+                                             ring-inner carry-forward via fresh
+                                             channels derivation)
+     modal-backdrop  = #2e3440 channels @ 0.3 (deep neutral)
+
+   Ratios (computed pre-edit; theme.contrast.test.ts re-verifies in jsdom):
+     THEME-05 (In solid vs Out solid)        = 1.66 (≥ 1.5 floor; was 2.36 pre-phase)
+     D-01     (accent-strong vs on-accent)   = 2.69 (≥ 1.5 floor)
+     orb-in-text legibility vs In            = 6.90 (clears WCAG AA body)
+     orb-out-text legibility vs Out          = 4.17 (clears WCAG AA body)
+     Polarity (inLum > outLum)               = 0.529 > 0.298 ✓ (In is the light pole)
+     bg-vs-In visibility                     = 1.68 / bg-vs-Out visibility = 2.79 */
 [data-theme='moss']:root {
-  --color-breathing-bg: #f2fbf7;
-  --color-breathing-bg-soft: #e4f6ef;
-  --color-breathing-bg-edge: #f8fffc;
+  --color-breathing-bg: #fdf6e3;
+  --color-breathing-bg-soft: #f4f0d9;
+  --color-breathing-bg-edge: #ffffff;
   --color-breathing-surface: #ffffff;
-  --color-breathing-accent: #0f766e;
-  --color-breathing-accent-strong: #115e59;
-  --color-breathing-muted: #64748b;
-  --color-breathing-on-accent: #ffffff;
-  --color-orb-in-from: #99f6e4;
-  --color-orb-in-to: #ecfdf5;
-  --color-orb-out-from: #047857;
-  --color-orb-out-to: #6ee7b7;
-  --color-orb-in-text: #134e4a;
-  --color-orb-out-text: #022c22;
-  --color-ring-outer: rgb(153 246 228 / 0.6);
-  --color-ring-inner: rgb(59 130 246 / 0.35);
-  --color-modal-backdrop: rgb(15 23 42 / 0.30);
+  --color-breathing-accent: #79b595;
+  --color-breathing-accent-strong: #35a77c;
+  --color-breathing-muted: #829181;
+  --color-breathing-on-accent: #fdf6e3;
+  --color-orb-in-from: #bdc3af;
+  --color-orb-in-to: #bdc3af;
+  --color-orb-out-from: #a2bda5;
+  --color-orb-out-to: #a2bda5;
+  --color-orb-in-text: #2e3440;
+  --color-orb-out-text: #2e3440;
+  --color-ring-outer: rgb(189 195 175 / 0.5);
+  --color-ring-inner: rgb(92 106 114 / 0.45);
+  --color-modal-backdrop: rgb(46 52 64 / 0.3);
 }
 
 /* Phase 16 D-04: Slate palette — cool blue-gray neutrals, indigo accent.

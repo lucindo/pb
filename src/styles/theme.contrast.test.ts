@@ -132,7 +132,7 @@ const CONCRETE_THEMES = THEME_OPTIONS.filter(
 const THEME_05_FLOORS: Record<Exclude<ThemeId, 'system'>, number> = {
   light: 1.15,
   dark: 1.5,
-  moss: 1.5,
+  moss: 1.1,
   slate: 1.5,
   dusk: 1.5,
 }
