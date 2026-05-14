@@ -258,40 +258,64 @@
   --color-modal-backdrop: rgb(104 112 154 / 0.30);
 }
 
-/* Phase 16 D-04: Dusk palette — warm violet/plum background, amber/golden accent.
-   Background: violet-950/violet-900 family (#2e1065/#4c1d95). Accent: amber-400 (#fbbf24).
-   16.2 F6+F7 coupled retune:
-   - F6: orb-in shifted from violet-100/purple-50 (#ede9fe/#faf5ff, near-white that punched
-     through the deep-purple chrome) to violet-200/violet-100 (#ddd6fe/#ede9fe) — still the
-     light/airy In pole, but a deeper lavender that respects the violet-950 chrome instead of
-     reading as a stark white blob.
-   - F7: orb-out softened from amber-600/amber-300 (#d97706/#fcd34d) to amber-700/amber-200
-     (#b45309/#fde68a) — the to-stop creamy amber-200 reads softer than the saturated amber-300
-     to-stop; the wider luminance span (deeper from-stop, lighter to-stop) gives a softer falloff
-     than the original tighter-saturated pair.
-   - F6+F7 are coupled because the contrast guard sees both midpoints. Tuned jointly to keep
-     ratio ≥ 1.5 — In-mid lum drops 0.88 → 0.77; Out-mid lum 0.45 → 0.39. Ratio ≈ 1.85.
-   - orb-in-text #4c1d95 (violet-900) clears 8.57:1 vs new In midpoint (unchanged).
-   - orb-out-text #78350f (amber-900) clears 3.83:1 vs new Out midpoint — passes WCAG AA for
-     large-display text (countdown digit + active phase label render at large sizes); below 4.5
-     for body text, but the consumers are large-display. Kept unchanged. */
+/* Phase 16.3 Plan 06: Dusk palette redesigned from Rosé Pine Main
+   (rose-pine/rose-pine-palette MIT — main flavor). Replaces 16.1/16.2 ad-hoc
+   violet-950 + amber pairing with deliberately-curated Rosé Pine Main palette
+   (iris+gold combo — deep-violet bg + warm gold accent, the canonical Dusk
+   personality). Coupled In+Out tune (RESEARCH Pitfall 1 + 16.2 F6+F7 lesson).
+
+   Mapping (RESEARCH §Pattern 2 — Dark flavor):
+     bg              = base #191724 (darkest deep-violet)
+     bg-soft         = surface #1f1d2e (one tier LIGHTER for Dark)
+     bg-edge         = #000000 (pure-black fallback — no deeper Rosé Pine tone;
+                       Dark Nord precedent)
+     surface         = surface #1f1d2e (dialog/card)
+     accent          = #ebcfb6 (50/50 gold+text blend per convention #4 —
+                       restrained warm-cream hover, +0.066 luminance lift)
+     accent-strong   = gold #f6c177 (warm primary action)
+     muted           = subtle #908caa (mid-luminance secondary text)
+     on-accent       = base #191724 (dark text on light gold button)
+     orb In (solid)  = iris #c4a7e7 (light lavender — the LIGHT pole even in
+                       Dark palette per coupled-tune lesson)
+     orb Out (solid) = #5b4a3d (70% base + 30% gold per convention #3 —
+                       soft warm tonal Out at large surface scale; pure gold
+                       would read as alarm-saturated)
+     orb-in-text     = base #191724 (dark text on light iris In)
+     orb-out-text    = text #e0def4 (light text on dark warm Out — clears AA body)
+     ring-outer      = iris channels @ 0.5 (orb-in family; sits on dark bg
+                       so renders as bright violet halo)
+     ring-inner      = gold channels @ 0.45 (orb-out warm family — lighter
+                       than #5b4a3d Out so ring shows; same family per Pitfall 2;
+                       16.2 Dusk already harmonized, no carry-forward needed)
+     modal-backdrop  = pure-black @ 0.50 (deepest backdrop)
+
+   Coupled In+Out polarity verified (Pitfall 1 acute for Dusk):
+     L(In iris #c4a7e7)   = 0.446
+     L(Out #5b4a3d blend) = 0.075
+     polarity 0.446 > 0.075 ✓
+   THEME-05 = (0.446+0.05) / (0.075+0.05) = 3.97 (well above 1.5 floor;
+              huge margin gain vs 16.2's 1.85 thanks to deeper Out blend).
+   D-01     = gold #f6c177 vs base #191724 = 10.79.
+   orb-in-text legibility vs In  = 8.35 (AA body, vs 16.2's 8.57).
+   orb-out-text legibility vs Out = 6.36 (AA body — clears 4.5 floor, vs 16.2's
+              3.83 large-display-only — net legibility upgrade). */
 [data-theme='dusk']:root {
-  --color-breathing-bg: #2e1065;
-  --color-breathing-bg-soft: #4c1d95;
-  --color-breathing-bg-edge: #1e0550;
-  --color-breathing-surface: #3b0f8c;
-  --color-breathing-accent: #fbbf24;
-  --color-breathing-accent-strong: #f59e0b;
-  --color-breathing-muted: #a78bfa;
-  --color-breathing-on-accent: #1e0550;
-  --color-orb-in-from: #ddd6fe;
-  --color-orb-in-to: #ede9fe;
-  --color-orb-out-from: #b45309;
-  --color-orb-out-to: #fde68a;
-  --color-orb-in-text: #4c1d95;
-  --color-orb-out-text: #78350f;
-  --color-ring-outer: rgb(237 233 254 / 0.5);
-  --color-ring-inner: rgb(251 191 36 / 0.45);
+  --color-breathing-bg: #191724;
+  --color-breathing-bg-soft: #1f1d2e;
+  --color-breathing-bg-edge: #000000;
+  --color-breathing-surface: #1f1d2e;
+  --color-breathing-accent: #ebcfb6;
+  --color-breathing-accent-strong: #f6c177;
+  --color-breathing-muted: #908caa;
+  --color-breathing-on-accent: #191724;
+  --color-orb-in-from: #c4a7e7;
+  --color-orb-in-to: #c4a7e7;
+  --color-orb-out-from: #5b4a3d;
+  --color-orb-out-to: #5b4a3d;
+  --color-orb-in-text: #191724;
+  --color-orb-out-text: #e0def4;
+  --color-ring-outer: rgb(196 167 231 / 0.5);
+  --color-ring-inner: rgb(246 193 119 / 0.45);
   --color-modal-backdrop: rgb(0 0 0 / 0.50);
 }
 
