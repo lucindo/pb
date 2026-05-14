@@ -101,8 +101,8 @@ describe('running session display', () => {
     await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    const outerRing = shape.querySelector('[aria-hidden="true"].orb-ring--outer')
-    const innerRing = shape.querySelector('[aria-hidden="true"].orb-ring--inner')
+    const outerRing = shape.querySelector('[aria-hidden="true"].shape-marker--outer')
+    const innerRing = shape.querySelector('[aria-hidden="true"].shape-marker--inner')
     expect(outerRing).not.toBeNull()
     expect(innerRing).not.toBeNull()
   })

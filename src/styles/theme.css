@@ -361,7 +361,7 @@
   opacity: 1;
 }
 
-.orb-ring--outer {
+.shape-marker--outer {
   border-color: var(--color-ring-outer);
   border-width: 1.5px;
 }
@@ -378,14 +378,14 @@
      crossfade alone carries the substitute phase indicator (D-07). Historical note:
      ring was originally kept under reduced motion per Phase 7 UAT 2026-05-11; user
      UAT correction 2026-05-12 reversed this (D-03, D-12). */
-.orb-ring--inner {
+.shape-marker--inner {
   border-color: var(--color-ring-inner);
   border-width: 1.5px;
   opacity: 0;
   transition: opacity 400ms ease-in-out;
 }
 
-[data-phase='out'] .orb-ring--inner {
+[data-phase='out'] .shape-marker--inner {
   opacity: 1;
 }
 
@@ -424,7 +424,7 @@ dialog.modal-fade[open]::backdrop {
      silently nuke the JS-controlled MID_SCALE and render the orb at scale(1).
    - F3: dialog modal fade also disabled here (per UI-SPEC: "in reduced-motion,
      dialog appears immediately").
-   - Phase 13 (D-03): .orb-ring--inner is suppressed (display: none) — the inner
+   - Phase 13 (D-03): .shape-marker--inner is suppressed (display: none) — the inner
      reference ring carries no information when the orb is locked at MID_SCALE;
      the .orb-layer--out opacity crossfade remains the sole substitute phase cue. */
 @media (prefers-reduced-motion: reduce) {
@@ -432,7 +432,7 @@ dialog.modal-fade[open]::backdrop {
     transition: none !important;
   }
 
-  .orb-ring--inner {
+  .shape-marker--inner {
     display: none;
   }
 }

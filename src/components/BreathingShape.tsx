@@ -63,7 +63,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
       }}
     >
       {/* D-04 + Phase 5.1 D-10/D-12: outer reference ring at MAX_SCALE boundary.
-          The 1.5px border (theme.css `.orb-ring--outer { border-width: 1.5px }`) lives
+          The 1.5px border (theme.css `.shape-marker--outer { border-width: 1.5px }`) lives
           INSIDE the box under the global `border-box` sizing. With `inset-0` the border's
           outer edge sat 1.5px inside the 100% container; the orb at scale(MAX_SCALE = 1.0)
           fills the 100% container exactly, leaving a Safari-visible gap at peak inhale.
@@ -72,7 +72,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           Mirror in BreathingShapeLeadIn below — both render sites must match (D-12). */}
       <span
         aria-hidden="true"
-        className="orb-ring--outer absolute rounded-full border-solid"
+        className="shape-marker--outer absolute rounded-full border-solid"
         style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
       {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07).
@@ -124,7 +124,7 @@ function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
           grid items and is rendered inconsistently by older Safari. */}
       <span
         aria-hidden="true"
-        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
+        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
         style={{
           width: `${(MIN_SCALE * 100).toFixed(2)}%`,
           height: `${(MIN_SCALE * 100).toFixed(2)}%`,
@@ -173,7 +173,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
           or the Safari outer-ring gap reappears during the 3-2-1 countdown. */}
       <span
         aria-hidden="true"
-        className="orb-ring--outer absolute rounded-full border-solid"
+        className="shape-marker--outer absolute rounded-full border-solid"
         style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
       {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
@@ -204,7 +204,7 @@ function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
           BreathingShapeBody. */}
       <span
         aria-hidden="true"
-        className="orb-ring--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
+        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
         style={{
           width: `${(MIN_SCALE * 100).toFixed(2)}%`,
           height: `${(MIN_SCALE * 100).toFixed(2)}%`,
