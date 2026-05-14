@@ -978,17 +978,19 @@ Already covered in §Architecture Patterns above (Patterns 1, 2, 3) and inline s
 
 **If this table is non-empty:** A3 (jsdom cascade) is the only MEDIUM-risk assumption. Planner should plan around it: if Wave 1 commit's tests fail jsdom cascade lookups, fall back to selector-presence assertions (`querySelector('.shape-marker--outer')` + `expect(...).not.toBeNull()`) rather than computed-style assertions. The existing pattern in `BreathingShape.test.tsx` lines 144-188 uses selector-presence + inline-style regex matching for the same reason — proven to work.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `sessionVariantRef` reset also happen in the cancel-during-lead-in branch?**
    - What we know: The cancel branch at App.tsx:294-307 already clears `audioAnchorRef.current = null` (line 302) and `planRef.current = null` (line 303). The leave-running cleanup effect at line 462-518 also fires when state.status leaves running — but during lead-in the session has never started (SESS-05) so the cleanup effect doesn't fire on cancel.
    - What's unclear: If sessionVariantRef isn't reset in the cancel branch, the next Start click (with a different variant selected in the picker) would still see the old `sessionVariantRef.current` value at the very first render — until the new Start handler overwrites it.
    - Recommendation: Add `sessionVariantRef.current = null` to the cancel branch at App.tsx:306 (between the existing `audioAnchorRef.current = null` and `planRef.current = null`). Defensive — costs 1 line, prevents a 1-frame stale-ref window.
+   - **RESOLVED:** Plan 06 Task 1 wires `sessionVariantRef.current = null` into the App.tsx cancel-during-lead-in branch alongside the existing `audioAnchorRef.current = null` / `planRef.current = null` resets (VARIANT-03 capture-at-start contract; covered by App.session.test.tsx VARIANT-03 case).
 
 2. **Default-arm `OrbShape` in the dispatcher switch — keep or rely on TS exhaustiveness?**
    - What we know: `VisualVariantId` is exhaustive in TS (3 cases). A `switch(variant)` with all 3 cases is enough; TS will type-error if a future 4th option is added without a case.
    - What's unclear: Do we want defensive default-arm `case 'orb': default: return <OrbShape …/>` for runtime resilience if `coerceVariant` ever returns an out-of-band value (shouldn't happen per Phase 14 D-09 lock)?
    - Recommendation: Keep the `default: return <OrbShape …/>` defensive arm. Documents the design intent ("orb is the fallback default per VARIANT-02"). Negligible cost.
+   - **RESOLVED:** Plan 05 Task 1 (BreathingShape dispatcher) keeps the `default: return <OrbShape …/>` arm in the 3-way switch — orb is the documented fallback per VARIANT-02 (covered by BreathingShape.test.tsx default-to-orb dispatch case).
 
 3. **Should SquareShape + RingShape import `MIN_SCALE/MAX_SCALE/MID_SCALE` from OrbShape, or duplicate the constants?**
    - What we know: CONTEXT.md deliverable 2/3 says "re-uses MIN_SCALE/MAX_SCALE/MID_SCALE constants verbatim — single source of truth still lives in OrbShape/constants module." Two reasonable interpretations:
@@ -996,16 +998,19 @@ Already covered in §Architecture Patterns above (Patterns 1, 2, 3) and inline s
      - (b) Hoist the constants to a separate `src/components/shapeConstants.ts` module.
    - What's unclear: Which is preferred?
    - Recommendation: Option (a) — export from `OrbShape.tsx`. Smaller diff; single new file source-of-truth; matches CONTEXT.md wording. The IN-01 keep-in-sync comment (BreathingShape.tsx:13-17) gets carried into OrbShape.tsx verbatim.
+   - **RESOLVED:** Plan 02 Task 1 hoists the 3 constants into a dedicated `src/components/shapeConstants.ts` module (option b), and Plan 03 Tasks 1+2 (SquareShape / RingShape) import from there. The planner picked option (b) over (a) because it avoids a Plan-02 ↔ Plan-03 import-cycle risk and matches the "single new file source-of-truth" intent at lower coupling cost (IN-01 sync-with-css comment block carried into shapeConstants.ts verbatim).
 
 4. **VariantPicker swatch fidelity vs DOM size — Option A (CSS-only mini renders) vs Option B (inline SVG)?**
    - What we know: Both pass THEME-UI-01 (both reference `var(--color-*)` tokens); both render at 24px swatch size. Option A is more faithful to actual variant rendering; Option B has a smaller per-button DOM footprint.
    - What's unclear: Which the operator prefers visually + ergonomically.
    - Recommendation: Option A by default per §VariantPicker Swatch Survey, but planner may switch to Option B (or hybrid Option A for orb+square + Option B for ring at small size — see Pitfall 8) without changing the phase scope.
+   - **RESOLVED:** Plan 05 Task 2 (VariantPicker body) implements Option A — CSS-only mini renders using `var(--color-*)` tokens at 24px swatch size; Plan 06 Task 2 (operator UAT) includes the "Picker inline swatch legibility at 24px" manual check that gates an Option B fallback only if the operator flags Ring legibility (no scope change).
 
 5. **Should the dispatcher's idle-guard `if (frame === null && leadInDigit == null)` also account for `variant`'s value? Could `variant` ever be null at idle?**
    - What we know: `useVisualVariant` seeds from `loadPrefs().variant` which is coerced to a valid `VisualVariantId` (Phase 14 D-09 guarantee). The prop type is `VisualVariantId` (not `| null`). The snapshot ref's `?? liveVariant` fallback always yields a valid value.
    - What's unclear: Nothing.
    - Recommendation: No special handling needed. `variant` is always defined and valid at dispatcher entry.
+   - **RESOLVED:** Plan 05 Task 1 (BreathingShape dispatcher) leaves the idle-guard at `if (frame === null && leadInDigit == null)` — variant is not part of the guard predicate; the prop type stays `VisualVariantId` (non-null) per Phase 14 D-09 coerce guarantee (no test needed beyond the existing idle-null-return dispatcher case).
 
 ## Environment Availability
 
