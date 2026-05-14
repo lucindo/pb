@@ -51,7 +51,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 16.1: UI Token Migration (INSERTED 2026-05-13)** - Migrate hardcoded `text-slate-*`/`bg-teal-*`/`border-teal-*`/`text-white`/`bg-white` classes across ~16 components (Start/Stop button, dialogs, stepper, pickers) to `var(--color-breathing-*)` tokens so theme swaps rebind the full UI, not just the ThemePicker selected option (completed 2026-05-13)
 - [x] **Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)** - UAT carry-forward from 16.1 plan 06: re-tune orb In/Out gradients per palette — Light Out (#f97316 too saturated), Moss Out (#3b82f6 too vivid blue), Slate Out (#6366f1 too vivid indigo), Dusk In (#ede9fe → #faf5ff too bright), Dusk Out (#d97706 softening). Pure theme.css palette retune; no .tsx touch (completed 2026-05-13 — smoke + text-legibility UAT approved; perceptual aesthetic UAT deferred to Phase 16.3 thorough theme revision)
 - [x] **Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)** - Interactive per-palette redesign sourcing each palette from a vetted open-source design system (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes. Per-palette task cadence + per-palette UAT before commit. Honors THEME-05 ≥ per-palette floor and THEME-UI-01 token-binding contract. Closes ring-inner harmonization carry-forwards for Moss + Slate (completed 2026-05-13).
-- [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
+- [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants (Square + Ring); render-only; disabled while `inSessionView`; reduced-motion contract preserved; sessionVariantRef capture-at-Start (D-09/D-10)
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
 
@@ -188,7 +188,13 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. Every variant renders the 3-2-1 lead-in countdown digit correctly through the existing `leadInDigit` prop path (VARIANT-05).
   4. Every variant applies the `prefers-reduced-motion: reduce` fixed-mid-scale + crossfade fallback equivalent to the existing orb contract (VARIANT-04).
   5. Selected variant persists across reloads via `Envelope.prefs.variant`; `tsc && lint && build && test` exit 0 (VARIANT-07).
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 17-01-PLAN.md — CSS + TSX + test-selector rename `.orb-ring--{outer,inner}` → `.shape-marker--{outer,inner}` (D-15 atlas): theme.css rule selectors + BreathingShape.tsx classNames + BreathingShape.test.tsx + App.session.test.tsx querySelectors
+  - [ ] 17-02-PLAN.md — OrbShape extraction from BreathingShape (verbatim Body + LeadIn move + `data-variant='orb'` attribute on roots + shapeConstants.ts MIN/MID/MAX_SCALE module + BreathingShape slimmed to pass-through + test migration)
+  - [ ] 17-03-PLAN.md — SquareShape (rounded-square 18%) + RingShape (annulus with radial-gradient hollow center at 35%) + 6 `[data-variant]` CSS overrides in theme.css (D-13 token reuse — no new color tokens)
+  - [ ] 17-04-PLAN.md — useVisualVariant orchestrator hook (cross-tab `storage` + same-tab `'hrv:prefs-changed'` filtered on `detail.key === 'variant'`, no global attribute write per D-16) + useVariantChoice picker setter hook (verbatim mirror of useThemeChoice with type substitutions)
+  - [ ] 17-05-PLAN.md — BreathingShape full 3-way dispatcher (optional `variant?` prop, default `'orb'`, switch with Orb default fallback per defense-in-depth) + VariantPicker radiogroup body with inline shape swatches (Option A CSS-only for Orb + Square; Option B SVG for Ring per UI-SPEC Pitfall 8)
+  - [ ] 17-06-PLAN.md — App.tsx integration (useVisualVariant invocation + sessionVariantRef snapshot at startSession per D-10 + clear on session end + BreathingShape `variant={sessionVariantRef.current ?? liveVariant}` prop) + App.session.test.tsx VARIANT-03 capture-at-Start coverage + operator UAT (5 palettes × 3 variants + reduced-motion + cross-tab) + phase close (REQUIREMENTS/ROADMAP/STATE/SUMMARY)
 **UI hint**: yes
 
 ### Phase 18: Audio Timbres
@@ -240,6 +246,6 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.1. UI Token Migration | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
-| 17. Visual Variants | v1.1 | 0/? | Not started | - |
+| 17. Visual Variants | v1.1 | 0/6 | Planned | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
