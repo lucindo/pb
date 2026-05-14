@@ -107,8 +107,9 @@ describe('SettingsDialog — inSessionView picker disable threading', () => {
     }
     // Phase 17: VariantPicker stub text "Variant: orb" replaced by real picker section label.
     expect(screen.getByText('Variant')).toBeInTheDocument()
-    // Remaining picker stubs (Phase 18/19 not yet replaced) still render stub texts.
-    expect(screen.getByText('Timbre: bowl')).toBeInTheDocument()
+    // Phase 18: TimbrePicker stub text "Timbre: bowl" replaced by real picker section label.
+    expect(screen.getByText('Timbre')).toBeInTheDocument()
+    // Remaining picker stub (Phase 19 not yet replaced) still renders stub text.
     expect(screen.getByText('Language: en')).toBeInTheDocument()
   })
 })
