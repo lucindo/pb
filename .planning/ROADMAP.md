@@ -52,7 +52,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)** - UAT carry-forward from 16.1 plan 06: re-tune orb In/Out gradients per palette — Light Out (#f97316 too saturated), Moss Out (#3b82f6 too vivid blue), Slate Out (#6366f1 too vivid indigo), Dusk In (#ede9fe → #faf5ff too bright), Dusk Out (#d97706 softening). Pure theme.css palette retune; no .tsx touch (completed 2026-05-13 — smoke + text-legibility UAT approved; perceptual aesthetic UAT deferred to Phase 16.3 thorough theme revision)
 - [x] **Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)** - Interactive per-palette redesign sourcing each palette from a vetted open-source design system (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes. Per-palette task cadence + per-palette UAT before commit. Honors THEME-05 ≥ per-palette floor and THEME-UI-01 token-binding contract. Closes ring-inner harmonization carry-forwards for Moss + Slate (completed 2026-05-13).
 - [x] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants (Square + Diamond); render-only; disabled while `inSessionView`; reduced-motion contract preserved; sessionVariantRef capture-at-Start (D-09/D-10) — completed 2026-05-14
-- [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
+- [x] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView` (completed 2026-05-14)
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
 
 ## Phase Details
@@ -214,8 +214,8 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   - [x] 18-02-PLAN.md — NEW `src/hooks/useTimbreChoice.ts` picker-side hook (verbatim mirror of useVariantChoice with variant→timbre substitutions; CustomEvent `detail.key === 'timbre'` per D-18) — TIMBRE-04
   - [x] 18-03-PLAN.md — EDIT `src/audio/cueSynth.ts` (parameterize scheduleBowlCue + scheduleInCueForTimbre / scheduleOutCueForTimbre dispatch; KEEP scheduleInCue/scheduleOutCue as Bowl-only wrappers per D-01 option (a); scheduleTick UNCHANGED per D-07) + EDIT `src/audio/audioEngine.ts` (AudioEngineOptions.timbre required + sessionTimbre closure capture per D-08 + scheduleLeadIn/scheduleNextCue forward via dispatch) — TIMBRE-01/02/05
   - [x] 18-04-PLAN.md — EDIT `src/hooks/useAudioCues.ts` (timbreRef mirror of mutedRef + start(plan, timbre) pre-await capture per D-08 + reconstructEngine reads timbreRef.current per D-11) — TIMBRE-01/03
-  - [ ] 18-05-PLAN.md — EDIT `src/components/TimbrePicker.tsx` fill stub body (verbatim mirror of ThemePicker radiogroup + useTimbreChoice consumer per D-06; THEME-UI-01 token-binding preserved per D-19; 44×44 + a11y per D-20) — TIMBRE-01/04
-  - [ ] 18-06-PLAN.md — EDIT `src/app/App.tsx` (onStartClick reads loadPrefs().timbre and passes to audioStart(plan, capturedTimbre) per D-09/D-10; no sessionTimbreRef / no useAudioTimbre orchestrator per D-08/D-09) + App.session.test.tsx TIMBRE-03 capture-at-Start coverage + phase close (REQUIREMENTS/ROADMAP/STATE/SUMMARY) — TIMBRE-01..05
+  - [x] 18-05-PLAN.md — EDIT `src/components/TimbrePicker.tsx` fill stub body (verbatim mirror of ThemePicker radiogroup + useTimbreChoice consumer per D-06; THEME-UI-01 token-binding preserved per D-19; 44×44 + a11y per D-20) — TIMBRE-01/04
+  - [x] 18-06-PLAN.md — EDIT `src/app/App.tsx` (onStartClick reads loadPrefs().timbre and passes to audioStart(plan, capturedTimbre) per D-09/D-10; no sessionTimbreRef / no useAudioTimbre orchestrator per D-08/D-09) + App.session.test.tsx TIMBRE-03 capture-at-Start coverage + phase close (REQUIREMENTS/ROADMAP/STATE/SUMMARY) — TIMBRE-01..05
 **UI hint**: yes
 
 ### Phase 19: Language Switching
@@ -256,5 +256,5 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
-| 18. Audio Timbres | v1.1 | 4/6 | In Progress|  |
+| 18. Audio Timbres | v1.1 | 6/6 | Complete   | 2026-05-14 |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
