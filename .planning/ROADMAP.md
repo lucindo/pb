@@ -210,8 +210,8 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   4. Selected timbre persists across reloads via `Envelope.prefs.timbre`; coerce-on-read falls back to `'bowl'` for unknown stored values (TIMBRE-04).
   5. Zero sample files or new npm dependencies are introduced; `FakeAudioContext` tests cover new `TimbrePreset` paths; `tsc && lint && build && test` exit 0.
 **Plans**: 6 plans
-  - [ ] 18-01-PLAN.md — NEW `src/audio/timbres.ts` pure-data preset module (TimbrePreset interface + TIMBRE_PRESETS record; Bowl verbatim move per D-02; Bell/Sine/Chime per D-03/D-04/D-05; TIMBRE-05 A4/A3 invariant guard test per D-21) — TIMBRE-01/02/05
-  - [ ] 18-02-PLAN.md — NEW `src/hooks/useTimbreChoice.ts` picker-side hook (verbatim mirror of useVariantChoice with variant→timbre substitutions; CustomEvent `detail.key === 'timbre'` per D-18) — TIMBRE-04
+  - [x] 18-01-PLAN.md — NEW `src/audio/timbres.ts` pure-data preset module (TimbrePreset interface + TIMBRE_PRESETS record; Bowl verbatim move per D-02; Bell/Sine/Chime per D-03/D-04/D-05; TIMBRE-05 A4/A3 invariant guard test per D-21) — TIMBRE-01/02/05
+  - [x] 18-02-PLAN.md — NEW `src/hooks/useTimbreChoice.ts` picker-side hook (verbatim mirror of useVariantChoice with variant→timbre substitutions; CustomEvent `detail.key === 'timbre'` per D-18) — TIMBRE-04
   - [ ] 18-03-PLAN.md — EDIT `src/audio/cueSynth.ts` (parameterize scheduleBowlCue + scheduleInCueForTimbre / scheduleOutCueForTimbre dispatch; KEEP scheduleInCue/scheduleOutCue as Bowl-only wrappers per D-01 option (a); scheduleTick UNCHANGED per D-07) + EDIT `src/audio/audioEngine.ts` (AudioEngineOptions.timbre required + sessionTimbre closure capture per D-08 + scheduleLeadIn/scheduleNextCue forward via dispatch) — TIMBRE-01/02/05
   - [ ] 18-04-PLAN.md — EDIT `src/hooks/useAudioCues.ts` (timbreRef mirror of mutedRef + start(plan, timbre) pre-await capture per D-08 + reconstructEngine reads timbreRef.current per D-11) — TIMBRE-01/03
   - [ ] 18-05-PLAN.md — EDIT `src/components/TimbrePicker.tsx` fill stub body (verbatim mirror of ThemePicker radiogroup + useTimbreChoice consumer per D-06; THEME-UI-01 token-binding preserved per D-19; 44×44 + a11y per D-20) — TIMBRE-01/04
@@ -256,5 +256,5 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
-| 18. Audio Timbres | v1.1 | 0/6 | Planned | - |
+| 18. Audio Timbres | v1.1 | 2/6 | In Progress|  |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
