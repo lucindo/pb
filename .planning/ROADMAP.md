@@ -50,7 +50,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 16: Themes** - CSS custom-property token system (`data-theme`); FOUC-prevention inline script; Light / Dark / System + 3 named palettes (completed 2026-05-13)
 - [x] **Phase 16.1: UI Token Migration (INSERTED 2026-05-13)** - Migrate hardcoded `text-slate-*`/`bg-teal-*`/`border-teal-*`/`text-white`/`bg-white` classes across ~16 components (Start/Stop button, dialogs, stepper, pickers) to `var(--color-breathing-*)` tokens so theme swaps rebind the full UI, not just the ThemePicker selected option (completed 2026-05-13)
 - [x] **Phase 16.2: Palette Aesthetic Refresh (INSERTED 2026-05-13)** - UAT carry-forward from 16.1 plan 06: re-tune orb In/Out gradients per palette — Light Out (#f97316 too saturated), Moss Out (#3b82f6 too vivid blue), Slate Out (#6366f1 too vivid indigo), Dusk In (#ede9fe → #faf5ff too bright), Dusk Out (#d97706 softening). Pure theme.css palette retune; no .tsx touch (completed 2026-05-13 — smoke + text-legibility UAT approved; perceptual aesthetic UAT deferred to Phase 16.3 thorough theme revision)
-- [ ] **Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)** - Interactive per-palette redesign sourcing each palette from a vetted open-source design system (e.g. Catppuccin Frappe for Dark; user-supplied reference per palette for Light/Moss/Slate/Dusk). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes. Per-palette task cadence + per-palette UAT before commit. Honors THEME-05 ≥ 1.5 contrast guard and THEME-UI-01 token-binding contract.
+- [x] **Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)** - Interactive per-palette redesign sourcing each palette from a vetted open-source design system (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes. Per-palette task cadence + per-palette UAT before commit. Honors THEME-05 ≥ per-palette floor and THEME-UI-01 token-binding contract. Closes ring-inner harmonization carry-forwards for Moss + Slate (completed 2026-05-13).
 - [ ] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants; render-only; disabled while `inSessionView`; reduced-motion contract preserved
 - [ ] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`
 - [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
@@ -170,12 +170,12 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   5. `tsc && lint && build && test` exit 0 at every commit boundary (per-commit green-gate).
 **Plans**: 7 plans
   - [x] 16.3-01-PLAN.md — Wave 0 preflight: pre-phase baseline (5 palette ratios + per-block md5) + mapping rubric dry-run worked example (Catppuccin Frappé → Dark default)
-  - [ ] 16.3-02-PLAN.md — Light palette redesign from operator-named open-source design system (interactive; autonomous: false)
-  - [ ] 16.3-03-PLAN.md — Dark palette redesign from operator-named open-source design system (interactive; autonomous: false)
-  - [ ] 16.3-04-PLAN.md — Moss palette redesign from operator-named open-source design system (interactive; closes 16.2-01 ring-inner harmonization carry-forward; autonomous: false)
-  - [ ] 16.3-05-PLAN.md — Slate palette redesign from operator-named open-source design system (interactive; closes 16.2-01 ring-inner harmonization carry-forward; autonomous: false)
-  - [ ] 16.3-06-PLAN.md — Dusk palette redesign from operator-named open-source design system (interactive; coupled In+Out tune; autonomous: false)
-  - [ ] 16.3-07-PLAN.md — Phase close: 16.3-SUMMARY.md + STATE/ROADMAP updates
+  - [x] 16.3-02-PLAN.md — Light palette redesign from Nord (Frost flavor) (interactive)
+  - [x] 16.3-03-PLAN.md — Dark palette redesign from Nord (Polar Night flavor) (interactive)
+  - [x] 16.3-04-PLAN.md — Moss palette redesign from Everforest (Light medium) (interactive); closes 16.2-01 ring-inner harmonization carry-forward
+  - [x] 16.3-05-PLAN.md — Slate palette redesign from Tokyo Night Day (interactive); closes 16.2-01 ring-inner harmonization carry-forward
+  - [x] 16.3-06-PLAN.md — Dusk palette redesign from Rosé Pine Main (interactive; coupled In+Out tune)
+  - [x] 16.3-07-PLAN.md — Phase close: 16.3-SUMMARY.md + STATE/ROADMAP updates
 **UI hint**: yes
 
 ### Phase 17: Visual Variants
@@ -239,7 +239,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16. Themes | v1.1 | 5/4 | Complete    | 2026-05-13 |
 | 16.1. UI Token Migration | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
-| 16.3. Thorough Theme Revision | v1.1 | 1/7 | In Progress|  |
+| 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 0/? | Not started | - |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |

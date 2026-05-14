@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
 status: executing
-stopped_at: Phase 16.2 Palette Aesthetic Refresh complete
-last_updated: "2026-05-13T16:53:07.444Z"
-last_activity: 2026-05-13 -- Phase 16.3 execution started
+stopped_at: Phase 16.3 Thorough Theme Revision complete
+last_updated: "2026-05-13T23:20:00.000Z"
+last_activity: 2026-05-13 -- Phase 16.3 closed (5/5 per-palette UAT approved against curated open-source palettes)
 progress:
   total_phases: 10
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 26
-  completed_plans: 20
-  percent: 77
+  completed_plans: 26
+  percent: 70
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 16.3 — thorough-theme-revision-inserted-2026-05-13
+**Current focus:** Phase 17 — Visual Variants (planning next)
 
 ## Current Position
 
-Phase: 16.3 (thorough-theme-revision-inserted-2026-05-13) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 16.3
-Last activity: 2026-05-13 -- Phase 16.3 execution started
+Phase: 17 (Visual Variants)
+Plan: not started
+Status: Complete (Phase 16.3 closed)
+Last activity: 2026-05-13 -- Phase 16.3 closed (5/5 per-palette UAT approved against curated open-source palettes)
 
-Progress: [██████░░░░] 60%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
@@ -51,7 +51,7 @@ Progress: [██████░░░░] 60%
 | 16. Themes | 4 | Complete |
 | 16.1. UI Token Migration | 7 | Complete |
 | 16.2. Palette Aesthetic Refresh | 2 | Complete (INSERTED 2026-05-13 — Phase 16.1 UAT carry-forward closed; perceptual aesthetic UAT deferred to Phase 16.3) |
-| 16.3. Thorough Theme Revision | TBD | Not started (INSERTED 2026-05-13 — interactive per-palette redesign sourcing open-source palettes) |
+| 16.3. Thorough Theme Revision | 7 | Complete (INSERTED 2026-05-13 — 5 palettes redesigned from named open-source design systems with per-palette UAT; ring-inner harmonization carry-forwards closed for Moss + Slate) |
 | 17. Visual Variants | TBD | Not started |
 | 18. Audio Timbres | TBD | Not started |
 | 19. Language Switching | TBD | Not started |
@@ -66,6 +66,7 @@ Progress: [██████░░░░] 60%
 - Phase 16.2 Plan 01 executed 2026-05-13 — 4 atomic per-palette commits (B1 bisect cadence): Light F1 amber-500/300 (`565581a`), Moss F4 emerald-700/300 (`fffa7ac`), Slate F5 slate-600/400 (`5eb446e`), Dusk F6+F7 violet-200/100 + amber-700/200 (`cc58998`). All 5 palettes pass THEME-05 ≥ 1.5 contrast (Light 1.59, Dark 4.85 unchanged, Moss 2.36, Slate 3.68, Dusk 1.85). Dark palette byte-identical (approved-untouched protocol held).
 - Phase 16.2 closed 2026-05-13 — smoke + text-legibility UAT approved; perceptual aesthetic UAT deferred to Phase 16.3 per operator decision (thorough theme revision sourcing each palette from a vetted open-source design system supersedes ad-hoc retune). F1/F4/F5/F6/F7 mathematically closed in 16.2; perceptual sign-off to be re-collected after 16.3 redesign.
 - Phase 16.3 inserted 2026-05-13 — Thorough Theme Revision: interactive theme-by-theme palette redesign with user-supplied open-source design-system reference per palette (e.g. Catppuccin Frappe for Dark). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes; honors THEME-05 ≥ 1.5 contrast and THEME-UI-01 token-binding contracts.
+- Phase 16.3 closed 2026-05-13 — 5 palettes redesigned from named open-source design systems (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main); 7 plans / 7 waves (1 preflight + 5 per-palette B1 cadence + 1 close); per-palette THEME-05 floor + D-01 ≥ 1.5 hold across all 5 palettes; 5/5 perceptual UAT approved; ring-inner harmonization carry-forward closed for Moss + Slate; REQUIREMENTS.md untouched (B2 — aesthetic redesign honors existing constraint IDs only).
 
 ### Decisions
 
@@ -126,11 +127,11 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-13T14:59:53Z
-Stopped at: Phase 16.2 Palette Aesthetic Refresh complete
-Resume file: .planning/phases/16.2-palette-aesthetic-refresh-inserted-2026-05-13/16.2-SUMMARY.md
-Next command: Phase 16.3 (Thorough Theme Revision) planning — `/gsd-plan-phase 16.3`
+Last session: 2026-05-13T23:20:00Z
+Stopped at: Phase 16.3 Thorough Theme Revision complete
+Resume file: .planning/phases/16.3-thorough-theme-revision-inserted-2026-05-13/16.3-SUMMARY.md
+Next command: Phase 17 (Visual Variants) planning — `/gsd-plan-phase 17`
 
 ## Operator Next Steps
 
-- Begin Phase 16.3 (Thorough Theme Revision) planning: `/gsd-plan-phase 16.3` — interactive per-palette redesign. User supplies an open-source design-system reference per palette (e.g. Catppuccin Frappe for Dark, others TBD for Light/Moss/Slate/Dusk); agent extracts and maps tokens; per-palette UAT before commit; one palette per task (B1 bisect cadence preserved). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes grounded in vetted open-source systems.
+- Begin Phase 17 (Visual Variants) planning: `/gsd-plan-phase 17` — Orb default + 2 alternate render-only visual variants; disabled while `inSessionView`; reduced-motion contract preserved (VARIANT-04). Builds on the now-stable 5-palette token surface delivered by Phases 16/16.1/16.2/16.3.
