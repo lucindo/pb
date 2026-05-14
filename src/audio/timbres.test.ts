@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest'
+
+import { TIMBRE_OPTIONS } from '../domain/settings'
+import { TIMBRE_PRESETS } from './timbres'
+
+// Pure-data tests — no FakeAudioContext / no Web Audio side effects.
+// Guards: TIMBRE-05 fundamental invariant (D-21), TIMBRE-02 Bowl byte-identical
+// proof at the data layer (D-02), and the OscillatorType='sine' invariant (D-14).
+
+describe('timbres', () => {
+  it('exports all 4 TimbreId keys', () => {
+    expect(Object.keys(TIMBRE_PRESETS)).toEqual(expect.arrayContaining([...TIMBRE_OPTIONS]))
+    expect(Object.keys(TIMBRE_PRESETS)).toHaveLength(4)
+  })
+
+  // D-21 / TIMBRE-05 guard — catches future preset additions that drift fundamentals.
+  it('every preset uses A4/A3 fundamentals (440 Hz In / 220 Hz Out)', () => {
+    for (const preset of Object.values(TIMBRE_PRESETS)) {
+      expect(preset.fundamentalHzIn).toBe(440)
+      expect(preset.fundamentalHzOut).toBe(220)
+    }
+  })
+
+  // D-02 / TIMBRE-02 — Bowl preset matches the cueSynth.ts module-level
+  // constants verbatim. Per-field equality is the data-layer byte-identical proof.
+  it('bowl preset matches verbatim cueSynth constants', () => {
+    const bowl = TIMBRE_PRESETS.bowl
+    expect(bowl.fundamentalHzIn).toBe(440)
+    expect(bowl.fundamentalHzOut).toBe(220)
+    expect(bowl.partials).toEqual([
+      { ratio: 1.0, gain: 1.0 },
+      { ratio: 2.76, gain: 0.4 },
+      { ratio: 5.4, gain: 0.15 },
+    ])
+    expect(bowl.decayTauIn).toBe(1.4)
+    expect(bowl.decayTauOut).toBe(1.8)
+    expect(bowl.filterFreqHz).toBe(3000)
+    expect(bowl.filterQ).toBe(0.5)
+    expect(bowl.peakGain).toBe(0.18)
+    expect(bowl.oscillatorType).toBe('sine')
+  })
+
+  it('partials[0].ratio === 1.0 for all presets', () => {
+    for (const preset of Object.values(TIMBRE_PRESETS)) {
+      expect(preset.partials[0]?.ratio).toBe(1.0)
+    }
+  })
+
+  // D-14 — no-PeriodicWave invariant: every preset is a partial-stacked sine.
+  it('every preset uses sine oscillator (D-14 no-PeriodicWave invariant)', () => {
+    for (const preset of Object.values(TIMBRE_PRESETS)) {
+      expect(preset.oscillatorType).toBe('sine')
+    }
+  })
+})
