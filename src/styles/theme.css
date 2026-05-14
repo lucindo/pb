@@ -409,38 +409,28 @@
   border-radius: 18%;
 }
 
-/* D-06/D-15: Ring variant — thinner concentric markers
-   (1px vs orb's 1.5px so the rings do not compete with the body annulus). */
-[data-variant='ring'] .shape-marker--outer {
-  border-width: 1px;
+/* Phase 17 deviation: Diamond variant — rotated-square via clip-path (Option A).
+   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) clips the .orb host
+   and its gradient layers into a 4-pointed diamond shape. The inline transform
+   stack (translate3d + scale) is untouched — Safari scale-interpolation safe
+   (see RingShape.tsx D-20 / Phase 5.1 Plan 04 hotfix comments).
+   Markers also receive the same clip-path so they trace the diamond outline
+   at MAX_SCALE (outer) and MIN_SCALE (inner) boundaries.
+   D-13 zero new color tokens: linear-gradient reuses --color-orb-{in,out}-{from,to}. */
+[data-variant='diamond'] .orb {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
-[data-variant='ring'] .shape-marker--inner {
-  border-width: 1px;
+[data-variant='diamond'] .orb-layer--in {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
-
-/* D-06: Ring variant — hollow center via radial-gradient on the
-   shared `.orb-layer--in/--out` classes (Option D per RESEARCH).
-   The inner stop at 35% creates a transparent core; the body
-   annulus occupies 35%-100% of the body radius. Color tokens
-   --color-orb-in/out-from/to are reused VERBATIM from the linear
-   gradient — D-13 zero new tokens. */
-[data-variant='ring'] .orb-layer--in {
-  background: radial-gradient(
-    circle at center,
-    transparent 0%,
-    transparent 35%,
-    var(--color-orb-in-from) 36%,
-    var(--color-orb-in-to) 100%
-  );
+[data-variant='diamond'] .orb-layer--out {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
-[data-variant='ring'] .orb-layer--out {
-  background: radial-gradient(
-    circle at center,
-    transparent 0%,
-    transparent 35%,
-    var(--color-orb-out-from) 36%,
-    var(--color-orb-out-to) 100%
-  );
+[data-variant='diamond'] .shape-marker--outer {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+[data-variant='diamond'] .shape-marker--inner {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 /* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.
