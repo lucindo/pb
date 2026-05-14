@@ -375,16 +375,16 @@ describe('VARIANT-03 capture-at-session-start', () => {
 
     await startAndAdvancePastLeadIn()
 
-    // Simulate a cross-tab write: change variant to 'ring' in localStorage
+    // Simulate a cross-tab write: change variant to 'diamond' in localStorage
     // and fire the 'storage' event — useVisualVariant will update liveVariant,
     // but sessionVariantRef.current (non-null during the session) wins per D-09/D-10.
-    const ringEnvelope = JSON.stringify({
+    const diamondEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'ring', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', variant: 'diamond', locale: 'en' },
     })
     act(() => {
-      window.localStorage.setItem(STATE_KEY, ringEnvelope)
-      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: ringEnvelope }))
+      window.localStorage.setItem(STATE_KEY, diamondEnvelope)
+      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: diamondEnvelope }))
     })
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
@@ -397,14 +397,14 @@ describe('VARIANT-03 capture-at-session-start', () => {
 
     await startAndAdvancePastLeadIn()
 
-    // Simulate cross-tab write to 'ring' mid-session (same as test 2)
-    const ringEnvelope = JSON.stringify({
+    // Simulate cross-tab write to 'diamond' mid-session (same as test 2)
+    const diamondEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'ring', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', variant: 'diamond', locale: 'en' },
     })
     act(() => {
-      window.localStorage.setItem(STATE_KEY, ringEnvelope)
-      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: ringEnvelope }))
+      window.localStorage.setItem(STATE_KEY, diamondEnvelope)
+      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: diamondEnvelope }))
     })
 
     // End the open-ended-style session via End button (open-ended direct end path)
@@ -417,11 +417,11 @@ describe('VARIANT-03 capture-at-session-start', () => {
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
 
     // Start a new session — sessionVariantRef was cleared on session end;
-    // liveVariant is now 'ring' (post-cross-tab update), so the new session captures 'ring'.
+    // liveVariant is now 'diamond' (post-cross-tab update), so the new session captures 'diamond'.
     await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-variant', 'ring')
+    expect(shape).toHaveAttribute('data-variant', 'diamond')
   })
 
   it('VARIANT-02 zero-regression — Orb is the rendered variant when prefs.variant is the DEFAULT_VARIANT "orb" (or absent from localStorage entirely)', async () => {

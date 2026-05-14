@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { RingShape } from './RingShape'
+import { DiamondShape } from './DiamondShape'
 import type { SessionFrame } from '../domain/sessionMath'
 import * as prm from '../hooks/usePrefersReducedMotion'
 
@@ -17,97 +17,97 @@ const sampleFrame: SessionFrame = {
   isComplete: false,
 }
 
-describe('RingShape', () => {
+describe('DiamondShape', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
   // Smoke tests
-  it('renders the RingBody when frame is provided and leadInDigit is null', () => {
-    render(<RingShape frame={sampleFrame} />)
+  it('renders the DiamondBody when frame is provided and leadInDigit is null', () => {
+    render(<DiamondShape frame={sampleFrame} />)
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 
   it('renders the lead-in digit 3', () => {
-    render(<RingShape frame={null} leadInDigit={3} />)
+    render(<DiamondShape frame={null} leadInDigit={3} />)
     expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
     expect(screen.getByText('3')).toBeVisible()
   })
 
   it('renders the lead-in digit 2', () => {
-    render(<RingShape frame={null} leadInDigit={2} />)
+    render(<DiamondShape frame={null} leadInDigit={2} />)
     expect(screen.getByRole('img', { name: 'Lead-in: 2' })).toBeVisible()
     expect(screen.getByText('2')).toBeVisible()
   })
 
   it('renders the lead-in digit 1', () => {
-    render(<RingShape frame={null} leadInDigit={1} />)
+    render(<DiamondShape frame={null} leadInDigit={1} />)
     expect(screen.getByRole('img', { name: 'Lead-in: 1' })).toBeVisible()
     expect(screen.getByText('1')).toBeVisible()
   })
 
   // data-variant attribute presence (D-16)
-  it('Body root carries data-variant="ring"', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  it('Body root carries data-variant="diamond"', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const root = container.querySelector('[role="img"]')
-    expect(root).toHaveAttribute('data-variant', 'ring')
+    expect(root).toHaveAttribute('data-variant', 'diamond')
   })
 
-  it('LeadIn root carries data-variant="ring"', () => {
-    const { container } = render(<RingShape frame={null} leadInDigit={2} />)
+  it('LeadIn root carries data-variant="diamond"', () => {
+    const { container } = render(<DiamondShape frame={null} leadInDigit={2} />)
     const root = container.querySelector('[role="img"]')
-    expect(root).toHaveAttribute('data-variant', 'ring')
+    expect(root).toHaveAttribute('data-variant', 'diamond')
   })
 
-  // Geometry: Ring retains rounded-full (circular outer edge)
-  it('.orb div retains rounded-full class (ring outer edge is circular — UNLIKE Square)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  // Geometry: Diamond uses clip-path (Option A) — no rounded-full on .orb host
+  it('.orb div does NOT have rounded-full class (diamond shape via CSS clip-path, not border-radius)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(orb!.classList.contains('rounded-full')).toBe(true)
+    expect(orb!.classList.contains('rounded-full')).toBe(false)
   })
 
-  it('.orb-layer--in retains rounded-full class (radial-gradient hollow center applied via CSS, not classes)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  it('.orb-layer--in does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const layerIn = container.querySelector('.orb-layer--in')
     expect(layerIn).not.toBeNull()
     // Reason: layerIn non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(layerIn!.classList.contains('rounded-full')).toBe(true)
+    expect(layerIn!.classList.contains('rounded-full')).toBe(false)
   })
 
-  it('.orb-layer--out retains rounded-full class (radial-gradient hollow center applied via CSS, not classes)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  it('.orb-layer--out does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const layerOut = container.querySelector('.orb-layer--out')
     expect(layerOut).not.toBeNull()
     // Reason: layerOut non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(layerOut!.classList.contains('rounded-full')).toBe(true)
+    expect(layerOut!.classList.contains('rounded-full')).toBe(false)
   })
 
-  it('.shape-marker--outer retains rounded-full class (concentric circular thin ring)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  it('.shape-marker--outer does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const outer = container.querySelector('.shape-marker--outer')
     expect(outer).not.toBeNull()
     // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(outer!.classList.contains('rounded-full')).toBe(true)
+    expect(outer!.classList.contains('rounded-full')).toBe(false)
   })
 
-  it('.shape-marker--inner retains rounded-full class (concentric circular thin ring)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  it('.shape-marker--inner does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const inner = container.querySelector('.shape-marker--inner')
     expect(inner).not.toBeNull()
     // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(inner!.classList.contains('rounded-full')).toBe(true)
+    expect(inner!.classList.contains('rounded-full')).toBe(false)
   })
 
   // Anchoring: Phase 5.1 D-12 / D-20 / D-21 structural contract
   it('.shape-marker--outer has explicit four-edge offsets (-1.5px) (D-21 + D-12)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const outer = container.querySelector('.shape-marker--outer')
     expect(outer).not.toBeNull()
     // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -121,7 +121,7 @@ describe('RingShape', () => {
   })
 
   it('.orb div uses four-edge anchoring (left:0 right:0 top:0 bottom:0), NOT inset-0 (D-20)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -139,7 +139,7 @@ describe('RingShape', () => {
 
   // Inner marker dimensions
   it('.shape-marker--inner width/height are MIN_SCALE*100% (same as Orb)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const inner = container.querySelector('.shape-marker--inner')
     expect(inner).not.toBeNull()
     // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
@@ -153,7 +153,7 @@ describe('RingShape', () => {
 
   // Kinematics: GPU-promoted scale transform
   it('.orb style.transform contains translate3d(0,0,0) scale(...) (GPU-promoted kinematics)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -165,7 +165,7 @@ describe('RingShape', () => {
   // Reduced-motion: MID_SCALE = 0.79 substitution (VARIANT-04)
   it('reduced-motion mock true → .orb style.transform contains scale(0.79) (MID_SCALE substitution)', () => {
     vi.spyOn(prm, 'usePrefersReducedMotion').mockReturnValue(true)
-    const { container } = render(<RingShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -176,7 +176,7 @@ describe('RingShape', () => {
 
   // VARIANT-04: .orb host has motion-reduce:transition-none on both Body and LeadIn
   it('Body .orb host has motion-reduce:transition-none class (VARIANT-04)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -186,7 +186,7 @@ describe('RingShape', () => {
 
   // VARIANT-04: LeadIn keeps the orb at MID_SCALE
   it('lead-in keeps the orb at MID_SCALE (scale(0.79)) regardless of reduced-motion state (VARIANT-04)', () => {
-    const { container } = render(<RingShape frame={null} leadInDigit={1} />)
+    const { container } = render(<DiamondShape frame={null} leadInDigit={1} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -196,7 +196,7 @@ describe('RingShape', () => {
 
   // VARIANT-05: lead-in digit size and color
   it('lead-in digit renders at text-7xl with color var(--color-orb-in-text) (VARIANT-05)', () => {
-    const { container } = render(<RingShape frame={null} leadInDigit={2} />)
+    const { container } = render(<DiamondShape frame={null} leadInDigit={2} />)
     const digit = container.querySelector('span.text-7xl')
     expect(digit).not.toBeNull()
     // Reason: digit non-null asserted by expect().not.toBeNull() immediately above.
@@ -208,17 +208,17 @@ describe('RingShape', () => {
   })
 
   // Negative assertion: TSX must NOT inline-override background on gradient layers
-  // (CSS owns the radial-gradient override — this test catches accidental drift)
-  it('no inline background style on .orb-layer--in (CSS owns the radial-gradient)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  // (CSS owns the gradient — this test catches accidental drift)
+  it('no inline background style on .orb-layer--in (CSS owns the gradient)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const layerIn = container.querySelector('.orb-layer--in')
     expect(layerIn).not.toBeNull()
     // layerIn cast to HTMLElement after null assertion above (querySelector returns Element | null)
     expect((layerIn as HTMLElement).style.background).toBe('')
   })
 
-  it('no inline background style on .orb-layer--out (CSS owns the radial-gradient)', () => {
-    const { container } = render(<RingShape frame={sampleFrame} />)
+  it('no inline background style on .orb-layer--out (CSS owns the gradient)', () => {
+    const { container } = render(<DiamondShape frame={sampleFrame} />)
     const layerOut = container.querySelector('.orb-layer--out')
     expect(layerOut).not.toBeNull()
     // layerOut cast to HTMLElement after null assertion above (querySelector returns Element | null)

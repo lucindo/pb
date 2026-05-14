@@ -41,7 +41,7 @@ describe('useVisualVariant', () => {
     // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'ring', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', variant: 'diamond', locale: 'en' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -57,7 +57,7 @@ describe('useVisualVariant', () => {
       )
     })
 
-    expect(result.current.variant).toBe('ring')
+    expect(result.current.variant).toBe('diamond')
   })
 
   it('ignores cross-tab storage event with unrelated key', async () => {
@@ -121,8 +121,8 @@ describe('useVisualVariant', () => {
     const { result } = renderHook(() => useVisualVariant())
     expect(result.current.variant).toBe('orb')
 
-    // Seed disk to ring before broadcast-all dispatch
-    seedPrefs('ring')
+    // Seed disk to diamond before broadcast-all dispatch
+    seedPrefs('diamond')
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -132,7 +132,7 @@ describe('useVisualVariant', () => {
       )
     })
 
-    expect(result.current.variant).toBe('ring')
+    expect(result.current.variant).toBe('diamond')
   })
 
   it('D-16 negative assertion: useVisualVariant does NOT write document.documentElement.dataset.variant', async () => {
@@ -157,18 +157,18 @@ describe('useVisualVariant', () => {
     expect(document.documentElement.dataset.variant).toBeUndefined()
 
     // Also trigger via CustomEvent
-    seedPrefs('ring')
+    seedPrefs('diamond')
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
-      window.dispatchEvent(new CustomEvent('hrv:prefs-changed', { detail: { key: 'variant', value: 'ring' } }))
+      window.dispatchEvent(new CustomEvent('hrv:prefs-changed', { detail: { key: 'variant', value: 'diamond' } }))
     })
 
     expect(document.documentElement.getAttribute('data-variant')).toBeNull()
     expect(document.documentElement.dataset.variant).toBeUndefined()
 
     // Confirm state did update (so we know the events were processed)
-    expect(result.current.variant).toBe('ring')
+    expect(result.current.variant).toBe('diamond')
   })
 
   it('no matchMedia subscription — window.matchMedia is never called during hook lifecycle', () => {

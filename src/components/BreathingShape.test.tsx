@@ -45,7 +45,7 @@ describe('BreathingShape', () => {
   })
 
   // ── Dispatch by variant — body render ────────────────────────────────────
-  it.each<VisualVariantId>(['orb', 'square', 'ring'])(
+  it.each<VisualVariantId>(['orb', 'square', 'diamond'])(
     'dispatches to the correct sibling for body render (variant="%s")',
     (variant) => {
       const { container } = render(<BreathingShape variant={variant} frame={sampleFrame} />)
@@ -55,7 +55,7 @@ describe('BreathingShape', () => {
   )
 
   // ── Dispatch by variant — lead-in render ─────────────────────────────────
-  it.each<VisualVariantId>(['orb', 'square', 'ring'])(
+  it.each<VisualVariantId>(['orb', 'square', 'diamond'])(
     'dispatches to the correct sibling for lead-in render (variant="%s")',
     (variant) => {
       const { container } = render(

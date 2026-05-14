@@ -45,19 +45,19 @@ describe('useVariantChoice', () => {
     expect(result.current.variant).toBe('square')
   })
 
-  it('setVariant("ring") writes the new variant to disk via savePrefs', () => {
+  it('setVariant("diamond") writes the new variant to disk via savePrefs', () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, variant: 'orb' })
     const { result } = renderHook(() => useVariantChoice())
 
     act(() => {
-      result.current.setVariant('ring')
+      result.current.setVariant('diamond')
     })
 
     // Verify via direct disk read (matches prefs.test.ts seeding pattern)
     // Reason: STATE_KEY is always present after setVariant; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as { version: number; prefs: UserPrefs }
-    expect(raw.prefs.variant).toBe('ring')
+    expect(raw.prefs.variant).toBe('diamond')
   })
 
   it('setVariant("square") preserves other prefs fields — envelope merge contract', () => {

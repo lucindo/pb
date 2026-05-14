@@ -109,6 +109,15 @@ describe('coerceTheme / coerceTimbre / coerceVariant / coerceLocale (D-10 per-fi
     expect(coerceVariant(0)).toBe(DEFAULT_VARIANT)
   })
 
+  // Forward-compat invariant: old 'ring' localStorage values (written before the
+  // Phase 17 deviation swap) coerce to DEFAULT_VARIANT ('orb') on read.
+  // This ensures users with saved 'ring' prefs gracefully fall back to the default
+  // rather than storing an unknown variant id in the live prefs object.
+  it("coerceVariant('ring') → DEFAULT_VARIANT ('orb') — forward-compat for pre-swap localStorage values", () => {
+    expect(coerceVariant('ring')).toBe(DEFAULT_VARIANT)
+    expect(coerceVariant('ring')).toBe('orb')
+  })
+
   it('coerceLocale accepts all LOCALE_OPTIONS members and rejects invalid values', () => {
     for (const opt of LOCALE_OPTIONS) {
       expect(coerceLocale(opt)).toBe(opt)

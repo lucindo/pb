@@ -113,11 +113,11 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
 
   // Test 7: when disabled=true, selected option retains aria-checked="true"
   it('when disabled=true, the selected option button retains aria-checked="true" and is disabled', () => {
-    seedVariant('ring')
+    seedVariant('diamond')
     render(<VariantPicker disabled={true} />)
-    const ringButton = screen.getByRole('radio', { name: /ring/i })
-    expect(ringButton).toHaveAttribute('aria-checked', 'true')
-    expect(ringButton).toBeDisabled()
+    const diamondButton = screen.getByRole('radio', { name: /diamond/i })
+    expect(diamondButton).toHaveAttribute('aria-checked', 'true')
+    expect(diamondButton).toBeDisabled()
   })
 
   // Test 8: 44×44 hit area via min-h-12 + px-3
@@ -141,14 +141,14 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
     }
   })
 
-  // Test 10: swatch primitive per variant (Pitfall 8 mitigation for Ring)
-  it('Orb button contains .orb-layer--in span with borderRadius 50%; Square button .orb-layer--in with 18%; Ring button has <svg> with <circle>', () => {
+  // Test 10: swatch primitive per variant
+  it('Orb button contains .orb-layer--in span with borderRadius 50%; Square button .orb-layer--in with 18%; Diamond button has <svg> with <polygon>', () => {
     render(<VariantPicker disabled={false} />)
     const radios = screen.getAllByRole('radio')
 
     const orbButton = radios.find((b) => b.textContent === 'Orb')
     const squareButton = radios.find((b) => b.textContent === 'Square')
-    const ringButton = radios.find((b) => b.textContent === 'Ring')
+    const diamondButton = radios.find((b) => b.textContent === 'Diamond')
 
     // Orb swatch: .orb-layer--in span with borderRadius 50%
     const orbSwatch = orbButton?.querySelector('.orb-layer--in') as HTMLElement | null
@@ -160,10 +160,10 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
     expect(squareSwatch).not.toBeNull()
     expect(squareSwatch?.style.borderRadius).toBe('18%')
 
-    // Ring swatch: <svg> with <circle> child (Pitfall 8 mitigation)
-    const ringsvg = ringButton?.querySelector('svg')
-    expect(ringsvg).not.toBeNull()
-    const ringCircle = ringsvg?.querySelector('circle')
-    expect(ringCircle).not.toBeNull()
+    // Diamond swatch: <svg> with <polygon> child (rotated-square geometry)
+    const diamondSvg = diamondButton?.querySelector('svg')
+    expect(diamondSvg).not.toBeNull()
+    const diamondPolygon = diamondSvg?.querySelector('polygon')
+    expect(diamondPolygon).not.toBeNull()
   })
 })
