@@ -44,13 +44,13 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 
 ### Visual Variants (CUST-03)
 
-- [ ] **VARIANT-01**: User can choose between **Orb** (default), and 2 alternate visual variants (e.g. **Square**, **Ring**) from the SettingsDialog.
-- [ ] **VARIANT-02**: Default variant is `Orb` so existing v1.0.1 visual behavior is unchanged for users who never open the picker (zero regression).
-- [ ] **VARIANT-03**: Variant picker is **disabled while `inSessionView`** — the selected variant is captured at session start and is not swapped mid-session (avoids rAF frame-identity collision).
-- [ ] **VARIANT-04**: Every variant honors `prefers-reduced-motion: reduce` (fixed mid-scale + crossfade fallback equivalent to the existing orb reduced-motion contract).
-- [ ] **VARIANT-05**: Every variant renders the 3-2-1 lead-in countdown digit correctly through the existing `leadInDigit` prop path.
-- [ ] **VARIANT-06**: Every variant honors the 44×44 hit-area floor and `focus-visible` ring contracts where interactive.
-- [ ] **VARIANT-07**: Selected variant persists across reloads via `Envelope.prefs.variant`.
+- [x] **VARIANT-01**: User can choose between **Orb** (default), and 2 alternate visual variants (**Square**, **Diamond**) from the SettingsDialog.
+- [x] **VARIANT-02**: Default variant is `Orb` so existing v1.0.1 visual behavior is unchanged for users who never open the picker (zero regression).
+- [x] **VARIANT-03**: Variant picker is **disabled while `inSessionView`** — the selected variant is captured at session start and is not swapped mid-session (avoids rAF frame-identity collision).
+- [x] **VARIANT-04**: Every variant honors `prefers-reduced-motion: reduce` (fixed mid-scale + crossfade fallback equivalent to the existing orb reduced-motion contract).
+- [x] **VARIANT-05**: Every variant renders the 3-2-1 lead-in countdown digit correctly through the existing `leadInDigit` prop path.
+- [x] **VARIANT-06**: Every variant honors the 44×44 hit-area floor and `focus-visible` ring contracts where interactive.
+- [x] **VARIANT-07**: Selected variant persists across reloads via `Envelope.prefs.variant`.
 
 ### Language Switching (I18N-01)
 
@@ -116,13 +116,13 @@ Which phases cover which requirements.
 | TIMBRE-03 | Phase 18 | Pending |
 | TIMBRE-04 | Phase 18 | Pending |
 | TIMBRE-05 | Phase 18 | Pending |
-| VARIANT-01 | Phase 17 | Pending |
-| VARIANT-02 | Phase 17 | Pending |
-| VARIANT-03 | Phase 17 | Pending |
-| VARIANT-04 | Phase 17 | Pending |
-| VARIANT-05 | Phase 17 | Pending |
-| VARIANT-06 | Phase 17 | Pending |
-| VARIANT-07 | Phase 17 | Pending |
+| VARIANT-01 | Phase 17 | Done |
+| VARIANT-02 | Phase 17 | Done |
+| VARIANT-03 | Phase 17 | Done |
+| VARIANT-04 | Phase 17 | Done |
+| VARIANT-05 | Phase 17 | Done |
+| VARIANT-06 | Phase 17 | Done |
+| VARIANT-07 | Phase 17 | Done |
 | I18N-01 | Phase 19 | Pending |
 | I18N-02 | Phase 19 | Pending |
 | I18N-03 | Phase 19 | Pending |
@@ -138,4 +138,4 @@ Which phases cover which requirements.
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-13 — Phase 16.1 THEME-UI-01 flipped to Done at phase close*
+*Last updated: 2026-05-14 — Phase 17 (Visual Variants) closed; VARIANT-01..07 flipped to Done; operator UAT-driven Ring → Diamond deviation; VisualVariantId is `'orb' | 'square' | 'diamond'`*

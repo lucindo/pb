@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
 status: executing
-stopped_at: Phase 17 UI-SPEC approved
-last_updated: "2026-05-14T11:52:11.195Z"
-last_activity: 2026-05-14 -- Phase 17 execution started
+stopped_at: Phase 17 closed
+last_updated: "2026-05-14T12:30:00.000Z"
+last_activity: "2026-05-14 — Phase 17 (Visual Variants) closed; VARIANT-01..07 shipped; sessionVariantRef capture-at-Start integration green; per-palette + reduced-motion + cross-tab UAT approved; operator-driven Ring → Diamond deviation applied in-phase (6 commits)"
 progress:
   total_phases: 10
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 32
-  completed_plans: 22
-  percent: 69
+  completed_plans: 28
+  percent: 87
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap d
 
 ## Current Position
 
-Phase: 17 (visual-variants) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 17
-Last activity: 2026-05-14 -- Phase 17 execution started
+Phase: 18 (audio-timbres) — NOT STARTED (Phase 17 complete)
+Plan: N/A — awaiting Phase 18 planning
+Status: Phase 17 complete; Phase 18 (Audio Timbres) is next
+Last activity: 2026-05-14 — Phase 17 (Visual Variants) closed
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 87%
 
 ## Performance Metrics
 
@@ -52,7 +52,7 @@ Progress: [███████░░░] 70%
 | 16.1. UI Token Migration | 7 | Complete |
 | 16.2. Palette Aesthetic Refresh | 2 | Complete (INSERTED 2026-05-13 — Phase 16.1 UAT carry-forward closed; perceptual aesthetic UAT deferred to Phase 16.3) |
 | 16.3. Thorough Theme Revision | 7 | Complete (INSERTED 2026-05-13 — 5 palettes redesigned from named open-source design systems with per-palette UAT; ring-inner harmonization carry-forwards closed for Moss + Slate) |
-| 17. Visual Variants | TBD | Not started |
+| 17. Visual Variants | 6 | Complete (2026-05-14 — operator-driven Ring → Diamond deviation in plan 17-06; VisualVariantId `'orb' \| 'square' \| 'diamond'`; 588 tests passing; D-05 default `'orb'` invariant held; old `'ring'` values coerce to `'orb'`) |
 | 18. Audio Timbres | TBD | Not started |
 | 19. Language Switching | TBD | Not started |
 
@@ -67,6 +67,7 @@ Progress: [███████░░░] 70%
 - Phase 16.2 closed 2026-05-13 — smoke + text-legibility UAT approved; perceptual aesthetic UAT deferred to Phase 16.3 per operator decision (thorough theme revision sourcing each palette from a vetted open-source design system supersedes ad-hoc retune). F1/F4/F5/F6/F7 mathematically closed in 16.2; perceptual sign-off to be re-collected after 16.3 redesign.
 - Phase 16.3 inserted 2026-05-13 — Thorough Theme Revision: interactive theme-by-theme palette redesign with user-supplied open-source design-system reference per palette (e.g. Catppuccin Frappe for Dark). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes; honors THEME-05 ≥ 1.5 contrast and THEME-UI-01 token-binding contracts.
 - Phase 16.3 closed 2026-05-13 — 5 palettes redesigned from named open-source design systems (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main); 7 plans / 7 waves (1 preflight + 5 per-palette B1 cadence + 1 close); per-palette THEME-05 floor + D-01 ≥ 1.5 hold across all 5 palettes; 5/5 perceptual UAT approved; ring-inner harmonization carry-forward closed for Moss + Slate; REQUIREMENTS.md untouched (B2 — aesthetic redesign honors existing constraint IDs only).
+- Phase 17 closed 2026-05-14 — Visual Variants: 3 render variants (Orb default + Square 18% rounded-square + Diamond rotated-square clip-path) via dispatcher + sibling-shape pattern (D-01); `.shape-marker--*` CSS rename (D-15); render-local `data-variant` attribute (D-16); zero new color tokens (D-13 token reuse across variants); sessionVariantRef snapshot at Start (D-09/D-10); 6 plans across 5 waves. Mid-execution operator UAT deviation: variant 3 swapped from Ring (annulus radial-gradient) → Diamond (rotated-square via clip-path on body + inscribed rotated-square markers via CSS-only override); 6 deviation commits (`c6ae41f`, `cac9680`, `78d5f69`, `3d4f97f`, `4c8846e`, `9bf5b90`); D-05 default `'orb'` invariant held; forward-compat: old `'ring'` localStorage values coerce to `DEFAULT_VARIANT`; per-palette + reduced-motion + cross-tab UAT approved; 588 tests passing; zero net-new runtime deps (D-18).
 
 ### Decisions
 
@@ -85,10 +86,10 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Phase 16.3 planning: `/gsd-plan-phase 16.3` (Thorough Theme Revision — interactive per-palette redesign sourcing open-source design systems)
-- Phase 17 planning (after 16.3): `/gsd-plan-phase 17` (Visual Variants)
+- Phase 18 planning: `/gsd-plan-phase 18` (Audio Timbres — 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`)
+- Phase 19 planning: `/gsd-plan-phase 19` (Language Switching — EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail)
 - Carry-forward from v1.0.1: `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — RESOLVED directly by Phase 13 (WARMUP-01 reframed as reduced-motion `.orb-ring--inner { display: none }`; no separate verification step). Todo moves to `.planning/todos/completed/` on phase close per 13-CONTEXT.md D-09.
-- Ring-inner rgb() harmonization for Moss + Slate (flagged in 16.2-01-SUMMARY deferred-items) — likely subsumed by Phase 16.3 thorough-revision token sweep; no standalone follow-up needed.
+- v1.2 deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
 
 ### Blockers/Concerns
 
@@ -127,11 +128,12 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-14T03:44:06.517Z
-Stopped at: Phase 17 UI-SPEC approved
-Resume file: .planning/phases/17-visual-variants/17-UI-SPEC.md
-Next command: Phase 17 (Visual Variants) planning — `/gsd-plan-phase 17`
+Last session: 2026-05-14T12:30:00.000Z
+Stopped at: Phase 17 closed (Ring → Diamond UAT deviation applied; VARIANT-01..07 Done)
+Resume file: .planning/phases/17-visual-variants/17-SUMMARY.md
+Next command: Phase 18 (Audio Timbres) planning — `/gsd-plan-phase 18`
 
 ## Operator Next Steps
 
-- Begin Phase 17 (Visual Variants) planning: `/gsd-plan-phase 17` — Orb default + 2 alternate render-only visual variants; disabled while `inSessionView`; reduced-motion contract preserved (VARIANT-04). Builds on the now-stable 5-palette token surface delivered by Phases 16/16.1/16.2/16.3.
+- Begin Phase 18 (Audio Timbres) planning: `/gsd-plan-phase 18` — 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView` (TIMBRE-01..05). Follows the same picker pattern as Phase 16 themes + Phase 17 variants.
+- Optionally begin Phase 19 (Language Switching) planning: `/gsd-plan-phase 19` — EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail (I18N-01..07).
