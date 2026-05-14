@@ -99,6 +99,24 @@ No new trust boundary surfaces. `savePrefs` envelope merge is covered by T-19-03
 - `hrv:prefs-changed` with `detail.key === 'locale'` is ready for `useLocale.ts` (Plan 04) to consume
 - No blockers
 
+## Self-Check: PASSED
+
+- [x] `src/hooks/useLocaleChoice.ts` exists
+- [x] `src/hooks/useLocaleChoice.test.ts` exists with 6 passing tests
+- [x] Commit `b2de6cd` exists (Task 1 — hook implementation)
+- [x] Commit `61730d8` exists (Task 2 — 6 tests)
+- [x] Commit `7c99e7d` exists (SUMMARY.md)
+- [x] `loadPrefs().locale` count: 1
+- [x] `savePrefs(.*locale: next)` count: 1
+- [x] `detail: { key: 'locale', value: next }` count: 1
+- [x] `TimbreId` count: 0 (no rename leaks)
+- [x] `eslint-disable` count: 0 (D-24)
+- [x] Test count: 6
+- [x] `npx tsc --noEmit` exits 0
+- [x] `npm run lint` exits 0
+- [x] `npm run build` exits 0
+- [x] `npm test -- --run` exits 0 (650/650 tests pass)
+
 ---
 *Phase: 19-language-switching*
 *Completed: 2026-05-14*
