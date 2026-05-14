@@ -32,8 +32,8 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
     render(<VariantPicker disabled={false} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(3)
-    const squareButton = radios.find((b) => b.textContent?.includes('Square'))
-    const otherButtons = radios.filter((b) => !b.textContent?.includes('Square'))
+    const squareButton = radios.find((b) => b.textContent === 'Square')
+    const otherButtons = radios.filter((b) => b.textContent !== 'Square')
     expect(squareButton).toHaveAttribute('aria-checked', 'true')
     for (const button of otherButtons) {
       expect(button).toHaveAttribute('aria-checked', 'false')
@@ -45,7 +45,9 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
     render(<VariantPicker disabled={false} />)
     const label = document.getElementById('variant-picker-label')
     expect(label).not.toBeNull()
-    expect(label?.textContent).toBe('Variant')
+    // Reason: label is asserted non-null on the line above; non-null assertion is invariant-safe.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(label!.textContent).toBe('Variant')
   })
 
   // Test 3: aria-disabled + disabled attribute
@@ -144,9 +146,9 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
     render(<VariantPicker disabled={false} />)
     const radios = screen.getAllByRole('radio')
 
-    const orbButton = radios.find((b) => b.textContent?.includes('Orb'))
-    const squareButton = radios.find((b) => b.textContent?.includes('Square'))
-    const ringButton = radios.find((b) => b.textContent?.includes('Ring'))
+    const orbButton = radios.find((b) => b.textContent === 'Orb')
+    const squareButton = radios.find((b) => b.textContent === 'Square')
+    const ringButton = radios.find((b) => b.textContent === 'Ring')
 
     // Orb swatch: .orb-layer--in span with borderRadius 50%
     const orbSwatch = orbButton?.querySelector('.orb-layer--in') as HTMLElement | null
