@@ -36,11 +36,11 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 
 ### Audio Timbres (CUST-02)
 
-- [ ] **TIMBRE-01**: User can choose among 4 named synthesized timbre presets (**Bowl** = default = current behavior, **Bell**, **Sine**, **Chime**) from the SettingsDialog.
-- [ ] **TIMBRE-02**: Default timbre selection is `Bowl` so existing v1.0.1 audio behavior is byte-identical for users who never open the picker (zero regression).
-- [ ] **TIMBRE-03**: Timbre picker is **disabled while `inSessionView`** — the selected timbre is captured at session start and is not swapped mid-session (next-session-only application). This avoids the AUDIO-01 reconstruction-race + dual-anchor re-anchor risk.
-- [ ] **TIMBRE-04**: Selected timbre persists across reloads via `Envelope.prefs.timbre`.
-- [ ] **TIMBRE-05**: Each timbre preserves the per-phase fundamental-frequency distinction (A4 In / A3 Out) within its own timbral character.
+- [x] **TIMBRE-01**: User can choose among 4 named synthesized timbre presets (**Bowl** = default = current behavior, **Bell**, **Sine**, **Chime**) from the SettingsDialog.
+- [x] **TIMBRE-02**: Default timbre selection is `Bowl` so existing v1.0.1 audio behavior is byte-identical for users who never open the picker (zero regression).
+- [x] **TIMBRE-03**: Timbre picker is **disabled while `inSessionView`** — the selected timbre is captured at session start and is not swapped mid-session (next-session-only application). This avoids the AUDIO-01 reconstruction-race + dual-anchor re-anchor risk.
+- [x] **TIMBRE-04**: Selected timbre persists across reloads via `Envelope.prefs.timbre`.
+- [x] **TIMBRE-05**: Each timbre preserves the per-phase fundamental-frequency distinction (A4 In / A3 Out) within its own timbral character.
 
 ### Visual Variants (CUST-03)
 
@@ -111,11 +111,11 @@ Which phases cover which requirements.
 | THEME-04 | Phase 16 | Done |
 | THEME-05 | Phase 16 | Done |
 | THEME-UI-01 | Phase 16.1 | Done |
-| TIMBRE-01 | Phase 18 | Pending |
-| TIMBRE-02 | Phase 18 | Pending |
-| TIMBRE-03 | Phase 18 | Pending |
-| TIMBRE-04 | Phase 18 | Pending |
-| TIMBRE-05 | Phase 18 | Pending |
+| TIMBRE-01 | Phase 18 | Complete |
+| TIMBRE-02 | Phase 18 | Complete |
+| TIMBRE-03 | Phase 18 | Complete |
+| TIMBRE-04 | Phase 18 | Complete |
+| TIMBRE-05 | Phase 18 | Complete |
 | VARIANT-01 | Phase 17 | Done |
 | VARIANT-02 | Phase 17 | Done |
 | VARIANT-03 | Phase 17 | Done |

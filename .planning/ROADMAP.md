@@ -256,5 +256,5 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
-| 18. Audio Timbres | v1.1 | 6/6 | Complete   | 2026-05-14 |
+| 18. Audio Timbres | v1.1 | 6/6 | Complete    | 2026-05-14 |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
