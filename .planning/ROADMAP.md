@@ -191,7 +191,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 **Plans**: 6 plans
   - [x] 17-01-PLAN.md — CSS + TSX + test-selector rename `.orb-ring--{outer,inner}` → `.shape-marker--{outer,inner}` (D-15 atlas): theme.css rule selectors + BreathingShape.tsx classNames + BreathingShape.test.tsx + App.session.test.tsx querySelectors
   - [x] 17-02-PLAN.md — OrbShape extraction from BreathingShape (verbatim Body + LeadIn move + `data-variant='orb'` attribute on roots + shapeConstants.ts MIN/MID/MAX_SCALE module + BreathingShape slimmed to pass-through + test migration)
-  - [ ] 17-03-PLAN.md — SquareShape (rounded-square 18%) + RingShape (annulus with radial-gradient hollow center at 35%) + 6 `[data-variant]` CSS overrides in theme.css (D-13 token reuse — no new color tokens)
+  - [x] 17-03-PLAN.md — SquareShape (rounded-square 18%) + RingShape (annulus with radial-gradient hollow center at 35%) + 6 `[data-variant]` CSS overrides in theme.css (D-13 token reuse — no new color tokens)
   - [x] 17-04-PLAN.md — useVisualVariant orchestrator hook (cross-tab `storage` + same-tab `'hrv:prefs-changed'` filtered on `detail.key === 'variant'`, no global attribute write per D-16) + useVariantChoice picker setter hook (verbatim mirror of useThemeChoice with type substitutions)
   - [ ] 17-05-PLAN.md — BreathingShape full 3-way dispatcher (optional `variant?` prop, default `'orb'`, switch with Orb default fallback per defense-in-depth) + VariantPicker radiogroup body with inline shape swatches (Option A CSS-only for Orb + Square; Option B SVG for Ring per UI-SPEC Pitfall 8)
   - [ ] 17-06-PLAN.md — App.tsx integration (useVisualVariant invocation + sessionVariantRef snapshot at startSession per D-10 + clear on session end + BreathingShape `variant={sessionVariantRef.current ?? liveVariant}` prop) + App.session.test.tsx VARIANT-03 capture-at-Start coverage + operator UAT (5 palettes × 3 variants + reduced-motion + cross-tab) + phase close (REQUIREMENTS/ROADMAP/STATE/SUMMARY)
@@ -246,6 +246,6 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.1. UI Token Migration | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 16.2. Palette Aesthetic Refresh | v1.1 | 2/2 | Complete | 2026-05-13 |
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
-| 17. Visual Variants | v1.1 | 3/6 | In Progress|  |
+| 17. Visual Variants | v1.1 | 4/6 | In Progress|  |
 | 18. Audio Timbres | v1.1 | 0/? | Not started | - |
 | 19. Language Switching | v1.1 | 0/? | Not started | - |
