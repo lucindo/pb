@@ -14,6 +14,7 @@ import { SettingsDialog } from '../components/SettingsDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useTheme } from '../hooks/useTheme'
+import { useVisualVariant } from '../hooks/useVisualVariant'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame } from '../domain/sessionMath'
@@ -34,7 +35,7 @@ import {
   STATE_KEY,
   type PersistedStats,
 } from '../storage'
-import type { SessionSettings } from '../domain/settings'
+import type { SessionSettings, VisualVariantId } from '../domain/settings'
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
@@ -137,6 +138,7 @@ export default function App() {
   const audio = useAudioCues(initialMute, onAudioReanchorRequired) // Phase 3 + Plan 06 D-35
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
   useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
+  const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
   const [appPhase, setAppPhase] = useState<AppPhase>('idle')
@@ -167,6 +169,15 @@ export default function App() {
   // can read cycleMs/inhaleMs/exhaleMs to compute boundary start times (per Pitfall 2 fix from
   // checker B1: boundary start times come from the PLAN, not from frame.elapsedMs at render time).
   const planRef = useRef<ReturnType<typeof createBreathingPlan> | null>(null)
+
+  // Phase 17 D-09: captured-at-Start snapshot. While non-null (during an active session
+  // including lead-in), BreathingShape receives this frozen value and ignores liveVariant.
+  // Belt-and-suspenders against a cross-tab storage event that the picker-disable cannot block (D-10).
+  // D-11: audio reconstruction (Phase 5.1 / Phase 9) does NOT re-snapshot — orthogonal subsystems.
+  // Note: kept as both a ref (for synchronous write in onStartClick before any await) AND as state
+  // (for the JSX render path — react-hooks/refs disallows reading .current in render).
+  const sessionVariantRef = useRef<VisualVariantId | null>(null)
+  const [sessionVariant, setSessionVariant] = useState<VisualVariantId | null>(null)
 
   // Refs to track in-flight lead-in timeouts so end-during-lead-in can cancel them cleanly.
   const leadInTimeoutsRef = useRef<number[]>([])
@@ -301,6 +312,8 @@ export default function App() {
       setAppPhase('idle')
       audioAnchorRef.current = null
       planRef.current = null
+      sessionVariantRef.current = null  // Phase 17 D-10 tidy clear (redundant with leave-running effect but avoids 1 frame of stale ref)
+      setSessionVariant(null)
       void audioStop()
       void wakeLockRelease() // Phase 5 D-07/D-08: idempotent if no lock held
       return
@@ -311,6 +324,13 @@ export default function App() {
     // bumps the same ref, so the post-await continuation can detect "I was cancelled"
     // by comparing local generation against the ref's current value.
     const generation = ++startGenerationRef.current
+
+    // Phase 17 D-10: capture-at-session-start — set BEFORE lead-in begins so the visual variant
+    // is frozen for the entire session (lead-in + breath loop). Reset in the leave-running cleanup
+    // effect below. D-11: audio reconstruction does NOT re-snapshot.
+    // Ref for synchronous write (pre-await guard); state for the JSX render path.
+    sessionVariantRef.current = liveVariant
+    setSessionVariant(liveVariant)
 
     setAppPhase('lead-in')
     setLeadInDigit(3)
@@ -358,7 +378,7 @@ export default function App() {
       session.start()
     }, LEAD_IN_DURATION_MS)
     leadInTimeoutsRef.current = [t1, t2, t3]
-  }, [appPhase, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
+  }, [appPhase, liveVariant, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
@@ -474,6 +494,8 @@ export default function App() {
       clearLeadInTimeouts()
       audioAnchorRef.current = null
       planRef.current = null
+      sessionVariantRef.current = null  // Phase 17 D-10 release the captured variant so next Start re-reads liveVariant
+      setSessionVariant(null)  // Phase 17 D-10 release the captured variant for the JSX render path
       lastBoundaryKeyRef.current = null
 
       // Phase 4 LOCL-02 + Phase 10 HOOKS-02 (D-06/D-09): single write site for
@@ -607,7 +629,9 @@ export default function App() {
         </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
+          {/* Phase 17 D-09: sessionVariant is the captured-at-Start frozen value (non-null during lead-in + running); liveVariant is the fallback at idle. */}
           <BreathingShape
+            variant={sessionVariant ?? liveVariant}
             frame={appPhase === 'running' ? session.liveFrame : null}
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
           />
