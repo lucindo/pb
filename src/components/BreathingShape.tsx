@@ -1,5 +1,14 @@
+// D-04 + Phase 17 Plan 02: BreathingShape is a thin dispatcher.
+// It owns the idle null-return guard (frame === null && leadInDigit == null → null).
+// All rendering is delegated to the appropriate shape component:
+//   - In Plan 02 (this plan): unconditionally delegates to OrbShape.
+//   - In Plan 05: replaces this body with a 3-way variant switch
+//     (OrbShape | SquareShape | RingShape) based on the `variant` prop.
+//
+// The MIN/MAX/MID scale constants have moved to src/components/shapeConstants.ts
+// (IN-01 — single source of truth for all three variants).
 import type { SessionFrame } from '../domain/sessionMath'
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
+import { OrbShape } from './OrbShape'
 
 export interface BreathingShapeProps {
   frame: SessionFrame | null
@@ -10,215 +19,9 @@ export interface BreathingShapeProps {
   leadInDigit?: 3 | 2 | 1 | null
 }
 
-// IN-01: keep these in sync with the matching tokens in `src/styles/theme.css`
-// (`--orb-scale-min`, `--orb-scale-max`, `--orb-scale-mid`). The TS constants
-// drive the breathing math here; the CSS tokens are exposed for stylesheet
-// consumers (e.g. the inline `transform: scale(var(--orb-scale-mid))` fallback
-// path under reduced-motion). If you edit one side, edit the other.
-const MIN_SCALE = 0.58 // keep in sync with --orb-scale-min
-const MAX_SCALE = 1.0 // keep in sync with --orb-scale-max
-const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — D-06 reduced-motion fixed size; keep in sync with --orb-scale-mid
-
-// IN-04 + Phase 3 D-14: split into wrapper + body so the matchMedia
-// subscription in usePrefersReducedMotion only mounts when there is an active
-// frame to render. On the idle screen (frame === null AND leadInDigit == null)
-// we render nothing without paying for the hook lifecycle.
-//
-// During lead-in we render BreathingShapeLeadIn (no usePrefersReducedMotion
-// subscription — the orb is locked at MID_SCALE for everyone, mirroring Phase
-// 2 D-06 reduced-motion mode regardless of OS preference).
-//
-// Hooks-rules-of-React are still respected because each component calls its
-// hooks unconditionally.
 export function BreathingShape({ frame, leadInDigit }: BreathingShapeProps) {
-  if (leadInDigit != null) {
-    return <BreathingShapeLeadIn digit={leadInDigit} />
-  }
-  if (frame === null) {
+  if (frame === null && leadInDigit == null) {
     return null
   }
-  return <BreathingShapeBody frame={frame} />
-}
-
-function BreathingShapeBody({ frame }: { frame: SessionFrame }) {
-  const reducedMotion = usePrefersReducedMotion()
-
-  const progress = Math.min(1, Math.max(0, frame.phaseProgress))
-  const liveScale =
-    frame.phase === 'in'
-      ? MIN_SCALE + progress * (MAX_SCALE - MIN_SCALE)
-      : MAX_SCALE - progress * (MAX_SCALE - MIN_SCALE)
-  const orbScale = reducedMotion ? MID_SCALE : liveScale
-
-  return (
-    <div
-      role="img"
-      aria-label={`Breathing shape: ${frame.phaseLabel}`}
-      data-phase={frame.phase}
-      data-progress={progress.toFixed(3)}
-      className="relative mx-auto my-12 grid place-items-center"
-      style={{
-        width: 'var(--orb-size)',
-        height: 'var(--orb-size)',
-      }}
-    >
-      {/* D-04 + Phase 5.1 D-10/D-12: outer reference ring at MAX_SCALE boundary.
-          The 1.5px border (theme.css `.shape-marker--outer { border-width: 1.5px }`) lives
-          INSIDE the box under the global `border-box` sizing. With `inset-0` the border's
-          outer edge sat 1.5px inside the 100% container; the orb at scale(MAX_SCALE = 1.0)
-          fills the 100% container exactly, leaving a Safari-visible gap at peak inhale.
-          `inset: -1.5px` shifts the border-box outward by exactly the border width so the
-          border's outer edge meets the orb at scale(1.0) on Safari + Chromium + Firefox.
-          Mirror in BreathingShapeLeadIn below — both render sites must match (D-12). */}
-      <span
-        aria-hidden="true"
-        className="shape-marker--outer absolute rounded-full border-solid"
-        style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
-      />
-      {/* The orb itself: scaled host with two stacked gradient layers (D-01, D-02, D-07).
-          Phase 5.1 Plan 04 D-20 + post-UAT hotfix: drop `inset-0` and use explicit
-          four-edge anchoring (left/right/top/bottom) so Safari Desktop sizes the
-          abs-pos `.orb` against the container's padding-box rather than collapsing
-          to the inner-ring's implicit grid auto-track (which made `.orb` 58% of
-          parent — see 05.1-UAT.md Task 3 pre-fix inspector data: 209 px instead
-          of 360 px). Initial Plan 04 fix used `width:100%; height:100%` (percent
-          dims) which sized correctly but FROZE the `transition: transform 200ms`
-          interpolation on Safari (post-fix UAT showed scale stuck at 0.58
-          despite React inline transform updating to scale(0.99) — Safari layer
-          interpolation never advanced beyond the initial value). Four-edge
-          anchoring matches the working outer-ring pattern and preserves the
-          transition. Mirrored in BreathingShapeLeadIn below (D-22). */}
-      <div
-        className="orb absolute rounded-full motion-reduce:transition-none"
-        style={{
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          // `translate3d(0,0,0)` forces GPU compositor promotion (Firefox
-          // Desktop flickers without this; Safari/Chromium auto-promote).
-          // Order matters: translate3d first so it establishes the 3D
-          // context, scale applies inside it.
-          transform: `translate3d(0,0,0) scale(${String(orbScale)})`,
-        }}
-      >
-        <span
-          aria-hidden="true"
-          className="orb-layer--in absolute inset-0 rounded-full"
-        />
-        <span
-          aria-hidden="true"
-          className="orb-layer--out absolute inset-0 rounded-full"
-        />
-      </div>
-      {/* D-04 + 260510-tc9 Bug 1: inner reference ring at MIN_SCALE boundary.
-          Rendered AFTER the orb so it sits on top of the opaque gradient fill
-          rather than behind it — the previous DOM order placed the ring below
-          the orb body, where it was occluded at every scale (no visible cue for
-          Out-phase arrival). With the ring on top, orb-edge approaches a fixed
-          visible inner ring as Out progresses (mirroring the outer-ring cue on
-          In) and coincides at MIN_SCALE = phase boundary.
-          WR-03: position explicitly with left/top + translate centering rather
-          than relying on implicit grid auto-positioning of an absolutely-positioned
-          child, which is genuinely ambiguous in the spec for absolutely-positioned
-          grid items and is rendered inconsistently by older Safari. */}
-      <span
-        aria-hidden="true"
-        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
-        style={{
-          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
-          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
-        }}
-      />
-      {/* D-03: phase label centered inside the orb at large display size */}
-      <span
-        className="relative z-10 text-5xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-6xl"
-        style={{
-          color:
-            frame.phase === 'in'
-              ? 'var(--color-orb-in-text)'
-              : 'var(--color-orb-out-text)',
-        }}
-      >
-        {frame.phaseLabel}
-      </span>
-    </div>
-  )
-}
-
-// Phase 3 D-14 + Phase 2 D-06: the lead-in is a neutral pre-state. The orb is
-// locked at MID_SCALE for everyone (mirrors reduced-motion mode regardless of
-// OS preference), and only the In gradient is rendered (no Out crossfade) so
-// the lead-in feels like a still pool of water awaiting the first breath.
-//
-// No usePrefersReducedMotion subscription here — the lead-in is constant by
-// design, so there is no animation to suppress.
-//
-// No data-phase / data-progress on the root — those attributes belong to the
-// active phase loop. The lead-in is pre-state and exposes only the aria-label
-// "Lead-in: N" for assistive tech.
-function BreathingShapeLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
-  return (
-    <div
-      role="img"
-      aria-label={`Lead-in: ${String(digit)}`}
-      className="relative mx-auto my-12 grid place-items-center"
-      style={{
-        width: 'var(--orb-size)',
-        height: 'var(--orb-size)',
-      }}
-    >
-      {/* Outer reference ring (Phase 2 D-04 + Phase 5.1 D-10/D-12).
-          Mirrors BreathingShapeBody above — both render sites must match
-          or the Safari outer-ring gap reappears during the 3-2-1 countdown. */}
-      <span
-        aria-hidden="true"
-        className="shape-marker--outer absolute rounded-full border-solid"
-        style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
-      />
-      {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
-          is rendered (no Out crossfade) so the lead-in feels like a still pool
-          of water awaiting the first breath. Phase 5.1 Plan 04 D-20 + D-22 +
-          post-UAT hotfix: same four-edge anchoring as BreathingShapeBody. The
-          lead-in is locked at MID_SCALE so the transition-freeze symptom
-          doesn't show up here, but match the body for D-22 invariant + so any
-          future "lead-in animates" change inherits the working CSS shape. */}
-      <div
-        className="orb absolute rounded-full"
-        style={{
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          // GPU promotion (see BreathingShapeBody comment above).
-          transform: `translate3d(0,0,0) scale(${String(MID_SCALE)})`,
-        }}
-      >
-        <span
-          aria-hidden="true"
-          className="orb-layer--in absolute inset-0 rounded-full"
-        />
-      </div>
-      {/* Inner reference ring (Phase 2 D-04 + 260510-tc9 Bug 1) — rendered AFTER
-          the orb so it sits on top of the opaque gradient fill. D-22 mirror of
-          BreathingShapeBody. */}
-      <span
-        aria-hidden="true"
-        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-solid"
-        style={{
-          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
-          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
-        }}
-      />
-      {/* D-14: digit in the same large-display position as the In/Out label,
-          one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
-          so the countdown reads as dominant. */}
-      <span
-        className="relative z-10 text-7xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-8xl"
-        style={{ color: 'var(--color-orb-in-text)' }}
-      >
-        {digit}
-      </span>
-    </div>
-  )
+  return <OrbShape frame={frame} leadInDigit={leadInDigit} />
 }
