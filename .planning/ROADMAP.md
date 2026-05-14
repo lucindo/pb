@@ -229,9 +229,9 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   4. The Forrest claim-safe copy (`inspired by Forrest's teachings` and the two-line disclaimer) is routed through the PT-BR translation pipeline; a translation-key allowlist or locked-copy review checklist is present in the codebase so future locale contributions cannot silently alter D-12 positioning (I18N-06 guardrail — D-12 decision honored).
   5. PT-BR translations are present for v1.1 ship with `// TODO: native-speaker review` flags marking machine-translated strings as v1.x carry-forward (I18N-07); `tsc && lint && build && test` exit 0.
 **Plans**: 9 plans
-  - [ ] 19-01-PLAN.md — strings.ts catalog (UiStrings interface + UI_STRINGS EN+PT-BR + LOCALE_DISPLAY_NAMES) + exhaustiveness tests
-  - [ ] 19-02-PLAN.md — useLocaleChoice picker-side hook (verbatim clone of useTimbreChoice with timbre→locale rename) + 6 hook tests
-  - [ ] 19-03-PLAN.md — learnContent locale-keyed shape + EN substring strip + PT-BR translation + lockedCopy module (3 entries × 2 locales) + frozen-EN snapshot guard test (D-02 .toBe byte-equality) + substring-absence guard
+  - [x] 19-01-PLAN.md — strings.ts catalog (UiStrings interface + UI_STRINGS EN+PT-BR + LOCALE_DISPLAY_NAMES) + exhaustiveness tests
+  - [x] 19-02-PLAN.md — useLocaleChoice picker-side hook (verbatim clone of useTimbreChoice with timbre→locale rename) + 6 hook tests
+  - [x] 19-03-PLAN.md — learnContent locale-keyed shape + EN substring strip + PT-BR translation + lockedCopy module (3 entries × 2 locales) + frozen-EN snapshot guard test (D-02 .toBe byte-equality) + substring-absence guard
   - [ ] 19-04-PLAN.md — useLocale orchestrator hook (3 effects: documentElement.lang write + cross-tab storage listener + same-tab hrv:prefs-changed listener) + 8 hook tests
   - [ ] 19-05-PLAN.md — LanguagePicker radiogroup body (mirror of TimbrePicker chrome with LOCALE_DISPLAY_NAMES endonyms) + 9 picker tests including D-14 cross-UI endonym invariant
   - [ ] 19-06-PLAN.md — Dialogs + anchors + toggle + pickers accept strings prop (9 components: SettingsDialog/EndSession/ResetStats/SettingsAnchor/LearnAnchor/MuteToggle/Theme/Variant/Timbre/LanguagePicker sectionLabel widening)
@@ -266,4 +266,4 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete    | 2026-05-14 |
-| 19. Language Switching | v1.1 | 0/? | Not started | - |
+| 19. Language Switching | v1.1 | 3/9 | In Progress|  |
