@@ -59,7 +59,7 @@ describe('audioEngine', () => {
   })
 
   it('createAudioEngine resolves with an engine when AudioContext construction succeeds', async () => {
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     expect(engine).toBeDefined()
     expect(typeof engine.scheduleLeadIn).toBe('function')
     expect(typeof engine.scheduleNextCue).toBe('function')
@@ -80,13 +80,13 @@ describe('audioEngine', () => {
         }
       },
     )
-    await expect(createAudioEngine()).rejects.toThrow('blocked')
+    await expect(createAudioEngine({ timbre: 'bowl' })).rejects.toThrow('blocked')
   })
 
   it('scheduleLeadIn schedules 3 ticks at t/+1/+2 and an In cue at +3', async () => {
     const tickSpy = vi.spyOn(cueSynth, 'scheduleTick')
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
 
     engine.scheduleLeadIn(0, samplePlan)
 
@@ -101,7 +101,7 @@ describe('audioEngine', () => {
   })
 
   it('scheduleLeadIn returns the audioTime of the first In cue (= startAudioTime + 3)', async () => {
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     const firstInCueTime = engine.scheduleLeadIn(7, samplePlan)
     expect(firstInCueTime).toBe(10)
     await engine.close()
@@ -112,8 +112,8 @@ describe('audioEngine', () => {
   })
 
   it('scheduleNextCue with newPhase=in calls scheduleInCue at the requested audioTime', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
     expect(inSpy).toHaveBeenCalledTimes(1)
     expect(inSpy.mock.calls[0]?.[1]).toBe(5)
@@ -121,31 +121,32 @@ describe('audioEngine', () => {
   })
 
   it('scheduleNextCue with newPhase=out calls scheduleOutCue at the requested audioTime', async () => {
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
-    const engine = await createAudioEngine()
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'out', audioTime: 5.5, phaseDurationSec: 6.54 })
     expect(outSpy).toHaveBeenCalledTimes(1)
     expect(outSpy.mock.calls[0]?.[1]).toBe(5.5)
     await engine.close()
   })
 
-  // 260510-tc9 Bug 2: engine forwards phaseDurationSec as the 4th positional arg
-  // to scheduleInCue / scheduleOutCue (matches cueSynth signature: ac, when, dest, phaseDurationSec).
-  it('scheduleNextCue forwards phaseDurationSec as the 4th arg to scheduleInCue/scheduleOutCue', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
-    const engine = await createAudioEngine()
+  // 260510-tc9 Bug 2: engine forwards phaseDurationSec to scheduleIn/OutCueForTimbre.
+  // Phase 18 Plan 03: dispatch signature is (ac, when, dest, timbre, phaseDurationSec),
+  // so phaseDurationSec is now the 5th positional arg (index 4) — index 3 is timbre.
+  it('scheduleNextCue forwards phaseDurationSec as the 5th arg to scheduleInCueForTimbre/scheduleOutCueForTimbre', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
     engine.scheduleNextCue({ newPhase: 'out', audioTime: 9.36, phaseDurationSec: 6.54 })
-    expect(inSpy.mock.calls[0]?.[3]).toBeCloseTo(4.36, 5)
-    expect(outSpy.mock.calls[0]?.[3]).toBeCloseTo(6.54, 5)
+    expect(inSpy.mock.calls[0]?.[4]).toBeCloseTo(4.36, 5)
+    expect(outSpy.mock.calls[0]?.[4]).toBeCloseTo(6.54, 5)
     await engine.close()
   })
 
   it('scheduleNextCue does NOT call cueSynth when muted', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.setMuted(true)
     engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
     engine.scheduleNextCue({ newPhase: 'out', audioTime: 6, phaseDurationSec: 6.54 })
@@ -156,8 +157,8 @@ describe('audioEngine', () => {
 
   it('setMuted(true) mid-cue applies cancelAndHoldAtTime + setTargetAtTime fade-out (D-08)', async () => {
     const { handle, fns } = makeMockCueHandle({ withCancelAndHold: true })
-    vi.spyOn(cueSynth, 'scheduleInCue').mockReturnValue(handle)
-    const engine = await createAudioEngine()
+    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(handle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
 
     engine.scheduleLeadIn(0, samplePlan) // produces an active In cue (the +3 boundary)
     engine.setMuted(true)
@@ -172,9 +173,9 @@ describe('audioEngine', () => {
   })
 
   it('setMuted(false) mid-phase does NOT fire any cue immediately (D-08 unmute-waits-for-boundary)', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
 
     engine.setMuted(true)
     inSpy.mockClear()
@@ -188,7 +189,7 @@ describe('audioEngine', () => {
   })
 
   it('engine.muted reflects the value passed to setMuted', async () => {
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     expect(engine.muted).toBe(false)
     engine.setMuted(true)
     expect(engine.muted).toBe(true)
@@ -218,7 +219,7 @@ describe('audioEngine', () => {
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
-    const probeEngine = await createAudioEngine()
+    const probeEngine = await createAudioEngine({ timbre: 'bowl' })
     await probeEngine.close()
     expect(closeSpy).toHaveBeenCalledTimes(1)
   })
@@ -241,15 +242,15 @@ describe('audioEngine', () => {
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     await engine.close()
     await engine.close()
     expect(closeSpy).toHaveBeenCalledTimes(1)
   })
 
   it('after close(), scheduleNextCue is a no-op (does not throw, does not call cueSynth)', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue')
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     await engine.close()
     inSpy.mockClear()
     expect(() => { engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 }) }).not.toThrow()
@@ -257,7 +258,7 @@ describe('audioEngine', () => {
   })
 
   it('scheduleLeadIn returns null when engine is closed (AUDIO-03)', async () => {
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     await engine.close()
     const result = engine.scheduleLeadIn(0, samplePlan)
     expect(result).toBeNull()
@@ -283,7 +284,7 @@ describe('audioEngine', () => {
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     probeTime = 42.5
     expect(engine.now()).toBe(42.5)
     await engine.close()
@@ -307,8 +308,8 @@ describe('audioEngine', () => {
     vi.stubGlobal('AudioContext', ProbeAC)
 
     const { handle: stubHandle } = makeMockCueHandle()
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue').mockReturnValue(stubHandle)
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(stubHandle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'in', audioTime: 9.5, phaseDurationSec: 4 })
     // audioTime 9.5 < currentTime(10) + SAFE_LEAD_SEC(0.005) → clamped to 10.005
     expect(inSpy.mock.calls[0]?.[1]).toBeCloseTo(probeTime + SAFE_LEAD_SEC, 9)
@@ -333,8 +334,8 @@ describe('audioEngine', () => {
     vi.stubGlobal('AudioContext', ProbeAC)
 
     const { handle: stubHandle } = makeMockCueHandle()
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCue').mockReturnValue(stubHandle)
-    const engine = await createAudioEngine()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(stubHandle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'in', audioTime: 12, phaseDurationSec: 4 })
     // audioTime 12 > currentTime(10) + SAFE_LEAD_SEC(0.005) → passes verbatim
     expect(inSpy.mock.calls[0]?.[1]).toBe(12)
@@ -364,7 +365,7 @@ describe('audioEngine', () => {
     }
     vi.stubGlobal('AudioContext', ProbeAC)
 
-    const engine = await createAudioEngine()
+    const engine = await createAudioEngine({ timbre: 'bowl' })
     // WR-06 path resumed the AC at construction.
     expect(engine.state).toBe('running')
 
@@ -379,8 +380,8 @@ describe('audioEngine', () => {
 
   it('cancelAndHoldAtTime fallback (Pitfall 9): when undefined, uses cancelScheduledValues + setValueAtTime', async () => {
     const { handle, fns } = makeMockCueHandle({ withCancelAndHold: false })
-    vi.spyOn(cueSynth, 'scheduleInCue').mockReturnValue(handle)
-    const engine = await createAudioEngine()
+    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(handle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
 
     engine.scheduleLeadIn(0, samplePlan) // captures activeCue
     engine.setMuted(true)
@@ -391,5 +392,57 @@ describe('audioEngine', () => {
     expect(fns.setTargetAtTime).toHaveBeenCalledTimes(1)
 
     await engine.close()
+  })
+
+  // Phase 18 Plan 03 Task 4: timbre-propagation tests verifying that the
+  // construction-time `opts.timbre` flows through scheduleLeadIn (first In cue)
+  // and scheduleNextCue (in/out ternary). Captures D-08 capture-at-construction
+  // semantics: no setter, no re-read, immutable for engine lifetime.
+
+  it('createAudioEngine({ timbre: "bell" }) forwards "bell" to scheduleInCueForTimbre on the first In cue', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bell' })
+
+    engine.scheduleLeadIn(0, samplePlan)
+
+    expect(inSpy).toHaveBeenCalledTimes(1)
+    // Signature: (ac, when, dest, timbre, phaseDurationSec) → timbre at index 3.
+    expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
+
+    await engine.close()
+  })
+
+  it('createAudioEngine({ timbre: "sine" }) forwards "sine" to scheduleInCueForTimbre and scheduleOutCueForTimbre via scheduleNextCue', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'sine' })
+
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 5 })
+    engine.scheduleNextCue({ newPhase: 'out', audioTime: 6.0, phaseDurationSec: 7 })
+
+    expect(inSpy).toHaveBeenCalledTimes(1)
+    expect(outSpy).toHaveBeenCalledTimes(1)
+    expect(inSpy.mock.calls[0]?.[3]).toBe('sine')
+    expect(outSpy.mock.calls[0]?.[3]).toBe('sine')
+
+    await engine.close()
+  })
+
+  it('engine captures timbre once at construction — two engines with different timbres operate independently (no shared mutable state)', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engineBell = await createAudioEngine({ timbre: 'bell' })
+    const engineChime = await createAudioEngine({ timbre: 'chime' })
+
+    // Bell engine schedules — must dispatch with 'bell', not 'chime' (independent capture).
+    engineBell.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
+    // Chime engine schedules — must dispatch with 'chime', not 'bell'.
+    engineChime.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
+
+    expect(inSpy).toHaveBeenCalledTimes(2)
+    expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
+    expect(inSpy.mock.calls[1]?.[3]).toBe('chime')
+
+    await engineBell.close()
+    await engineChime.close()
   })
 })

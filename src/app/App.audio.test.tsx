@@ -129,7 +129,8 @@ describe('App — audio cues (Phase 3)', () => {
   // boundary effect's `audioAnchor === null` guard short-circuits and the spy
   // is never called. Proves the B1 dual-anchor fix + the B2 reframed truth.
   it('schedules an Out cue at the correct audio-clock time on the first Out boundary (after full lead-in completion)', async () => {
-    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+    // Phase 18 Plan 03: engine dispatches via scheduleOutCueForTimbre (parameterized).
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
 
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -339,7 +340,8 @@ describe('App — audio cues (Phase 3)', () => {
   // Test 15: caller-side clamp — audioTime is clamped to audio.audioNow() + SAFE_LEAD_SEC
   it('AUDIO-02: App boundary effect clamps audioTime to audio.audioNow() + SAFE_LEAD_SEC (caller-side)', async () => {
     const tracker = installTrackedAC()
-    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+    // Phase 18 Plan 03: engine dispatches via scheduleOutCueForTimbre (parameterized).
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
 
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -377,7 +379,8 @@ describe('App — audio cues (Phase 3)', () => {
   // Test 16: paired no-clamp case — audioTime already future, passes verbatim
   it('AUDIO-02: App boundary effect passes audioTime verbatim when already > now() + SAFE_LEAD_SEC', async () => {
     const tracker = installTrackedAC()
-    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue')
+    // Phase 18 Plan 03: engine dispatches via scheduleOutCueForTimbre (parameterized).
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
 
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -648,15 +651,16 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     window.localStorage.setItem('hrv:state:v1', JSON.stringify({ version: 1, mute: true }))
     const tracker = installTrackedAC()
 
-    // Capture newAC.currentTime SYNCHRONOUSLY at the moment scheduleOutCue is
+    // Capture newAC.currentTime SYNCHRONOUSLY at the moment the Out cue dispatch is
     // called (inside the engine's scheduleNextCue stack frame). Reading
     // mock.calls[0][0].currentTime AFTER the spy returns would drift because
     // the AC clock is live — we need a snapshot at invocation time.
-    const originalScheduleOutCue = cueSynth.scheduleOutCue
+    // Phase 18 Plan 03: engine now calls scheduleOutCueForTimbre(ctx, time, dest, timbre, durSec).
+    const originalScheduleOutCueForTimbre = cueSynth.scheduleOutCueForTimbre
     let acNowAtBoundary: number | null = null
-    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCue').mockImplementation((ctx, time, dest, durSec) => {
+    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre').mockImplementation((ctx, time, dest, timbre, durSec) => {
       if (acNowAtBoundary === null) acNowAtBoundary = ctx.currentTime
-      return originalScheduleOutCue(ctx, time, dest, durSec)
+      return originalScheduleOutCueForTimbre(ctx, time, dest, timbre, durSec)
     })
 
     // Derive the mid-phase reconstruction target from the production

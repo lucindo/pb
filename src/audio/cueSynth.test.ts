@@ -2,10 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   scheduleInCue,
+  scheduleInCueForTimbre,
   scheduleOutCue,
+  scheduleOutCueForTimbre,
   scheduleTick,
   type CueHandle,
 } from './cueSynth'
+import { TIMBRE_OPTIONS } from '../domain/settings'
+import { TIMBRE_PRESETS } from './timbres'
 
 // Test helper: relies on FakeAudioContext polyfill installed by vitest.setup.ts.
 function createAc(): AudioContext {
@@ -356,5 +360,111 @@ describe('cueSynth', () => {
     expect(decayCall[2]).toBeCloseTo(OUT_DEFAULT_TAU, 5) // unchanged from baseline
     // cleanupAt extends to phase end (not just τ × TAIL_MULTIPLIER).
     expect(handle.cleanupAt).toBeGreaterThan(1.0 + 30)
+  })
+})
+
+// Test helper duplicated here so the per-timbre describes can be siblings of
+// the original cueSynth describe (no internal helper hoisting needed).
+function createAcForTimbre(): AudioContext {
+  return new AudioContext()
+}
+
+// Phase 18 Plan 03 Task 3: parameterized per-timbre coverage for the new
+// scheduleInCueForTimbre / scheduleOutCueForTimbre dispatch surface. The
+// existing Bowl tests above stay UNCHANGED — TIMBRE-02 byte-identical proof
+// at the synthesis layer. These blocks add 4 × it.each(TIMBRE_OPTIONS) tests
+// per dispatch direction (8 tests × 4 timbres = 32 per-timbre assertions).
+
+describe('scheduleInCueForTimbre (all timbres)', () => {
+  it.each(TIMBRE_OPTIONS)('%s: oscillator count equals preset.partials.length', (timbre) => {
+    const ac = createAcForTimbre()
+    const oscSpy = vi.spyOn(ac, 'createOscillator')
+    scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
+    expect(oscSpy).toHaveBeenCalledTimes(TIMBRE_PRESETS[timbre].partials.length)
+  })
+
+  it.each(TIMBRE_OPTIONS)('%s: first oscillator frequency matches preset.fundamentalHzIn', (timbre) => {
+    const ac = createAcForTimbre()
+    const oscillators: OscillatorNode[] = []
+    const realCreate = ac.createOscillator.bind(ac)
+    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
+      const osc = realCreate()
+      oscillators.push(osc)
+      return osc
+    })
+
+    scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
+
+    const preset = TIMBRE_PRESETS[timbre]
+    expect(oscillators).toHaveLength(preset.partials.length)
+    // Reason: length asserted above; index 0 is safe.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(oscillators[0]!.frequency.value).toBeCloseTo(preset.fundamentalHzIn, 5)
+  })
+
+  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain', (timbre) => {
+    const ac = createAcForTimbre()
+    const handle: CueHandle = scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    expect(setValue).toHaveBeenCalledWith(TIMBRE_PRESETS[timbre].peakGain, 1.0)
+  })
+
+  it.each(TIMBRE_OPTIONS)('%s: decay time constant matches preset.decayTauIn', (timbre) => {
+    const ac = createAcForTimbre()
+    const handle: CueHandle = scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    const decayCall = setTarget.mock.calls[0] as [number, number, number]
+    expect(decayCall[2]).toBeCloseTo(TIMBRE_PRESETS[timbre].decayTauIn, 5)
+  })
+})
+
+describe('scheduleOutCueForTimbre (all timbres)', () => {
+  it.each(TIMBRE_OPTIONS)('%s: oscillator count equals preset.partials.length', (timbre) => {
+    const ac = createAcForTimbre()
+    const oscSpy = vi.spyOn(ac, 'createOscillator')
+    scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
+    expect(oscSpy).toHaveBeenCalledTimes(TIMBRE_PRESETS[timbre].partials.length)
+  })
+
+  it.each(TIMBRE_OPTIONS)('%s: first oscillator frequency matches preset.fundamentalHzOut', (timbre) => {
+    const ac = createAcForTimbre()
+    const oscillators: OscillatorNode[] = []
+    const realCreate = ac.createOscillator.bind(ac)
+    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
+      const osc = realCreate()
+      oscillators.push(osc)
+      return osc
+    })
+
+    scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
+
+    const preset = TIMBRE_PRESETS[timbre]
+    expect(oscillators).toHaveLength(preset.partials.length)
+    // Reason: length asserted above; index 0 is safe.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(oscillators[0]!.frequency.value).toBeCloseTo(preset.fundamentalHzOut, 5)
+  })
+
+  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain', (timbre) => {
+    const ac = createAcForTimbre()
+    const handle: CueHandle = scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    expect(setValue).toHaveBeenCalledWith(TIMBRE_PRESETS[timbre].peakGain, 1.0)
+  })
+
+  it.each(TIMBRE_OPTIONS)('%s: decay time constant matches preset.decayTauOut', (timbre) => {
+    const ac = createAcForTimbre()
+    const handle: CueHandle = scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    const decayCall = setTarget.mock.calls[0] as [number, number, number]
+    expect(decayCall[2]).toBeCloseTo(TIMBRE_PRESETS[timbre].decayTauOut, 5)
   })
 })

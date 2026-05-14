@@ -1,27 +1,22 @@
 // Pure Web Audio synthesis builders. Zero React imports.
 // Mirrors the pure-builder + lookup-table pattern of src/domain/breathingPlan.ts.
 //
-// In cue:  A4 = 440 Hz, decayTimeConstant 1.4 s, ~7 s tail (strike-and-decay)
-// Out cue: A3 = 220 Hz, decayTimeConstant 1.8 s, ~9 s tail
-// Tick:    1200 Hz square wave, ~80 ms (perceptually distinct from bowl cues per D-15)
+// Phase 18 D-02: Bowl preset DSP recipes now live in src/audio/timbres.ts
+// (TIMBRE_PRESETS.bowl). cueSynth dispatches per-timbre via
+// scheduleInCueForTimbre / scheduleOutCueForTimbre, which look up
+// TIMBRE_PRESETS[timbre] and call the parameterized scheduleBowlCue. The
+// existing scheduleInCue / scheduleOutCue exports are preserved as Bowl-only
+// thin wrappers (D-01 option (a) — TIMBRE-02 signature-stability proof).
+//
+// Tick:   1200 Hz square wave, ~80 ms (perceptually distinct from bowl cues per D-15 / D-07
+//         fixed across all timbres — scheduleTick body is byte-identical to v1.0.1).
 // Source: 03-RESEARCH.md Pattern 2 lines 271-340.
 //
-// All audio is generated entirely via Web Audio API — no bundled or external assets (D-04).
+// All audio is generated entirely via Web Audio API — no bundled or external assets (D-04 / D-14).
 
-const IN_FUNDAMENTAL_HZ = 440 // A4
-const OUT_FUNDAMENTAL_HZ = 220 // A3
-const PEAK_GAIN = 0.18 // master peak, well below 1.0 for headroom
+import { TIMBRE_PRESETS, type TimbrePreset } from './timbres'
+import type { TimbreId } from '../domain/settings'
 
-const PARTIALS: ReadonlyArray<{ ratio: number; gain: number }> = [
-  { ratio: 1.0, gain: 1.0 },
-  { ratio: 2.76, gain: 0.4 },
-  { ratio: 5.4, gain: 0.15 },
-]
-
-const IN_DECAY_TIME_CONSTANT = 1.4
-const OUT_DECAY_TIME_CONSTANT = 1.8
-const FILTER_FREQ_HZ = 3000
-const FILTER_Q = 0.5
 const STRIKE_RAMP_OFFSET = 0.005 // when + 0.005 — instant attack with a tiny ramp lead
 const TAIL_MULTIPLIER = 5 // stop oscillators after ~5*timeConstant
 const TAIL_PADDING_SEC = 0.1 // tiny extra to avoid asymptote clip
@@ -49,6 +44,10 @@ const CLEANUP_PADDING_SEC = 0.2 // extra wallclock margin before nodes are GC-ab
 // silence already lands within the phase — high-BPM regime), behavior is
 // byte-identical to the pre-Bug-2 implementation: target 0.0001, oscillators
 // run for τ × TAIL_MULTIPLIER.
+//
+// Phase 18 D-12: these constants stay module-level and are SHARED across all
+// four timbres. Per-timbre threshold auto-derives from
+// preset.decayTauIn/Out × PERCEPTUAL_SILENCE_TAU_MULT.
 const PERCEPTUAL_SILENCE_TAU_MULT = 3 // 3×τ ≈ -26 dB ≈ perceptual silence
 const SUSTAIN_FLOOR_RATIO = 0.15 // ≈ -16 dB below peak — quiet but clearly audible
 const PHASE_END_FADE_OUT_TAU = 0.05 // setTargetAtTime τ for the boundary fade (≈ 150 ms perceptual)
@@ -57,6 +56,8 @@ const NEAR_SILENCE = 0.0001 // setTargetAtTime can't ramp to true zero
 
 // Tick (lead-in): perceptually distinct from bowl cues per D-15.
 // Square wave through a low-pass filter, very short envelope.
+// Phase 18 D-07: the tick is FIXED across all timbres — the countdown role
+// (perceptually distinct from any phase cue) is preserved verbatim from v1.0.1.
 const TICK_FUNDAMENTAL_HZ = 1200
 const TICK_FILTER_FREQ_HZ = 2400
 const TICK_FILTER_Q = 1.5
@@ -75,14 +76,20 @@ function scheduleBowlCue(
   audioCtx: AudioContext,
   when: number,
   destination: AudioNode,
-  fundamentalHz: number,
-  defaultDecayTau: number,
+  preset: TimbrePreset,
+  kind: 'in' | 'out',
   phaseDurationSec?: number,
 ): CueHandle {
+  // Phase 18 D-01: per-call resolution of fundamental + decay from the preset
+  // based on kind. All other DSP parameters (partials, filter, peak gain,
+  // oscillator type) read directly from `preset` below.
+  const fundamentalHz = kind === 'in' ? preset.fundamentalHzIn : preset.fundamentalHzOut
+  const defaultDecayTau = kind === 'in' ? preset.decayTauIn : preset.decayTauOut
+
   // 260510-tc9 Bug 2: when the phase outlasts natural perceptual silence, decay
   // toward a non-zero sustain floor (audible until the flip) and fade that
   // floor out in the last PHASE_END_FADE_OUT_LEAD_SEC of the phase. Onset
-  // character (PEAK_GAIN, defaultDecayTau) is preserved either way.
+  // character (preset.peakGain, defaultDecayTau) is preserved either way.
   const naturalSilenceAt = defaultDecayTau * PERCEPTUAL_SILENCE_TAU_MULT
   const needsSustain =
     phaseDurationSec !== undefined && phaseDurationSec > naturalSilenceAt
@@ -90,13 +97,13 @@ function scheduleBowlCue(
   // Low-pass filter — softens the partial stack and removes hiss.
   const filter = audioCtx.createBiquadFilter()
   filter.type = 'lowpass'
-  filter.frequency.value = FILTER_FREQ_HZ
-  filter.Q.value = FILTER_Q
+  filter.frequency.value = preset.filterFreqHz
+  filter.Q.value = preset.filterQ
 
   // Master envelope GainNode — strike-and-decay (D-01).
   const envelope = audioCtx.createGain()
-  envelope.gain.setValueAtTime(PEAK_GAIN, when)
-  const decayTarget = needsSustain ? PEAK_GAIN * SUSTAIN_FLOOR_RATIO : NEAR_SILENCE
+  envelope.gain.setValueAtTime(preset.peakGain, when)
+  const decayTarget = needsSustain ? preset.peakGain * SUSTAIN_FLOOR_RATIO : NEAR_SILENCE
   envelope.gain.setTargetAtTime(decayTarget, when + STRIKE_RAMP_OFFSET, defaultDecayTau)
 
   let stopAt: number
@@ -118,9 +125,9 @@ function scheduleBowlCue(
   const oscillators: OscillatorNode[] = []
   const partialGains: GainNode[] = []
 
-  for (const partial of PARTIALS) {
+  for (const partial of preset.partials) {
     const osc = audioCtx.createOscillator()
-    osc.type = 'sine'
+    osc.type = preset.oscillatorType
     osc.frequency.value = fundamentalHz * partial.ratio
 
     const partialGain = audioCtx.createGain()
@@ -170,20 +177,44 @@ function scheduleBowlCue(
   }
 }
 
+// Phase 18 D-01: new per-timbre dispatch surface. These functions look up the
+// preset from TIMBRE_PRESETS and forward to the parameterized scheduleBowlCue.
+// Callers in audioEngine (Plan 03) pass the session-captured TimbreId.
+
+export function scheduleInCueForTimbre(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  timbre: TimbreId,
+  phaseDurationSec?: number,
+): CueHandle {
+  const preset = TIMBRE_PRESETS[timbre]
+  return scheduleBowlCue(audioCtx, when, destination, preset, 'in', phaseDurationSec)
+}
+
+export function scheduleOutCueForTimbre(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  timbre: TimbreId,
+  phaseDurationSec?: number,
+): CueHandle {
+  const preset = TIMBRE_PRESETS[timbre]
+  return scheduleBowlCue(audioCtx, when, destination, preset, 'out', phaseDurationSec)
+}
+
+// Phase 18 D-01 option (a): Bowl-only thin wrappers preserved for TIMBRE-02
+// signature stability. Existing v1.0.1 callers that haven't yet migrated to
+// the per-timbre dispatch continue to work — the body delegates to the new
+// dispatch with the locked 'bowl' TimbreId, so the audio path is byte-identical.
+
 export function scheduleInCue(
   audioCtx: AudioContext,
   when: number,
   destination: AudioNode,
   phaseDurationSec?: number,
 ): CueHandle {
-  return scheduleBowlCue(
-    audioCtx,
-    when,
-    destination,
-    IN_FUNDAMENTAL_HZ,
-    IN_DECAY_TIME_CONSTANT,
-    phaseDurationSec,
-  )
+  return scheduleInCueForTimbre(audioCtx, when, destination, 'bowl', phaseDurationSec)
 }
 
 export function scheduleOutCue(
@@ -192,14 +223,7 @@ export function scheduleOutCue(
   destination: AudioNode,
   phaseDurationSec?: number,
 ): CueHandle {
-  return scheduleBowlCue(
-    audioCtx,
-    when,
-    destination,
-    OUT_FUNDAMENTAL_HZ,
-    OUT_DECAY_TIME_CONSTANT,
-    phaseDurationSec,
-  )
+  return scheduleOutCueForTimbre(audioCtx, when, destination, 'bowl', phaseDurationSec)
 }
 
 export function scheduleTick(
@@ -208,6 +232,7 @@ export function scheduleTick(
   destination: AudioNode,
 ): CueHandle {
   // Single square-wave oscillator — perceptually distinct from sine-stack bowl cues (D-15).
+  // Phase 18 D-07: body is byte-identical to v1.0.1 — tick stays fixed across all timbres.
   const osc = audioCtx.createOscillator()
   osc.type = 'square'
   osc.frequency.value = TICK_FUNDAMENTAL_HZ

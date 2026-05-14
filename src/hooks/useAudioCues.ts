@@ -20,6 +20,12 @@ import {
   type AudioEngine,
   type AudioStatus,
 } from '../audio/audioEngine'
+// Phase 18 Plan 03 interim scaffold: AudioEngineOptions.timbre is now required (D-08).
+// Plan 04 will replace these defaulted call sites with a proper `timbreRef` capture
+// + `start(plan, timbre)` parameter (CONTEXT.md §Phase Boundary item 5). Defaulting
+// to DEFAULT_TIMBRE here preserves the v1.0.1 Bowl audio path verbatim — TIMBRE-02
+// byte-identical proof holds across this transitional commit.
+import { DEFAULT_TIMBRE } from '../domain/settings'
 
 export type { AudioStatus }
 
@@ -213,7 +219,9 @@ export function useAudioCues(
       // D-08 (AUDIO-06): 'starting' literal removed from AudioStatus union (Plan 01).
       // Transition goes 'idle' → 'lead-in' (success) | 'failed' directly.
       try {
-        const engine = await createAudioEngine({ onStateChange: handleStateChange })
+        // Phase 18 Plan 03 interim scaffold: hard-code DEFAULT_TIMBRE until Plan 04
+        // threads `timbre` through `start(plan, timbre)` and captures into `timbreRef`.
+        const engine = await createAudioEngine({ timbre: DEFAULT_TIMBRE, onStateChange: handleStateChange })
         engineRef.current = engine
         // HOOKS-01 / D-11: read mute from mutedRef so `start` does NOT depend on
         // the React `muted` state. The ref-mirror effect above keeps the ref in
@@ -300,7 +308,11 @@ export function useAudioCues(
 
     let newEngine: AudioEngine
     try {
-      newEngine = await createAudioEngine({ onStateChange: handleStateChange })
+      // Phase 18 Plan 03 interim scaffold: hard-code DEFAULT_TIMBRE. Plan 04 will
+      // replace this with `const currentTimbre = timbreRef.current` capture before
+      // the await — mirror of the `const currentMuted = mutedRef.current` posture
+      // at line 292. Reconstruction will then inherit the session's original timbre.
+      newEngine = await createAudioEngine({ timbre: DEFAULT_TIMBRE, onStateChange: handleStateChange })
     } catch {
       // D-10 terminal fallback: createAudioEngine threw. Fire-and-forget close
       // the old engine (gesture already consumed by the failed construction).
