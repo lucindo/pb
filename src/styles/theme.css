@@ -210,32 +210,52 @@
   --color-modal-backdrop: rgb(46 52 64 / 0.3);
 }
 
-/* Phase 16 D-04: Slate palette — cool blue-gray neutrals, indigo accent.
-   Background: slate-50/slate-100/slate-200 family. Accent: indigo-600 (#4f46e5).
-   16.2 F5 retune: orb-out shifted from vivid indigo (#6366f1/#a5b4fc) to desaturated neutral
-   slate-600/slate-400 (#475569/#94a3b8) — reads as ambient chrome shadow rather than a competing
-   accent against the indigo-600 chrome accent. orb-out-text follows the hue shift (indigo-950
-   #1e1b4b → slate-950 #020617) to stay legible on the deeper slate-grey midpoint.
-   Orb-in = blue-50/blue-100 (very light, luminance ~0.86); Orb-out = slate-600/slate-400 (luminance ~0.20).
-   Ratio ≈ 3.68. */
+/* Phase 16.3 Plan 05: Slate palette redesigned from Tokyo Night Day
+   (folke/tokyonight.nvim MIT — Light flavor "day"). Closes 16.2-01-SUMMARY deferred
+   ring-inner harmonization: ring-inner channels migrated from stale indigo-500
+   `99 102 241` to source's cyan family (hue-shift contrast vs orb-out indigo-grey).
+
+   Mapping (RESEARCH §Pattern 2 — Light flavor):
+     bg              = bg #e1e2e7 (widest-coverage neutral)
+     bg-soft         = bg_dark #d0d5e3 (one tier DEEPER for Light)
+     bg-edge         = #ffffff (lightest edge — Plan 02 convention; source has no lighter tone)
+     surface         = #ffffff (dialog/card)
+     accent          = blue0 #7890dd (soft indigo for hover — half-lift per convention #4)
+     accent-strong   = fg #3760bf (deep indigo for default Start)
+     muted           = dark5 #68709a (mid-luminance secondary text)
+     on-accent       = #ffffff (white text on dark indigo button)
+     orb In (solid)  = bg_visual #b7c1e3 (cool blue-tinted light pole — airy)
+     orb Out (solid) = dark5 #68709a (deep cool neutral; soft tonal Out)
+     orb-in-text     = fg #3760bf (deep indigo on light blue In)
+     orb-out-text    = bg #e1e2e7 (light text on dark Out)
+     ring-outer      = bg_visual channels @ 0.6 (orb-in family per rubric)
+     ring-inner      = bg_visual channels @ 0.55 (light-on-dark ring per Dark Nord precedent;
+                       cyan @0.50 disappeared into indigo Out body — UAT iteration 1 fix.
+                       Closes 16.2-01 carry-forward: channels migrated from stale indigo-500
+                       `99 102 241` to orb-in-family bg_visual)
+     modal-backdrop  = dark5 channels @ 0.30 (softer mid-indigo-grey wash — UAT iteration 1:
+                       fg channels @ 0.40 read too saturated/blue over dialog content)
+
+   THEME-05 = 2.69 (well above 1.5 floor). D-01 = 5.87 (well above 1.5).
+   Polarity: inLum 0.538 > outLum 0.169 ✓ */
 [data-theme='slate']:root {
-  --color-breathing-bg: #f1f5f9;
-  --color-breathing-bg-soft: #e2e8f0;
-  --color-breathing-bg-edge: #f8fafc;
+  --color-breathing-bg: #e1e2e7;
+  --color-breathing-bg-soft: #d0d5e3;
+  --color-breathing-bg-edge: #ffffff;
   --color-breathing-surface: #ffffff;
-  --color-breathing-accent: #4f46e5;
-  --color-breathing-accent-strong: #3730a3;
-  --color-breathing-muted: #94a3b8;
+  --color-breathing-accent: #7890dd;
+  --color-breathing-accent-strong: #3760bf;
+  --color-breathing-muted: #68709a;
   --color-breathing-on-accent: #ffffff;
-  --color-orb-in-from: #eff6ff;
-  --color-orb-in-to: #dbeafe;
-  --color-orb-out-from: #475569;
-  --color-orb-out-to: #94a3b8;
-  --color-orb-in-text: #1e3a8a;
-  --color-orb-out-text: #020617;
-  --color-ring-outer: rgb(239 246 255 / 0.7);
-  --color-ring-inner: rgb(99 102 241 / 0.40);
-  --color-modal-backdrop: rgb(15 23 42 / 0.30);
+  --color-orb-in-from: #b7c1e3;
+  --color-orb-in-to: #b7c1e3;
+  --color-orb-out-from: #68709a;
+  --color-orb-out-to: #68709a;
+  --color-orb-in-text: #3760bf;
+  --color-orb-out-text: #e1e2e7;
+  --color-ring-outer: rgb(183 193 227 / 0.6);
+  --color-ring-inner: rgb(183 193 227 / 0.55);
+  --color-modal-backdrop: rgb(104 112 154 / 0.30);
 }
 
 /* Phase 16 D-04: Dusk palette — warm violet/plum background, amber/golden accent.
