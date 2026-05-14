@@ -228,7 +228,16 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   3. Selected language persists across reloads via `Envelope.prefs.locale`; coerce-on-read falls back to `'en'` for unknown stored values (I18N-03).
   4. The Forrest claim-safe copy (`inspired by Forrest's teachings` and the two-line disclaimer) is routed through the PT-BR translation pipeline; a translation-key allowlist or locked-copy review checklist is present in the codebase so future locale contributions cannot silently alter D-12 positioning (I18N-06 guardrail — D-12 decision honored).
   5. PT-BR translations are present for v1.1 ship with `// TODO: native-speaker review` flags marking machine-translated strings as v1.x carry-forward (I18N-07); `tsc && lint && build && test` exit 0.
-**Plans**: TBD
+**Plans**: 9 plans
+  - [ ] 19-01-PLAN.md — strings.ts catalog (UiStrings interface + UI_STRINGS EN+PT-BR + LOCALE_DISPLAY_NAMES) + exhaustiveness tests
+  - [ ] 19-02-PLAN.md — useLocaleChoice picker-side hook (verbatim clone of useTimbreChoice with timbre→locale rename) + 6 hook tests
+  - [ ] 19-03-PLAN.md — learnContent locale-keyed shape + EN substring strip + PT-BR translation + lockedCopy module (3 entries × 2 locales) + frozen-EN snapshot guard test (D-02 .toBe byte-equality) + substring-absence guard
+  - [ ] 19-04-PLAN.md — useLocale orchestrator hook (3 effects: documentElement.lang write + cross-tab storage listener + same-tab hrv:prefs-changed listener) + 8 hook tests
+  - [ ] 19-05-PLAN.md — LanguagePicker radiogroup body (mirror of TimbrePicker chrome with LOCALE_DISPLAY_NAMES endonyms) + 9 picker tests including D-14 cross-UI endonym invariant
+  - [ ] 19-06-PLAN.md — Dialogs + anchors + toggle + pickers accept strings prop (9 components: SettingsDialog/EndSession/ResetStats/SettingsAnchor/LearnAnchor/MuteToggle/Theme/Variant/Timbre/LanguagePicker sectionLabel widening)
+  - [ ] 19-07-PLAN.md — Form + footer + controls + breathing accept strings prop (8 components: SettingsForm/SettingsStepper/SessionControls/StatsFooter/SessionReadout/BreathingShape/Orb/Square/DiamondShape); D-15 template-fn aria-labels; Path A wedge for phase label
+  - [ ] 19-08-PLAN.md — App.tsx wires useLocale + resolves catalogs + drills slices to 15 consumers; App.tsx:686 medical-advice migrated to lockedCopy.medicalAdviceLine; LearnDialog accepts learnContent + lockedCopy + strings props with locked-phrase paragraph composition
+  - [ ] 19-09-PLAN.md — Phase close: App.locale.test.tsx integration smoke + manual UAT (cross-tab mid-session swap + PT-BR spot-check + persistence + in-session disable) + REQUIREMENTS/ROADMAP/STATE flips + SUMMARY + UAT log
 **UI hint**: yes
 
 ## Progress
