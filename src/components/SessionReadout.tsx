@@ -1,7 +1,20 @@
 import type { SessionFrame } from '../domain/sessionMath'
 import { formatDuration } from '../domain/sessionMath'
 import type { SessionStatus } from '../domain/sessionController'
+import type { StretchStage } from '../domain/stretchRamp'
 import type { UiStrings } from '../content/strings'
+
+// Exhaustive stage→label map — a new StretchStage without a case is a compile error.
+function stageText(stage: StretchStage, strings: UiStrings['readout']): string {
+  switch (stage) {
+    case 'hold-initial':
+      return strings.stageHoldInitial
+    case 'ramp':
+      return strings.stageRamp
+    case 'hold-target':
+      return strings.stageHoldTarget
+  }
+}
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null
@@ -88,6 +101,29 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           </span>
           <span className="font-mono text-2xl font-semibold">{timeValue}</span>
         </div>
+      ) : null}
+      {/* D-13/D-14: live BPM chip + stage label — running stretch sessions only.
+          D-15: the ramp→hold-target transition is silent (no cue/marker). */}
+      {frame !== null && frame.currentBpm !== undefined && status !== 'complete' ? (
+        <>
+          <div
+            aria-live="off"
+            className="mt-2 inline-flex items-baseline gap-2 rounded-full bg-[var(--color-breathing-surface)]/80 px-4 py-2 text-[var(--color-breathing-accent-strong)]"
+          >
+            <span className="font-mono text-2xl font-semibold">{frame.currentBpm.toFixed(1)}</span>
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+              {strings.currentBpmLabel}
+            </span>
+          </div>
+          {frame.stage !== undefined ? (
+            <p
+              aria-live="off"
+              className="mt-1 text-center text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]"
+            >
+              {stageText(frame.stage, strings)}
+            </p>
+          ) : null}
+        </>
       ) : null}
     </section>
   )
