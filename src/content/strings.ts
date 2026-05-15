@@ -75,6 +75,7 @@ export interface UiStrings {
     readonly unmute: string
     readonly resume: string
     readonly unavailable: string
+    readonly audioPausedAnnouncement: string
   }
   readonly readout: {
     readonly elapsed: string
@@ -176,6 +177,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       unmute: 'Unmute audio cues',
       resume: 'Resume audio',
       unavailable: 'Audio unavailable in this browser',
+      audioPausedAnnouncement: 'Audio paused, tap to resume',
     },
     readout: {
       elapsed: 'Elapsed',
@@ -278,6 +280,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       unmute: 'Reativar áudio', // TODO: native-speaker review
       resume: 'Retomar áudio', // TODO: native-speaker review
       unavailable: 'Áudio indisponível neste navegador', // TODO: native-speaker review
+      audioPausedAnnouncement: 'Áudio pausado, toque para retomar', // TODO: native-speaker review
     },
     readout: {
       elapsed: 'Decorrido', // TODO: native-speaker review

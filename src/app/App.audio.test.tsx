@@ -8,6 +8,7 @@ import * as cueSynth from '../audio/cueSynth'
 import { SAFE_LEAD_SEC } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { DEFAULT_SETTINGS } from '../domain/settings'
+import { UI_STRINGS } from '../content/strings'
 
 // The MuteToggle has three possible accessible names per state — match any.
 function muteButton() {
@@ -486,7 +487,7 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     // aria-live region should announce the transition. There are multiple
     // role="status" nodes in the tree (SessionReadout also has one); find ours
     // by its unique text content.
-    expect(screen.getByText('Audio paused, tap to resume')).toBeInTheDocument()
+    expect(screen.getByText(UI_STRINGS.en.mute.audioPausedAnnouncement)).toBeInTheDocument()
     tracker.restore()
   })
 

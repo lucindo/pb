@@ -654,7 +654,7 @@ export default function App() {
             frame={leadInPlaceholderFrame ?? session.liveFrame}
             status={state.status}
             isLeadInPlaceholder={appPhase === 'lead-in'}
-            message={state.status === 'complete' && !inSessionView ? state.message : undefined}
+            showCompletionHeadline={state.status === 'complete' && !inSessionView}
             strings={uiStrings.readout}
           />
           <SettingsForm
@@ -686,7 +686,7 @@ export default function App() {
             aria-live="polite"
             className="sr-only"
           >
-            {audio.audioStatus === 'needs-resume' ? 'Audio paused, tap to resume' : ''}
+            {audio.audioStatus === 'needs-resume' ? uiStrings.mute.audioPausedAnnouncement : ''}
           </div>
           {/* D-15 amendment (2026-05-10, user-approved): the main-screen helper
               line was replaced with the medical-advice disclaimer. Original D-15

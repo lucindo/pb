@@ -6,17 +6,20 @@ import type { UiStrings } from '../content/strings'
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   status: SessionStatus
-  message?: 'Session complete'
+  /** When true, render the translated completion headline. App.tsx sets this when
+   *  status === 'complete' && !inSessionView (Phase 19 CR-01 fix — replaces the
+   *  hardcoded `state.message: 'Session complete'` literal that bypassed i18n). */
+  showCompletionHeadline?: boolean
   strings: UiStrings['readout']
   /** UI-01 / WR-08: when true, the component is rendering the pre-session
    *  lead-in placeholder. The caller commits to providing a non-null `frame`.
    *  The component renders the timer chip (label + formatted duration) and
-   *  ignores `status` and `message`. Documents the lead-in contract at the
-   *  component boundary so callers no longer override `status` to 'idle'. */
+   *  ignores `status`. Documents the lead-in contract at the component boundary
+   *  so callers no longer override `status` to 'idle'. */
   isLeadInPlaceholder?: boolean
 }
 
-export function SessionReadout({ frame, status, message, strings, isLeadInPlaceholder }: SessionReadoutProps) {
+export function SessionReadout({ frame, status, showCompletionHeadline, strings, isLeadInPlaceholder }: SessionReadoutProps) {
   // UI-01 / WR-08: lead-in placeholder branch fires FIRST so the timer chip
   // renders unconditionally, ignoring status and message. Caller commits to a
   // non-null frame when this is true (typed-only contract — no runtime assert).
@@ -49,7 +52,7 @@ export function SessionReadout({ frame, status, message, strings, isLeadInPlaceh
     )
   }
 
-  if (status === 'idle' && frame === null && message === undefined) {
+  if (status === 'idle' && frame === null && !showCompletionHeadline) {
     return null
   }
 
@@ -71,8 +74,8 @@ export function SessionReadout({ frame, status, message, strings, isLeadInPlaceh
         aria-live="polite"
         aria-atomic="true"
       >
-        {message ? (
-          <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{message}</p>
+        {showCompletionHeadline ? (
+          <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.sessionComplete}</p>
         ) : null}
       </div>
       {showTimeChip ? (

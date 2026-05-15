@@ -25,7 +25,7 @@ function renderReadout(props: Partial<SessionReadoutProps> = {}) {
     <SessionReadout
       frame={props.frame ?? null}
       status={props.status ?? 'idle'}
-      message={props.message}
+      showCompletionHeadline={props.showCompletionHeadline}
       strings={props.strings ?? EN_STRINGS_FIXTURE.readout}
       isLeadInPlaceholder={props.isLeadInPlaceholder}
     />,
@@ -44,25 +44,25 @@ describe('SessionReadout', () => {
       isLeadInPlaceholder: true,
       frame: sampleFrame,
       status: 'complete',
-      message: 'Session complete',
+      showCompletionHeadline: true,
     })
     expect(screen.getByText('Remaining')).toBeInTheDocument()
     expect(screen.getByText('10:00')).toBeInTheDocument()
-    expect(screen.queryByText('Session complete')).not.toBeInTheDocument()
+    expect(screen.queryByText(EN_STRINGS_FIXTURE.readout.sessionComplete)).not.toBeInTheDocument()
   })
 
-  it('isLeadInPlaceholder=false + status "complete" + non-null frame → headline rendered, chip hidden', () => {
+  it('isLeadInPlaceholder=false + status "complete" + non-null frame → translated headline rendered, chip hidden', () => {
     renderReadout({
       isLeadInPlaceholder: false,
       frame: sampleFrame,
       status: 'complete',
-      message: 'Session complete',
+      showCompletionHeadline: true,
     })
-    expect(screen.getByText('Session complete')).toBeInTheDocument()
+    expect(screen.getByText(EN_STRINGS_FIXTURE.readout.sessionComplete)).toBeInTheDocument()
     expect(screen.queryByText('Remaining')).not.toBeInTheDocument()
   })
 
-  it('isLeadInPlaceholder absent + status "idle" + null frame + no message → component returns null', () => {
+  it('isLeadInPlaceholder absent + status "idle" + null frame + no completion headline → component returns null', () => {
     const { container } = renderReadout({ status: 'idle', frame: null })
     expect(container.firstChild).toBeNull()
   })
