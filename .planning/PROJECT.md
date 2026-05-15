@@ -12,29 +12,17 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ## Current State
 
-**Shipped:** v1.0.1 Code Review Patch (2026-05-12) — 6 patch phases (07–12), 12 plans, 17 tasks, 143 commits, 409/409 Vitest tests pass (363 → 409). HEAD `3bdb69b`. Codebase ~10,925 LOC TS/TSX in `src/`.
+**Shipped:** v1.1 Customization (2026-05-15) — 10 phases (13–19 + 16.1/16.2/16.3 inserted), 47 plans, 58 tasks, 712/712 Vitest tests pass (409 → 712). All success criteria validated. SettingsDialog with Theme/Variant/Timbre/Language pickers, 5 named palettes curated from open-source design systems, 3 visual variants, 4 synthesized audio timbres, EN+PT-BR language switching with frozen-EN locked claim-safe copy guard. Zero net-new runtime dependencies.
 
-**v1.1 feature work complete:** Phases 13–19 closed (Phase 19 Language Switching closed 2026-05-14 — EN + PT-BR catalogs, `useLocale` orchestrator, `LanguagePicker`, locale-aware `formatLastSessionDate`, locked claim-safe copy guarded by frozen-EN byte-equality snapshot). 712/712 Vitest tests pass; tsc + lint + build exit 0. v1.x carry-forward: PT-BR native-speaker review for 76 `// TODO: native-speaker review` markers (I18N-07).
+**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27.
 
-**Audit:** PASSED 27/27 requirements at `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md`. Cross-phase integration clean (6/6 wiring points WIRED). All E2E flows (5/5) complete. `tsc/lint/build` exit 0 at HEAD.
+**v1.x carry-forward (next milestone):** PT-BR native-speaker review of 76 `// TODO: native-speaker review` markers (I18N-07). iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. See STATE.md `## Deferred Items` for the full register.
 
-**In flight:** v1.1 Customization — kicked off 2026-05-12. Scope: inner-ring UX symmetry (carry-forward warm-up) + customization umbrella (themes/CUST-01, audio timbres/CUST-02, visual variants/CUST-03, language/I18N-01).
+**v2 backlog:** PWA install (PWA-01). BPM stretch session (PATT-02).
 
-## Current Milestone: v1.1 Customization
+## Next Milestone
 
-**Goal:** Add user-facing customization (themes, audio timbres, visual variants, language) on top of the v1.0.1 strict baseline, starting with inner-ring UX symmetry as a low-risk warm-up.
-
-**Target features:**
-- Inner-ring UX symmetry (Phase 5.1 carry-forward — small, low-risk warm-up before customization).
-- Themes (CUST-01) — theme switching.
-- Audio timbres (CUST-02) — alternate cue voices in `cueSynth`.
-- Visual variants (CUST-03) — alternate orb/visual styles.
-- Language switching (I18N-01) — leverages section-keyed `learnContent.ts` shape.
-
-**Deferred from earlier v1.1 plan:**
-- PWA install (PWA-01) — Web App Manifest + service worker.
-- BPM stretch session (PATT-02).
-- iOS Safari mid-page audio recovery, Firefox orb scale flicker, S2 Android Chrome wake lock UAT, iOS Pitfall 6 phone-call interrupted state.
+To be scoped. Start with `/gsd-new-milestone` to define goals + requirements.
 
 ## Requirements
 

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
-status: milestone_complete
+status: Awaiting next milestone
 stopped_at: Phase 19 (Language Switching) complete; v1.1 close pending
-last_updated: "2026-05-14T22:00:00.000Z"
-last_activity: 2026-05-14 -- Phase 19 complete (9/9 plans)
+last_updated: "2026-05-15T02:25:14.747Z"
+last_activity: 2026-05-15 — Milestone v1.1 completed and archived
 progress:
   total_phases: 10
-  completed_phases: 10
+  completed_phases: 9
   total_plans: 47
   completed_plans: 43
-  percent: 100
+  percent: 91
 ---
 
 # Project State
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap d
 
 ## Current Position
 
-Phase: 19
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-15
-
-Progress: [█████████░] 91%
+Phase: Milestone v1.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-15 — Milestone v1.1 completed and archived
 
 ## Performance Metrics
 
@@ -122,6 +120,13 @@ Items acknowledged and carried forward from previous milestone close:
 | v1.x debt | Cross-tab `recordSession` increment race (WR-07 root) — STORAGE-03 covers UI consistency only | Documented in REQUIREMENTS.md v1.0.1 Out of Scope | 2026-05-11 v1.0.1 planning |
 | procedural | Phase 5 lacks VERIFICATION.md | Artifact gap only; coverage intact via 5.1 UAT Task 4 | 2026-05-11 v1.0 close |
 | procedural | Phase 02/03 VERIFICATION.md status "human_needed" (all items closed via 5.1 Task 4 sweep) | Statuses not re-flipped | 2026-05-11 v1.0 close |
+| procedural | Phase 15 HUMAN-UAT.md (partial — 3 pending scenarios) | Operator-accepted at phase close; remaining items deferred | 2026-05-15 v1.1 close |
+| procedural | Phase 18 HUMAN-UAT.md (partial — 4 pending scenarios) | Operator-accepted at phase close; remaining items deferred | 2026-05-15 v1.1 close |
+| procedural | Phase 19 19-UAT.md (audit reports "unknown" status — artifact-format mismatch with audit-open scanner; UAT outcomes recorded inline PASS/PARTIAL/PASS/PASS) | 4/4 UAT items recorded; operator-approved phase close | 2026-05-15 v1.1 close |
+| procedural | Phase 15 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
+| procedural | Phase 18 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
+| procedural | Quick task `260510-tc9` listed "missing" status by audit-open scanner | Bug fixes shipped in commit `0db8f5d` (Phase 5.1 close) — status field gap only | 2026-05-15 v1.1 close |
+| v1.x carry-forward | Pending todo `2026-05-13-themes-aesthetic-refresh.md` (medium) | Aesthetic refresh deferred behind 16.3 thorough redesign; revisit if 16.3 results show further gaps | 2026-05-15 v1.1 close |
 
 **Audit references:**
 
@@ -137,6 +142,4 @@ Next command: `/gsd-transition` for milestone close eligibility check, or `/gsd-
 
 ## Operator Next Steps
 
-- Phase 19 is complete (9/9 plans). All I18N-01..07 requirements are Done.
-- Run `/gsd-transition` for v1.1 milestone close eligibility check, or `/gsd-complete-milestone v1.1` to close the Customization milestone.
-- v1.x carry-forward: Per-locale PT-BR native-speaker review (I18N-07) — machine translation ships with `// TODO: native-speaker review` markers in strings.ts + learnContent.ts.
+- Start the next milestone with /gsd-new-milestone

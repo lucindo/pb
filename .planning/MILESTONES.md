@@ -1,5 +1,29 @@
 # Milestones
 
+## v1.1 Customization (Shipped: 2026-05-15)
+
+**Phases completed:** 10 phases (13, 14, 15, 16, 16.1, 16.2, 16.3, 17, 18, 19), 47 plans, 58 tasks
+
+**Delivered:** Full SettingsDialog with 4 pickers (Theme, Variant, Timbre, Language). 5 named palettes (Light, Dark, Moss, Slate, Dusk) curated from open-source design systems (Nord, Everforest, Tokyo Night, Rosé Pine), full UI token migration to `--color-breathing-*` cascade, 3 visual variants (Orb, Square, Diamond), 4 synthesized audio timbres (Bowl, Bell, Sine, Chime), and EN+PT-BR language switching with frozen-EN locked claim-safe copy guard. Zero net-new runtime dependencies; 712/712 tests pass.
+
+**Key accomplishments:**
+
+1. **Phase 13 — Inner-Ring UX Symmetry:** Reduced-motion path drops `.orb-ring--inner` in favor of `.orb-layer--out` opacity crossfade alone (WARMUP-01 / D-07 preserved). Pure CSS; closes carry-forward todo from v1.0.1.
+2. **Phase 14 — Prefs Foundation:** `Envelope.prefs` storage shape + `Record<dimension, valid-value>` domain validators; coerce-on-read for unknown stored values. Unblocks every downstream customization dimension.
+3. **Phase 15 — SettingsDialog Shell:** Native `<dialog>` shell + gear `SettingsAnchor` trigger + 4 stub pickers + `inSessionView` disable contract before any feature picker is wired (INFRA-04 SC1..SC5).
+4. **Phase 16 + 16.1 + 16.2 + 16.3 — Themes:** 5-palette CSS token cascade (`@theme` + `[data-theme]:root` overrides), FOUC inline script, automated WCAG luminance contrast guard (≥ 1.5 on orb In/Out midpoints across all 5 palettes), full UI token migration of 16 components from hardcoded Tailwind classes to `var(--color-breathing-*)`, and final palette redesign sourced from named open-source design systems (Nord Frost, Nord Polar Night, Everforest Light, Tokyo Night Day, Rosé Pine Main).
+5. **Phase 17 — Visual Variants:** 3 render variants (Orb default + Square 18% rounded-square + Diamond rotated-square clip-path) via dispatcher + sibling-shape pattern; render-local `data-variant`; sessionVariantRef snapshot at Start; zero new color tokens (D-13 token reuse across variants); mid-execution operator deviation Ring → Diamond with forward-compat coercion for old `'ring'` localStorage values.
+6. **Phase 18 — Audio Timbres:** 4 synthesized timbre presets wired into `cueSynth` via `scheduleInCueForTimbre` / `scheduleOutCueForTimbre` dispatch; `timbreRef` mirror of `mutedRef`; timbre captured at session start (D-08/D-09); Bowl default byte-identical (TIMBRE-02 — zero audio change for users who never open SettingsDialog).
+7. **Phase 19 — Language Switching:** EN+PT-BR catalogs with roll-your-own typed `Record<LocaleId, UiStrings>` (14 sub-objects), `useLocale` orchestrator hook (3 effects: lang write + cross-tab storage + same-tab `hrv:prefs-changed`), `LanguagePicker` radiogroup with native endonyms, strings-prop drilled to 17 consumer components, locked claim-safe copy module (`LOCKED_COPY`) guarded by frozen-EN byte-equality `.toBe()` snapshot in `lockedCopy.test.ts`. UAT-2 translation deviations applied post-execution (`app` slice for header/title, bowl→Taça, In/Out→Puxa/Solta, etc.). Locale-aware `formatLastSessionDate(locale)` so PT-BR users see dates in Portuguese.
+
+**Known deferred items at close:** 7 (see STATE.md `## Deferred Items`). Primary carry-forward: PT-BR native-speaker review for 76 `// TODO: native-speaker review` markers (I18N-07 → v1.x).
+
+**Test count progression:** v1.0.1 baseline 409 → v1.1 close 712 (+303).
+
+**Roadmap insertions:** Phase 16.1 (UI Token Migration), Phase 16.2 (Palette Aesthetic Refresh), Phase 16.3 (Thorough Theme Revision) — each captured a gap surfaced during operator UAT and routed back through discuss → plan → execute before continuing the original roadmap.
+
+---
+
 ## v1.0.1 Code Review Patch (Shipped: 2026-05-12)
 
 **Phases completed:** 6 phases, 12 plans, 17 tasks
