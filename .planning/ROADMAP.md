@@ -5,7 +5,7 @@
 - ✅ **v1.0 MVP** — Phases 1–6 + Phase 5.1 INSERTED (shipped 2026-05-11)
 - ✅ **v1.0.1 Code Review Patch** — Phases 7–12 (shipped 2026-05-12)
 - ✅ **v1.1 Customization** — Phases 13–19 + 16.1/16.2/16.3 INSERTED (shipped 2026-05-15)
-- 📋 **Next milestone** — TBD (start with `/gsd-new-milestone`)
+- 📋 **v1.2 BPM Stretch** — Phases 20–22 (in progress)
 
 ## Phases
 
@@ -63,9 +63,47 @@ Phase artifacts: `.planning/milestones/v1.1-phases/`
 
 </details>
 
-### 📋 Next milestone (planned)
+### 📋 v1.2 BPM Stretch (Phases 20–22)
 
-Run `/gsd-new-milestone` to scope the next milestone.
+- [ ] **Phase 20: Session Start Polish** - Disable Start button during lead-in countdown; no double-start possible.
+- [ ] **Phase 21: Per-Theme Favicon** - Each of the 5 palettes ships its own favicon variant; swaps on theme change and at load.
+- [ ] **Phase 22: BPM Stretch Session** - Stretch mode with warm-up → sub-perceptual ramp → cool-down on the existing one-clock SessionFrame.
+
+## Phase Details
+
+### Phase 20: Session Start Polish
+**Goal**: Users cannot accidentally double-start a session during the lead-in countdown
+**Depends on**: Phase 19 (existing session flow)
+**Requirements**: LEAD-01
+**Success Criteria** (what must be TRUE):
+  1. User sees the Start button visually disabled while `appPhase === 'lead-in'` is in flight
+  2. User cannot click Start a second time during the 3-second lead-in countdown (no double-start, no re-trigger)
+  3. User sees the Start button return to its normal enabled state when the session moves to the first In/Out cycle
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 21: Per-Theme Favicon
+**Goal**: Users see a favicon that matches their active palette in the browser tab and OS task switcher
+**Depends on**: Phase 20
+**Requirements**: FAVI-01, FAVI-02, FAVI-03
+**Success Criteria** (what must be TRUE):
+  1. User sees a distinct favicon variant for each of the 5 palettes (Light, Dark, Moss, Slate, Dusk) that differs visually in the browser tab
+  2. User's favicon swaps immediately when they change theme via SettingsDialog, including across tabs (same-tab + cross-tab `storage` event)
+  3. User's persisted-theme favicon is applied on initial page load with no flash of the default favicon before the correct one appears
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 22: BPM Stretch Session
+**Goal**: Users can run a BPM stretch session whose breathing rate walks sub-perceptually from a warm-up BPM to a target BPM and then holds, using the existing one-clock SessionFrame and dual-anchor audio scheduling
+**Depends on**: Phase 21
+**Requirements**: STRETCH-01, STRETCH-02, STRETCH-03, STRETCH-04, STRETCH-05, STRETCH-06, STRETCH-07, STRETCH-08
+**Success Criteria** (what must be TRUE):
+  1. User can enable stretch mode from the session settings surface and the mode picker is disabled (grayed out) when the configured session duration is below the minimum gate that makes the ramp meaningful
+  2. User can pick `initialBpm` and `targetBpm` independently from the existing BPM grid (1–7 in 0.5 BPM increments) and pick `holdInitialSeconds` (warm-up) and `holdTargetSeconds` (cool-down) durations
+  3. User runs a session whose BPM steps are strictly less than 0.5 BPM throughout the ramp — the transition is sub-perceptual and the step invariant is enforced by the engine on the existing one-clock SessionFrame
+  4. User hears phase-aligned audio cues across the entire ramp — the dual-anchor scheduling (Phase 3 D-13/D-14) holds across every BPM step change with no scheduling gap or misalignment
+  5. User's stretch settings (initialBpm, targetBpm, holdInitialSeconds, holdTargetSeconds) persist across reloads via the existing localStorage envelope (refuse-downgrade write, forward-compat read), and the total session duration shown reflects `hold initial + ramp + hold target`
+**Plans**: TBD
 
 ## Progress
 
@@ -94,23 +132,10 @@ Run `/gsd-new-milestone` to scope the next milestone.
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
+| 20. Session Start Polish | v1.2 | 0/? | Not started | - |
+| 21. Per-Theme Favicon | v1.2 | 0/? | Not started | - |
+| 22. BPM Stretch Session | v1.2 | 0/? | Not started | - |
 
 ## Backlog
 
-### Phase 999.1: we should have one favicon per theme (BACKLOG)
-
-**Goal:** [Captured for future planning] Per-theme favicons — palette swap currently only rebinds in-page chrome; the browser tab icon stays static. Each of the 5 palettes (Light, Dark, Moss, Slate, Dusk) should ship its own favicon variant that swaps when `data-theme` changes (or at least matches the persisted preference on load).
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.2: the start session button should be disabled during the countdown phase (BACKLOG)
-
-**Goal:** [Captured for future planning] Disable the Start-session button while `appPhase === 'lead-in'` (the 3-second countdown that fires after pressing Start before the first In/Out cycle begins). Currently the button remains clickable during the countdown, which can lead to double-starts or confusing UX. The button should reflect the in-flight state.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+*(none currently)*

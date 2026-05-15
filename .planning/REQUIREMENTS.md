@@ -96,15 +96,15 @@ Which phases cover which requirements. Filled during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LEAD-01 | TBD | Pending |
-| FAVI-01 | TBD | Pending |
-| FAVI-02 | TBD | Pending |
-| FAVI-03 | TBD | Pending |
-| STRETCH-01 | TBD | Pending |
-| STRETCH-02 | TBD | Pending |
-| STRETCH-03 | TBD | Pending |
-| STRETCH-04 | TBD | Pending |
-| STRETCH-05 | TBD | Pending |
-| STRETCH-06 | TBD | Pending |
-| STRETCH-07 | TBD | Pending |
-| STRETCH-08 | TBD | Pending |
+| LEAD-01 | Phase 20 | Pending |
+| FAVI-01 | Phase 21 | Pending |
+| FAVI-02 | Phase 21 | Pending |
+| FAVI-03 | Phase 21 | Pending |
+| STRETCH-01 | Phase 22 | Pending |
+| STRETCH-02 | Phase 22 | Pending |
+| STRETCH-03 | Phase 22 | Pending |
+| STRETCH-04 | Phase 22 | Pending |
+| STRETCH-05 | Phase 22 | Pending |
+| STRETCH-06 | Phase 22 | Pending |
+| STRETCH-07 | Phase 22 | Pending |
+| STRETCH-08 | Phase 22 | Pending |

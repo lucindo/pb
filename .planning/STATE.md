@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: BPM Stretch
 status: planning
-last_updated: "2026-05-15T02:59:16.743Z"
+last_updated: "2026-05-15T03:00:00.000Z"
 last_activity: 2026-05-15
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14 — v1.2 BPM Stretch milestone opened)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Defining v1.2 requirements
+**Current focus:** v1.2 roadmap created — ready to plan Phase 20
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap created, planning Phase 20 next)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-15 — Milestone v1.2 started
+Status: Ready to plan
+Last activity: 2026-05-15 — v1.2 BPM Stretch roadmap created (Phases 20–22)
 
 ## Performance Metrics
 
@@ -35,8 +35,9 @@ Last activity: 2026-05-15 — Milestone v1.2 started
 
 - Total plans completed (v1.0): 30
 - Total plans completed (v1.0.1): 12
-- Average duration: N/A (v1.1 not started)
-- Total execution time: 0.0 hours (v1.1)
+- Total plans completed (v1.1): 47
+- Average duration: N/A (v1.2 not started)
+- Total execution time: 0.0 hours (v1.2)
 
 **By Phase (v1.1):**
 
@@ -53,6 +54,14 @@ Last activity: 2026-05-15 — Milestone v1.2 started
 | 18. Audio Timbres | 6 | Complete (2026-05-14) |
 | 19. Language Switching | 9 | Complete (2026-05-14) |
 
+**By Phase (v1.2):**
+
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 20. Session Start Polish | TBD | Pending |
+| 21. Per-Theme Favicon | TBD | Pending |
+| 22. BPM Stretch Session | TBD | Pending |
+
 ## Accumulated Context
 
 ### Roadmap Evolution
@@ -67,6 +76,7 @@ Last activity: 2026-05-15 — Milestone v1.2 started
 - Phase 17 closed 2026-05-14 — Visual Variants: 3 render variants (Orb default + Square 18% rounded-square + Diamond rotated-square clip-path) via dispatcher + sibling-shape pattern (D-01); `.shape-marker--*` CSS rename (D-15); render-local `data-variant` attribute (D-16); zero new color tokens (D-13 token reuse across variants); sessionVariantRef snapshot at Start (D-09/D-10); 6 plans across 5 waves. Mid-execution operator UAT deviation: variant 3 swapped from Ring (annulus radial-gradient) → Diamond (rotated-square via clip-path on body + inscribed rotated-square markers via CSS-only override); 6 deviation commits (`c6ae41f`, `cac9680`, `78d5f69`, `3d4f97f`, `4c8846e`, `9bf5b90`); D-05 default `'orb'` invariant held; forward-compat: old `'ring'` localStorage values coerce to `DEFAULT_VARIANT`; per-palette + reduced-motion + cross-tab UAT approved; 588 tests passing; zero net-new runtime deps (D-18).
 - Phase 18 closed 2026-05-14 — Audio Timbres: 4 synthesized timbre presets (Bowl default + Bell + Sine + Chime) wired into cueSynth via scheduleInCueForTimbre/scheduleOutCueForTimbre dispatch; timbreRef mirror of mutedRef; timbre captured at session start per D-08/D-09; TimbrePicker radiogroup body (verbatim mirror of ThemePicker); 6 plans across 5 waves; zero net-new runtime deps; per-commit green-gate held.
 - Phase 19 closed 2026-05-14 — Language Switching: EN+PT-BR instant React state swap; roll-your-own typed Record<LocaleId, UiStrings> catalog (14 sub-objects, 63 PT-BR entries); LOCKED_COPY module with frozen-EN byte-equality guard (lockedCopy.test.ts .toBe assertions); useLocale orchestrator (3 effects: lang write + cross-tab storage + same-tab hrv:prefs-changed); LanguagePicker radiogroup; strings-prop drilled to 17 consumer components across Plans 06+07; App.tsx wires useLocale + resolves per-render catalogs (Plans 08+09); medical-advice migrated to LOCKED_COPY.medicalAdviceLine; 9 plans across 5 waves; 712 tests passing post-UAT deviation fixes; UAT-2 PT-BR translation deviations applied in commit 311a55e (UiStrings.app slice + bowl→Taça + 4 video titles reverted to English); I18N-07 native-speaker review deferred to v1.x; zero net-new runtime deps.
+- v1.2 BPM Stretch roadmap created 2026-05-15 — 3 phases (20 Session Start Polish, 21 Per-Theme Favicon, 22 BPM Stretch Session) ordered smallest-blast-radius first; backlog items 999.1 and 999.2 promoted into Phases 21 and 20 respectively; 12/12 requirements mapped; PATT-02 remains constrained to one-clock SessionFrame + dual-anchor audio (Phase 3 D-13/D-14) + existing localStorage envelope (Phase 8 D-01/D-04a).
 
 ### Decisions
 
@@ -75,27 +85,31 @@ Recent decisions affecting current work:
 
 - **[v1.1 phase ordering]** Smallest-blast-radius-first sequencing: Phase 13 (pure CSS warm-up) → Phase 14 (storage/domain foundation) → Phase 15 (dialog shell) → Phase 16 (themes, CSS-only, smallest surface) → Phase 17 (render-only variants) → Phase 18 (audio timbres, highest technical risk) → Phase 19 (i18n, widest string surface, last to minimize structural conflicts).
 - **[D-12 locked-copy override]** I18N-06: Forrest claim-safe copy IS routed through the translation pipeline (user decision overriding research recommendation). Phase 19 must ship a guardrail mechanism (translation-key allowlist or locked-copy review checklist) so future locale contributions cannot silently weaken D-12 positioning.
-- **[Next-session-only swap]** Timbre and Variant pickers are disabled while `inSessionView`. No mid-session swap. Captured at session start.
-- **[Zero net-new runtime deps]** All v1.1 features achieved with existing Tailwind v4, Web Audio API, React, and TypeScript patterns. No `npm install` permitted.
+- **[Next-session-only swap]** Timbre and Variant pickers are disabled while `inSessionView`. No mid-session swap. Captured at session start. Mid-session BPM swap (outside the planned stretch ramp) also remains forbidden (consistent with v1.1 timbre/variant rule).
+- **[Zero net-new runtime deps]** All v1.1 features achieved with existing Tailwind v4, Web Audio API, React, and TypeScript patterns. No `npm install` permitted for v1.2.
 - **[Per-commit green-gate]** `tsc && lint && build && test` must exit 0 at every commit (D-09/D-15 invariant carried forward from v1.0.1).
 - **[Roll-your-own i18n]** No i18n library for v1.1. Typed `Record<LocaleId, UiStrings>` content file + locale-keyed `learnContent.ts` map. Revisit Lingui only if 5+ locales ship.
 - **[PT-BR machine translation]** I18N-07 machine translation with `// TODO: native-speaker review` flag is acceptable for v1.1 ship; native review is a v1.x carry-forward.
 - **[Bowl default byte-identical]** TIMBRE-02: Default timbre = `'bowl'`. Users who never open SettingsDialog hear zero audio change from v1.0.1.
+- **[v1.2 phase ordering]** Smallest-blast-radius first: Phase 20 (single button state, surgical) → Phase 21 (favicon swap, asset + DOM) → Phase 22 (engine + UI, highest risk). Operator-decided at roadmap creation.
+- **[Stretch on existing one-clock SessionFrame]** Phase 22 must not introduce a second clock or timing abstraction. BPM steps ride the Phase 1 contract unchanged.
+- **[Stretch audio reuses dual-anchor scheduling]** Phase 3 D-13/D-14 dual-anchor invariant holds across the stretch ramp. No per-segment audio cue variants; single cue contract per session.
+- **[Stretch settings ride existing envelope]** Phase 8 D-01/D-04a refuse-downgrade write + forward-compat read contract applies to stretch settings persistence. Schema bump must remain backward-compatible.
 - [Phase ?]: Plan 16.1-01 D-02 strategy: Path A (Tailwind v4 /N alpha modifier on var()) is the default; Path B (inline rgb(from var(...) r g b / N)) is the fallback if plan 04 dev-server smoke check shows transparent render
 
 ### Pending Todos
 
-- Phase 18 planning: `/gsd-plan-phase 18` (Audio Timbres — 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView`)
-- Phase 19 planning: `/gsd-plan-phase 19` (Language Switching — EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail)
-- Carry-forward from v1.0.1: `2026-05-11-reduced-motion-still-shows-out-phase-boundary-cue` — RESOLVED directly by Phase 13 (WARMUP-01 reframed as reduced-motion `.orb-ring--inner { display: none }`; no separate verification step). Todo moves to `.planning/todos/completed/` on phase close per 13-CONTEXT.md D-09.
+- v1.2: `/gsd-plan-phase 20` (Session Start Polish — disable Start button during `appPhase === 'lead-in'`)
+- v1.2: `/gsd-plan-phase 21` (Per-Theme Favicon — 5 palette variants; swap on data-theme change; no FOUC on load)
+- v1.2: `/gsd-plan-phase 22` (BPM Stretch Session — engine ramp + settings surface + persistence + audio invariant)
 - v1.2 deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
 
 ### Blockers/Concerns
 
 None at roadmap creation. Technical risk flags:
 
-- **Phase 18 (highest risk):** `timbreRef` + reconstruction replay interaction with AUDIO-01 generation counter. Phase sequenced after prefs + dialog foundation to isolate failure mode.
-- **Phase 19 (widest surface):** I18N string surface touches every visible label; sequenced last to avoid structural conflicts with theme/variant/timbre changes in Phases 16–18.
+- **Phase 22 (highest risk):** BPM ramp step calculation + one-clock SessionFrame integration + dual-anchor re-anchor on each step + localStorage schema bump. Sequenced last to isolate failure mode.
+- **Phase 21 (medium risk):** Favicon swap must cover same-tab `data-theme` mutation, cross-tab `storage` event, and initial-load FOUC prevention — three separate code paths.
 
 ### Quick Tasks Completed
 
@@ -115,7 +129,6 @@ Items acknowledged and carried forward from previous milestone close:
 | v1.x carry-forward | iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3, Open Question 5 / Assumption A6) | No mitigation planned for v1 | 2026-05-11 v1.0 close |
 | v1.x carry-forward | Per-locale `learnContent.ts` native-speaker review for PT-BR (I18N-07) | Machine translation ships with TODO flag | v1.1 scoping |
 | v2 | PWA install (PWA-01) — Web App Manifest + service worker | Out of v1.1 scope; revisit after customization milestone validation | v1.1 scoping |
-| v2 | BPM stretch session (PATT-02) | Out of v1.1 scope; revisit post-customization | v1.1 scoping |
 | v1.x debt | Cross-tab `recordSession` increment race (WR-07 root) — STORAGE-03 covers UI consistency only | Documented in REQUIREMENTS.md v1.0.1 Out of Scope | 2026-05-11 v1.0.1 planning |
 | procedural | Phase 5 lacks VERIFICATION.md | Artifact gap only; coverage intact via 5.1 UAT Task 4 | 2026-05-11 v1.0 close |
 | procedural | Phase 02/03 VERIFICATION.md status "human_needed" (all items closed via 5.1 Task 4 sweep) | Statuses not re-flipped | 2026-05-11 v1.0 close |
@@ -134,11 +147,11 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-14T22:00:00.000Z
-Stopped at: Phase 19 (Language Switching) complete; v1.1 close pending
-Resume file: .planning/phases/19-language-switching/19-SUMMARY.md
-Next command: `/gsd-transition` for milestone close eligibility check, or `/gsd-complete-milestone v1.1` if all v1.1 phases are now closed.
+Last session: 2026-05-15T03:00:00.000Z
+Stopped at: v1.2 roadmap created (Phases 20–22)
+Resume file: .planning/ROADMAP.md
+Next command: `/gsd-plan-phase 20`
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 20 with `/gsd-plan-phase 20`
