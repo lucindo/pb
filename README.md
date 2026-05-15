@@ -18,7 +18,7 @@ The app's defaults reflect the practice's three working rules:
 - **no pauses between inhale and exhale** — one continuous wave
 - **exhale longer than (or equal to) inhale** — for asymmetric ratios the exhale carries the longer side
 
-A breathing session in the app is just a clean, accurate clock that respects those rules and gets out of the way. The on-screen orb and the optional bowl-like tones mark where you are in each breath; the timing itself does the work.
+A breathing session in the app is just a clean, accurate clock that respects those rules and gets out of the way. The on-screen visual guide and the optional bowl-like tones mark where you are in each breath; the timing itself does the work.
 
 > The information here is informational. The app is **guided breathing practice, not medical advice** — it does not diagnose, treat, or claim to improve any clinical condition. If you have a cardiopulmonary or autonomic-nervous-system condition, talk to a clinician before starting any new breathing practice.
 
@@ -50,14 +50,17 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 
 ## Features
 
-- Configurable BPM (3.5 – 7), inhale/exhale ratio (50:50, 40:60, 30:70, 20:80), and duration (5 – 60 minutes or open-ended).
-- A single calm visual guide (orb) with a synchronized In / Out label.
-- Optional generated audio cues — soft bowl-like tones at each phase boundary (mutable).
+- Configurable BPM (1 – 7), inhale/exhale ratio (50:50, 40:60, 30:70, 20:80), and duration (5 – 60 minutes or open-ended).
+- BPM-stretch session pattern — an optional guided arc that opens with a Warm-up at an easier pace, ramps gradually through a Stretch toward a slower target, and closes with a Settle, so the slowdown is gentle rather than abrupt.
+- A single calm visual guide with three interchangeable variants — Orb, Square, and Diamond — each with a synchronized In / Out label.
+- Five named color palettes (theme switching) so the visual guide matches your preferred calm tone.
+- EN / PT-BR language switching — the full interface, including the Learn explainer, is available in English and Brazilian Portuguese.
+- Optional generated audio cues — soft bowl-like tones at each phase boundary (mutable), with four selectable timbres.
 - 3-2-1 audible + visual lead-in before the timing clock starts.
 - Local-only practice stats (sessions completed, total time) — stored in browser localStorage; never sent anywhere.
-- Hands-off resilience — Wake Lock keeps the screen on while a session runs (where supported); the orb / tones / clock re-anchor cleanly after suspend / resume / mute / unmute on mobile.
+- Hands-off resilience — Wake Lock keeps the screen on while a session runs (where supported); the visual guide / tones / clock re-anchor cleanly after suspend / resume / mute / unmute on mobile.
 - Calm, claim-safe in-app explainer modal (`Learn` corner anchor → modal with explanation + Forrest links + disclaimers).
-- Honors `prefers-reduced-motion` — orb visual swaps from a breathing scale animation to a fixed mid-scale gradient crossfade.
+- Honors `prefers-reduced-motion` — the visual guide swaps from a breathing scale animation to a fixed mid-scale gradient crossfade.
 - Responsive: pocket-sized on mobile, fits comfortably on tablet and desktop without zoom.
 
 ---
@@ -66,7 +69,7 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 
 - React 19 + TypeScript, built with Vite.
 - Tailwind CSS v4 via `@tailwindcss/vite`.
-- Vitest + Testing Library for unit + behavior tests (363+ tests across the codebase as of v1.0).
+- Vitest + Testing Library for unit + behavior tests (839 tests across the codebase as of v1.3).
 - ESLint (TypeScript + React Hooks + React Refresh rule packs).
 - Web APIs: `<dialog>` (top-layer modals), `AudioContext` (generated cues), Page Visibility / Wake Lock (resume / screen-on), `localStorage` (settings + stats).
 - No backend, no telemetry, no analytics, no third-party scripts.
@@ -105,14 +108,21 @@ Open the URL Vite prints (typically `http://localhost:5173`) and the app is read
 ```
 src/
   app/            React entry — App.tsx wires the page
-  components/    BreathingShape (orb), SessionReadout, SessionControls,
-                  SettingsForm, StatsFooter, EndSessionDialog,
-                  ResetStatsDialog, LearnAnchor, LearnDialog
-  content/        learnContent.ts — typed copy + Forrest link record
-  domain/         breathingPlan, sessionMath, settings — pure functions
-  hooks/          useSessionEngine, useAudioCues, useWakeLock
-  audio/          audioEngine + cueSynth — Web Audio API layer
-  storage/        localStorage wrappers (settings, mute, stats)
+  components/     Visual guide variants (Orb / Square / Diamond),
+                  SessionReadout, SessionControls, SettingsForm,
+                  SettingsDialog, StatsFooter, EndSessionDialog,
+                  ResetStatsDialog, LearnAnchor, LearnDialog, and the
+                  Theme / Variant / Timbre / Language pickers
+  content/        learnContent + strings — typed copy, Forrest link
+                  record, and EN / PT-BR interface strings
+  domain/         breathingPlan, sessionMath, sessionController,
+                  stretchRamp, settings — pure functions
+  hooks/          useSessionEngine, useAudioCues, useWakeLock,
+                  useTheme, useVisualVariant, useLocale, and the
+                  matching choice hooks
+  audio/          audioEngine + cueSynth + timbres — Web Audio API layer
+  storage/        localStorage wrappers (settings, prefs, stats)
+  styles/         theme palettes + favicon palette sync
 .planning/        Planning artifacts (specs, phases, ROADMAP) — see
                   PROJECT.md if you want to dive into the design history
 ```
@@ -129,4 +139,6 @@ src/
 
 ## License
 
-See `LICENSE` if present. Otherwise the source is provided as-is; if you adapt it, please continue to credit Forrest Knutson as the practice's source and keep the "not medical advice" framing intact.
+This project is licensed under the **MIT License** — see the [`LICENSE`](LICENSE) file at the repository root for the full text.
+
+As a courtesy — not a license term — if you adapt or build on this app, please continue to credit Forrest Knutson as the source of the breathing practice and keep the "guided breathing practice, not medical advice" framing intact. References to Forrest Knutson and Resonant Breathing here are attribution and inspiration only; his name, content, and apps remain his.
