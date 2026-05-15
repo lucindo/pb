@@ -1,34 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Customization
-status: Awaiting next milestone
-stopped_at: Phase 19 (Language Switching) complete; v1.1 close pending
-last_updated: "2026-05-15T02:25:14.747Z"
-last_activity: 2026-05-15 — Milestone v1.1 completed and archived
+milestone: v1.2
+milestone_name: BPM Stretch
+status: planning
+last_updated: "2026-05-15T02:59:16.743Z"
+last_activity: 2026-05-15
 progress:
-  total_phases: 10
-  completed_phases: 9
-  total_plans: 47
-  completed_plans: 43
-  percent: 91
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap defined)
+See: .planning/PROJECT.md (updated 2026-05-14 — v1.2 BPM Stretch milestone opened)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 19 — Language Switching
+**Current focus:** Defining v1.2 requirements
 
 ## Current Position
 
-Phase: Milestone v1.1 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-15 — Milestone v1.1 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-15 — Milestone v1.2 started
 
 ## Performance Metrics
 

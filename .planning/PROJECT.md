@@ -20,9 +20,17 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **v2 backlog:** PWA install (PWA-01). BPM stretch session (PATT-02).
 
-## Next Milestone
+## Current Milestone: v1.2 BPM Stretch
 
-To be scoped. Start with `/gsd-new-milestone` to define goals + requirements.
+**Goal:** Ship the BPM stretch session pattern (warm-up → sub-perceptual ramp → cool-down) on the existing one-clock SessionFrame, and close two small UX gaps surfaced during v1.1.
+
+**Target features:**
+- Start button disabled during lead-in countdown (backlog 999.2) — prevent double-start while `appPhase === 'lead-in'`
+- Per-theme favicon (backlog 999.1) — each of the 5 palettes ships its own favicon variant; swap on `data-theme` change and match persisted theme on load
+- BPM stretch session (PATT-02) — user picks `initialBpm`, `targetBpm`, `holdInitialSeconds`, `holdTargetSeconds`; engine walks BPM in steps < 0.5 BPM along the existing one-clock frame; dual-anchor audio invariants (Phase 3 D-13/D-14) hold across BPM changes; minimum-duration gate enables the mode
+
+**Phase numbering:** Continues from v1.1 (starts at Phase 20).
+**Ordering:** Smallest-blast-radius first — 999.2 (single button state) → 999.1 (favicon swap) → PATT-02 (engine + UI).
 
 ## Requirements
 
@@ -162,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — Phase 18 (Audio Timbres) complete*
+*Last updated: 2026-05-14 — v1.2 BPM Stretch milestone opened*
