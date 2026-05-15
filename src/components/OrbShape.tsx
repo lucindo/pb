@@ -1,29 +1,35 @@
 import type { SessionFrame } from '../domain/sessionMath'
+import type { CueStyleId } from '../domain/settings'
 import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
+import { CueGlyph } from './CueGlyph'
 
 export interface OrbShapeProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
   strings: UiStrings['breathing']
+  // Phase 25 Plan 03: OPTIONAL, default 'labels' — zero-regression for callers
+  // that pre-date Phase 25. OrbLeadIn does NOT receive cue (D-07).
+  cue?: CueStyleId
 }
 
 // D-04: OrbShape does NOT own the idle null-return — the BreathingShape
 // dispatcher (Plan 05) guards that and never invokes OrbShape with both
 // frame=null AND leadInDigit=null.
-export function OrbShape({ frame, leadInDigit, strings }: OrbShapeProps) {
+export function OrbShape({ frame, leadInDigit, strings, cue = 'labels' }: OrbShapeProps) {
   if (leadInDigit != null) {
+    // OrbLeadIn does NOT receive cue — D-07: lead-in countdown digit is unchanged
     return <OrbLeadIn digit={leadInDigit} strings={strings} />
   }
   // OrbShape's caller (BreathingShape dispatcher) guarantees frame !== null
   // when leadInDigit is null (D-04 — dispatcher owns the idle null-return guard).
   // Reason: BreathingShape dispatcher asserts frame !== null before delegating to OrbShape when leadInDigit is null.
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return <OrbBody frame={frame!} strings={strings} />
+  return <OrbBody frame={frame!} strings={strings} cue={cue} />
 }
 
-function OrbBody({ frame, strings }: { frame: SessionFrame; strings: UiStrings['breathing'] }) {
+function OrbBody({ frame, strings, cue }: { frame: SessionFrame; strings: UiStrings['breathing']; cue: CueStyleId }) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -119,18 +125,11 @@ function OrbBody({ frame, strings }: { frame: SessionFrame; strings: UiStrings['
           height: `${(MIN_SCALE * 100).toFixed(2)}%`,
         }}
       />
-      {/* D-03: phase label centered inside the orb at large display size */}
-      <span
-        className="relative z-10 text-5xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-6xl"
-        style={{
-          color:
-            frame.phase === 'in'
-              ? 'var(--color-orb-in-text)'
-              : 'var(--color-orb-out-text)',
-        }}
-      >
-        {phaseLabel}
-      </span>
+      {/* D-03: phase label centered inside the orb at large display size.
+          Phase 25 Plan 03: replaced with CueGlyph — branches on `cue` prop.
+          labels mode: byte-identical to the original span (zero regression).
+          arrow/nose modes: aria-hidden SVG + sr-only phaseLabel (CUE-03 / D-09). */}
+      <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
     </div>
   )
 }

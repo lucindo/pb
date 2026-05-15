@@ -111,7 +111,7 @@ export function CueGlyph({ cue, phase, phaseLabel }: CueGlyphProps): React.React
         ))}
         {/* Direction arrows — up for In, down for Out */}
         {arrowData.lines.map((l) => (
-          <line key={`${l.x1}-${l.y1}-${l.x2}-${l.y2}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
+          <line key={`${String(l.x1)}-${String(l.y1)}-${String(l.x2)}-${String(l.y2)}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
         ))}
         {arrowData.arrowheads.map((pts) => (
           <polyline key={pts} points={pts} />
