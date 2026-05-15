@@ -21,6 +21,7 @@ function renderControlsWithMute(props: Partial<SessionControlsProps> = {}) {
       muted={props.muted ?? false}
       audioAvailable={props.audioAvailable ?? true}
       onMuteToggle={onMuteToggle}
+      inLeadIn={props.inLeadIn}
     />,
   )
   return { ...utils, onStart, onEnd, onMuteToggle }
@@ -153,5 +154,32 @@ describe('SessionControls', () => {
     expect(primary.className).toMatch(/flex-1/)
     expect(primary).not.toHaveClass('mt-6')
     expect(primary).not.toHaveClass('w-full')
+  })
+
+  it('LEAD-01/D-05: when inLeadIn is true, primary button accessible name is the cancel string (EN)', () => {
+    // Inline-mute branch (App.tsx caller uses all three audio props)
+    renderControlsWithMute({ status: 'idle', inLeadIn: true })
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeVisible()
+  })
+
+  it('LEAD-01/D-05: when inLeadIn is omitted (undefined), primary button accessible name is still "Start session" (backward-compat)', () => {
+    renderControlsWithMute({ status: 'idle' })
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+  })
+
+  it('LEAD-01 pt-BR: when inLeadIn is true with pt-BR strings, primary button accessible name is "Cancelar"', () => {
+    render(
+      <SessionControls
+        status="idle"
+        onStart={vi.fn()}
+        onEnd={vi.fn()}
+        strings={UI_STRINGS['pt-BR'].controls}
+        inLeadIn={true}
+        muted={false}
+        audioAvailable={true}
+        onMuteToggle={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeVisible()
   })
 })

@@ -126,8 +126,8 @@ describe('App — wake lock (Phase 5)', () => {
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
-    // Cancel-during-lead-in: button label is locked to 'Start session' (Phase 2 W4).
-    const primaryBtn = screen.getByRole('button', { name: 'Start session' })
+    // Cancel-during-lead-in: button label is 'Cancel' during lead-in (Phase 20 LEAD-01 / D-07).
+    const primaryBtn = screen.getByRole('button', { name: 'Cancel' })
     fireEvent.click(primaryBtn)
     await flushMicrotasks()
 

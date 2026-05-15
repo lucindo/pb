@@ -18,6 +18,7 @@ export interface UiStrings {
   readonly controls: {
     readonly startSession: string
     readonly endSession: string
+    readonly cancel: string
   }
   readonly endSessionDialog: {
     readonly title: string
@@ -120,6 +121,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     controls: {
       startSession: 'Start session',
       endSession: 'End session',
+      cancel: 'Cancel',
     },
     endSessionDialog: {
       title: 'End this session?',
@@ -223,6 +225,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     controls: {
       startSession: 'Iniciar sessão', // TODO: native-speaker review
       endSession: 'Encerrar sessão', // TODO: native-speaker review
+      cancel: 'Cancelar', // TODO: native-speaker review
     },
     endSessionDialog: {
       title: 'Encerrar esta sessão?', // TODO: native-speaker review
