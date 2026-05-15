@@ -57,7 +57,7 @@ Requirements for the Customization milestone. Each maps to roadmap phases.
 - [ ] **I18N-01**: User can choose between **EN** (English, default) and **PT-BR** (Portuguese, Brazil) from the SettingsDialog.
 - [ ] **I18N-02**: Language switch is instant — React state swap, no page reload — and does not interrupt the running breath loop. The picker is **disabled while `inSessionView`** so the in-session string surface does not re-render mid-breath.
 - [ ] **I18N-03**: Selected language persists across reloads via `Envelope.prefs.locale`.
-- [ ] **I18N-04**: A typed `Record<LocaleId, UiStrings>` map (roll-your-own, no framework dependency) covers all UI labels (buttons, dialog copy, stats labels, settings form labels).
+- [x] **I18N-04**: A typed `Record<LocaleId, UiStrings>` map (roll-your-own, no framework dependency) covers all UI labels (buttons, dialog copy, stats labels, settings form labels).
 - [ ] **I18N-05**: `src/content/learnContent.ts` exposes a locale-keyed map (`{ en: LEARN_CONTENT_EN, pt_BR: LEARN_CONTENT_PT_BR }`) sharing the existing section-keyed shape.
 - [ ] **I18N-06**: The Forrest claim-safe copy (`inspired by Forrest's teachings` and the two-line disclaimer) IS routed through the translation pipeline (PT-BR translation provided). **NOTE:** This overrides the research recommendation that locked copy stay as TS constants — Planning must add a guardrail (e.g. translation-key allowlist, locked-copy review step) so future locale contributions cannot silently weaken the D-12 claim-safe positioning.
 - [ ] **I18N-07**: PT-BR translation is supplied for v1.1 ship; machine translation is acceptable with a `// TODO: native-speaker review` flag tracked as v1.x carry-forward.
@@ -126,7 +126,7 @@ Which phases cover which requirements.
 | I18N-01 | Phase 19 | Pending |
 | I18N-02 | Phase 19 | Pending |
 | I18N-03 | Phase 19 | Pending |
-| I18N-04 | Phase 19 | Pending |
+| I18N-04 | Phase 19 | Complete |
 | I18N-05 | Phase 19 | Pending |
 | I18N-06 | Phase 19 | Pending |
 | I18N-07 | Phase 19 | Pending |
