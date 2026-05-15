@@ -98,7 +98,7 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 21-01-PLAN.md — Shared faviconPalette module (5 accent-strong colors + SVG template) + theme.css sync-guard test (FAVI-01)
+- [x] 21-01-PLAN.md — Shared faviconPalette module (5 accent-strong colors + SVG template) + theme.css sync-guard test (FAVI-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 21-02-PLAN.md — useFavicon hook + index.html pre-paint favicon extension + App.tsx mount + human-verify (FAVI-01, FAVI-02, FAVI-03)
@@ -143,7 +143,7 @@ Plans:
 | 18. Audio Timbres | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
-| 21. Per-Theme Favicon | v1.2 | 0/2 | Not started | - |
+| 21. Per-Theme Favicon | v1.2 | 1/2 | In Progress|  |
 | 22. BPM Stretch Session | v1.2 | 0/? | Not started | - |
 
 ## Backlog
