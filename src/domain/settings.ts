@@ -125,6 +125,16 @@ export function isValidVariant(v: unknown): v is VisualVariantId {
 
 export const DEFAULT_VARIANT: VisualVariantId = 'orb'
 
+export type CueStyleId = 'labels' | 'arrow' | 'nose'
+
+export const CUE_OPTIONS = ['labels', 'arrow', 'nose'] as const satisfies readonly CueStyleId[]
+
+export function isValidCue(v: unknown): v is CueStyleId {
+  return typeof v === 'string' && (CUE_OPTIONS as readonly string[]).includes(v)
+}
+
+export const DEFAULT_CUE: CueStyleId = 'labels'  // FIXED per CONTEXT D-01 / success criterion 5
+
 export type LocaleId = 'en' | 'pt-BR'
 
 export const LOCALE_OPTIONS = ['en', 'pt-BR'] as const satisfies readonly LocaleId[]
