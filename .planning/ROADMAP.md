@@ -94,3 +94,14 @@ Run `/gsd-new-milestone` to scope the next milestone.
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
+
+## Backlog
+
+### Phase 999.1: we should have one favicon per theme (BACKLOG)
+
+**Goal:** [Captured for future planning] Per-theme favicons — palette swap currently only rebinds in-page chrome; the browser tab icon stays static. Each of the 5 palettes (Light, Dark, Moss, Slate, Dusk) should ship its own favicon variant that swaps when `data-theme` changes (or at least matches the persisted preference on load).
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
