@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Customization
 status: executing
-stopped_at: Phase 19 context gathered
-last_updated: "2026-05-14T21:43:37.299Z"
-last_activity: 2026-05-14 -- Phase 19 execution started
+stopped_at: Phase 19 (Language Switching) complete; v1.1 close pending
+last_updated: "2026-05-14T22:00:00.000Z"
+last_activity: 2026-05-14 -- Phase 19 complete (9/9 plans)
 progress:
   total_phases: 10
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 47
-  completed_plans: 34
-  percent: 72
+  completed_plans: 43
+  percent: 91
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-12 — v1.0.1 shipped, v1.1 roadmap d
 
 ## Current Position
 
-Phase: 19 (Language Switching) — EXECUTING
-Plan: 1 of 9
-Status: Executing Phase 19
-Last activity: 2026-05-14 -- Phase 19 execution started
+Phase: 19 (Language Switching) — COMPLETE
+Plan: 9 of 9
+Status: Phase 19 complete; v1.1 milestone close pending
+Last activity: 2026-05-14 -- Phase 19 complete (9/9 plans; 712/712 tests pass)
 
-Progress: [████████░░] 87%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -53,8 +53,8 @@ Progress: [████████░░] 87%
 | 16.2. Palette Aesthetic Refresh | 2 | Complete (INSERTED 2026-05-13 — Phase 16.1 UAT carry-forward closed; perceptual aesthetic UAT deferred to Phase 16.3) |
 | 16.3. Thorough Theme Revision | 7 | Complete (INSERTED 2026-05-13 — 5 palettes redesigned from named open-source design systems with per-palette UAT; ring-inner harmonization carry-forwards closed for Moss + Slate) |
 | 17. Visual Variants | 6 | Complete (2026-05-14 — operator-driven Ring → Diamond deviation in plan 17-06; VisualVariantId `'orb' \| 'square' \| 'diamond'`; 588 tests passing; D-05 default `'orb'` invariant held; old `'ring'` values coerce to `'orb'`) |
-| 18. Audio Timbres | TBD | Not started |
-| 19. Language Switching | TBD | Not started |
+| 18. Audio Timbres | 6 | Complete (2026-05-14) |
+| 19. Language Switching | 9 | Complete (2026-05-14) |
 
 ## Accumulated Context
 
@@ -68,6 +68,8 @@ Progress: [████████░░] 87%
 - Phase 16.3 inserted 2026-05-13 — Thorough Theme Revision: interactive theme-by-theme palette redesign with user-supplied open-source design-system reference per palette (e.g. Catppuccin Frappe for Dark). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes; honors THEME-05 ≥ 1.5 contrast and THEME-UI-01 token-binding contracts.
 - Phase 16.3 closed 2026-05-13 — 5 palettes redesigned from named open-source design systems (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main); 7 plans / 7 waves (1 preflight + 5 per-palette B1 cadence + 1 close); per-palette THEME-05 floor + D-01 ≥ 1.5 hold across all 5 palettes; 5/5 perceptual UAT approved; ring-inner harmonization carry-forward closed for Moss + Slate; REQUIREMENTS.md untouched (B2 — aesthetic redesign honors existing constraint IDs only).
 - Phase 17 closed 2026-05-14 — Visual Variants: 3 render variants (Orb default + Square 18% rounded-square + Diamond rotated-square clip-path) via dispatcher + sibling-shape pattern (D-01); `.shape-marker--*` CSS rename (D-15); render-local `data-variant` attribute (D-16); zero new color tokens (D-13 token reuse across variants); sessionVariantRef snapshot at Start (D-09/D-10); 6 plans across 5 waves. Mid-execution operator UAT deviation: variant 3 swapped from Ring (annulus radial-gradient) → Diamond (rotated-square via clip-path on body + inscribed rotated-square markers via CSS-only override); 6 deviation commits (`c6ae41f`, `cac9680`, `78d5f69`, `3d4f97f`, `4c8846e`, `9bf5b90`); D-05 default `'orb'` invariant held; forward-compat: old `'ring'` localStorage values coerce to `DEFAULT_VARIANT`; per-palette + reduced-motion + cross-tab UAT approved; 588 tests passing; zero net-new runtime deps (D-18).
+- Phase 18 closed 2026-05-14 — Audio Timbres: 4 synthesized timbre presets (Bowl default + Bell + Sine + Chime) wired into cueSynth via scheduleInCueForTimbre/scheduleOutCueForTimbre dispatch; timbreRef mirror of mutedRef; timbre captured at session start per D-08/D-09; TimbrePicker radiogroup body (verbatim mirror of ThemePicker); 6 plans across 5 waves; zero net-new runtime deps; per-commit green-gate held.
+- Phase 19 closed 2026-05-14 — Language Switching: EN+PT-BR instant React state swap; roll-your-own typed Record<LocaleId, UiStrings> catalog (14 sub-objects, 63 PT-BR entries); LOCKED_COPY module with frozen-EN byte-equality guard (lockedCopy.test.ts .toBe assertions); useLocale orchestrator (3 effects: lang write + cross-tab storage + same-tab hrv:prefs-changed); LanguagePicker radiogroup; strings-prop drilled to 17 consumer components across Plans 06+07; App.tsx wires useLocale + resolves per-render catalogs (Plans 08+09); medical-advice migrated to LOCKED_COPY.medicalAdviceLine; 9 plans across 5 waves; 712 tests passing post-UAT deviation fixes; UAT-2 PT-BR translation deviations applied in commit 311a55e (UiStrings.app slice + bowl→Taça + 4 video titles reverted to English); I18N-07 native-speaker review deferred to v1.x; zero net-new runtime deps.
 
 ### Decisions
 
@@ -128,12 +130,13 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-14T20:30:30.020Z
-Stopped at: Phase 19 context gathered
-Resume file: .planning/phases/19-language-switching/19-CONTEXT.md
-Next command: Phase 18 (Audio Timbres) planning — `/gsd-plan-phase 18`
+Last session: 2026-05-14T22:00:00.000Z
+Stopped at: Phase 19 (Language Switching) complete; v1.1 close pending
+Resume file: .planning/phases/19-language-switching/19-SUMMARY.md
+Next command: `/gsd-transition` for milestone close eligibility check, or `/gsd-complete-milestone v1.1` if all v1.1 phases are now closed.
 
 ## Operator Next Steps
 
-- Begin Phase 18 (Audio Timbres) planning: `/gsd-plan-phase 18` — 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView` (TIMBRE-01..05). Follows the same picker pattern as Phase 16 themes + Phase 17 variants.
-- Optionally begin Phase 19 (Language Switching) planning: `/gsd-plan-phase 19` — EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail (I18N-01..07).
+- Phase 19 is complete (9/9 plans). All I18N-01..07 requirements are Done.
+- Run `/gsd-transition` for v1.1 milestone close eligibility check, or `/gsd-complete-milestone v1.1` to close the Customization milestone.
+- v1.x carry-forward: Per-locale PT-BR native-speaker review (I18N-07) — machine translation ships with `// TODO: native-speaker review` markers in strings.ts + learnContent.ts.

@@ -53,7 +53,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 - [x] **Phase 16.3: Thorough Theme Revision (INSERTED 2026-05-13)** - Interactive per-palette redesign sourcing each palette from a vetted open-source design system (Light=Nord Frost, Dark=Nord Polar Night, Moss=Everforest Light medium, Slate=Tokyo Night Day, Dusk=Rosé Pine Main). Replaces 16.1/16.2 ad-hoc aesthetic results with deliberately-curated palettes. Per-palette task cadence + per-palette UAT before commit. Honors THEME-05 ≥ per-palette floor and THEME-UI-01 token-binding contract. Closes ring-inner harmonization carry-forwards for Moss + Slate (completed 2026-05-13).
 - [x] **Phase 17: Visual Variants** - Orb (default) + 2 alternate visual variants (Square + Diamond); render-only; disabled while `inSessionView`; reduced-motion contract preserved; sessionVariantRef capture-at-Start (D-09/D-10) — completed 2026-05-14
 - [x] **Phase 18: Audio Timbres** - 4 synthesized timbre presets wired into `cueSynth`; captured at session start; disabled while `inSessionView` (completed 2026-05-14)
-- [ ] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism
+- [x] **Phase 19: Language Switching** - EN + PT-BR; instant React state swap; locked claim-safe copy routed through translation pipeline with guardrail mechanism (completed 2026-05-14)
 
 ## Phase Details
 
@@ -222,22 +222,23 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 **Goal**: Users can switch between English and PT-BR; the language switch is instant, does not interrupt a running session, and locked claim-safe copy is guarded against silent weakening by future locale contributions.
 **Depends on**: Phase 15
 **Requirements**: I18N-01, I18N-02, I18N-03, I18N-04, I18N-05, I18N-06, I18N-07
+**Status**: Complete (2026-05-14)
 **Success Criteria** (what must be TRUE):
-  1. Selecting PT-BR from the SettingsDialog immediately re-renders all UI labels (buttons, dialog copy, stats labels, settings form labels) in Portuguese without a page reload; the running breath loop is unaffected (I18N-02).
-  2. The language picker is disabled while `inSessionView` is true (I18N-02 in-session guard); EN is the default and existing behavior is unchanged for users who never open the picker.
-  3. Selected language persists across reloads via `Envelope.prefs.locale`; coerce-on-read falls back to `'en'` for unknown stored values (I18N-03).
-  4. The Forrest claim-safe copy (`inspired by Forrest's teachings` and the two-line disclaimer) is routed through the PT-BR translation pipeline; a translation-key allowlist or locked-copy review checklist is present in the codebase so future locale contributions cannot silently alter D-12 positioning (I18N-06 guardrail — D-12 decision honored).
-  5. PT-BR translations are present for v1.1 ship with `// TODO: native-speaker review` flags marking machine-translated strings as v1.x carry-forward (I18N-07); `tsc && lint && build && test` exit 0.
+  1. Selecting PT-BR from the SettingsDialog immediately re-renders all UI labels (buttons, dialog copy, stats labels, settings form labels) in Portuguese without a page reload; the running breath loop is unaffected (I18N-02). — PASS
+  2. The language picker is disabled while `inSessionView` is true (I18N-02 in-session guard); EN is the default and existing behavior is unchanged for users who never open the picker. — PASS
+  3. Selected language persists across reloads via `Envelope.prefs.locale`; coerce-on-read falls back to `'en'` for unknown stored values (I18N-03). — PASS
+  4. The Forrest claim-safe copy (`inspired by Forrest's teachings` and the two-line disclaimer) is routed through the PT-BR translation pipeline; a translation-key allowlist or locked-copy review checklist is present in the codebase so future locale contributions cannot silently alter D-12 positioning (I18N-06 guardrail — D-12 decision honored). — PASS
+  5. PT-BR translations are present for v1.1 ship with `// TODO: native-speaker review` flags marking machine-translated strings as v1.x carry-forward (I18N-07); `tsc && lint && build && test` exit 0. — PARTIAL (translations shipped; native-speaker review deferred to v1.x per I18N-07)
 **Plans**: 9 plans
-  - [x] 19-01-PLAN.md — strings.ts catalog (UiStrings interface + UI_STRINGS EN+PT-BR + LOCALE_DISPLAY_NAMES) + exhaustiveness tests
-  - [x] 19-02-PLAN.md — useLocaleChoice picker-side hook (verbatim clone of useTimbreChoice with timbre→locale rename) + 6 hook tests
-  - [x] 19-03-PLAN.md — learnContent locale-keyed shape + EN substring strip + PT-BR translation + lockedCopy module (3 entries × 2 locales) + frozen-EN snapshot guard test (D-02 .toBe byte-equality) + substring-absence guard
-  - [x] 19-04-PLAN.md — useLocale orchestrator hook (3 effects: documentElement.lang write + cross-tab storage listener + same-tab hrv:prefs-changed listener) + 8 hook tests
-  - [x] 19-05-PLAN.md — LanguagePicker radiogroup body (mirror of TimbrePicker chrome with LOCALE_DISPLAY_NAMES endonyms) + 9 picker tests including D-14 cross-UI endonym invariant
-  - [x] 19-06-PLAN.md — Dialogs + anchors + toggle + pickers accept strings prop (9 components: SettingsDialog/EndSession/ResetStats/SettingsAnchor/LearnAnchor/MuteToggle/Theme/Variant/Timbre/LanguagePicker sectionLabel widening)
-  - [x] 19-07-PLAN.md — Form + footer + controls + breathing accept strings prop (8 components: SettingsForm/SettingsStepper/SessionControls/StatsFooter/SessionReadout/BreathingShape/Orb/Square/DiamondShape); D-15 template-fn aria-labels; Path A wedge for phase label
-  - [x] 19-08-PLAN.md — App.tsx wires useLocale + resolves catalogs + drills slices to 15 consumers; App.tsx:686 medical-advice migrated to lockedCopy.medicalAdviceLine; LearnDialog accepts learnContent + lockedCopy + strings props with locked-phrase paragraph composition
-  - [ ] 19-09-PLAN.md — Phase close: App.locale.test.tsx integration smoke + manual UAT (cross-tab mid-session swap + PT-BR spot-check + persistence + in-session disable) + REQUIREMENTS/ROADMAP/STATE flips + SUMMARY + UAT log
+  - [x] 19-01-PLAN.md — strings.ts catalog (UiStrings interface + UI_STRINGS EN+PT-BR + LOCALE_DISPLAY_NAMES) + exhaustiveness tests — `fc2ee7f`
+  - [x] 19-02-PLAN.md — useLocaleChoice picker-side hook (verbatim clone of useTimbreChoice with timbre→locale rename) + 6 hook tests — `b2de6cd`, `61730d8`
+  - [x] 19-03-PLAN.md — learnContent locale-keyed shape + EN substring strip + PT-BR translation + lockedCopy module (3 entries × 2 locales) + frozen-EN snapshot guard test (D-02 .toBe byte-equality) + substring-absence guard — `c471ca4`
+  - [x] 19-04-PLAN.md — useLocale orchestrator hook (3 effects: documentElement.lang write + cross-tab storage listener + same-tab hrv:prefs-changed listener) + 8 hook tests — `44f6606`, `5cfcc58`
+  - [x] 19-05-PLAN.md — LanguagePicker radiogroup body (mirror of TimbrePicker chrome with LOCALE_DISPLAY_NAMES endonyms) + 9 picker tests including D-14 cross-UI endonym invariant — `8ade978`
+  - [x] 19-06-PLAN.md — Dialogs + anchors + toggle + pickers accept strings prop (9 components: SettingsDialog/EndSession/ResetStats/SettingsAnchor/LearnAnchor/MuteToggle/Theme/Variant/Timbre/LanguagePicker sectionLabel widening) — `56fef5b`
+  - [x] 19-07-PLAN.md — Form + footer + controls + breathing accept strings prop (8 components: SettingsForm/SettingsStepper/SessionControls/StatsFooter/SessionReadout/BreathingShape/Orb/Square/DiamondShape); D-15 template-fn aria-labels; Path A wedge for phase label — `6589b37`
+  - [x] 19-08-PLAN.md — App.tsx wires useLocale + resolves catalogs + drills slices to 15 consumers; App.tsx:686 medical-advice migrated to lockedCopy.medicalAdviceLine; LearnDialog accepts learnContent + lockedCopy + strings props with locked-phrase paragraph composition — `8e1b8dd`, `b7002c8`, `ba1586a`
+  - [x] 19-09-PLAN.md — Phase close: App.locale.test.tsx integration smoke + manual UAT (cross-tab mid-session swap + PT-BR spot-check + persistence + in-session disable) + REQUIREMENTS/ROADMAP/STATE flips + SUMMARY + UAT log — `e05073a`, `311a55e`
 **UI hint**: yes
 
 ## Progress
@@ -266,4 +267,4 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete    | 2026-05-14 |
-| 19. Language Switching | v1.1 | 8/9 | In Progress|  |
+| 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-14 |
