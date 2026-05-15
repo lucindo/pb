@@ -108,9 +108,11 @@ export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabe
   // Step 1: warm-up hold at initialBpm (always present — minimum 5 min)
   segments.push(makeSegment(initialBpm, warmUpMinutes * 60_000, 'hold-initial'))
 
-  // Step 2: ramp — each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04)
+  // Step 2: ramp — each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04).
+  // Math.max(1, …) guards a degenerate initialBpm === targetBpm call (validateSettings
+  // rejects it upstream, but the engine must not divide by a zero step count).
   const bpmSpan = initialBpm - targetBpm
-  const numSteps = Math.ceil(bpmSpan / 0.4999)
+  const numSteps = Math.max(1, Math.ceil(bpmSpan / 0.4999))
   const stepRequestedMs = (rampDurationMinutes * 60_000) / numSteps
 
   for (let i = 0; i < numSteps; i++) {
@@ -134,12 +136,13 @@ export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabe
  * to handle variable cycle lengths. cycleIndex is absolute (session-global
  * monotonic) — never resets at segment boundaries (Pitfall 1).
  *
- * completionMs uses the LAST segment's cycleMs for rounding (Pitfall 3).
- * For open-ended sessions (totalMs === null), isComplete is always false.
+ * The session's true end is the last segment's endMs — buildStretchSegments
+ * already snapped every segment to a whole cycle boundary, so completion and
+ * remaining time are read straight off the table. An open-ended cool-down has
+ * endMs = Infinity → remainingMs null, isComplete always false.
  */
 export function getStretchFrame(
   segments: StretchSegment[],
-  totalMs: number | null,
   elapsedMs: number,
 ): StretchSessionFrame {
   const safeElapsedMs = Math.max(0, elapsedMs)
@@ -166,17 +169,11 @@ export function getStretchFrame(
   const phaseProgress = phaseDurationMs === 0 ? 0 : phaseElapsedMs / phaseDurationMs
   const phase: BreathPhase = isInPhase ? 'in' : 'out'
 
-  // Remaining and completion (Pitfall 3: use last segment's cycleMs for rounding)
-  const remainingMs = totalMs === null ? null : Math.max(0, totalMs - safeElapsedMs)
-
-  let completionMs: number | null = null
-  if (totalMs !== null) {
-    const lastSeg = segments[segments.length - 1] as StretchSegment
-    // Round totalMs up to the next cycle boundary of the last segment
-    completionMs = lastSeg.startMs + Math.ceil((totalMs - lastSeg.startMs) / lastSeg.cycleMs) * lastSeg.cycleMs
-  }
-
-  const isComplete = completionMs !== null && safeElapsedMs >= completionMs
+  // Remaining and completion derive from the segment table's true end —
+  // the last segment's endMs (already cycle-aligned; Infinity → open-ended).
+  const sessionEndMs = (segments[segments.length - 1] as StretchSegment).endMs
+  const remainingMs = sessionEndMs === Infinity ? null : Math.max(0, sessionEndMs - safeElapsedMs)
+  const isComplete = sessionEndMs !== Infinity && safeElapsedMs >= sessionEndMs
 
   return {
     phase,

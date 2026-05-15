@@ -138,8 +138,7 @@ describe('buildStretchSegments', () => {
 describe('getStretchFrame', () => {
   it('returns phase "in" at elapsedMs 0 with cycleIndex 0', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    const frame = getStretchFrame(segs, totalMs, 0)
+    const frame = getStretchFrame(segs, 0)
     expect(frame.phase).toBe('in')
     expect(frame.cycleIndex).toBe(0)
     expect(frame.isComplete).toBe(false)
@@ -147,12 +146,10 @@ describe('getStretchFrame', () => {
 
   it('cycleIndex is non-decreasing across an entire session sweep', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    const step = 1000
-    const duration = (totalMs ?? 1_800_000) * 0.5
+    const duration = (computeStretchTotalMs(baseSettings) ?? 1_800_000) * 0.5
     let lastIndex = -1
-    for (let t = 0; t <= duration; t += step) {
-      const frame = getStretchFrame(segs, totalMs, t)
+    for (let t = 0; t <= duration; t += 1000) {
+      const frame = getStretchFrame(segs, t)
       expect(frame.cycleIndex).toBeGreaterThanOrEqual(lastIndex)
       lastIndex = frame.cycleIndex
     }
@@ -160,20 +157,18 @@ describe('getStretchFrame', () => {
 
   it('cycleIndex never resets at segment boundaries (Pitfall 1 - absolute monotonic)', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
     for (let i = 1; i < segs.length; i++) {
       const boundaryMs = segs[i]?.startMs ?? 0
       if (boundaryMs === Infinity) continue
-      const frameBefore = getStretchFrame(segs, totalMs, boundaryMs - 1)
-      const frameAt = getStretchFrame(segs, totalMs, boundaryMs)
+      const frameBefore = getStretchFrame(segs, boundaryMs - 1)
+      const frameAt = getStretchFrame(segs, boundaryMs)
       expect(frameAt.cycleIndex).toBeGreaterThanOrEqual(frameBefore.cycleIndex)
     }
   })
 
   it('frame carries currentBpm, stage, cycleStartMs, currentCycleMs', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    const frame = getStretchFrame(segs, totalMs, 0)
+    const frame = getStretchFrame(segs, 0)
     expect(frame.currentBpm).toBeDefined()
     expect(frame.stage).toBeDefined()
     expect(frame.cycleStartMs).toBeDefined()
@@ -184,59 +179,74 @@ describe('getStretchFrame', () => {
 
   it('currentBpm at elapsedMs 0 equals initialBpm (warm-up hold)', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    const frame = getStretchFrame(segs, totalMs, 0)
-    expect(frame.currentBpm).toBe(baseSettings.initialBpm)
+    expect(getStretchFrame(segs, 0).currentBpm).toBe(baseSettings.initialBpm)
   })
 
   it('stage at elapsedMs 0 is "hold-initial" (warm-up is always first)', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    const frame = getStretchFrame(segs, totalMs, 0)
-    expect(frame.stage).toBe('hold-initial')
+    expect(getStretchFrame(segs, 0).stage).toBe('hold-initial')
   })
 
-  it('isComplete fires at or after the cycle-rounded completionMs (Pitfall 3 last-segment rounding)', () => {
+  it('isComplete fires exactly at the last segment endMs (cycle-aligned, no drift)', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    if (totalMs === null) throw new Error('unexpected null totalMs')
+    const endMs = (segs[segs.length - 1] as StretchSegment).endMs
 
-    const lastSeg = segs[segs.length - 1] as StretchSegment
-    const completionMs = lastSeg.startMs + Math.ceil((totalMs - lastSeg.startMs) / lastSeg.cycleMs) * lastSeg.cycleMs
-
-    expect(getStretchFrame(segs, totalMs, completionMs - 1).isComplete).toBe(false)
-    expect(getStretchFrame(segs, totalMs, completionMs).isComplete).toBe(true)
-    expect(getStretchFrame(segs, totalMs, completionMs + 100).isComplete).toBe(true)
+    expect(getStretchFrame(segs, endMs - 1).isComplete).toBe(false)
+    expect(getStretchFrame(segs, endMs).isComplete).toBe(true)
+    expect(getStretchFrame(segs, endMs + 100).isComplete).toBe(true)
   })
 
-  it('open-ended (totalMs null): isComplete is always false', () => {
+  it('does not complete early — the cool-down segment runs to its endMs (CR-01 regression)', () => {
+    // Drift-prone config: non-integer cycle counts in every segment.
+    const driftSettings: SessionSettings = {
+      ...baseSettings,
+      initialBpm: 5.5,
+      targetBpm: 4.5,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    }
+    const segs = buildStretchSegments(driftSettings, '40:60')
+    const coolDown = segs[segs.length - 1] as StretchSegment
+    expect(coolDown.stage).toBe('hold-target')
+    const midCoolDown = coolDown.startMs + (coolDown.endMs - coolDown.startMs) / 2
+    expect(getStretchFrame(segs, coolDown.startMs).isComplete).toBe(false)
+    expect(getStretchFrame(segs, midCoolDown).isComplete).toBe(false)
+    expect(getStretchFrame(segs, midCoolDown).stage).toBe('hold-target')
+    expect(getStretchFrame(segs, coolDown.endMs).isComplete).toBe(true)
+  })
+
+  it('open-ended: isComplete is always false', () => {
     const segs = buildStretchSegments(openEndedSettings, '40:60')
     for (const t of [0, 1_000, 60_000, 600_000, 3_600_000]) {
-      expect(getStretchFrame(segs, null, t).isComplete).toBe(false)
+      expect(getStretchFrame(segs, t).isComplete).toBe(false)
     }
   })
 
-  it('open-ended (totalMs null): remainingMs is always null', () => {
+  it('open-ended: remainingMs is always null', () => {
     const segs = buildStretchSegments(openEndedSettings, '40:60')
     for (const t of [0, 1_000, 3_600_000]) {
-      expect(getStretchFrame(segs, null, t).remainingMs).toBeNull()
+      expect(getStretchFrame(segs, t).remainingMs).toBeNull()
     }
+  })
+
+  it('finite session: remainingMs reaches 0 exactly at the last segment endMs', () => {
+    const segs = buildStretchSegments(baseSettings, '40:60')
+    const endMs = (segs[segs.length - 1] as StretchSegment).endMs
+    expect(getStretchFrame(segs, endMs).remainingMs).toBe(0)
   })
 
   it('clamps negative elapsedMs to 0', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    const frame = getStretchFrame(segs, totalMs, -500)
+    const frame = getStretchFrame(segs, -500)
     expect(frame.elapsedMs).toBe(0)
     expect(frame.cycleIndex).toBe(0)
   })
 
   it('phaseProgress is in [0, 1] range', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    if (totalMs === null) throw new Error('unexpected null totalMs')
     for (const t of [0, 5000, 100_000]) {
-      const frame = getStretchFrame(segs, totalMs, t)
+      const frame = getStretchFrame(segs, t)
       expect(frame.phaseProgress).toBeGreaterThanOrEqual(0)
       expect(frame.phaseProgress).toBeLessThanOrEqual(1)
     }
@@ -244,10 +254,8 @@ describe('getStretchFrame', () => {
 
   it('remainingMs decreases as session progresses for a finite session', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
-    const totalMs = computeStretchTotalMs(baseSettings)
-    if (totalMs === null) throw new Error('unexpected null totalMs')
-    const frame1 = getStretchFrame(segs, totalMs, 0)
-    const frame2 = getStretchFrame(segs, totalMs, 5000)
+    const frame1 = getStretchFrame(segs, 0)
+    const frame2 = getStretchFrame(segs, 5000)
     expect(frame2.remainingMs).toBeLessThan(frame1.remainingMs ?? Infinity)
   })
 })

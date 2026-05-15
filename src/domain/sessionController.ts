@@ -5,7 +5,7 @@ import { getSessionFrame } from './sessionMath'
 import type { DurationOption, SessionSettings } from './settings'
 import { DURATION_OPTIONS } from './settings'
 import type { StretchSegment } from './stretchRamp'
-import { buildStretchSegments, computeStretchTotalMs, getStretchFrame } from './stretchRamp'
+import { buildStretchSegments, getStretchFrame } from './stretchRamp'
 
 export type SessionStatus = 'idle' | 'running' | 'complete'
 
@@ -52,7 +52,7 @@ export function startSession(selectedSettings: SessionSettings, nowMs: number): 
     ? buildStretchSegments(lockedSettings, lockedSettings.ratio)
     : null
   const lastFrame = stretchSegments !== null
-    ? getStretchFrame(stretchSegments, computeStretchTotalMs(lockedSettings), 0)
+    ? getStretchFrame(stretchSegments, 0)
     : getSessionFrame(plan, 0)
 
   return {
@@ -120,7 +120,7 @@ export function completeIfNeeded(
 ): RunningSessionState | CompleteSessionState {
   const elapsedMs = nowMs - state.startedAtMs
   const lastFrame = state.stretchSegments !== null
-    ? getStretchFrame(state.stretchSegments, computeStretchTotalMs(state.lockedSettings), elapsedMs)
+    ? getStretchFrame(state.stretchSegments, elapsedMs)
     : getSessionFrame(state.plan, elapsedMs)
 
   if (!lastFrame.isComplete) {
