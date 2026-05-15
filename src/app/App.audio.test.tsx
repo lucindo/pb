@@ -240,7 +240,9 @@ describe('App — audio cues (Phase 3)', () => {
   })
 
   // -- Test 11: cancel-during-lead-in (W4 + Open Question 2 (a)) ---------------
-  it('pressing the primary button during lead-in (still labelled Start session) cancels back to idle without opening the EndSessionDialog', async () => {
+  // D-07: rewritten — Phase 20 relabels the primary button to 'Cancel' during lead-in (LEAD-01).
+  // The cancel-behavior assertions (no dialog, numerals cleared, AC.close called) are retained.
+  it('pressing the primary button during lead-in (labelled Cancel per LEAD-01) cancels back to idle without opening the EndSessionDialog', async () => {
     const OriginalAC = window.AudioContext
     let acInstance: AudioContext | null = null
     const acSpy = vi.fn(function (this: AudioContext, ...args: unknown[]) {
@@ -250,6 +252,7 @@ describe('App — audio cues (Phase 3)', () => {
     vi.stubGlobal('AudioContext', acSpy)
 
     render(<App />)
+    // Idle state — initial click to enter lead-in (button still reads 'Start session').
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await flushMicrotasks()
     act(() => {
@@ -257,12 +260,11 @@ describe('App — audio cues (Phase 3)', () => {
     })
     expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
-    // Per checker W4: the primary button label is LOCKED to 'Start session' during
-    // lead-in (Phase 1 D-11 + Plan 04 Task 1a design). Assert exact label, NOT a
-    // disjunction. session.status is still 'idle' from useSessionEngine's POV
-    // (SESS-05); the click is routed through onStartClick which detects
-    // appPhase === 'lead-in' and cancels.
-    const primaryBtn = screen.getByRole('button', { name: 'Start session' })
+    // Per checker W4 (Phase 20 D-04/D-07 revision): the primary button label is now
+    // 'Cancel' during lead-in (LEAD-01 via inLeadIn prop). session.status is still
+    // 'idle' from useSessionEngine's POV (SESS-05); the click is routed through
+    // onStartClick which detects appPhase === 'lead-in' and cancels.
+    const primaryBtn = screen.getByRole('button', { name: 'Cancel' })
     fireEvent.click(primaryBtn)
     await flushMicrotasks()
 
@@ -274,6 +276,25 @@ describe('App — audio cues (Phase 3)', () => {
     expect(acInstance).not.toBeNull()
     const closeMock = (acInstance as unknown as { close: ReturnType<typeof vi.fn> }).close
     expect(closeMock).toHaveBeenCalled()
+  })
+
+  // -- Test 11b: lead-in label regression (D-08 EN+PT-BR) ----------------------
+  it('LEAD-01 D-08: primary button shows "Cancel" (EN) during lead-in and disappears once session starts', async () => {
+    render(<App />)
+    // Confirm idle label before lead-in
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+
+    // Enter lead-in
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await flushMicrotasks()
+    act(() => {
+      vi.advanceTimersByTime(500)
+    })
+
+    // During lead-in the button must read 'Cancel' (EN)
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeVisible()
+    // 'Start session' must no longer be queryable as a button
+    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
   })
 
   // -- Test 12: AC failure path (D-10 visuals-only fallback) ------------------
