@@ -102,6 +102,51 @@ describe('UI_STRINGS template-fn entries (D-15)', () => {
   })
 })
 
+describe('Phase 22 stretch string keys EN/PT-BR parity', () => {
+  const stretchSettingsFormKeys = [
+    'sessionModeLabel',
+    'modeStandard',
+    'modeStretch',
+    'stretchGateHint',
+    'initialBpmLabel',
+    'targetBpmLabel',
+    'holdInitialLabel',
+    'holdTargetLabel',
+    'rampDurationLabel',
+    'holdNoneLabel',
+    'holdOpenEndedLabel',
+    'totalLabel',
+    'totalOpenEndedLabel',
+  ] as const
+
+  const stretchReadoutKeys = [
+    'currentBpmLabel',
+    'stageHoldInitial',
+    'stageRamp',
+    'stageHoldTarget',
+  ] as const
+
+  it('every stretch settingsForm key exists and is a non-empty string in both EN and PT-BR', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      for (const key of stretchSettingsFormKeys) {
+        const value = UI_STRINGS[locale].settingsForm[key]
+        expect(typeof value, `settingsForm.${key} in ${locale}`).toBe('string')
+        expect(value.length, `settingsForm.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('every stretch readout key exists and is a non-empty string in both EN and PT-BR', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      for (const key of stretchReadoutKeys) {
+        const value = UI_STRINGS[locale].readout[key]
+        expect(typeof value, `readout.${key} in ${locale}`).toBe('string')
+        expect(value.length, `readout.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
 describe('LOCALE_DISPLAY_NAMES (D-14 native endonyms)', () => {
   it('en label is "English"', () => {
     expect(LOCALE_DISPLAY_NAMES.en).toBe('English')
