@@ -214,12 +214,14 @@ describe('CueGlyph — nose mode (candidate D2)', () => {
     expect(container.querySelector('[class*="animate-"]')).toBeNull()
   })
 
-  it('nose is stroked (fill=none on the group or paths, stroke used)', () => {
+  it('nose is stroked (svg has fill="none" and stroke="currentColor" — uses stroke, not fill)', () => {
     const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" />)
     const svg = container.querySelector('svg')
     expect(svg).not.toBeNull()
-    // At least one element has fill=none (nose uses stroke, not fill)
-    const fillNone = svg!.querySelector('[fill="none"]')
-    expect(fillNone).not.toBeNull()
+    // The nose SVG root carries fill="none" and stroke="currentColor"
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(svg!.getAttribute('fill')).toBe('none')
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(svg!.getAttribute('stroke')).toBe('currentColor')
   })
 })
