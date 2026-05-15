@@ -18,7 +18,21 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **v1.x carry-forward (next milestone):** PT-BR native-speaker review of 76 `// TODO: native-speaker review` markers (I18N-07). iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. See STATE.md `## Deferred Items` for the full register.
 
-**v2 backlog:** PWA install (PWA-01).
+**v2 backlog:** (none — PWA install promoted into v1.3).
+
+## Current Milestone: v1.3 Release Polish
+
+**Goal:** Make the app distribution-ready — proper licensing, an installable offline-capable PWA, completed PT-BR translations, and two small UX additions.
+
+**Target features (operator-ordered, smallest-blast-radius first):**
+- LICENSE file added to the repo + README updated (docs)
+- Forrest native-app links (Resonant Breathing iPhone/Android) on the Learn surface (ui)
+- Labels-vs-icons toggle — new SettingsDialog picker switching the in-orb In/Out cue between text labels and arrow icons (ui)
+- PT-BR native-speaker review (I18N-07) — all 76 machine-translated strings reviewed by a native speaker; `// TODO: native-speaker review` markers removed
+- PWA install (PWA-01) — Web App Manifest + maskable icons + Apple touch icon + service worker caching the app shell for full offline session use
+
+**Phase numbering:** Continues from v1.2 (starts at Phase 23).
+**Note:** PWA service-worker tooling may introduce a build-time dependency (e.g. Vite PWA plugin) — the zero-net-new-*runtime*-deps invariant still holds; flag at planning.
 
 ## Requirements
 
@@ -66,7 +80,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Active
 
-(None — v1.2 shipped. Next milestone requirements defined via `/gsd-new-milestone`.)
+v1.3 Release Polish — requirements defined in `.planning/REQUIREMENTS.md`: LICENSE + README, Forrest native-app links, labels-vs-icons toggle, PT-BR native-speaker review (I18N-07), PWA install (PWA-01).
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -179,4 +193,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 — after v1.2 BPM Stretch milestone close*
+*Last updated: 2026-05-15 — v1.3 Release Polish milestone opened*

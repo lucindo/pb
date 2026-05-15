@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: BPM Stretch
-status: Awaiting next milestone
-stopped_at: Phase 22 UI-SPEC approved
-last_updated: "2026-05-15T18:51:37.078Z"
-last_activity: 2026-05-15 — Milestone v1.2 completed and archived
+milestone: v1.3
+milestone_name: Release Polish
+status: planning
+last_updated: "2026-05-15T19:46:23.168Z"
+last_activity: 2026-05-15
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-15 — after v1.2 BPM Stretch milesto
 
 ## Current Position
 
-Phase: Milestone v1.2 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-15 — Milestone v1.2 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-15 — Milestone v1.3 started
 
 ## Performance Metrics
 
