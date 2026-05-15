@@ -17,8 +17,8 @@ import { useFavicon } from '../hooks/useFavicon'
 import { useTheme } from '../hooks/useTheme'
 import { useVisualVariant } from '../hooks/useVisualVariant'
 import { useWakeLock } from '../hooks/useWakeLock'
-import { createBreathingPlan } from '../domain/breathingPlan'
-import { getSessionFrame } from '../domain/sessionMath'
+import { createBreathingPlan, type BreathingPlan } from '../domain/breathingPlan'
+import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import {
   LEAD_IN_DURATION_MS,
   LEAD_IN_TICK_INTERVAL_MS,
@@ -45,6 +45,29 @@ import { LOCKED_COPY } from '../content/lockedCopy'
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
 type AppPhase = 'idle' | 'lead-in' | 'running'
+
+// Phase 22 Pitfall 2: a stretch session has a variable per-cycle cycleMs, so a
+// boundary's audio-clock offset cannot come from `cycleIndex * plan.cycleMs`.
+// When the frame carries `cycleStartMs` (a stretch frame from getStretchFrame),
+// read the boundary offset and per-cycle phase durations straight off the frame;
+// otherwise use the constant-plan formula (standard sessions — byte-unchanged).
+export function computeBoundaryAudioOffsets(
+  frame: SessionFrame,
+  plan: BreathingPlan,
+): { boundaryStartMs: number; phaseDurationSec: number } {
+  if (frame.cycleStartMs !== undefined) {
+    const inhaleMs = frame.currentInhaleMs ?? plan.inhaleMs
+    const exhaleMs = frame.currentExhaleMs ?? plan.exhaleMs
+    return {
+      boundaryStartMs: frame.cycleStartMs + (frame.phase === 'in' ? 0 : inhaleMs),
+      phaseDurationSec: (frame.phase === 'in' ? inhaleMs : exhaleMs) / 1000,
+    }
+  }
+  return {
+    boundaryStartMs: frame.cycleIndex * plan.cycleMs + (frame.phase === 'in' ? 0 : plan.inhaleMs),
+    phaseDurationSec: (frame.phase === 'in' ? plan.inhaleMs : plan.exhaleMs) / 1000,
+  }
+}
 
 export default function App() {
   // Phase 4 LOCL-01: restore persisted settings + mute at mount.
@@ -592,11 +615,10 @@ export default function App() {
 
     // Compute boundary start time from the plan (NOT from frame.elapsedMs).
     // boundaryStartMs is the elapsed offset from session t=0 to the start of THIS phase.
-    // - For In phase (start of cycle N): cycleIndex * cycleMs
-    // - For Out phase (after In within cycle N): cycleIndex * cycleMs + inhaleMs
-    const boundaryStartMs =
-      frame.cycleIndex * plan.cycleMs +
-      (frame.phase === 'in' ? 0 : plan.inhaleMs)
+    // Standard sessions: cycleIndex * cycleMs (+ inhaleMs for Out). Stretch sessions:
+    // straight off the segment table's cycleStartMs (variable cycleMs — Pitfall 2).
+    // phaseDurationSec likewise uses the per-cycle inhale/exhale for stretch frames.
+    const { boundaryStartMs, phaseDurationSec } = computeBoundaryAudioOffsets(frame, plan)
 
     // Convert to audio-clock time using the dual anchor captured at lead-in completion.
     const audioTime = audioAnchor + boundaryStartMs / 1000
@@ -608,14 +630,11 @@ export default function App() {
     if (liveAudioNow === null) return
     const clampedAudioTime = Math.max(audioTime, liveAudioNow + SAFE_LEAD_SEC)
 
-    // 260510-tc9 Bug 2: pass the UPCOMING phase's duration so the bowl-cue decay
-    // envelope stretches with the phase length at low BPM (avoids silent tail
-    // before the next boundary at BPM ≤ 3.5). The engine + cueSynth clamp the
-    // value so default short-phase cues are unchanged and very long phases
-    // do not drone.
-    const phaseDurationSec =
-      (frame.phase === 'in' ? plan.inhaleMs : plan.exhaleMs) / 1000
-
+    // 260510-tc9 Bug 2: phaseDurationSec (computed above) is the UPCOMING phase's
+    // duration so the bowl-cue decay envelope stretches with the phase length at
+    // low BPM (avoids silent tail before the next boundary at BPM ≤ 3.5). The
+    // engine + cueSynth clamp the value so default short-phase cues are unchanged
+    // and very long phases do not drone.
     audioNotifyPhaseBoundary({ newPhase: frame.phase, audioTime: clampedAudioTime, phaseDurationSec })
   }, [appPhase, session.currentFrame, audioNotifyPhaseBoundary, audioAudioNow])
 
