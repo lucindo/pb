@@ -71,7 +71,7 @@ afterEach(() => {
 describe('useFavicon', () => {
   it('seeds favicon from loadPrefs().theme at mount (named theme: dark)', () => {
     seedPrefs('dark')
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     const href = getFaviconHref()
     // dark palette hex is #81a1c1; URL-encoded: %2381a1c1 or the raw hex in the data URI
     expect(href).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
@@ -79,7 +79,7 @@ describe('useFavicon', () => {
 
   it('seeds favicon from loadPrefs().theme at mount (named theme: moss)', () => {
     seedPrefs('moss')
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     const href = getFaviconHref()
     expect(href).toContain(FAVICON_COLORS.moss.replace('#', '%23').slice(1))
   })
@@ -87,7 +87,7 @@ describe('useFavicon', () => {
   it('resolves system theme via matchMedia.matches=true → dark favicon', () => {
     seedPrefs('system')
     vi.spyOn(window, 'matchMedia').mockReturnValue(makeMqlMock(true))
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     const href = getFaviconHref()
     // system + matches=true → resolved to 'dark'
     expect(href).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
@@ -96,7 +96,7 @@ describe('useFavicon', () => {
   it('resolves system theme via matchMedia.matches=false → light favicon', () => {
     seedPrefs('system')
     vi.spyOn(window, 'matchMedia').mockReturnValue(makeMqlMock(false))
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     const href = getFaviconHref()
     // system + matches=false → resolved to 'light'
     expect(href).toContain(FAVICON_COLORS.light.replace('#', '%23').slice(1))
@@ -112,7 +112,7 @@ describe('useFavicon', () => {
         },
       }),
     )
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     // starts as light (matches=false)
     expect(getFaviconHref()).toContain(FAVICON_COLORS.light.replace('#', '%23').slice(1))
 
@@ -125,7 +125,7 @@ describe('useFavicon', () => {
 
   it('updates favicon via cross-tab storage event with key === STATE_KEY', async () => {
     seedPrefs('dark')
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
 
     // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
@@ -152,7 +152,7 @@ describe('useFavicon', () => {
 
   it('ignores cross-tab storage event with unrelated key', async () => {
     seedPrefs('dark')
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     const hrefBefore = getFaviconHref()
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
@@ -174,7 +174,7 @@ describe('useFavicon', () => {
 
   it('updates favicon via same-tab hrv:prefs-changed CustomEvent with key="theme"', async () => {
     seedPrefs('dark')
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
 
     // Seed the new theme on disk before dispatching
@@ -193,7 +193,7 @@ describe('useFavicon', () => {
 
   it('ignores same-tab hrv:prefs-changed CustomEvent with key="variant"', async () => {
     seedPrefs('dark')
-    renderHook(() => useFavicon())
+    renderHook(() => { useFavicon() })
     const hrefBefore = getFaviconHref()
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
@@ -215,7 +215,7 @@ describe('useFavicon', () => {
 
     seedPrefs('dark')
     expect(() => {
-      renderHook(() => useFavicon())
+      renderHook(() => { useFavicon() })
     }).not.toThrow()
   })
 })
