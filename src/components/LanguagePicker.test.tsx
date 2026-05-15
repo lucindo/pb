@@ -6,6 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LanguagePicker } from './LanguagePicker'
 import { STATE_KEY } from '../storage'
 import type { LocaleId } from '../domain/settings'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Helper: seed localStorage with a known locale so useLocaleChoice reads it on mount.
 function seedLocale(locale: LocaleId): void {
@@ -27,12 +30,12 @@ afterEach(() => {
 
 describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
   it('renders the "Language" section label', () => {
-    render(<LanguagePicker disabled={false} />)
+    render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     expect(screen.getByText('Language')).toBeInTheDocument()
   })
 
   it('renders exactly 2 radio buttons with native endonym labels English and Português (Brasil)', () => {
-    render(<LanguagePicker disabled={false} />)
+    render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(2)
     const labels = Array.from(radios).map((b) => b.textContent)
@@ -41,7 +44,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
 
   it('aria-checked reflects the stored locale — seeded pt-BR makes PT-BR button checked and EN button unchecked', () => {
     seedLocale('pt-BR')
-    render(<LanguagePicker disabled={false} />)
+    render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const ptBRButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     const enButton = screen.getByRole('radio', { name: 'English' })
     expect(ptBRButton).toHaveAttribute('aria-checked', 'true')
@@ -51,7 +54,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
   it('clicking an enabled option writes the new locale to disk via savePrefs', async () => {
     seedLocale('en')
     const user = userEvent.setup()
-    render(<LanguagePicker disabled={false} />)
+    render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const ptBRButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     await user.click(ptBRButton)
     const stored = window.localStorage.getItem(STATE_KEY)
@@ -65,7 +68,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
   it('clicking an enabled option dispatches hrv:prefs-changed with detail.key === "locale"', async () => {
     seedLocale('en')
     const user = userEvent.setup()
-    render(<LanguagePicker disabled={false} />)
+    render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
     const ptBRButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
@@ -78,7 +81,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
   })
 
   it('when disabled=true, both buttons have disabled attribute and radiogroup has aria-disabled="true"', () => {
-    render(<LanguagePicker disabled={true} />)
+    render(<LanguagePicker disabled={true} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
       expect(button).toBeDisabled()
@@ -89,7 +92,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
   it('when disabled=true, clicking does NOT write to disk', async () => {
     seedLocale('en')
     const user = userEvent.setup()
-    render(<LanguagePicker disabled={true} />)
+    render(<LanguagePicker disabled={true} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const ptBRButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     await user.click(ptBRButton)
     const stored = window.localStorage.getItem(STATE_KEY)
@@ -103,7 +106,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
 
   it('selected option retains its aria-checked=true highlight even when disabled=true', () => {
     seedLocale('pt-BR')
-    render(<LanguagePicker disabled={true} />)
+    render(<LanguagePicker disabled={true} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     const ptBRButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     expect(ptBRButton).toHaveAttribute('aria-checked', 'true')
     expect(ptBRButton).toBeDisabled()
@@ -112,7 +115,7 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
   it('D-14 cross-UI endonym invariant: native endonym labels are the same regardless of seeded locale', () => {
     // Seed pt-BR locale (simulating a pt-BR UI context)
     seedLocale('pt-BR')
-    render(<LanguagePicker disabled={false} />)
+    render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.settings.languageLabel} />)
     // Both endonym labels must be present in their native form — they do NOT flow through UI_STRINGS
     expect(screen.getByRole('radio', { name: 'English' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Português (Brasil)' })).toBeInTheDocument()

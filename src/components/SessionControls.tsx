@@ -1,5 +1,6 @@
 import type { SessionStatus } from '../domain/sessionController'
 import type { UiStrings } from '../content/strings'
+import { UI_STRINGS } from '../content/strings'
 import { MuteToggle } from './MuteToggle'
 
 export interface SessionControlsProps {
@@ -24,6 +25,10 @@ export interface SessionControlsProps {
    *  on this interface to preserve backward compatibility with legacy-layout
    *  callers that never render MuteToggle. */
   resumeHintId?: string
+  /** Phase 19 Plan 06 stop-gap: EN fixture for MuteToggle strings. Plan 08 will
+   *  replace with the live locale slice from useLocale(). Optional for legacy
+   *  compatibility — when absent, falls back to UI_STRINGS.en.mute. */
+  muteStrings?: UiStrings['mute']
   onMuteToggle?(this: void): void
 }
 
@@ -36,6 +41,7 @@ export function SessionControls({
   audioAvailable,
   needsResume,
   resumeHintId,
+  muteStrings,
   onMuteToggle,
 }: SessionControlsProps) {
   const isRunning = status === 'running'
@@ -79,6 +85,7 @@ export function SessionControls({
         audioAvailable={audioAvailable}
         needsResume={needsResume}
         resumeHintId={resumeHintId ?? ''}
+        strings={muteStrings ?? UI_STRINGS.en.mute}
         onToggle={onMuteToggle}
       />
     </div>

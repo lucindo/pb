@@ -7,11 +7,13 @@
 // - size-12 → size-11 (44 px exact match for the Phase 2 D-17 hit-area floor)
 // - text-2xl + leading-none dropped (this button hosts an SVG icon, not a glyph)
 
+import type { UiStrings } from '../content/strings'
+
 export interface MuteToggleProps {
   muted: boolean
   audioAvailable: boolean
   /** Plan 06 D-32: when true, button morphs into a resume affordance —
-   *  refresh-arrow glyph + aria-label 'Resume audio'. Priority: audioAvailable=false
+   *  refresh-arrow glyph + aria-label from strings.resume. Priority: audioAvailable=false
    *  outranks; muted is ignored in label and aria-pressed is undefined. */
   needsResume?: boolean
   /** A11Y-01: id of the App-level aria-live resume-hint region. When needsResume
@@ -20,22 +22,23 @@ export interface MuteToggleProps {
    *  empty-content announcements (the live region text is the empty string when
    *  not in needs-resume mode). */
   resumeHintId: string
+  strings: UiStrings['mute']
   onToggle(this: void): void
 }
 
-export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, onToggle }: MuteToggleProps) {
+export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, strings, onToggle }: MuteToggleProps) {
   // Plan 06 D-32: label priority — unavailable > needsResume > muted/unmuted.
   // Phase 3 D-10 'unavailable' takes highest priority and outranks needsResume because
   // in practice the hook's audioStatus state machine makes them mutually exclusive
   // (audioStatus='unavailable' suppresses 'needs-resume') — but the priority order
   // is defensive against any future state surface change.
   const label = !audioAvailable
-    ? 'Audio unavailable in this browser'
+    ? strings.unavailable
     : needsResume
-      ? 'Resume audio'
+      ? strings.resume
       : muted
-        ? 'Unmute audio cues'
-        : 'Mute audio cues'
+        ? strings.unmute
+        : strings.mute
 
   return (
     <button

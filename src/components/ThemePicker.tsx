@@ -9,17 +9,20 @@
 
 import { THEME_OPTIONS, type ThemeId } from '../domain/settings'
 import { useThemeChoice } from '../hooks/useThemeChoice'
+import type { UiStrings } from '../content/strings'
 
 export interface ThemePickerProps {
   disabled: boolean
+  strings: UiStrings['themes']
+  sectionLabel: string
 }
 
-export function ThemePicker({ disabled }: ThemePickerProps) {
+export function ThemePicker({ disabled, strings, sectionLabel }: ThemePickerProps) {
   const { theme, setTheme } = useThemeChoice()
 
   return (
     <div>
-      <p id="theme-picker-label" className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">Theme</p>
+      <p id="theme-picker-label" className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">{sectionLabel}</p>
       <div
         role="radiogroup"
         aria-labelledby="theme-picker-label"
@@ -28,7 +31,7 @@ export function ThemePicker({ disabled }: ThemePickerProps) {
       >
         {THEME_OPTIONS.map((id: ThemeId) => {
           const selected = theme === id
-          const label = id.charAt(0).toUpperCase() + id.slice(1)
+          const label = strings[id]
           const selectedClasses = 'border-2 border-[var(--color-breathing-accent)] bg-[var(--color-breathing-bg-soft)] text-[var(--color-breathing-accent-strong)]'
           const unselectedClasses = 'border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-accent-strong)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'
           const baseClasses = 'min-h-12 rounded-full px-3 py-2 text-sm font-semibold shadow-sm transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45'

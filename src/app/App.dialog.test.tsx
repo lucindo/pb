@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EndSessionDialog } from '../components/EndSessionDialog'
 import { STATE_KEY } from '../storage'
+import { UI_STRINGS } from '../content/strings'
 import App from './App'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
 // session timing clock starts. Helper to click Start + flush microtasks for the
@@ -29,7 +32,12 @@ function renderDialog(
   const onConfirm = props.onConfirm ?? vi.fn()
   const onCancel = props.onCancel ?? vi.fn()
   const utils = render(
-    <EndSessionDialog open={props.open ?? false} onConfirm={onConfirm} onCancel={onCancel} />,
+    <EndSessionDialog
+      open={props.open ?? false}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      strings={EN_STRINGS_FIXTURE.endSessionDialog}
+    />,
   )
   return { ...utils, onConfirm, onCancel }
 }

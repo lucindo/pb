@@ -1,12 +1,15 @@
 import { useEffect, useRef, type MouseEventHandler } from 'react'
 
+import type { UiStrings } from '../content/strings'
+
 export interface EndSessionDialogProps {
   open: boolean
   onConfirm(this: void): void
   onCancel(this: void): void
+  strings: UiStrings['endSessionDialog']
 }
 
-export function EndSessionDialog({ open, onConfirm, onCancel }: EndSessionDialogProps) {
+export function EndSessionDialog({ open, onConfirm, onCancel, strings }: EndSessionDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -58,7 +61,7 @@ export function EndSessionDialog({ open, onConfirm, onCancel }: EndSessionDialog
           id="end-session-title"
           className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]"
         >
-          End this session?
+          {strings.title}
         </h2>
         {/* F2: drop flex-col-reverse so mobile column order matches DOM order
             (Keep going on top, End below). Previously column-reverse stacked the
@@ -73,14 +76,14 @@ export function EndSessionDialog({ open, onConfirm, onCancel }: EndSessionDialog
             onClick={onCancel}
             className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
-            Keep going
+            {strings.cancel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="min-h-12 rounded-full bg-[#bf616a] px-5 py-2 text-base font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-red-900/20 transition hover:bg-[#a85459] active:bg-[#92444c] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
-            End
+            {strings.confirm}
           </button>
         </div>
       </div>

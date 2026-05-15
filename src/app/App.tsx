@@ -633,8 +633,8 @@ export default function App() {
           <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
             HRV Breathing
           </h1>
-          <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} />
-          <LearnAnchor disabled={inSessionView} onClick={onLearnClick} />
+          <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} strings={UI_STRINGS.en.anchors} />
+          <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={UI_STRINGS.en.anchors} />
         </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
@@ -668,6 +668,7 @@ export default function App() {
             audioAvailable={audio.audioAvailable}
             needsResume={audio.audioStatus === 'needs-resume'}
             resumeHintId="mute-toggle-resume-hint"
+            muteStrings={UI_STRINGS.en.mute}
             onMuteToggle={() => { void onMuteOrResumeClick() }}
           />
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
@@ -699,17 +700,19 @@ export default function App() {
         open={endDialogOpen}
         onConfirm={confirmEnd}
         onCancel={cancelEnd}
+        strings={UI_STRINGS.en.endSessionDialog}
       />
       <ResetStatsDialog
         open={resetDialogOpen}
         onConfirm={confirmReset}
         onCancel={cancelReset}
+        strings={UI_STRINGS.en.resetStatsDialog}
       />
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}
       <LearnDialog open={learnDialogOpen} onClose={onLearnClose} />
       {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/VariantPicker/TimbrePicker/LanguagePicker stubs. */}
-      <SettingsDialog open={settingsDialogOpen} onClose={onSettingsClose} inSessionView={inSessionView} />
+      <SettingsDialog open={settingsDialogOpen} onClose={onSettingsClose} inSessionView={inSessionView} strings={UI_STRINGS.en} />
     </main>
   )
 }
