@@ -32,7 +32,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 **Phase numbering:** Continues from v1.1 (starts at Phase 20).
 **Ordering:** Smallest-blast-radius first — 999.2 (single button state) → 999.1 (favicon swap) → PATT-02 (engine + UI).
 
-**Progress:** Phase 20 complete (2026-05-15) — LEAD-01 resolved: primary button relabels to `Cancel`/`Cancelar` during the lead-in countdown, removing the double-start affordance. Phase 21 complete (2026-05-15) — FAVI-01/02/03 resolved: each of the 5 palettes shows a distinct favicon; swaps live on theme change (same-tab + cross-tab) and applies the persisted theme before first paint with no flash. 753/753 tests pass.
+**Progress:** Phase 20 complete (2026-05-15) — LEAD-01 resolved: primary button relabels to `Cancel`/`Cancelar` during the lead-in countdown, removing the double-start affordance. Phase 21 complete (2026-05-15) — FAVI-01/02/03 resolved: each of the 5 palettes shows a distinct favicon; swaps live on theme change (same-tab + cross-tab) and applies the persisted theme before first paint with no flash. Phase 22 complete (2026-05-15) — STRETCH-01..08 resolved: BPM stretch mode (Warm-up → Stretch ramp → Settle) on the one-clock SessionFrame; cycle-aligned segment table so BPM steps land only on Out→In boundaries; iOS-switch mode picker; minute-based stage durations with a read-only computed-total Duration box; dual-anchor audio holds across the ramp. Operator UAT redesigned the stretch UX mid-checkpoint (gate removed, minute-based stages, stage renames) — approved 2026-05-15. v1.2 milestone feature-complete. 839/839 tests pass.
 
 ## Requirements
 
@@ -172,4 +172,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 — Phase 21 (Per-Theme Favicon) complete*
+*Last updated: 2026-05-15 — Phase 22 (BPM Stretch Session) complete; v1.2 milestone feature-complete*
