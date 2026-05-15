@@ -9,7 +9,19 @@ import {
   saveMute,
 } from './settings'
 import { STATE_KEY } from './storage'
-import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
+import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type SessionSettings } from '../domain/settings'
+
+const STRETCH_SETTINGS: SessionSettings = {
+  bpm: 5.5,
+  ratio: '40:60',
+  durationMinutes: 10,
+  mode: 'stretch',
+  initialBpm: 6,
+  targetBpm: 4,
+  holdInitialSeconds: 30,
+  holdTargetSeconds: 60,
+  rampDurationMinutes: 25,
+}
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -79,6 +91,49 @@ describe('coerceSettings (D-15)', () => {
   })
 })
 
+describe('coerceSettings — stretch fields (Plan 22-02 / STRETCH-07)', () => {
+  it('returns all 6 stretch fields unchanged when valid', () => {
+    expect(coerceSettings(STRETCH_SETTINGS)).toEqual(STRETCH_SETTINGS)
+  })
+
+  it('forward-compat: an old envelope with no stretch keys loads with stretch defaults — no throw', () => {
+    const oldShape = { bpm: 5.5, ratio: '40:60', durationMinutes: 10 }
+    expect(() => coerceSettings(oldShape)).not.toThrow()
+    expect(coerceSettings(oldShape)).toEqual({
+      bpm: 5.5,
+      ratio: '40:60',
+      durationMinutes: 10,
+      mode: DEFAULT_SETTINGS.mode,
+      initialBpm: DEFAULT_STRETCH_SETTINGS.initialBpm,
+      targetBpm: DEFAULT_STRETCH_SETTINGS.targetBpm,
+      holdInitialSeconds: DEFAULT_STRETCH_SETTINGS.holdInitialSeconds,
+      holdTargetSeconds: DEFAULT_STRETCH_SETTINGS.holdTargetSeconds,
+      rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
+    })
+  })
+
+  it('falls back PER FIELD when mode is drifted — keeps valid sibling stretch fields', () => {
+    expect(coerceSettings({ ...STRETCH_SETTINGS, mode: 'foo' }))
+      .toEqual({ ...STRETCH_SETTINGS, mode: DEFAULT_SETTINGS.mode })
+  })
+
+  it('falls back PER FIELD when rampDurationMinutes is off-grid — keeps valid siblings', () => {
+    expect(coerceSettings({ ...STRETCH_SETTINGS, rampDurationMinutes: 7 }))
+      .toEqual({ ...STRETCH_SETTINGS, rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes })
+  })
+
+  it('null / non-object input yields the stretch defaults', () => {
+    expect(coerceSettings(null)).toMatchObject({
+      mode: DEFAULT_SETTINGS.mode,
+      initialBpm: DEFAULT_STRETCH_SETTINGS.initialBpm,
+      targetBpm: DEFAULT_STRETCH_SETTINGS.targetBpm,
+      holdInitialSeconds: DEFAULT_STRETCH_SETTINGS.holdInitialSeconds,
+      holdTargetSeconds: DEFAULT_STRETCH_SETTINGS.holdTargetSeconds,
+      rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
+    })
+  })
+})
+
 describe('coerceMute (D-14 / D-07)', () => {
   it('returns true when raw is true', () => { expect(coerceMute(true)).toBe(true) })
   it('returns false when raw is false', () => { expect(coerceMute(false)).toBe(false) })
@@ -99,6 +154,11 @@ describe('loadSettings / saveSettings round-trip', () => {
     const next: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50', durationMinutes: 5 }
     saveSettings(next)
     expect(loadSettings()).toEqual(next)
+  })
+
+  it('round-trips a full stretch-mode settings object byte-equal (STRETCH-07)', () => {
+    saveSettings(STRETCH_SETTINGS)
+    expect(loadSettings()).toEqual(STRETCH_SETTINGS)
   })
 
   it('preserves mute and stats fields when saving settings (envelope merge)', () => {
