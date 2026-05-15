@@ -124,7 +124,7 @@ Plans:
 - [x] 22-02-PLAN.md — coerceSettings stretch persistence + stretch-aware sessionController (segment build, frame dispatch) (STRETCH-04/05/07)
 
 **Wave 3** *(blocked on 22-01, 22-02, 22-03)*
-- [ ] 22-04-PLAN.md — SettingsForm mode picker + stretch fields + 15-min gate + computed total; SessionReadout live BPM + stage label (STRETCH-01/02/03/06)
+- [x] 22-04-PLAN.md — SettingsForm mode picker + stretch fields + 15-min gate + computed total; SessionReadout live BPM + stage label (STRETCH-01/02/03/06)
 
 **Wave 4** *(blocked on 22-02, 22-04)*
 - [ ] 22-05-PLAN.md — Stretch-aware App.tsx audio boundary effect + end-to-end human verification (STRETCH-04/08)
@@ -158,7 +158,7 @@ Plans:
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete    | 2026-05-15 |
-| 22. BPM Stretch Session | v1.2 | 3/5 | In Progress|  |
+| 22. BPM Stretch Session | v1.2 | 4/5 | In Progress|  |
 
 ## Backlog
 
