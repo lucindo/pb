@@ -97,7 +97,10 @@ Plans:
 **UI hint**: yes
 
 Plans:
+**Wave 1**
 - [ ] 21-01-PLAN.md — Shared faviconPalette module (5 accent-strong colors + SVG template) + theme.css sync-guard test (FAVI-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 21-02-PLAN.md — useFavicon hook + index.html pre-paint favicon extension + App.tsx mount + human-verify (FAVI-01, FAVI-02, FAVI-03)
 
 ### Phase 22: BPM Stretch Session
