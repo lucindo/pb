@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { SessionFrame } from '../domain/sessionMath'
 import { SessionReadout, type SessionReadoutProps } from './SessionReadout'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame with a non-null remainingMs for timed session scenarios.
 // 600_000 ms remaining → formatDuration renders "10:00".
@@ -23,6 +26,7 @@ function renderReadout(props: Partial<SessionReadoutProps> = {}) {
       frame={props.frame ?? null}
       status={props.status ?? 'idle'}
       message={props.message}
+      strings={props.strings ?? EN_STRINGS_FIXTURE.readout}
       isLeadInPlaceholder={props.isLeadInPlaceholder}
     />,
   )

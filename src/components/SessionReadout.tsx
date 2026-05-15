@@ -1,11 +1,13 @@
 import type { SessionFrame } from '../domain/sessionMath'
 import { formatDuration } from '../domain/sessionMath'
 import type { SessionStatus } from '../domain/sessionController'
+import type { UiStrings } from '../content/strings'
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   status: SessionStatus
   message?: 'Session complete'
+  strings: UiStrings['readout']
   /** UI-01 / WR-08: when true, the component is rendering the pre-session
    *  lead-in placeholder. The caller commits to providing a non-null `frame`.
    *  The component renders the timer chip (label + formatted duration) and
@@ -14,23 +16,23 @@ export interface SessionReadoutProps {
   isLeadInPlaceholder?: boolean
 }
 
-export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: SessionReadoutProps) {
+export function SessionReadout({ frame, status, message, strings, isLeadInPlaceholder }: SessionReadoutProps) {
   // UI-01 / WR-08: lead-in placeholder branch fires FIRST so the timer chip
   // renders unconditionally, ignoring status and message. Caller commits to a
   // non-null frame when this is true (typed-only contract — no runtime assert).
   if (isLeadInPlaceholder) {
-    const placeholderLabel = frame?.remainingMs === null ? 'Elapsed' : 'Remaining'
+    const placeholderLabel = frame?.remainingMs === null ? strings.elapsed : strings.remaining
     const placeholderValue = frame
       ? formatDuration(frame.remainingMs ?? frame.elapsedMs)
       : '0:00'
     return (
       <section
-        aria-label="Session readout"
+        aria-label={strings.readoutAriaLabel}
         className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
       >
         <div
           role="status"
-          aria-label="Session announcement"
+          aria-label={strings.announcementAriaLabel}
           aria-live="polite"
           aria-atomic="true"
         />
@@ -51,7 +53,7 @@ export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: 
     return null
   }
 
-  const timeLabel = frame?.remainingMs === null ? 'Elapsed' : 'Remaining'
+  const timeLabel = frame?.remainingMs === null ? strings.elapsed : strings.remaining
   const timeValue = frame ? formatDuration(frame.remainingMs ?? frame.elapsedMs) : '0:00'
   // Phase 3 polish: when the session has completed, the "Session complete"
   // headline is the only useful information — the timer chip would just read
@@ -60,12 +62,12 @@ export function SessionReadout({ frame, status, message, isLeadInPlaceholder }: 
 
   return (
     <section
-      aria-label="Session readout"
+      aria-label={strings.readoutAriaLabel}
       className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
     >
       <div
         role="status"
-        aria-label="Session announcement"
+        aria-label={strings.announcementAriaLabel}
         aria-live="polite"
         aria-atomic="true"
       >

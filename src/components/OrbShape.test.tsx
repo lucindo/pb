@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 
 import { OrbShape } from './OrbShape'
 import type { SessionFrame } from '../domain/sessionMath'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame for the existing-Phase-2-behavior tests. `remainingMs` is part of
 // the SessionFrame contract (src/domain/sessionMath.ts) — null for open-ended,
@@ -21,38 +24,40 @@ const sampleFrame: SessionFrame = {
 
 describe('OrbShape', () => {
   it('renders the OrbBody when frame is provided and leadInDigit is null', () => {
-    render(<OrbShape frame={sampleFrame} />)
+    render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    // EN: strings.breathingShapeAriaLabel = 'Breathing shape', strings.inhale = 'In'
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 
   it('renders the lead-in digit in the orb area when leadInDigit is set (3)', () => {
-    render(<OrbShape frame={null} leadInDigit={3} />)
-    expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+    render(<OrbShape frame={null} leadInDigit={3} strings={EN_STRINGS_FIXTURE.breathing} />)
+    // EN: strings.leadInAriaLabel(3) = 'Lead-in 3'
+    expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
     expect(screen.getByText('3')).toBeVisible()
   })
 
   it('renders the lead-in digit 2', () => {
-    render(<OrbShape frame={null} leadInDigit={2} />)
-    expect(screen.getByRole('img', { name: 'Lead-in: 2' })).toBeVisible()
+    render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
     expect(screen.getByText('2')).toBeVisible()
   })
 
   it('renders the lead-in digit 1', () => {
-    render(<OrbShape frame={null} leadInDigit={1} />)
-    expect(screen.getByRole('img', { name: 'Lead-in: 1' })).toBeVisible()
+    render(<OrbShape frame={null} leadInDigit={1} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByRole('img', { name: 'Lead-in 1' })).toBeVisible()
     expect(screen.getByText('1')).toBeVisible()
   })
 
   it('renders lead-in when both frame and leadInDigit are set (lead-in wins)', () => {
-    render(<OrbShape frame={sampleFrame} leadInDigit={2} />)
+    render(<OrbShape frame={sampleFrame} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
     expect(
       screen.queryByRole('img', { name: 'Breathing shape: In' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Lead-in: 2' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
   })
 
   it('lead-in keeps the orb at MID_SCALE (no scaling animation, scale(0.79))', () => {
-    const { container } = render(<OrbShape frame={null} leadInDigit={1} />)
+    const { container } = render(<OrbShape frame={null} leadInDigit={1} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -61,7 +66,7 @@ describe('OrbShape', () => {
   })
 
   it('lead-in does not have data-phase or data-progress attributes (it is a neutral pre-state)', () => {
-    const { container } = render(<OrbShape frame={null} leadInDigit={3} />)
+    const { container } = render(<OrbShape frame={null} leadInDigit={3} strings={EN_STRINGS_FIXTURE.breathing} />)
     const root = container.querySelector('[role="img"]')
     expect(root).not.toBeNull()
     // Reason: root non-null asserted by expect().not.toBeNull() immediately above.
@@ -72,7 +77,7 @@ describe('OrbShape', () => {
   })
 
   it('lead-in renders digit with text-7xl class (one step larger than the In/Out label)', () => {
-    const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+    const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
     const digit = container.querySelector('span.text-7xl')
     expect(digit).not.toBeNull()
     // Reason: digit non-null asserted by expect().not.toBeNull() immediately above.
@@ -81,13 +86,13 @@ describe('OrbShape', () => {
   })
 
   it('Body root carries data-variant="orb"', () => {
-    const { container } = render(<OrbShape frame={sampleFrame} />)
+    const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'orb')
   })
 
   it('LeadIn root carries data-variant="orb"', () => {
-    const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+    const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'orb')
   })
@@ -105,13 +110,13 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
 
   describe('OrbBody (frame=sampleFrame)', () => {
     it('renders a `.orb` element', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
     })
 
     it('`.orb` does NOT have the Tailwind `inset-0` class (D-20)', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -120,7 +125,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('`.orb` has explicit four-edge anchoring left/right/top/bottom (D-20 + post-UAT hotfix)', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -139,7 +144,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('`.orb` still carries the existing transform: scale(...) (Phase 2 D-01/D-02 preserved)', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -149,7 +154,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('`.shape-marker--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21)', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -165,7 +170,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('`.shape-marker--outer` does NOT have the Tailwind `inset-0` class (defensive, locks Plan 02 + Plan 04)', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -174,7 +179,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('`.shape-marker--inner` is unchanged from the WR-03 template (D-26 / D-11 guard)', () => {
-      const { container } = render(<OrbShape frame={sampleFrame} />)
+      const { container } = render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const inner = container.querySelector('.shape-marker--inner')
       expect(inner).not.toBeNull()
       // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
@@ -197,13 +202,13 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
 
   describe('OrbLeadIn (leadInDigit=2) — D-22 mirror', () => {
     it('renders a `.orb` element', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
     })
 
     it('lead-in `.orb` does NOT have the Tailwind `inset-0` class (D-20 + D-22)', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -212,7 +217,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('lead-in `.orb` has explicit four-edge anchoring left/right/top/bottom (D-20 + D-22 + post-UAT hotfix)', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -227,7 +232,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('lead-in `.orb` still carries transform: scale(0.79) (Phase 2 D-06 + Phase 3 D-14 preserved)', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const orb = container.querySelector('.orb')
       expect(orb).not.toBeNull()
       // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -237,7 +242,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('lead-in `.shape-marker--outer` has explicit four-edge offsets, not `inset:` shorthand (D-21 + D-22)', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -251,7 +256,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('lead-in `.shape-marker--outer` does NOT have the Tailwind `inset-0` class', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const outer = container.querySelector('.shape-marker--outer')
       expect(outer).not.toBeNull()
       // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -260,7 +265,7 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
     })
 
     it('lead-in `.shape-marker--inner` is unchanged from the WR-03 template', () => {
-      const { container } = render(<OrbShape frame={null} leadInDigit={2} />)
+      const { container } = render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
       const inner = container.querySelector('.shape-marker--inner')
       expect(inner).not.toBeNull()
       // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.

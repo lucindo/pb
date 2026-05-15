@@ -5,6 +5,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { StatsFooter, type StatsFooterProps } from './StatsFooter'
 import type { PersistedStats } from '../storage'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 const baseStats: PersistedStats = {
   totalSessions: 12,
@@ -19,6 +22,7 @@ function renderFooter(props: Partial<StatsFooterProps> = {}) {
     <StatsFooter
       stats={props.stats ?? baseStats}
       onResetClick={onResetClick}
+      strings={props.strings ?? EN_STRINGS_FIXTURE.stats}
     />,
   )
   return { ...utils, onResetClick }

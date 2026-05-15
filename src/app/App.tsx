@@ -37,6 +37,7 @@ import {
   type PersistedStats,
 } from '../storage'
 import type { SessionSettings, VisualVariantId } from '../domain/settings'
+import { UI_STRINGS } from '../content/strings' // Phase 19 stop-gap: EN fixture until Plan 08 wires useLocale().
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
@@ -642,23 +643,27 @@ export default function App() {
             variant={sessionVariant ?? liveVariant}
             frame={appPhase === 'running' ? session.liveFrame : null}
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
+            strings={UI_STRINGS.en.breathing}
           />
           <SessionReadout
             frame={leadInPlaceholderFrame ?? session.liveFrame}
             status={state.status}
             isLeadInPlaceholder={appPhase === 'lead-in'}
             message={state.status === 'complete' && !inSessionView ? state.message : undefined}
+            strings={UI_STRINGS.en.readout}
           />
           <SettingsForm
             settings={state.selectedSettings}
             isRunning={inSessionView}
             onChange={persistedSetSettings}
             onExtendDuration={session.extendDuration}
+            strings={UI_STRINGS.en.settingsForm}
           />
           <SessionControls
             status={state.status}
             onStart={() => { void onStartClick() }}
             onEnd={requestEnd}
+            strings={UI_STRINGS.en.controls}
             muted={audio.muted}
             audioAvailable={audio.audioAvailable}
             needsResume={audio.audioStatus === 'needs-resume'}
@@ -687,7 +692,7 @@ export default function App() {
           </p>
         </div>
         {!inSessionView && stats.totalSessions > 0 && (
-          <StatsFooter stats={stats} onResetClick={onResetClick} />
+          <StatsFooter stats={stats} onResetClick={onResetClick} strings={UI_STRINGS.en.stats} />
         )}
       </section>
       <EndSessionDialog

@@ -118,7 +118,7 @@ describe('App — wake lock (Phase 5)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await flushMicrotasks()
     act(() => { vi.advanceTimersByTime(500) })
-    expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
     // Sentinel may or may not have resolved yet; capture defensively.
     // Reason: Start session click triggers exactly one wakeLock.request; results[0] is populated by this point.
@@ -165,7 +165,7 @@ describe('App — wake lock (Phase 5)', () => {
       render(<App />)
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
       await flushMicrotasks()
-      expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+      expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
       act(() => { vi.advanceTimersByTime(LEAD_IN_MS) })
       await flushMicrotasks()

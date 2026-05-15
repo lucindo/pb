@@ -1,10 +1,12 @@
 import type { SessionStatus } from '../domain/sessionController'
+import type { UiStrings } from '../content/strings'
 import { MuteToggle } from './MuteToggle'
 
 export interface SessionControlsProps {
   status: SessionStatus
   onStart(this: void): void
   onEnd(this: void): void
+  strings: UiStrings['controls']
   // Phase 3 (D-05): inline mute toggle next to the primary action.
   // OPTIONAL — when ANY of the three new audio props is undefined, the legacy
   // single-button layout is rendered instead. This keeps the Phase 1/2 App tests
@@ -29,6 +31,7 @@ export function SessionControls({
   status,
   onStart,
   onEnd,
+  strings,
   muted,
   audioAvailable,
   needsResume,
@@ -52,7 +55,7 @@ export function SessionControls({
         className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
         onClick={isRunning ? onEnd : onStart}
       >
-        {isRunning ? 'End session' : 'Start session'}
+        {isRunning ? strings.endSession : strings.startSession}
       </button>
     )
   }
@@ -69,7 +72,7 @@ export function SessionControls({
         className="min-h-11 flex-1 rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
         onClick={isRunning ? onEnd : onStart}
       >
-        {isRunning ? 'End session' : 'Start session'}
+        {isRunning ? strings.endSession : strings.startSession}
       </button>
       <MuteToggle
         muted={muted}

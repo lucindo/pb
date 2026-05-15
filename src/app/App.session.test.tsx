@@ -449,7 +449,7 @@ describe('VARIANT-03 capture-at-session-start', () => {
       vi.advanceTimersByTime(100)
     })
 
-    const leadInShape = screen.getByRole('img', { name: 'Lead-in: 3' })
+    const leadInShape = screen.getByRole('img', { name: 'Lead-in 3' })
     expect(leadInShape).toHaveAttribute('data-variant', 'square')
   })
 })
