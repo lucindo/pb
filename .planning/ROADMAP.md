@@ -6,6 +6,7 @@
 - ✅ **v1.0.1 Code Review Patch** — Phases 7–12 (shipped 2026-05-12)
 - ✅ **v1.1 Customization** — Phases 13–19 + 16.1/16.2/16.3 INSERTED (shipped 2026-05-15)
 - ✅ **v1.2 BPM Stretch** — Phases 20–22 (shipped 2026-05-15)
+- 🚧 **v1.3 Release Polish** — Phases 23–27 (planning started 2026-05-15)
 
 ## Phases
 
@@ -75,6 +76,78 @@ Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 
 </details>
 
+### 🚧 v1.3 Release Polish (Phases 23–27) — IN PROGRESS
+
+- [ ] **Phase 23: LICENSE + README** — MIT `LICENSE` file added + a claim-safe, accurate README for repo distribution-readiness.
+- [ ] **Phase 24: Forrest Native-App Links** — Two outbound Resonant Breathing store links (iOS + Android) on the Learn surface, EN + PT-BR.
+- [ ] **Phase 25: Labels-vs-Icons Cue Toggle** — A 5th SettingsDialog picker switching the in-orb In/Out cue between text labels and arrow icons, accessible across all 3 variants.
+- [ ] **Phase 26: PT-BR Native-Speaker Review** — Every `// TODO: native-speaker review` marker resolved and removed by a native-speaker pass; locked-copy guards intact.
+- [ ] **Phase 27: PWA Install & Offline** — Installable Web App Manifest + offline-capable service worker, verified on a real iOS device in installed standalone mode.
+
+## Phase Details
+
+### Phase 23: LICENSE + README
+**Goal**: The repository is distribution-ready with proper licensing and an accurate, claim-safe README.
+**Depends on**: Nothing (first v1.3 phase; smallest blast radius — repo root only, zero `src/` files)
+**Requirements**: DOCS-01, DOCS-02
+**Success Criteria** (what must be TRUE):
+  1. The repository root contains a `LICENSE` file with the MIT License text and the copyright line `Copyright (c) 2026 Renato Lucindo`.
+  2. The README accurately describes the app, its purpose, and the local dev/build setup (`npm install`, dev server, `npm run build`).
+  3. The README states the project's claim-safe positioning — guided breathing practice, inspired by Forrest Knutson's teachings — and contains no medical, therapeutic, or diagnostic claims.
+  4. The README clarifies the Forrest-attribution boundary: references to Forrest Knutson and Resonant Breathing are attribution/inspiration only; his name, content, and apps remain his.
+  5. The per-commit green-gate (`tsc && lint && build && test`) still passes (this phase touches no `src/` files, so it passes trivially).
+**Plans**: TBD
+
+### Phase 24: Forrest Native-App Links
+**Goal**: Users can reach Forrest Knutson's native Resonant Breathing apps directly from the Learn surface.
+**Depends on**: Phase 23
+**Requirements**: LEARN-01
+**Success Criteria** (what must be TRUE):
+  1. A user can open Forrest Knutson's Resonant Breathing app on the iOS App Store from the Learn surface.
+  2. A user can open Forrest Knutson's Resonant Breathing app on Google Play from the Learn surface.
+  3. Both links open in a new tab/window and the link labels are localized in EN and PT-BR (new `pt-BR` labels carry the `// TODO: native-speaker review` marker).
+  4. The new links sit inside the existing LearnDialog structure and do not alter or weaken the locked claim-safe copy; link copy stays neutral and descriptive (no benefit-claiming language).
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 25: Labels-vs-Icons Cue Toggle
+**Goal**: Users can choose whether the in-orb In/Out breathing cue shows text labels or directional arrow icons.
+**Depends on**: Phase 24
+**Requirements**: CUE-01, CUE-02, CUE-03
+**Success Criteria** (what must be TRUE):
+  1. A user can switch the in-orb In/Out cue between text labels and arrow icons via a new picker in SettingsDialog.
+  2. The user's cue-indicator choice persists across reloads via the existing localStorage prefs envelope, with no `STATE_VERSION` bump.
+  3. In icon mode, a screen reader still announces the localized In/Out word (visually-hidden localized text + `aria-hidden` SVG), and the existing `aria-live` phase announcements are unchanged.
+  4. The icon cue reads clearly and unambiguously across all 3 visual variants (Orb, Square, Diamond), under `prefers-reduced-motion`, and across all 5 palettes.
+  5. The default cue style is `'labels'`, so users who never open SettingsDialog see today's exact rendering with zero regression.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 26: PT-BR Native-Speaker Review
+**Goal**: The PT-BR translation reads naturally to a native speaker and the codebase no longer signals unreviewed strings.
+**Depends on**: Phase 25 (must run after Phases 24 and 25 so the single native-speaker pass also covers the new PT-BR strings those phases introduce)
+**Requirements**: I18N-07
+**Success Criteria** (what must be TRUE):
+  1. Every machine-translated PT-BR string in `src/content/` catalogs has been reviewed by a native speaker and corrected where needed.
+  2. A `grep` for `// TODO: native-speaker review` across `src/content/` returns zero matches at phase close.
+  3. The frozen-EN `LOCKED_COPY` byte-equality guard (`lockedCopy.test.ts`) stays green — the EN side of locked copy is untouched.
+  4. The `Record<LocaleId, UiStrings>` type completeness holds — only PT-BR string values change, never keys; `tsc` in the green-gate passes.
+  5. The reviewed PT-BR strings render without overflow on a narrow mobile viewport (including the new Phase 24 link labels and Phase 25 picker strings).
+**Plans**: TBD
+
+### Phase 27: PWA Install & Offline
+**Goal**: Users can install the app to their home screen / desktop and run a breathing session fully offline.
+**Depends on**: Phase 26 (and effectively all prior phases — service-worker caching must wrap a frozen, verified app)
+**Requirements**: PWA-01, PWA-02, PWA-03
+**Success Criteria** (what must be TRUE):
+  1. A user can install the app to their home screen / desktop via the browser-native install affordance; the Web App Manifest has correct `scope`/`start_url`/`id` for the `/hrv/` base path, maskable icons, and an explicit Apple touch icon.
+  2. A user can start and complete a breathing session fully offline — a service worker precaches the app shell and all static assets.
+  3. After a redeploy, the installed app updates to the latest version without serving a stale shell, and a service-worker-triggered reload never interrupts a running breathing session.
+  4. The theme and favicon pre-paint inline scripts still run with no FOUC in installed standalone mode.
+  5. A first-class real-device UAT confirms install, offline session, audio cues, and wake-lock behavior on a physical iOS device in installed standalone mode (iOS < 18.4 standalone wake-lock loss documented as a known limitation, not a blocker).
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -105,6 +178,11 @@ Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 | 20. Session Start Polish | v1.2 | 1/1 | Complete | 2026-05-15 |
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete | 2026-05-15 |
 | 22. BPM Stretch Session | v1.2 | 5/5 | Complete | 2026-05-15 |
+| 23. LICENSE + README | v1.3 | 0/? | Not started | - |
+| 24. Forrest Native-App Links | v1.3 | 0/? | Not started | - |
+| 25. Labels-vs-Icons Cue Toggle | v1.3 | 0/? | Not started | - |
+| 26. PT-BR Native-Speaker Review | v1.3 | 0/? | Not started | - |
+| 27. PWA Install & Offline | v1.3 | 0/? | Not started | - |
 
 ## Backlog
 

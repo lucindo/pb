@@ -96,13 +96,13 @@ Which phases cover which requirements. Filled during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCS-01 | TBD | Pending |
-| DOCS-02 | TBD | Pending |
-| LEARN-01 | TBD | Pending |
-| CUE-01 | TBD | Pending |
-| CUE-02 | TBD | Pending |
-| CUE-03 | TBD | Pending |
-| I18N-07 | TBD | Pending |
-| PWA-01 | TBD | Pending |
-| PWA-02 | TBD | Pending |
-| PWA-03 | TBD | Pending |
+| DOCS-01 | Phase 23 | Pending |
+| DOCS-02 | Phase 23 | Pending |
+| LEARN-01 | Phase 24 | Pending |
+| CUE-01 | Phase 25 | Pending |
+| CUE-02 | Phase 25 | Pending |
+| CUE-03 | Phase 25 | Pending |
+| I18N-07 | Phase 26 | Pending |
+| PWA-01 | Phase 27 | Pending |
+| PWA-02 | Phase 27 | Pending |
+| PWA-03 | Phase 27 | Pending |
