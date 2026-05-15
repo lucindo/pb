@@ -7,6 +7,7 @@ import {
   isValidTheme,
   isValidTimbre,
   isValidVariant,
+  isValidCue,
   isValidLocale,
   isValidMode,
   isValidWarmUp,
@@ -15,6 +16,8 @@ import {
   validateSettings,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
+  CUE_OPTIONS,
+  DEFAULT_CUE,
 } from './settings'
 import type { SessionSettings } from './settings'
 
@@ -124,6 +127,41 @@ describe('isValidVariant (INFRA-02 D-01)', () => {
     expect(isValidVariant(undefined)).toBe(false)
     expect(isValidVariant(0)).toBe(false)
     expect(isValidVariant(['orb'])).toBe(false)
+  })
+})
+
+describe('isValidCue (Phase 25 CUE-01)', () => {
+  it('returns true for all CUE_OPTIONS members: labels, arrow, nose', () => {
+    expect(isValidCue('labels')).toBe(true)
+    expect(isValidCue('arrow')).toBe(true)
+    expect(isValidCue('nose')).toBe(true)
+  })
+
+  it('returns false for variant-like strings that are not cue options ("orb", "square", "diamond")', () => {
+    expect(isValidCue('orb')).toBe(false)
+    expect(isValidCue('square')).toBe(false)
+    expect(isValidCue('diamond')).toBe(false)
+  })
+
+  it('returns false for empty string', () => {
+    expect(isValidCue('')).toBe(false)
+  })
+
+  it('returns false for wrong type (null, undefined, 42, array)', () => {
+    expect(isValidCue(null)).toBe(false)
+    expect(isValidCue(undefined)).toBe(false)
+    expect(isValidCue(42)).toBe(false)
+    expect(isValidCue(['labels'])).toBe(false)
+  })
+})
+
+describe('CUE_OPTIONS and DEFAULT_CUE (Phase 25 CUE-01)', () => {
+  it('CUE_OPTIONS deep-equals ["labels", "arrow", "nose"]', () => {
+    expect([...CUE_OPTIONS]).toEqual(['labels', 'arrow', 'nose'])
+  })
+
+  it('DEFAULT_CUE is "labels" (FIXED per CONTEXT D-01)', () => {
+    expect(DEFAULT_CUE).toBe('labels')
   })
 })
 
