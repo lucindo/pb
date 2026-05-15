@@ -2,6 +2,7 @@
 created: 2026-05-15T15:00:44.934Z
 title: Add labels vs icons toggle for session indicator
 area: ui
+resolves_phase: 25
 files:
   - src/components/BreathingShape.tsx
   - src/components/SettingsForm.tsx

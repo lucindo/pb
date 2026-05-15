@@ -2,6 +2,7 @@
 created: 2026-05-15T15:00:44.934Z
 title: Add Forrest native app links to Learn page
 area: ui
+resolves_phase: 24
 files:
   - src/content/learnContent.ts
   - src/components/LearnDialog.tsx

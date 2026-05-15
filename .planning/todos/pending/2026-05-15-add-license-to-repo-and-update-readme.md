@@ -2,6 +2,7 @@
 created: 2026-05-15T15:00:44.934Z
 title: Add license to repo and update README
 area: docs
+resolves_phase: 23
 files:
   - LICENSE
   - README.md:130
