@@ -6,6 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { VariantPicker } from './VariantPicker'
 import { STATE_KEY } from '../storage'
 import type { VisualVariantId } from '../domain/settings'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Helper: seed localStorage with a known variant so useVariantChoice reads it on mount.
 function seedVariant(variant: VisualVariantId): void {
@@ -29,7 +32,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
   // Test 1: aria-checked reflects the stored variant
   it('renders 3 radio buttons with aria-checked matching the seeded variant', () => {
     seedVariant('square')
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(3)
     const squareButton = radios.find((b) => b.textContent === 'Square')
@@ -42,7 +45,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
 
   // Test 2: renders section header with id="variant-picker-label"
   it('renders a section header <p id="variant-picker-label">Variant</p> above the radiogroup', () => {
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const label = document.getElementById('variant-picker-label')
     expect(label).not.toBeNull()
     // Reason: label is asserted non-null on the line above; non-null assertion is invariant-safe.
@@ -52,7 +55,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
 
   // Test 3: aria-disabled + disabled attribute
   it('radiogroup has aria-disabled={disabled} and each button has native disabled={disabled}', () => {
-    render(<VariantPicker disabled={true} />)
+    render(<VariantPicker disabled={true} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     expect(screen.getByRole('radiogroup')).toHaveAttribute('aria-disabled', 'true')
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
@@ -64,7 +67,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
   it('clicking an unselected button calls setVariant — verified via savePrefs round-trip', async () => {
     seedVariant('orb')
     const user = userEvent.setup()
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const squareButton = screen.getByRole('radio', { name: /square/i })
     await user.click(squareButton)
     const stored = window.localStorage.getItem(STATE_KEY)
@@ -79,7 +82,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
   it('clicking dispatches hrv:prefs-changed with { key: "variant", value: id }', async () => {
     seedVariant('orb')
     const user = userEvent.setup()
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
     const squareButton = screen.getByRole('radio', { name: /square/i })
@@ -95,7 +98,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
   it('when disabled=true, clicking does NOT write to disk and no CustomEvent fires', async () => {
     seedVariant('orb')
     const user = userEvent.setup()
-    render(<VariantPicker disabled={true} />)
+    render(<VariantPicker disabled={true} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
     const squareButton = screen.getByRole('radio', { name: /square/i })
@@ -114,7 +117,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
   // Test 7: when disabled=true, selected option retains aria-checked="true"
   it('when disabled=true, the selected option button retains aria-checked="true" and is disabled', () => {
     seedVariant('diamond')
-    render(<VariantPicker disabled={true} />)
+    render(<VariantPicker disabled={true} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const diamondButton = screen.getByRole('radio', { name: /diamond/i })
     expect(diamondButton).toHaveAttribute('aria-checked', 'true')
     expect(diamondButton).toBeDisabled()
@@ -122,7 +125,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
 
   // Test 8: 44×44 hit area via min-h-12 + px-3
   it('every button has min-h-12 class AND px-3 class (44×44 hit area — VARIANT-06)', () => {
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
       expect(button.className).toContain('min-h-12')
@@ -132,7 +135,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
 
   // Test 9: focus-visible ring classes
   it('every button has focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 classes', () => {
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
       expect(button.className).toContain('focus-visible:ring-2')
@@ -143,7 +146,7 @@ describe('VariantPicker — full radiogroup picker (Phase 17 Plan 05)', () => {
 
   // Test 10: swatch primitive per variant
   it('Orb button contains .orb-layer--in span with borderRadius 50%; Square button .orb-layer--in with 18%; Diamond button has <svg> with <polygon>', () => {
-    render(<VariantPicker disabled={false} />)
+    render(<VariantPicker disabled={false} strings={EN_STRINGS_FIXTURE.variants} sectionLabel={EN_STRINGS_FIXTURE.settings.variantLabel} />)
     const radios = screen.getAllByRole('radio')
 
     const orbButton = radios.find((b) => b.textContent === 'Orb')

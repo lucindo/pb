@@ -1,12 +1,15 @@
 import { useEffect, useRef, type MouseEventHandler } from 'react'
 
+import type { UiStrings } from '../content/strings'
+
 export interface ResetStatsDialogProps {
   open: boolean
   onConfirm(this: void): void
   onCancel(this: void): void
+  strings: UiStrings['resetStatsDialog']
 }
 
-export function ResetStatsDialog({ open, onConfirm, onCancel }: ResetStatsDialogProps) {
+export function ResetStatsDialog({ open, onConfirm, onCancel, strings }: ResetStatsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -58,7 +61,7 @@ export function ResetStatsDialog({ open, onConfirm, onCancel }: ResetStatsDialog
           id="reset-stats-title"
           className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]"
         >
-          Reset practice stats?
+          {strings.title}
         </h2>
         {/* Same row layout as Phase 2 dialog: Keep on top (mobile col), Keep left / Reset right (desktop row). */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -68,14 +71,14 @@ export function ResetStatsDialog({ open, onConfirm, onCancel }: ResetStatsDialog
             onClick={onCancel}
             className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
-            Keep
+            {strings.cancel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="min-h-12 rounded-full bg-[#bf616a] px-5 py-2 text-base font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-red-900/20 transition hover:bg-[#a85459] active:bg-[#92444c] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
-            Reset
+            {strings.confirm}
           </button>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { LanguagePicker } from './LanguagePicker'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
 import { VariantPicker } from './VariantPicker'
+import type { UiStrings } from '../content/strings'
 
 // src/components/SettingsDialog.tsx
 //
@@ -28,9 +29,10 @@ export interface SettingsDialogProps {
   open: boolean
   onClose(this: void): void
   inSessionView: boolean
+  strings: Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'timbres'>
 }
 
-export function SettingsDialog({ open, onClose, inSessionView }: SettingsDialogProps) {
+export function SettingsDialog({ open, onClose, inSessionView, strings }: SettingsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   // Imperative open/close so the browser sets up <dialog>'s top-layer + inert behavior.
@@ -77,19 +79,19 @@ export function SettingsDialog({ open, onClose, inSessionView }: SettingsDialogP
       className="modal-fade m-auto max-w-md rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
-        <h2 id="settings-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">Settings</h2>
+        <h2 id="settings-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.settings.title}</h2>
         {/* D-10: Theme → Variant → Timbre → Language order (Landmine 7: each receives disabled={inSessionView}) */}
-        <ThemePicker disabled={inSessionView} />
-        <VariantPicker disabled={inSessionView} />
-        <TimbrePicker disabled={inSessionView} />
-        <LanguagePicker disabled={inSessionView} />
+        <ThemePicker disabled={inSessionView} strings={strings.themes} sectionLabel={strings.settings.themeLabel} />
+        <VariantPicker disabled={inSessionView} strings={strings.variants} sectionLabel={strings.settings.variantLabel} />
+        <TimbrePicker disabled={inSessionView} strings={strings.timbres} sectionLabel={strings.settings.timbreLabel} />
+        <LanguagePicker disabled={inSessionView} sectionLabel={strings.settings.languageLabel} />
         {/* D-11 + D-18: explicit Close button — primary mobile dismiss path */}
         <div className="flex justify-center">
           <button
             type="button"
             onClick={onClose}
             className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >Close</button>
+          >{strings.settings.close}</button>
         </div>
       </div>
     </dialog>

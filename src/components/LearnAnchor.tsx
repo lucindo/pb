@@ -9,17 +9,20 @@
 // D-04: 44×44 hit-area floor via padding, NOT by enlarging text. Visible text stays text-sm.
 // D-21 carry-forward: focus-visible ring chain on every interactive element.
 
+import type { UiStrings } from '../content/strings'
+
 export interface LearnAnchorProps {
   disabled: boolean
   onClick(this: void): void
+  strings: UiStrings['anchors']
 }
 
-export function LearnAnchor({ disabled, onClick }: LearnAnchorProps) {
+export function LearnAnchor({ disabled, onClick, strings }: LearnAnchorProps) {
   return (
     <button
       type="button"
       aria-disabled={disabled || undefined}
-      aria-label={disabled ? 'Learn (unavailable during session)' : 'Learn'}
+      aria-label={disabled ? strings.learnDisabled : strings.learn}
       onClick={disabled ? undefined : onClick}
       className={`absolute right-0 top-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-full border bg-[var(--color-breathing-surface)]/70 px-2.5 py-2 text-sm font-semibold shadow-sm backdrop-blur-sm transition sm:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
         disabled
@@ -42,7 +45,7 @@ export function LearnAnchor({ disabled, onClick }: LearnAnchorProps) {
         <path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H10v15H5.5A2.5 2.5 0 0 1 3 15.5V5.5Z" />
         <path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H14v15h4.5A2.5 2.5 0 0 0 21 15.5V5.5Z" />
       </svg>
-      <span className="hidden sm:inline">Learn</span>
+      <span className="hidden sm:inline">{strings.learn}</span>
     </button>
   )
 }

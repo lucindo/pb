@@ -23,14 +23,15 @@ import { LOCALE_DISPLAY_NAMES } from '../content/strings'
 
 export interface LanguagePickerProps {
   disabled: boolean
+  sectionLabel: string
 }
 
-export function LanguagePicker({ disabled }: LanguagePickerProps) {
+export function LanguagePicker({ disabled, sectionLabel }: LanguagePickerProps) {
   const { locale, setLocale } = useLocaleChoice()
 
   return (
     <div>
-      <p id="language-picker-label" className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">Language</p>
+      <p id="language-picker-label" className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">{sectionLabel}</p>
       <div
         role="radiogroup"
         aria-labelledby="language-picker-label"

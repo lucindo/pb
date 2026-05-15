@@ -11,6 +11,9 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { SettingsDialog } from './SettingsDialog'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 function renderDialog(
   props: Partial<{ open: boolean; onClose: () => void; inSessionView: boolean }> = {},
@@ -21,6 +24,7 @@ function renderDialog(
       open={props.open ?? false}
       onClose={onClose}
       inSessionView={props.inSessionView ?? false}
+      strings={EN_STRINGS_FIXTURE}
     />,
   )
   return { ...utils, onClose }
@@ -88,7 +92,7 @@ describe('SettingsDialog — open→close transition', () => {
     const { container, rerender } = renderDialog({ open: true })
     const dialog = container.querySelector('dialog') as HTMLDialogElement
     expect(dialog.open).toBe(true)
-    rerender(<SettingsDialog open={false} onClose={vi.fn()} inSessionView={false} />)
+    rerender(<SettingsDialog open={false} onClose={vi.fn()} inSessionView={false} strings={EN_STRINGS_FIXTURE} />)
     expect(dialog.open).toBe(false)
   })
 })
