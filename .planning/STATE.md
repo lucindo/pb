@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: BPM Stretch
 status: executing
 stopped_at: Phase 21 context gathered
-last_updated: "2026-05-15T04:29:44.019Z"
-last_activity: 2026-05-15 -- Phase 21 planning complete
+last_updated: "2026-05-15T04:31:30.837Z"
+last_activity: 2026-05-15 -- Phase 21 execution started
 progress:
   total_phases: 3
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-14 — v1.2 BPM Stretch milestone opened)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 20 — session-start-polish
+**Current focus:** Phase 21 — per-theme-favicon
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-15 -- Phase 21 planning complete
+Phase: 21 (per-theme-favicon) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 21
+Last activity: 2026-05-15 -- Phase 21 execution started
 
 ## Performance Metrics
 
