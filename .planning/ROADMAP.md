@@ -117,8 +117,8 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 22-01-PLAN.md — Stretch settings schema, predicates, validation + stretchRamp.ts ramp engine (segment table, frame lookup, gate predicate) (STRETCH-02..06)
-- [ ] 22-03-PLAN.md — Stretch UI strings (EN + PT-BR) for the settings surface and in-session readout (STRETCH-01/03/06)
+- [x] 22-01-PLAN.md — Stretch settings schema, predicates, validation + stretchRamp.ts ramp engine (segment table, frame lookup, gate predicate) (STRETCH-02..06)
+- [x] 22-03-PLAN.md — Stretch UI strings (EN + PT-BR) for the settings surface and in-session readout (STRETCH-01/03/06)
 
 **Wave 2** *(blocked on 22-01)*
 - [ ] 22-02-PLAN.md — coerceSettings stretch persistence + stretch-aware sessionController (segment build, frame dispatch) (STRETCH-04/05/07)
@@ -158,7 +158,7 @@ Plans:
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete    | 2026-05-15 |
-| 22. BPM Stretch Session | v1.2 | 0/5 | Planned | - |
+| 22. BPM Stretch Session | v1.2 | 2/5 | In Progress|  |
 
 ## Backlog
 
