@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phase 25 — cue modes mockup</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; padding: 2rem;
+    font: 15px/1.5 -apple-system, system-ui, sans-serif;
+    background: #f4f3f0; color: #2a2a28;
+  }
+  h1 { font-size: 1.15rem; font-weight: 600; }
+  h2.sec { font-size: 1rem; margin: 2.2rem 0 .3rem; border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
+  p.note { max-width: 64ch; color: #555; }
+  .grid { display: grid; gap: 1.4rem; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); margin-top: 1rem; }
+  .card {
+    background: #fff; border: 1px solid #e3e1dc; border-radius: 14px;
+    padding: 1.1rem; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  .card.pick { border-color: #8fb7af; box-shadow: 0 0 0 2px #8fb7af55; }
+  .card h3 { font-size: .95rem; margin: 0 0 .15rem; }
+  .card .desc { font-size: .8rem; color: #777; margin: 0 0 .9rem; }
+  .pair { display: flex; gap: .9rem; }
+  .orb {
+    flex: 1; aspect-ratio: 1; border-radius: 50%;
+    display: grid; place-items: center; position: relative;
+    background: radial-gradient(circle at 38% 32%, #cfe3df, #8fb7af);
+  }
+  .orb.out { background: radial-gradient(circle at 38% 32%, #e8d9cf, #c2a48f); }
+  .orb svg { width: 52%; height: 52%; }
+  .orb .word {
+    font-size: 1.7rem; font-weight: 600; letter-spacing: -.01em; color: #2c3a36;
+  }
+  .orb.out .word { color: #4a3324; }
+  .orb .tag {
+    position: absolute; bottom: 7px; font-size: .62rem;
+    letter-spacing: .08em; text-transform: uppercase; color: #ffffffcc;
+  }
+  .ink { stroke: #2c3a36; fill: none; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+  .ink.out { stroke: #4a3324; }
+  .fill { fill: #2c3a36; }
+  .fill.out { fill: #4a3324; }
+  .variant-row { display: flex; gap: 1rem; margin-top: .8rem; }
+  .sq { border-radius: 18% !important; }
+  .dia { border-radius: 8% !important; transform: rotate(45deg); }
+  .dia svg { transform: rotate(-45deg); }
+  .variant-row .orb { max-width: 110px; }
+</style>
+</head>
+<body>
+<h1>Phase 25 — cue modes: Arrow / Drawing / Text</h1>
+<p class="note">Picker config = 3 modes. Left orb = <strong>In</strong> (inhale), right orb = <strong>Out</strong> (exhale).
+Arrow mode locked to <strong>F</strong>. Pick a Drawing candidate (D1–D3) or say tweak.
+Final SVG tuned during implementation.</p>
+
+<h2 class="sec">Mode 1 — Arrow (locked: F soft solid chevron)</h2>
+<div class="grid">
+  <div class="card pick">
+    <h3>F — Soft solid chevron</h3>
+    <p class="desc">Filled rounded chevron. Up = In, Down = Out.</p>
+    <div class="pair">
+      <div class="orb"><svg viewBox="0 0 100 100"><path class="fill" d="M50 28 Q54 28 57 32 L82 64 Q84 68 80 70 Q76 72 73 68 L50 44 L27 68 Q24 72 20 70 Q16 68 18 64 L43 32 Q46 28 50 28 Z"/></svg><span class="tag">In</span></div>
+      <div class="orb out"><svg viewBox="0 0 100 100"><path class="fill out" d="M50 72 Q46 72 43 68 L18 36 Q16 32 20 30 Q24 28 27 32 L50 56 L73 32 Q76 28 80 30 Q84 32 82 36 L57 68 Q54 72 50 72 Z"/></svg><span class="tag">Out</span></div>
+    </div>
+  </div>
+</div>
+
+<h2 class="sec">Mode 2 — Drawing (nose + airflow, from your reference images)</h2>
+<div class="grid">
+
+  <!-- D1: faithful curved -->
+  <div class="card">
+    <h3>D1 — Nose + curved airflow</h3>
+    <p class="desc">Closest to your reference: nose outline, curved breath arrows.</p>
+    <div class="pair">
+      <div class="orb">
+        <svg viewBox="0 0 100 100"><g class="ink">
+          <path d="M44 16 Q38 40 34 55"/>
+          <path d="M56 16 Q62 40 66 55"/>
+          <path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/>
+          <path d="M29 90 Q26 79 35 74"/>
+          <polyline points="30,79 35,73 40,80"/>
+          <path d="M71 90 Q74 79 65 74"/>
+          <polyline points="60,80 65,73 70,79"/>
+        </g></svg><span class="tag">In</span>
+      </div>
+      <div class="orb out">
+        <svg viewBox="0 0 100 100"><g class="ink out">
+          <path d="M44 16 Q38 40 34 55"/>
+          <path d="M56 16 Q62 40 66 55"/>
+          <path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/>
+          <path d="M35 73 Q26 78 29 90"/>
+          <polyline points="24,83 29,91 35,86"/>
+          <path d="M65 73 Q74 78 71 90"/>
+          <polyline points="65,86 71,91 76,83"/>
+        </g></svg><span class="tag">Out</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- D2: straight arrows -->
+  <div class="card">
+    <h3>D2 — Nose + straight arrows</h3>
+    <p class="desc">Cleaner: same nose, straight up/down arrows. Reads better small.</p>
+    <div class="pair">
+      <div class="orb">
+        <svg viewBox="0 0 100 100"><g class="ink">
+          <path d="M44 16 Q38 40 34 55"/>
+          <path d="M56 16 Q62 40 66 55"/>
+          <path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/>
+          <line x1="37" y1="92" x2="37" y2="76"/>
+          <polyline points="31,82 37,75 43,82"/>
+          <line x1="63" y1="92" x2="63" y2="76"/>
+          <polyline points="57,82 63,75 69,82"/>
+        </g></svg><span class="tag">In</span>
+      </div>
+      <div class="orb out">
+        <svg viewBox="0 0 100 100"><g class="ink out">
+          <path d="M44 16 Q38 40 34 55"/>
+          <path d="M56 16 Q62 40 66 55"/>
+          <path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/>
+          <line x1="37" y1="74" x2="37" y2="90"/>
+          <polyline points="31,84 37,91 43,84"/>
+          <line x1="63" y1="74" x2="63" y2="90"/>
+          <polyline points="57,84 63,91 69,84"/>
+        </g></svg><span class="tag">Out</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- D3: minimal nostrils -->
+  <div class="card">
+    <h3>D3 — Minimal nostrils + arrows</h3>
+    <p class="desc">Drop the bridge ridges — just nostril arc + arrows. Simplest.</p>
+    <div class="pair">
+      <div class="orb">
+        <svg viewBox="0 0 100 100"><g class="ink">
+          <path d="M30 44 Q31 60 43 57 Q48 56 50 60 Q52 56 57 57 Q69 60 70 44"/>
+          <path d="M30 90 Q27 78 36 73"/>
+          <polyline points="31,78 36,72 41,79"/>
+          <path d="M70 90 Q73 78 64 73"/>
+          <polyline points="59,79 64,72 69,78"/>
+        </g></svg><span class="tag">In</span>
+      </div>
+      <div class="orb out">
+        <svg viewBox="0 0 100 100"><g class="ink out">
+          <path d="M30 44 Q31 60 43 57 Q48 56 50 60 Q52 56 57 57 Q69 60 70 44"/>
+          <path d="M36 73 Q27 78 30 90"/>
+          <polyline points="25,83 30,91 36,86"/>
+          <path d="M64 73 Q73 78 70 90"/>
+          <polyline points="64,86 70,91 75,83"/>
+        </g></svg><span class="tag">Out</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<h2 class="sec">Mode 3 — Text (today's rendering — default, unchanged)</h2>
+<div class="grid">
+  <div class="card pick">
+    <h3>Text — In / Out word</h3>
+    <p class="desc">Localized word, centered. Default mode, zero regression.</p>
+    <div class="pair">
+      <div class="orb"><span class="word">In</span><span class="tag">In</span></div>
+      <div class="orb out"><span class="word">Out</span><span class="tag">Out</span></div>
+    </div>
+  </div>
+</div>
+
+<h2 class="sec">D2 across the 3 variants (Orb / Square / Diamond) — In phase</h2>
+<div class="variant-row">
+  <div class="orb"><svg viewBox="0 0 100 100"><g class="ink"><path d="M44 16 Q38 40 34 55"/><path d="M56 16 Q62 40 66 55"/><path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/><line x1="37" y1="92" x2="37" y2="76"/><polyline points="31,82 37,75 43,82"/><line x1="63" y1="92" x2="63" y2="76"/><polyline points="57,82 63,75 69,82"/></g></svg></div>
+  <div class="orb sq"><svg viewBox="0 0 100 100"><g class="ink"><path d="M44 16 Q38 40 34 55"/><path d="M56 16 Q62 40 66 55"/><path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/><line x1="37" y1="92" x2="37" y2="76"/><polyline points="31,82 37,75 43,82"/><line x1="63" y1="92" x2="63" y2="76"/><polyline points="57,82 63,75 69,82"/></g></svg></div>
+  <div class="orb dia"><svg viewBox="0 0 100 100"><g class="ink"><path d="M44 16 Q38 40 34 55"/><path d="M56 16 Q62 40 66 55"/><path d="M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55"/><line x1="37" y1="92" x2="37" y2="76"/><polyline points="31,82 37,75 43,82"/><line x1="63" y1="92" x2="63" y2="76"/><polyline points="57,82 63,75 69,82"/></g></svg></div>
+</div>
+
+</body>
+</html>

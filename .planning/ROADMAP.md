@@ -80,7 +80,7 @@ Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 
 - [x] **Phase 23: LICENSE + README** â MIT `LICENSE` file added + a claim-safe, accurate README for repo distribution-readiness. (completed 2026-05-15)
 - [x] **Phase 24: Forrest Native-App Links** â Two outbound Resonant Breathing store links (iOS + Android) on the Learn surface, EN + PT-BR. (completed 2026-05-15)
-- [ ] **Phase 25: Labels-vs-Icons Cue Toggle** â A 5th SettingsDialog picker switching the in-orb In/Out cue between text labels and arrow icons, accessible across all 3 variants.
+- [ ] **Phase 25: Labels-vs-Icons Cue Toggle** â A 5th SettingsDialog picker switching the in-orb In/Out cue between text labels, arrow icons, and a nose-airflow drawing, accessible across all 3 variants.
 - [ ] **Phase 26: PT-BR Native-Speaker Review** â Every `// TODO: native-speaker review` marker resolved and removed by a native-speaker pass; locked-copy guards intact.
 - [ ] **Phase 27: PWA Install & Offline** â Installable Web App Manifest + offline-capable service worker, verified on a real iOS device in installed standalone mode.
 
@@ -117,15 +117,15 @@ Plans:
 - [x] 24-01-PLAN.md — Add iOS App Store + Google Play "Resonant Breathing" links to LearnDialog (EN + PT-BR, claim-safe)
 
 ### Phase 25: Labels-vs-Icons Cue Toggle
-**Goal**: Users can choose whether the in-orb In/Out breathing cue shows text labels or directional arrow icons.
+**Goal**: Users can choose how the in-orb In/Out breathing cue is shown — text labels, directional arrow icons, or a nose-airflow drawing.
 **Depends on**: Phase 24
 **Requirements**: CUE-01, CUE-02, CUE-03
 **Success Criteria** (what must be TRUE):
-  1. A user can switch the in-orb In/Out cue between text labels and arrow icons via a new picker in SettingsDialog.
-  2. The user's cue-indicator choice persists across reloads via the existing localStorage prefs envelope, with no `STATE_VERSION` bump.
-  3. In icon mode, a screen reader still announces the localized In/Out word (visually-hidden localized text + `aria-hidden` SVG), and the existing `aria-live` phase announcements are unchanged.
-  4. The icon cue reads clearly and unambiguously across all 3 visual variants (Orb, Square, Diamond), under `prefers-reduced-motion`, and across all 5 palettes.
-  5. The default cue style is `'labels'`, so users who never open SettingsDialog see today's exact rendering with zero regression.
+  1. A user can switch the in-orb In/Out cue between text labels, arrow icons, and a nose-airflow drawing via a new three-option picker in SettingsDialog.
+  2. The user's cue-style choice persists across reloads via the existing localStorage prefs envelope, with no `STATE_VERSION` bump.
+  3. In arrow and drawing modes, a screen reader still announces the localized In/Out word (visually-hidden localized text + `aria-hidden` SVG), and the existing `aria-live` phase announcements are unchanged.
+  4. The arrow and drawing cues read clearly and unambiguously across all 3 visual variants (Orb, Square, Diamond), under `prefers-reduced-motion`, and across all 5 palettes.
+  5. The default cue style is `'labels'` (Text), so users who never open SettingsDialog see today's exact rendering with zero regression.
 **Plans**: TBD
 **UI hint**: yes
 
