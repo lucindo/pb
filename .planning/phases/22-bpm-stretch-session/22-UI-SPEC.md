@@ -1,10 +1,11 @@
 ---
 phase: 22
 slug: bpm-stretch-session
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-15
+reviewed_at: 2026-05-15T00:00:00Z
 ---
 
 # Phase 22 — UI Design Contract
