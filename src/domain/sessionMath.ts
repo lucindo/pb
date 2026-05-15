@@ -1,4 +1,5 @@
 import type { BreathingPlan } from './breathingPlan'
+import type { StretchStage } from './stretchRamp'
 
 export type BreathPhase = 'in' | 'out'
 
@@ -10,6 +11,13 @@ export interface SessionFrame {
   phaseProgress: number
   cycleIndex: number
   isComplete: boolean
+  // Optional stretch-only fields — undefined for standard sessions (Phase 22 Plan 01)
+  cycleStartMs?: number
+  currentCycleMs?: number
+  currentInhaleMs?: number
+  currentExhaleMs?: number
+  currentBpm?: number
+  stage?: StretchStage
 }
 
 export function getSessionFrame(plan: BreathingPlan, elapsedMs: number): SessionFrame {

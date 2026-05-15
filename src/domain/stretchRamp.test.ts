@@ -64,11 +64,14 @@ describe('buildStretchSegments', () => {
     expect(firstRamp?.bpm).toBe(baseSettings.initialBpm)
   })
 
-  it('last ramp segment BPM equals targetBpm', () => {
+  it('last ramp segment BPM is >= targetBpm (ramp walks toward targetBpm; hold-target carries exact target)', () => {
     const segs = buildStretchSegments(baseSettings, '40:60')
     const rampSegs = segs.filter(s => s.stage === 'ramp')
     const lastRamp = rampSegs[rampSegs.length - 1]
-    expect(lastRamp?.bpm).toBe(baseSettings.targetBpm)
+    // Last ramp step is initialBpm - (numSteps-1)*bpmSpan/numSteps >= targetBpm
+    expect(lastRamp?.bpm).toBeGreaterThanOrEqual(baseSettings.targetBpm)
+    // And must still be strictly less than initialBpm
+    expect(lastRamp?.bpm).toBeLessThan(baseSettings.initialBpm)
   })
 
   it('with holdInitialSeconds 15: first segment stage is hold-initial at initialBpm for 15000ms', () => {
