@@ -267,4 +267,4 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete    | 2026-05-14 |
-| 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-14 |
+| 19. Language Switching | v1.1 | 9/9 | Complete    | 2026-05-15 |
