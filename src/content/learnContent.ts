@@ -30,6 +30,8 @@ export interface LearnContent {
     readonly patreon: LearnLink
     readonly heroVideo: LearnLink
     readonly keyVideos: readonly LearnLink[]
+    readonly appStoreIos: LearnLink
+    readonly googlePlayAndroid: LearnLink
   }
 }
 
@@ -85,6 +87,14 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
           url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
         },
       ],
+      appStoreIos: {
+        label: 'Resonant Breathing on the App Store',
+        url: 'https://apps.apple.com/us/app/resonant-breathing/id1568058013',
+      },
+      googlePlayAndroid: {
+        label: 'Resonant Breathing on Google Play',
+        url: 'https://play.google.com/store/apps/details?id=com.johngoodstadt.knutson.meditation',
+      },
     },
   },
   'pt-BR': {
@@ -152,6 +162,14 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
           url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
         },
       ],
+      appStoreIos: {
+        label: 'Resonant Breathing na App Store', // TODO: native-speaker review
+        url: 'https://apps.apple.com/us/app/resonant-breathing/id1568058013',
+      },
+      googlePlayAndroid: {
+        label: 'Resonant Breathing no Google Play', // TODO: native-speaker review
+        url: 'https://play.google.com/store/apps/details?id=com.johngoodstadt.knutson.meditation',
+      },
     },
   },
 } as const satisfies Readonly<Record<LocaleId, LearnContent>>

@@ -123,6 +123,7 @@ export interface UiStrings {
     readonly close: string
     readonly resourcesHeading: string
     readonly videosHeading: string
+    readonly nativeAppsHeading: string
   }
 }
 
@@ -243,6 +244,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       close: 'Close',
       resourcesHeading: 'Forrest Knutson Resources',
       videosHeading: 'Selected HRV Breathing Videos',
+      nativeAppsHeading: 'Resonant Breathing app',
     },
   },
   'pt-BR': {
@@ -362,6 +364,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       close: 'Fechar', // TODO: native-speaker review
       resourcesHeading: 'Links do Forrest Knutson', // TODO: native-speaker review
       videosHeading: 'Vídeos selecionados de respiração VFC', // TODO: native-speaker review
+      nativeAppsHeading: 'App Resonant Breathing', // TODO: native-speaker review
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>
