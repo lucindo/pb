@@ -14,7 +14,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Shipped:** v1.0.1 Code Review Patch (2026-05-12) — 6 patch phases (07–12), 12 plans, 17 tasks, 143 commits, 409/409 Vitest tests pass (363 → 409). HEAD `3bdb69b`. Codebase ~10,925 LOC TS/TSX in `src/`.
 
-**v1.1 in progress:** Phases 13–18 complete (audio-timbres landed 2026-05-14). 644/644 Vitest tests pass. Phase 19 (Language Switching) is the last feature phase before v1.1 ship.
+**v1.1 feature work complete:** Phases 13–19 closed (Phase 19 Language Switching closed 2026-05-14 — EN + PT-BR catalogs, `useLocale` orchestrator, `LanguagePicker`, locale-aware `formatLastSessionDate`, locked claim-safe copy guarded by frozen-EN byte-equality snapshot). 712/712 Vitest tests pass; tsc + lint + build exit 0. v1.x carry-forward: PT-BR native-speaker review for 76 `// TODO: native-speaker review` markers (I18N-07).
 
 **Audit:** PASSED 27/27 requirements at `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md`. Cross-phase integration clean (6/6 wiring points WIRED). All E2E flows (5/5) complete. `tsc/lint/build` exit 0 at HEAD.
 
