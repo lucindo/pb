@@ -185,7 +185,7 @@ Plans:
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete | 2026-05-15 |
 | 22. BPM Stretch Session | v1.2 | 5/5 | Complete | 2026-05-15 |
 | 23. LICENSE + README | v1.3 | 1/1 | Complete   | 2026-05-15 |
-| 24. Forrest Native-App Links | v1.3 | 1/1 | Complete   | 2026-05-15 |
+| 24. Forrest Native-App Links | v1.3 | 1/1 | Complete    | 2026-05-15 |
 | 25. Labels-vs-Icons Cue Toggle | v1.3 | 0/? | Not started | - |
 | 26. PT-BR Native-Speaker Review | v1.3 | 0/? | Not started | - |
 | 27. PWA Install & Offline | v1.3 | 0/? | Not started | - |

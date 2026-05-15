@@ -18,7 +18,7 @@ Requirements for the v1.3 release. Each maps to one roadmap phase.
 
 ### Learn Surface
 
-- [ ] **LEARN-01**: User can open Forrest Knutson's native "Resonant Breathing" apps (iOS App Store + Google Play) from the Learn surface.
+- [x] **LEARN-01**: User can open Forrest Knutson's native "Resonant Breathing" apps (iOS App Store + Google Play) from the Learn surface.
 
 ### Cue Indicator
 
@@ -98,7 +98,7 @@ Which phases cover which requirements. Filled during roadmap creation.
 |-------------|-------|--------|
 | DOCS-01 | Phase 23 | Complete |
 | DOCS-02 | Phase 23 | Complete |
-| LEARN-01 | Phase 24 | Pending |
+| LEARN-01 | Phase 24 | Complete |
 | CUE-01 | Phase 25 | Pending |
 | CUE-02 | Phase 25 | Pending |
 | CUE-03 | Phase 25 | Pending |
