@@ -113,6 +113,57 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v1.1 — Customization
+
+**Shipped:** 2026-05-15
+**Phases:** 10 (13, 14, 15, 16, 16.1, 16.2, 16.3, 17, 18, 19) | **Plans:** 47
+
+### What Was Built
+
+- 5-palette theme system (Light, Dark, Moss, Slate, Dusk) curated from open-source design systems (Nord, Everforest, Tokyo Night, Rosé Pine) with `data-theme` cascade and FOUC inline script
+- Full UI token migration from hardcoded Tailwind colors to `var(--color-breathing-*)` across 16 components with `theme.no-hardcoded-classes.test.ts` guard
+- SettingsDialog shell with 4 pickers (Theme, Variant, Timbre, Language) gated behind `inSessionView` disable contract
+- 3 visual variants (Orb default, Square 18% rounded, Diamond rotated-square clip-path) via dispatcher + sibling-shape pattern
+- 4 synthesized audio timbres (Bowl, Bell, Sine, Chime) via `scheduleInCueForTimbre` / `scheduleOutCueForTimbre` dispatch; captured at session start
+- EN+PT-BR language switching with roll-your-own typed catalog, `useLocale` orchestrator, `LanguagePicker` radiogroup, frozen-EN byte-equality guard on locked claim-safe copy
+
+### What Worked
+
+- **Sibling-pattern verbatim clones** for `useLocaleChoice`/`useTimbreChoice`/`useVariantChoice` and `LanguagePicker`/`TimbrePicker`/`ThemePicker` paid off: zero design surprises in waves 2+; pickers shipped in 3 hours each via mechanical mirroring.
+- **`hrv:prefs-changed` CustomEvent + cross-tab `'storage'` listener** as the shared cross-tab sync mechanism for every customization dimension: one pattern, four consumers, zero special cases.
+- **Frozen-EN `.toBe()` byte-equality snapshot guard** (`lockedCopy.test.ts`) lived up to D-12 promise: PT-BR translation churn during UAT did not weaken EN baseline.
+- **Worktree-mode parallel waves** when intra-wave `files_modified` had no overlap — Wave 1 of Phase 19 (19-01, 19-02, 19-03) and Phase 16.3's per-palette cadence both ran ~3× faster than serial.
+
+### What Was Inefficient
+
+- **UI token migration was a 16-component sweep that wasn't visible until human-verify** — Phase 16 closed with the ThemePicker working but the rest of the UI ignoring theme swaps. Required Phase 16.1 emergency insertion. **Lesson:** "theme rebinding" SC needs an explicit per-component contract, not just a token-defined contract.
+- **Translation quality was uncatchable by automated tests** — UAT-2 surfaced 11 distinct PT-BR fixes (Bowl→Taça, In/Out→Puxa/Solta, "Reativar pistas de áudio"→"Reativar áudio", etc.) and a separate `app` slice insertion (header/title were inline literals). **Lesson:** ship i18n with operator UAT in mind; expect a fix-now translation deviation commit after the first PT-BR walk-through.
+- **Code review caught 2 hardcoded EN literals that bypassed translation** (`'Session complete'` in sessionController, `'Audio paused, tap to resume'` aria-live in App.tsx) — both shipped through 8 prior plans without flag. **Lesson:** for i18n phases, run `grep -rE "[A-Z][a-z]+ [a-z]+" src/ --include='*.ts*' | grep -v "import\|//\|UI_STRINGS\|strings\."` after wiring to surface unmigrated literals.
+- **Subagent background-spawning flaked in Wave 2 of Phase 19** — 3 spawned `gsd-executor` agents returned "no Bash access" without attempting a tool call. Foreground spawning recovered cleanly. **Lesson:** if 2+ consecutive `run_in_background=true` agents fail with permission-decline before any tool call, switch to foreground for the wave; do not retry.
+
+### Patterns Established
+
+- **`Record<LocaleId, X>` lookup at render time** (`learnContent = LEARN_CONTENT[locale]`, `lockedCopy = LOCKED_COPY[locale]`, `uiStrings = UI_STRINGS[locale]`) is reference-stable enough for React; no memoization needed.
+- **Per-palette commit cadence with B1 bisect-safe step granularity** (Phase 16.2 + 16.3): one commit per palette gradient or per palette redesign, each individually green-gated, enables cherry-pick or single-palette revert post-shipping.
+- **Operator UAT as deviation source-of-truth**: Phase 17's Ring→Diamond swap, Phase 16.2's gradient retunes, Phase 19's translation fixes all came from operator-driven UAT findings post-implementation. Plan must accommodate a "fix-now-vs-defer" decision at the close checkpoint, not relegate translation/aesthetic UAT to "v1.x".
+- **Decimal-phase insertion remains the right tool for emergent scope** — three inserts in v1.1 (16.1, 16.2, 16.3) all closed cleanly; insertion overhead is low because ROADMAP/STATE handles it.
+
+### Key Lessons
+
+1. **Auto-generated MILESTONES.md accomplishments are fragile** — the `milestone.complete` SDK call extracted "One-liner:" stubs for ~70% of phases because frontmatter format varied. Curated rewrite required.
+2. **Frozen-EN guard works** — locked claim-safe copy stayed byte-identical through PT-BR translation churn (Phase 19) AND through the unrelated UAT translation deviation fix commit. The `.toBe()` assertion was the single line that prevented D-12 drift.
+3. **Worktree merges with phantom deletions** — wave-2/3/4 executors committed their SUMMARY.md files to main directly while the worktree branch lacked them. The standard merge-loop deletion guard incorrectly blocked these as "files deleted in WT_BRANCH". Workaround: skip the deletion check when files match `*-SUMMARY.md` and validate post-merge via working-tree integrity.
+4. **The `inSessionView` disable contract scales** — Phase 15 wrote it once (gear control), then Phase 17/18/19 reused it across 4 pickers without contract drift. Single-source UI gate pattern paid off.
+5. **Locale-aware date formatting via optional argument** preserves Phase 4 D-19 minimal-diff invariant while still letting PT-BR users see Portuguese month names. `formatLastSessionDate(atMs, now?, locale?)` is backward-compatible.
+
+### Cost Observations
+
+- Model mix: ~90% sonnet (executor), 10% opus (orchestrator). Larger contexts via `--1M` not used for v1.1 — 200K window was sufficient with worktree isolation freshening each executor.
+- Sessions: ~3 working sessions per phase from discuss→plan→execute→verify→close. Phase 19 took 1 long session due to manual UAT walkthrough mid-plan.
+- Notable: subagent background-spawn flakiness in Phase 19 Wave 2 cost ~2 wasted spawns (no tool calls). Foreground recovery added ~10 min but produced clean results.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -121,6 +172,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 |-----------|--------|-------|------------|
 | v1.0 | 7 | 30 | Established phase/plan/wave structure, decimal-phase insertion pattern, pre-close audit workflow |
 | v1.0.1 | 6 | 12 | Strict TS + ESLint baseline as compiler floor; per-commit green-gate as invariant; `// Reason:` policy for hook-deps disables; worktree-mode merge protocol shaken out (untracked-file merge gotcha) |
+| v1.1 | 10 | 47 | Worktree parallel waves with intra-wave `files_modified` overlap check; sibling-pattern verbatim cloning for picker/hook trios; `Record<LocaleId, X>` per-render lookup; frozen-EN byte-equality guard for locked copy; decimal-phase inserts (16.1, 16.2, 16.3) for emergent UAT-driven scope; locale-aware date formatter via optional arg (Phase 4 D-19 preserved) |
 
 ### Cumulative Quality
 
@@ -128,9 +180,12 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 |-----------|-------|------------|------------|
 | v1.0 | 363/363 pass | 27 | ~9,032 |
 | v1.0.1 | 409/409 pass | 29 | ~10,925 |
+| v1.1 | 712/712 pass | 54 | ~14,500 (est.) |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **Decimal-phase insertion handles emergent scope** — Phase 5.1 (v1.0) and Phase 12 HYGIENE-01 docs-only flip (v1.0.1) both proved that mid-milestone reality can be honored without forcing literal-text adherence to the original ROADMAP.
-2. **Pre-close audit is non-negotiable** — both v1.0 and v1.0.1 caught real or apparent gaps before archival. v1.0.1 specifically demonstrated that stale audits can mislead; re-running is cheap.
-3. **Cross-phase invariants must be made explicit in CONTEXT** — Phase 12 HYGIENE-01 → Phase 9 AUDIO-02 dependency would have caused a regression without the D-01/D-02 carve-out.
+1. **Decimal-phase insertion handles emergent scope** — Phase 5.1 (v1.0), Phase 12 HYGIENE-01 docs-only flip (v1.0.1), and Phases 16.1/16.2/16.3 (v1.1) all proved mid-milestone reality can be honored without forcing literal-text adherence to the original ROADMAP.
+2. **Pre-close audit is non-negotiable** — v1.0, v1.0.1, and v1.1 each caught real or apparent gaps before archival. v1.1 specifically demonstrated that human_needed UAT/VERIFICATION acknowledgments are explicit deferred-items entries, not silent passes.
+3. **Cross-phase invariants must be made explicit in CONTEXT** — Phase 12 HYGIENE-01 → Phase 9 AUDIO-02 dependency (v1.0.1) and Phase 19 `format.ts` D-19 "untouched" invariant (v1.1) both proved that explicit carve-outs prevent regressions.
+4. **Sibling-pattern verbatim cloning is the cheapest way to ship feature trios** — `useThemeChoice`/`useTimbreChoice`/`useVariantChoice`/`useLocaleChoice` and `ThemePicker`/`TimbrePicker`/`VariantPicker`/`LanguagePicker` (v1.1) all closed in 3–10 hours each because the mirror reference was load-bearing.
+5. **Operator UAT is the source of truth for aesthetic + i18n + variant choices** — v1.1 saw operator-driven deviations in 3 phases (Ring→Diamond, palette retunes, PT-BR translation fixes). The orchestrator must accommodate fix-now deviations at the close checkpoint.
