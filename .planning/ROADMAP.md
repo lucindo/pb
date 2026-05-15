@@ -236,7 +236,7 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
   - [x] 19-05-PLAN.md — LanguagePicker radiogroup body (mirror of TimbrePicker chrome with LOCALE_DISPLAY_NAMES endonyms) + 9 picker tests including D-14 cross-UI endonym invariant
   - [x] 19-06-PLAN.md — Dialogs + anchors + toggle + pickers accept strings prop (9 components: SettingsDialog/EndSession/ResetStats/SettingsAnchor/LearnAnchor/MuteToggle/Theme/Variant/Timbre/LanguagePicker sectionLabel widening)
   - [x] 19-07-PLAN.md — Form + footer + controls + breathing accept strings prop (8 components: SettingsForm/SettingsStepper/SessionControls/StatsFooter/SessionReadout/BreathingShape/Orb/Square/DiamondShape); D-15 template-fn aria-labels; Path A wedge for phase label
-  - [ ] 19-08-PLAN.md — App.tsx wires useLocale + resolves catalogs + drills slices to 15 consumers; App.tsx:686 medical-advice migrated to lockedCopy.medicalAdviceLine; LearnDialog accepts learnContent + lockedCopy + strings props with locked-phrase paragraph composition
+  - [x] 19-08-PLAN.md — App.tsx wires useLocale + resolves catalogs + drills slices to 15 consumers; App.tsx:686 medical-advice migrated to lockedCopy.medicalAdviceLine; LearnDialog accepts learnContent + lockedCopy + strings props with locked-phrase paragraph composition
   - [ ] 19-09-PLAN.md — Phase close: App.locale.test.tsx integration smoke + manual UAT (cross-tab mid-session swap + PT-BR spot-check + persistence + in-session disable) + REQUIREMENTS/ROADMAP/STATE flips + SUMMARY + UAT log
 **UI hint**: yes
 
@@ -266,4 +266,4 @@ Phase artifacts: `.planning/milestones/v1.0.1-phases/`
 | 16.3. Thorough Theme Revision | v1.1 | 7/7 | Complete | 2026-05-13 |
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete    | 2026-05-14 |
-| 19. Language Switching | v1.1 | 7/9 | In Progress|  |
+| 19. Language Switching | v1.1 | 8/9 | In Progress|  |
