@@ -48,15 +48,16 @@ describe('SettingsForm — stretch surface (Plan 22-04)', () => {
     }
   })
 
-  it('gate: a sub-15-min stretch total disables the mode increase button and shows the hint', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch', rampDurationMinutes: 5 } })
+  it('gate: a sub-15-min stretch total disables the →Stretch increase button and shows the hint', () => {
+    // mode 'standard' so the mode picker's increase points at →Stretch (the gated direction)
+    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard', rampDurationMinutes: 5 } })
     expect(screen.getByText('Needs a 15+ min session')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: EN.stepper.increaseLabel('Session mode') }))
       .toBeDisabled()
   })
 
-  it('no gate hint when the stretch total clears 15 minutes', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch' } })
+  it('no gate hint and →Stretch enabled when the stretch total clears 15 minutes', () => {
+    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
     expect(screen.queryByText('Needs a 15+ min session')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: EN.stepper.increaseLabel('Session mode') }))
       .toBeEnabled()
