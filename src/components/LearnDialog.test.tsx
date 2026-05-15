@@ -173,3 +173,33 @@ describe('LearnDialog — PT-BR rendering', () => {
     expect(screen.queryByText('About this practice')).not.toBeInTheDocument()
   })
 })
+
+describe('LearnDialog — native-app store links', () => {
+  it('App Store link has correct href, target="_blank", and rel="noopener noreferrer" (D-04, T-24-01)', () => {
+    renderDialog({ open: true })
+    const link = screen.getByRole('link', { name: /App Store/i })
+    expect(link).toHaveAttribute('href', LEARN_CONTENT.en.links.appStoreIos.url)
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('Google Play link has correct href, target="_blank", and rel="noopener noreferrer" (D-04, T-24-01)', () => {
+    renderDialog({ open: true })
+    const link = screen.getByRole('link', { name: /Google Play/i })
+    expect(link).toHaveAttribute('href', LEARN_CONTENT.en.links.googlePlayAndroid.url)
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('renders the native-apps section heading for EN locale (D-01, D-08)', () => {
+    renderDialog({ open: true })
+    expect(screen.getByText(UI_STRINGS.en.learn.nativeAppsHeading)).toBeInTheDocument()
+  })
+
+  it('renders PT-BR native-apps heading and both PT-BR link labels (D-06)', () => {
+    renderDialog({ open: true, locale: 'pt-BR' })
+    expect(screen.getByText(UI_STRINGS['pt-BR'].learn.nativeAppsHeading)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: LEARN_CONTENT['pt-BR'].links.appStoreIos.label })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: LEARN_CONTENT['pt-BR'].links.googlePlayAndroid.label })).toBeInTheDocument()
+  })
+})

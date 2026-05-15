@@ -172,6 +172,32 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
           </div>
         </div>
 
+        {/* D-01 (Phase 24): third link sub-section — after videos, before affiliation micro-line.
+            D-03: plain accent-color text links, no badge assets.
+            D-04 / T-24-01: target="_blank" rel="noopener noreferrer" on both links.
+            D-08: heading and labels name the "Resonant Breathing" app only — no Forrest authorship claim. */}
+        <div>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
+          <div className="mt-1 grid gap-2">
+            <a
+              href={links.appStoreIos.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {links.appStoreIos.label}
+            </a>
+            <a
+              href={links.googlePlayAndroid.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            >
+              {links.googlePlayAndroid.label}
+            </a>
+          </div>
+        </div>
+
         {/* D-14 amendment (2026-05-10, user-approved): the medical-advice
             micro-line was moved from this modal to the main breathing card
             (D-15 amendment). Only the affiliation micro-line remains here. */}

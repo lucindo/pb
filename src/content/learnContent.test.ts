@@ -102,7 +102,23 @@ describe('LEARN_CONTENT link contract', () => {
     }
   })
 
-  it('no URL in links matches dangerous schemes javascript:, data:, vbscript: (T-06-04)', () => {
+  it('appStoreIos URL starts with https:// (T-24-02)', () => {
+    expect(LEARN_CONTENT.en.links.appStoreIos.url.startsWith('https://')).toBe(true)
+  })
+
+  it('googlePlayAndroid URL starts with https:// (T-24-02)', () => {
+    expect(LEARN_CONTENT.en.links.googlePlayAndroid.url.startsWith('https://')).toBe(true)
+  })
+
+  it('appStoreIos URL equals the exact iOS store URL (D-07)', () => {
+    expect(LEARN_CONTENT.en.links.appStoreIos.url).toBe('https://apps.apple.com/us/app/resonant-breathing/id1568058013')
+  })
+
+  it('googlePlayAndroid URL equals the exact Android store URL (D-07)', () => {
+    expect(LEARN_CONTENT.en.links.googlePlayAndroid.url).toBe('https://play.google.com/store/apps/details?id=com.johngoodstadt.knutson.meditation')
+  })
+
+  it('no URL in links matches dangerous schemes javascript:, data:, vbscript: (T-06-04, T-24-02)', () => {
     const allUrls = [
       LEARN_CONTENT.en.links.book.url,
       LEARN_CONTENT.en.links.website.url,
@@ -110,6 +126,8 @@ describe('LEARN_CONTENT link contract', () => {
       LEARN_CONTENT.en.links.patreon.url,
       LEARN_CONTENT.en.links.heroVideo.url,
       ...LEARN_CONTENT.en.links.keyVideos.map((v) => v.url),
+      LEARN_CONTENT.en.links.appStoreIos.url,
+      LEARN_CONTENT.en.links.googlePlayAndroid.url,
     ]
     for (const url of allUrls) {
       expect(url).not.toMatch(/^(javascript|data|vbscript):/i)
@@ -146,6 +164,14 @@ describe('LEARN_CONTENT PT-BR URL identity (D-12)', () => {
 
   it('keyVideos length identical across locales', () => {
     expect(LEARN_CONTENT['pt-BR'].links.keyVideos.length).toBe(LEARN_CONTENT.en.links.keyVideos.length)
+  })
+
+  it('appStoreIos URL identical across locales (D-07 locale-invariant)', () => {
+    expect(LEARN_CONTENT['pt-BR'].links.appStoreIos.url).toBe(LEARN_CONTENT.en.links.appStoreIos.url)
+  })
+
+  it('googlePlayAndroid URL identical across locales (D-07 locale-invariant)', () => {
+    expect(LEARN_CONTENT['pt-BR'].links.googlePlayAndroid.url).toBe(LEARN_CONTENT.en.links.googlePlayAndroid.url)
   })
 
   it('PT-BR forrest body does NOT contain its EN-baseline-equivalent locked phrase', () => {
