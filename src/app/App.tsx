@@ -13,6 +13,7 @@ import { SettingsAnchor } from '../components/SettingsAnchor'
 import { SettingsDialog } from '../components/SettingsDialog'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
+import { useFavicon } from '../hooks/useFavicon'
 import { useTheme } from '../hooks/useTheme'
 import { useVisualVariant } from '../hooks/useVisualVariant'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -142,6 +143,7 @@ export default function App() {
   const audio = useAudioCues(initialMute, onAudioReanchorRequired) // Phase 3 + Plan 06 D-35
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
   useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
+  useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
   const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
   const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
   const learnContent = LEARN_CONTENT[locale] // per-render catalog resolution (D-06 hook return shape)

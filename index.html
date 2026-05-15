@@ -5,7 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Phase 16 THEME-04: pre-paint theme attribute. SYNC WITH src/storage/storage.ts STATE_KEY. -->
-    <script>(function(){try{var raw=localStorage.getItem('hrv:state:v1');var t=raw&&(JSON.parse(raw).prefs||{}).theme;if(t==='system'||!t||['light','dark','moss','slate','dusk'].indexOf(t)<0){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(_){document.documentElement.setAttribute('data-theme','light');}})();</script>
+    <!-- SYNC WITH src/styles/faviconPalette.ts FAVICON_COLORS / src/styles/theme.css --color-breathing-accent-strong -->
+    <script>(function(){try{var raw=localStorage.getItem('hrv:state:v1');var t=raw&&(JSON.parse(raw).prefs||{}).theme;if(t==='system'||!t||['light','dark','moss','slate','dusk'].indexOf(t)<0){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var c={'light':'#5e81ac','dark':'#81a1c1','moss':'#35a77c','slate':'#3760bf','dusk':'#f6c177'};var h=c[t]||c['light'];var u='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%23'+h.slice(1)+'"/></svg>';var l=document.querySelector('link[rel="icon"]');if(l){l.setAttribute('href',u);}}catch(_){document.documentElement.setAttribute('data-theme','light');var lf=document.querySelector('link[rel="icon"]');if(lf){lf.setAttribute('href','data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%235e81ac"/></svg>');}}})();</script>
     <title>HRV Breathing</title>
   </head>
   <body>

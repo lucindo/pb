@@ -73,9 +73,8 @@ describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
   })
 
   // Assertion (2): FAVICON_COLORS[themeId] must match the inline hex map in index.html
-  // PLAN 02: un-skip once index.html inline favicon map exists (lands in Plan 02 Task 1).
-  // The inline map is added by Plan 02 — it does not exist yet when Plan 01 runs.
-  it.skip('FAVICON_COLORS hex matches index.html inline favicon map (PLAN 02: un-skip there)', () => {
+  // PLAN 02: now live — index.html inline favicon map added in Plan 02 Task 2.
+  it('FAVICON_COLORS hex matches index.html inline favicon map', () => {
     const indexHtmlPath = resolve(__dirname, '../../index.html')
     const indexHtml = readFileSync(indexHtmlPath, 'utf-8')
 
