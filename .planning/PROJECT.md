@@ -32,6 +32,8 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 **Phase numbering:** Continues from v1.1 (starts at Phase 20).
 **Ordering:** Smallest-blast-radius first — 999.2 (single button state) → 999.1 (favicon swap) → PATT-02 (engine + UI).
 
+**Progress:** Phase 20 complete (2026-05-15) — LEAD-01 resolved: primary button relabels to `Cancel`/`Cancelar` during the lead-in countdown, removing the double-start affordance. 716/716 tests pass.
+
 ## Requirements
 
 ### Validated
@@ -170,4 +172,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-14 — v1.2 BPM Stretch milestone opened*
+*Last updated: 2026-05-15 — Phase 20 (Session Start Polish) complete*
