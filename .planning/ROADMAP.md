@@ -105,3 +105,12 @@ Run `/gsd-new-milestone` to scope the next milestone.
 
 Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.2: the start session button should be disabled during the countdown phase (BACKLOG)
+
+**Goal:** [Captured for future planning] Disable the Start-session button while `appPhase === 'lead-in'` (the 3-second countdown that fires after pressing Start before the first In/Out cycle begins). Currently the button remains clickable during the countdown, which can lead to double-starts or confusing UX. The button should reflect the in-flight state.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
