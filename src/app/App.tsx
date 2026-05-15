@@ -37,7 +37,9 @@ import {
   type PersistedStats,
 } from '../storage'
 import type { SessionSettings, VisualVariantId } from '../domain/settings'
-import { UI_STRINGS } from '../content/strings' // Phase 19 stop-gap: EN fixture until Plan 08 wires useLocale().
+import { useLocale } from '../hooks/useLocale'
+import { LEARN_CONTENT } from '../content/learnContent'
+import { LOCKED_COPY } from '../content/lockedCopy'
 
 // Phase 3 D-13: appPhase gates whether useSessionEngine.start() has been called.
 // 'lead-in' is BEFORE the session timing clock starts (preserves SESS-05).
@@ -141,6 +143,9 @@ export default function App() {
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
   useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
   const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
+  const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
+  const learnContent = LEARN_CONTENT[locale] // per-render catalog resolution (D-06 hook return shape)
+  const lockedCopy = LOCKED_COPY[locale] // per-render catalog resolution (D-04 composition rule)
 
   // Phase 3 D-14: appPhase + leadInDigit drive the 3-2-1 lead-in visual.
   const [appPhase, setAppPhase] = useState<AppPhase>('idle')
@@ -633,8 +638,8 @@ export default function App() {
           <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
             HRV Breathing
           </h1>
-          <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} strings={UI_STRINGS.en.anchors} />
-          <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={UI_STRINGS.en.anchors} />
+          <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} strings={uiStrings.anchors} />
+          <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={uiStrings.anchors} />
         </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
@@ -643,32 +648,32 @@ export default function App() {
             variant={sessionVariant ?? liveVariant}
             frame={appPhase === 'running' ? session.liveFrame : null}
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
-            strings={UI_STRINGS.en.breathing}
+            strings={uiStrings.breathing}
           />
           <SessionReadout
             frame={leadInPlaceholderFrame ?? session.liveFrame}
             status={state.status}
             isLeadInPlaceholder={appPhase === 'lead-in'}
             message={state.status === 'complete' && !inSessionView ? state.message : undefined}
-            strings={UI_STRINGS.en.readout}
+            strings={uiStrings.readout}
           />
           <SettingsForm
             settings={state.selectedSettings}
             isRunning={inSessionView}
             onChange={persistedSetSettings}
             onExtendDuration={session.extendDuration}
-            strings={UI_STRINGS.en.settingsForm}
+            strings={uiStrings.settingsForm}
           />
           <SessionControls
             status={state.status}
             onStart={() => { void onStartClick() }}
             onEnd={requestEnd}
-            strings={UI_STRINGS.en.controls}
+            strings={uiStrings.controls}
             muted={audio.muted}
             audioAvailable={audio.audioAvailable}
             needsResume={audio.audioStatus === 'needs-resume'}
             resumeHintId="mute-toggle-resume-hint"
-            muteStrings={UI_STRINGS.en.mute}
+            muteStrings={uiStrings.mute}
             onMuteToggle={() => { void onMuteOrResumeClick() }}
           />
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
@@ -689,30 +694,30 @@ export default function App() {
               relaxes that decision and surfaces LEARN-04 framing on the practice
               screen too. The phrase matches D-14's modal-only line verbatim. */}
           <p className="mt-4 text-sm leading-6 text-[var(--color-breathing-muted)]">
-            Guided breathing practice — not medical advice.
+            {lockedCopy.medicalAdviceLine}
           </p>
         </div>
         {!inSessionView && stats.totalSessions > 0 && (
-          <StatsFooter stats={stats} onResetClick={onResetClick} strings={UI_STRINGS.en.stats} />
+          <StatsFooter stats={stats} onResetClick={onResetClick} strings={uiStrings.stats} />
         )}
       </section>
       <EndSessionDialog
         open={endDialogOpen}
         onConfirm={confirmEnd}
         onCancel={cancelEnd}
-        strings={UI_STRINGS.en.endSessionDialog}
+        strings={uiStrings.endSessionDialog}
       />
       <ResetStatsDialog
         open={resetDialogOpen}
         onConfirm={confirmReset}
         onCancel={cancelReset}
-        strings={UI_STRINGS.en.resetStatsDialog}
+        strings={uiStrings.resetStatsDialog}
       />
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}
-      <LearnDialog open={learnDialogOpen} onClose={onLearnClose} />
+      <LearnDialog open={learnDialogOpen} onClose={onLearnClose} learnContent={learnContent} lockedCopy={lockedCopy} strings={uiStrings.learn} />
       {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/VariantPicker/TimbrePicker/LanguagePicker stubs. */}
-      <SettingsDialog open={settingsDialogOpen} onClose={onSettingsClose} inSessionView={inSessionView} strings={UI_STRINGS.en} />
+      <SettingsDialog open={settingsDialogOpen} onClose={onSettingsClose} inSessionView={inSessionView} strings={uiStrings} />
     </main>
   )
 }
