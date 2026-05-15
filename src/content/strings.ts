@@ -35,6 +35,7 @@ export interface UiStrings {
     readonly close: string
     readonly themeLabel: string
     readonly variantLabel: string
+    readonly cueLabel: string
     readonly timbreLabel: string
     readonly languageLabel: string
   }
@@ -50,6 +51,11 @@ export interface UiStrings {
     readonly orb: string
     readonly square: string
     readonly diamond: string
+  }
+  readonly cue: {
+    readonly labels: string
+    readonly arrow: string
+    readonly nose: string
   }
   readonly timbres: {
     readonly bowl: string
@@ -153,6 +159,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       close: 'Close',
       themeLabel: 'Theme',
       variantLabel: 'Variant',
+      cueLabel: 'Cue style',
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
     },
@@ -168,6 +175,11 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       orb: 'Orb',
       square: 'Square',
       diamond: 'Diamond',
+    },
+    cue: {
+      labels: 'Text',
+      arrow: 'Arrow',
+      nose: 'Nose',
     },
     timbres: {
       bowl: 'Bowl',
@@ -272,6 +284,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       close: 'Fechar', // TODO: native-speaker review
       themeLabel: 'Tema', // TODO: native-speaker review
       variantLabel: 'Variante', // TODO: native-speaker review
+      cueLabel: 'Estilo de sinal', // TODO: native-speaker review
       timbreLabel: 'Timbre', // TODO: native-speaker review
       languageLabel: 'Idioma', // TODO: native-speaker review
     },
@@ -287,6 +300,11 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       orb: 'Esfera', // TODO: native-speaker review
       square: 'Quadrado', // TODO: native-speaker review
       diamond: 'Losango', // TODO: native-speaker review
+    },
+    cue: {
+      labels: 'Texto', // TODO: native-speaker review
+      arrow: 'Seta', // TODO: native-speaker review
+      nose: 'Nariz', // TODO: native-speaker review
     },
     timbres: {
       bowl: 'Taça', // TODO: native-speaker review
