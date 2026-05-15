@@ -18,20 +18,22 @@
 import type { PersistedStats } from '../storage'
 import { formatLastSessionDate, formatLastSessionDuration } from '../storage/format'
 import type { UiStrings } from '../content/strings'
+import type { LocaleId } from '../domain/settings'
 
 export interface StatsFooterProps {
   stats: PersistedStats
   onResetClick(this: void): void
   strings: UiStrings['stats']
+  locale?: LocaleId
 }
 
-export function StatsFooter({ stats, onResetClick, strings }: StatsFooterProps) {
-  // Phase 19 Path A: translate at component layer (D-19 minimal-diff).
-  // Compose the last-session line using formatLastSessionDate + formatLastSessionDuration
-  // from format.ts (date/duration extraction helpers), then pass through strings.lastSessionPrefix.
+export function StatsFooter({ stats, onResetClick, strings, locale }: StatsFooterProps) {
+  // Phase 19 D-25: pass current UI locale into the date formatter so PT-BR users
+  // see month/day rendered in Portuguese (e.g. "14 de mai." instead of "May 14").
+  // Phase 19 Path A: translate at component layer; format.ts now accepts an optional locale arg.
   const lastDate =
     stats.lastSessionAtMs !== null && stats.lastSessionDurationSeconds !== null
-      ? formatLastSessionDate(stats.lastSessionAtMs)
+      ? formatLastSessionDate(stats.lastSessionAtMs, Date.now, locale)
       : null
   const lastDuration =
     stats.lastSessionDurationSeconds !== null

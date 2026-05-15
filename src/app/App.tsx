@@ -633,10 +633,10 @@ export default function App() {
             lead-in and running (D-03 disable-not-hide). */}
         <div className="relative w-full">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[var(--color-breathing-accent)]">
-            HRV practice
+            {uiStrings.app.header}
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
-            HRV Breathing
+            {uiStrings.app.title}
           </h1>
           <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} strings={uiStrings.anchors} />
           <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={uiStrings.anchors} />
@@ -698,7 +698,7 @@ export default function App() {
           </p>
         </div>
         {!inSessionView && stats.totalSessions > 0 && (
-          <StatsFooter stats={stats} onResetClick={onResetClick} strings={uiStrings.stats} />
+          <StatsFooter stats={stats} onResetClick={onResetClick} strings={uiStrings.stats} locale={locale} />
         )}
       </section>
       <EndSessionDialog

@@ -89,7 +89,7 @@ describe('App locale switching (Phase 19)', () => {
   // -------------------------------------------------------------------------
   // Test 4: cross-tab storage event updates locale even without picker interaction
   // -------------------------------------------------------------------------
-  it('cross-tab storage event updates documentElement.lang to pt-BR', async () => {
+  it('cross-tab storage event updates documentElement.lang to pt-BR', () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     render(<App />)
 
@@ -99,7 +99,7 @@ describe('App locale switching (Phase 19)', () => {
     // Simulate cross-tab write: another tab changes prefs.locale to 'pt-BR' in localStorage
     // and the browser fires the 'storage' event on this tab's window.
     const ptBrEnvelope = JSON.stringify({ version: 1, prefs: { ...DEFAULT_FULL_PREFS, locale: 'pt-BR' } })
-    await act(async () => {
+    act(() => {
       window.localStorage.setItem(STATE_KEY, ptBrEnvelope)
       window.dispatchEvent(
         new StorageEvent('storage', { key: STATE_KEY, newValue: ptBrEnvelope, oldValue: null }),

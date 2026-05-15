@@ -11,6 +11,10 @@
 import type { LocaleId } from '../domain/settings'
 
 export interface UiStrings {
+  readonly app: {
+    readonly header: string
+    readonly title: string
+  }
   readonly controls: {
     readonly startSession: string
     readonly endSession: string
@@ -108,6 +112,10 @@ export interface UiStrings {
 
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
   en: {
+    app: {
+      header: 'HRV practice',
+      title: 'HRV Breathing',
+    },
     controls: {
       startSession: 'Start session',
       endSession: 'End session',
@@ -206,6 +214,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     },
   },
   'pt-BR': {
+    app: {
+      header: 'PRÁTICA VFC', // TODO: native-speaker review
+      title: 'Respiração VFC', // TODO: native-speaker review
+    },
     controls: {
       startSession: 'Iniciar sessão', // TODO: native-speaker review
       endSession: 'Encerrar sessão', // TODO: native-speaker review
@@ -242,7 +254,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       diamond: 'Losango', // TODO: native-speaker review
     },
     timbres: {
-      bowl: 'Tigela', // TODO: native-speaker review
+      bowl: 'Taça', // TODO: native-speaker review
       bell: 'Sino', // TODO: native-speaker review
       sine: 'Senoidal', // TODO: native-speaker review
       chime: 'Carrilhão', // TODO: native-speaker review
@@ -262,8 +274,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
     },
     mute: {
-      mute: 'Silenciar pistas de áudio', // TODO: native-speaker review
-      unmute: 'Reativar pistas de áudio', // TODO: native-speaker review
+      mute: 'Silenciar áudio', // TODO: native-speaker review
+      unmute: 'Reativar áudio', // TODO: native-speaker review
       resume: 'Retomar áudio', // TODO: native-speaker review
       unavailable: 'Áudio indisponível neste navegador', // TODO: native-speaker review
     },
@@ -277,8 +289,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     anchors: {
       settings: 'Configurações', // TODO: native-speaker review
       settingsDisabled: 'Configurações (indisponíveis durante a sessão)', // TODO: native-speaker review
-      learn: 'Aprender', // TODO: native-speaker review
-      learnDisabled: 'Aprender (indisponível durante a sessão)', // TODO: native-speaker review
+      learn: 'Aprenda', // TODO: native-speaker review
+      learnDisabled: 'Aprenda (indisponível durante a sessão)', // TODO: native-speaker review
     },
     stats: {
       sessionsCount: (n) =>
@@ -289,19 +301,19 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       lastSessionPrefix: (date, duration) => `Último: ${date} · ${duration}`, // TODO: native-speaker review
       totalSuffix: 'total', // TODO: native-speaker review
-      reset: 'Reiniciar', // TODO: native-speaker review
+      reset: 'Zerar', // TODO: native-speaker review
     },
     breathing: {
-      inhale: 'Entra', // TODO: native-speaker review
-      exhale: 'Sai', // TODO: native-speaker review
+      inhale: 'Puxa', // TODO: native-speaker review
+      exhale: 'Solta', // TODO: native-speaker review
       breathingShapeAriaLabel: 'Forma da respiração', // TODO: native-speaker review
       leadInAriaLabel: (d) => `Contagem regressiva ${String(d)}`, // TODO: native-speaker review
     },
     learn: {
       title: 'Sobre esta prática', // TODO: native-speaker review
       close: 'Fechar', // TODO: native-speaker review
-      resourcesHeading: 'Recursos de Forrest Knutson', // TODO: native-speaker review
-      videosHeading: 'Vídeos selecionados de respiração HRV', // TODO: native-speaker review
+      resourcesHeading: 'Links do Forrest Knutson', // TODO: native-speaker review
+      videosHeading: 'Vídeos selecionados de respiração VFC', // TODO: native-speaker review
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>

@@ -91,15 +91,15 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
     explainer: {
       hrv: {
         // TODO: native-speaker review
-        title: 'O que é HRV / respiração de ressonância',
+        title: 'O que é VFC / respiração de ressonância',
         // TODO: native-speaker review
-        body: 'A respiração HRV é uma prática calma de respirações lentas, geralmente menos de sete por minuto. Nessa frequência baixa, sua respiração se alinha suavemente com o ritmo natural do seu coração — um estado por vezes chamado de respiração de ressonância. Esta é uma prática tranquila, não um procedimento clínico nem uma medição do seu coração.',
+        body: 'A respiração VFC é uma prática calma de respirações lentas, geralmente menos de sete por minuto. Nessa frequência baixa, sua respiração se alinha suavemente com o ritmo natural do seu coração — um estado por vezes chamado de respiração de ressonância. Esta é uma prática tranquila, não um procedimento clínico nem uma medição do seu coração.',
       },
       timing: {
         // TODO: native-speaker review
         title: 'Como este app cronometra sua respiração',
         // TODO: native-speaker review
-        body: 'Este app guia uma inalação e exalação contínuas, sem pausa entre elas. Você escolhe uma frequência lenta abaixo de sete respirações por minuto e, para padrões assimétricos, a exalação é sempre o lado mais longo. O orbe na tela e os tons opcionais semelhantes a tigelas simplesmente marcam onde você está em cada respiração.',
+        body: 'Este app guia uma inspiração e expiração contínuas, sem pausa entre elas. Você escolhe uma frequência lenta abaixo de sete respirações por minuto e, para padrões assimétricos, a expiração é sempre o lado mais longo. O orbe na tela e os tons opcionais semelhantes a tigelas simplesmente marcam onde você está em cada respiração.',
       },
       forrest: {
         // TODO: native-speaker review
@@ -131,24 +131,24 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
         url: 'https://www.patreon.com/forrestknutson',
       },
       heroVideo: {
-        // TODO: native-speaker review
-        label: 'A Santíssima Trindade da Respiração Induz a Ressonância HRV',
+        // Video title kept in English — YouTube source is English; no PT-BR title available.
+        label: 'The Holy Trinity of Breath Induces HRV Resonance',
         url: 'https://www.youtube.com/watch?v=89WorFpMyY0',
       },
       keyVideos: [
         {
-          // TODO: native-speaker review
-          label: 'A Magia da Meditação Sentado Muito Quieto - SVS',
+          // Video title kept in English — YouTube source is English; no PT-BR title available.
+          label: 'The Meditation Magic of Sitting Very Still - SVS',
           url: 'https://www.youtube.com/watch?v=6NpH44c34do',
         },
         {
-          // TODO: native-speaker review
-          label: '4 Provas da Meditação',
+          // Video title kept in English — YouTube source is English; no PT-BR title available.
+          label: '4 Proofs of Meditation',
           url: 'https://www.youtube.com/watch?v=Kn_tQYaUO4M',
         },
         {
-          // TODO: native-speaker review
-          label: 'Meditação Profunda para Iniciantes - Naturalmente - Técnica Clínica de Mindfulness',
+          // Video title kept in English — YouTube source is English; no PT-BR title available.
+          label: 'Beginners Deep Meditation - Naturally - Clinical Mindfulness Technique',
           url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
         },
       ],

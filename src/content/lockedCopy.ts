@@ -28,6 +28,6 @@ export const LOCKED_COPY: Readonly<Record<LocaleId, LockedCopy>> = {
     // LOCKED: back-translation = "Guided breathing practice — not medical advice."
     medicalAdviceLine: "Prática de respiração guiada — não é conselho médico.",
     // LOCKED: back-translation = "Independent project. Not affiliated with Forrest Knutson."
-    affiliationLine: "Projeto independente. Não afiliado a Forrest Knutson.",
+    affiliationLine: "Projeto independente. Não afiliado ao Forrest Knutson.",
   },
 } as const satisfies Readonly<Record<LocaleId, LockedCopy>>

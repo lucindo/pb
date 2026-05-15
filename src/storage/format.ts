@@ -15,6 +15,17 @@ const DATE_FMT_OTHER_YEAR = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
 })
 
+// Phase 19 D-25: per-call locale formatters bypass the module-level cache when
+// the caller supplies an explicit locale (e.g. the current UI locale from
+// useLocale()), so the rendered date matches the active UI language even when
+// the browser/OS default differs.
+function dateFormatterFor(locale: string | undefined, sameYear: boolean): Intl.DateTimeFormat {
+  if (locale === undefined) return sameYear ? DATE_FMT_SAME_YEAR : DATE_FMT_OTHER_YEAR
+  return new Intl.DateTimeFormat(locale, sameYear
+    ? { month: 'short', day: 'numeric' }
+    : { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 // D-06: < 60 min -> "N min"; >= 60 min -> "N.N hours" with one decimal.
 //
 // WR-02: defer the hours flip until the rendered hours value rounds up to 1.1
@@ -39,13 +50,13 @@ export function formatSessionCount(count: number): string {
 }
 
 // D-05: "May 7" current year; "May 7, 2025" other year.
-/** @param now Test-only seam — production callers always omit this; tests pass a pinned `() => number` to drive the same-year vs other-year branch coverage in `format.test.ts`. */
-export function formatLastSessionDate(atMs: number, now: () => number = Date.now): string {
+/** @param now Test-only seam — production callers always omit this; tests pass a pinned `() => number` to drive the same-year vs other-year branch coverage in `format.test.ts`.
+ *  @param locale Phase 19 D-25 — optional UI-locale override; when omitted the module-cached system-default formatters are used (preserves Phase 4 behavior for callers that have not migrated). */
+export function formatLastSessionDate(atMs: number, now: () => number = Date.now, locale?: string): string {
   const d = new Date(atMs)
   const today = new Date(now())
-  return d.getFullYear() === today.getFullYear()
-    ? DATE_FMT_SAME_YEAR.format(d)
-    : DATE_FMT_OTHER_YEAR.format(d)
+  const sameYear = d.getFullYear() === today.getFullYear()
+  return dateFormatterFor(locale, sameYear).format(d)
 }
 
 // D-07: integer minutes via floor (e.g. 9:55 session -> "9 min").
