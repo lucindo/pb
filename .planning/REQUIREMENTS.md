@@ -13,7 +13,7 @@ Requirements for v1.2 release. Each maps to roadmap phases.
 
 ### Session Start Polish
 
-- [ ] **LEAD-01**: User cannot click Start while the lead-in countdown is in flight; the button is disabled and visually reflects the in-flight state (no double-start).
+- [x] **LEAD-01**: User cannot click Start while the lead-in countdown is in flight; the button is disabled and visually reflects the in-flight state (no double-start).
 
 ### Favicon
 
@@ -96,7 +96,7 @@ Which phases cover which requirements. Filled during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LEAD-01 | Phase 20 | Pending |
+| LEAD-01 | Phase 20 | Complete |
 | FAVI-01 | Phase 21 | Pending |
 | FAVI-02 | Phase 21 | Pending |
 | FAVI-03 | Phase 21 | Pending |
