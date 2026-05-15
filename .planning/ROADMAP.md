@@ -66,7 +66,7 @@ Phase artifacts: `.planning/milestones/v1.1-phases/`
 ### 📋 v1.2 BPM Stretch (Phases 20–22)
 
 - [x] **Phase 20: Session Start Polish** - Disable Start button during lead-in countdown; no double-start possible. (completed 2026-05-15)
-- [ ] **Phase 21: Per-Theme Favicon** - Each of the 5 palettes ships its own favicon variant; swaps on theme change and at load.
+- [x] **Phase 21: Per-Theme Favicon** - Each of the 5 palettes ships its own favicon variant; swaps on theme change and at load. (completed 2026-05-15)
 - [ ] **Phase 22: BPM Stretch Session** - Stretch mode with warm-up → sub-perceptual ramp → cool-down on the existing one-clock SessionFrame.
 
 ## Phase Details
@@ -101,7 +101,7 @@ Plans:
 - [x] 21-01-PLAN.md — Shared faviconPalette module (5 accent-strong colors + SVG template) + theme.css sync-guard test (FAVI-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 21-02-PLAN.md — useFavicon hook + index.html pre-paint favicon extension + App.tsx mount + human-verify (FAVI-01, FAVI-02, FAVI-03)
+- [x] 21-02-PLAN.md — useFavicon hook + index.html pre-paint favicon extension + App.tsx mount + human-verify (FAVI-01, FAVI-02, FAVI-03)
 
 ### Phase 22: BPM Stretch Session
 **Goal**: Users can run a BPM stretch session whose breathing rate walks sub-perceptually from a warm-up BPM to a target BPM and then holds, using the existing one-clock SessionFrame and dual-anchor audio scheduling
@@ -143,7 +143,7 @@ Plans:
 | 18. Audio Timbres | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
-| 21. Per-Theme Favicon | v1.2 | 1/2 | In Progress|  |
+| 21. Per-Theme Favicon | v1.2 | 2/2 | Complete   | 2026-05-15 |
 | 22. BPM Stretch Session | v1.2 | 0/? | Not started | - |
 
 ## Backlog
