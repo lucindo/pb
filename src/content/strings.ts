@@ -70,6 +70,19 @@ export interface UiStrings {
       readonly decreaseLabel: (label: string) => string
       readonly increaseLabel: (label: string) => string
     }
+    readonly sessionModeLabel: string
+    readonly modeStandard: string
+    readonly modeStretch: string
+    readonly stretchGateHint: string
+    readonly initialBpmLabel: string
+    readonly targetBpmLabel: string
+    readonly holdInitialLabel: string
+    readonly holdTargetLabel: string
+    readonly rampDurationLabel: string
+    readonly holdNoneLabel: string
+    readonly holdOpenEndedLabel: string
+    readonly totalLabel: string
+    readonly totalOpenEndedLabel: string
   }
   readonly mute: {
     readonly mute: string
@@ -84,6 +97,10 @@ export interface UiStrings {
     readonly readoutAriaLabel: string
     readonly announcementAriaLabel: string
     readonly sessionComplete: string
+    readonly currentBpmLabel: string
+    readonly stageHoldInitial: string
+    readonly stageRamp: string
+    readonly stageHoldTarget: string
   }
   readonly anchors: {
     readonly settings: string
@@ -173,6 +190,19 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         decreaseLabel: (l) => `Decrease ${l}`,
         increaseLabel: (l) => `Increase ${l}`,
       },
+      sessionModeLabel: 'Session mode',
+      modeStandard: 'Standard',
+      modeStretch: 'Stretch',
+      stretchGateHint: 'Needs a 15+ min session',
+      initialBpmLabel: 'Start BPM',
+      targetBpmLabel: 'Target BPM',
+      holdInitialLabel: 'Warm-up',
+      holdTargetLabel: 'Cool-down',
+      rampDurationLabel: 'Ramp',
+      holdNoneLabel: 'None',
+      holdOpenEndedLabel: 'Open-ended',
+      totalLabel: 'Total:',
+      totalOpenEndedLabel: 'Total: Open-ended',
     },
     mute: {
       mute: 'Mute audio cues',
@@ -187,6 +217,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       readoutAriaLabel: 'Session readout',
       announcementAriaLabel: 'Session announcement',
       sessionComplete: 'Session complete',
+      currentBpmLabel: 'BPM',
+      stageHoldInitial: 'Warm-up',
+      stageRamp: 'Ramp',
+      stageHoldTarget: 'Cool-down',
     },
     anchors: {
       settings: 'Settings',
@@ -277,6 +311,19 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         decreaseLabel: (l) => `Diminuir ${l}`, // TODO: native-speaker review
         increaseLabel: (l) => `Aumentar ${l}`, // TODO: native-speaker review
       },
+      sessionModeLabel: 'Modo de sessão', // TODO: native-speaker review
+      modeStandard: 'Padrão', // TODO: native-speaker review
+      modeStretch: 'Alongamento', // TODO: native-speaker review
+      stretchGateHint: 'Necessita sessão de 15+ min', // TODO: native-speaker review
+      initialBpmLabel: 'BPM inicial', // TODO: native-speaker review
+      targetBpmLabel: 'BPM alvo', // TODO: native-speaker review
+      holdInitialLabel: 'Aquecimento', // TODO: native-speaker review
+      holdTargetLabel: 'Resfriamento', // TODO: native-speaker review
+      rampDurationLabel: 'Rampa', // TODO: native-speaker review
+      holdNoneLabel: 'Nenhum', // TODO: native-speaker review
+      holdOpenEndedLabel: 'Aberto', // TODO: native-speaker review
+      totalLabel: 'Total:', // TODO: native-speaker review
+      totalOpenEndedLabel: 'Total: Aberto', // TODO: native-speaker review
     },
     mute: {
       mute: 'Silenciar áudio', // TODO: native-speaker review
@@ -291,6 +338,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       readoutAriaLabel: 'Leitura da sessão', // TODO: native-speaker review
       announcementAriaLabel: 'Anúncio da sessão', // TODO: native-speaker review
       sessionComplete: 'Sessão concluída', // TODO: native-speaker review
+      currentBpmLabel: 'BPM', // TODO: native-speaker review
+      stageHoldInitial: 'Aquecimento', // TODO: native-speaker review
+      stageRamp: 'Rampa', // TODO: native-speaker review
+      stageHoldTarget: 'Resfriamento', // TODO: native-speaker review
     },
     anchors: {
       settings: 'Configurações', // TODO: native-speaker review
