@@ -1,149 +1,249 @@
-# Feature Research — v1.1 Customization
+# Feature Research
 
-**Domain:** HRV breathing / guided paced-breathing web app — customization layer
-**Researched:** 2026-05-12
-**Confidence:** HIGH for theme and audio timbre UX patterns (multiple verified sources); MEDIUM for visual variant UX (fewer direct comparisons at this scope level); MEDIUM for i18n UX patterns (general-web evidence is solid; meditation-specific evidence is thinner).
+**Domain:** v1.3 Release Polish for a shipped local-only HRV breathing webapp (React + Vite + TS)
+**Researched:** 2026-05-15
+**Confidence:** HIGH (PWA install UX, app-store badge conventions, a11y patterns, licensing — all verified against MDN / web.dev / Apple + Google official guidelines; MEDIUM on Forrest app-store URLs — Google Play package ID confirmed, Apple App Store numeric ID not directly retrievable and must be confirmed at planning)
 
-> **Scope note:** v1.0 table stakes (timing engine, orb, audio cues, stats, wake lock, Learn surface)
-> are already shipped and validated. This file covers only the four v1.1 target features plus the
-> inner-ring UX symmetry warm-up. References to v1.0 code are dependency callouts, not re-research.
+This is a **polish milestone, not a feature expansion**. Five tightly-scoped additions make a shipped app distribution-ready. The research below treats "table stakes" as "what makes each addition actually correct/complete" and "anti-features" as "scope traps to explicitly refuse." None of the five features touches the breathing engine, timing, or audio scheduling.
 
 ---
 
-## Feature Landscape
+## Feature 1 — LICENSE + README
 
 ### Table Stakes (Users Expect These)
 
-These are the minimum behaviors users assume each customization feature has. Missing them means the
-feature feels unfinished or untrustworthy.
-
-| Feature | Why Expected | Complexity | v1.1 Notes |
-|---------|--------------|------------|------------|
-| Theme persists across sessions | Users set a theme once and expect it to survive a page reload, browser close, and revisit. Any app that resets to the default every session feels broken. | LOW | Extend existing `Envelope` in `storage/storage.ts`; add `theme?: string` field. Coerce on read like existing `settings`/`mute` fields. |
-| Theme respects OS dark/light preference as a default | System dark mode is widely expected as a first-class default in 2026. Breathing apps in particular are used in dark environments at night. | LOW | Detect `prefers-color-scheme` with `matchMedia`; apply `system` as the shipping default. Requires named CSS custom-property tokens to exist for both modes. |
-| Audio timbre cue sounds like the named timbre | If the UI says "Bowl" the sound must be recognizably bowl-like; if it says "Bell" it must have the attack character of a bell. Mislabeled timbres destroy trust. | MEDIUM | Each timbre is a distinct synthesized preset in `cueSynth.ts`. Parameters (fundamental Hz, partial ratios, decay constant, oscillator waveform) fully define the character. No samples required. |
-| Selected timbre persists | Same expectation as theme: choose once, remember forever. | LOW | Add `timbre?: string` to `Envelope`. Coerce with a valid-timbre allowlist guard like the existing `isValidBpm`/`isValidRatio` pattern in `domain/settings.ts`. |
-| Visual variant matches the label | If the label says "Orb" the user sees an orb; "Square" should produce a square. | LOW | Scoped to the `BreathingShape.tsx` component plus a variant-router. The outer session layout, ring positions, and data-phase attributes are unchanged. |
-| Selected visual variant persists | Same persistence expectation. | LOW | Add `visualVariant?: string` to `Envelope`. Coerce on read. |
-| Language setting persists and applies immediately | Users who choose a non-default language expect it to hold across sessions. In-session language switching should not interrupt the running breath loop. | LOW | Add `language?: string` to `Envelope`. The session engine and timing are language-independent — only UI labels and `learnContent.ts` are affected. |
-| Settings surface is reachable without touching the running session | Users must be able to preview customization options at any time, including before starting a session, without accidentally pausing or ending a session. | LOW | The existing SettingsForm is rendered only in the idle/stopped state. Customization pickers live in the same settings panel — no new surface needed unless scope expands. |
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| A `LICENSE` file at repo root | A public hobby repo without a license is "all rights reserved" by default — confusing and unfriendly | LOW | MIT recommended: shortest, permissive, includes the all-caps no-warranty + no-liability clause by default. Single file, copyright line `Copyright (c) 2026 Renato Lucindo`. |
+| README "what this is" + screenshot/GIF | First thing a visitor reads; the app is visual, so a screenshot communicates faster than prose | LOW | Reuse the PROJECT.md "What This Is" paragraph. One orb screenshot or short GIF. |
+| README "run locally" (clone / `npm install` / `npm run dev`) | Anyone forking a Vite app expects the standard three commands | LOW | Already-standard Vite scripts; no new tooling. |
+| Claim-safe / "not medical advice" line in README | The locked in-app disclaimer must be mirrored in the repo's front door; the project's defining constraint | LOW | Reuse the existing `LOCKED_COPY` two-line disclaimer verbatim. Do NOT paraphrase — drift risk. |
+| "Inspired by Forrest Knutson's teachings" attribution, no protected branding | PROJECT.md Out-of-Scope: no unlicensed logos/assets; attribution is required and welcomed, branding is not | LOW | Text + plain links only. Same posture as the Learn surface. |
+| Tech-stack one-liner | Contributors/forkers want to know React+Vite+TS before cloning | LOW | One line; matches PROJECT.md "Tech stack". |
 
 ### Differentiators (Competitive Advantage)
 
-Features that go beyond the expected baseline and distinguish this app in the crowded breathing space.
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Feature list grouped by capability (sessions / visuals / audio / themes / i18n / PWA) | Communicates the depth of a ~19k-LOC app that looks simple | LOW | Bulleted; derived from PROJECT.md validated requirements. |
+| "Privacy: 100% local, no backend, no tracking" callout | A genuine, verifiable differentiator vs. most wellness apps; reassures users at a glance | LOW | True per PROJECT.md constraints — state it plainly. |
+| Link to the live deployed app + the two Forrest native apps | Connects the README to both the running product and the original inspiration | LOW | Pairs naturally with Feature 2's store links. |
 
-| Feature | Value Proposition | Complexity | v1.1 Notes |
-|---------|-------------------|------------|------------|
-| Named calm-palette themes beyond light/dark | Apps like Lungy offer 20 themes; Breathwrk adjusts palette by time of day. Named themes ("Moss", "Slate", "Dusk") let users associate the app with a personal mood without the complexity of custom color pickers. | MEDIUM | Implement as CSS-custom-property token sets on `:root[data-theme='moss']` etc. Each theme overrides the full `--color-breathing-*` and `--color-orb-*` token set from `theme.css`. Three to five themes is the right count: enough choice, no decision paralysis. |
-| Fully synthesized alternate timbres — no sample files | Lungy and iBreathe use recorded samples. Generating all timbres from Web Audio API partials keeps the bundle unchanged and eliminates licensing risk. | MEDIUM | `cueSynth.ts` already follows a `scheduleBowlCue(fundamentalHz, decayTau, partials)` pattern. Each new timbre is a named `TimbrePreset` constant (different Hz, different waveform, different partial stack). Thin wrapper; no architectural change. |
-| Alternate visual style that works under reduced-motion | A non-orb variant (e.g. a breathing square or expanding ring) that is legible at MID_SCALE constant size works equally well for reduced-motion users — the variant itself can be the differentiation rather than the scale animation. | MEDIUM | `BreathingShape.tsx` routes on `frame.phase` and the `visualVariant` prop. Each variant is a self-contained component that receives the same `SessionFrame` input. Outer structure (rings, data-phase, scale math) remains unchanged unless the variant explicitly opts out. |
-| Language switching without a page reload | Many web i18n implementations require a reload to swap bundles. If language switching is instant (swap string constants in React state), it feels more native-app-like and reinforces the local-first, zero-server positioning. | MEDIUM | Viable because the content corpus is small. English strings are already mostly inline; the Learn surface strings are section-keyed in `learnContent.ts`. A locale constant + a locale-keyed string map achieves instant switching without a framework. |
-| Inner-ring symmetry (warm-up) | The inner ring currently appears only during the Out phase (Out-phase arrival cue). Making it symmetric — a ring appears during In phase at the outer boundary, and during Out phase at the inner boundary — creates a satisfying mirror that rewards attention without adding controls or cognitive load. | LOW | Pure CSS + `BreathingShape.tsx` change. Adds `orb-ring--in-arrival` that fades in only at `[data-phase='in']`. Mirrors the existing `[data-phase='out'] .orb-ring--inner` pattern. [2026-05-12 update] Symmetric-cue framing rejected at discuss-phase; actual scope is reduced-motion `.orb-ring--inner { display: none }`. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01. |
+### Anti-Features (Commonly Requested, Often Problematic)
 
-### Anti-Features (Explicitly Out of Scope)
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Non-commercial / CC-style "no commercial use" license | Owner instinct to prevent others profiting from a hobby project | "Non-commercial" clauses are NOT OSI-approved, are legally vague, scare off contributors, and don't match a hobby project's actual goal | MIT — permissive, well-understood, no-warranty clause already covers liability. If stronger copyleft is desired, GPL-3.0; do not invent a custom NC license. |
+| CONTRIBUTING.md, CODE_OF_CONDUCT, issue templates, badges-wall | "Real" open-source projects have them | Solo hobby project — process scaffolding nobody will use; pure scope creep in a polish milestone | One README. Add governance docs only if/when real contributors appear. |
+| Auto-generated API/architecture docs | Documenting the ~19k-LOC internals feels thorough | Maintenance burden, instantly stale, not what a webapp visitor needs | Keep the rich internal docs in `.planning/`; README stays user-facing. |
+| Changelog / release-notes file | Mirrors MILESTONES.md | `.planning/MILESTONES.md` already is the changelog | A one-line "see .planning/ for development history" link at most. |
 
-Features that appear adjacent to customization but must be rejected to preserve the project's core value.
+**Recommended license: MIT.** Permissive, ~20 lines, OSI-approved, universally understood, and its all-caps `AS IS` / no-liability clause is exactly the legal shield a no-warranty hobby breathing app wants. A "non-commercial" license would be the wrong instinct — see anti-features.
 
-| Anti-Feature | Why Requested | Why Problematic | Alternative |
-|--------------|---------------|-----------------|-------------|
-| Custom color picker / user-defined themes | Power users often want "their" color. | Custom pickers are complex UI, increase test surface, can produce low-contrast or inaccessible combos that violate WCAG, and shift focus from breathing to tinkering. Breaks the "calm" contract. | Offer 3-5 curated named themes that are pre-tested for contrast. Leave the picker to v2+ if demand is validated. |
-| Gamification: streaks, badges, level-up for sessions | Users familiar with Headspace/Calm expect retention mechanics. Research shows streaks in meditation apps frequently become a source of anxiety rather than motivation (MetaFilter survey, Smartico analysis). | Directly conflicts with PROJECT.md Out of Scope: "Streaks, leaderboards, achievements, social sharing, or gamified pressure — history should stay simple and calm." | Keep the existing neutral stats: total sessions, total minutes, last session. That gives encouragement without performance pressure. |
-| Social sharing of session results | "Share your session" is a common app feature. | Requires no account, no cloud, no social graph — all out of scope. Sharing a screenshot is always possible without app support. | No action needed. |
-| Theme auto-switch by time of day | Breathwrk does time-aware palettes. | Adds complexity (clock polling, edge cases at midnight, DST), no direct user request surfaced, and reduces user control of the environment they've chosen. | "System" mode (prefers-color-scheme) already handles the common day/night shift. Named themes are chosen explicitly. |
-| Audio volume slider | Users often ask for fine-grained volume control. | PEAK_GAIN (0.18) in `cueSynth.ts` is already conservative and well below headroom limit. A volume slider requires an extra gain node in the signal chain, a persistent value, and UI surface that adds nothing for most users. Mobile OS volume controls handle the rest. | Mute toggle (already shipped). Optional future consideration only if user-reported audio-too-loud complaints emerge. |
-| Per-phase audio timbre (different sound for In vs. Out) | "Make the In sound different from the Out sound" is a natural extension. | In/Out are already distinguished by fundamental frequency: A4 (440 Hz) In vs. A3 (220 Hz) Out — the pitch difference IS the timbre distinction. Adding per-phase picker doubles the UI surface for minimal gain. | One session-wide timbre preset. The Hz distinction is preserved within any timbre by continuing the A4/A3 fundamental split. |
-| Animated transition when switching visual variants | Smooth cross-fade between orb and breathing square. | The session engine drives the animation through `requestAnimationFrame`. A cross-fade between two competing animation loops risks frame-identity collision and rAF cancellation complexity. | Switch variants only from the settings panel (idle state only). No mid-session variant switching in v1.1. |
-| Language switching during an active session | Swap language while breathing. | Causes a UI re-render of all string content mid-session, potentially disrupting focus. No practical need — language choice is set-and-forget. | Language applies on next session start. Display language can switch immediately in the UI, but the decision is confirmed before a session begins. |
-| In-app audio preview / playback button for timbres | "Play sample" to audition each timbre before selecting. | Requires user gesture to unlock AudioContext (existing iOS constraint). A preview button in the settings panel is a second gesture path separate from session-start unlock and risks duplicating the audio engine bootstrap complexity. | Show the timbre name with a short descriptor ("Bell — bright attack, fast fade" vs. "Bowl — warm strike, long sustain"). Name + description is sufficient for 3-4 timbres. |
-| Unlicensed asset-based timbres (OGG/MP3 samples) | Higher fidelity bowls from bundled samples. | Licensing risk; bundle size jump; asset management; no offline-first guarantee without service worker. | Stay synthesized via Web Audio API. The existing cueSynth bowl is already rated positively in UAT. Alternate synthesized timbres expand choice without any of these costs. |
-| Medical or therapeutic framing for customization | "Teal theme for focus, blue for sleep, amber for anxiety relief." | Medical claims are explicitly out of scope. Color-mood associations are speculative. | Name themes by palette character (Moss, Slate, Dusk) not by claimed outcome. |
+---
+
+## Feature 2 — Forrest Native-App Links on the Learn Surface
+
+Forrest Knutson's free **Resonant Breathing** app exists on both stores. Google Play package ID confirmed: `com.johngoodstadt.knutson.meditation` → `https://play.google.com/store/apps/details?id=com.johngoodstadt.knutson.meditation`. The Apple App Store listing exists but its numeric App ID must be confirmed at planning time (search "Resonant Breathing" by Forrest Knutson / Meditative Mellows on the App Store).
+
+### Table Stakes (Users Expect These)
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Two outbound links — iOS App Store + Google Play | The app is web-first; pointing power users to the official native apps is honest and useful | LOW | Add to the existing `LearnDialog` content alongside YouTube/Website/book links. New entries in `learnContent.ts`, same pattern. |
+| Links open in a new tab/window, `rel="noopener noreferrer"` | Same as every other external link in the Learn dialog (YouTube, Amazon) | LOW | Match existing Learn link attributes exactly — consistency, not a new pattern. |
+| Honest, claim-safe link copy | The Learn surface has locked claim-safe copy; new copy must not over-promise | LOW | e.g. "Forrest's free Resonant Breathing app — iPhone" / "— Android". No medical claims. Plain, factual. |
+| EN + PT-BR strings for the new entries | Every UI string in the app is bilingual (I18N-01..06) | LOW | Two short labels per locale. Coordinate with Feature 4's PT-BR pass. |
+
+### Differentiators (Competitive Advantage)
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Official store badge artwork (Apple "Download on the App Store" + Google "Get it on Google Play") | Instantly recognizable, looks professional, and is the convention store guidelines actually expect | LOW–MEDIUM | Must use **unmodified official badge SVG/PNG** (Apple Marketing Resources; Google Play Partner Marketing Hub). Apple badge first when both shown; equal-or-larger sizing for the Play badge; do not recolor/resize/crop. Bundle artwork locally (project constraint: no externally-hosted assets) and respect the mandated clear-space. |
+| A short "also available as native apps" framing sentence | Sets context — these are Forrest's apps, this web app is the inspired-redesign sibling | LOW | One sentence; reinforces the "inspired redesign, not a clone" positioning from PROJECT.md. |
+
+### Anti-Features (Commonly Requested, Often Problematic)
+
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Smart App Banner / deep-link / "open in app" interception | "Seamless" hand-off to native | Requires the native apps' association files (which this project does not own/control), adds meta tags and platform-detection complexity; pure scope creep | Plain outbound links to the public store listings. The store handles "open vs install." |
+| OS-sniffing to show only "your platform's" badge | Cleaner UI | Brittle UA detection, breaks on desktop, hides the other platform for households with mixed devices | Show both badges always — desktop users may be choosing for their phone. |
+| Custom-designed badges / recolored to match the active theme | Visual harmony with the 5 themes | Violates Apple AND Google badge guidelines (no modification of color/proportion/elements) — a real compliance issue | Use official badges as-is. They sit fine on any theme background with the mandated clear-space. If a theming clash is unacceptable, fall back to plain styled text links. |
+| Reviews, ratings, screenshots embedded from the stores | Richness | Requires store APIs, goes stale, adds weight to a lean offline app | Just the link/badge. The store page has all of that. |
+
+---
+
+## Feature 3 — Labels-vs-Icons Toggle (In-Orb Breathing Cue)
+
+A 5th `SettingsDialog` radiogroup picker (joining Theme / Variant / Timbre / Language) switching the in-orb In/Out cue between **text labels** ("In"/"Out", localized) and **arrow icons** (directional — expand/up for inhale, contract/down for exhale). **This is the highest-dependency feature of the milestone** — it touches visual variants, i18n, a11y, and reduced-motion simultaneously.
+
+### Table Stakes (Users Expect These)
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Default = **text labels** (current behavior) | v1.0/v1.1 shipped text; the default must preserve existing UX byte-for-byte for users who never open Settings (the TIMBRE-02 "Bowl byte-identical" precedent) | LOW | Default `'labels'`; coerce-on-read fallback for unknown stored values (Phase 14 INFRA pattern). |
+| 5th radiogroup picker in SettingsDialog, identical to the existing 4 | The dialog already has 4 radiogroups; a 5th must match interaction, focus, and the `inSessionView` disable contract exactly | LOW–MEDIUM | Clone the existing picker component/pattern. No new dialog infrastructure. |
+| Choice persists via the localStorage `Envelope.prefs` shape | Every other picker persists; this one must too | LOW | New field in the `prefs` envelope + domain validator + `coerceSettings` fallback. No `STATE_VERSION` bump (forward-compat read contract). |
+| Icon mode has an accessible name on the cue (screen-reader gets "In"/"Out") | An icon-only cue must NOT lose the semantic label — WCAG. Research is unambiguous: visible-text > sr-only text > aria-label | MEDIUM | **Preferred: visually-hidden (`.sr-only`) localized "In"/"Out" text alongside the arrow, with `aria-hidden="true"` on the decorative SVG.** This survives machine translation and is the documented best practice. `aria-label` is the "last-resort code smell" fallback only. |
+| Localized text labels in BOTH modes' a11y layer | Even in icon mode, the sr-only text must be localized (EN: In/Out, PT-BR: Puxa/Solta per the v1.1 UAT-2 decision) | LOW | Reuse the existing `In`/`Out` localized strings — no new translation for the words themselves. |
+| Works across all 3 visual variants (Orb / Square / Diamond) | The cue renders inside every variant; the toggle must be variant-agnostic | MEDIUM | The In/Out cue is rendered by the shape dispatcher's shared layer — verify the icon swap lives at the cue layer, not per-variant. If the cue is currently variant-specific, this is the main implementation cost. |
+| Honors reduced-motion | The existing reduced-motion path crossfades instead of scaling; arrow icons must not introduce motion that bypasses `prefers-reduced-motion` | MEDIUM | The arrow is a static directional glyph that swaps on phase change (In↔Out) — same crossfade treatment as the text label today. No spinning/sliding arrows. The icon is a *symbol*, not an *animation*. |
+
+### Differentiators (Competitive Advantage)
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Icon mode = language-neutral cue | An arrow needs no translation; useful for non-EN/PT-BR speakers and reduces in-orb text for a cleaner minimalist look | LOW | This is the genuine user value — pairs well with the meditative aesthetic. |
+| Capture choice at session start (snapshot, like Variant/Timbre) | Consistency with `sessionVariantRef`/`timbreRef` — mid-session changes shouldn't mutate a running session | LOW–MEDIUM | Decide at planning: snapshot-at-Start (matches Variant/Timbre, CUST-03/TIMBRE precedent) vs. live-reactive. Snapshot is the established pattern and lower-risk. |
+
+### Anti-Features (Commonly Requested, Often Problematic)
+
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Animated/morphing arrows (arrow grows, rotates, slides) | "More dynamic" | Conflicts with the orb's own scale animation, fights reduced-motion, adds motion the design deliberately avoids | Static directional glyph that crossfades on phase change — identical motion budget to today's text label. |
+| A third option ("both icon + text") | "Why not let users have both" | Crowds the small in-orb space, undermines the picker's binary clarity, more layout/variant testing | Binary picker. The sr-only text already gives screen-reader users "both" semantically. |
+| Custom icon set / per-theme icon styling | Visual richness | Scope creep; 5 themes × 3 variants × 2 cue arrows = a test-matrix explosion | One simple arrow pair (e.g. inline SVG, `currentColor`) that inherits the existing token color. |
+| `aria-label` on the icon as the primary a11y mechanism | Less markup | Documented "code smell": inconsistent AT support, not picked up by machine translation | Visually-hidden localized text + `aria-hidden` on the SVG. `aria-label` only if a layout constraint truly blocks sr-only text. |
+| Free-form "choose your own glyph/emoji" | Personalization | Infinite combinatorial surface, an a11y nightmare | Two curated arrows, full stop. |
+
+---
+
+## Feature 4 — PT-BR Native-Speaker Review (I18N-07)
+
+76 strings carry `// TODO: native-speaker review`. This is a **content-quality pass, not a code feature** — "done" is a definition, not a build.
+
+### Table Stakes ("Done" Looks Like This)
+
+| Item | Why Expected | Complexity | Notes |
+|------|--------------|------------|-------|
+| All 76 markers resolved — every string read by a PT-BR native speaker, corrected if needed | The literal I18N-07 carry-forward; markers are a debt register | LOW (effort) / MEDIUM (coordination) | The work is reviewing, not engineering. A marker is removed only after a human PT-BR speaker signs off the string. |
+| Every `// TODO: native-speaker review` comment removed | Markers must not outlive the review — leftover markers misrepresent state | LOW | Mechanical delete after each string is approved. |
+| Translations read naturally to a native speaker (not literal machine output) | The whole point: machine translation is grammatically plausible but often stilted / wrong-register | LOW | Calm, warm, non-clinical register — matches the app's tone constraint. |
+| Locked claim-safe copy stays claim-safe in PT-BR | The disclaimer / "inspired by" copy is frozen-EN guarded; the PT-BR equivalent must carry zero medical claims | LOW | If the review touches `LOCKED_COPY` PT-BR strings, re-verify against the claim-safe constraint and the `lockedCopy.test.ts` guard. |
+| Domain-correct breathing vocabulary | "Inhale/exhale", "breaths per minute", "warm-up/stretch/settle", timbre names — terms a PT-BR meditator would actually recognize | LOW | Confirm v1.1 UAT-2 choices (In/Out → Puxa/Solta, Bowl → Taça) still hold; the reviewer is the authority. |
+| UI doesn't break with corrected strings (length/layout) | PT-BR strings often run longer than EN; a fix could overflow a button or the in-orb cue | LOW–MEDIUM | Visual smoke-check after edits — especially the in-orb cue, picker labels, buttons. The frozen-EN byte-equality guard still passes (only PT-BR changes). |
+| Full green-gate after edits (`tsc && lint && build && test`) | The per-commit invariant — string edits still run the gate | LOW | Translations live in a typed `Record<LocaleId, UiStrings>`; a dropped key is a compile error. |
+
+### Differentiators
+
+| Item | Value Proposition | Complexity | Notes |
+|------|-------------------|------------|-------|
+| Consistency pass — the same term translated the same way everywhere | A glossary-level review catches "BPM" / "breaths" rendered three different ways | LOW | The reviewer keeps a small term list while going through the 76. |
+| Date/number formatting spot-check for the pt-BR locale | i18n review checklists flag locale formatting; `formatLastSessionDate(locale)` already exists | LOW | Confirm the existing locale-aware date formatting reads correctly to the reviewer; no code change expected. |
+
+### Anti-Features
+
+| Item | Why Requested | Why Problematic | Alternative |
+|------|---------------|-----------------|-------------|
+| Adding a third language while "in there anyway" | Momentum | Out of scope for a polish milestone; multiplies the review surface and test matrix | Finish PT-BR. New languages are a separate future milestone. |
+| Adopting an i18n library / translation-management platform | "Proper" i18n tooling | The roll-your-own typed catalog works and is zero-runtime-dep; swapping it is a migration, not a polish | Keep the existing `Record<LocaleId, UiStrings>` catalog. |
+| Re-translating EN copy / re-opening locked English strings | Review momentum | Frozen-EN is guarded by `lockedCopy.test.ts` for a reason — copy-drift protection | Touch PT-BR only. EN locked copy is immutable here. |
+| Machine-re-translating with a "better" model and skipping the human | Faster | I18N-07 explicitly requires a *native speaker*; a better machine model is still not a native speaker | A human PT-BR speaker reviews. That is the requirement. |
+
+---
+
+## Feature 5 — PWA Install (Full Offline) — PWA-01
+
+Web App Manifest + maskable icons + Apple touch icon + a service worker precaching the app shell for full offline session use. The app is **already an ideal PWA candidate**: single-purpose, local-only, no backend, no network calls during a session.
+
+### Table Stakes (Users Expect These)
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| `manifest.webmanifest` — name, short_name, start_url, scope, `display: standalone`, theme/background color, icons | The baseline of "installable"; Chrome's install criteria require it | LOW–MEDIUM | `vite-plugin-pwa` generates it. `theme_color`/`background_color` should pick a neutral palette value (the app has 5 themes — choose one stable default; the static manifest can't be per-theme). |
+| Icon set — 192px + 512px, plus a **maskable** 512px icon | Android adaptive icons crop non-maskable icons badly; maskable is table stakes, not optional | LOW | Reuse/extend the existing favicon SVG → export PNGs with proper maskable safe-zone padding. |
+| `apple-touch-icon` link + `apple-mobile-web-app-*` meta tags | iOS reads `apple-touch-icon` (overrides manifest icons if present); needed for a correct home-screen icon | LOW | Single 180×180 PNG + meta tags in `index.html`. iOS 26 opens home-screen sites as web apps even without a manifest, but the tags ensure the icon/title are right. |
+| Service worker precaching the app shell (JS/CSS/HTML + icons) | "Full offline session use" is the stated goal — the SW must serve the shell with zero network | MEDIUM | `vite-plugin-pwa` + Workbox `generateSW`; `globPatterns` for js/css/html + the icon PNGs. The app already has no runtime network dependency, so a precache-only strategy is sufficient — no runtime caching handlers needed. |
+| Offline = full session works (timing, orb, audio, settings, stats) | "Full offline session use" is the promise — the entire core experience must run with the network off | MEDIUM | Audio is synthesized (no asset fetch), state is localStorage, no backend — offline-capable by architecture. The SW just needs to serve the shell. Verify in DevTools "Offline." |
+| Install affordance: rely on browser UI on desktop/Android; **explicit iOS instructions** | Chrome/Edge surface their own install affordance via `beforeinstallprompt`; iOS Safari has NO `beforeinstallprompt` and no auto-prompt | MEDIUM | iOS users must be told: tap Share → "Add to Home Screen." Show this hint **only in browser display-mode** (hide when already `standalone`). |
+| Standalone display mode — no browser chrome once installed | Users expect an installed app to look like an app | LOW | `display: standalone` in the manifest delivers this on all platforms. |
+| Update handling — a new deploy reaches installed users | A cached PWA can otherwise serve a stale build forever | LOW–MEDIUM | `vite-plugin-pwa` `registerType`: `autoUpdate` is simplest (refresh-on-next-load). `prompt` ("new version available — reload") is more correct for an app a user keeps open. Recommend `autoUpdate` for this lean single-page tool; flag at planning. |
+
+### Differentiators (Competitive Advantage)
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Custom in-app install button on Android/desktop (capture `beforeinstallprompt`, show own button) | More context/branding than the browser's generic affordance; lets the app *invite* installation | MEDIUM | Capture the deferred event, show a tasteful "Install" button, call `prompt()` on click. Must hide in `standalone` mode and when no event has fired. Genuinely nice — but optional. |
+| iOS "Add to Home Screen" mini-guide (Share-icon illustration) | iOS install is non-obvious; a tiny visual guide meaningfully lifts iOS installs | LOW–MEDIUM | A small dismissible hint, or a line in Settings/Learn. Render only in iOS Safari + browser mode. |
+| Maskable + monochrome icon / themed splash polish | Looks first-class on the home screen and at launch | LOW | The iOS splash is generated from `background_color` + icon; getting the safe-zone right is the main effort. |
+
+### Anti-Features (Commonly Requested, Often Problematic)
+
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Aggressive install nag (modal/banner on first visit) | "Drive installs" | Hostile UX, especially before the user has tried the app; users dismiss and resent it | Quiet, dismissible affordance; let the user reach for it. Honor a "dismissed" flag. |
+| Runtime caching strategies / background sync / periodic sync | "Proper offline-first" | The app has NO backend and NO runtime network requests — runtime caching handlers solve a problem that doesn't exist; background sync is unreliable on iOS anyway | Precache-only `generateSW`. There is nothing to runtime-cache. |
+| Push notifications / "time to breathe" reminders | Engagement | Out of scope (PROJECT.md: no gamified pressure, calm tone); iOS push needs an installed PWA + is fiddly; adds a permission prompt | None. Reminders contradict the app's calm, low-pressure philosophy. |
+| Hand-rolled service worker | "Full control" | SW lifecycle / precache-manifest bugs are notorious; reinventing Workbox is a footgun | `vite-plugin-pwa` (Workbox wrapper). Build-time dep only — the runtime-deps invariant holds. |
+| Trying to make iOS behave like Android (force an install prompt) | Parity | iOS genuinely has no `beforeinstallprompt`; any "fix" is a hack | Detect iOS Safari, show manual instructions. Accept the platform difference. |
+| `display: fullscreen` (hide the status bar) | "Immersive" | Hides the clock/battery; users mid-meditation may want them; `standalone` is the expected default | `display: standalone`. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Envelope (storage/storage.ts)
-    ├──extends──> Theme persistence (add `theme?: string`)
-    ├──extends──> Timbre persistence (add `timbre?: string`)
-    ├──extends──> Visual variant persistence (add `visualVariant?: string`)
-    └──extends──> Language persistence (add `language?: string`)
+Feature 1 (LICENSE + README)
+    └── independent — pure docs, zero code, smallest blast radius (operator-ordered first)
 
-domain/settings.ts predicate pattern
-    ├──mirrors──> isValidTheme() — allowlist guard for stored theme value
-    ├──mirrors──> isValidTimbre() — allowlist guard for stored timbre value
-    ├──mirrors──> isValidVisualVariant() — allowlist guard
-    └──mirrors──> isValidLanguage() — allowlist guard
+Feature 2 (Forrest store links)
+    └──requires──> existing LearnDialog + learnContent.ts  (extend, don't rebuild)
+    └──requires──> existing i18n catalog (EN + PT-BR strings for new entries)
+    └──enhances──> Feature 1 (README can reuse the same two store links)
 
-storage/settings.ts coercer pattern
-    ├──mirrors──> coerceTheme() — non-throwing, falls back to DEFAULT_THEME
-    ├──mirrors──> coerceTimbre() — non-throwing, falls back to DEFAULT_TIMBRE
-    ├──mirrors──> coerceVisualVariant() — non-throwing, falls back to DEFAULT_VISUAL_VARIANT
-    └──mirrors──> coerceLanguage() — non-throwing, falls back to DEFAULT_LANGUAGE
+Feature 3 (Labels-vs-icons toggle)  ← HIGHEST DEPENDENCY FEATURE
+    └──requires──> SettingsDialog (add 5th radiogroup, clone existing picker pattern)
+    └──requires──> Envelope.prefs storage shape (new persisted field + domain validator + coerce-on-read)
+    └──requires──> i18n catalog (sr-only "In"/"Out" must be localized; reuses existing words)
+    └──requires──> all 3 visual variants (cue must render variant-agnostically)
+    └──requires──> reduced-motion path (static glyph crossfade, no new motion)
+    └──interacts──> a11y (sr-only localized text + aria-hidden SVG — NOT aria-label)
 
-cueSynth.ts (CUST-02)
-    ├──requires──> scheduleInCue / scheduleOutCue remain the public API
-    ├──adds──> TimbrePreset type (name, in-params, out-params)
-    └──adds──> scheduleInCue(ctx, when, dest, phaseDuration, preset)
-                 — default preset = existing BOWL behavior (zero regression)
+Feature 4 (PT-BR native-speaker review)
+    └──requires──> i18n catalog (the 76 marked strings)
+    └──interacts──> Feature 2 (review the new store-link PT-BR strings in the same pass)
+    └──interacts──> Feature 3 (review/confirm the cue picker's PT-BR labels in the same pass)
+    └──constrained-by──> frozen-EN lockedCopy.test.ts guard (touch PT-BR only)
 
-BreathingShape.tsx (CUST-03)
-    ├──requires──> SessionFrame (unchanged — all variants consume same input)
-    ├──adds──> visualVariant prop (string union)
-    └──adds──> variant-router that delegates to variant-specific sub-components
-
-learnContent.ts (I18N-01)
-    ├──already has──> section-keyed shape (hrv, timing, forrest) — i18n-stable by design
-    └──adds──> locale-keyed map: { en: LEARN_CONTENT, es: LEARN_CONTENT_ES, ... }
-
-theme.css (CUST-01)
-    ├──already has──> --color-breathing-*, --color-orb-* token set
-    └──adds──> [data-theme='moss'], [data-theme='slate'], [data-theme='dusk'] token overrides
-
-Inner-ring UX symmetry (warm-up, no feature flag)
-    ├──requires──> BreathingShape.tsx — add [data-phase='in'] .orb-ring--outer fade-in rule
-    └──purely──> CSS + minimal JSX change; no storage, no settings model touch
+Feature 5 (PWA install)
+    └──requires──> build-time dep: vite-plugin-pwa (runtime-deps invariant still holds — flag at planning)
+    └──requires──> icon assets (extend existing favicon SVG → maskable + apple-touch PNGs)
+    └──enhances──> already-offline-capable architecture (synth audio + localStorage + no backend)
+    └──independent of──> Features 2/3 (no shared surface)
 ```
-
-[2026-05-12 update] The rule add shown above (`[data-phase='in'] .orb-ring--outer` fade-in) was rejected; actual implementation is reduced-motion `.orb-ring--inner { display: none }` inside the existing `@media (prefers-reduced-motion: reduce)` block. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
 
 ### Dependency Notes
 
-- **Storage schema bumps for all four customization fields are safe:** the existing `Envelope` `spread-then-override` read pattern (STORAGE-01) and `refuse-downgrade` write guard (STORAGE-02) remain valid. New optional fields on the envelope require only coercer functions and valid-value guards — the same pattern as `settings`/`mute`/`stats`.
-- **cueSynth.ts is the chokepoint for CUST-02:** the `scheduleBowlCue` private function accepts `fundamentalHz` and `defaultDecayTau` already. A `TimbrePreset` struct that bundles those parameters is a minimal addition. The existing BOWL preset becomes the default, preserving byte-identical behavior when no preset is specified.
-- **BreathingShape.tsx is the chokepoint for CUST-03:** the component already accepts `frame` (SessionFrame) and `leadInDigit`. Adding a `visualVariant` prop and a router is low-risk because the orb implementation is already fully encapsulated in `BreathingShapeBody`. Variant sub-components are new siblings, not modifications.
-- **learnContent.ts is already i18n-structured:** the `hrv`/`timing`/`forrest` section keys were explicitly designed as "i18n-stable identifiers for future locale swap" (comment at line 2 of `learnContent.ts`). Adding a locale map `{ en: LEARN_CONTENT }` and shipping one additional locale (Spanish is the highest-value second language for a global English-content yoga/breathing audience) is the minimal I18N-01 implementation.
-- **Inner-ring symmetry has zero dependency risk:** it is a pure CSS + JSX addition to `BreathingShape.tsx`. It does not touch the storage model, the audio engine, the settings domain, or the timing engine. It is a warm-up task precisely because of this isolation. [2026-05-12 update] Implementation is pure CSS only (no JSX addition); a single rule inside the existing `@media (prefers-reduced-motion: reduce)` block with no BreathingShape.tsx edit. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
-- **Theme switching must not use Tailwind `dark:` class variants:** the existing `theme.css` uses CSS custom properties under `@theme { }` (Tailwind v4 convention). Named themes should follow the same custom-property pattern on a `[data-theme]` attribute on `<html>` or the app root — not Tailwind class variants, which would require rewriting all consumer classes.
+- **Feature 3 is the integration hotspot.** It is the only feature that simultaneously touches SettingsDialog, the persistence envelope, i18n, all 3 visual variants, reduced-motion, AND a11y. Plan it with the most care; verify the In/Out cue renders from a *shared* layer, not per-variant code.
+- **Feature 4 should run after (or alongside the tail of) Features 2 and 3.** Both add new PT-BR strings; folding them into the single native-speaker pass avoids a second review round.
+- **Feature 1 is genuinely independent** — pure docs, can land first (matching the operator ordering) with zero risk to the app.
+- **Feature 5 is independent of 2/3/4** — no shared UI surface; its only coupling is the new build-time `vite-plugin-pwa` dependency, which must be explicitly flagged against the zero-net-new-*runtime*-deps invariant.
 
 ---
 
-## v1.1 Feature Set
+## MVP Definition
 
-### Ship in v1.1
+This is a polish milestone — the "MVP" is the milestone's must-ship core.
 
-These are the four milestone features plus the warm-up.
+### Launch With (v1.3 core)
 
-- [x] **Inner-ring UX symmetry** — Add `[data-phase='in']` CSS rule mirroring the existing `[data-phase='out'] .orb-ring--inner` pattern. Also applies the outer ring fade-in on In to create symmetric arrival cues. Pure CSS + BreathingShape.tsx. Zero storage touch. Low-risk warm-up. [2026-05-12 update] Feature shipped as reduced-motion `.orb-ring--inner` suppression; the symmetric-arrival framing is annotated here but not implemented. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01.
-- [ ] **CUST-01: Theme switching** — Light / Dark / System (OS default) + 2-3 named palette themes. Picker in SettingsForm. Persisted to `Envelope.theme`. Applied via `data-theme` attribute on root. CSS custom-property token overrides in `theme.css`.
-- [ ] **CUST-02: Audio timbres** — 3-4 named synthesized presets (Bowl, Bell, Sine, Chime). Default = existing Bowl (zero regression). `TimbrePreset` struct in `cueSynth.ts`. Persisted to `Envelope.timbre`. Picker in SettingsForm.
-- [ ] **CUST-03: Visual variants** — 2-3 named visual styles for the session guide (Orb/default, Square, Ring). Each variant consumes `SessionFrame` unchanged. Persisted to `Envelope.visualVariant`. Picker in SettingsForm.
-- [ ] **I18N-01: Language switching** — EN default + 1 additional locale (Spanish recommended). Locale-keyed string map for UI labels and `learnContent.ts` sections. Persisted to `Envelope.language`. Picker in SettingsForm or a dedicated header control. No framework dependency (custom hook + string map).
+- [ ] **MIT `LICENSE` + user-facing README** — repo distribution-readiness; zero code risk
+- [ ] **Two Forrest store links in LearnDialog** (official badges preferred; styled text links acceptable fallback) — honest pointer to the original native apps
+- [ ] **Labels-vs-icons picker** — default `'labels'` (preserves current UX), persisted, all 3 variants, reduced-motion safe, sr-only localized a11y text
+- [ ] **All 76 PT-BR markers resolved and removed** by a native-speaker review — closes the I18N-07 carry-forward
+- [ ] **Installable offline PWA** — manifest + maskable/apple-touch icons + app-shell precaching SW; full offline session verified on Android Chrome and iOS Safari
 
-### Defer to v1.x
+### Add After Validation (in-milestone differentiators, low-risk)
 
-- [ ] PWA install / service worker (PWA-01) — deferred from earlier v1.1 plan; independent of customization.
-- [ ] Additional locales beyond EN+ES — add only if usage data or explicit requests surface.
-- [ ] Additional visual variants beyond 3 — same trigger.
-- [ ] Audio preview button — only if user confusion about timbre names is reported.
-- [ ] Import/export of local settings (JSON) — useful for privacy-conscious users, not v1.1 priority.
+- [ ] Official store badge artwork (vs. text links) for Feature 2 — if badge-guideline compliance + theme fit are confirmed
+- [ ] Custom `beforeinstallprompt` install button on Android/desktop — if the browser-native affordance feels insufficient
+- [ ] iOS "Add to Home Screen" mini-guide with a Share-icon illustration
 
-### Future (v2+)
+### Future Consideration (explicitly NOT v1.3)
 
-- [ ] Custom color picker / user-defined themes — after named themes are validated.
-- [ ] Per-phase audio configuration — only if the single-timbre model proves insufficient.
-- [ ] Platform health integrations — Apple Health, Google Fit.
-- [ ] Sensor-based HRV biofeedback.
+- [ ] Third UI language — a separate i18n milestone
+- [ ] Push / reminder notifications — contradicts the calm, no-pressure philosophy (PROJECT.md Out of Scope)
+- [ ] Deep-linking / Smart App Banner to the native apps — requires assets/association files this project doesn't own
 
 ---
 
@@ -151,89 +251,50 @@ These are the four milestone features plus the warm-up.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Inner-ring UX symmetry | LOW-MEDIUM | LOW | P0 (warm-up, land first) [2026-05-12 update] Priority/value/cost unchanged; scope reduced to one CSS rule per `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03. |
-| CUST-01: Theme (light/dark/system) | HIGH | LOW | P1 |
-| CUST-01: Named palette themes (2-3) | MEDIUM | MEDIUM | P1 |
-| CUST-02: Audio timbres (Bowl + 2-3 more) | MEDIUM | MEDIUM | P1 |
-| CUST-03: Visual variants (Orb + 1-2 more) | MEDIUM | MEDIUM | P1 |
-| I18N-01: Language switching (EN + ES) | MEDIUM | MEDIUM | P1 |
-| Storage schema extension for all 4 fields | HIGH (enabler) | LOW | P0 (prerequisite) |
-| isValid<X> / coerce<X> guards for new fields | HIGH (correctness) | LOW | P0 (prerequisite) |
+| MIT LICENSE + README | MEDIUM (repo-facing) | LOW | P1 |
+| Forrest store links (text or badge) | MEDIUM | LOW | P1 |
+| Forrest store **badge artwork** (vs text) | LOW–MEDIUM | LOW–MEDIUM | P2 |
+| Labels-vs-icons picker (core: default+persist+variants+a11y) | MEDIUM | MEDIUM | P1 |
+| PT-BR native-speaker review (76 markers) | HIGH (PT-BR users) | LOW build / MEDIUM coordination | P1 |
+| PWA install — manifest + icons + offline SW | HIGH | MEDIUM | P1 |
+| PWA — custom `beforeinstallprompt` install button | MEDIUM | MEDIUM | P2 |
+| PWA — iOS Add-to-Home-Screen mini-guide | MEDIUM (iOS only) | LOW–MEDIUM | P2 |
 
-**Priority key:**
-- P0: Must land before feature work (infrastructure)
-- P1: Ship in v1.1
-- P2: After v1.1 validation
-- P3: v2+
+**Priority key:** P1 = must ship for v1.3 · P2 = should ship if low-risk · P3 = future.
 
 ---
 
-## Competitor Customization Analysis
+## Competitor Feature Analysis
 
-| Dimension | iBreathe | Lungy | Breathwrk | The Breathing App | Our v1.1 Approach |
-|-----------|----------|-------|-----------|-------------------|-------------------|
-| Themes | Dark interface (accessibility note); no named palette themes | 20 themes (generative visual styles, not color palettes) | Time-aware bright/muted palette | No theme control | Light / Dark / System + 3 named calm palettes |
-| Audio timbre options | 4 interval indicator sounds (not described in detail) | Real-time generative audio, not swappable timbres | Multiple preset sounds | One warm/bright sound | 3-4 synthesized presets: Bowl (default), Bell, Sine, Chime |
-| Visual style options | Single breathing shape | 20 real-time generative visuals (3D, particle) | Multiple animations | Single breathing ball | 2-3 static variants: Orb (default), Square, Ring |
-| Language support | English only (iOS system locale not surfaced in search) | Not surfaced | Not surfaced | English only | EN (default) + ES in v1.1 |
-| Settings persistence | Yes (iOS app conventions) | Yes | Yes | Yes | Yes — all four fields added to existing Envelope |
-| In-session customization | Some settings adjustable mid-session | Visual selectable before session | Not mid-session in free tier | Not mid-session | No mid-session variant/language switching in v1.1 |
-
----
-
-## Implementation Dependency Map for Roadmap
-
-This section summarizes which v1.0 code surfaces each feature touches, to inform phase sequencing.
-
-### CUST-01: Themes
-- **Touches:** `src/styles/theme.css` (new `[data-theme]` token blocks), `src/app/App.tsx` (apply `data-theme` attr to root), `src/components/SettingsForm.tsx` (theme picker), `src/storage/storage.ts` (Envelope field), `src/storage/settings.ts` (coerceTheme), `src/domain/settings.ts` (isValidTheme, DEFAULT_THEME).
-- **Does NOT touch:** timing engine, audio engine, session controller, stats.
-- **Risk:** Tailwind v4 `@theme` block interaction — new token overrides must follow the same CSS custom-property convention, not Tailwind class variants.
-
-### CUST-02: Audio Timbres
-- **Touches:** `src/audio/cueSynth.ts` (TimbrePreset type + preset constants + updated `scheduleInCue`/`scheduleOutCue` signatures), `src/hooks/useAudioCues.ts` (pass active preset through), `src/components/SettingsForm.tsx` (timbre picker), storage chain (Envelope + coerceTimbre + isValidTimbre).
-- **Does NOT touch:** lookaheadScheduler logic, audioEngine.ts reconstruction, mute toggle, wake lock.
-- **Risk:** FakeAudioContext test polyfill — any new oscillator node type used by alternate timbres must be supported or stubbed in `vitest.setup.ts`.
-
-### CUST-03: Visual Variants
-- **Touches:** `src/components/BreathingShape.tsx` (visualVariant prop + variant router + new variant sub-components), `src/components/SettingsForm.tsx` (variant picker), storage chain.
-- **Does NOT touch:** session engine, audio, timing, stats.
-- **Risk:** Each new variant must handle `leadInDigit` (the 3-2-1 countdown orb path) and `reducedMotion` correctly. The orb handles both; new variants must follow the same contract.
-
-### I18N-01: Language Switching
-- **Touches:** `src/content/learnContent.ts` (locale-keyed map), new `src/i18n/strings.ts` (or equivalent) for UI label strings, `src/components/LearnDialog.tsx` (consume locale strings), `src/components/SettingsForm.tsx` (language picker), storage chain (Envelope + coerceLanguage + isValidLanguage).
-- **Does NOT touch:** timing engine, audio, visual animation, stats model.
-- **Risk:** `learnContent.ts` strings for the Spanish locale require accurate translation. Machine translation is acceptable for v1.1 with a disclaimer-to-self; a native-speaker review is preferred before wider promotion.
-
-### Inner-Ring UX Symmetry (warm-up)
-- **Touches:** `src/styles/theme.css` (new `[data-phase='in'] .orb-ring--outer` opacity rule), `src/components/BreathingShape.tsx` (confirm `data-phase='in'` already set — it is, in the existing `data-phase={frame.phase}` attribute).
-- **Does NOT touch:** anything else.
-- **Risk:** Negligible. The In-phase outer-ring fade-in mirrors the exact CSS pattern of the Out-phase inner-ring fade-in. Only new CSS selector, no JS change required.
-
-[2026-05-12 update] "Touches" reduced to `src/styles/theme.css` only — no `BreathingShape.tsx` edit (BreathingShape.tsx is listed in 13-CONTEXT.md canonical_refs "Source NOT edited"). Actual rule is `.orb-ring--inner { display: none }` inside the existing `@media (prefers-reduced-motion: reduce)` block; risk unchanged. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
+| Feature | Forrest's native Resonant Breathing apps | Typical wellness web apps | Our v1.3 approach |
+|---------|------------------------------------------|---------------------------|-------------------|
+| Distribution | App Store / Google Play listings | Often closed-source, no license | MIT license + public README; link OUT to Forrest's store listings (honest sibling positioning) |
+| Install | Native install via store | Bookmark only, or an aggressive PWA nag | Installable PWA; quiet affordance; explicit iOS instructions; no nag |
+| Offline | Native = inherently offline | Many require network | Full offline by architecture (synth audio + localStorage + no backend) — the SW just precaches the shell |
+| Breathing cue | Clean animation, tone-only option | Text or animation | Choice: localized text OR a language-neutral arrow icon; a11y preserved in both |
+| Languages | Single language | Often EN-only | EN + PT-BR, native-speaker reviewed |
+| Branding | Forrest's own branding | — | Claim-safe "inspired by Forrest's teachings"; no protected assets; official store badges used unmodified per guidelines |
 
 ---
 
 ## Sources
 
-- Apple App Store: iBreathe – Relax and Breathe — feature set including 4 sound options, dark interface, dark mode. HIGH confidence. https://apps.apple.com/us/app/ibreathe-relax-and-breathe/id1296605806
-- Jade Lizard Software (iBreathe developer site) — confirms ultra-minimal design philosophy. HIGH confidence. https://www.jadelizardsoftware.com/ibreathe
-- Lungy app (App Store + press) — 20 generative visual themes, real-time synthesis, game-engine-driven. MEDIUM confidence (press coverage, not direct docs). https://www.lungy.app/ and https://apps.apple.com/us/app/lungy-breathing-health/id1545223887
-- It's Nice That — Lungy design coverage confirming generative graphics and sound. MEDIUM confidence. https://www.itsnicethat.com/news/pi-a-lungy-digital-160123
-- Breathwrk (official site + App Store) — time-aware palette, multiple animations, multiple sounds. HIGH confidence for feature set. https://www.breathwrk.com/
-- Purrweb Meditation App Design guide — UX patterns for calm apps, soft shapes, minimal controls. MEDIUM confidence (design consultancy synthesis). https://www.purrweb.com/blog/designing-a-meditation-app-tips-step-by-step-guide/
-- Enso Meditation Timer (App Store) — 12 exclusive synthesized chimes, IAP for additional bells. HIGH confidence for audio timbre count norms. https://apps.apple.com/us/app/ens%C5%8D-meditation-timer-bell/id840637879
-- SmartInterface Design Patterns — language selector UX best practices. HIGH confidence (Vitaly Friedman / Smashing editorial). https://smart-interface-design-patterns.com/articles/language-selector/
-- Smashing Magazine — language selector design patterns (placement, naming, no-reload patterns). HIGH confidence. https://www.smashingmagazine.com/2022/05/designing-better-language-selector/
-- InTheMoment app — multilingual meditation app analysis, notes on instant language switching UX. MEDIUM confidence. https://inthemoment.app/articles/meditation-app-multiple-languages
-- Tailwind CSS dark mode docs — class-based vs. media-query-based dark mode. HIGH confidence (official docs). https://tailwindcss.com/docs/dark-mode
-- Medium: Multi-theme UI with Tailwind v4 and React — CSS custom property token override pattern for named themes. MEDIUM confidence (community tutorial, verified against Tailwind v4 docs). https://medium.com/render-beyond/build-a-flawless-multi-theme-ui-using-new-tailwind-css-v4-react-dca2b3c95510
-- Smartico — gamification in mental wellness apps, streaks as anxiety source. MEDIUM confidence (industry analysis). https://www.smartico.ai/blog-post/gamification-mental-wellness-apps
-- MetaFilter: "Meditation app that's not gamified" — user community expressing preference for non-gamified calm apps. MEDIUM confidence (community anecdote, multiple respondents). https://ask.metafilter.com/386087/Meditation-app-thats-not-gamified
-- MDN Web Docs: Web Audio API Advanced Techniques — PeriodicWave for custom bell synthesis, parameter scheduling. HIGH confidence (official). https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
-- Big Human: Mindfulness App Design Trends 2026 — soft palettes, reduced visual complexity, calming animations. MEDIUM confidence (agency analysis). https://www.bighuman.com/blog/trends-in-mindfulness-app-design
+- [Choose an open source license — choosealicense.com](https://choosealicense.com/) — MIT recommendation for permissive hobby projects
+- [FOSSA — How to Choose the Right Open Source License](https://fossa.com/blog/how-choose-right-open-source-license/) — permissive vs copyleft; non-commercial-clause caveats
+- [MDN — Making PWAs installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable) — install criteria, render iOS instructions only in browser mode
+- [web.dev — Installation prompt](https://web.dev/learn/pwa/installation-prompt) — `beforeinstallprompt`, custom in-page install UI
+- [MagicBell — PWA iOS Limitations and Safari Support (2026)](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide) — no `beforeinstallprompt` on iOS; manual Add-to-Home-Screen
+- [firt.dev — iOS PWA Compatibility](https://firt.dev/notes/pwa-ios/) — `apple-touch-icon` overrides manifest icons; iOS 26 home-screen behavior
+- [Vite PWA — Service Worker Precache guide](https://vite-pwa-org.netlify.app/guide/service-worker-precache) — `generateSW`, `globPatterns`, precache manifest
+- [Vite + PWA: Handling Offline Caching Correctly (2026)](https://www.enjoytoday.cn/posts/vite-pwa-guide/) — `autoUpdate` vs `prompt`, caching strategies
+- [Apple — App Store Marketing Resources & Identity Guidelines](https://developer.apple.com/app-store/marketing/guidelines/) — official badge artwork, black badge, App Store badge placed first
+- [Google Play — Badge Guidelines (Partner Marketing Hub)](https://partnermarketinghub.withgoogle.com/brands/google-play/visual-identity/badge-guidelines/) — no badge modification, clear-space, equal-or-larger sizing, badge generator
+- [Resonant Breathing — Google Play listing](https://play.google.com/store/apps/details?id=com.johngoodstadt.knutson.meditation) — confirms Forrest Knutson app + Android package ID
+- [A11Y Collective — ARIA labels](https://www.a11y-collective.com/blog/aria-labels/) — `aria-label` as "last-resort code smell"
+- [Medium — When to use aria-label or screen reader only text](https://medium.com/design-bootcamp/when-to-use-aria-label-or-screen-reader-only-text-cd778627b43b) — sr-only text survives machine translation; preferred over `aria-label`
+- [W3C — Short i18n review checklist](https://www.w3.org/International/i18n-drafts/techniques/shortchecklist) — i18n review coverage, locale formatting
+- [Idea Translations — How to Evaluate Translation Quality](https://ideatranslations.com/2025/08/05/how-to-evaluate-translation-quality-your-8-point-checklist/) — natural flow, native-speaker definition of "done"
 
 ---
-
-*Feature research for: HRV breathing app — v1.1 Customization milestone*
-*Researched: 2026-05-12*
+*Feature research for: v1.3 Release Polish — HRV Breathing WebApp*
+*Researched: 2026-05-15*

@@ -1,465 +1,584 @@
 # Architecture Research
 
-**Domain:** HRV breathing webapp — v1.1 Customization integration
-**Researched:** 2026-05-12
-**Confidence:** HIGH — based on direct codebase inspection of all source files at HEAD `3bdb69b`
+**Domain:** v1.3 Release Polish — 5-feature integration into a shipped React 18 + Vite + TS HRV breathing webapp
+**Researched:** 2026-05-15
+**Confidence:** HIGH (codebase read directly; PWA tooling verified against current vite-plugin-pwa 1.3.0)
 
-## Integration Overview
+> Scope note: the existing architecture is FIXED. This document maps how each of the 5 v1.3
+> features *integrates* — it does not redesign layers, folders, or patterns. Every new file
+> follows an existing sibling-clone template already in the tree.
 
-v1.1 adds five customization features to the existing v1.0.1 baseline. Each maps to a specific set of integration points. The baseline architecture is not restructured — v1.1 extends it.
+## Standard Architecture
 
-```
-EXISTING (v1.0.1)                          v1.1 ADDITIONS
-─────────────────────────────────────────────────────────────────────
-src/domain/          (pure math, untouched) ← No v1.1 domain changes
-src/hooks/
-  useSessionEngine   (untouched)
-  useAudioCues       (timbre ref injection)  ← CUST-02
-  useWakeLock        (untouched)
-  usePrefersReducedMotion (untouched)
-src/components/
-  BreathingShape     (variant dispatch)      ← CUST-03 + inner-ring fix [2026-05-12 update] The "inner-ring fix" is reduced-motion suppression in theme.css only; no BreathingShape.tsx edit. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01.
-  SettingsForm       (unchanged)
-  + NEW: SettingsDialog                     ← new: customization UI surface
-src/audio/
-  cueSynth           (new timbre presets)    ← CUST-02
-  audioEngine        (timbre plumbing)       ← CUST-02
-src/content/
-  learnContent       (section-keyed, unchanged for v1.1)
-  + NEW: uiStrings                          ← I18N-01
-src/storage/
-  storage            (prefs?: unknown field) ← additive envelope change
-  settings           (unchanged)
-  stats              (unchanged)
-  + NEW: prefs                              ← CUST-01/02/03/I18N-01
-src/styles/
-  theme.css          (new theme blocks)      ← CUST-01
-src/app/
-  App                (prefs wiring)          ← CUST-01/02/03/I18N-01
-```
-
-## Feature-by-Feature Integration Points
-
-### Warm-up: Inner-Ring UX Symmetry
-
-Issue B carry-forward from Phase 5.1: the outer ring appears at `MAX_SCALE` as the "In phase arrival" visual cue, but the inner ring appears throughout the Out phase rather than appearing precisely at `MIN_SCALE` (the Out-phase arrival point). The fix is contained entirely in `src/components/BreathingShape.tsx`.
-
-**Files touched:**
-- `src/components/BreathingShape.tsx` — adjust inner-ring rendering or positioning so the ring appearance coincides with orb edge reaching `MIN_SCALE`
-- `src/styles/theme.css` — possibly adjust `.orb-ring--inner` CSS rule if the fix requires a timing or opacity change
-
-**What to preserve:**
-- `[data-phase='out'] .orb-ring--inner { opacity: 1 }` CSS gate must remain (or equivalent)
-- `BreathingShapeLeadIn` must mirror any `BreathingShapeBody` change per the existing D-22 invariant
-- The `left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2` centering pattern (WR-03 — spec-safe across older Safari)
-
-**Risk:** LOW — isolated to one component, no hook or domain changes.
-
-[2026-05-12 update] Issue B was reduced-motion-only in actual user UAT (2026-05-12); normal-motion inner-ring behavior is correct as-is. Fix is one CSS rule in `theme.css` `@media (prefers-reduced-motion: reduce)`, not BreathingShape.tsx. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01 / D-03.
-
----
-
-### CUST-01: Theme System
-
-**Approach:** Tailwind v4 `@theme` block per-theme override inside `src/styles/theme.css` plus a `data-theme` attribute on `<html>`. No external theme-provider library. This is the natural extension of the existing token system — the `@theme {}` block already defines all visual tokens, and `[data-theme='dark'] { ... }` blocks rebind them.
-
-**Why `data-theme` attribute over class-based or React Context:**
-- The existing `@theme {}` block is a single-root token definition. `[data-theme='dark']` selector overrides slot cleanly into the existing CSS structure.
-- Attribute lives on `<html>` and all CSS consumers inherit it automatically — zero React re-renders for visual token changes.
-- Tailwind v4 is CSS-first (no `tailwind.config.js` in this project) and CSS custom property inheritance is native.
-
-**Files touched:**
-- `src/styles/theme.css` — add `[data-theme='dark'] { ... }` blocks (and any additional named themes) that rebind `--color-breathing-bg`, `--color-breathing-accent`, `--color-orb-*`, `--color-ring-*` tokens
-- `src/storage/prefs.ts` (NEW) — `loadPrefs`, `savePrefs`, `coercePrefs`
-- `src/storage/storage.ts` — `Envelope` interface gets `prefs?: unknown` field
-- `src/app/App.tsx` — read `loadPrefs()` at mount; set `document.documentElement.dataset.theme` reactively on prefs change; write `savePrefs()` on change
-- `src/components/SettingsDialog.tsx` (NEW) — theme picker
-- `src/components/BreathingShape.tsx` — zero changes; already reads from CSS variables exclusively
-
-**No changes to:** `src/domain/`, `src/hooks/`, `src/audio/`, `src/content/`
-
----
-
-### CUST-02: Audio Timbre System
-
-**Approach:** Extend `cueSynth.ts` with timbre-dispatch functions above the existing `scheduleInCue`/`scheduleOutCue`/`scheduleTick`. The existing functions are preserved unchanged — the dispatch layer adds a selection indirection keyed by `TimbreId`.
-
-**Files touched:**
-- `src/audio/cueSynth.ts` — add `scheduleInCueForTimbre(timbre: TimbreId, audioCtx, when, destination, phaseDurationSec?)` and `scheduleOutCueForTimbre` dispatch functions. Bowl (`'bowl'`) routes to existing `scheduleInCue`/`scheduleOutCue`. A new `'chime'` timbre uses a simpler sine wave with a shorter decay. `'none'` returns a synthetic no-op `CueHandle` with a past `cleanupAt`.
-- `src/audio/audioEngine.ts` — `createAudioEngine` receives a `timbre: TimbreId` option (default `'bowl'`). `scheduleLeadIn` and `scheduleNextCue` forward the timbre to cueSynth dispatch.
-- `src/hooks/useAudioCues.ts` — add `timbreRef = useRef<TimbreId>('bowl')` alongside `mutedRef`. Thread timbre through `start(plan, timbre)` and replay `timbreRef.current` in `reconstructEngine` (same pattern as `mutedRef`).
-- `src/app/App.tsx` — pass `prefs.timbre` to `audio.start(plan, prefs.timbre)` in `onStartClick`.
-
-**Mid-session timbre change contract:**
-Timbre is fixed at session start — do not allow live switching. Reasons: switching mid-session would require either AudioContext reconstruction (breaks dual-anchor, forces a new lead-in) or parallel audio graphs (unjustified complexity). The UX contract: disable the timbre picker in SettingsDialog while `inSessionView` is true (same pattern as BPM/ratio inputs in `SettingsForm`). The preference is stored immediately so the user can see the selection; it applies on the next `audio.start()`.
-
-**Reconstruction contract:** `reconstructEngine` in `useAudioCues.ts` currently captures `mutedRef.current` synchronously before any `await`. Add the same capture for `timbreRef.current`:
-```typescript
-const currentTimbre = timbreRef.current  // captured before any await
-// ...
-newEngine = await createAudioEngine({ timbre: currentTimbre, onStateChange: handleStateChange })
-```
-This ensures the reconstructed engine uses the session's original timbre, not any prefs change the user may have made since session start.
-
-**CueHandle contract is unchanged:** All timbres return `{ envelope, scheduledAt, cleanupAt }`. The `'none'` timbre returns a synthetic handle with `cleanupAt = when - 1` (immediately expired, pruned on first `pruneExpiredCues` call).
-
----
-
-### CUST-03: Visual Variant System
-
-**Approach:** `BreathingShape` dispatches to a variant component based on a new `variant` prop. All variants receive the same `SessionFrame` contract — no variant owns its own timing.
-
-**Files touched:**
-- `src/components/BreathingShape.tsx` — top-level `BreathingShape` receives `variant: VisualVariantId` prop (defaulting to `'orb'`) and dispatches to `BreathingShapeOrb` (current `BreathingShapeBody`, renamed) or new variant components. `BreathingShapeLeadIn` is shared across all variants (or each variant provides its own lead-in sub-component for the lead-in digit case).
-- `src/app/App.tsx` — pass `prefs.variant` to `<BreathingShape variant={prefs.variant} ... />`
-
-**Invariant — no variant owns timing:** All variants MUST derive their animation from `frame.phaseProgress` passed as a prop or CSS custom property. CSS animations on a variant are only for decorative effects (shimmer, color pulse) that do not need to be phase-accurate; phase-accurate motion is always JS-driven via the `liveFrame` rAF loop. This prevents the "multiple competing timers" anti-pattern.
-
-**`usePrefersReducedMotion` hook:** Each animated variant subscribes to this hook per the existing pattern. The hook mounts only when there is an active frame, so subscription cost is proportional to usage.
-
-**CSS tokens:** Variants read from the same `--color-orb-*` / `--color-ring-*` tokens in `theme.css`. New variant-specific tokens go in the same `@theme {}` block — no separate CSS files.
-
-**No hook changes:** `useSessionEngine`, `useAudioCues`, `useWakeLock` are untouched.
-
----
-
-### I18N-01: Language Switching
-
-**Approach:** Add `src/content/uiStrings.ts` parallel to `learnContent.ts`. The `learnContent.ts` section-keyed shape (already I18N-ready per v1.0 D-12) is the model: a locale-keyed record of typed string objects.
-
-**Files touched:**
-- `src/content/uiStrings.ts` (NEW) — `UI_STRINGS` record keyed by `LocaleId`. Covers: button labels, dialog copy, stats labels, settings labels, disclaimer text, aria labels.
-- `src/content/learnContent.ts` — no changes for v1.1 (English-only; locale-keying is deferred until a second locale lands).
-- `src/components/` — components receive string props or a locale-strings slice from App
-- `src/app/App.tsx` — selects `UI_STRINGS[prefs.locale]` and passes string objects to children
-
-**RTL deferred:** The `dir` attribute on `<html>` is the extension point. No RTL layout changes in v1.1.
-
-**No runtime i18n framework at v1.1:** At English-plus-one-locale stage, the typed record pattern from `learnContent.ts` is sufficient and zero-overhead. Add a framework (e.g., `react-i18next`) when locale count exceeds ~3 or pluralization/interpolation becomes needed. The typed-record call sites (`strings.button.start`) migrate to `t('button.start')` mechanically.
-
-**Prop-drilling vs Context:** Prop-drill the locale strings from App for v1.1. A `LocaleContext` is appropriate when 3+ deep component trees need access; at v1.1 scope most string consumers are direct children of App or one level down.
-
----
-
-### Settings UI Surface (SettingsDialog)
-
-All four CUST/I18N features need a user-accessible UI. The v1.0.1 dialog pattern is clone-not-extract (`native <dialog>` + `modal-fade` class). `SettingsDialog` follows this pattern exactly.
-
-**Files touched:**
-- `src/components/SettingsDialog.tsx` (NEW) — native `<dialog>` with `modal-fade`; contains theme picker, timbre picker, variant picker, locale picker; `onClose` callback pattern identical to `LearnDialog`
-- `src/app/App.tsx` — adds `settingsDialogOpen` state, `onSettingsClick`/`onSettingsClose` handlers; renders `<SettingsDialog prefs={prefs} onPrefsChange={setPrefs} open={...} onClose={...} />`; settings anchor disabled during `inSessionView` per D-03 disable-not-hide contract
-- A settings trigger button or icon in the UI, positioned analogously to `LearnAnchor`
-
-**During-session behavior:** SettingsDialog is disabled/hidden during `inSessionView`. Theme and locale changes apply immediately (CSS attr swap, string swap — no session-lifecycle dependency). Timbre and variant changes are stored immediately but the picker controls show a "applies next session" annotation or are disabled while running.
-
----
-
-## Prefs Data Model
-
-All four features share one prefs object stored as the `prefs` subtree of the existing envelope. One read, one write, one coercer, one type.
-
-```typescript
-// src/storage/prefs.ts
-
-export type ThemeId = 'default' | 'dark'          // expand as themes land
-export type TimbreId = 'bowl' | 'chime' | 'none'
-export type VisualVariantId = 'orb' | 'ring-pulse' | 'minimal'
-export type LocaleId = 'en'                        // expand per I18N-01
-
-export interface UserPrefs {
-  theme: ThemeId
-  timbre: TimbreId
-  variant: VisualVariantId
-  locale: LocaleId
-}
-
-export const DEFAULT_PREFS: UserPrefs = {
-  theme: 'default',
-  timbre: 'bowl',
-  variant: 'orb',
-  locale: 'en',
-}
-```
-
-## Envelope Schema Strategy
-
-**No STATE_KEY or STATE_VERSION bump needed for v1.1.**
-
-The existing D-01 spread-then-override in `readEnvelope` preserves unknown top-level fields:
-
-```typescript
-return { ...p, version: onDiskVersion }
-```
-
-Adding `prefs?: unknown` to the `Envelope` TypeScript interface is sufficient. The runtime already round-trips unknown fields. The write path stamps `STATE_VERSION = 1` on every write — the prefs subtree is carried along transparently.
-
-**Backward compatibility (v1.0.1 client reads v1.1 envelope):** The v1.0.1 `coerceSettings`/`coerceMute`/`coerceStats` only look at their respective subtrees; `prefs` is silently ignored. Settings and stats survive intact.
-
-**Forward compatibility (v1.1 client reads v1.0.1 envelope):** `prefs` is absent, so `coercePrefs(undefined)` returns `DEFAULT_PREFS`. No migration needed.
-
-**Acceptable risk:** If a v1.0.1 browser overwrites a v1.1-written envelope, the `prefs` subtree is dropped (the v1.0.1 write path does not carry `prefs`). This is acceptable for v1.1: prefs are preferences (non-critical), and the next v1.1 read reconstructs from `DEFAULT_PREFS`.
-
-**Anti-pattern to avoid:** Do NOT store prefs under a separate localStorage key (e.g., `hrv:prefs:v1`). That bypasses the STORAGE-01/02 forward-compat and refuse-downgrade guards, and the STORAGE-03 cross-tab listener only filters on `STATE_KEY`.
-
-**If a future v1.2 feature requires a non-additive schema change** (e.g., renaming a prefs key), bump `STATE_VERSION` then and add migration logic in `readEnvelope` per the WR-05 dual-versioning convention documented in `storage.ts`.
-
-## System Overview — v1.1 Architecture
+### Existing layer model (unchanged by v1.3)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                          UI Layer                                │
-│  BreathingShape(variant)   SettingsDialog   LearnDialog/others  │
-│  driven by liveFrame       prefs pickers    (unchanged v1.0)    │
-├─────────────────────────────────────────────────────────────────┤
-│                       App.tsx (orchestrator)                    │
-│  session + audio + prefs + dialog state                         │
-│  document.documentElement.dataset.theme = prefs.theme           │
-│  UI_STRINGS[prefs.locale] → passed to children                 │
-├─────────────────────────────────────────────────────────────────┤
-│                    Hooks Layer                                   │
-│  useSessionEngine    useAudioCues(timbre)    useWakeLock         │
-│  (unchanged)         timbreRef added         (unchanged)        │
-├─────────────────────────────────────────────────────────────────┤
-│                    Audio Layer                                   │
-│  cueSynth: scheduleInCueForTimbre / scheduleOutCueForTimbre     │
-│  audioEngine: createAudioEngine({ timbre, onStateChange })      │
-├─────────────────────────────────────────────────────────────────┤
-│              Domain Layer (UNTOUCHED)                           │
-│  breathingPlan  sessionMath  sessionController  settings        │
-├─────────────────────────────────────────────────────────────────┤
-│                   Storage Layer                                  │
-│  storage.ts: Envelope { version, settings?, mute?, stats?,      │
-│              prefs? }   ← prefs?: unknown field added           │
-│  prefs.ts (NEW): UserPrefs, coercePrefs, loadPrefs, savePrefs  │
-│  settings.ts  stats.ts  format.ts  (unchanged)                 │
-├─────────────────────────────────────────────────────────────────┤
-│              Content + Style Layer                              │
-│  theme.css: @theme {} + [data-theme='dark'] {} blocks          │
-│  uiStrings.ts (NEW): UI_STRINGS[locale]                        │
-│  learnContent.ts (unchanged for v1.1)                          │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  src/app/         App.tsx shell — owns state, wires hooks→components   │
+├──────────────────────────────────────────────────────────────────────┤
+│  src/components/  Presentational. SettingsDialog hosts 4 pickers.      │
+│                   BreathingShape → OrbShape/SquareShape/DiamondShape   │
+│                   render the in-orb In/Out label. LearnDialog.         │
+├──────────────────────────────────────────────────────────────────────┤
+│  src/hooks/       Adapters. useXChoice (picker write-path) +           │
+│                   useX orchestrator (App-side live state + sync).      │
+├──────────────────────────────────────────────────────────────────────┤
+│  src/domain/      Pure modules. settings.ts: isValid*/coerce*,         │
+│                   *_OPTIONS, DEFAULT_*, type unions.                   │
+├──────────────────────────────────────────────────────────────────────┤
+│  src/content/     i18n catalogs. strings.ts (UI_STRINGS),              │
+│                   learnContent.ts (LEARN_CONTENT), lockedCopy.ts.      │
+├──────────────────────────────────────────────────────────────────────┤
+│  src/storage/     localStorage envelope. prefs.ts: UserPrefs +         │
+│                   coercePrefs + loadPrefs/savePrefs.                   │
+├──────────────────────────────────────────────────────────────────────┤
+│  index.html       Pre-paint inline scripts (theme FOUC + favicon).     │
+│                   %BASE_URL% substitution, Vite base='/hrv/'.          │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Data Flow Changes
+### Where each v1.3 feature touches the model
 
-### Prefs Load/Save Flow
+| Feature | Layers touched | New files | Modified files |
+|---------|----------------|-----------|----------------|
+| 1. LICENSE + README | repo root only | `LICENSE` | `README.md` |
+| 2. Forrest native-app links | content + components | none | `learnContent.ts`, `strings.ts` (maybe), `LearnDialog.tsx` |
+| 3. Labels-vs-icons toggle | domain + storage + hooks + components + content | `useIndicatorChoice.ts`, `useIndicator.ts`, `IndicatorPicker.tsx` (+ 3 tests) | `settings.ts`, `prefs.ts`, `SettingsDialog.tsx`, `strings.ts`, `OrbShape.tsx`, `SquareShape.tsx`, `DiamondShape.tsx`, `BreathingShape.tsx`, `App.tsx` |
+| 4. PT-BR review | content only | none | `learnContent.ts`, `strings.ts` |
+| 5. PWA install | build config + html + hooks/app + assets | `manifest` (plugin-generated), maskable + apple-touch icons, optional `useServiceWorker.ts` | `vite.config.ts`, `index.html`, `main.tsx`, `package.json` |
+
+## Per-Feature Integration
+
+### Feature 1 — LICENSE + README (smallest blast radius)
+
+**Integration surface:** repo root only. Zero app-architecture impact — confirmed.
+
+- `LICENSE`: new repo-root file. Not bundled, not copied into `public/`, not referenced by code.
+- `README.md` already exists (7.1 KB, last touched v1.0). Update is prose only.
+- No `src/` change, no test change, no build-graph change. The green-gate
+  (`tsc && lint && build && test`) is unaffected — this phase passes trivially.
+
+**Risk:** none. The only judgement call is license choice (MIT is the conventional
+default for a local-only, no-backend webapp; defer the actual choice to the operator).
+
+### Feature 2 — Forrest native-app links (Learn surface)
+
+**Integration surface:** `src/content/learnContent.ts` + `src/components/LearnDialog.tsx` (+ `strings.ts` only if a new sub-section heading is wanted).
+
+The Learn surface already has a structured link model. `LearnContent.links` is a
+fixed-key object (`youtubeChannel`, `website`, `book`, `patreon`, `heroVideo`,
+`keyVideos[]`). Each `LearnLink` is `{ label, url }`. The new Resonant Breathing
+iPhone + Android app-store links are **two new keys** in that object.
+
+**Steps:**
+1. `learnContent.ts` — add two `LearnLink` keys (e.g. `iosApp`, `androidApp`) to the
+   `LearnContent.links` interface and to **both** the `en` and `pt-BR` catalogs.
+   The `satisfies Readonly<Record<LocaleId, LearnContent>>` typing makes a
+   missing-locale or missing-key omission a compile error — both locales must land
+   together.
+2. `LearnDialog.tsx` — add two `<a>` elements following the verbatim existing link
+   pattern (`target="_blank" rel="noopener noreferrer"`, `min-h-[44px]` hit area,
+   token-bound focus ring, `text-[var(--color-breathing-accent)]`). Likely in the
+   "Forrest Knutson Resources" sub-section alongside `youtubeChannel`/`website`/
+   `book`/`patreon`, or a new sub-section if the operator wants visual separation.
+   The D-12 link-order comment block in `LearnDialog.tsx` must be amended to record
+   the new keys.
+3. `strings.ts` — only needed if the new links sit in a *new* titled sub-section.
+   `UiStrings['learn']` currently has `resourcesHeading` + `videosHeading`. If the
+   app links join the existing Resources section, no `strings.ts` change is needed.
+
+**Locked-copy vs translatable — the answer:**
+- App-store **URLs** are NOT copy at all — they are `url` fields, identical across
+  locales (the existing `youtubeChannel.url` is byte-identical in `en` and `pt-BR`).
+- App-store **labels** ("Resonant Breathing for iPhone" etc.) are **translatable**,
+  NOT locked copy. `lockedCopy.ts` deliberately holds only the 3 D-12 claim-safe
+  entries (`inspiredByForrest`, `medicalAdviceLine`, `affiliationLine`) — "smallest
+  blast radius" is an explicit D-03 decision. App-store link labels carry no
+  medical/affiliation claim, so they belong in `learnContent.ts.links`, with a
+  `// TODO: native-speaker review` marker on the `pt-BR` label (same convention as
+  every other translatable string). They feed into Feature 4's review count.
+- Precedent for the alternative: the existing `keyVideos` labels are kept in English
+  with an explicit "Video title kept in English — no PT-BR title available" comment.
+  App names *can* follow that posture if the operator prefers — but app-store
+  listings are localized by the stores themselves, so a translated `pt-BR` label is
+  the better default.
+
+**Guardrail:** the `lockedCopy.test.ts` substring-absence guard asserts the locked
+Forrest phrase never appears inside `forrest.body`. New app links do not interact
+with that guard — keep the new keys out of `lockedCopy.ts` entirely.
+
+### Feature 3 — Labels-vs-icons toggle (the 5th SettingsDialog picker)
+
+This is a verbatim sibling-clone of the existing 4-picker pattern. The cleanest
+template to clone is **Variant** (the most recent picker, Phase 17) — but with one
+critical divergence on the capture-at-start question (see below).
+
+**Picker anatomy (the 4 existing pickers, for reference):**
+
+| Layer | Theme | Variant | Timbre | Language |
+|-------|-------|---------|--------|----------|
+| domain type/enum/validator/default | `ThemeId` / `isValidTheme` / `DEFAULT_THEME` | `VisualVariantId` / `isValidVariant` / `DEFAULT_VARIANT` | `TimbreId` / `isValidTimbre` / `DEFAULT_TIMBRE` | `LocaleId` / `isValidLocale` / `DEFAULT_LOCALE` |
+| `prefs` field + coercer | `theme` / `coerceTheme` | `variant` / `coerceVariant` | `timbre` / `coerceTimbre` | `locale` / `coerceLocale` |
+| picker-side write hook | `useThemeChoice` | `useVariantChoice` | `useTimbreChoice` | `useLocaleChoice` |
+| App-side orchestrator hook | `useTheme` | `useVisualVariant` | (`timbreRef` lives in `useAudioCues`) | `useLocale` |
+| component | `ThemePicker` | `VariantPicker` | `TimbrePicker` | `LanguagePicker` |
+| live-swap vs capture-at-start | **live** | **capture-at-Start** | **capture-at-Start** | **live** |
+
+**Sibling-clone steps for the new `indicator` picker** (suggested type
+`IndicatorStyle = 'labels' | 'icons'`):
+
+1. **`src/domain/settings.ts`** — add the enum surface, mirroring the
+   `VisualVariantId` block exactly:
+   ```ts
+   export type IndicatorStyle = 'labels' | 'icons'
+   export const INDICATOR_OPTIONS = ['labels', 'icons'] as const satisfies readonly IndicatorStyle[]
+   export function isValidIndicator(v: unknown): v is IndicatorStyle {
+     return typeof v === 'string' && (INDICATOR_OPTIONS as readonly string[]).includes(v)
+   }
+   export const DEFAULT_INDICATOR: IndicatorStyle = 'labels'  // current behavior = text labels
+   ```
+   `DEFAULT_INDICATOR = 'labels'` preserves today's exact rendering for every user
+   who never opens SettingsDialog (zero-regression — same posture as Timbre's
+   `bowl` default being byte-identical).
+
+2. **`src/storage/prefs.ts`** — add `indicator` to the `UserPrefs` interface, to
+   `DEFAULT_PREFS`, add a `coerceIndicator` (clone `coerceVariant`), and add
+   `indicator: coerceIndicator(r.indicator)` to `coercePrefs`. **No `STATE_VERSION`
+   bump** — the forward-compat spread-then-override read + refuse-downgrade write
+   contract (Phase 8 D-01/D-04a) handles a new prefs field automatically; old
+   envelopes coerce the missing field to `DEFAULT_INDICATOR` on read. This is the
+   same no-bump path v1.2 stretch settings used.
+
+3. **`src/hooks/useIndicatorChoice.ts`** (NEW) — clone `useVariantChoice.ts`
+   verbatim. Returns `{ indicator, setIndicator }`. The setter does the 4-step
+   write: fresh `loadPrefs()` → `savePrefs({ ...current, indicator: next })` →
+   `setIndicatorState(next)` → `dispatchEvent(new CustomEvent('hrv:prefs-changed',
+   { detail: { key: 'indicator', value: next } }))`. The `'hrv:prefs-changed'`
+   event name and `{ key, value }` detail shape are reused as-is (D-22 — one event,
+   N filtered consumers).
+
+4. **`src/hooks/useIndicator.ts`** (NEW) — clone `useVisualVariant.ts` verbatim
+   (the variant orchestrator, NOT `useTheme` — there is no global DOM attribute to
+   write, the indicator is render-local). Two effects: cross-tab `storage` listener
+   filtered on `STATE_KEY`, and same-tab `hrv:prefs-changed` listener filtered on
+   `detail.key === 'indicator' || detail.key === undefined`.
+
+5. **`src/components/IndicatorPicker.tsx`** (NEW) — clone `VariantPicker.tsx`. A
+   2-column `grid` radiogroup (`grid-cols-2`, vs Variant's `grid-cols-3`) over
+   `INDICATOR_OPTIONS`. Each option button can show a tiny preview swatch
+   ("In" text vs a ↑ arrow glyph) above the label, matching VariantPicker's
+   swatch-above-label layout. Props contract is the Phase 15 D-02 standard:
+   `{ disabled, strings, sectionLabel }` — no `value` prop. State + write path come
+   from `useIndicatorChoice()`.
+
+6. **`src/components/SettingsDialog.tsx`** — add `<IndicatorPicker disabled={inSessionView}
+   strings={strings.indicators} sectionLabel={strings.settings.indicatorLabel} />`.
+   The D-10 picker-order comment must be amended. Decide placement: most natural is
+   Variant → Indicator adjacency (both govern the breathing-shape visual). Also
+   widen `SettingsDialogProps.strings` from
+   `Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'timbres'>` to include
+   `'indicators'`.
+
+7. **`src/content/strings.ts`** — add `indicatorLabel` to the `settings` sub-object,
+   add a new `indicators: { labels: string; icons: string }` sub-object to the
+   `UiStrings` interface, and supply `en` + `pt-BR` values. PT-BR values carry the
+   `// TODO: native-speaker review` marker (feeds Feature 4).
+
+8. **Consumer change — the in-orb In/Out render path.** The component that switches
+   text vs arrow-icon is **`OrbShape.tsx`** (inner function `OrbBody`), and
+   identically **`SquareShape.tsx`** and **`DiamondShape.tsx`** — all 3 sibling
+   shapes render their own In/Out label independently (verified: each takes the same
+   `frame`/`leadInDigit`/`strings` props from the `BreathingShape` dispatcher). The
+   exact render site in `OrbShape.tsx` is the final `<span>` (lines ~122–133):
+   `phaseLabel` is computed as `frame.phase === 'in' ? strings.inhale : strings.exhale`
+   and rendered inside a `text-5xl/text-6xl` span. With the toggle, that span renders
+   either the text label (current) or an arrow icon (↑ for In / ↓ for Out, or an
+   inline SVG arrow).
+   The `aria-label` on the shape root (`${strings.breathingShapeAriaLabel}:
+   ${phaseLabel}`) must keep using the **text** `phaseLabel` regardless of the
+   toggle, so assistive tech is unaffected — the icon is a visual swap only.
+   `OrbLeadIn` (the 3-2-1 countdown) is unaffected — it renders a digit, not an
+   In/Out label.
+
+9. **`src/components/BreathingShape.tsx`** — the dispatcher. Add an
+   `indicator?: IndicatorStyle` prop to `BreathingShapeProps` (optional with default
+   `'labels'`, mirroring how `variant?` defaults to `'orb'`), and pass it through the
+   `switch` to all 3 shapes. Each shape adds `indicator` to its props interface and
+   branches the label span.
+
+10. **`src/app/App.tsx`** — wire it. Two parts:
+    - Call `const { indicator: liveIndicator } = useIndicator()` next to
+      `useVisualVariant()` (~line 170).
+    - Pass it to `<BreathingShape>` (~line 669).
+
+**Capture-at-session-start vs live-swappable — the decision (#3 explicit ask):**
+
+Variant and Timbre are captured-at-start because mid-session change would be
+*disruptive to the practice* (the orb shape morphing, or a cue timbre changing,
+mid-breath). Theme and Language are live because they are chrome, not the breathing
+guide itself.
+
+The labels-vs-icons indicator is a **borderline case** but the recommendation is
+**live-swappable** (clone `useVisualVariant`, NOT a `sessionIndicatorRef`):
+- It is purely a glyph swap inside the label span — no geometry change, no audio
+  re-anchor, no animation interruption. A user toggling it mid-session sees the word
+  "In" become "↑" with zero disruption to timing.
+- SettingsDialog is **disabled during a session anyway** (`inSessionView` →
+  `disabled` on every picker). A mid-session swap is therefore not reachable through
+  the normal UI; live vs captured only differs for the cross-tab case (another tab
+  changing the pref), where live is strictly better UX.
+- Live is also **less code**: no `sessionIndicatorRef`/`setSessionIndicator` pair in
+  App.tsx, no capture site in `onStartClick`, no clear site in the leave-running
+  effect. App.tsx passes `liveIndicator` straight to `<BreathingShape>`.
+
+If the operator instead wants strict consistency with the other shape dimension
+(Variant), capture-at-start is a small additional step: add a
+`sessionIndicatorRef`/`setSessionIndicator` pair and `indicator={sessionIndicator
+?? liveIndicator}` exactly as `sessionVariant ?? liveVariant` does today (App.tsx
+line 670). **Default recommendation: live.** Flag this as a one-line operator
+decision at planning.
+
+### Feature 4 — PT-BR native-speaker review
+
+**Integration surface:** `src/content/strings.ts` (81 markers today) +
+`src/content/learnContent.ts` (10 markers today) — 91 total. (PROJECT.md cites 76
+from v1.1 close; the count grew because v1.2 added stretch strings, and Features 2 +
+3 will add a few more before this phase runs.) Edits are **confined to the `pt-BR`
+slices of the two catalogs**.
+
+**Guardrails that MUST stay intact:**
+1. **Frozen-EN `LOCKED_COPY` byte-equality guard** — `lockedCopy.test.ts` asserts
+   the 3 EN locked strings byte-exact via `.toBe()`. The reviewer must NOT touch
+   `lockedCopy.ts` `en` values. The `pt-BR` locked entries *can* be reviewed, but
+   they carry `// LOCKED: back-translation = ...` comments and must keep
+   back-translation parity — change them only with deliberate intent, and update the
+   back-translation comment to match.
+2. **Substring-absence guard** — `lockedCopy.test.ts` asserts the locked
+   `inspiredByForrest` phrase never appears verbatim inside `forrest.body` for any
+   locale. A reviewer rewording the `pt-BR` `forrest.body` must not accidentally
+   reintroduce the exact locked phrase string.
+3. **Em-dash guard** — `lockedCopy.test.ts` asserts `pt-BR.medicalAdviceLine`
+   contains U+2014. Keep the em-dash if that line is reviewed.
+4. **Template-function entries** — several `pt-BR` strings are functions
+   (`leadInAriaLabel: (d) => ...`, stepper labels). The reviewer edits the string
+   *body*, not the function signature — `strings.test.ts` + `tsc` enforce the shape.
+5. **`Record<LocaleId, ...> satisfies` typing** — every catalog is
+   `satisfies Readonly<Record<LocaleId, ...>>`. A missing or extra key is a compile
+   error. The reviewer must not add/remove keys, only change `pt-BR` string values.
+6. **Marker removal as done-signal** — once a string is reviewed, its
+   `// TODO: native-speaker review` comment is deleted. A grep for the marker in
+   `src/content/` reaching zero is the phase's done-signal. Keep the "Video title
+   kept in English" comments (intentional non-translations, not pending reviews).
+
+This phase touches no logic, no component, no test assertion values (only string
+contents that tests may snapshot — re-check `strings.test.ts` if it asserts any
+`pt-BR` literal before editing).
+
+### Feature 5 — PWA install (full offline)
+
+**Integration surface (the 5-point map):**
 
 ```
-App mount
+┌─ vite.config.ts ──── VitePWA() plugin added to plugins[] (build-time devDep)
+├─ index.html ─────── manifest link + apple-touch-icon link + theme-color meta
+│                      (plugin can inject most; explicit is clearer in this repo)
+├─ SW registration ── plugin's virtual `registerSW` called once at app bootstrap
+│                      (main.tsx) — NOT a stateful hook unless an
+│                      update-available toast is wanted
+├─ manifest ───────── start_url + scope + icons + display + theme_color
+├─ public/ assets ─── maskable 192/512 icons + apple-touch-icon 180×180
+└─ precache ───────── Workbox generateSW precaches the entire built bundle
+```
+
+**Recommendation: use `vite-plugin-pwa` (v1.3.0) in `generateSW` mode**, not a
+hand-rolled service worker. v1.3.0 (released 2026-05-05) declares `vite ^8.0.0` in
+peer deps, so it is compatible with this repo's Vite 8.0.10. It is a **build-time
+devDependency only** — the zero-net-new-*runtime*-deps invariant holds (PROJECT.md
+already flags this exact allowance). A hand-rolled SW is more code, more pitfalls
+(cache versioning, precache-manifest hashing), and buys nothing here.
+
+**1. `vite.config.ts`** — add `VitePWA({ ... })` to `plugins[]`:
+- `registerType: 'autoUpdate'` — no in-app update prompt; the app is a single
+  breathing screen, so silent update on next load is the calm choice.
+- `workbox: { globPatterns: ['**/*.{js,css,html,svg}'] }` — precache the whole
+  built bundle. There is **no backend and nothing dynamic to cache** (settings live
+  in localStorage, audio is synthesized at runtime via Web Audio, never fetched).
+  Precache-everything = full offline session use, which is the PWA-01 goal.
+- Keep the `test` config block untouched — vitest config is in the same file; the
+  PWA plugin must not run during tests (it is inert under vitest by default).
+
+**2. `index.html`** — the plugin can auto-inject the manifest link, but this repo's
+`index.html` already hand-manages `<link rel="icon">` and pre-paint scripts, so be
+explicit and consistent:
+- `<link rel="manifest" href="%BASE_URL%manifest.webmanifest" />` — use
+  `%BASE_URL%` so it survives the Vite `base` (Phase 12 D-04 precedent).
+- `<link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />` — iOS
+  ignores the manifest `icons` for the home-screen icon; it needs this explicit tag.
+- `<meta name="theme-color" content="..." />` — for the browser UI chrome color.
+  Note this is a *static* meta; the existing per-theme favicon system is dynamic —
+  see the icon-strategy decision below for how the two reconcile.
+
+**3. Service-worker registration** — `vite-plugin-pwa` exposes a virtual module
+`virtual:pwa-register`. Call `registerSW({ immediate: true })` **once** in
+`src/main.tsx` at app bootstrap. With `registerType: 'autoUpdate'` there is no
+update state to surface, so **no new hook is needed** — a `useServiceWorker` hook is
+only justified if the operator wants an "update available / reload" toast, which
+contradicts the calm-UI principle. Recommendation: register in `main.tsx`, no hook.
+
+**4. Manifest `start_url` / `scope` vs Vite `base`** — this is the critical PWA
+gotcha. The app is served under `base: '/hrv/'`. The manifest MUST agree:
+- `start_url`: `'/hrv/'` or relative `'./'` (relative resolves against the
+  manifest's own location — the safer choice, avoids hardcoding the base).
+- `scope`: `'/hrv/'` or `'./'`.
+- If `start_url`/`scope` omit the `/hrv/` prefix, the installed PWA opens at `/`
+  (404 / wrong app) and the SW scope will not cover the app. `vite-plugin-pwa`
+  derives these from Vite `base` automatically when not overridden —
+  **prefer letting the plugin derive them** rather than hardcoding, so a future
+  `base` change (the exact scenario Phase 12 D-04 guards against) stays correct.
+
+**5. Icon strategy vs the existing 5-palette favicon system** — decision required:
+- The existing favicon is **dynamic**: a per-theme inline SVG data-URI swapped at
+  runtime by `useFavicon` + the pre-paint `index.html` script, sourced from
+  `faviconPalette.ts` (5 accent colors). This is a `<link rel="icon">` mechanism.
+- PWA install icons (`manifest.icons`, `apple-touch-icon`) are **static** — the OS
+  reads them once at install time and never re-reads them. They **cannot** be
+  per-theme. The home-screen icon is frozen at install.
+- **Recommendation: ONE neutral install icon set**, not per-theme. Generate a
+  192×192 + 512×512 maskable PNG (and a 180×180 apple-touch-icon) from a single
+  brand-neutral version of the orb mark — pick one palette accent (the `light` theme
+  `#5e81ac` is the natural default, matching the favicon fallback) or a
+  theme-agnostic neutral. Maskable icons need ~20% safe-zone padding so Android's
+  adaptive-icon mask does not clip the orb. These are static files in `public/`.
+- This means the app has **two icon systems coexisting**: the dynamic per-theme
+  favicon (browser tab, unchanged) and the static PWA install icon set (home
+  screen, new). They do not conflict — different `<link>` rels, different lifecycle.
+  Document this split so a future contributor does not try to "unify" them.
+- Maskable PNGs cannot be inline SVG data-URIs — they must be real files. This is
+  the only new binary-asset class v1.3 introduces (`public/` currently holds one
+  `favicon.svg`).
+
+**Precache / data-flow:** nothing dynamic. No backend, no API, no fetched audio.
+Workbox `generateSW` precaches the hashed built bundle (`*.js/css/html/svg`); the SW
+serves it cache-first on repeat visits → full offline session use. localStorage
+(settings, stats, prefs) is independent of the SW and already works offline.
+
+**Testing note:** the PWA plugin is build-only and inert under vitest — the existing
+839 tests are unaffected. A manual UAT (install prompt, offline reload, icon on home
+screen) is the right verification, mirroring the v1.0 wake-lock manual-UAT
+precedent. A Lighthouse PWA audit is a useful done-check.
+
+## Recommended Project Structure
+
+No new folders. v1.3 adds files into existing layer folders:
+
+```
+src/
+├── domain/settings.ts         # + IndicatorStyle enum surface (Feature 3)
+├── storage/prefs.ts           # + indicator field + coerceIndicator (Feature 3)
+├── hooks/
+│   ├── useIndicatorChoice.ts  # NEW — picker write hook (clone useVariantChoice)
+│   └── useIndicator.ts        # NEW — App-side orchestrator (clone useVisualVariant)
+├── components/
+│   └── IndicatorPicker.tsx    # NEW — 5th picker (clone VariantPicker)
+├── content/
+│   ├── strings.ts             # + indicators sub-object + PT-BR review (F3+F4)
+│   └── learnContent.ts        # + iosApp/androidApp links + PT-BR review (F2+F4)
+├── main.tsx                   # + registerSW() bootstrap call (Feature 5)
+└── ...
+public/
+├── favicon.svg                # existing
+├── pwa-192.png                # NEW maskable (Feature 5)
+├── pwa-512.png                # NEW maskable (Feature 5)
+└── apple-touch-icon.png       # NEW (Feature 5)
+(repo root)
+├── LICENSE                    # NEW (Feature 1)
+├── README.md                  # updated (Feature 1)
+└── vite.config.ts             # + VitePWA plugin (Feature 5)
+```
+
+## Architectural Patterns
+
+### Pattern 1: Sibling-clone picker (Feature 3)
+
+**What:** A new SettingsDialog picker is built by cloning the 4-file set of an
+existing picker (domain enum + prefs field + 2 hooks + component), never by
+abstracting a generic picker.
+**When to use:** any new customization dimension.
+**Trade-offs:** more files than a generic abstraction, but each picker's
+locked-string contract and capture-vs-live policy is verifiable in isolation
+(matches the project's clone-don't-extract principle). Already proven 4×.
+
+### Pattern 2: `hrv:prefs-changed` event bus (Feature 3)
+
+**What:** One CustomEvent name, `{ key, value }` detail shape. Picker-side hooks
+dispatch; App-side orchestrator hooks filter on `detail.key`.
+**When to use:** same-tab sync from a write-hook back to the App-side live state
+(the native `storage` event does not fire in the writing tab).
+**Trade-offs:** none here — the new `indicator` consumer slots in with zero new
+event-bus surface.
+
+### Pattern 3: vite-plugin-pwa generateSW precache (Feature 5)
+
+**What:** Workbox auto-generates a service worker that precaches the hashed build
+output; `registerType: 'autoUpdate'` updates silently.
+**When to use:** static, backendless apps where the whole bundle is the cache set.
+**Trade-offs:** a build-time devDependency; offline-after-first-visit only (no
+runtime-fetch caching needed because there is nothing to fetch).
+
+## Data Flow
+
+### Indicator preference flow (Feature 3)
+
+```
+User picks in IndicatorPicker
     ↓
-loadPrefs() → coercePrefs(envelope.prefs) → DEFAULT_PREFS if absent
+useIndicatorChoice.setIndicator(next)
+    ↓  loadPrefs() → savePrefs({...current, indicator: next}) → setIndicatorState
+    ↓  dispatchEvent('hrv:prefs-changed', {key:'indicator'})
     ↓
-prefs state = { theme, timbre, variant, locale }
-    ├──→ document.documentElement.dataset.theme = prefs.theme  (CSS gate)
-    ├──→ UI_STRINGS[prefs.locale] selected → passed to components
-    ├──→ prefs.variant passed to <BreathingShape variant={...} />
-    └──→ prefs.timbre available for audio.start() at next session start
-
-User changes preference in SettingsDialog
+useIndicator (App-side) re-reads loadPrefs().indicator
     ↓
-onPrefsChange(next) → setPrefs(next) → savePrefs(next) → writeEnvelope
-    ├──→ Theme: document.documentElement.dataset.theme = next.theme (immediate)
-    ├──→ Locale: UI_STRINGS[next.locale] re-selected (immediate)
-    └──→ Timbre / variant: stored; applies at next session start only
+App.tsx <BreathingShape indicator={liveIndicator}>
+    ↓
+BreathingShape switch → OrbShape / SquareShape / DiamondShape
+    ↓
+label <span> renders text  OR  arrow icon  (aria-label always uses text)
 ```
 
-### Timbre Session-Start Flow
+### PWA offline flow (Feature 5)
 
 ```
-onStartClick (user gesture)
-    ↓
-audio.start(plan, prefs.timbre)
-    ↓
-useAudioCues: timbreRef.current = timbre (captured synchronously)
-    ↓
-createAudioEngine({ timbre, onStateChange })
-    ↓
-scheduleLeadIn → scheduleInCueForTimbre(timbre, ...)
-scheduleNextCue → dispatch to cueSynth by timbre
-    ↓
-[iOS lock-screen fires mid-session]
-    ↓
-reconstructEngine reads timbreRef.current (stable for session duration)
-    → new createAudioEngine({ timbre: timbreRef.current, ... })
+First visit (online)
+    ↓  registerSW() → SW installs → Workbox precaches built bundle
+Repeat visit (online or OFFLINE)
+    ↓  SW serves bundle cache-first
+    ↓  App boots → localStorage (settings/stats/prefs) → full session, no network
 ```
 
-### Theme Data Flow
+## Recommended Build Order
 
-```
-prefs.theme change
-    ↓
-document.documentElement.dataset.theme = next.theme
-    ↓
-CSS: [data-theme='dark'] rebinds --color-breathing-bg, --color-orb-*, etc.
-    ↓
-All components pick up new values via CSS variable inheritance
-    ↓ (zero React re-renders for visual token changes)
-```
+The operator's smallest-blast-radius sequence is sound and is preserved verbatim.
+Each feature is independent — no cross-feature dependency forces a different order.
+One ordering refinement is called out below.
 
-## Dual-Anchor + Reconstruction Contract Safety
+| Order | Feature | Phase | Blast radius | Rationale |
+|-------|---------|-------|--------------|-----------|
+| 1 | LICENSE + README | Phase 23 | repo root, 0 `src/` files | Zero code risk; green-gate passes trivially. Pure docs. |
+| 2 | Forrest native-app links | Phase 24 | 2–3 content/component files | Additive; reuses the existing `LearnLink` model + link-render pattern. Adds a few PT-BR markers. |
+| 3 | Labels-vs-icons toggle | Phase 25 | 3 new + 9 modified files | The largest UI change. Full sibling-clone of the picker pattern + 3-shape consumer edit. |
+| 4 | PT-BR native-speaker review | Phase 26 | 2 content files (`pt-BR` only) | Sequenced AFTER 2 and 3 so it reviews ALL pending markers in one pass — including the new markers Features 2 and 3 introduce. Reviewing earlier would leave a second review pass. |
+| 5 | PWA install | Phase 27 | build config + html + assets + 1 registration site | Most novel surface (new build-time dep, new asset class, manifest/scope gotcha). Last = the rest of the app is frozen and verified before SW caching wraps it. |
 
-The Phase 3 dual-anchor scheduler and Phase 5.1 reconstruction contracts are preserved unchanged by all v1.1 features:
+**Phase numbering:** continues from v1.2 — Phases 23–27 (PROJECT.md confirms v1.3
+starts at Phase 23). 5 features → 5 phases is the natural 1:1 mapping; each feature
+is cohesive and independently shippable.
 
-- **Theme changes:** CSS-only. No audio or engine interaction.
-- **Visual variant changes:** React render output only. No timing or audio path.
-- **Locale/language changes:** String swaps. No timing or audio path.
-- **Timbre changes:** Captured at session start. Reconstruction reads `timbreRef.current` (stable for session duration) using the same synchronous-before-await capture as `mutedRef.current`.
+**Ordering note worth flagging at planning:** Feature 4 (PT-BR review) is correctly
+placed *after* Features 2 and 3 because both add new `pt-BR`
+`// TODO: native-speaker review` markers. Running the review last means the native
+speaker reviews the complete set once — the "grep for marker count == 0" done-signal
+is only meaningful if all marker-producing phases have already landed.
 
-The one new reconstruction obligation: `reconstructEngine` must capture and replay `timbreRef.current` the same way it already captures and replays `mutedRef.current`. This is a three-line addition — see the timbre section above.
+## Anti-Patterns
 
-## Suggested Build Order
+### Anti-Pattern 1: Putting app-store link labels in `lockedCopy.ts`
 
-### Phase A — Inner-ring UX symmetry (warm-up)
+**What people do:** treat the new Forrest app-store links as "Forrest-related =
+must be locked."
+**Why it's wrong:** `lockedCopy.ts` D-03 is deliberately scoped to exactly the 3
+claim-safe entries. App-store labels carry no medical/affiliation claim; locking
+them bloats the frozen-EN guard surface and blocks legitimate PT-BR translation.
+**Do this instead:** new links go in `learnContent.ts.links` as normal translatable
+`LearnLink` entries with a `// TODO: native-speaker review` marker on the `pt-BR`
+label.
 
-Smallest change, no new architecture, validates green-gate posture before the broader v1.1 changes. Issue B is a genuine UX bug.
+### Anti-Pattern 2: Per-theme PWA install icons
 
-1. Investigate exact inner-ring arrival timing in `src/components/BreathingShape.tsx`
-2. Fix inner-ring coincidence with orb edge at `MIN_SCALE`; mirror in `BreathingShapeLeadIn` (D-22)
-3. Possibly adjust `.orb-ring--inner` CSS in `src/styles/theme.css`
-4. Green-gate: `tsc && lint && build && test`
+**What people do:** assume the 5-palette favicon system should extend to the PWA
+install icon, generating 5 maskable icon sets.
+**Why it's wrong:** the OS reads the install icon once at install time and never
+re-reads it — "per-theme" is physically impossible for a home-screen icon. It also
+multiplies the new binary-asset count 5×.
+**Do this instead:** one neutral maskable icon set + one apple-touch-icon. The
+dynamic per-theme favicon system stays untouched for the browser tab.
 
-[2026-05-12 update] Scope reduced — no timing investigation needed, no BreathingShape.tsx edit. One CSS rule (`.orb-ring--inner { display: none }`) under `@media (prefers-reduced-motion: reduce)` is the complete implementation. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-03.
+### Anti-Pattern 3: Hardcoding `start_url: '/hrv/'` in the manifest
 
-### Phase B — Envelope schema + prefs foundation
+**What people do:** write the literal base path into the manifest.
+**Why it's wrong:** it duplicates the `base` value and breaks silently if `base`
+ever changes — the exact failure Phase 12 D-04 (`%BASE_URL%` substitution)
+established a pattern to avoid.
+**Do this instead:** let `vite-plugin-pwa` derive `start_url`/`scope` from Vite
+`base`, or use relative `'./'`.
 
-All four customization features write to `prefs`. Establishing the type, coercer, load/save, and `DEFAULT_PREFS` first means CUST-01/02/03/I18N-01 each build against a stable foundation.
+### Anti-Pattern 4: Capture-at-start for the indicator toggle by reflex
 
-1. Add `prefs?: unknown` to `Envelope` in `src/storage/storage.ts`
-2. Create `src/storage/prefs.ts`: `UserPrefs`, `DEFAULT_PREFS`, `coercePrefs`, `loadPrefs`, `savePrefs`
-3. Re-export from `src/storage/index.ts`
-4. Wire `loadPrefs()` at App mount (no UI yet — just prefs state)
-5. Tests: `src/storage/prefs.test.ts` — coerce fallback, round-trip, forward-compat with missing `prefs` field
+**What people do:** copy the Variant `sessionVariantRef` capture machinery because
+"the indicator also affects the breathing shape."
+**Why it's wrong:** Variant captures at start because mid-session geometry change is
+disruptive; the indicator is a pure glyph swap with no disruption, and SettingsDialog
+is disabled in-session anyway. The capture machinery is dead weight here.
+**Do this instead:** clone `useVisualVariant` (live), pass `liveIndicator` straight
+to `BreathingShape`. (Operator may override for strict-consistency reasons — flag at
+planning, but live is the default.)
 
-### Phase C — Settings UI surface (SettingsDialog)
+### Anti-Pattern 5: A stateful `useServiceWorker` hook for autoUpdate registration
 
-The dialog shell is needed before per-feature toggles can be tested end-to-end. Build with stub pickers first.
+**What people do:** wrap SW registration in a React hook.
+**Why it's wrong:** with `registerType: 'autoUpdate'` there is no update state to
+render — a hook adds a component-tree dependency for a one-shot bootstrap call.
+**Do this instead:** call `registerSW({ immediate: true })` once in `main.tsx`. A
+hook is only justified if an update-available toast is wanted (it isn't, for a
+calm-UI single-screen app).
 
-1. `src/components/SettingsDialog.tsx` — native `<dialog>` with `modal-fade`, stub controls
-2. App.tsx wiring: `settingsDialogOpen` state, open/close handlers, disabled during `inSessionView`
-3. Settings trigger button in the UI
-4. Prefs write path: SettingsDialog callbacks → App `setPrefs` → `savePrefs`
+## Integration Points
 
-### Phase D — Theme tokens (CUST-01)
+### Internal Boundaries
 
-CSS-only change with immediate visual feedback. Low risk of breaking existing tests.
+| Boundary | Communication | v1.3 change |
+|----------|---------------|-------------|
+| `useIndicatorChoice` ↔ `useIndicator` | `'hrv:prefs-changed'` CustomEvent (`{key:'indicator'}`) + cross-tab `storage` | New consumer of the existing event bus — no new event name. |
+| `SettingsDialog` → `IndicatorPicker` | `{ disabled, strings, sectionLabel }` props (Phase 15 D-02) | New 5th picker child. |
+| `App.tsx` → `BreathingShape` → 3 shapes | new `indicator?` prop threaded through dispatcher | Optional prop, default `'labels'` — pre-Phase-25 callers compile unchanged. |
+| `prefs.ts` ↔ localStorage envelope | `coercePrefs` per-field fallback | New `indicator` field; no `STATE_VERSION` bump (forward-compat read). |
+| Service worker ↔ built bundle | Workbox precache manifest | New: SW caches hashed bundle for offline. Independent of localStorage. |
+| `index.html` ↔ build | `%BASE_URL%` substitution | New manifest + apple-touch-icon links join the existing favicon link. |
 
-1. Define `ThemeId` type in `src/storage/prefs.ts` (add to Phase B work)
-2. Add theme token blocks to `src/styles/theme.css`
-3. App.tsx reactive effect: `document.documentElement.dataset.theme = prefs.theme`
-4. SettingsDialog: theme picker controls wired to prefs
+### External Services
 
-### Phase E — Visual variants (CUST-03)
+| Service | Integration pattern | Notes |
+|---------|---------------------|-------|
+| Apple/Google app stores | static external `<a href>` in LearnDialog | Same `target="_blank" rel="noopener noreferrer"` pattern as existing Forrest links. URLs are locale-invariant. |
+| Browser PWA install / SW | `vite-plugin-pwa` generateSW + manifest | Build-time devDependency only; runtime-deps invariant intact. |
 
-Component-only change. Builds on prefs foundation and SettingsDialog. No audio changes.
+## Scaling Considerations
 
-1. Rename `BreathingShapeBody` → `BreathingShapeOrb` (the default variant)
-2. Add `variant` prop to `BreathingShape` public interface
-3. Implement 1–2 additional variants driven by `frame.phaseProgress`
-4. App.tsx: pass `prefs.variant` to `<BreathingShape>`
-5. SettingsDialog: variant picker
-
-### Phase F — Audio timbres (CUST-02)
-
-Most technically involved because of the reconstruction replay requirement.
-
-1. Add `scheduleInCueForTimbre`/`scheduleOutCueForTimbre` dispatch to `src/audio/cueSynth.ts`
-2. Implement at least one additional timbre (e.g., `'chime'`)
-3. Add `timbre` option to `createAudioEngine` in `src/audio/audioEngine.ts`
-4. Add `timbreRef` to `useAudioCues`; thread timbre through `start()` and `reconstructEngine()`
-5. App.tsx: pass `prefs.timbre` to `audio.start(plan, prefs.timbre)` in `onStartClick`
-6. SettingsDialog: timbre picker
-7. Tests: add timbre-dispatch unit tests in `src/audio/cueSynth.test.ts`
-
-### Phase G — Language switching (I18N-01)
-
-Widest surface area (touches every rendered string) but lowest technical risk. Do this last so string refactoring does not conflict with structural changes from earlier phases.
-
-1. Create `src/content/uiStrings.ts` with `UI_STRINGS` record keyed by `LocaleId`
-2. Audit all hardcoded strings in components
-3. Thread locale strings from App
-4. SettingsDialog: locale picker
-5. Tests: each locale entry is complete and non-empty
-
-## Component Responsibilities — v1.1 Changes
-
-| Component | v1.0.1 Responsibility | v1.1 Change |
-|-----------|----------------------|-------------|
-| `BreathingShape` | Dispatch to body/lead-in | Dispatch by `variant` prop; inner-ring fix [2026-05-12 update] Inner-ring fix lives in `theme.css`, not `BreathingShape.tsx`. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01. |
-| `BreathingShapeBody` | Single orb implementation | Renamed `BreathingShapeOrb`; behavior unchanged |
-| `SettingsDialog` (NEW) | n/a | Theme / timbre / variant / locale pickers |
-| `App.tsx` | Session orchestration | Prefs state; theme attr setter; timbre pass-through |
-| `cueSynth.ts` | Bowl cue generation | Timbre dispatch table added above existing functions |
-| `audioEngine.ts` | Stateful AC lifecycle | `timbre` option on `createAudioEngine` |
-| `useAudioCues.ts` | Audio hook | `timbreRef` added; timbre threaded through `start`/`reconstructEngine` |
-| `storage/prefs.ts` (NEW) | n/a | `UserPrefs` type, coerce, load, save |
-| `storage/storage.ts` | Envelope r/w | `prefs?: unknown` field added to `Envelope` interface |
-| `content/uiStrings.ts` (NEW) | n/a | Locale-keyed UI string records |
-| `styles/theme.css` | Single default token set | Per-theme override blocks |
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Mid-Session Timbre Switch
-
-**What goes wrong:** Applying a timbre change immediately mid-session requires either AudioContext reconstruction (breaks dual-anchor, forces a new lead-in) or a parallel audio graph (unjustified complexity).
-
-**Prevention:** Disable the timbre picker in SettingsDialog while `inSessionView` is true, mirroring how BPM/ratio controls are disabled in `SettingsForm`. Store the selection immediately; apply at next `audio.start()`.
-
-### Anti-Pattern 2: Theme Provider React Context
-
-**What goes wrong:** A `ThemeContext` with a React Provider causes all subscribed components to re-render on theme change — unnecessary because theme tokens are CSS variables that components already read via `var(--token)`.
-
-**Prevention:** Use `document.documentElement.dataset.theme` to gate CSS `[data-theme]` selectors. React state holds the selected `ThemeId` for persistence and picker binding; the DOM attribute is the CSS mechanism. No React Context needed.
-
-### Anti-Pattern 3: Separate I18N Framework for v1.1
-
-**What goes wrong:** Adding `react-i18next` or `formatjs` at English-plus-one-locale stage adds ~50 KB bundle weight, build configuration, and a new mental model for what is a typed-record lookup.
-
-**Prevention:** Use the `learnContent.ts` section-keyed pattern extended to UI strings. The migration path is mechanical: `strings.button.start` call sites become `t('button.start')` when a framework is warranted.
-
-### Anti-Pattern 4: Visual Variant Owns Its Own Timer
-
-**What goes wrong:** A variant using CSS `animation-duration` tied to BPM creates a second competing timer. At 5.5 BPM the phase is ~5.45 s; a hardcoded `5s` animation drifts immediately and users notice when visual and audio cues diverge.
-
-**Prevention:** All variants MUST derive phase-accurate motion from `frame.phaseProgress` (prop or CSS custom property `--phase-progress`). CSS animations on variants are only for decorative effects that do not need to be phase-accurate.
-
-### Anti-Pattern 5: Prefs in a Separate localStorage Key
-
-**What goes wrong:** A separate key (e.g., `hrv:prefs:v1`) bypasses the STORAGE-01/02 forward-compat and refuse-downgrade guards, and requires a second STORAGE-03 cross-tab listener.
-
-**Prevention:** Store all prefs inside the existing `STATE_KEY` envelope under the `prefs` subtree. The D-01 spread-then-override in `readEnvelope` handles additive top-level fields transparently.
-
-## Modified Files Summary
-
-| File | Change | Risk |
-|------|--------|------|
-| `src/components/BreathingShape.tsx` | Inner-ring fix; variant dispatch | LOW [2026-05-12 update] BreathingShape.tsx receives no Phase 13 edit; `theme.css` carries the reduced-motion suppression change. See `.planning/phases/13-inner-ring-ux-symmetry/13-CONTEXT.md` D-01. |
-| `src/styles/theme.css` | Theme override blocks; possibly inner-ring CSS | LOW |
-| `src/audio/cueSynth.ts` | Timbre dispatch table | MEDIUM |
-| `src/audio/audioEngine.ts` | `timbre` option on `createAudioEngine` | MEDIUM |
-| `src/hooks/useAudioCues.ts` | `timbreRef`; thread timbre through `start`/`reconstructEngine` | MEDIUM |
-| `src/storage/storage.ts` | Add `prefs?: unknown` to `Envelope` | LOW |
-| `src/storage/index.ts` | Re-export `prefs.ts` | LOW |
-| `src/app/App.tsx` | Prefs state; theme attr setter; timbre pass-through; SettingsDialog wiring | MEDIUM |
-
-## New Files
-
-| File | Purpose |
-|------|---------|
-| `src/storage/prefs.ts` | `UserPrefs` type, `coercePrefs`, `loadPrefs`, `savePrefs` |
-| `src/components/SettingsDialog.tsx` | Native `<dialog>` with preference pickers |
-| `src/content/uiStrings.ts` | Locale-keyed UI string records |
-
-## Untouched Files
-
-`src/domain/` (all), `src/hooks/useSessionEngine.ts`, `src/hooks/useWakeLock.ts`, `src/hooks/usePrefersReducedMotion.ts`, `src/storage/settings.ts`, `src/storage/stats.ts`, `src/storage/format.ts`, `src/content/learnContent.ts`, `src/components/SettingsForm.tsx`, `src/components/SettingsStepper.tsx`, `src/components/SessionControls.tsx`, `src/components/SessionReadout.tsx`, `src/components/StatsFooter.tsx`, `src/components/LearnAnchor.tsx`, `src/components/LearnDialog.tsx`, `src/components/ResetStatsDialog.tsx`, `src/components/EndSessionDialog.tsx`, `src/main.tsx`
+Not applicable in the conventional sense — the app is local-only, single-user,
+no backend. The v1.3 "scale" concern is **bundle growth**: the indicator picker adds
+~3 small files; the PWA plugin adds build-time tooling and ~a few KB of SW glue to
+the shipped output. None of this affects runtime performance of a single breathing
+session. The precache set grows with every future asset added to `public/` — keep
+`globPatterns` scoped to actual app assets.
 
 ## Sources
 
-- Direct codebase inspection at HEAD `3bdb69b`: `src/styles/theme.css`, `src/storage/storage.ts`, `src/audio/cueSynth.ts`, `src/audio/audioEngine.ts`, `src/hooks/useAudioCues.ts`, `src/components/BreathingShape.tsx`, `src/app/App.tsx`, `src/content/learnContent.ts`, `src/domain/settings.ts`, `src/storage/settings.ts`, `src/storage/index.ts`, `src/index.css`, `vite.config.ts`, `package.json`
-- `.planning/PROJECT.md` — v1.1 milestone scope, envelope D-01 spread-then-override decision, strict baseline invariants, WR-05 dual-versioning convention
-- `.planning/milestones/v1.0-research/ARCHITECTURE.md` — v1.0 architecture intent (historical context)
-- Tailwind CSS v4 CSS-first configuration — `@tailwindcss/vite ^4.3.0` in `package.json`; no `tailwind.config.js` file confirms v4 CSS-first mode; `@theme {}` and per-selector override blocks are the v4 token mechanism
+- Codebase read directly: `src/domain/settings.ts`, `src/storage/prefs.ts`,
+  `src/hooks/useVariantChoice.ts`, `useThemeChoice.ts`, `useVisualVariant.ts`,
+  `src/components/VariantPicker.tsx`, `SettingsDialog.tsx`, `BreathingShape.tsx`,
+  `OrbShape.tsx`, `SessionReadout.tsx`, `LearnDialog.tsx`, `src/content/learnContent.ts`,
+  `lockedCopy.ts`, `lockedCopy.test.ts`, `strings.ts`, `src/app/App.tsx`,
+  `index.html`, `vite.config.ts`, `package.json` (HIGH confidence)
+- `.planning/PROJECT.md`, `.planning/MILESTONES.md` — architecture decisions, phase
+  history, v1.3 milestone definition (HIGH confidence)
+- [vite-plugin-pwa GitHub](https://github.com/vite-pwa/vite-plugin-pwa) — generateSW
+  strategy, autoUpdate registerType
+- [vite-plugin-pwa releases](https://github.com/vite-pwa/vite-plugin-pwa/releases) —
+  v1.3.0 (2026-05-05), Vite 8 peer-dependency support
+- [Vite 8 support · Issue #918](https://github.com/vite-pwa/vite-plugin-pwa/issues/918) —
+  Vite 8 compatibility confirmation
+- [Vite Plugin PWA guide](https://vite-pwa-org.netlify.app/guide/) — manifest,
+  scope, start_url derivation from base
 
 ---
-*Architecture research for: HRV breathing webapp v1.1 customization integration*
-*Researched: 2026-05-12*
+*Architecture research for: v1.3 Release Polish — 5-feature integration*
+*Researched: 2026-05-15*

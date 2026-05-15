@@ -1,352 +1,448 @@
 # Pitfalls Research
 
-**Domain:** HRV breathing webapp — v1.1 Customization (themes, audio timbres, visual variants, i18n)
-**Researched:** 2026-05-12
-**Confidence:** HIGH for envelope/audio/reduced-motion integration pitfalls (codebase directly inspected); HIGH for TypeScript strict-mode interaction pitfalls; MEDIUM for i18n bundle tree-shaking (WebSearch + Vite docs, not verified against a deployed instance of this codebase); MEDIUM for Tailwind v4 theme token scoping (WebSearch-confirmed, version-specific behavior).
+**Domain:** v1.3 Release Polish — adding 5 features (LICENSE/README, Forrest native-app links, labels-vs-icons toggle, PT-BR native-speaker review, PWA install with full offline) to an existing shipped HRV breathing SPA (React + Vite + TS, local-only, base-path `/hrv/`).
+**Researched:** 2026-05-15
+**Confidence:** HIGH (PWA section verified against Vite PWA docs + WebKit bug tracker + Safari 18.4 release notes; project-specific pitfalls verified against PROJECT.md / MILESTONES.md / RETROSPECTIVE.md / index.html / vite.config.ts)
+
+This document is scoped to mistakes specific to adding **these** features to **this** system. Generic web pitfalls are omitted. The PWA feature (#5) is the highest-risk and is treated first and at the most depth.
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Envelope schema bump that replaces the whole top-level object — losing unknown fields written by a newer build
+### Pitfall 1: Service-worker scope / manifest path mismatch under the `/hrv/` base
 
 **What goes wrong:**
-When CUST-01 (themes) or CUST-02 (timbres) adds a new top-level field to the `Envelope` in `src/storage/storage.ts` (e.g. `theme?: unknown` or `timbre?: unknown`), an author unfamiliar with the STORAGE-01 spread-then-override invariant writes the new field by constructing a new object from scratch: `writeEnvelope({ version: STATE_VERSION, settings: env.settings, mute: env.mute, stats: env.stats, theme: newTheme })`. This silently drops any additional top-level keys a concurrent newer-tab has written. It also breaks the refuse-downgrade guard (D-04a): the inline re-read checks `currentVersion > STATE_VERSION` to abort, but a freshly-constructed object that forgets the on-disk version always stamps STATE_VERSION, making the guard a no-op.
+The app is served from `base: '/hrv/'`, not domain root. A service worker can only control URLs **at or below its own directory**. If the SW file lands at `/sw.js` (root) it cannot control `/hrv/*` pages; if the manifest `start_url`/`scope` say `/` while the app lives at `/hrv/`, the installed PWA either fails to register, controls nothing, or launches to a 404. The result is a "PWA" that installs but never goes offline — the failure is silent in dev and only appears in the prod build on the real host.
 
 **Why it happens:**
-`readEnvelope` returns an `Envelope` typed with only the four known fields (`version`, `settings`, `mute`, `stats`). The static type does not surface unknown extra keys, so TypeScript does not warn when a developer destructures only the four known fields and re-assembles without the spread. The storage.ts comment warns against this but is easy to miss when adding a new field.
+PWA tutorials assume root deployment. `vite-plugin-pwa` mostly auto-derives paths from Vite `base`, but the manifest `scope`, `start_url`, and `id` still need to resolve to `/hrv/`, and a hand-rolled `navigator.serviceWorker.register()` call defaults `scope` to the SW file's own directory. Deploying to a subpath is exactly the case the plugin's own issue tracker (#263, #764) shows people getting wrong.
 
 **How to avoid:**
-Always add new top-level customization fields by spreading the existing envelope first and then overriding:
-```typescript
-// CORRECT — preserves any unknown fields from a concurrent newer build:
-writeEnvelope({ ...env, theme: newTheme }, deps)
-
-// WRONG — drops unknown fields and breaks the refuse-downgrade guard:
-writeEnvelope({ version: STATE_VERSION, settings: env.settings, mute: env.mute, stats: env.stats, theme: newTheme }, deps)
-```
-Add a `theme?: unknown` (and equivalently `timbre?: unknown`) field to the `Envelope` interface in `storage.ts` at the same time the feature is added — that forces every write site to satisfy the static type and makes the spread pattern visible. Do NOT add `[k: string]: unknown` index signature to `Envelope` (storage.ts RESEARCH RQ-4 Option b already rejected this because it breaks the `Envelope`-assignable-to-discriminated-union contract elsewhere).
+- Use `vite-plugin-pwa` (build-time dependency — allowed; runtime invariant intact, and PROJECT.md already flags this) so SW + manifest emit under `base` automatically. Do **not** hand-roll the SW registration.
+- Explicitly set manifest `scope: '/hrv/'`, `start_url: '/hrv/'`, `id: '/hrv/'`. Do not leave them defaulted.
+- Confirm the emitted `sw.js` and `manifest.webmanifest` land under `dist/` referenced through `/hrv/` (not `/`).
+- Reference manifest assets the same way the favicon already does — via `%BASE_URL%` substitution or plugin-managed paths — so a future `base` change does not silently break them (the established Phase 12 D-04 pattern).
 
 **Warning signs:**
-- A `writeEnvelope` call that lists all four existing known fields by name instead of using `...env` spread.
-- Tests that only assert the four known fields exist after a write, never asserting that an unknown fifth field survives a round-trip.
+- `npm run build` then a root-served static preview "works" — but the real host serves under `/hrv/` and DevTools → Application → Service Workers shows "no SW" or scope `/`.
+- Lighthouse PWA audit reports "start_url is not in scope" or "does not respond with 200 when offline."
+- Installed app launches to a blank page or 404.
 
-**Phase to address:**
-CUST-01 (themes) — first phase that adds a new top-level envelope field. Establish the pattern once; CUST-02/I18N-01 inherit it.
+**Phase to address:** PWA phase (manifest + SW setup task). Verify this first, before any caching-strategy work.
 
 ---
 
-### Pitfall 2: Audio timbre swap during a running session that breaks the dual-anchor reconstruction invariant
+### Pitfall 2: Stale-cache trap — installed PWA serves an outdated app shell after deploy
 
 **What goes wrong:**
-CUST-02 adds user-selectable audio timbres (alternate `cueSynth` parameters). A naive implementation wires the timbre selector to immediately close the current `AudioEngine` and open a new one mid-session. This triggers `reconstructEngine()` in `useAudioCues`, which fires `onReanchorRequiredRef.current?.(newEngine.now())`. The App-level `audioAnchorRef.current` is then re-set to the new AC's `currentTime` (≈ 0) minus the session-elapsed offset (kitchen-sink fix). If timbre changes are allowed freely while running, this reconstruction path fires repeatedly, each time re-anchoring the dual-clock alignment. Because reconstruction is async, a second timbre swap arriving before the first `createAudioEngine` awaits can arrive with a stale generation counter, causing the AUDIO-01 generation check to abort the second engine after it is already constructed — leaving `engineRef.current === null` mid-session (engine reference lost, no further cues fire).
-
-Additionally, OscillatorNode instances that are already `start()`-ed and `stop()`-ed cannot be mutated; a timbre change affects only cues that have not yet been scheduled. If the timbre preference is applied by simply changing a module-level constant and then scheduling the next cue, the in-flight cue (already scheduled with old oscillator nodes) plays with the old timbre and the next plays with the new — producing a one-cycle seam. This is an audio UX concern, not a crash, but can be jarring.
+A precache service worker keeps serving the previously cached `index.html` + JS bundle. After a deploy, returning users get the **old** app indefinitely (or until they manually clear storage). For this app that means a shipped bug fix, a translation correction, or a new theme never reaches an installed user — the worst kind of regression because it is invisible to the team (their browser updated) and permanent for the user.
 
 **Why it happens:**
-`cueSynth.ts` hard-codes `IN_FUNDAMENTAL_HZ = 440`, `OUT_FUNDAMENTAL_HZ = 220`, `PARTIALS`, decay time-constants, etc. as module-level constants. The clean API surface for timbre customization is to pass these as parameters to `scheduleBowlCue`. Authors taking a shortcut may instead mutate a shared config object mid-session or fully reconstruct the engine per timbre change.
+The point of a precache SW is cache-first delivery; without an explicit update strategy the old SW stays in the `waiting` state and the old cache stays authoritative. Hashed asset filenames help with sub-resources but the SW itself and the cache manifest still need to roll over.
 
 **How to avoid:**
-- Parameterize timbre as a pure value passed to the cue schedule functions — `scheduleInCue(ctx, when, dest, phaseDuration, timbreConfig)`. The `cueSynth` functions become stateless with respect to timbre; the engine receives `timbreConfig` at construction and passes it through. No module-level mutable state.
-- Make timbre changes take effect at the next session start only (not mid-session). Persist the preference immediately but defer application. This eliminates the reconstruction race entirely.
-- If mid-session timbre is a hard requirement, limit changes to the boundary between phases (when no cue is in-flight) and never trigger engine reconstruction — instead pass the new timbre config through `scheduleNextCue`. This is safe because each `scheduleNextCue` call creates fresh oscillator/gain nodes for the new cue.
+- Use `vite-plugin-pwa` with `registerType: 'autoUpdate'`. This forces Workbox `skipWaiting: true` + `clientsClaim: true` (a new SW takes control immediately) and `cleanupOutdatedCaches: true` (default in `generateSW` mode — purges prior-version caches).
+- Accept the documented `autoUpdate` tradeoff: it can reload a tab and lose in-progress input. For this app the only stateful surface is a running breathing session, and a mid-session reload is bad. **Recommendation:** `autoUpdate` + an "is a session running?" guard that defers the reload until the session ends / the app is idle. Document this as an explicit decision in the phase plan.
+- Alternative: `prompt`-for-update with a calm "update available" affordance — heavier UI work, weaker fit for a hands-off app.
 
 **Warning signs:**
-- `CUST-02` implementation closes and re-opens `AudioEngine` when the user changes timbre preference during a session.
-- Timbre config is stored as a module-level `let` that is mutated at change time rather than passed as a parameter to schedule functions.
+- After a deploy, a hard refresh shows new content but a normal revisit shows old content.
+- DevTools → Application → Service Workers shows a SW stuck in "waiting to activate."
+- Post-deploy operator UAT: old copy / old behavior persists on a device that had the PWA installed.
 
-**Phase to address:**
-CUST-02 (audio timbres). The `cueSynth` parameterization must be designed before any timbre UI is wired to avoid mid-session engine churn.
+**Phase to address:** PWA phase (SW update-strategy task). Must be decided at planning, not discovered at UAT.
 
 ---
 
-### Pitfall 3: Theme CSS tokens that silently destroy the reduced-motion gradient crossfade contract (D-07)
+### Pitfall 3: iOS Safari PWA standalone-mode audio / Wake Lock regressions vs a browser tab
 
 **What goes wrong:**
-CUST-01 adds theme switching by defining alternate CSS custom property values (e.g. `--color-orb-in-from`, `--color-orb-in-to`, `--color-orb-out-from`, `--color-orb-out-to`). Under `prefers-reduced-motion: reduce`, the orb is locked at `MID_SCALE` and the SOLE phase indicator is the opacity crossfade between `.orb-layer--in` and `.orb-layer--out`. If a theme's "in" and "out" color tokens are perceptually indistinct from each other (e.g. both light pastels, or both the same hue), the crossfade becomes invisible to reduced-motion users — the only phase cue is gone.
-
-The existing theme.css comment at line 25-27 documents this explicitly: "UAT-1: 'from' stops deepened one Tailwind step (teal-200 / blue-200) so the opacity crossfade between In and Out is perceptually readable under prefers-reduced-motion (where the orb is locked at MID_SCALE and the crossfade is the sole phase indicator per D-07)." A theme author adding new color tokens who does not know this context will ship a variant where reduced-motion users cannot follow the session.
-
-A second sub-pitfall: theme switching that sets token values via a class on `<html>` or `<body>` (the common Tailwind pattern) can conflict with the `@media (prefers-reduced-motion: reduce)` rule in `theme.css`. Specifically, the existing rule:
-```css
-@media (prefers-reduced-motion: reduce) {
-  dialog.modal-fade { transition: none !important; }
-}
-```
-relies on cascade ordering with respect to Tailwind's `@theme` block. Adding class-based theme token overrides at a higher specificity can silently win over the `@media` rule if the override block is injected after `theme.css` in the stylesheet order.
-
-**How to avoid:**
-- Define a "theme contract": every theme MUST supply a perceptually distinct `--color-orb-in-from` vs `--color-orb-out-from` (minimum contrast delta, documented). Test each theme against the reduced-motion path explicitly — enable OS reduced-motion in system settings, load each theme, confirm the crossfade is visible without scale animation.
-- Keep theme token overrides inside a `@layer` block at the same layer as `theme.css`'s `@theme`, or use `:root[data-theme="X"]` selectors that are lower specificity than `@media` rules. Do NOT use `!important` in theme override files.
-- Never add a `transition: none !important` to `.orb-layer--in` or `.orb-layer--out` inside the reduced-motion block — these transitions are deliberately PRESERVED as the sole phase indicator under reduced-motion per D-07 and the comment at `theme.css:106-108`.
-
-**Warning signs:**
-- A new theme's in/out gradient stops differ only in lightness, not hue (reduced-motion crossfade is invisible).
-- Theme CSS uses `!important` on transition or opacity rules.
-- Reduced-motion UAT is skipped for new themes because "motion behavior is unchanged."
-
-**Phase to address:**
-CUST-01 (themes). The theme contract (perceptual crossfade requirement) must be the acceptance criterion before any theme ships.
-
----
-
-### Pitfall 4: Theme token injection that clobbers `BreathingShape.tsx`'s dual MIN/MAX_SCALE sync contract (IN-01)
-
-**What goes wrong:**
-`BreathingShape.tsx` line 17-20 documents the `IN-01` sync contract: `--orb-scale-min`, `--orb-scale-max`, and `--orb-scale-mid` CSS tokens MUST stay in sync with the `MIN_SCALE`, `MAX_SCALE`, and `MID_SCALE` TypeScript constants. The TS side drives the breathing math (scale interpolation per `phaseProgress`); the CSS tokens are consumed by stylesheet fallbacks and the `motion-reduce` path.
-
-A visual variant (CUST-03) that applies an alternate `--orb-scale-min` or `--orb-scale-max` via a CSS token override without updating the TS constants will create a mismatch: the orb scale animation follows the TS values while the reference rings (`.orb-ring--outer` at `-1.5px` inset, `.orb-ring--inner` at `MIN_SCALE * 100%`) are positioned against the CSS token values. The outer ring will appear to gap from the orb at peak inhale; the inner ring will not coincide with the orb at peak exhale. The `theme.css` comment at lines 17-20 and the `BreathingShape.tsx` comments at lines 17-20 document this explicitly, but authors adding CUST-03 variants may miss it.
-
-**How to avoid:**
-- If CUST-03 variants need alternate orb size ranges, change BOTH the TS constants AND the CSS tokens together in the same commit, and add a test that derives the orb-ring dimensions from the TS constants (not a hardcoded snapshot) to catch future divergence.
-- Alternatively, keep `--orb-scale-min/max/mid` read-only (not part of the theme API) and instead vary `--orb-size` (the `clamp()` expression) as the only dimension a visual variant controls. This keeps the IN-01 contract isolated from the theme API.
-
-**Warning signs:**
-- A CUST-03 phase plan that changes orb scale range CSS tokens without a corresponding TS constant update.
-- Test snapshots that capture ring pixel offsets from the old MIN_SCALE; these will silently drift if CSS tokens diverge.
-
-**Phase to address:**
-CUST-03 (visual variants). Write the dual-update requirement into the CUST-03 phase plan acceptance criteria.
-
----
-
-### Pitfall 5: i18n string IDs that collide with the locked-copy contract for Forrest-claim-safe text
-
-**What goes wrong:**
-I18N-01 introduces a translation key lookup (e.g. `t('learn.forrest.body')`) that replaces static strings in `LearnDialog.tsx` and `learnContent.ts`. The Phase 6 D-12 contract locks two specific strings: the phrase `"inspired by Forrest's teachings"` and the two-line disclaimer. These are locked to prevent copy drift that could accidentally produce a health claim or drop the Forrest attribution.
-
-If I18N-01 wraps these locked strings in the same translation function as all other UI copy, a future locale contributor can provide a translation key override that replaces the locked phrase with any content — silently breaking the claim-safe positioning contract. Locked strings that pass through a translation pipeline become effectively unlocked.
-
-The existing `learnContent.ts` has a comment at line 6: "Disclaimer copy is intentionally inlined in `LearnDialog.tsx` per CONTEXT.md §Established Patterns — short copy stays inline; explainer lives in this asset. Do NOT add disclaimer strings to this module." This comment will need to be re-validated when I18N-01 runs.
-
-**How to avoid:**
-- Classify locked strings separately from translatable copy. Locked strings are constants in TS source, not translation keys. `LearnDialog.tsx` renders them directly from a `LOCKED_COPY` constant, not from `t()`.
-- Translatable copy (section titles, generic labels) goes through the i18n pipeline. Locked copy (claim-safe phrases, the disclaimer) stays as hardcoded TS constants that are co-located with `LearnDialog.tsx`.
-- Document this two-tier approach explicitly in the I18N-01 plan so locale contributors understand which strings are off-limits.
-
-**Warning signs:**
-- A translation key named `learn.forrest.claimPhrase` or `disclaimer.line1` — these indicate locked copy has entered the translation pipeline.
-- `LearnDialog.tsx` no longer contains the literal string `"inspired by Forrest's teachings"` after I18N-01 lands.
-
-**Phase to address:**
-I18N-01 (language switching). The locked-copy audit must be the first step, before any string extraction.
-
----
-
-### Pitfall 6: i18n lazy-loaded locale bundles that break Vitest test determinism via async initialization
-
-**What goes wrong:**
-The standard pattern for React i18n (react-i18next or similar) initializes the i18n library asynchronously at app bootstrap via `i18n.init({ ... })`, often with a `LanguageDetector` backend. Vitest tests that render components using `useTranslation()` or `t()` before init resolves will see the fallback key (e.g. `"learn.title"` rendered as the literal key string instead of the English label). This causes snapshot tests to fail non-deterministically or always produce key-based output.
-
-Additionally, Vite tree-shaking for locale bundles requires that locale imports use static dynamic-import expressions (`import('./locales/en.json')`) rather than computed paths (`import(\`./locales/${lang}.json\``). Computed paths force Vite to include all matching files in the bundle as a dynamic chunk, defeating the lazy-load intent and inflating the production bundle.
-
-The existing `learnContent.ts` uses a section-keyed shape (`hrv`, `timing`, `forrest`) described at line 3 as "i18n-stable identifiers for future locale swap." This is a good foundation, but any i18n library added in I18N-01 must be initialized synchronously in Vitest (via a test setup file) with the English locale to prevent the flakiness.
-
-**How to avoid:**
-- In `vitest.setup.ts` (the existing polyfill/setup file), initialize the i18n library synchronously with the English locale using a `resources` object instead of a backend loader. Never use the HTTP backend or filesystem backend in tests.
-- Use static import expressions for each locale: `import('./locales/en.json')`, `import('./locales/ja.json')`. Never use template literals or computed variables in the import path.
-- Keep `learnContent.ts`'s section keys (`hrv`, `timing`, `forrest`) as the namespacing anchor for any i18n namespace to avoid key collision with other parts of the UI.
-
-**Warning signs:**
-- A test renders a component that calls `t('key')` and the snapshot contains literal dot-notation key strings (`"learn.hrv.title"`) rather than English text.
-- The i18n init call is `async` and not awaited in `vitest.setup.ts`.
-- The Vite build output shows a large `locales-[hash].js` chunk that includes all locale files even though only one is loaded at startup.
-
-**Phase to address:**
-I18N-01 (language switching). The Vitest init setup is a blocking first step before any test file uses translation hooks.
-
----
-
-### Pitfall 7: Theme class or data-attribute switching that introduces a FOUC on load
-
-**What goes wrong:**
-CUST-01 theme switching via a class on `<html>` (e.g. `class="theme-dark"`) or a `data-theme` attribute is applied by JavaScript after React hydration. On first paint the browser renders the default token values; the JavaScript then reads localStorage and applies the class. Users see a brief flash of the default theme (typically the green/teal palette) before the selected theme loads — perceptually jarring for a calm breathing app.
+The app's two hands-off pillars — Web Audio cues and Screen Wake Lock — can behave **differently** in an iOS Home Screen ("Add to Home Screen") standalone PWA than in a Safari tab, and the difference only appears on a real device. Two verified facts:
+- **Wake Lock**: was *broken* in iOS Home Screen Web Apps from iOS 16.4 through 18.3.1 (WebKit bug 254545) and only **fixed in iOS/iPadOS 18.4** (Safari 18.4 release notes, March 31, 2025). Users on iOS < 18.4 who install the PWA get **no wake lock at all** even though the same code works in a Safari tab on the same device.
+- **Audio**: WebKit has a long-standing class of standalone-PWA audio bugs (WebKit 198277, Apple Developer Forums thread 762582) where audio stops when the standalone app loses foreground / the device sleeps. This compounds the project's *already-deferred* iOS Safari mid-page audio-session-loss carry-forward (Override SC1).
 
 **Why it happens:**
-React hydration is async relative to CSS variable application. By the time the `useEffect` that reads `localStorage` and sets `document.documentElement.dataset.theme` runs, the browser has already painted the default token values.
+iOS treats a standalone PWA as a separate runtime from the Safari tab, with its own (more restrictive) lifecycle. Wake Lock progressive enhancement means a missing API degrades *silently* — exactly the failure that hides until real-device UAT. jsdom cannot model any of this.
 
 **How to avoid:**
-- Inject a tiny inline `<script>` in `index.html` before the main bundle that reads the theme preference from `localStorage` and sets the class/attribute synchronously, before first paint. This is the standard FOUC prevention for theme switching.
-- The script must be small and synchronous (no module, no `defer`) and handle the `localStorage` unavailable case (private browsing) by defaulting to the base theme silently.
+- Keep Wake Lock strictly progressive-enhancement (it already is — two-ref pattern, idempotent release). No new code needed; the new risk is only "does standalone mode change behavior."
+- Treat "installed PWA on iOS" as a **distinct UAT target** separate from "Safari tab on iOS." Both must be walked through on a real device before the PWA feature is declared done.
+- Set milestone expectations: on iOS < 18.4 the installed PWA will not hold the screen awake. Decide whether that is an acceptable shipped state (likely yes — document as a known limitation) or whether to detect standalone mode (`navigator.standalone` / `display-mode: standalone` media query) and show guidance.
+- Do **not** assume audio + wake lock that passed v1.0/v1.1/v1.2 tab-mode UAT still pass in standalone mode — re-verify.
 
 **Warning signs:**
-- Theme switching is wired entirely through a `useEffect` call.
-- No inline script in `index.html` reads the theme before the React bundle loads.
-- First paint in DevTools shows the default palette for one frame before the selected theme appears.
+- jsdom/Vitest suite is fully green but the installed app on a physical iPhone lets the screen sleep mid-session, or audio cuts when the screen locks.
+- UAT was done in a Safari tab only and the "PWA" box was checked from that.
 
-**Phase to address:**
-CUST-01 (themes). Include the inline bootstrap script in the phase plan.
+**Phase to address:** PWA phase — explicit real-device UAT task with iOS standalone mode as a named target. Directly mirrors the v1.0 retro lesson: "jsdom polyfill semantics ≠ real WebKit audio session semantics; manual real-device UAT is not optional for audio + wake lock + visibility flows."
 
 ---
 
-### Pitfall 8: Visual variant (CUST-03) that inadvertently drops the 44×44 hit-area or focus-visible ring floor
+### Pitfall 4: Service worker interfering with the pre-paint inline scripts (theme FOUC + per-theme favicon)
 
 **What goes wrong:**
-CUST-03 adds alternate visual styles to the orb or session controls. If an alternate variant changes the button sizing (e.g. a "compact" variant that shrinks `SessionControls` buttons) it can violate the 44×44 hit-area floor (Phase 2 D-17). Similarly, if a variant's CSS overrides include `outline: none` or reset Tailwind's `focus-visible:ring-*` utilities (to apply a custom focus style), the replacement may not meet the 3:1 contrast ratio or 2px thickness required by WCAG 2.4.7 / SC 2.4.13.
+`index.html` runs a single combined pre-paint inline script (Phase 16 theme FOUC + Phase 21 per-theme favicon — both read `localStorage` synchronously before first paint). A precache SW serves a cached copy of `index.html`. If the SW caches a stale `index.html`, the inline script the user runs is stale too — a theme/favicon logic fix never reaches installed users. Separately, if `index.html` is served via a SW navigation-fallback that strips or reorders head content, the FOUC script could be delayed past first paint, reintroducing the exact FOUC the Phase 16/21 inline script exists to prevent.
+
+**Why it happens:**
+The inline script lives *inside* the precached HTML document, so it inherits every staleness and fallback-routing pitfall of the HTML itself. Teams think of the SW as caching "assets" and forget the inline `<script>` is now also cache-governed.
 
 **How to avoid:**
-- Define a component-level accessibility contract: buttons must have `min-width: 44px; min-height: 44px` as a non-negotiable base. Variants change aesthetics (color, border-radius, gradient) but never sizing or focus ring.
-- If a variant introduces a custom focus indicator, test it against the WCAG 2.4.11 focus appearance requirement (3:1 contrast ratio against adjacent colors, 2px perimeter).
-- Run the existing Vitest tests after each variant is applied — the `LearnAnchor.test.tsx`, `MuteToggle.test.tsx`, and `SessionControls.test.tsx` files assert on rendered structure; a variant that changes the element tree will break those assertions immediately.
+- The Pitfall 2 fix (`autoUpdate` + `cleanupOutdatedCaches`) covers staleness — but explicitly verify it covers `index.html` and its inline script, not just hashed JS.
+- Keep the inline script inline (do not let a PWA refactor move it to an external file — an external file is independently cacheable and adds a round-trip, worsening FOUC).
+- Confirm the SW navigation fallback returns the **precached `index.html` verbatim** (Workbox `navigateFallback` to the app shell) with head + inline script intact.
+- After the PWA phase, re-run the theme-FOUC and favicon-FOUC checks (no flash on reload) **in installed standalone mode**, not just in a tab.
 
 **Warning signs:**
-- A CUST-03 CSS file contains `outline: 0` or `outline: none` on any interactive element.
-- Button dimensions are overridden in a variant stylesheet without a `min-width`/`min-height` floor.
-- A variant is shipped without a keyboard-navigation smoke test.
+- Theme/favicon flash on launch of the installed PWA even though a browser tab shows no flash.
+- A theme or favicon logic change ships but installed users still see the old behavior.
 
-**Phase to address:**
-CUST-03 (visual variants). Add an a11y contract checklist to the CUST-03 acceptance criteria.
+**Phase to address:** PWA phase (SW caching task) — add "inline pre-paint script survives precache + navigation fallback, no FOUC in standalone" to its success criteria.
 
 ---
 
-### Pitfall 9: `useCallback`/`useEffect` dependency drift when customization prefs are added to `App.tsx` state
+### Pitfall 5: Editing the frozen-EN `LOCKED_COPY` during the PT-BR native-speaker review
 
 **What goes wrong:**
-Adding `theme`, `timbre`, or `locale` as React state in `App.tsx` creates new closure variables. If these variables are read inside existing `useCallback` or `useEffect` callbacks — even incidentally (e.g. a `console.debug` that references `theme` for debugging) — `react-hooks/exhaustive-deps: error` will require them in the dep array. Adding them to the dep array can cause existing phase-boundary effects or audio-scheduling effects to re-fire when the user changes a customization preference mid-session, producing spurious phase-boundary events or re-scheduled cues.
+The PT-BR review touches translation strings. The `LOCKED_COPY` module holds claim-safe medical/branding copy guarded by a frozen-EN byte-equality `.toBe()` snapshot (`lockedCopy.test.ts`, Phase 19 D-12). A reviewer or implementer "improving wording" can touch the **EN** side of locked copy, or restructure the locked module, breaking the byte-equality guard — and the per-commit green-gate (`tsc && lint && build && test`) fails the commit. Worse, if someone "fixes" the test to make it pass, the claim-safe positioning silently drifts.
 
-In the existing codebase, the `mutedRef` pattern (HOOKS-01) was introduced specifically because `muted` state in dep arrays caused `start` and `reconstructEngine` to re-create on every mute toggle. The same risk applies to any new top-level state that ends up in a closure used by timing-critical effects.
+**Why it happens:**
+A translation pass naturally invites copy edits; the boundary between "translatable UI string" and "frozen claim-safe string" is not visually obvious in a diff. The native-speaker reviewer is not necessarily aware of the LOCKED_COPY contract.
 
 **How to avoid:**
-- Use a `useRef` mirror pattern (same as `mutedRef`) for any customization state that timing-critical effects need to read without re-firing: `const themeRef = useRef(theme); useEffect(() => { themeRef.current = theme }, [theme])`. The timing effects read `themeRef.current` and do not list `theme` in their dep arrays (with the mandatory `// Reason:` annotation per Phase 7 D-04 policy).
-- Keep new customization prefs out of `App.tsx` state where possible — prefer a dedicated context or a thin config module that timing effects never import.
+- Brief the reviewer explicitly: the disclaimer / "inspired by Forrest's teachings" line / medical-safety copy is **frozen** — review the PT-BR rendering for accuracy but do not propose EN changes; flag concerns instead of editing.
+- The byte-equality test is the backstop — if it fails, treat that as a **stop signal**, never as a test to update. State this in the phase plan.
+- Scope the review commits to the translatable catalog slices only; keep `LOCKED_COPY` and `lockedCopy.test.ts` out of the files-modified set for review tasks.
+- The v1.1 retro confirms the guard works (it survived PT-BR churn once already) — the risk is a human bypassing it, not the guard failing.
 
 **Warning signs:**
-- A new `theme` or `timbre` state variable appears inside an existing `useCallback` or `useEffect` that was previously not re-created on theme changes.
-- The ESLint `react-hooks/exhaustive-deps` rule requires a new dep to be added to a timing-critical dep array.
-- Adding a theme to the dep array of the phase-boundary effect causes that effect to fire during a running session when the user changes themes.
+- `lockedCopy.test.ts` `.toBe()` assertion fails in the green-gate.
+- A review commit's diff touches `LOCKED_COPY` or `lockedCopy.test.ts`.
 
-**Phase to address:**
-CUST-01 first (sets the architectural pattern); CUST-02 and CUST-03 inherit.
+**Phase to address:** PT-BR review phase — phase plan must name LOCKED_COPY as out-of-scope and the byte-equality failure as a stop signal.
+
+---
+
+## Moderate Pitfalls
+
+### Pitfall 6: Icon-only In/Out mode failing accessibility (no screen-reader text)
+
+**What goes wrong:**
+The labels-vs-icons toggle, in icon-only mode, replaces the localized "In"/"Out" / "Puxa"/"Solta" text with arrow icons. If the icons carry no accessible name, screen-reader users — and the existing `aria-live` phase announcements — lose the breathing-phase cue entirely, making the app unusable hands-off for blind users in icon mode.
+
+**Why it happens:**
+Decorative-looking SVG arrows are easy to ship with no `aria-label` / visually-hidden text. The implementer sees a working icon and moves on.
+
+**How to avoid:**
+- Icon mode is a **visual** change only: keep a visually-hidden text node (or `aria-label`) carrying the localized "In"/"Out" word so assistive tech and the existing `aria-live` region are unchanged regardless of toggle state.
+- Verify the existing phase-announcement `aria-live` path still emits the word, not the icon, in icon mode.
+
+**Warning signs:** VoiceOver/NVDA reads nothing (or "image") for the breathing phase in icon mode; a jsdom a11y assertion finds an element with no accessible name.
+
+**Phase to address:** Labels-vs-icons toggle phase.
+
+---
+
+### Pitfall 7: Arrow icons that don't read clearly across the 3 visual variants or under reduced-motion
+
+**What goes wrong:**
+The In/Out indicator renders inside 3 shape variants (Orb, Square, Diamond). An arrow tuned against the Orb may be illegible inside the Diamond's clip-path, clash with the Square, or — under `prefers-reduced-motion`, where the shape does a gradient crossfade instead of scaling — fail to communicate direction because the motion that reinforced "in vs out" is gone.
+
+**Why it happens:**
+The toggle is designed and eyeballed against the default Orb only; the matrix (3 shapes × 2 motion modes × 5 palettes × 2 toggle states) is large and easy to under-test.
+
+**How to avoid:**
+- Review the icon in all 3 variants and in reduced-motion mode before declaring done — reduced-motion is the hardest case because the icon must carry direction *alone*.
+- Confirm icon contrast holds across all 5 palettes (the v1.1 WCAG luminance contrast guard is the precedent for a per-palette check).
+- Keep the arrow shape simple and unambiguous (clear up/down direction) rather than ornamental.
+
+**Warning signs:** Operator UAT in a non-Orb variant or reduced-motion mode finds the cue ambiguous; the icon "looks fine" only in the default Orb.
+
+**Phase to address:** Labels-vs-icons toggle phase (UAT task spanning the variant × motion matrix).
+
+---
+
+### Pitfall 8: localStorage `prefs` schema mistake when adding the indicator-mode field
+
+**What goes wrong:**
+The toggle adds a new field to the `Envelope.prefs` shape. Mistakes: bumping `STATE_VERSION` unnecessarily (triggers the refuse-downgrade write contract against other tabs/versions), failing to add a per-field `coerceSettings` fallback (an unknown/old stored value yields an invalid mode or crashes), or breaking the forward-compat spread-then-override read.
+
+**Why it happens:**
+Schema changes feel like they need a version bump; in this codebase they explicitly do not — v1.1 (prefs fields) and v1.2 (4 stretch fields) both added fields with **no `STATE_VERSION` bump** via per-field coercion.
+
+**How to avoid:**
+- Follow the established pattern exactly: add the field, add an `isValid<X>` predicate + `coerceSettings` per-field fallback (default to "labels" mode), **do not** bump `STATE_VERSION`. Phase 8 D-01/D-04a + Phase 22 STRETCH-07 are the reference.
+- Old envelopes with no indicator field must coerce to the default — test that case explicitly.
+
+**Warning signs:** A `STATE_VERSION` change in the diff; an old-envelope coercion test missing; the cross-tab `storage` listener misbehaving after the change.
+
+**Phase to address:** Labels-vs-icons toggle phase (persistence task).
+
+---
+
+### Pitfall 9: FOUC if indicator mode is not applied pre-paint — or unnecessary pre-paint complexity if it is
+
+**What goes wrong:**
+If the persisted indicator mode (labels vs icons) is read only after React mounts, a user who chose "icons" sees the text labels flash for a frame on every load, then they swap to icons — a visible FOUC, the class of bug the theme/favicon inline scripts exist to prevent. The inverse mistake: adding pre-paint inline-script complexity when the indicator is not even on screen at load.
+
+**Why it happens:**
+Indicator mode feels like ordinary React state, unlike theme which is "obviously" a pre-paint concern. The In/Out cue may only render once a session is running.
+
+**How to avoid:**
+- Resolve the assumption first: **is the In/Out indicator on screen before a session starts?** If the indicator only appears after the Start gesture, no FOUC is reachable and pre-paint handling is unnecessary — do not add it speculatively.
+- If the indicator *is* visible at first paint, apply the mode via the existing pre-paint inline-script slot in `index.html` (theme + favicon already use it — the v1.2-established FOUC slot).
+
+**Warning signs:** Reload with "icons" chosen shows a one-frame flash of text labels; or a PR adds inline-script complexity for an indicator that is never rendered pre-session.
+
+**Phase to address:** Labels-vs-icons toggle phase — resolve the "indicator on screen pre-session?" question during planning.
+
+---
+
+### Pitfall 10: Maskable icon safe-zone, missing apple-touch-icon, theme-color meta
+
+**What goes wrong:**
+- A maskable icon that fills the full canvas gets its edges (or the breathing-orb logo) clipped when Android applies a circular/squircle mask — the icon looks cropped.
+- No `apple-touch-icon` means iOS uses a low-quality screenshot of the page as the home-screen icon.
+- A missing or wrong `theme-color` meta makes the iOS standalone status bar / Android toolbar clash with the app's themed background.
+
+**Why it happens:**
+The app currently ships only an SVG favicon. PWA install needs raster PNG icons at specific sizes, a maskable variant respecting the ~80% center safe-zone, an explicit `apple-touch-icon`, and a `theme-color`. The maskable safe-zone is the most-missed detail.
+
+**How to avoid:**
+- Generate maskable icons with the logo art confined to the central ~80% safe-zone.
+- Provide `apple-touch-icon` (180×180 PNG) explicitly in `index.html` head.
+- Set a `theme-color` meta — and note it is theme-dependent: this app has 5 palettes, and iOS does not reliably update `theme-color` live per palette in standalone mode. Pick one neutral value (or accept it matches only the default theme). Do not over-invest in per-palette `theme-color` switching.
+- `vite-plugin-pwa`'s asset-generator can produce the icon set; verify the maskable output in a maskable-icon previewer.
+
+**Warning signs:** Android home-screen icon looks clipped; iOS home-screen icon is a page screenshot; status bar color clashes with the app background.
+
+**Phase to address:** PWA phase (icon/manifest assets task).
+
+---
+
+### Pitfall 11: Forrest native-app links — dead, region-locked, or claim-weakening
+
+**What goes wrong:**
+- App Store / Play Store URLs rot or are region-locked; a tapped link 404s or shows "not available in your country."
+- The new links are added to the Learn surface *bypassing the `LearnDialog` locked-copy contract* — e.g. inline near the disclaimer with new surrounding copy that subtly reframes the app.
+- New link copy ("Get Forrest's official app") drifts the claim-safe positioning by implying endorsement or medical benefit.
+
+**Why it happens:**
+App Store links are assumed permanent; they are not. The Learn surface already has a locked-copy contract (Phase 6 D-12) and a disable-not-hide anchor contract (D-18) — a new link added casually can violate either.
+
+**How to avoid:**
+- Verify the actual current Resonant Breathing iPhone + Android store URLs at implementation time; prefer canonical store landing URLs (these geo-redirect gracefully) over hard region-coded ones. Treat link verification like the Phase 12 canonical-amazon-URL fix.
+- Add the links *inside* the existing `LearnDialog` structure, respecting its locked-copy contract — new link labels are translatable UI strings, but any surrounding framing copy near the disclaimer must not weaken the claim-safe positioning.
+- Keep link copy descriptive and neutral ("Forrest Knutson's Resonant Breathing app"), not benefit-claiming.
+- These are external links — if a store removes the app the link dies; accept that as low-severity link rot, same as the existing YouTube/book links.
+
+**Warning signs:** A store link 404s or region-blocks in UAT; the Learn diff touches locked copy or adds benefit-claiming language near the disclaimer.
+
+**Phase to address:** Forrest native-app links phase.
+
+---
+
+### Pitfall 12: README claiming medical benefits / wrong LICENSE
+
+**What goes wrong:**
+- The README, written freshly, describes the app with health/medical-benefit language ("improves heart rate variability," "reduces anxiety," "therapeutic") — violating the project's hard claim-safe constraint that the in-app copy is carefully guarded for.
+- The LICENSE is incompatible with a "Forrest-Knutson-inspired" claim-safe hobby project — e.g. a license implying an endorsement, or one that conflicts with the project's intent to reference (not reuse) Forrest's branding/assets.
+
+**Why it happens:**
+The README lives *outside* the i18n catalog and the `LOCKED_COPY` guard — none of the existing claim-safe machinery protects it. It is the single most likely place for medical claims to leak in. License choice is often an afterthought copy-pasted from another repo.
+
+**How to avoid:**
+- Write the README claim-safe by the same rules as in-app copy: "guided breathing practice," "inspired by Forrest Knutson's teachings," explicit "not medical advice" disclaimer. Reuse the exact frozen disclaimer phrasing where possible.
+- Choose a permissive OSS license (MIT is the conventional fit for a hobby webapp; it makes no endorsement or warranty claims). The LICENSE covers *this project's code only* — it must not imply rights over Forrest's name, content, or the Resonant Breathing apps. Add a short README note clarifying that Forrest Knutson references are attribution/inspiration only.
+- Have the README reviewed against the claim-safe constraint before merge — treat it like locked copy even though no automated guard covers it.
+
+**Warning signs:** README draft contains "treats," "cures," "clinically," "therapeutic," "medical benefit"; LICENSE chosen without considering the Forrest-attribution boundary.
+
+**Phase to address:** LICENSE + README phase (smallest blast radius — ordered first per the operator-ordered milestone).
+
+---
+
+## Minor Pitfalls
+
+### Pitfall 13: Stale `// TODO: native-speaker review` markers after the PT-BR pass
+
+**What goes wrong:** The PT-BR review (I18N-07) corrects translations but leaves the 76 `// TODO: native-speaker review` markers behind, so the codebase still signals "unreviewed" after the work is done.
+
+**How to avoid:** The phase's definition-of-done explicitly includes removing every reviewed marker; a `grep -rc "native-speaker review" src/` at phase close must return 0. Marker removal happens in the same commit as the correction so the two never drift.
+
+**Phase to address:** PT-BR review phase.
+
+---
+
+### Pitfall 14: Breaking `Record<LocaleId, UiStrings>` type completeness
+
+**What goes wrong:** A reviewer renames a key or drops a string in the PT-BR catalog; the `Record<LocaleId, UiStrings>` type no longer fully aligns and `tsc` fails — or, if a key is added EN-only, PT-BR is silently incomplete.
+
+**How to avoid:** The strict `Record<LocaleId, UiStrings>` type already enforces structural completeness — let `tsc` in the green-gate be the guard. Reviewers edit *values*, never *keys*. Phase plan: keys are frozen for the review task.
+
+**Phase to address:** PT-BR review phase.
+
+---
+
+### Pitfall 15: PT-BR translation length overflowing fixed-width UI
+
+**What goes wrong:** A more accurate native PT-BR phrase is longer than its machine-translated predecessor and overflows a button, chip, or the In/Out indicator — Portuguese commonly runs ~15-30% longer than English.
+
+**How to avoid:** Operator UAT walks the PT-BR UI on a narrow mobile viewport after the review (the v1.1 retro already established "expect a fix-now translation deviation commit"). Pay specific attention to the new labels-vs-icons picker and the new Forrest-link labels.
+
+**Phase to address:** PT-BR review phase (UAT) — and cross-check the labels-vs-icons + Forrest-links phases produce PT-BR strings of sane length.
+
+---
+
+### Pitfall 16: Sibling-clone picker pattern broken by the new toggle
+
+**What goes wrong:** The labels-vs-icons picker is implemented divergently instead of as a verbatim sibling clone of the existing SettingsDialog pickers (Theme/Variant/Timbre/Language) and their `use*Choice` hooks — inconsistent UX, harder review, lost the v1.1 "sibling-pattern verbatim cloning ships fast" advantage.
+
+**How to avoid:** Clone an existing picker + its `use*Choice` hook verbatim as the starting point; only the option set and the persisted field differ. This is an explicitly verified cross-milestone pattern (v1.1 retro key lesson #4).
+
+**Phase to address:** Labels-vs-icons toggle phase.
+
+---
+
+### Pitfall 17: vite-plugin-pwa disabled in dev — prod-only surprises
+
+**What goes wrong:** The SW is disabled in `vite dev` by default, so the entire PWA surface (install, offline, caching, the FOUC interaction, scope) is untested until a prod build. Bugs surface only after deploy.
+
+**How to avoid:** Test the prod build locally — `npm run build && npx vite preview` — and exercise install + offline + SW update there. `vite-plugin-pwa` supports `devOptions.enabled: true` to run the SW in dev for debugging; use it deliberately, but the authoritative check is `vite preview` on the prod build, served under the `/hrv/` path. Add prod-build PWA verification to the phase's success criteria.
+
+**Phase to address:** PWA phase (verification task).
 
 ---
 
 ## Technical Debt Patterns
 
-Shortcuts that seem reasonable but create long-term problems specific to adding customization.
-
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Store theme preference inside `settings` subtree of envelope | No new envelope field needed | `coerceSettings` will strip unknown keys (per D-02 sub-key forward-compat is NOT guaranteed); theme pref survives only until `coerceSettings` is updated | Never — use a dedicated top-level field with spread-then-override write |
-| Apply timbre change by mutating `cueSynth.ts` module-level constants | Simplest immediate implementation | Breaks test isolation (module-level state leaks between test files); cue synthesis is no longer pure | Never — parameterize timbre as a function argument |
-| Translate locked Forrest claim strings through `t()` | All copy in one pipeline | Locked strings become editable by locale contributors; claim-safe positioning silently lost | Never |
-| Use a `useEffect` to set `document.documentElement.dataset.theme` on mount | No HTML change needed | FOUC on first load for non-default themes | Acceptable for demo/spike; never for shipped theme |
-| Rely on Tailwind's purge to eliminate unused theme token classes | Simpler build config | Alternate themes defined in JS objects (not class strings) may be purged if not safelisted | Never without explicit safelist |
-| Wrap all locale imports in a computed path (`import(\`./locales/${lang}\`)`) | Single dynamic import for all locales | Vite cannot tree-shake; all locale bundles included in main chunk | Never — use per-locale static imports |
-
----
+| Hand-roll `navigator.serviceWorker.register()` instead of `vite-plugin-pwa` | No build-time dependency | Manual base-path/scope handling, manual precache manifest, manual cache-busting — Pitfalls 1/2/4 reappear as bespoke code | Never — the build-time dep is allowed; runtime invariant is intact |
+| `registerType: 'autoUpdate'` with no in-session guard on reload | Simplest update path | A deploy can reload a tab mid-breathing-session | Acceptable only with a session-running guard that defers the reload |
+| Move the index.html inline FOUC script to an external file during the PWA refactor | "Cleaner" HTML | External file is independently cached + adds a round-trip → reintroduces FOUC | Never — keep it inline |
+| Per-palette `theme-color` meta switching in standalone mode | Pixel-perfect status bar per theme | iOS does not reliably update `theme-color` live in standalone; high effort, low/no payoff | Skip — pick one neutral value |
+| Skip iOS-standalone real-device UAT, rely on Safari-tab UAT | Faster phase close | Standalone audio/wake-lock regressions ship undetected (Pitfall 3) | Never for this app — hands-off audio is the core value |
+| Bump `STATE_VERSION` for the new indicator-mode prefs field | Feels "correct" | Triggers refuse-downgrade write against other versions/tabs unnecessarily | Never — use per-field coercion (v1.1/v1.2 precedent) |
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Envelope + new theme field | Construct whole new envelope object without spread | Always `{ ...env, theme: newValue }` — spread first, override second |
-| cueSynth + timbre variants | Mutate module-level frequency/decay constants | Pass timbre config as call-time parameters to `scheduleBowlCue` |
-| CSS theme tokens + reduced-motion | New theme has indistinct in/out gradient stops | Enforce perceptual contrast between `--color-orb-in-from` and `--color-orb-out-from` in every theme |
-| CSS theme tokens + orb scale contract | Override `--orb-scale-min/max/mid` without updating `BreathingShape.tsx` TS constants | Either keep scale tokens read-only or update both token and TS constant in same commit |
-| i18n + locked Forrest copy | Add locked phrases as translation keys | Keep locked strings as TS constants, not i18n keys |
-| i18n + Vitest | Init i18n library asynchronously in `vitest.setup.ts` | Init synchronously with `resources` object in setup; never use a backend loader in tests |
-| CUST-03 variants + focus ring | CSS variant resets `outline` without replacement | Variants change aesthetics, never hit-area or focus ring; keep `focus-visible:ring-*` utilities |
-| New React state in App.tsx + timing effects | Add `theme` to existing timing-effect dep arrays | Use `useRef` mirror pattern (HOOKS-01 precedent) to decouple customization reads from timing deps |
-
----
+| Service worker + Vite `base: '/hrv/'` | SW at root, manifest `scope`/`start_url` = `/` | Explicit `scope`/`start_url`/`id` = `/hrv/`; verify emitted files resolve under `/hrv/` |
+| Service worker + precached `index.html` | Stale shell served forever after deploy | `registerType: 'autoUpdate'` → `skipWaiting` + `clientsClaim` + `cleanupOutdatedCaches` |
+| SW navigation fallback + inline FOUC script | Fallback strips/reorders head, FOUC returns | `navigateFallback` to verbatim precached `index.html`; re-verify FOUC in standalone |
+| App Store / Play Store deep links | Hard region-coded URL 404s / geo-blocks | Use canonical store landing URLs that geo-redirect; verify both at implementation time |
+| iOS "Add to Home Screen" | Expecting `beforeinstallprompt` (does not exist on iOS) | No install-prompt API on iOS — at most show passive "Add to Home Screen" guidance; never build an install button that assumes the event |
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Eagerly importing all locale bundles at startup | Bundle inflates by locale file size × locale count; main chunk increases | Static per-locale dynamic imports; load non-default locales only on demand | Immediately on first locale added beyond English |
-| Re-rendering App on every timbre/theme read from `audioNow` | Audio-scheduling effects re-run on non-audio-related state changes; phantom cue scheduling | Keep customization state in a separate context or module-level config that timing effects never close over | When session has ≥1 customization pref in the timing-effect dep chain |
-| Per-frame CSS variable writes for animated theme transitions | Forces style recalculation every rAF tick; battles the existing `will-change: transform` GPU promotion on `.orb` | Theme transitions (if any) must be CSS-only, not JS-driven; never write CSS variables inside the rAF tick | On any device running a 20+ minute session |
-| LocalStorage write per timbre/theme change (not batched with session write) | Extra synchronous write per interaction; contention with the existing session-end batch write | Write customization prefs on user interaction (infrequent); this is fine — the pitfall is writing inside the rAF tick or the phase-boundary effect | If timbre change is wired to a per-frame update callback |
-
----
+| Precaching oversized assets | Slow first install, large storage footprint | Precache only the app shell + hashed JS chunks; audio is runtime-synthesized so there are no audio files to cache (an advantage here) | Large icon sets / any future bundled assets |
+| iOS PWA storage quota eviction | Installed PWA loses `localStorage` (settings/stats) after storage pressure | iOS evicts PWA storage more aggressively than a tab; the existing silent-fallback envelope already degrades gracefully — no new code, but set the expectation in docs | Long-idle installed PWA on a storage-constrained device |
 
 ## Security Mistakes
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Accepting locale strings from URL query params or hash without sanitization | An attacker crafts a link with `?lang=<script>` or a locale key that injects HTML | Always validate locale codes against an explicit allowlist; locale code must match `/^[a-z]{2}(-[A-Z]{2})?$/` pattern before `i18n.changeLanguage()` |
-| Injecting translated strings as `dangerouslySetInnerHTML` for rich text in locale files | XSS if locale files are user-editable or loaded from an untrusted source | Render translated strings as text content only; if rich text is needed, use a controlled markdown renderer with an HTML allowlist |
-| Theme data-attribute value derived from unvalidated user input | Attribute injection in `document.documentElement.dataset.theme = userInput` | Validate against explicit theme name allowlist before setting |
-
----
+| Service worker caching with no scope discipline | A too-broad SW scope could intercept unrelated paths if `/hrv/` shares an origin with other apps | Keep SW `scope` tight to `/hrv/`; never widen to `/` |
+| LICENSE implying rights over Forrest's brand/apps | Misrepresents the attribution boundary; reputational/legal ambiguity | MIT (or similar) covering *this code only* + explicit README note that Forrest references are attribution/inspiration, his apps/branding are his |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Timbre change takes effect mid-breath | Jarring one-cycle audio seam between old and new timbre | Apply timbre at next session start; persist immediately, defer application |
-| Theme change causes visible FOUC on page reload | Calm breathing context broken by flash of wrong theme | Inline sync bootstrap script reads localStorage before first paint |
-| Language switch triggers session reset or loses settings | User's selected BPM/ratio/duration reverts to default | Language is presentation-only; settings envelope is separate from locale preference |
-| Visual variant (CUST-03) removes the In/Out phase label text | Reduced-motion users lose both animation AND text phase indicator | Phase label text is always required; variants can style it but cannot remove it |
-| Alternate theme with identical in/out orb colors confuses reduced-motion users | User cannot tell inhale from exhale — session is unusable | Theme contract requires perceptually distinct in/out tokens (enforced in UAT checklist) |
-
----
+| Icon-only In/Out with no fallback word for screen readers | Blind users lose the breathing cue entirely in icon mode | Always keep a visually-hidden localized word; icon mode is visual-only |
+| Ambiguous arrow icon under reduced-motion | Reduced-motion users cannot tell inhale from exhale | Verify direction reads from the icon *alone* (no motion) before shipping |
+| Auto-update SW reload mid-session | A breathing session is interrupted by a surprise reload | Defer the SW-triggered reload until the session ends / app idle |
+| Installed PWA on iOS < 18.4 silently not holding screen awake | User's screen sleeps mid hands-off session | Document as a known limitation; optionally detect standalone mode and advise |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Envelope schema bump:** every new customization field is added to `Envelope` interface in `storage.ts`; all writes use `{ ...env, newField: value }` spread pattern; a round-trip test verifies unknown fields survive a write.
-- [ ] **Audio timbre:** timbre parameters are function arguments to `scheduleBowlCue`, not module-level state; changing timbre mid-session does NOT reconstruct the `AudioEngine`; test isolation verified (no module-level mutation leaks between test files).
-- [ ] **Reduced-motion crossfade contract:** every new theme has been manually tested with OS reduced-motion enabled; in/out gradient crossfade is visually distinguishable without orb scale animation; `.orb-layer--in`/`.orb-layer--out` opacity transitions are NOT in the `@media (prefers-reduced-motion: reduce)` suppression block.
-- [ ] **Orb scale sync:** if CUST-03 changes `--orb-scale-min/max/mid`, both the CSS token AND `BreathingShape.tsx`'s `MIN_SCALE`/`MAX_SCALE`/`MID_SCALE` TS constants were updated in the same commit and the ring alignment visually verified.
-- [ ] **Locked-copy audit:** `LearnDialog.tsx` still contains the literal string `"inspired by Forrest's teachings"` and the two-line disclaimer as TS source constants, not translation keys.
-- [ ] **Vitest i18n init:** `vitest.setup.ts` initializes the i18n library synchronously with a `resources` object; no test snapshot contains raw dot-notation translation keys.
-- [ ] **FOUC prevention:** `index.html` has a synchronous inline `<script>` (no `type="module"`) that reads the theme preference from `localStorage` and sets the theme attribute/class before first paint.
-- [ ] **44×44 hit-area floor:** every CUST-03 variant is tested with keyboard navigation; buttons pass 44×44 minimum; `outline: none` is absent from variant CSS.
-- [ ] **Timing-effect dep purity:** no customization state variable (`theme`, `timbre`, `locale`) appears in the dep arrays of the phase-boundary effect or audio scheduling effect without a `// Reason:` annotation and a `useRef` mirror.
-- [ ] **Per-commit green gate:** `tsc && lint && build && test` passes on every commit landing customization code; no `// @ts-ignore` or `eslint-disable` annotations added without the Phase 7 D-04 `// Reason:` policy.
-
----
+- [ ] **PWA install:** Often missing — verify the prod build served under `/hrv/` actually goes offline (DevTools offline + reload), not just that the manifest validates.
+- [ ] **PWA update:** Often missing — verify a *second* deploy reaches an already-installed instance (rebuild, redeploy, confirm new content without manual cache clear).
+- [ ] **PWA on iOS:** Often missing — verify in *installed standalone mode on a real iPhone*, not a Safari tab: audio cues + wake lock + theme/favicon FOUC.
+- [ ] **Maskable icon:** Often missing — verify the logo sits inside the ~80% safe-zone in a maskable-icon previewer.
+- [ ] **apple-touch-icon:** Often missing — verify `index.html` has an explicit 180×180 `apple-touch-icon` (else iOS uses a page screenshot).
+- [ ] **Labels-vs-icons toggle:** Often missing — verify icon mode across all 3 variants × reduced-motion × 5 palettes, and that screen readers still announce In/Out.
+- [ ] **PT-BR review:** Often missing — verify all 76 `// TODO: native-speaker review` markers are removed (`grep` returns 0) and `LOCKED_COPY` is byte-identical.
+- [ ] **README:** Often missing — verify no medical/therapeutic claims; disclaimer present; Forrest-attribution boundary stated.
+- [ ] **Forrest links:** Often missing — verify both store URLs resolve (not 404 / not region-blocked) and respect the `LearnDialog` locked-copy contract.
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Envelope field lost due to pick-not-spread write | LOW (if caught in testing) / HIGH (if users have lost data) | Add spread, bump `STATE_VERSION`, write migration in `readEnvelope` that re-hydrates the field from a default if absent; add round-trip test |
-| Audio timbre reconstruction race mid-session | MEDIUM | Remove engine reconstruction from timbre change path; make timbre apply at next session start; add test that verifies no reconstruction fires on timbre toggle |
-| Theme breaks reduced-motion crossfade | LOW | Add perceptual contrast to the theme's in/out tokens; update the theme contract checklist |
-| Locked copy entered translation pipeline | MEDIUM | Extract locked strings back to `LOCKED_COPY` constants in `LearnDialog.tsx`; audit all locale files for the claim-safe phrases; update I18N-01 plan |
-| FOUC on theme load | LOW | Add inline sync script to `index.html`; verify in DevTools "disable cache" mode |
-| Focus ring lost in CUST-03 variant | LOW-MEDIUM | Re-add `focus-visible:ring-*` utilities; test contrast ratio; verify 44×44 floor |
-| Timing-effect dep drift | MEDIUM | Introduce `useRef` mirror for the offending state; add `// Reason:` annotation; verify no spurious phase-boundary events during running session |
-
----
+| Stale SW serving old shell after deploy (no autoUpdate) | HIGH | Hard to remediate retroactively — installed users may stay stale until manual clear; a corrected SW only reaches them after the old SW updates itself. Prevent, do not recover. |
+| Wrong SW scope (`/` vs `/hrv/`) | LOW (pre-ship) | Fix manifest `scope`/`start_url`/`id`, rebuild, re-verify under `/hrv/` — cheap if caught before users install |
+| `LOCKED_COPY` byte-equality test failing | LOW | Revert the locked-copy edit; the test failure *is* the recovery signal — never edit the test |
+| Medical claim shipped in README | LOW (technically) | Edit README, commit — no installed-state coupling; but reputationally costly if it shipped publicly |
+| Icon-only mode inaccessible | LOW | Add visually-hidden localized word; small fix |
+| Installed PWA wake-lock dead on iOS < 18.4 | N/A (platform) | Cannot fix in app code (WebKit bug 254545); document as a known limitation / carry-forward |
 
 ## Pitfall-to-Phase Mapping
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Envelope spread-then-override for new fields | CUST-01 (first envelope field add) | Round-trip test: write with unknown fifth field, read back, assert field present |
-| Audio timbre reconstruction race | CUST-02 design phase | Test: trigger timbre change during mock running session; assert `reconstructEngine` not called |
-| Reduced-motion crossfade destruction | CUST-01 (theme contract) | Manual UAT with OS reduced-motion on; each theme variant |
-| Orb scale TS/CSS sync | CUST-03 (visual variants) | Visual inspection of outer/inner ring alignment at peak inhale/exhale across variants |
-| Locked-copy / i18n collision | I18N-01 first step (locked-copy audit) | Grep for literal locked strings in `LearnDialog.tsx` post-I18N-01 |
-| Vitest i18n flakiness | I18N-01 setup | `vitest run` 10× in CI; zero translation-key-as-output failures |
-| Theme FOUC | CUST-01 implementation | DevTools throttled 3G + disable cache + hard reload; no flash of default theme |
-| 44×44 / focus-visible regression | CUST-03 (visual variants) | Keyboard-nav smoke test + existing `MuteToggle.test.tsx`/`SessionControls.test.tsx` pass |
-| Timing-effect dep drift | CUST-01 (establishes pattern) | `react-hooks/exhaustive-deps: error` in lint; no new suppression annotations in timing effects |
-| Per-commit green gate | Every CUST/I18N commit | `tsc && lint && build && test` exit 0 before merge |
+| 1. SW scope / manifest path mismatch under `/hrv/` | PWA phase | DevTools → Application shows SW controlling `/hrv/`; Lighthouse PWA audit passes start_url-in-scope |
+| 2. Stale-cache trap after deploy | PWA phase | Second deploy reaches an already-installed instance with no manual clear |
+| 3. iOS standalone audio / Wake Lock regression | PWA phase | Real-device UAT in *installed standalone mode* on iPhone — audio + wake lock |
+| 4. SW interfering with pre-paint inline script | PWA phase | No theme/favicon FOUC on installed-PWA launch; a logic fix reaches installed users |
+| 5. Editing frozen-EN `LOCKED_COPY` during PT-BR review | PT-BR review phase | `lockedCopy.test.ts` byte-equality `.toBe()` stays green; review diff excludes `LOCKED_COPY` |
+| 6. Icon-only In/Out inaccessible | Labels-vs-icons phase | Screen-reader announces In/Out in icon mode; a11y assertion finds an accessible name |
+| 7. Arrow unclear across variants / reduced-motion | Labels-vs-icons phase | UAT across 3 variants × reduced-motion × 5 palettes |
+| 8. `prefs` schema migration mistake | Labels-vs-icons phase | No `STATE_VERSION` bump; old-envelope coerces-to-default test passes |
+| 9. FOUC if indicator mode not pre-paint | Labels-vs-icons phase | Resolve "indicator on screen pre-session?"; if yes, inline-script slot; no flash on reload |
+| 10. Maskable icon / apple-touch-icon / theme-color | PWA phase | Maskable previewer shows logo in safe-zone; explicit apple-touch-icon + theme-color in head |
+| 11. Dead / region-locked / claim-weakening Forrest links | Forrest native-app links phase | Both store URLs resolve; links inside `LearnDialog` locked-copy contract; neutral copy |
+| 12. README medical claims / wrong LICENSE | LICENSE + README phase | README has no medical/therapeutic claims + disclaimer present; MIT-style license + attribution note |
+| 13. Stale `native-speaker review` markers | PT-BR review phase | `grep -rc "native-speaker review" src/` returns 0 |
+| 14. `Record<LocaleId, UiStrings>` completeness broken | PT-BR review phase | `tsc` green-gate passes; keys frozen for the review |
+| 15. PT-BR length overflows fixed-width UI | PT-BR review phase | Operator UAT on narrow mobile viewport, incl. new picker + new link labels |
+| 16. Sibling-clone picker pattern broken | Labels-vs-icons phase | New picker + hook are verbatim siblings of an existing pair |
+| 17. SW disabled in dev — prod-only surprises | PWA phase | `npm run build && vite preview` under `/hrv/` exercises install + offline + update |
 
----
+## Testable in jsdom/Vitest vs Requires Real-Device UAT
+
+**Highest-leverage section for the PWA feature** — jsdom has no service worker, no install lifecycle, and no real WebKit audio session. Be explicit about the boundary so the phase plan does not over-promise automated coverage.
+
+**Testable under Vitest/jsdom (automated green-gate):**
+- Manifest JSON content/shape — assert `scope`/`start_url`/`id` = `/hrv/`, icon entries present, maskable variant declared (a plain JSON-parse + assertion test, the same shape as `favicon.sync.test.ts`).
+- The new `prefs` indicator-mode field: `isValid*` predicate, `coerceSettings` fallback, old-envelope coercion, no `STATE_VERSION` bump — full domain-layer coverage.
+- Labels-vs-icons picker rendering + `use*Choice` hook behavior (sibling-clone of existing picker tests).
+- Icon-mode accessible-name presence (jsdom can assert the visually-hidden word / `aria-label` exists).
+- `LOCKED_COPY` byte-equality (existing `lockedCopy.test.ts`).
+- `Record<LocaleId, UiStrings>` completeness (via `tsc` in the green-gate).
+- Optional sync-guard test that manifest `theme-color` / icon colors match `faviconPalette` if shared (generalizes `favicon.sync.test.ts`).
+
+**NOT testable in jsdom — requires `vite preview` prod build and/or real-device UAT:**
+- Service worker registration, scope enforcement, precache, offline fetch — jsdom has no SW runtime. Verify via `vite preview` + Chrome DevTools (offline reload).
+- SW update / `skipWaiting` / stale-cache rollover after a second deploy — manual deploy-twice UAT.
+- iOS "Add to Home Screen" install + standalone launch — real iPhone only.
+- Standalone-mode audio behavior (WebKit 198277 class) — real iPhone, installed PWA.
+- Standalone-mode Wake Lock (working only iOS ≥ 18.4 per WebKit 254545) — real iPhone, installed PWA; ideally one device < 18.4 and one ≥ 18.4.
+- Theme / favicon FOUC in installed standalone mode — real-device visual check.
+- Maskable icon masking result — maskable-icon previewer + real Android home screen.
+- Arrow-icon legibility across variants × reduced-motion × palettes — operator visual UAT.
+
+**Process precedent:** the v1.0 retro lesson — "jsdom polyfill semantics ≠ real WebKit audio session semantics; manual real-device UAT is not optional for audio + wake lock + visibility flows" — applies directly. The PWA phase must budget a real-device UAT task as a first-class deliverable, not a "v1.x carry-forward."
 
 ## Sources
 
-- `src/storage/storage.ts` — STORAGE-01 D-01 spread-then-override invariant and STORAGE-02 D-04a refuse-downgrade guard; WR-05 dual-versioning convention; Pitfall comments inline. HIGH confidence (direct codebase inspection).
-- `src/audio/cueSynth.ts` — OscillatorNode lifecycle (fire-and-forget, cannot re-start), module-level frequency constants, `scheduleBowlCue` phaseDurationSec sustain logic. HIGH confidence (direct codebase inspection).
-- `src/audio/audioEngine.ts` — reconstruction path, generation counter (AUDIO-01), engine null-before-await pattern, `mutedRef` posture for mid-session mute replay (D-35b). HIGH confidence (direct codebase inspection).
-- `src/hooks/useAudioCues.ts` — HOOKS-01 `mutedRef` pattern, `reconstructGenerationRef` posture, `onReanchorRequiredRef` dual-anchor re-anchor. HIGH confidence (direct codebase inspection).
-- `src/styles/theme.css` — D-07 deliberate PRESERVATION of `.orb-layer--out` opacity transition under reduced-motion; IN-01 dual-sync contract for `--orb-scale-min/max/mid`. HIGH confidence (direct codebase inspection).
-- `src/components/BreathingShape.tsx` — IN-01 sync contract comments, `usePrefersReducedMotion` hook, MID_SCALE fixed-scale under reduced-motion. HIGH confidence (direct codebase inspection).
-- `src/content/learnContent.ts` — section-keyed i18n-stable identifiers, "Do NOT add disclaimer strings to this module" constraint. HIGH confidence (direct codebase inspection).
-- `src/domain/settings.ts` — `coerceSettings` strips sub-keys to `SessionSettings` shape; demonstrates why theme pref must NOT live inside the `settings` subtree. HIGH confidence (direct codebase inspection).
-- MDN, OscillatorNode — "An OscillatorNode can only be started once; calling start() a second time throws an error." HIGH confidence. https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
-- MDN, Web Audio API — fire-and-forget source node pattern; oscillator type mutation via `type` property or `setPeriodicWave()` as the correct mid-session timbre mechanism. HIGH confidence. https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Advanced_techniques
-- W3C WAI WCAG 2.4.7 Focus Visible / SC 2.4.13 Focus Appearance — 44×44 minimum target size, 2px focus ring, 3:1 contrast ratio requirements. HIGH confidence. https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html
-- Tailwind CSS — dark mode token strategy, class vs. media query, CSS variable design token pattern. MEDIUM confidence (version-specific; Tailwind v4 behavior confirmed via WebSearch). https://tailwindcss.com/docs/dark-mode
-- Vite dynamic import tree-shaking discussion — computed-path dynamic imports disable tree-shaking. MEDIUM confidence (WebSearch; Vite GitHub discussion). https://github.com/vitejs/vite/discussions/13171
-- react-i18next GitHub issue #1724 — language not set during Vitest tests when using LanguageDetector/HttpBackend. MEDIUM confidence (WebSearch; GitHub issue thread). https://github.com/i18next/react-i18next/issues/1724
-- `.planning/milestones/v1.0-research/PITFALLS.md` — historical domain pitfalls for v1.0 baseline; provides context for what was already addressed and why. HIGH confidence (project source).
+- [Vite PWA — Register Service Worker / base path guidance](https://vite-pwa-org.netlify.app/guide/register-service-worker) — HIGH
+- [Vite PWA — Auto Update strategy (skipWaiting / clientsClaim / cleanupOutdatedCaches)](https://vite-pwa-org.netlify.app/guide/auto-update.html) — HIGH
+- [Vite PWA — Getting Started / PWA requirements](https://vite-pwa-org.netlify.app/guide/) — HIGH
+- [vite-plugin-pwa Issue #263 — Manifest / Service Worker in subdirectory](https://github.com/vite-pwa/vite-plugin-pwa/issues/263) — MEDIUM (community confirmation of the subpath pitfall)
+- [vite-plugin-pwa Issue #764 — Service Worker scope with subpath access](https://github.com/vite-pwa/vite-plugin-pwa/issues/764) — MEDIUM
+- [WebKit Bug 254545 — Wake Lock API does not work in Home Screen Web Apps (fixed iOS 18.4)](https://bugs.webkit.org/show_bug.cgi?id=254545) — HIGH
+- [WebKit Bug 198277 — Audio stops when standalone web app is not in foreground](https://bugs.webkit.org/show_bug.cgi?id=198277) — HIGH
+- [Apple — Safari 18.4 Release Notes (Wake Lock in Home Screen Web Apps)](https://developer.apple.com/documentation/safari-release-notes/safari-18_4-release-notes) — HIGH
+- [iOS Audio Lockscreen Problem in PWA — Apple Developer Forums thread 762582](https://developer.apple.com/forums/thread/762582) — MEDIUM
+- [PWA iOS Limitations and Safari Support guide](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide) — MEDIUM
+- Project context: `.planning/PROJECT.md`, `.planning/MILESTONES.md`, `.planning/RETROSPECTIVE.md`, `index.html`, `vite.config.ts` — HIGH
 
 ---
-*Pitfalls research for: HRV breathing webapp — v1.1 Customization*
-*Researched: 2026-05-12*
+*Pitfalls research for: v1.3 Release Polish — adding LICENSE/README, Forrest native-app links, labels-vs-icons toggle, PT-BR native-speaker review, and PWA install to the HRV breathing webapp*
+*Researched: 2026-05-15*
+</content>
