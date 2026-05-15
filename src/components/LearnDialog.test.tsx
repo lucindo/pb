@@ -4,14 +4,24 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { LEARN_CONTENT } from '../content/learnContent'
+import { LOCKED_COPY } from '../content/lockedCopy'
+import { UI_STRINGS } from '../content/strings'
+import type { LocaleId } from '../domain/settings'
 import { LearnDialog } from './LearnDialog'
 
 function renderDialog(
-  props: Partial<{ open: boolean; onClose: () => void }> = {},
+  props: Partial<{ open: boolean; onClose: () => void; locale: LocaleId }> = {},
 ) {
+  const locale: LocaleId = props.locale ?? 'en'
   const onClose = props.onClose ?? vi.fn()
   const utils = render(
-    <LearnDialog open={props.open ?? false} onClose={onClose} />,
+    <LearnDialog
+      open={props.open ?? false}
+      onClose={onClose}
+      learnContent={LEARN_CONTENT[locale]}
+      lockedCopy={LOCKED_COPY[locale]}
+      strings={UI_STRINGS[locale].learn}
+    />,
   )
   return { ...utils, onClose }
 }
@@ -152,5 +162,14 @@ describe('LearnDialog — external link security', () => {
       expect(link).toHaveAttribute('target', '_blank')
       expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     })
+  })
+})
+
+describe('LearnDialog — PT-BR rendering', () => {
+  it('renders PT-BR forrest title + lockedCopy.inspiredByForrest when locale="pt-BR"', () => {
+    renderDialog({ open: true, locale: 'pt-BR' })
+    expect(screen.getByText(UI_STRINGS['pt-BR'].learn.title)).toBeInTheDocument()
+    expect(screen.getByText(LOCKED_COPY['pt-BR'].inspiredByForrest)).toBeInTheDocument()
+    expect(screen.queryByText('About this practice')).not.toBeInTheDocument()
   })
 })
