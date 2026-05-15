@@ -23,14 +23,14 @@ Requirements for v1.2 release. Each maps to roadmap phases.
 
 ### BPM Stretch
 
-- [ ] **STRETCH-01**: User can choose a BPM stretch session mode from the session settings surface.
-- [ ] **STRETCH-02**: User can pick `initialBpm` and `targetBpm` from the existing BPM grid (1–7 in 0.5 increments).
-- [ ] **STRETCH-03**: User can pick `holdInitialSeconds` (warm-up at initialBpm) and `holdTargetSeconds` (cool-down at targetBpm).
-- [ ] **STRETCH-04**: User runs a stretch session whose BPM walks from initialBpm → targetBpm in sub-perceptual steps strictly < 0.5 BPM along the existing one-clock SessionFrame.
-- [ ] **STRETCH-05**: User can run a stretch session whose total duration is `hold initial + ramp + hold target`, or open-ended at the target hold.
-- [ ] **STRETCH-06**: User sees BPM stretch mode disabled when total duration is below the minimum gate that makes the ramp meaningful.
-- [ ] **STRETCH-07**: User's stretch settings persist across reloads via the localStorage envelope (refuse-downgrade write, forward-compat read).
-- [ ] **STRETCH-08**: User hears phase-aligned audio cues across the ramp — dual-anchor scheduling (Phase 3 D-13/D-14) holds across BPM changes.
+- [x] **STRETCH-01**: User can choose a BPM stretch session mode from the session settings surface.
+- [x] **STRETCH-02**: User can pick `initialBpm` and `targetBpm` from the existing BPM grid (1–7 in 0.5 increments).
+- [x] **STRETCH-03**: User can pick `holdInitialSeconds` (warm-up at initialBpm) and `holdTargetSeconds` (cool-down at targetBpm).
+- [x] **STRETCH-04**: User runs a stretch session whose BPM walks from initialBpm → targetBpm in sub-perceptual steps strictly < 0.5 BPM along the existing one-clock SessionFrame.
+- [x] **STRETCH-05**: User can run a stretch session whose total duration is `hold initial + ramp + hold target`, or open-ended at the target hold.
+- [x] **STRETCH-06**: User sees BPM stretch mode disabled when total duration is below the minimum gate that makes the ramp meaningful.
+- [x] **STRETCH-07**: User's stretch settings persist across reloads via the localStorage envelope (refuse-downgrade write, forward-compat read).
+- [x] **STRETCH-08**: User hears phase-aligned audio cues across the ramp — dual-anchor scheduling (Phase 3 D-13/D-14) holds across BPM changes.
 
 ## Future Requirements
 
@@ -100,11 +100,11 @@ Which phases cover which requirements. Filled during roadmap creation.
 | FAVI-01 | Phase 21 | Complete |
 | FAVI-02 | Phase 21 | Complete |
 | FAVI-03 | Phase 21 | Complete |
-| STRETCH-01 | Phase 22 | Pending |
-| STRETCH-02 | Phase 22 | Pending |
-| STRETCH-03 | Phase 22 | Pending |
-| STRETCH-04 | Phase 22 | Pending |
-| STRETCH-05 | Phase 22 | Pending |
-| STRETCH-06 | Phase 22 | Pending |
-| STRETCH-07 | Phase 22 | Pending |
-| STRETCH-08 | Phase 22 | Pending |
+| STRETCH-01 | Phase 22 | Complete |
+| STRETCH-02 | Phase 22 | Complete |
+| STRETCH-03 | Phase 22 | Complete |
+| STRETCH-04 | Phase 22 | Complete |
+| STRETCH-05 | Phase 22 | Complete |
+| STRETCH-06 | Phase 22 | Complete |
+| STRETCH-07 | Phase 22 | Complete |
+| STRETCH-08 | Phase 22 | Complete |

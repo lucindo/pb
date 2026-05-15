@@ -158,7 +158,7 @@ Plans:
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete    | 2026-05-15 |
-| 22. BPM Stretch Session | v1.2 | 5/5 | Complete   | 2026-05-15 |
+| 22. BPM Stretch Session | v1.2 | 5/5 | Complete    | 2026-05-15 |
 
 ## Backlog
 
