@@ -101,3 +101,70 @@ describe('session lifecycle controller', () => {
     expect(() => extendTimedSession(running, 7)).toThrow(RangeError)
   })
 })
+
+describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
+  const stretchSettings: SessionSettings = {
+    ...DEFAULT_SETTINGS,
+    mode: 'stretch',
+    initialBpm: 6,
+    targetBpm: 4,
+    holdInitialSeconds: 30,
+    holdTargetSeconds: 60,
+    rampDurationMinutes: 20,
+  }
+
+  it('standard startSession sets stretchSegments to null (regression guard)', () => {
+    const running = startSession(baseSettings, 1_000)
+
+    expect(running.stretchSegments).toBeNull()
+    expect(running.lastFrame.phaseLabel).toBe('In')
+    expect(running.lastFrame.currentBpm).toBeUndefined()
+  })
+
+  it('stretch startSession builds a non-empty segment table and a stretch frame', () => {
+    const running = startSession(stretchSettings, 1_000)
+
+    expect(running.stretchSegments).not.toBeNull()
+    expect(running.stretchSegments?.length).toBeGreaterThan(0)
+    expect(running.lastFrame.currentBpm).toBe(6)
+    expect(running.lastFrame.stage).toBe('hold-initial')
+  })
+
+  it('completeIfNeeded on a stretch session dispatches to the stretch frame', () => {
+    const running = startSession(stretchSettings, 0)
+    // 10 minutes in — mid-ramp; frame must carry stretch live-state fields
+    const next = completeIfNeeded(running, 10 * 60_000)
+
+    expect(next.status).toBe('running')
+    if (next.status !== 'running') throw new Error('Expected running state')
+    expect(next.lastFrame.stage).toBe('ramp')
+    expect(typeof next.lastFrame.currentBpm).toBe('number')
+  })
+
+  it('an open-ended stretch session never returns a complete state', () => {
+    const running = startSession({ ...stretchSettings, holdTargetSeconds: 'open-ended' }, 0)
+
+    const later = completeIfNeeded(running, 5 * 60 * 60_000)
+
+    expect(later.status).toBe('running')
+    if (later.status !== 'running') throw new Error('Expected running state')
+    expect(later.lastFrame.remainingMs).toBeNull()
+  })
+
+  it('a finite stretch session completes once its computed total is reached', () => {
+    const running = startSession(stretchSettings, 0)
+    // total = 30s hold + 20min ramp + 60s hold = 1_290_000 ms
+    const totalMs = 30_000 + 20 * 60_000 + 60_000
+
+    const atTotal = completeIfNeeded(running, totalMs)
+
+    expect(atTotal.status).toBe('complete')
+    if (atTotal.status !== 'complete') throw new Error('Expected complete state')
+    expect(atTotal.message).toBe('Session complete')
+  })
+
+  it('extendTimedSession throws RangeError for a stretch session (CONTEXT D-02)', () => {
+    const running = startSession(stretchSettings, 0)
+    expect(() => extendTimedSession(running, 30)).toThrow(RangeError)
+  })
+})
