@@ -172,7 +172,7 @@ None. Plan executed exactly as written:
 - `npx vitest run`: 316/316 passing (baseline 312 + 4 new)
 - `npx tsc --noEmit`: clean (exit 0)
 
----
+***
 
 ## Iteration 2 — Post-UAT (2026-05-11)
 
@@ -214,7 +214,7 @@ Commit `836f6e4`.
   audible sustain through entire phase and clean handoff at flip (no audible
   decay-tail bleeding into next strike).
 
----
+***
 
 ## Iteration 3 — Post-UAT (2026-05-11)
 

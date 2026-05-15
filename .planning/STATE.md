@@ -132,8 +132,6 @@ Items acknowledged and carried forward from previous milestone close:
 | procedural | Phase 19 19-UAT.md (audit reports "unknown" status — artifact-format mismatch with audit-open scanner; UAT outcomes recorded inline PASS/PARTIAL/PASS/PASS) | 4/4 UAT items recorded; operator-approved phase close | 2026-05-15 v1.1 close |
 | procedural | Phase 15 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
 | procedural | Phase 18 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
-| procedural | Quick task `260510-tc9` listed "missing" status by audit-open scanner | Bug fixes shipped in commit `0db8f5d` (Phase 5.1 close) — status field gap only | 2026-05-15 v1.1 close |
-| procedural | Quick task `260510-tc9` still listed "missing" by audit-open scanner | Bug fixes shipped in commit `0db8f5d`; status field gap only — re-acknowledged at v1.2 close | 2026-05-15 v1.2 close |
 | todo | Pending todo `2026-05-15-add-forrest-native-app-links-to-learn-page.md` (ui) | New v1.x candidate — add links to Forrest's native Resonant Breathing apps on the Learn surface; triage at next-milestone scoping | 2026-05-15 v1.2 close |
 | todo | Pending todo `2026-05-15-add-labels-vs-icons-toggle-for-session-indicator.md` (ui) | New v1.x candidate — labels-vs-icons toggle for the session indicator; triage at next-milestone scoping | 2026-05-15 v1.2 close |
 | todo | Pending todo `2026-05-15-add-license-to-repo-and-update-readme.md` (docs) | New v1.x candidate — add a LICENSE file and update README; triage at next-milestone scoping | 2026-05-15 v1.2 close |
