@@ -93,8 +93,12 @@ Plans:
   1. User sees a distinct favicon variant for each of the 5 palettes (Light, Dark, Moss, Slate, Dusk) that differs visually in the browser tab
   2. User's favicon swaps immediately when they change theme via SettingsDialog, including across tabs (same-tab + cross-tab `storage` event)
   3. User's persisted-theme favicon is applied on initial page load with no flash of the default favicon before the correct one appears
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 21-01-PLAN.md — Shared faviconPalette module (5 accent-strong colors + SVG template) + theme.css sync-guard test (FAVI-01)
+- [ ] 21-02-PLAN.md — useFavicon hook + index.html pre-paint favicon extension + App.tsx mount + human-verify (FAVI-01, FAVI-02, FAVI-03)
 
 ### Phase 22: BPM Stretch Session
 **Goal**: Users can run a BPM stretch session whose breathing rate walks sub-perceptually from a warm-up BPM to a target BPM and then holds, using the existing one-clock SessionFrame and dual-anchor audio scheduling
@@ -136,7 +140,7 @@ Plans:
 | 18. Audio Timbres | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
-| 21. Per-Theme Favicon | v1.2 | 0/? | Not started | - |
+| 21. Per-Theme Favicon | v1.2 | 0/2 | Not started | - |
 | 22. BPM Stretch Session | v1.2 | 0/? | Not started | - |
 
 ## Backlog
