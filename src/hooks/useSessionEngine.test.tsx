@@ -2,9 +2,11 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SessionSettings } from '../domain/settings'
+import { DEFAULT_SETTINGS } from '../domain/settings'
 import { useSessionEngine } from './useSessionEngine'
 
 const defaultSettings: SessionSettings = {
+  ...DEFAULT_SETTINGS,
   bpm: 5.5,
   ratio: '40:60',
   durationMinutes: 10,

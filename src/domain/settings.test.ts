@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
-import { isValidBpm, isValidRatio, isValidDuration, isValidTheme, isValidTimbre, isValidVariant, isValidLocale } from './settings'
+import {
+  isValidBpm,
+  isValidRatio,
+  isValidDuration,
+  isValidTheme,
+  isValidTimbre,
+  isValidVariant,
+  isValidLocale,
+  isValidMode,
+  isValidHoldSeconds,
+  isValidHoldTarget,
+  isValidRampDuration,
+  validateSettings,
+  DEFAULT_SETTINGS,
+  DEFAULT_STRETCH_SETTINGS,
+} from './settings'
+import type { SessionSettings } from './settings'
 
 describe('isValidBpm (HYGIENE-02 D-08)', () => {
   it('returns true for valid BPM_OPTIONS members (e.g. 5.5)', () => {
@@ -127,5 +143,180 @@ describe('isValidLocale (INFRA-02 D-01)', () => {
     expect(isValidLocale(undefined)).toBe(false)
     expect(isValidLocale(0)).toBe(false)
     expect(isValidLocale(['en'])).toBe(false)
+  })
+})
+
+// STRETCH-02/03 (D-07) predicate tests
+
+describe('isValidMode (STRETCH-02)', () => {
+  it('returns true for "standard" and "stretch"', () => {
+    expect(isValidMode('standard')).toBe(true)
+    expect(isValidMode('stretch')).toBe(true)
+  })
+
+  it('returns false for unknown strings ("foo", "STANDARD", "")', () => {
+    expect(isValidMode('foo')).toBe(false)
+    expect(isValidMode('STANDARD')).toBe(false)
+    expect(isValidMode('')).toBe(false)
+  })
+
+  it('returns false for non-strings (42, null, undefined, array)', () => {
+    expect(isValidMode(42)).toBe(false)
+    expect(isValidMode(null)).toBe(false)
+    expect(isValidMode(undefined)).toBe(false)
+    expect(isValidMode(['standard'])).toBe(false)
+  })
+})
+
+describe('isValidHoldSeconds (STRETCH-03, D-07)', () => {
+  it('returns true for HOLD_SECONDS_OPTIONS members (0, 15, 30, 45, 60)', () => {
+    expect(isValidHoldSeconds(0)).toBe(true)
+    expect(isValidHoldSeconds(15)).toBe(true)
+    expect(isValidHoldSeconds(30)).toBe(true)
+    expect(isValidHoldSeconds(45)).toBe(true)
+    expect(isValidHoldSeconds(60)).toBe(true)
+  })
+
+  it('returns false for non-option numbers (10, -1, 61)', () => {
+    expect(isValidHoldSeconds(10)).toBe(false)
+    expect(isValidHoldSeconds(-1)).toBe(false)
+    expect(isValidHoldSeconds(61)).toBe(false)
+  })
+
+  it('returns false for "open-ended" (not valid for holdInitial)', () => {
+    expect(isValidHoldSeconds('open-ended')).toBe(false)
+  })
+
+  it('returns false for wrong type (null, undefined, NaN)', () => {
+    expect(isValidHoldSeconds(null)).toBe(false)
+    expect(isValidHoldSeconds(undefined)).toBe(false)
+    expect(isValidHoldSeconds(NaN)).toBe(false)
+  })
+})
+
+describe('isValidHoldTarget (STRETCH-03, D-07, D-11)', () => {
+  it('returns true for HOLD_SECONDS_OPTIONS members (0, 15, 30, 45, 60)', () => {
+    expect(isValidHoldTarget(0)).toBe(true)
+    expect(isValidHoldTarget(15)).toBe(true)
+    expect(isValidHoldTarget(60)).toBe(true)
+  })
+
+  it('returns true for "open-ended" sentinel (D-11)', () => {
+    expect(isValidHoldTarget('open-ended')).toBe(true)
+  })
+
+  it('returns false for non-option numbers (10, -1) and arbitrary strings ("foo")', () => {
+    expect(isValidHoldTarget(10)).toBe(false)
+    expect(isValidHoldTarget(-1)).toBe(false)
+    expect(isValidHoldTarget('foo')).toBe(false)
+  })
+
+  it('returns false for null and undefined', () => {
+    expect(isValidHoldTarget(null)).toBe(false)
+    expect(isValidHoldTarget(undefined)).toBe(false)
+  })
+})
+
+describe('isValidRampDuration (STRETCH-03, D-07)', () => {
+  it('returns true for RAMP_DURATION_OPTIONS members (5..60, 5-min steps)', () => {
+    expect(isValidRampDuration(5)).toBe(true)
+    expect(isValidRampDuration(10)).toBe(true)
+    expect(isValidRampDuration(30)).toBe(true)
+    expect(isValidRampDuration(60)).toBe(true)
+  })
+
+  it('returns false for non-option numbers (7, 0, 65)', () => {
+    expect(isValidRampDuration(7)).toBe(false)
+    expect(isValidRampDuration(0)).toBe(false)
+    expect(isValidRampDuration(65)).toBe(false)
+  })
+
+  it('returns false for "open-ended" and other strings', () => {
+    expect(isValidRampDuration('open-ended')).toBe(false)
+    expect(isValidRampDuration('20')).toBe(false)
+  })
+
+  it('returns false for NaN and Infinity', () => {
+    expect(isValidRampDuration(NaN)).toBe(false)
+    expect(isValidRampDuration(Infinity)).toBe(false)
+  })
+})
+
+// D-07 default stretch settings yield 20-min computed total
+describe('DEFAULT_STRETCH_SETTINGS and DEFAULT_SETTINGS (STRETCH pitfall-5)', () => {
+  it('DEFAULT_SETTINGS has mode "standard"', () => {
+    expect(DEFAULT_SETTINGS.mode).toBe('standard')
+  })
+
+  it('DEFAULT_STRETCH_SETTINGS fields yield a 20-minute computed total (gate-clear)', () => {
+    const { holdInitialSeconds, rampDurationMinutes, holdTargetSeconds } = DEFAULT_STRETCH_SETTINGS
+    const total = holdInitialSeconds * 1000 + rampDurationMinutes * 60000 + (holdTargetSeconds === 'open-ended' ? 0 : holdTargetSeconds * 1000)
+    expect(total).toBe(20 * 60 * 1000)
+  })
+})
+
+// validateSettings stretch-mode extensions
+describe('validateSettings stretch-mode (D-01, STRETCH-02/03)', () => {
+  const validStretchSettings: SessionSettings = {
+    bpm: 5.5,
+    ratio: '40:60',
+    durationMinutes: 10,
+    mode: 'stretch',
+    initialBpm: 6,
+    targetBpm: 4,
+    holdInitialSeconds: 0,
+    holdTargetSeconds: 0,
+    rampDurationMinutes: 20,
+  }
+
+  it('accepts a valid stretch-mode settings object', () => {
+    expect(() => validateSettings(validStretchSettings)).not.toThrow()
+  })
+
+  it('throws RangeError for invalid mode', () => {
+    const bad = { ...validStretchSettings, mode: 'foo' as never }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('throws RangeError when stretch: initialBpm is invalid (not in BPM_OPTIONS)', () => {
+    const bad = { ...validStretchSettings, initialBpm: 999 }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('throws RangeError when stretch: targetBpm >= initialBpm (D-01 down-only)', () => {
+    const bad = { ...validStretchSettings, targetBpm: 6 }  // equal → invalid
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+    const bad2 = { ...validStretchSettings, targetBpm: 7 }  // greater → invalid
+    expect(() => validateSettings(bad2)).toThrow(RangeError)
+  })
+
+  it('throws RangeError when stretch: holdInitialSeconds is invalid', () => {
+    const bad = { ...validStretchSettings, holdInitialSeconds: 10 as never }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('throws RangeError when stretch: holdTargetSeconds is invalid', () => {
+    const bad = { ...validStretchSettings, holdTargetSeconds: 'forever' as never }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('throws RangeError when stretch: rampDurationMinutes is invalid', () => {
+    const bad = { ...validStretchSettings, rampDurationMinutes: 7 }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('does NOT throw for standard-mode settings even if stretch fields would be invalid', () => {
+    const standardSettings: SessionSettings = {
+      bpm: 5.5,
+      ratio: '40:60',
+      durationMinutes: 10,
+      mode: 'standard',
+      initialBpm: 6,
+      targetBpm: 4,
+      holdInitialSeconds: 0,
+      holdTargetSeconds: 0,
+      rampDurationMinutes: 20,
+    }
+    expect(() => validateSettings(standardSettings)).not.toThrow()
   })
 })

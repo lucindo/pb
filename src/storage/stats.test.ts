@@ -95,7 +95,8 @@ describe('recordSession aggregation (D-02)', () => {
 
 describe('resetStats (D-11)', () => {
   it('wipes stats subtree only — settings and mute survive', () => {
-    saveSettings({ bpm: 4, ratio: '50:50', durationMinutes: 5 })
+    const savedSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50' as const, durationMinutes: 5 as const }
+    saveSettings(savedSettings)
     saveMute(true)
     recordSession(60_000, true, { now: () => 1_700_000_000_000 })
     expect(loadStats().totalSessions).toBe(1)
@@ -103,7 +104,7 @@ describe('resetStats (D-11)', () => {
     resetStats()
 
     expect(loadStats()).toEqual(ZERO)
-    expect(loadSettings()).toEqual({ bpm: 4, ratio: '50:50', durationMinutes: 5 })
+    expect(loadSettings()).toEqual(savedSettings)
     expect(loadMute()).toBe(true)
   })
 
