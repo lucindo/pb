@@ -30,6 +30,11 @@ export interface SessionControlsProps {
    *  compatibility — when absent, falls back to UI_STRINGS.en.mute. */
   muteStrings?: UiStrings['mute']
   onMuteToggle?(this: void): void
+  /** LEAD-01 / D-05: when true, the primary button label becomes strings.cancel
+   *  instead of strings.startSession. Follows the existing optional-prop pattern
+   *  (muted, audioAvailable). Callers that never pass this prop retain the prior
+   *  idle label ('Start session') unchanged. */
+  inLeadIn?: boolean
 }
 
 export function SessionControls({
@@ -43,6 +48,7 @@ export function SessionControls({
   resumeHintId,
   muteStrings,
   onMuteToggle,
+  inLeadIn,
 }: SessionControlsProps) {
   const isRunning = status === 'running'
   // Per checker B3: render the inline-mute layout ONLY when all three new audio
@@ -61,7 +67,8 @@ export function SessionControls({
         className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
         onClick={isRunning ? onEnd : onStart}
       >
-        {isRunning ? strings.endSession : strings.startSession}
+        {/* Reason: inLeadIn distinguishes idle-during-lead-in from idle-idle per LEAD-01/D-04/D-05 */}
+        {isRunning ? strings.endSession : inLeadIn ? strings.cancel : strings.startSession}
       </button>
     )
   }
@@ -78,7 +85,8 @@ export function SessionControls({
         className="min-h-11 flex-1 rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
         onClick={isRunning ? onEnd : onStart}
       >
-        {isRunning ? strings.endSession : strings.startSession}
+        {/* Reason: inLeadIn distinguishes idle-during-lead-in from idle-idle per LEAD-01/D-04/D-05 */}
+        {isRunning ? strings.endSession : inLeadIn ? strings.cancel : strings.startSession}
       </button>
       <MuteToggle
         muted={muted}

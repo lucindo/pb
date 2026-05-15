@@ -21,6 +21,7 @@ function renderControlsWithMute(props: Partial<SessionControlsProps> = {}) {
       muted={props.muted ?? false}
       audioAvailable={props.audioAvailable ?? true}
       onMuteToggle={onMuteToggle}
+      inLeadIn={props.inLeadIn}
     />,
   )
   return { ...utils, onStart, onEnd, onMuteToggle }
