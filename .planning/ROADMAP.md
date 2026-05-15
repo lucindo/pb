@@ -76,11 +76,14 @@ Phase artifacts: `.planning/milestones/v1.1-phases/`
 **Depends on**: Phase 19 (existing session flow)
 **Requirements**: LEAD-01
 **Success Criteria** (what must be TRUE):
-  1. User sees the Start button visually disabled while `appPhase === 'lead-in'` is in flight
-  2. User cannot click Start a second time during the 3-second lead-in countdown (no double-start, no re-trigger)
-  3. User sees the Start button return to its normal enabled state when the session moves to the first In/Out cycle
-**Plans**: TBD
+  1. User sees the primary button read `Cancel` / `Cancelar` (not `Start session`) while `appPhase === 'lead-in'` is in flight
+  2. User cannot click Start a second time during the 3-second lead-in countdown — no `Start` affordance exists, so no double-start; the click runs the existing cancel branch
+  3. User sees the primary button return to `End session` (running) / `Start session` (idle) when the session moves past the lead-in
+**Plans**: 1 plan
 **UI hint**: yes
+
+Plans:
+- [ ] 20-01-PLAN.md — Swap primary button label to Cancel/Cancelar during lead-in (LEAD-01)
 
 ### Phase 21: Per-Theme Favicon
 **Goal**: Users see a favicon that matches their active palette in the browser tab and OS task switcher
@@ -132,7 +135,7 @@ Phase artifacts: `.planning/milestones/v1.1-phases/`
 | 17. Visual Variants | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 18. Audio Timbres | v1.1 | 6/6 | Complete | 2026-05-14 |
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
-| 20. Session Start Polish | v1.2 | 0/? | Not started | - |
+| 20. Session Start Polish | v1.2 | 0/1 | Not started | - |
 | 21. Per-Theme Favicon | v1.2 | 0/? | Not started | - |
 | 22. BPM Stretch Session | v1.2 | 0/? | Not started | - |
 
