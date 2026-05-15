@@ -100,7 +100,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
-- Open todos (4) tracked under `.planning/todos/` — see Deferred Items below. Triage at next-milestone scoping.
+- Open todos (3) tracked under `.planning/todos/` — see Deferred Items below. Triage at next-milestone scoping.
 
 ### Blockers/Concerns
 
@@ -133,7 +133,6 @@ Items acknowledged and carried forward from previous milestone close:
 | procedural | Phase 15 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
 | procedural | Phase 18 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
 | procedural | Quick task `260510-tc9` listed "missing" status by audit-open scanner | Bug fixes shipped in commit `0db8f5d` (Phase 5.1 close) — status field gap only | 2026-05-15 v1.1 close |
-| v1.x carry-forward | Pending todo `2026-05-13-themes-aesthetic-refresh.md` (medium) | Aesthetic refresh deferred behind 16.3 thorough redesign; revisit if 16.3 results show further gaps | 2026-05-15 v1.1 close |
 | procedural | Quick task `260510-tc9` still listed "missing" by audit-open scanner | Bug fixes shipped in commit `0db8f5d`; status field gap only — re-acknowledged at v1.2 close | 2026-05-15 v1.2 close |
 | todo | Pending todo `2026-05-15-add-forrest-native-app-links-to-learn-page.md` (ui) | New v1.x candidate — add links to Forrest's native Resonant Breathing apps on the Learn surface; triage at next-milestone scoping | 2026-05-15 v1.2 close |
 | todo | Pending todo `2026-05-15-add-labels-vs-icons-toggle-for-session-indicator.md` (ui) | New v1.x candidate — labels-vs-icons toggle for the session indicator; triage at next-milestone scoping | 2026-05-15 v1.2 close |
