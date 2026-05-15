@@ -176,7 +176,8 @@ describe('LOCL-02 — stats record on each end path', () => {
     })
     // Re-click during lead-in cancels per onStartClick cancel branch (D-03)
     // session.status is still 'idle' so runningSnapshotRef was never populated
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    // Button label is 'Cancel' during lead-in (Phase 20 LEAD-01).
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await advanceTime(0)
     const env = readEnvelope()
     const sessions2 = (env?.['stats'] as Record<string, unknown> | undefined)?.['totalSessions'] as number | undefined

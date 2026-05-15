@@ -302,10 +302,11 @@ export default function App() {
     leadInTimeoutsRef.current = []
   }, [])
 
-  // Per checker W4: the primary button label is LOCKED to 'Start session' during lead-in
-  // (Phase 1 D-11 copy lock). The cancel-during-lead-in path is routed THROUGH this onStart
-  // handler because session.status is still 'idle' during lead-in (SESS-05 — useSessionEngine
-  // has not yet been started). SessionControls dispatches onClick by status; idle → onStart.
+  // Phase 20 D-04 supersedes Phase 3 D-11 copy lock for the lead-in window: the primary button
+  // label is now 'Cancel'/'Cancelar' during lead-in (LEAD-01 via the inLeadIn prop on
+  // SessionControls). The still-accurate part: the cancel path is routed THROUGH onStartClick
+  // because session.status is still 'idle' during lead-in (SESS-05 — useSessionEngine has not
+  // yet been started). SessionControls dispatches onClick by status; idle → onStart.
   // So onStartClick handles BOTH the start-from-idle case AND the cancel-during-lead-in case.
   const onStartClick = useCallback(async () => {
     // Cancel-during-lead-in branch (Open Question 2 option (a) + checker W4):
@@ -675,6 +676,7 @@ export default function App() {
             resumeHintId="mute-toggle-resume-hint"
             muteStrings={uiStrings.mute}
             onMuteToggle={() => { void onMuteOrResumeClick() }}
+            inLeadIn={appPhase === 'lead-in'}
           />
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
               Lives at the App level (discretion #6) so the announcement fires once on
