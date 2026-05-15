@@ -17,9 +17,9 @@ Requirements for v1.2 release. Each maps to roadmap phases.
 
 ### Favicon
 
-- [ ] **FAVI-01**: User has a per-palette favicon variant for each of the 5 themes (Light, Dark, Moss, Slate, Dusk).
-- [ ] **FAVI-02**: User's favicon swaps when the active theme changes via SettingsDialog (same-tab + cross-tab).
-- [ ] **FAVI-03**: User's persisted-theme favicon is applied on initial page load (no flash of the default favicon).
+- [x] **FAVI-01**: User has a per-palette favicon variant for each of the 5 themes (Light, Dark, Moss, Slate, Dusk).
+- [x] **FAVI-02**: User's favicon swaps when the active theme changes via SettingsDialog (same-tab + cross-tab).
+- [x] **FAVI-03**: User's persisted-theme favicon is applied on initial page load (no flash of the default favicon).
 
 ### BPM Stretch
 
@@ -97,9 +97,9 @@ Which phases cover which requirements. Filled during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | LEAD-01 | Phase 20 | Complete |
-| FAVI-01 | Phase 21 | Pending |
-| FAVI-02 | Phase 21 | Pending |
-| FAVI-03 | Phase 21 | Pending |
+| FAVI-01 | Phase 21 | Complete |
+| FAVI-02 | Phase 21 | Complete |
+| FAVI-03 | Phase 21 | Complete |
 | STRETCH-01 | Phase 22 | Pending |
 | STRETCH-02 | Phase 22 | Pending |
 | STRETCH-03 | Phase 22 | Pending |
