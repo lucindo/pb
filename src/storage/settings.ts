@@ -12,8 +12,8 @@ import {
   isValidRatio,
   isValidDuration,
   isValidMode,
-  isValidHoldSeconds,
-  isValidHoldTarget,
+  isValidWarmUp,
+  isValidCoolDown,
   isValidRampDuration,
   type SessionSettings,
 } from '../domain/settings'
@@ -31,8 +31,8 @@ export function coerceSettings(raw: unknown): SessionSettings {
     mode:                isValidMode(r.mode)                   ? r.mode                    : DEFAULT_SETTINGS.mode,
     initialBpm:          isValidBpm(r.initialBpm)              ? r.initialBpm              : DEFAULT_STRETCH_SETTINGS.initialBpm,
     targetBpm:           isValidBpm(r.targetBpm)               ? r.targetBpm               : DEFAULT_STRETCH_SETTINGS.targetBpm,
-    holdInitialSeconds:  isValidHoldSeconds(r.holdInitialSeconds) ? r.holdInitialSeconds   : DEFAULT_STRETCH_SETTINGS.holdInitialSeconds,
-    holdTargetSeconds:   isValidHoldTarget(r.holdTargetSeconds)   ? r.holdTargetSeconds    : DEFAULT_STRETCH_SETTINGS.holdTargetSeconds,
+    warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)        ? r.warmUpMinutes           : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
+    coolDownMinutes:     isValidCoolDown(r.coolDownMinutes)    ? r.coolDownMinutes         : DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
     rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes) ? r.rampDurationMinutes : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
   }
 }

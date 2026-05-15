@@ -9,8 +9,8 @@ import {
   isValidVariant,
   isValidLocale,
   isValidMode,
-  isValidHoldSeconds,
-  isValidHoldTarget,
+  isValidWarmUp,
+  isValidCoolDown,
   isValidRampDuration,
   validateSettings,
   DEFAULT_SETTINGS,
@@ -168,67 +168,68 @@ describe('isValidMode (STRETCH-02)', () => {
   })
 })
 
-describe('isValidHoldSeconds (STRETCH-03, D-07)', () => {
-  it('returns true for HOLD_SECONDS_OPTIONS members (0, 15, 30, 45, 60)', () => {
-    expect(isValidHoldSeconds(0)).toBe(true)
-    expect(isValidHoldSeconds(15)).toBe(true)
-    expect(isValidHoldSeconds(30)).toBe(true)
-    expect(isValidHoldSeconds(45)).toBe(true)
-    expect(isValidHoldSeconds(60)).toBe(true)
+describe('isValidWarmUp (STRETCH-03, D-07)', () => {
+  it('returns true for WARMUP_MINUTES_OPTIONS members (5, 10, 15)', () => {
+    expect(isValidWarmUp(5)).toBe(true)
+    expect(isValidWarmUp(10)).toBe(true)
+    expect(isValidWarmUp(15)).toBe(true)
   })
 
-  it('returns false for non-option numbers (10, -1, 61)', () => {
-    expect(isValidHoldSeconds(10)).toBe(false)
-    expect(isValidHoldSeconds(-1)).toBe(false)
-    expect(isValidHoldSeconds(61)).toBe(false)
+  it('returns false for non-option numbers (0, 7, 20, -1)', () => {
+    expect(isValidWarmUp(0)).toBe(false)
+    expect(isValidWarmUp(7)).toBe(false)
+    expect(isValidWarmUp(20)).toBe(false)
+    expect(isValidWarmUp(-1)).toBe(false)
   })
 
-  it('returns false for "open-ended" (not valid for holdInitial)', () => {
-    expect(isValidHoldSeconds('open-ended')).toBe(false)
+  it('returns false for "open-ended" (not valid for warm-up)', () => {
+    expect(isValidWarmUp('open-ended')).toBe(false)
   })
 
   it('returns false for wrong type (null, undefined, NaN)', () => {
-    expect(isValidHoldSeconds(null)).toBe(false)
-    expect(isValidHoldSeconds(undefined)).toBe(false)
-    expect(isValidHoldSeconds(NaN)).toBe(false)
+    expect(isValidWarmUp(null)).toBe(false)
+    expect(isValidWarmUp(undefined)).toBe(false)
+    expect(isValidWarmUp(NaN)).toBe(false)
   })
 })
 
-describe('isValidHoldTarget (STRETCH-03, D-07, D-11)', () => {
-  it('returns true for HOLD_SECONDS_OPTIONS members (0, 15, 30, 45, 60)', () => {
-    expect(isValidHoldTarget(0)).toBe(true)
-    expect(isValidHoldTarget(15)).toBe(true)
-    expect(isValidHoldTarget(60)).toBe(true)
+describe('isValidCoolDown (STRETCH-03, D-07, D-11)', () => {
+  it('returns true for COOLDOWN_OPTIONS numeric members (5, 10, 15, 20)', () => {
+    expect(isValidCoolDown(5)).toBe(true)
+    expect(isValidCoolDown(10)).toBe(true)
+    expect(isValidCoolDown(15)).toBe(true)
+    expect(isValidCoolDown(20)).toBe(true)
   })
 
   it('returns true for "open-ended" sentinel (D-11)', () => {
-    expect(isValidHoldTarget('open-ended')).toBe(true)
+    expect(isValidCoolDown('open-ended')).toBe(true)
   })
 
-  it('returns false for non-option numbers (10, -1) and arbitrary strings ("foo")', () => {
-    expect(isValidHoldTarget(10)).toBe(false)
-    expect(isValidHoldTarget(-1)).toBe(false)
-    expect(isValidHoldTarget('foo')).toBe(false)
+  it('returns false for non-option numbers (0, 7, 25) and arbitrary strings ("foo")', () => {
+    expect(isValidCoolDown(0)).toBe(false)
+    expect(isValidCoolDown(7)).toBe(false)
+    expect(isValidCoolDown(25)).toBe(false)
+    expect(isValidCoolDown('foo')).toBe(false)
   })
 
   it('returns false for null and undefined', () => {
-    expect(isValidHoldTarget(null)).toBe(false)
-    expect(isValidHoldTarget(undefined)).toBe(false)
+    expect(isValidCoolDown(null)).toBe(false)
+    expect(isValidCoolDown(undefined)).toBe(false)
   })
 })
 
 describe('isValidRampDuration (STRETCH-03, D-07)', () => {
-  it('returns true for RAMP_DURATION_OPTIONS members (5..60, 5-min steps)', () => {
+  it('returns true for RAMP_DURATION_OPTIONS members (5, 10, 15, 20)', () => {
     expect(isValidRampDuration(5)).toBe(true)
     expect(isValidRampDuration(10)).toBe(true)
-    expect(isValidRampDuration(30)).toBe(true)
-    expect(isValidRampDuration(60)).toBe(true)
+    expect(isValidRampDuration(15)).toBe(true)
+    expect(isValidRampDuration(20)).toBe(true)
   })
 
-  it('returns false for non-option numbers (7, 0, 65)', () => {
+  it('returns false for non-option numbers (7, 0, 25)', () => {
     expect(isValidRampDuration(7)).toBe(false)
     expect(isValidRampDuration(0)).toBe(false)
-    expect(isValidRampDuration(65)).toBe(false)
+    expect(isValidRampDuration(25)).toBe(false)
   })
 
   it('returns false for "open-ended" and other strings', () => {
@@ -248,10 +249,11 @@ describe('DEFAULT_STRETCH_SETTINGS and DEFAULT_SETTINGS (STRETCH pitfall-5)', ()
     expect(DEFAULT_SETTINGS.mode).toBe('standard')
   })
 
-  it('DEFAULT_STRETCH_SETTINGS fields yield a 20-minute computed total (gate-clear)', () => {
-    const { holdInitialSeconds, rampDurationMinutes, holdTargetSeconds } = DEFAULT_STRETCH_SETTINGS
-    const total = holdInitialSeconds * 1000 + rampDurationMinutes * 60000 + (holdTargetSeconds === 'open-ended' ? 0 : holdTargetSeconds * 1000)
-    expect(total).toBe(20 * 60 * 1000)
+  it('DEFAULT_STRETCH_SETTINGS fields yield a 15-minute computed total', () => {
+    const { warmUpMinutes, rampDurationMinutes, coolDownMinutes } = DEFAULT_STRETCH_SETTINGS
+    const coolDown = coolDownMinutes === 'open-ended' ? 0 : coolDownMinutes
+    const total = (warmUpMinutes + rampDurationMinutes + coolDown) * 60000
+    expect(total).toBe(15 * 60 * 1000)
   })
 })
 
@@ -264,8 +266,8 @@ describe('validateSettings stretch-mode (D-01, STRETCH-02/03)', () => {
     mode: 'stretch',
     initialBpm: 6,
     targetBpm: 4,
-    holdInitialSeconds: 0,
-    holdTargetSeconds: 0,
+    warmUpMinutes: 5,
+    coolDownMinutes: 5,
     rampDurationMinutes: 20,
   }
 
@@ -290,13 +292,13 @@ describe('validateSettings stretch-mode (D-01, STRETCH-02/03)', () => {
     expect(() => validateSettings(bad2)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: holdInitialSeconds is invalid', () => {
-    const bad = { ...validStretchSettings, holdInitialSeconds: 10 as never }
+  it('throws RangeError when stretch: warmUpMinutes is invalid', () => {
+    const bad = { ...validStretchSettings, warmUpMinutes: 7 as never }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: holdTargetSeconds is invalid', () => {
-    const bad = { ...validStretchSettings, holdTargetSeconds: 'forever' as never }
+  it('throws RangeError when stretch: coolDownMinutes is invalid', () => {
+    const bad = { ...validStretchSettings, coolDownMinutes: 'forever' as never }
     expect(() => validateSettings(bad)).toThrow(RangeError)
   })
 
@@ -313,8 +315,8 @@ describe('validateSettings stretch-mode (D-01, STRETCH-02/03)', () => {
       mode: 'standard',
       initialBpm: 6,
       targetBpm: 4,
-      holdInitialSeconds: 0,
-      holdTargetSeconds: 0,
+      warmUpMinutes: 5,
+      coolDownMinutes: 5,
       rampDurationMinutes: 20,
     }
     expect(() => validateSettings(standardSettings)).not.toThrow()

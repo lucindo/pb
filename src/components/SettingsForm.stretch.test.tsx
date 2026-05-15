@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -24,43 +24,39 @@ function renderForm(overrides: Partial<SettingsFormProps> = {}) {
   return { onChange, onExtendDuration }
 }
 
-const STRETCH_LEGENDS = ['Start BPM', 'Target BPM', 'Warm-up', 'Ramp', 'Cool-down']
+// Stepper fieldsets expose role="group" named by their legend — query by these
+// to avoid text collisions (e.g. "Stretch" is both the mode label and the
+// ramp-stage field label).
+const STRETCH_GROUPS = ['Start BPM', 'Target BPM', 'Warm-up', 'Stretch', 'Settle']
 
-describe('SettingsForm — stretch surface (Plan 22-04)', () => {
-  it('renders the Standard/Stretch mode picker', () => {
+describe('SettingsForm — stretch surface (Plan 22-04 / 22-05 redesign)', () => {
+  it('renders the Standard/Stretch mode switch', () => {
     renderForm()
-    expect(screen.getByText('Session mode')).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Session mode' })).toBeInTheDocument()
   })
 
   it('standard mode: single BPM stepper present, no stretch field steppers', () => {
     renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
-    expect(screen.getByText('BPM')).toBeInTheDocument()
-    for (const legend of STRETCH_LEGENDS) {
-      expect(screen.queryByText(legend)).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+    for (const group of STRETCH_GROUPS) {
+      expect(screen.queryByRole('group', { name: group })).not.toBeInTheDocument()
     }
   })
 
-  it('stretch mode: 5 stretch steppers present, single BPM stepper absent', () => {
+  it('stretch mode: 5 stretch field steppers present, single BPM stepper absent', () => {
     renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch' } })
-    expect(screen.queryByText('BPM')).not.toBeInTheDocument()
-    for (const legend of STRETCH_LEGENDS) {
-      expect(screen.getByText(legend)).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+    for (const group of STRETCH_GROUPS) {
+      expect(screen.getByRole('group', { name: group })).toBeInTheDocument()
     }
   })
 
-  it('gate: a sub-15-min stretch total disables the →Stretch increase button and shows the hint', () => {
-    // mode 'standard' so the mode picker's increase points at →Stretch (the gated direction)
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard', rampDurationMinutes: 5 } })
-    expect(screen.getByText('Needs a 15+ min session')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel('Session mode') }))
-      .toBeDisabled()
-  })
-
-  it('no gate hint and →Stretch enabled when the stretch total clears 15 minutes', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
-    expect(screen.queryByText('Needs a 15+ min session')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel('Session mode') }))
-      .toBeEnabled()
+  it('toggling the switch from standard fires onChange with mode "stretch"', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
+    await user.click(screen.getByRole('switch', { name: 'Session mode' }))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect((onChange.mock.calls[0]?.[0] as SessionSettings).mode).toBe('stretch')
   })
 
   it('lowering initialBpm auto-corrects a now-invalid targetBpm below the new initialBpm', async () => {
@@ -76,13 +72,16 @@ describe('SettingsForm — stretch surface (Plan 22-04)', () => {
     expect(next.targetBpm).toBeLessThan(next.initialBpm)
   })
 
-  it('computed-total readout shows "Total: 20:00" for the default stretch field values', () => {
+  it('read-only Duration box shows the computed total for default stretch values', () => {
     renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch' } })
-    expect(screen.getByText('Total: 20:00')).toBeInTheDocument()
+    // warm-up 5 + ramp 5 + cool-down 5 = 15 min
+    const duration = screen.getByRole('group', { name: 'Duration' })
+    expect(within(duration).getByText('15 min')).toBeInTheDocument()
   })
 
-  it('computed-total readout shows the open-ended label when holdTarget is open-ended', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch', holdTargetSeconds: 'open-ended' } })
-    expect(screen.getByText('Total: Open-ended')).toBeInTheDocument()
+  it('Duration box shows the open-ended label when cool-down is open-ended', () => {
+    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch', coolDownMinutes: 'open-ended' } })
+    const duration = screen.getByRole('group', { name: 'Duration' })
+    expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
   })
 })

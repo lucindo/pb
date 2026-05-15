@@ -5,15 +5,18 @@ export type SessionMode = 'standard' | 'stretch'
 
 export const MODE_OPTIONS = ['standard', 'stretch'] as const satisfies readonly SessionMode[]
 
-export type HoldSecondsOption = 0 | 15 | 30 | 45 | 60
+// Stretch stage durations are minute-based: Warm-up (initial-BPM hold), Ramp
+// (the BPM walk-down), and Cool-down (target-BPM hold). The structural minimum
+// total is 5 + 5 + 5 = 15 min, so no separate "session long enough" gate is needed.
+export type WarmUpMinutes = 5 | 10 | 15
 
-export const HOLD_SECONDS_OPTIONS = [0, 15, 30, 45, 60] as const satisfies readonly HoldSecondsOption[]
+export const WARMUP_MINUTES_OPTIONS = [5, 10, 15] as const satisfies readonly WarmUpMinutes[]
 
-export type HoldTargetOption = HoldSecondsOption | 'open-ended'
+export type CoolDownMinutes = 5 | 10 | 15 | 20 | 'open-ended'
 
-export const HOLD_TARGET_OPTIONS = [0, 15, 30, 45, 60, 'open-ended'] as const satisfies readonly HoldTargetOption[]
+export const COOLDOWN_OPTIONS = [5, 10, 15, 20, 'open-ended'] as const satisfies readonly CoolDownMinutes[]
 
-export const RAMP_DURATION_OPTIONS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60] as const satisfies readonly number[]
+export const RAMP_DURATION_OPTIONS = [5, 10, 15, 20] as const satisfies readonly number[]
 
 export interface SessionSettings {
   bpm: number
@@ -22,8 +25,8 @@ export interface SessionSettings {
   mode: SessionMode
   initialBpm: number
   targetBpm: number
-  holdInitialSeconds: HoldSecondsOption
-  holdTargetSeconds: HoldTargetOption
+  warmUpMinutes: WarmUpMinutes
+  coolDownMinutes: CoolDownMinutes
   rampDurationMinutes: number
 }
 
@@ -74,19 +77,19 @@ export const DEFAULT_SETTINGS: SessionSettings = {
   mode: 'standard',
   initialBpm: 5.5,
   targetBpm: 4.5,
-  holdInitialSeconds: 0,
-  holdTargetSeconds: 0,
-  rampDurationMinutes: 20,
+  warmUpMinutes: 5,
+  coolDownMinutes: 5,
+  rampDurationMinutes: 5,
 }
 
-// DEFAULT_STRETCH_SETTINGS: the per-field stretch defaults referenced by storage coercer (Plan 02).
-// Fields yield holdInitial(0) + ramp(20min) + holdTarget(0) = 20-minute total → gate clear (Pitfall 5).
+// DEFAULT_STRETCH_SETTINGS: the per-field stretch defaults referenced by the
+// storage coercer. Warm-up 5 + Ramp 5 + Cool-down 5 = 15-minute computed total.
 export const DEFAULT_STRETCH_SETTINGS = {
   initialBpm: 5.5,
   targetBpm: 4.5,
-  holdInitialSeconds: 0 as HoldSecondsOption,
-  holdTargetSeconds: 0 as HoldTargetOption,
-  rampDurationMinutes: 20,
+  warmUpMinutes: 5 as WarmUpMinutes,
+  coolDownMinutes: 5 as CoolDownMinutes,
+  rampDurationMinutes: 5,
 } as const
 
 // Phase 14 D-01: v1.1 customization enum surfaces — predicates are FINAL;
@@ -151,17 +154,17 @@ export function isValidMode(v: unknown): v is SessionMode {
   return typeof v === 'string' && (MODE_OPTIONS as readonly string[]).includes(v)
 }
 
-export function isValidHoldSeconds(v: unknown): v is HoldSecondsOption {
+export function isValidWarmUp(v: unknown): v is WarmUpMinutes {
   return typeof v === 'number'
     && Number.isFinite(v)
-    && (HOLD_SECONDS_OPTIONS as readonly number[]).includes(v)
+    && (WARMUP_MINUTES_OPTIONS as readonly number[]).includes(v)
 }
 
-export function isValidHoldTarget(v: unknown): v is HoldTargetOption {
+export function isValidCoolDown(v: unknown): v is CoolDownMinutes {
   if (v === 'open-ended') return true
   return typeof v === 'number'
     && Number.isFinite(v)
-    && (HOLD_SECONDS_OPTIONS as readonly number[]).includes(v)
+    && (COOLDOWN_OPTIONS as readonly unknown[]).includes(v)
 }
 
 export function isValidRampDuration(v: unknown): v is number {
@@ -203,12 +206,12 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
       throw new RangeError(`Unsupported targetBpm: ${String(settings.targetBpm)}`)
     }
 
-    if (!isValidHoldSeconds(settings.holdInitialSeconds)) {
-      throw new RangeError(`Unsupported holdInitialSeconds: ${String(settings.holdInitialSeconds)}`)
+    if (!isValidWarmUp(settings.warmUpMinutes)) {
+      throw new RangeError(`Unsupported warmUpMinutes: ${String(settings.warmUpMinutes)}`)
     }
 
-    if (!isValidHoldTarget(settings.holdTargetSeconds)) {
-      throw new RangeError(`Unsupported holdTargetSeconds: ${String(settings.holdTargetSeconds)}`)
+    if (!isValidCoolDown(settings.coolDownMinutes)) {
+      throw new RangeError(`Unsupported coolDownMinutes: ${String(settings.coolDownMinutes)}`)
     }
 
     if (!isValidRampDuration(settings.rampDurationMinutes)) {

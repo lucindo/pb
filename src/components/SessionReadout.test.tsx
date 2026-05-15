@@ -89,7 +89,7 @@ describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
   it('a standard frame (no currentBpm) renders no BPM chip and no stage label', () => {
     renderReadout({ frame: sampleFrame, status: 'running' })
     expect(screen.queryByText('BPM')).not.toBeInTheDocument()
-    expect(screen.queryByText('Ramp')).not.toBeInTheDocument()
+    expect(screen.queryByText('Stretch')).not.toBeInTheDocument()
   })
 
   it('a running stretch frame renders the live BPM chip to one decimal + the unit label', () => {
@@ -101,8 +101,8 @@ describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
   it('maps each stretch stage to its label', () => {
     const cases: { stage: NonNullable<SessionFrame['stage']>; label: string }[] = [
       { stage: 'hold-initial', label: 'Warm-up' },
-      { stage: 'ramp', label: 'Ramp' },
-      { stage: 'hold-target', label: 'Cool-down' },
+      { stage: 'ramp', label: 'Stretch' },
+      { stage: 'hold-target', label: 'Settle' },
     ]
     for (const { stage, label } of cases) {
       const { unmount } = renderReadout({ frame: { ...stretchFrame, stage }, status: 'running' })

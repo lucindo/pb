@@ -108,8 +108,8 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
     mode: 'stretch',
     initialBpm: 6,
     targetBpm: 4,
-    holdInitialSeconds: 30,
-    holdTargetSeconds: 60,
+    warmUpMinutes: 10,
+    coolDownMinutes: 15,
     rampDurationMinutes: 20,
   }
 
@@ -132,8 +132,8 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
 
   it('completeIfNeeded on a stretch session dispatches to the stretch frame', () => {
     const running = startSession(stretchSettings, 0)
-    // 10 minutes in — mid-ramp; frame must carry stretch live-state fields
-    const next = completeIfNeeded(running, 10 * 60_000)
+    // 15 minutes in — mid-ramp (warm-up 10 min, ramp 10:00–30:00)
+    const next = completeIfNeeded(running, 15 * 60_000)
 
     expect(next.status).toBe('running')
     if (next.status !== 'running') throw new Error('Expected running state')
@@ -142,7 +142,7 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
   })
 
   it('an open-ended stretch session never returns a complete state', () => {
-    const running = startSession({ ...stretchSettings, holdTargetSeconds: 'open-ended' }, 0)
+    const running = startSession({ ...stretchSettings, coolDownMinutes: 'open-ended' }, 0)
 
     const later = completeIfNeeded(running, 5 * 60 * 60_000)
 
@@ -153,10 +153,10 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
 
   it('a finite stretch session completes once its computed total is reached', () => {
     const running = startSession(stretchSettings, 0)
-    // total = 30s hold + 20min ramp + 60s hold = 1_290_000 ms
-    const totalMs = 30_000 + 20 * 60_000 + 60_000
+    // total = (warm-up 10 + ramp 20 + cool-down 15) min = 45 min
+    const totalMs = (10 + 20 + 15) * 60_000
 
-    const atTotal = completeIfNeeded(running, totalMs)
+    const atTotal = completeIfNeeded(running, totalMs + 60_000)
 
     expect(atTotal.status).toBe('complete')
     if (atTotal.status !== 'complete') throw new Error('Expected complete state')

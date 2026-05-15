@@ -1,22 +1,20 @@
 import {
   BPM_OPTIONS,
+  COOLDOWN_OPTIONS,
   DURATION_OPTIONS,
-  HOLD_SECONDS_OPTIONS,
-  HOLD_TARGET_OPTIONS,
-  MODE_OPTIONS,
   RAMP_DURATION_OPTIONS,
   RATIO_OPTIONS,
   STRETCH_INITIAL_BPM_OPTIONS,
+  WARMUP_MINUTES_OPTIONS,
+  type CoolDownMinutes,
   type DurationOption,
-  type HoldSecondsOption,
-  type HoldTargetOption,
   type RatioLabel,
-  type SessionMode,
   type SessionSettings,
+  type WarmUpMinutes,
 } from '../domain/settings'
-import { computeStretchTotalMs, isStretchGateClear } from '../domain/stretchRamp'
-import { formatDuration as formatTotalMs } from '../domain/sessionMath'
+import { computeStretchTotalMs } from '../domain/stretchRamp'
 import type { UiStrings } from '../content/strings'
+import { ModeToggle } from './ModeToggle'
 import { SettingsStepper } from './SettingsStepper'
 
 export interface SettingsFormProps {
@@ -35,29 +33,24 @@ export function SettingsForm({
   strings,
 }: SettingsFormProps) {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
+  const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
   const formatDuration = (value: DurationOption): string =>
     value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
-  const formatHoldSeconds = (value: HoldSecondsOption): string =>
-    value === 0 ? strings.holdNoneLabel : `${String(value)}s`
-  const formatHoldTarget = (value: HoldTargetOption): string => {
-    if (value === 'open-ended') return strings.holdOpenEndedLabel
-    if (value === 0) return strings.holdNoneLabel
-    return `${String(value)}s`
-  }
-  const formatRamp = (value: number): string => `${String(value)} ${strings.minutesUnit}`
-  const formatMode = (value: SessionMode): string =>
-    value === 'stretch' ? strings.modeStretch : strings.modeStandard
+  const formatCoolDown = (value: CoolDownMinutes): string =>
+    value === 'open-ended' ? strings.holdOpenEndedLabel : `${String(value)} ${strings.minutesUnit}`
 
   const durationOptions = DURATION_OPTIONS as readonly DurationOption[]
   const durationIndex = durationOptions.indexOf(settings.durationMinutes)
   const nextDuration = durationOptions[durationIndex + 1]
 
   const isStretch = settings.mode === 'stretch'
-  const gateClear = isStretchGateClear(settings)
-  // targetBpm is constrained to a strictly-down ramp (D-01): only BPM values
-  // below the current initialBpm are selectable.
+  // D-01: targetBpm is a strictly-down ramp — only BPM values below initialBpm.
   const targetBpmOptions = (BPM_OPTIONS as readonly number[]).filter((v) => v < settings.initialBpm)
+  // The stretch Duration box is read-only: warm-up + ramp + cool-down summed.
   const stretchTotalMs = computeStretchTotalMs(settings)
+  const stretchDurationText = stretchTotalMs === null
+    ? strings.openEndedLabel
+    : `${String(stretchTotalMs / 60_000)} ${strings.minutesUnit}`
 
   const updateSettings = (nextSettings: Partial<SessionSettings>) => {
     onChange({ ...settings, ...nextSettings })
@@ -74,13 +67,12 @@ export function SettingsForm({
     updateSettings({ durationMinutes })
   }
 
-  // Lowering initialBpm can leave the current targetBpm at or above it; correct
-  // it down to the highest valid option below the new initialBpm (Interaction Contract).
+  // Lowering initialBpm can leave targetBpm at or above it; correct it down to
+  // the highest valid option below the new initialBpm (Interaction Contract).
   const updateInitialBpm = (initialBpm: number) => {
     if (settings.targetBpm >= initialBpm) {
       const validTargets = (BPM_OPTIONS as readonly number[]).filter((v) => v < initialBpm)
-      const corrected = validTargets[validTargets.length - 1]
-      updateSettings({ initialBpm, targetBpm: corrected })
+      updateSettings({ initialBpm, targetBpm: validTargets[validTargets.length - 1] })
       return
     }
     updateSettings({ initialBpm })
@@ -88,79 +80,34 @@ export function SettingsForm({
 
   return (
     <div className="grid w-full gap-4" aria-label={strings.ariaLabel}>
+      {/* D-05: Standard/Stretch switch — next-session-only, hidden while running. */}
       {!isRunning && (
+        <ModeToggle
+          isStretch={isStretch}
+          modeLabel={strings.sessionModeLabel}
+          standardLabel={strings.modeStandard}
+          stretchLabel={strings.modeStretch}
+          onChange={(toStretch) => { updateSettings({ mode: toStretch ? 'stretch' : 'standard' }) }}
+        />
+      )}
+      {!isRunning && (isStretch ? (
         <>
-          {/* D-05: Standard/Stretch mode picker — a two-option stepper, not a toggle. */}
-          <SettingsStepper<SessionMode>
-            label={strings.sessionModeLabel}
-            value={settings.mode}
-            options={MODE_OPTIONS}
-            formatValue={formatMode}
-            onChange={(mode) => { updateSettings({ mode }) }}
-            disableIncrease={!gateClear}
+          <SettingsStepper
+            label={strings.initialBpmLabel}
+            value={settings.initialBpm}
+            options={STRETCH_INITIAL_BPM_OPTIONS}
+            formatValue={formatBpm}
+            onChange={updateInitialBpm}
             strings={strings.stepper}
           />
-          {/* D-12: gate the →Stretch direction with a visible hint, not a silent disable. */}
-          {!gateClear && (
-            <p className="mt-1 text-center text-sm font-normal text-[var(--color-breathing-muted)]">
-              {strings.stretchGateHint}
-            </p>
-          )}
-          {/* D-06: in Stretch mode the single bpm stepper is swapped for the 5 stretch fields. */}
-          {isStretch ? (
-            <>
-              <SettingsStepper
-                label={strings.initialBpmLabel}
-                value={settings.initialBpm}
-                options={STRETCH_INITIAL_BPM_OPTIONS}
-                formatValue={formatBpm}
-                onChange={updateInitialBpm}
-                strings={strings.stepper}
-              />
-              <SettingsStepper
-                label={strings.targetBpmLabel}
-                value={settings.targetBpm}
-                options={targetBpmOptions}
-                formatValue={formatBpm}
-                onChange={(targetBpm) => { updateSettings({ targetBpm }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper<HoldSecondsOption>
-                label={strings.holdInitialLabel}
-                value={settings.holdInitialSeconds}
-                options={HOLD_SECONDS_OPTIONS}
-                formatValue={formatHoldSeconds}
-                onChange={(holdInitialSeconds) => { updateSettings({ holdInitialSeconds }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper
-                label={strings.rampDurationLabel}
-                value={settings.rampDurationMinutes}
-                options={RAMP_DURATION_OPTIONS}
-                formatValue={formatRamp}
-                onChange={(rampDurationMinutes) => { updateSettings({ rampDurationMinutes }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper<HoldTargetOption>
-                label={strings.holdTargetLabel}
-                value={settings.holdTargetSeconds}
-                options={HOLD_TARGET_OPTIONS}
-                formatValue={formatHoldTarget}
-                onChange={(holdTargetSeconds) => { updateSettings({ holdTargetSeconds }) }}
-                strings={strings.stepper}
-              />
-            </>
-          ) : (
-            <SettingsStepper
-              label={strings.bpmLabel}
-              value={settings.bpm}
-              options={BPM_OPTIONS}
-              formatValue={formatBpm}
-              onChange={(bpm) => { updateSettings({ bpm }) }}
-              strings={strings.stepper}
-            />
-          )}
-          {/* Ratio stepper stays visible in BOTH modes (D-06). */}
+          <SettingsStepper
+            label={strings.targetBpmLabel}
+            value={settings.targetBpm}
+            options={targetBpmOptions}
+            formatValue={formatBpm}
+            onChange={(targetBpm) => { updateSettings({ targetBpm }) }}
+            strings={strings.stepper}
+          />
           <SettingsStepper<RatioLabel>
             label={strings.ratioLabel}
             value={settings.ratio}
@@ -168,23 +115,62 @@ export function SettingsForm({
             onChange={(ratio) => { updateSettings({ ratio }) }}
             strings={strings.stepper}
           />
-          {/* D-08: live computed-total readout — D-02 sum of holdInitial + ramp + holdTarget. */}
-          {isStretch && (
-            <p
-              aria-live="polite"
-              className="mt-2 text-center text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-accent-strong)]"
-            >
-              {stretchTotalMs === null
-                ? strings.totalOpenEndedLabel
-                : `${strings.totalLabel} ${formatTotalMs(stretchTotalMs)}`}
-            </p>
-          )}
+          <SettingsStepper<WarmUpMinutes>
+            label={strings.holdInitialLabel}
+            value={settings.warmUpMinutes}
+            options={WARMUP_MINUTES_OPTIONS}
+            formatValue={formatMinutes}
+            onChange={(warmUpMinutes) => { updateSettings({ warmUpMinutes }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper
+            label={strings.rampDurationLabel}
+            value={settings.rampDurationMinutes}
+            options={RAMP_DURATION_OPTIONS}
+            formatValue={formatMinutes}
+            onChange={(rampDurationMinutes) => { updateSettings({ rampDurationMinutes }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<CoolDownMinutes>
+            label={strings.holdTargetLabel}
+            value={settings.coolDownMinutes}
+            options={COOLDOWN_OPTIONS}
+            formatValue={formatCoolDown}
+            onChange={(coolDownMinutes) => { updateSettings({ coolDownMinutes }) }}
+            strings={strings.stepper}
+          />
         </>
-      )}
-      {/* UI-SPEC "Duration stepper in stretch mode": the standard duration stepper is
-          hidden in stretch mode — the computed-total readout is the duration surface
-          there and durationMinutes is unused by the stretch engine. */}
-      {settings.mode === 'standard' && (
+      ) : (
+        <>
+          <SettingsStepper
+            label={strings.bpmLabel}
+            value={settings.bpm}
+            options={BPM_OPTIONS}
+            formatValue={formatBpm}
+            onChange={(bpm) => { updateSettings({ bpm }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<RatioLabel>
+            label={strings.ratioLabel}
+            value={settings.ratio}
+            options={RATIO_OPTIONS}
+            onChange={(ratio) => { updateSettings({ ratio }) }}
+            strings={strings.stepper}
+          />
+        </>
+      ))}
+      {/* Duration: read-only computed total in stretch mode (warm-up + ramp +
+          cool-down); the extendable stepper in standard mode. */}
+      {isStretch ? (
+        <SettingsStepper<string>
+          label={strings.durationLabel}
+          value={stretchDurationText}
+          options={[stretchDurationText]}
+          readOnly
+          onChange={() => undefined}
+          strings={strings.stepper}
+        />
+      ) : (
         <SettingsStepper<DurationOption>
           label={strings.durationLabel}
           value={settings.durationMinutes}

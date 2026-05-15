@@ -44,11 +44,6 @@ export interface StretchSessionFrame extends SessionFrame {
   currentExhaleMs: number   // this cycle's exhale duration
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-/** D-10: minimum stretch session total before the gate clears (15 minutes). */
-export const STRETCH_MIN_TOTAL_MS = 15 * 60_000
-
 // ─── Ratio table (mirroring breathingPlan.ts) ──────────────────────────────
 
 const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
@@ -63,27 +58,36 @@ const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
 /**
  * Builds the piecewise-constant segment table for a stretch session.
  *
- * Step 1: optional hold-initial segment at initialBpm (omitted if holdInitialSeconds === 0)
+ * Step 1: warm-up hold at initialBpm for warmUpMinutes
  * Step 2: ramp — numSteps = ceil((initialBpm - targetBpm) / 0.4999) segments, linear BPM
  *          step i: bpm_i = initialBpm - i * (initialBpm - targetBpm) / numSteps
- * Step 3: optional hold-target segment (omitted if holdTargetSeconds === 0; open-ended → endMs = Infinity)
+ * Step 3: cool-down hold at targetBpm for coolDownMinutes ('open-ended' → endMs = Infinity)
  *
- * cycleBaseIndex on each segment = running sum of floor(segmentDuration / cycleMs) for all prior
+ * Every segment's duration is snapped to a WHOLE number of that segment's cycles, so
+ * each segment boundary lands exactly on a cycle boundary (an Out→In transition). This
+ * guarantees the BPM only ever steps between cycles — never mid-inhale or mid-exhale.
+ *
+ * cycleBaseIndex on each segment = running sum of segment cycle counts for all prior
  * segments (Pitfall 1 — absolute cycleIndex never resets).
  */
 export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabel): StretchSegment[] {
-  const { initialBpm, targetBpm, holdInitialSeconds, holdTargetSeconds, rampDurationMinutes } = settings
+  const { initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes } = settings
   const ratioParts = RATIO_PARTS[ratio]
   const segments: StretchSegment[] = []
   let cursorMs = 0
   let cumulativeCycles = 0
 
-  function makeSegment(bpm: number, durationMs: number, stage: StretchStage): StretchSegment {
+  function makeSegment(bpm: number, requestedMs: number, stage: StretchStage): StretchSegment {
     const cycleMs = 60_000 / bpm
     const inhaleMs = cycleMs * (ratioParts.inhale / 100)
     const exhaleMs = cycleMs * (ratioParts.exhale / 100)
+    const isOpenEnded = requestedMs === Infinity
+    // Snap the requested duration to a whole number of cycles so the segment
+    // boundary lands on an Out→In transition (mid-cycle BPM-step bug fix).
+    const cycleCount = isOpenEnded ? 0 : Math.max(1, Math.round(requestedMs / cycleMs))
+    const durationMs = isOpenEnded ? Infinity : cycleCount * cycleMs
     const startMs = cursorMs
-    const endMs = durationMs === Infinity ? Infinity : cursorMs + durationMs
+    const endMs = isOpenEnded ? Infinity : cursorMs + durationMs
     const seg: StretchSegment = {
       startMs,
       endMs,
@@ -94,35 +98,29 @@ export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabe
       stage,
       cycleBaseIndex: cumulativeCycles,
     }
-    if (durationMs !== Infinity) {
-      cumulativeCycles += Math.floor(durationMs / cycleMs)
+    if (!isOpenEnded) {
+      cumulativeCycles += cycleCount
       cursorMs += durationMs
     }
     return seg
   }
 
-  // Step 1: hold-initial (skip if 0)
-  if (holdInitialSeconds > 0) {
-    segments.push(makeSegment(initialBpm, holdInitialSeconds * 1_000, 'hold-initial'))
-  }
+  // Step 1: warm-up hold at initialBpm (always present — minimum 5 min)
+  segments.push(makeSegment(initialBpm, warmUpMinutes * 60_000, 'hold-initial'))
 
-  // Step 2: ramp
-  // Each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04)
+  // Step 2: ramp — each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04)
   const bpmSpan = initialBpm - targetBpm
   const numSteps = Math.ceil(bpmSpan / 0.4999)
-  const stepDurationMs = (rampDurationMinutes * 60_000) / numSteps
+  const stepRequestedMs = (rampDurationMinutes * 60_000) / numSteps
 
   for (let i = 0; i < numSteps; i++) {
     const stepBpm = initialBpm - i * (bpmSpan / numSteps)
-    segments.push(makeSegment(stepBpm, stepDurationMs, 'ramp'))
+    segments.push(makeSegment(stepBpm, stepRequestedMs, 'ramp'))
   }
 
-  // Step 3: hold-target (skip if 0)
-  if (holdTargetSeconds !== 0) {
-    const isOpenEnded = holdTargetSeconds === 'open-ended'
-    const durationMs = isOpenEnded ? Infinity : holdTargetSeconds * 1_000
-    segments.push(makeSegment(targetBpm, durationMs, 'hold-target'))
-  }
+  // Step 3: cool-down hold at targetBpm ('open-ended' → unbounded final segment)
+  const coolDownMs = coolDownMinutes === 'open-ended' ? Infinity : coolDownMinutes * 60_000
+  segments.push(makeSegment(targetBpm, coolDownMs, 'hold-target'))
 
   return segments
 }
@@ -201,23 +199,12 @@ export function getStretchFrame(
 // ─── computeStretchTotalMs ───────────────────────────────────────────────────
 
 /**
- * Computes the total session duration from stretch settings.
- * Returns null when holdTargetSeconds is 'open-ended' (D-11).
+ * Computes the total session duration from stretch settings: the sum of
+ * warm-up + ramp + cool-down minutes. Returns null when coolDownMinutes is
+ * 'open-ended' (D-11).
  */
 export function computeStretchTotalMs(settings: SessionSettings): number | null {
-  const { holdInitialSeconds, rampDurationMinutes, holdTargetSeconds } = settings
-  if (holdTargetSeconds === 'open-ended') return null
-  return holdInitialSeconds * 1_000 + rampDurationMinutes * 60_000 + holdTargetSeconds * 1_000
-}
-
-// ─── isStretchGateClear ───────────────────────────────────────────────────────
-
-/**
- * Returns true when the computed stretch total >= STRETCH_MIN_TOTAL_MS (15 min),
- * or when holdTargetSeconds is 'open-ended' (infinite → always clears gate).
- * D-09/D-10/D-11.
- */
-export function isStretchGateClear(settings: SessionSettings): boolean {
-  const total = computeStretchTotalMs(settings)
-  return total === null || total >= STRETCH_MIN_TOTAL_MS
+  const { warmUpMinutes, rampDurationMinutes, coolDownMinutes } = settings
+  if (coolDownMinutes === 'open-ended') return null
+  return (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
 }

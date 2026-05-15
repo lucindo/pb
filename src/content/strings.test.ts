@@ -107,16 +107,12 @@ describe('Phase 22 stretch string keys EN/PT-BR parity', () => {
     'sessionModeLabel',
     'modeStandard',
     'modeStretch',
-    'stretchGateHint',
     'initialBpmLabel',
     'targetBpmLabel',
     'holdInitialLabel',
     'holdTargetLabel',
     'rampDurationLabel',
-    'holdNoneLabel',
     'holdOpenEndedLabel',
-    'totalLabel',
-    'totalOpenEndedLabel',
   ] as const
 
   const stretchReadoutKeys = [

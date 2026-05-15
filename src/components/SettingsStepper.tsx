@@ -9,6 +9,8 @@ export interface SettingsStepperProps<T extends string | number> {
   disabled?: boolean
   disableDecrease?: boolean
   disableIncrease?: boolean
+  /** When true, render only the value (no +/- buttons) — a read-only display field. */
+  readOnly?: boolean
   strings: UiStrings['settingsForm']['stepper']
 }
 
@@ -21,6 +23,7 @@ export function SettingsStepper<T extends string | number>({
   disabled = false,
   disableDecrease = false,
   disableIncrease = false,
+  readOnly = false,
   strings,
 }: SettingsStepperProps<T>) {
   const selectedIndex = options.indexOf(value)
@@ -32,6 +35,25 @@ export function SettingsStepper<T extends string | number>({
     if (nextValue !== undefined) {
       onChange(nextValue)
     }
+  }
+
+  if (readOnly) {
+    return (
+      <fieldset
+        aria-label={strings.fieldAriaLabel(label)}
+        className="rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)]/80 p-4 shadow-sm shadow-teal-900/5"
+      >
+        <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+          {label}
+        </legend>
+        <output
+          aria-live="polite"
+          className="mt-3 block rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
+        >
+          {formatValue(value)}
+        </output>
+      </fieldset>
+    )
   }
 
   return (

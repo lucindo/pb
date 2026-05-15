@@ -18,9 +18,9 @@ const STRETCH_SETTINGS: SessionSettings = {
   mode: 'stretch',
   initialBpm: 6,
   targetBpm: 4,
-  holdInitialSeconds: 30,
-  holdTargetSeconds: 60,
-  rampDurationMinutes: 25,
+  warmUpMinutes: 10,
+  coolDownMinutes: 15,
+  rampDurationMinutes: 20,
 }
 
 beforeEach(() => {
@@ -106,8 +106,8 @@ describe('coerceSettings — stretch fields (Plan 22-02 / STRETCH-07)', () => {
       mode: DEFAULT_SETTINGS.mode,
       initialBpm: DEFAULT_STRETCH_SETTINGS.initialBpm,
       targetBpm: DEFAULT_STRETCH_SETTINGS.targetBpm,
-      holdInitialSeconds: DEFAULT_STRETCH_SETTINGS.holdInitialSeconds,
-      holdTargetSeconds: DEFAULT_STRETCH_SETTINGS.holdTargetSeconds,
+      warmUpMinutes: DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
+      coolDownMinutes: DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
       rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
     })
   })
@@ -127,8 +127,8 @@ describe('coerceSettings — stretch fields (Plan 22-02 / STRETCH-07)', () => {
       mode: DEFAULT_SETTINGS.mode,
       initialBpm: DEFAULT_STRETCH_SETTINGS.initialBpm,
       targetBpm: DEFAULT_STRETCH_SETTINGS.targetBpm,
-      holdInitialSeconds: DEFAULT_STRETCH_SETTINGS.holdInitialSeconds,
-      holdTargetSeconds: DEFAULT_STRETCH_SETTINGS.holdTargetSeconds,
+      warmUpMinutes: DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
+      coolDownMinutes: DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
       rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
     })
   })

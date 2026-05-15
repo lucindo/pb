@@ -75,6 +75,8 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
   // headline is the only useful information — the timer chip would just read
   // "Remaining 0:00" forever, which is noise. Hide it on the complete state.
   const showTimeChip = status !== 'complete' && frame !== null
+  // A running stretch session shows Stage · Remaining · BPM on one line.
+  const isStretchRunning = showTimeChip && frame.currentBpm !== undefined
 
   return (
     <section
@@ -91,7 +93,33 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.sessionComplete}</p>
         ) : null}
       </div>
-      {showTimeChip ? (
+      {/* D-13/D-14: a running stretch session shows Stage · Remaining · BPM on
+          one centered, evenly-spaced line. D-15: the Stretch→Settle transition
+          is silent (no cue/marker). Standard sessions keep the plain timer chip. */}
+      {isStretchRunning && frame.currentBpm !== undefined ? (
+        <div
+          aria-live="off"
+          className="mt-4 inline-flex items-baseline justify-center gap-6 rounded-full bg-[var(--color-breathing-surface)]/80 px-6 py-3 text-[var(--color-breathing-accent-strong)]"
+        >
+          {frame.stage !== undefined ? (
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+              {stageText(frame.stage, strings)}
+            </span>
+          ) : null}
+          <span className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+              {timeLabel}
+            </span>
+            <span className="font-mono text-2xl font-semibold">{timeValue}</span>
+          </span>
+          <span className="flex items-baseline gap-2">
+            <span className="font-mono text-2xl font-semibold">{frame.currentBpm.toFixed(1)}</span>
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+              {strings.currentBpmLabel}
+            </span>
+          </span>
+        </div>
+      ) : showTimeChip ? (
         <div
           aria-live="off"
           className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
@@ -101,29 +129,6 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           </span>
           <span className="font-mono text-2xl font-semibold">{timeValue}</span>
         </div>
-      ) : null}
-      {/* D-13/D-14: live BPM chip + stage label — running stretch sessions only.
-          D-15: the ramp→hold-target transition is silent (no cue/marker). */}
-      {frame !== null && frame.currentBpm !== undefined && status !== 'complete' ? (
-        <>
-          <div
-            aria-live="off"
-            className="mt-2 inline-flex items-baseline gap-2 rounded-full bg-[var(--color-breathing-surface)]/80 px-4 py-2 text-[var(--color-breathing-accent-strong)]"
-          >
-            <span className="font-mono text-2xl font-semibold">{frame.currentBpm.toFixed(1)}</span>
-            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-              {strings.currentBpmLabel}
-            </span>
-          </div>
-          {frame.stage !== undefined ? (
-            <p
-              aria-live="off"
-              className="mt-1 text-center text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]"
-            >
-              {stageText(frame.stage, strings)}
-            </p>
-          ) : null}
-        </>
       ) : null}
     </section>
   )
