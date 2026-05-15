@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: BPM Stretch
 status: planning
-last_updated: "2026-05-15T03:00:00.000Z"
-last_activity: 2026-05-15
+stopped_at: Phase 20 context gathered
+last_updated: "2026-05-15T03:24:17.338Z"
+last_activity: 2026-05-15 — v1.2 BPM Stretch roadmap created (Phases 20–22)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 0
 ---
 
 # Project State
@@ -147,9 +147,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-15T03:00:00.000Z
-Stopped at: v1.2 roadmap created (Phases 20–22)
-Resume file: .planning/ROADMAP.md
+Last session: 2026-05-15T03:24:17.333Z
+Stopped at: Phase 20 context gathered
+Resume file: .planning/phases/20-session-start-polish/20-CONTEXT.md
 Next command: `/gsd-plan-phase 20`
 
 ## Operator Next Steps
