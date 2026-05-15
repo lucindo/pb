@@ -10,6 +10,7 @@
 // Phase 17 deviation: 'ring' replaced with 'diamond' (rotated-square geometry via clip-path).
 import type { SessionFrame } from '../domain/sessionMath'
 import type { VisualVariantId } from '../domain/settings'
+import type { UiStrings } from '../content/strings'
 import { OrbShape } from './OrbShape'
 import { SquareShape } from './SquareShape'
 import { DiamondShape } from './DiamondShape'
@@ -17,6 +18,7 @@ import { DiamondShape } from './DiamondShape'
 export interface BreathingShapeProps {
   variant?: VisualVariantId
   frame: SessionFrame | null
+  strings: UiStrings['breathing']
   // Phase 3 D-14: when set, renders the digit in the orb area in place of the
   // In/Out phase label. Lead-in always wins when both leadInDigit and frame are
   // present (the lead-in is a pre-session visual; the frame may already be
@@ -24,17 +26,17 @@ export interface BreathingShapeProps {
   leadInDigit?: 3 | 2 | 1 | null
 }
 
-export function BreathingShape({ variant = 'orb', frame, leadInDigit }: BreathingShapeProps) {
+export function BreathingShape({ variant = 'orb', frame, strings, leadInDigit }: BreathingShapeProps) {
   if (frame === null && leadInDigit == null) {
     return null
   }
   switch (variant) {
     case 'square':
-      return <SquareShape frame={frame} leadInDigit={leadInDigit} />
+      return <SquareShape frame={frame} leadInDigit={leadInDigit} strings={strings} />
     case 'diamond':
-      return <DiamondShape frame={frame} leadInDigit={leadInDigit} />
+      return <DiamondShape frame={frame} leadInDigit={leadInDigit} strings={strings} />
     case 'orb':
     default:
-      return <OrbShape frame={frame} leadInDigit={leadInDigit} />
+      return <OrbShape frame={frame} leadInDigit={leadInDigit} strings={strings} />
   }
 }

@@ -55,7 +55,7 @@ describe('App — audio cues (Phase 3)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await flushMicrotasks()
 
-    expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
     expect(screen.getByText('3')).toBeVisible()
   })
 
@@ -68,7 +68,7 @@ describe('App — audio cues (Phase 3)', () => {
       vi.advanceTimersByTime(1000)
     })
 
-    expect(screen.getByRole('img', { name: 'Lead-in: 2' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
     expect(screen.getByText('2')).toBeVisible()
   })
 
@@ -81,7 +81,7 @@ describe('App — audio cues (Phase 3)', () => {
       vi.advanceTimersByTime(2000)
     })
 
-    expect(screen.getByRole('img', { name: 'Lead-in: 1' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 1' })).toBeVisible()
     expect(screen.getByText('1')).toBeVisible()
   })
 
@@ -254,7 +254,7 @@ describe('App — audio cues (Phase 3)', () => {
     act(() => {
       vi.advanceTimersByTime(500)
     })
-    expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
     // Per checker W4: the primary button label is LOCKED to 'Start session' during
     // lead-in (Phase 1 D-11 + Plan 04 Task 1a design). Assert exact label, NOT a
@@ -294,7 +294,7 @@ describe('App — audio cues (Phase 3)', () => {
     await flushMicrotasks()
 
     // Visuals-only fallback: lead-in numerals still render.
-    expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
     // Mute icon shows the disabled state with the D-10 accessible name.
     const mute = muteButton()

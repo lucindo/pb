@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DiamondShape } from './DiamondShape'
 import type { SessionFrame } from '../domain/sessionMath'
 import * as prm from '../hooks/usePrefersReducedMotion'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame — same stub used in OrbShape.test.tsx and SquareShape.test.tsx.
 const sampleFrame: SessionFrame = {
@@ -24,44 +27,46 @@ describe('DiamondShape', () => {
 
   // Smoke tests
   it('renders the DiamondBody when frame is provided and leadInDigit is null', () => {
-    render(<DiamondShape frame={sampleFrame} />)
+    render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    // EN: strings.breathingShapeAriaLabel = 'Breathing shape', strings.inhale = 'In'
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 
   it('renders the lead-in digit 3', () => {
-    render(<DiamondShape frame={null} leadInDigit={3} />)
-    expect(screen.getByRole('img', { name: 'Lead-in: 3' })).toBeVisible()
+    render(<DiamondShape frame={null} leadInDigit={3} strings={EN_STRINGS_FIXTURE.breathing} />)
+    // EN: strings.leadInAriaLabel(3) = 'Lead-in 3'
+    expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
     expect(screen.getByText('3')).toBeVisible()
   })
 
   it('renders the lead-in digit 2', () => {
-    render(<DiamondShape frame={null} leadInDigit={2} />)
-    expect(screen.getByRole('img', { name: 'Lead-in: 2' })).toBeVisible()
+    render(<DiamondShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
     expect(screen.getByText('2')).toBeVisible()
   })
 
   it('renders the lead-in digit 1', () => {
-    render(<DiamondShape frame={null} leadInDigit={1} />)
-    expect(screen.getByRole('img', { name: 'Lead-in: 1' })).toBeVisible()
+    render(<DiamondShape frame={null} leadInDigit={1} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByRole('img', { name: 'Lead-in 1' })).toBeVisible()
     expect(screen.getByText('1')).toBeVisible()
   })
 
   // data-variant attribute presence (D-16)
   it('Body root carries data-variant="diamond"', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'diamond')
   })
 
   it('LeadIn root carries data-variant="diamond"', () => {
-    const { container } = render(<DiamondShape frame={null} leadInDigit={2} />)
+    const { container } = render(<DiamondShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'diamond')
   })
 
   // Geometry: Diamond uses clip-path (Option A) on host/layers — no rounded-full on .orb host
   it('.orb div does NOT have rounded-full class (diamond shape via CSS clip-path, not border-radius)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -70,7 +75,7 @@ describe('DiamondShape', () => {
   })
 
   it('.orb-layer--in does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const layerIn = container.querySelector('.orb-layer--in')
     expect(layerIn).not.toBeNull()
     // Reason: layerIn non-null asserted by expect().not.toBeNull() immediately above.
@@ -79,7 +84,7 @@ describe('DiamondShape', () => {
   })
 
   it('.orb-layer--out does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const layerOut = container.querySelector('.orb-layer--out')
     expect(layerOut).not.toBeNull()
     // Reason: layerOut non-null asserted by expect().not.toBeNull() immediately above.
@@ -88,7 +93,7 @@ describe('DiamondShape', () => {
   })
 
   it('.shape-marker--outer does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const outer = container.querySelector('.shape-marker--outer')
     expect(outer).not.toBeNull()
     // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -97,7 +102,7 @@ describe('DiamondShape', () => {
   })
 
   it('.shape-marker--inner does NOT have rounded-full class (diamond shape via CSS clip-path)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const inner = container.querySelector('.shape-marker--inner')
     expect(inner).not.toBeNull()
     // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
@@ -109,7 +114,7 @@ describe('DiamondShape', () => {
   // geometry. No inline style is emitted on marker spans; CSS [data-variant='diamond']
   // .shape-marker--outer/--inner owns all positioning (Option Y).
   it('.shape-marker--outer has NO inline style (CSS owns diamond marker positioning, iteration 2)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const outer = container.querySelector('.shape-marker--outer')
     expect(outer).not.toBeNull()
     // Reason: outer non-null asserted by expect().not.toBeNull() immediately above.
@@ -123,7 +128,7 @@ describe('DiamondShape', () => {
   })
 
   it('.orb div uses four-edge anchoring (left:0 right:0 top:0 bottom:0), NOT inset-0 (D-20)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -141,7 +146,7 @@ describe('DiamondShape', () => {
 
   // Inner marker dimensions: Phase 17 iteration 2 — CSS owns width/height for diamond
   it('.shape-marker--inner has NO inline width/height (CSS owns diamond marker sizing, iteration 2)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const inner = container.querySelector('.shape-marker--inner')
     expect(inner).not.toBeNull()
     // Reason: inner non-null asserted by expect().not.toBeNull() immediately above.
@@ -155,7 +160,7 @@ describe('DiamondShape', () => {
 
   // Kinematics: GPU-promoted scale transform
   it('.orb style.transform contains translate3d(0,0,0) scale(...) (GPU-promoted kinematics)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -167,7 +172,7 @@ describe('DiamondShape', () => {
   // Reduced-motion: MID_SCALE = 0.79 substitution (VARIANT-04)
   it('reduced-motion mock true → .orb style.transform contains scale(0.79) (MID_SCALE substitution)', () => {
     vi.spyOn(prm, 'usePrefersReducedMotion').mockReturnValue(true)
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -178,7 +183,7 @@ describe('DiamondShape', () => {
 
   // VARIANT-04: .orb host has motion-reduce:transition-none on both Body and LeadIn
   it('Body .orb host has motion-reduce:transition-none class (VARIANT-04)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -188,7 +193,7 @@ describe('DiamondShape', () => {
 
   // VARIANT-04: LeadIn keeps the orb at MID_SCALE
   it('lead-in keeps the orb at MID_SCALE (scale(0.79)) regardless of reduced-motion state (VARIANT-04)', () => {
-    const { container } = render(<DiamondShape frame={null} leadInDigit={1} />)
+    const { container } = render(<DiamondShape frame={null} leadInDigit={1} strings={EN_STRINGS_FIXTURE.breathing} />)
     const orb = container.querySelector('.orb')
     expect(orb).not.toBeNull()
     // Reason: orb non-null asserted by expect().not.toBeNull() immediately above.
@@ -198,7 +203,7 @@ describe('DiamondShape', () => {
 
   // VARIANT-05: lead-in digit size and color
   it('lead-in digit renders at text-7xl with color var(--color-orb-in-text) (VARIANT-05)', () => {
-    const { container } = render(<DiamondShape frame={null} leadInDigit={2} />)
+    const { container } = render(<DiamondShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
     const digit = container.querySelector('span.text-7xl')
     expect(digit).not.toBeNull()
     // Reason: digit non-null asserted by expect().not.toBeNull() immediately above.
@@ -212,7 +217,7 @@ describe('DiamondShape', () => {
   // Negative assertion: TSX must NOT inline-override background on gradient layers
   // (CSS owns the gradient — this test catches accidental drift)
   it('no inline background style on .orb-layer--in (CSS owns the gradient)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const layerIn = container.querySelector('.orb-layer--in')
     expect(layerIn).not.toBeNull()
     // layerIn cast to HTMLElement after null assertion above (querySelector returns Element | null)
@@ -220,7 +225,7 @@ describe('DiamondShape', () => {
   })
 
   it('no inline background style on .orb-layer--out (CSS owns the gradient)', () => {
-    const { container } = render(<DiamondShape frame={sampleFrame} />)
+    const { container } = render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const layerOut = container.querySelector('.orb-layer--out')
     expect(layerOut).not.toBeNull()
     // layerOut cast to HTMLElement after null assertion above (querySelector returns Element | null)

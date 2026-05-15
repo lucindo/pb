@@ -1,3 +1,5 @@
+import type { UiStrings } from '../content/strings'
+
 export interface SettingsStepperProps<T extends string | number> {
   label: string
   value: T
@@ -7,6 +9,7 @@ export interface SettingsStepperProps<T extends string | number> {
   disabled?: boolean
   disableDecrease?: boolean
   disableIncrease?: boolean
+  strings: UiStrings['settingsForm']['stepper']
 }
 
 export function SettingsStepper<T extends string | number>({
@@ -18,6 +21,7 @@ export function SettingsStepper<T extends string | number>({
   disabled = false,
   disableDecrease = false,
   disableIncrease = false,
+  strings,
 }: SettingsStepperProps<T>) {
   const selectedIndex = options.indexOf(value)
   const canDecrease = selectedIndex > 0
@@ -32,7 +36,7 @@ export function SettingsStepper<T extends string | number>({
 
   return (
     <fieldset
-      aria-label={label}
+      aria-label={strings.fieldAriaLabel(label)}
       className="rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)]/80 p-4 shadow-sm shadow-teal-900/5"
     >
       <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
@@ -41,7 +45,7 @@ export function SettingsStepper<T extends string | number>({
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
-          aria-label={`Decrease ${label}`}
+          aria-label={strings.decreaseLabel(label)}
           className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-2xl leading-none text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled || disableDecrease || !canDecrease}
           onClick={() => { changeBy(-1) }}
@@ -56,7 +60,7 @@ export function SettingsStepper<T extends string | number>({
         </output>
         <button
           type="button"
-          aria-label={`Increase ${label}`}
+          aria-label={strings.increaseLabel(label)}
           className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-2xl leading-none text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled || disableIncrease || !canIncrease}
           onClick={() => { changeBy(1) }}

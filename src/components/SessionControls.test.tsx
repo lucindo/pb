@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { SessionControls, type SessionControlsProps } from './SessionControls'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 function renderControlsWithMute(props: Partial<SessionControlsProps> = {}) {
   const onStart = props.onStart ?? vi.fn()
@@ -14,6 +17,7 @@ function renderControlsWithMute(props: Partial<SessionControlsProps> = {}) {
       status={props.status ?? 'idle'}
       onStart={onStart}
       onEnd={onEnd}
+      strings={props.strings ?? EN_STRINGS_FIXTURE.controls}
       muted={props.muted ?? false}
       audioAvailable={props.audioAvailable ?? true}
       onMuteToggle={onMuteToggle}
@@ -29,7 +33,12 @@ function renderControlsLegacy(
   const onStart = props.onStart ?? vi.fn()
   const onEnd = props.onEnd ?? vi.fn()
   const utils = render(
-    <SessionControls status={props.status ?? 'idle'} onStart={onStart} onEnd={onEnd} />,
+    <SessionControls
+      status={props.status ?? 'idle'}
+      onStart={onStart}
+      onEnd={onEnd}
+      strings={EN_STRINGS_FIXTURE.controls}
+    />,
   )
   return { ...utils, onStart, onEnd }
 }
@@ -124,6 +133,7 @@ describe('SessionControls', () => {
         status="idle"
         onStart={vi.fn()}
         onEnd={vi.fn()}
+        strings={EN_STRINGS_FIXTURE.controls}
         muted={true}
       />,
     )

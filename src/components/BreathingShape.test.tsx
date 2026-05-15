@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest'
 import { BreathingShape } from './BreathingShape'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { VisualVariantId } from '../domain/settings'
+import { UI_STRINGS } from '../content/strings'
+
+const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame for dispatcher-level smoke tests. BreathingShape.test.tsx
 // only covers the dispatcher's idle null-return guard, variant dispatch, and
@@ -23,23 +26,23 @@ const sampleFrame: SessionFrame = {
 describe('BreathingShape', () => {
   // ── Idle null-return guard (D-04) ─────────────────────────────────────────
   it('renders null when frame is null and no leadInDigit (no variant prop)', () => {
-    const { container } = render(<BreathingShape frame={null} />)
+    const { container } = render(<BreathingShape frame={null} strings={EN_STRINGS_FIXTURE.breathing} />)
     expect(container.firstChild).toBeNull()
   })
 
   it('renders null when frame is null and leadInDigit is null (variant="orb")', () => {
-    const { container } = render(<BreathingShape variant="orb" frame={null} leadInDigit={null} />)
+    const { container } = render(<BreathingShape variant="orb" frame={null} leadInDigit={null} strings={EN_STRINGS_FIXTURE.breathing} />)
     expect(container.firstChild).toBeNull()
   })
 
   it('renders null when frame is null and no leadInDigit (variant="square" — idle guard applies regardless of variant)', () => {
-    const { container } = render(<BreathingShape variant="square" frame={null} />)
+    const { container } = render(<BreathingShape variant="square" frame={null} strings={EN_STRINGS_FIXTURE.breathing} />)
     expect(container.firstChild).toBeNull()
   })
 
   // ── Default-to-orb (VARIANT-02 zero-regression) ───────────────────────────
   it('defaults variant to "orb" when no variant prop is passed', () => {
-    const { container } = render(<BreathingShape frame={sampleFrame} />)
+    const { container } = render(<BreathingShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'orb')
   })
@@ -48,7 +51,7 @@ describe('BreathingShape', () => {
   it.each<VisualVariantId>(['orb', 'square', 'diamond'])(
     'dispatches to the correct sibling for body render (variant="%s")',
     (variant) => {
-      const { container } = render(<BreathingShape variant={variant} frame={sampleFrame} />)
+      const { container } = render(<BreathingShape variant={variant} frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
       const root = container.querySelector('[role="img"]')
       expect(root).toHaveAttribute('data-variant', variant)
     },
@@ -59,7 +62,7 @@ describe('BreathingShape', () => {
     'dispatches to the correct sibling for lead-in render (variant="%s")',
     (variant) => {
       const { container } = render(
-        <BreathingShape variant={variant} frame={null} leadInDigit={3} />,
+        <BreathingShape variant={variant} frame={null} leadInDigit={3} strings={EN_STRINGS_FIXTURE.breathing} />,
       )
       const root = container.querySelector('[role="img"]')
       expect(root).toHaveAttribute('data-variant', variant)
@@ -70,15 +73,16 @@ describe('BreathingShape', () => {
 
   // ── Lead-in priority (D-14) ───────────────────────────────────────────────
   it('lead-in wins when both frame and leadInDigit are set (D-14 priority) — renders lead-in, not body', () => {
-    render(<BreathingShape variant="orb" frame={sampleFrame} leadInDigit={2} />)
+    render(<BreathingShape variant="orb" frame={sampleFrame} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
     expect(screen.queryByRole('img', { name: 'Breathing shape: In' })).not.toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Lead-in: 2' })).toBeVisible()
+    // EN strings.leadInAriaLabel(2) = 'Lead-in 2' (no colon — matches strings catalog)
+    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
   })
 
   // ── Unknown variant fallback (defense in depth) ──────────────────────────
   it('falls back to OrbShape when variant is an unknown value (defense in depth)', () => {
     const { container } = render(
-      <BreathingShape variant={'unknown' as VisualVariantId} frame={sampleFrame} />,
+      <BreathingShape variant={'unknown' as VisualVariantId} frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
     )
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'orb')

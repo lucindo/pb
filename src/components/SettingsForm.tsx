@@ -6,6 +6,7 @@ import {
   type RatioLabel,
   type SessionSettings,
 } from '../domain/settings'
+import type { UiStrings } from '../content/strings'
 import { SettingsStepper } from './SettingsStepper'
 
 export interface SettingsFormProps {
@@ -13,14 +14,7 @@ export interface SettingsFormProps {
   isRunning: boolean
   onChange(this: void, settings: SessionSettings): void
   onExtendDuration(this: void, durationMinutes: number): void
-}
-
-function formatBpm(value: number): string {
-  return `${String(value)} BPM`
-}
-
-function formatDuration(value: DurationOption): string {
-  return value === 'open-ended' ? 'Open-ended' : `${String(value)} min`
+  strings: UiStrings['settingsForm']
 }
 
 export function SettingsForm({
@@ -28,7 +22,12 @@ export function SettingsForm({
   isRunning,
   onChange,
   onExtendDuration,
+  strings,
 }: SettingsFormProps) {
+  const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
+  const formatDuration = (value: DurationOption): string =>
+    value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
+
   const durationOptions = DURATION_OPTIONS as readonly DurationOption[]
   const durationIndex = durationOptions.indexOf(settings.durationMinutes)
   const nextDuration = durationOptions[durationIndex + 1]
@@ -49,32 +48,35 @@ export function SettingsForm({
   }
 
   return (
-    <div className="grid w-full gap-4" aria-label="Session settings">
+    <div className="grid w-full gap-4" aria-label={strings.ariaLabel}>
       {!isRunning && (
         <>
           <SettingsStepper
-            label="BPM"
+            label={strings.bpmLabel}
             value={settings.bpm}
             options={BPM_OPTIONS}
             formatValue={formatBpm}
             onChange={(bpm) => { updateSettings({ bpm }) }}
+            strings={strings.stepper}
           />
           <SettingsStepper<RatioLabel>
-            label="Ratio"
+            label={strings.ratioLabel}
             value={settings.ratio}
             options={RATIO_OPTIONS}
             onChange={(ratio) => { updateSettings({ ratio }) }}
+            strings={strings.stepper}
           />
         </>
       )}
       <SettingsStepper<DurationOption>
-        label="Duration"
+        label={strings.durationLabel}
         value={settings.durationMinutes}
         options={durationOptions}
         formatValue={formatDuration}
         onChange={updateDuration}
         disableDecrease={isRunning}
         disableIncrease={isRunning && typeof nextDuration !== 'number'}
+        strings={strings.stepper}
       />
     </div>
   )

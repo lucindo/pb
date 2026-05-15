@@ -1,24 +1,26 @@
 import type { SessionFrame } from '../domain/sessionMath'
+import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
 
 export interface DiamondShapeProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
+  strings: UiStrings['breathing']
 }
 
 // D-04: DiamondShape does NOT own the idle null-return — the BreathingShape
 // dispatcher (Plan 05) guards that and never invokes DiamondShape with both
 // frame=null AND leadInDigit=null.
-export function DiamondShape({ frame, leadInDigit }: DiamondShapeProps) {
+export function DiamondShape({ frame, leadInDigit, strings }: DiamondShapeProps) {
   if (leadInDigit != null) {
-    return <DiamondLeadIn digit={leadInDigit} />
+    return <DiamondLeadIn digit={leadInDigit} strings={strings} />
   }
   // DiamondShape's caller (BreathingShape dispatcher) guarantees frame !== null
   // when leadInDigit is null (D-04 — dispatcher owns the idle null-return guard).
   // Reason: BreathingShape dispatcher asserts frame !== null before delegating to DiamondShape when leadInDigit is null.
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return <DiamondBody frame={frame!} />
+  return <DiamondBody frame={frame!} strings={strings} />
 }
 
 // Diamond geometry approach: clip-path on the .orb host and gradient layers (Option A).
@@ -34,7 +36,7 @@ export function DiamondShape({ frame, leadInDigit }: DiamondShapeProps) {
 // host diamond's vertex positions (outer: orb-size boundary; inner: MIN_SCALE boundary).
 // Marker inline styles are NOT emitted here — CSS [data-variant='diamond'] owns all
 // marker positioning (Option Y). D-13 zero new color tokens.
-function DiamondBody({ frame }: { frame: SessionFrame }) {
+function DiamondBody({ frame, strings }: { frame: SessionFrame; strings: UiStrings['breathing'] }) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -44,10 +46,13 @@ function DiamondBody({ frame }: { frame: SessionFrame }) {
       : MAX_SCALE - progress * (MAX_SCALE - MIN_SCALE)
   const orbScale = reducedMotion ? MID_SCALE : liveScale
 
+  // Phase 19 Path A wedge: translate at JSX layer (D-18 file-split invariant).
+  const phaseLabel = frame.phase === 'in' ? strings.inhale : strings.exhale
+
   return (
     <div
       role="img"
-      aria-label={`Breathing shape: ${frame.phaseLabel}`}
+      aria-label={`${strings.breathingShapeAriaLabel}: ${phaseLabel}`}
       data-phase={frame.phase}
       data-progress={progress.toFixed(3)}
       data-variant="diamond"
@@ -121,7 +126,7 @@ function DiamondBody({ frame }: { frame: SessionFrame }) {
               : 'var(--color-orb-out-text)',
         }}
       >
-        {frame.phaseLabel}
+        {phaseLabel}
       </span>
     </div>
   )
@@ -138,11 +143,11 @@ function DiamondBody({ frame }: { frame: SessionFrame }) {
 // No data-phase / data-progress on the root — those attributes belong to the
 // active phase loop. The lead-in is pre-state and exposes only the aria-label
 // "Lead-in: N" for assistive tech.
-function DiamondLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
+function DiamondLeadIn({ digit, strings }: { digit: 1 | 2 | 3; strings: UiStrings['breathing'] }) {
   return (
     <div
       role="img"
-      aria-label={`Lead-in: ${String(digit)}`}
+      aria-label={strings.leadInAriaLabel(digit)}
       data-variant="diamond"
       className="relative mx-auto my-12 grid place-items-center"
       style={{

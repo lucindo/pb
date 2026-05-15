@@ -1,27 +1,29 @@
 import type { SessionFrame } from '../domain/sessionMath'
+import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
 
 export interface SquareShapeProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
+  strings: UiStrings['breathing']
 }
 
 // D-04: SquareShape does NOT own the idle null-return — the BreathingShape
 // dispatcher (Plan 05) guards that and never invokes SquareShape with both
 // frame=null AND leadInDigit=null.
-export function SquareShape({ frame, leadInDigit }: SquareShapeProps) {
+export function SquareShape({ frame, leadInDigit, strings }: SquareShapeProps) {
   if (leadInDigit != null) {
-    return <SquareLeadIn digit={leadInDigit} />
+    return <SquareLeadIn digit={leadInDigit} strings={strings} />
   }
   // SquareShape's caller (BreathingShape dispatcher) guarantees frame !== null
   // when leadInDigit is null (D-04 — dispatcher owns the idle null-return guard).
   // Reason: BreathingShape dispatcher asserts frame !== null before delegating to SquareShape when leadInDigit is null.
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return <SquareBody frame={frame!} />
+  return <SquareBody frame={frame!} strings={strings} />
 }
 
-function SquareBody({ frame }: { frame: SessionFrame }) {
+function SquareBody({ frame, strings }: { frame: SessionFrame; strings: UiStrings['breathing'] }) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -31,10 +33,13 @@ function SquareBody({ frame }: { frame: SessionFrame }) {
       : MAX_SCALE - progress * (MAX_SCALE - MIN_SCALE)
   const orbScale = reducedMotion ? MID_SCALE : liveScale
 
+  // Phase 19 Path A wedge: translate at JSX layer (D-18 file-split invariant).
+  const phaseLabel = frame.phase === 'in' ? strings.inhale : strings.exhale
+
   return (
     <div
       role="img"
-      aria-label={`Breathing shape: ${frame.phaseLabel}`}
+      aria-label={`${strings.breathingShapeAriaLabel}: ${phaseLabel}`}
       data-phase={frame.phase}
       data-progress={progress.toFixed(3)}
       data-variant="square"
@@ -131,7 +136,7 @@ function SquareBody({ frame }: { frame: SessionFrame }) {
               : 'var(--color-orb-out-text)',
         }}
       >
-        {frame.phaseLabel}
+        {phaseLabel}
       </span>
     </div>
   )
@@ -148,11 +153,11 @@ function SquareBody({ frame }: { frame: SessionFrame }) {
 // No data-phase / data-progress on the root — those attributes belong to the
 // active phase loop. The lead-in is pre-state and exposes only the aria-label
 // "Lead-in: N" for assistive tech.
-function SquareLeadIn({ digit }: { digit: 1 | 2 | 3 }) {
+function SquareLeadIn({ digit, strings }: { digit: 1 | 2 | 3; strings: UiStrings['breathing'] }) {
   return (
     <div
       role="img"
-      aria-label={`Lead-in: ${String(digit)}`}
+      aria-label={strings.leadInAriaLabel(digit)}
       data-variant="square"
       className="relative mx-auto my-12 grid place-items-center"
       style={{
