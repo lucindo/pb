@@ -79,7 +79,7 @@ Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 ### ð§ v1.3 Release Polish (Phases 23â27) â IN PROGRESS
 
 - [x] **Phase 23: LICENSE + README** â MIT `LICENSE` file added + a claim-safe, accurate README for repo distribution-readiness. (completed 2026-05-15)
-- [ ] **Phase 24: Forrest Native-App Links** â Two outbound Resonant Breathing store links (iOS + Android) on the Learn surface, EN + PT-BR.
+- [x] **Phase 24: Forrest Native-App Links** â Two outbound Resonant Breathing store links (iOS + Android) on the Learn surface, EN + PT-BR. (completed 2026-05-15)
 - [ ] **Phase 25: Labels-vs-Icons Cue Toggle** â A 5th SettingsDialog picker switching the in-orb In/Out cue between text labels and arrow icons, accessible across all 3 variants.
 - [ ] **Phase 26: PT-BR Native-Speaker Review** â Every `// TODO: native-speaker review` marker resolved and removed by a native-speaker pass; locked-copy guards intact.
 - [ ] **Phase 27: PWA Install & Offline** â Installable Web App Manifest + offline-capable service worker, verified on a real iOS device in installed standalone mode.
@@ -114,7 +114,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 24-01-PLAN.md — Add iOS App Store + Google Play "Resonant Breathing" links to LearnDialog (EN + PT-BR, claim-safe)
+- [x] 24-01-PLAN.md — Add iOS App Store + Google Play "Resonant Breathing" links to LearnDialog (EN + PT-BR, claim-safe)
 
 ### Phase 25: Labels-vs-Icons Cue Toggle
 **Goal**: Users can choose whether the in-orb In/Out breathing cue shows text labels or directional arrow icons.
@@ -185,7 +185,7 @@ Plans:
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete | 2026-05-15 |
 | 22. BPM Stretch Session | v1.2 | 5/5 | Complete | 2026-05-15 |
 | 23. LICENSE + README | v1.3 | 1/1 | Complete   | 2026-05-15 |
-| 24. Forrest Native-App Links | v1.3 | 0/1 | Not started | - |
+| 24. Forrest Native-App Links | v1.3 | 1/1 | Complete   | 2026-05-15 |
 | 25. Labels-vs-Icons Cue Toggle | v1.3 | 0/? | Not started | - |
 | 26. PT-BR Native-Speaker Review | v1.3 | 0/? | Not started | - |
 | 27. PWA Install & Offline | v1.3 | 0/? | Not started | - |
