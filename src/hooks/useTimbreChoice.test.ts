@@ -15,6 +15,7 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
   variant: 'orb',
+  cue: 'labels',
   locale: 'en',
 }
 
@@ -61,7 +62,7 @@ describe('useTimbreChoice', () => {
   })
 
   it('setTimbre("bell") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'dark', timbre: 'bowl', variant: 'square', locale: 'pt-BR' })
+    seedPrefs({ theme: 'dark', timbre: 'bowl', variant: 'square', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useTimbreChoice())
 
     act(() => {

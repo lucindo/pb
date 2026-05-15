@@ -15,6 +15,7 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
   variant: 'orb',
+  cue: 'labels',
   locale: 'en',
 }
 
@@ -61,7 +62,7 @@ describe('useThemeChoice', () => {
   })
 
   it('setTheme("slate") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'moss', timbre: 'bell', variant: 'square', locale: 'pt-BR' })
+    seedPrefs({ theme: 'moss', timbre: 'bell', variant: 'square', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useThemeChoice())
 
     act(() => {

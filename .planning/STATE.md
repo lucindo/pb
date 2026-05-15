@@ -4,8 +4,8 @@ milestone: v1.3
 milestone_name: Release Polish
 status: executing
 stopped_at: Phase 25 context gathered
-last_updated: "2026-05-15T23:36:53.884Z"
-last_activity: 2026-05-15 -- Phase 25 planning complete
+last_updated: "2026-05-15T23:39:59.048Z"
+last_activity: 2026-05-15 -- Phase 25 execution started
 progress:
   total_phases: 1
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-15 — v1.3 Release Polish milestone opened)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 24 — forrest-native-app-links
+**Current focus:** Phase 25 — labels-vs-icons-cue-toggle
 
 ## Current Position
 
-Phase: 25
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-15 -- Phase 25 planning complete
+Phase: 25 (labels-vs-icons-cue-toggle) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 25
+Last activity: 2026-05-15 -- Phase 25 execution started
 
 ## Performance Metrics
 

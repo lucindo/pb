@@ -15,6 +15,7 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
   variant: 'orb',
+  cue: 'labels',
   locale: 'en',
 }
 
@@ -61,7 +62,7 @@ describe('useLocaleChoice', () => {
   })
 
   it('setLocale("pt-BR") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'dark', timbre: 'bell', variant: 'square', locale: 'en' })
+    seedPrefs({ theme: 'dark', timbre: 'bell', variant: 'square', cue: 'labels', locale: 'en' })
     const { result } = renderHook(() => useLocaleChoice())
 
     act(() => {

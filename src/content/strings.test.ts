@@ -4,6 +4,7 @@ import {
   LOCALE_OPTIONS,
   THEME_OPTIONS,
   VARIANT_OPTIONS,
+  CUE_OPTIONS,
   TIMBRE_OPTIONS,
 } from '../domain/settings'
 import { UI_STRINGS, LOCALE_DISPLAY_NAMES } from './strings'
@@ -22,12 +23,13 @@ describe('UI_STRINGS exhaustiveness', () => {
     }
   })
 
-  it('every locale has non-empty settings.title, settings.close, settings.themeLabel, settings.variantLabel, settings.timbreLabel, settings.languageLabel', () => {
+  it('every locale has non-empty settings.title, settings.close, settings.themeLabel, settings.variantLabel, settings.cueLabel, settings.timbreLabel, settings.languageLabel', () => {
     for (const locale of LOCALE_OPTIONS) {
       expect(UI_STRINGS[locale].settings.title.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.close.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.themeLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.variantLabel.length).toBeGreaterThan(0)
+      expect(UI_STRINGS[locale].settings.cueLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.timbreLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.languageLabel.length).toBeGreaterThan(0)
     }
@@ -47,6 +49,28 @@ describe('UI_STRINGS exhaustiveness', () => {
         expect(UI_STRINGS[locale].variants[id].length).toBeGreaterThan(0)
       }
     }
+  })
+
+  it('every locale has cue entries for every CUE_OPTIONS id (Phase 25 CUE-01)', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      for (const id of CUE_OPTIONS) {
+        expect(UI_STRINGS[locale].cue[id].length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('EN cue strings have exact required values: labels="Text", arrow="Arrow", nose="Nose" (Phase 25 CONTEXT D-12)', () => {
+    expect(UI_STRINGS.en.settings.cueLabel).toBe('Cue style')
+    expect(UI_STRINGS.en.cue.labels).toBe('Text')
+    expect(UI_STRINGS.en.cue.arrow).toBe('Arrow')
+    expect(UI_STRINGS.en.cue.nose).toBe('Nose')
+  })
+
+  it('PT-BR cue strings are non-empty (machine-translated with review markers)', () => {
+    expect(UI_STRINGS['pt-BR'].settings.cueLabel.length).toBeGreaterThan(0)
+    expect(UI_STRINGS['pt-BR'].cue.labels.length).toBeGreaterThan(0)
+    expect(UI_STRINGS['pt-BR'].cue.arrow.length).toBeGreaterThan(0)
+    expect(UI_STRINGS['pt-BR'].cue.nose.length).toBeGreaterThan(0)
   })
 
   it('every locale has timbres entries for every TIMBRE_OPTIONS id', () => {
