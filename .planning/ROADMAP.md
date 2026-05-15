@@ -110,8 +110,11 @@ Plans:
   2. A user can open Forrest Knutson's Resonant Breathing app on Google Play from the Learn surface.
   3. Both links open in a new tab/window and the link labels are localized in EN and PT-BR (new `pt-BR` labels carry the `// TODO: native-speaker review` marker).
   4. The new links sit inside the existing LearnDialog structure and do not alter or weaken the locked claim-safe copy; link copy stays neutral and descriptive (no benefit-claiming language).
-**Plans**: TBD
+**Plans**: 1 plan
 **UI hint**: yes
+
+Plans:
+- [ ] 24-01-PLAN.md — Add iOS App Store + Google Play "Resonant Breathing" links to LearnDialog (EN + PT-BR, claim-safe)
 
 ### Phase 25: Labels-vs-Icons Cue Toggle
 **Goal**: Users can choose whether the in-orb In/Out breathing cue shows text labels or directional arrow icons.
@@ -182,7 +185,7 @@ Plans:
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete | 2026-05-15 |
 | 22. BPM Stretch Session | v1.2 | 5/5 | Complete | 2026-05-15 |
 | 23. LICENSE + README | v1.3 | 1/1 | Complete   | 2026-05-15 |
-| 24. Forrest Native-App Links | v1.3 | 0/? | Not started | - |
+| 24. Forrest Native-App Links | v1.3 | 0/1 | Not started | - |
 | 25. Labels-vs-Icons Cue Toggle | v1.3 | 0/? | Not started | - |
 | 26. PT-BR Native-Speaker Review | v1.3 | 0/? | Not started | - |
 | 27. PWA Install & Offline | v1.3 | 0/? | Not started | - |
