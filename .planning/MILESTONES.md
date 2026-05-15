@@ -1,5 +1,28 @@
 # Milestones
 
+## v1.2 BPM Stretch (Shipped: 2026-05-15)
+
+**Phases completed:** 3 phases (20, 21, 22), 8 plans, 8 tasks
+
+**Delivered:** BPM stretch session pattern (Warm-up → Stretch ramp → Settle) on the existing one-clock SessionFrame — sub-perceptual BPM steps along a cycle-aligned segment table — plus two small UX gaps closed: lead-in double-start prevention and per-theme favicons. Zero net-new runtime dependencies; 839/839 tests pass.
+
+**Key accomplishments:**
+
+1. **Phase 20 — Session Start Polish:** Primary button relabels to `Cancel` / `Cancelar` during the lead-in countdown via a three-way ternary label resolution (`inLeadIn` optional prop), removing the double-start affordance — a second click runs the existing cancel branch (LEAD-01).
+2. **Phase 21 — Per-Theme Favicon:** Shared `faviconPalette` module (5 accent-strong palette colors + SVG template) + `useFavicon` orchestrator hook with dual-event cross-tab sync (`storage` + `hrv:prefs-changed`) and gated `matchMedia` system-theme resolve; pre-paint inline script in `index.html` applies the persisted-theme favicon before first paint with no FOUC; `favicon.sync.test.ts` guards palette/theme.css drift (FAVI-01/02/03).
+3. **Phase 22 — BPM Stretch engine:** Piecewise-constant `stretchRamp.ts` ramp engine with a sub-0.5-BPM step invariant, cycle-aligned segment table so BPM steps land only on Out→In boundaries, minute-based stage durations, and a fully-typed `SessionSettings` schema (`SessionMode`, stretch field options, `isValid*` predicates, `DEFAULT_STRETCH_SETTINGS`).
+4. **Phase 22 — Stretch persistence + controller:** Stretch settings persist via the existing forward-compat localStorage envelope with no `STATE_VERSION` bump (per-field `coerceSettings` fallback on read); `sessionController` dispatches frame computation to the segment table for stretch sessions; `extendTimedSession` rejects stretch sessions.
+5. **Phase 22 — Stretch UI:** `SettingsForm` renders the Standard/Stretch mode picker, the conditional 5-field stretch block, the 15-min gate hint and a live computed-total Duration readout; `SessionReadout` shows the live BPM chip + stage label for running stretch sessions; EN + PT-BR strings for the full surface.
+6. **Phase 22 — Stretch audio:** The App.tsx audio boundary effect computes per-cycle audio-clock offsets from the stretch segment table — Phase 3 D-13/D-14 dual-anchor scheduling holds across every BPM step with no gap or misalignment (STRETCH-08).
+
+**Operator UAT deviation:** A mid-checkpoint operator UAT on Phase 22 drove a stretch-UX redesign (minimum-duration gate removed, minute-based stages, stage renames) implemented in commit `8eb35bd` and re-verified to approval.
+
+**Known deferred items at close:** 5 open artifact items acknowledged and deferred (see STATE.md `## Deferred Items`) — 1 quick-task scanner false positive + 4 pending todos.
+
+**Test count progression:** v1.1 close 712 → v1.2 close 839 (+127).
+
+---
+
 ## v1.1 Customization (Shipped: 2026-05-15)
 
 **Phases completed:** 10 phases (13, 14, 15, 16, 16.1, 16.2, 16.3, 17, 18, 19), 47 plans, 58 tasks

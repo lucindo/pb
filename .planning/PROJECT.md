@@ -12,27 +12,13 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ## Current State
 
-**Shipped:** v1.1 Customization (2026-05-15) — 10 phases (13–19 + 16.1/16.2/16.3 inserted), 47 plans, 58 tasks, 712/712 Vitest tests pass (409 → 712). All success criteria validated. SettingsDialog with Theme/Variant/Timbre/Language pickers, 5 named palettes curated from open-source design systems, 3 visual variants, 4 synthesized audio timbres, EN+PT-BR language switching with frozen-EN locked claim-safe copy guard. Zero net-new runtime dependencies.
+**Shipped:** v1.2 BPM Stretch (2026-05-15) — 3 phases (20–22), 8 plans, 8 tasks, 839/839 Vitest tests pass (712 → 839). All 12 v1.2 requirements validated. BPM stretch session pattern (Warm-up → Stretch ramp → Settle) on the existing one-clock SessionFrame with a cycle-aligned segment table and sub-perceptual BPM steps, per-theme favicons across the 5 palettes, and lead-in double-start prevention. Zero net-new runtime dependencies.
 
-**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27.
+**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27. v1.1 Customization (2026-05-15) — 47 plans, SettingsDialog + 5 named palettes + 3 visual variants + 4 audio timbres + EN/PT-BR language switching.
 
 **v1.x carry-forward (next milestone):** PT-BR native-speaker review of 76 `// TODO: native-speaker review` markers (I18N-07). iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. See STATE.md `## Deferred Items` for the full register.
 
-**v2 backlog:** PWA install (PWA-01). BPM stretch session (PATT-02).
-
-## Current Milestone: v1.2 BPM Stretch
-
-**Goal:** Ship the BPM stretch session pattern (warm-up → sub-perceptual ramp → cool-down) on the existing one-clock SessionFrame, and close two small UX gaps surfaced during v1.1.
-
-**Target features:**
-- Start button disabled during lead-in countdown (backlog 999.2) — prevent double-start while `appPhase === 'lead-in'`
-- Per-theme favicon (backlog 999.1) — each of the 5 palettes ships its own favicon variant; swap on `data-theme` change and match persisted theme on load
-- BPM stretch session (PATT-02) — user picks `initialBpm`, `targetBpm`, `holdInitialSeconds`, `holdTargetSeconds`; engine walks BPM in steps < 0.5 BPM along the existing one-clock frame; dual-anchor audio invariants (Phase 3 D-13/D-14) hold across BPM changes; minimum-duration gate enables the mode
-
-**Phase numbering:** Continues from v1.1 (starts at Phase 20).
-**Ordering:** Smallest-blast-radius first — 999.2 (single button state) → 999.1 (favicon swap) → PATT-02 (engine + UI).
-
-**Progress:** Phase 20 complete (2026-05-15) — LEAD-01 resolved: primary button relabels to `Cancel`/`Cancelar` during the lead-in countdown, removing the double-start affordance. Phase 21 complete (2026-05-15) — FAVI-01/02/03 resolved: each of the 5 palettes shows a distinct favicon; swaps live on theme change (same-tab + cross-tab) and applies the persisted theme before first paint with no flash. Phase 22 complete (2026-05-15) — STRETCH-01..08 resolved: BPM stretch mode (Warm-up → Stretch ramp → Settle) on the one-clock SessionFrame; cycle-aligned segment table so BPM steps land only on Out→In boundaries; iOS-switch mode picker; minute-based stage durations with a read-only computed-total Duration box; dual-anchor audio holds across the ramp. Operator UAT redesigned the stretch UX mid-checkpoint (gate removed, minute-based stages, stage renames) — approved 2026-05-15. v1.2 milestone feature-complete. 839/839 tests pass.
+**v2 backlog:** PWA install (PWA-01).
 
 ## Requirements
 
@@ -64,9 +50,23 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] **DOMAIN-01 + UI-01/02 + A11Y-01 (Phase 11)** — `extendTimedSession` boundary validation, `SessionReadout` lead-in placeholder contract, symmetric auto-close for Learn/Reset dialogs in-session, `MuteToggle` resume-mode `role`/`aria-describedby`.
 - [x] **ASSETS-01 + CONTENT-01 + HYGIENE-01/02/03 (Phase 12)** — Favicon `%BASE_URL%` swap + new `public/favicon.svg`, canonical amazon.com `/dp/B0CCFWP4W8` book URL, `isValid<X>` predicate relocation from `storage` to `domain/settings` (+ 9 new domain tests), `formatLastSessionDate` test-only-seam JSDoc, HYGIENE-01 docs-only flip to "Overtaken by Phase 9 AUDIO-02" (caller-side clamp depends on `audio.audioNow`).
 
+**v1.1 Customization (validated 2026-05-12 → 2026-05-15 — see `.planning/milestones/v1.1-REQUIREMENTS.md` for full traceability):**
+
+- [x] **WARMUP-01 + INFRA-01..04 (Phases 13–15)** — Reduced-motion inner-ring symmetry; `Envelope.prefs` storage shape + domain validators; native `<dialog>` SettingsDialog shell with `inSessionView` disable contract.
+- [x] **THEME-01..05 + THEME-UI-01 (Phases 16 + 16.1/16.2/16.3)** — 5 named palettes curated from open-source design systems; full UI token migration of 16 components to `var(--color-breathing-*)`; WCAG luminance contrast guard.
+- [x] **CUST-01..03 (Phase 17)** — 3 visual variants (Orb default + Square + Diamond) via render dispatcher; sessionVariantRef capture-at-Start; old `'ring'` localStorage values coerce to default.
+- [x] **TIMBRE-01..05 (Phase 18)** — 4 synthesized audio timbres (Bowl default byte-identical + Bell + Sine + Chime); timbre captured at session start.
+- [x] **I18N-01..06 (Phase 19)** — EN+PT-BR language switching; typed `Record<LocaleId, UiStrings>` catalog; `useLocale` orchestrator; frozen-EN byte-equality guard on locked claim-safe copy. *I18N-07 native-speaker review → v1.x carry-forward.*
+
+**v1.2 BPM Stretch (validated 2026-05-15 — see `.planning/milestones/v1.2-REQUIREMENTS.md` for full traceability):**
+
+- [x] **LEAD-01 (Phase 20)** — Primary button relabels to `Cancel`/`Cancelar` during the lead-in countdown; double-start affordance removed.
+- [x] **FAVI-01/02/03 (Phase 21)** — Per-palette favicon for each of the 5 themes; swaps on theme change (same-tab + cross-tab); persisted-theme favicon applied pre-paint with no FOUC.
+- [x] **STRETCH-01..08 (Phase 22)** — BPM stretch session mode (Warm-up → Stretch ramp → Settle) on the one-clock SessionFrame; cycle-aligned segment table with sub-0.5-BPM steps; minute-based stage durations + computed-total Duration readout; stretch settings persist via the existing localStorage envelope; dual-anchor audio (Phase 3 D-13/D-14) holds across the ramp.
+
 ### Active
 
-v1.1 Customization — Phases 13–16 complete (2026-05-13). Phase 16 themes shipped (THEME-01..05 validated). Phase 16.1 inserted for UI token migration (Start/Stop button + 15 other components carry hardcoded teal/slate classes that don't rebind on data-theme swap). Phases 17/18/19 (Visual Variants, Audio Timbres, Language Switching) remain.
+(None — v1.2 shipped. Next milestone requirements defined via `/gsd-new-milestone`.)
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -105,7 +105,7 @@ Normal user-selected options:
 
 **Tech stack:** React 18 + Vite + TypeScript (strict + `strictTypeChecked`) + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/` (includes `isValidBpm`/`isValidRatio`/`isValidDuration` shared predicates since v1.0.1), hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope (forward-compat read + refuse-downgrade write + cross-tab listener since v1.0.1). Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement with in-flight + release-during-await guards.
 
-**Codebase size at v1.0.1 ship:** ~10,925 LOC in `src/` (TS/TSX); 409/409 Vitest tests across 29 files. Production bundle `dist/assets/index-*.js` ≈ 231 KB (≈70 KB gzip).
+**Codebase size at v1.2 ship:** ~19,161 LOC in `src/` (TS/TSX); 839/839 Vitest tests. Stretch ramp engine added under `src/domain/stretchRamp.ts`; favicon palette module under `src/styles/faviconPalette.ts`. (v1.0.1 baseline: ~10,925 LOC / 409 tests.)
 
 ## Constraints
 
@@ -153,6 +153,13 @@ Normal user-selected options:
 | Shared `isValid<X>` predicates in `domain/settings.ts` (Phase 12 HYGIENE-02) | Eliminates allow-list duplication between `validateSettings` (throws) and `coerceSettings` (fallback) | ✓ Validated Phase 12 |
 | HYGIENE-01 "Overtaken" docs-only flip (Phase 12 D-01/D-02) | Phase 9 AUDIO-02 caller-side clamp DEPENDS on `audio.audioNow` — literal removal would break the contract | ✓ Validated Phase 12 — docs flip + REVIEW.md addendum |
 | Favicon `%BASE_URL%` HTML substitution (Phase 12 D-04) | Survives any future Vite `base` change without an HTML edit | ✓ Validated Phase 12 |
+| Cancel-label over disabled-attribute for lead-in (Phase 20) | Three-way ternary label keeps the button interactive; a second click runs the existing cancel branch instead of needing a separate disabled state | ✓ Validated v1.2 — LEAD-01 |
+| Shared `faviconPalette` module + sync-guard test (Phase 21 D-01/D-07) | Single source for the 5 palette accent colors; `favicon.sync.test.ts` blocks drift between palette module and `theme.css` | ✓ Validated v1.2 — FAVI-01..03 |
+| Pre-paint inline favicon script in `index.html` (Phase 21) | Applies the persisted-theme favicon before first paint — no FOUC, same pattern as the theme FOUC script | ✓ Validated v1.2 |
+| BPM stretch rides the existing one-clock SessionFrame (Phase 22) | No second clock or timing abstraction; piecewise-constant ramp via a cycle-aligned segment table so steps land only on Out→In boundaries | ✓ Validated v1.2 — STRETCH-04 |
+| Stretch settings ride the existing localStorage envelope (Phase 22) | Per-field `coerceSettings` fallback on read; no `STATE_VERSION` bump — forward-compat read + refuse-downgrade write contract (Phase 8 D-01/D-04a) unchanged | ✓ Validated v1.2 — STRETCH-07 |
+| Stretch audio reuses dual-anchor scheduling (Phase 22) | Phase 3 D-13/D-14 dual-anchor invariant holds across every BPM step; per-cycle audio-clock offsets computed from the segment table; no per-segment cue variants | ✓ Validated v1.2 — STRETCH-08 |
+| Operator UAT as deviation source-of-truth (Phase 22) | Mid-checkpoint UAT redesigned the stretch UX (gate removed, minute-based stages, stage renames); plan accommodated a fix-now deviation at the close checkpoint | ✓ Validated v1.2 — commit `8eb35bd` |
 
 ## Evolution
 
@@ -172,4 +179,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 — Phase 22 (BPM Stretch Session) complete; v1.2 milestone feature-complete*
+*Last updated: 2026-05-15 — after v1.2 BPM Stretch milestone close*

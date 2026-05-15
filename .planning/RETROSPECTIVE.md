@@ -164,6 +164,51 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v1.2 — BPM Stretch
+
+**Shipped:** 2026-05-15
+**Phases:** 3 (20, 21, 22) | **Plans:** 8 | **Commits:** 80 (15 `feat`) | **Timeline:** ~1 day (2026-05-14 → 2026-05-15)
+
+### What Was Built
+
+- **Phase 20 — Session Start Polish:** Lead-in double-start prevention. The primary button relabels to `Cancel`/`Cancelar` during the lead-in countdown via a three-way ternary on an `inLeadIn` optional prop — a second click runs the existing cancel branch, so no `Start` affordance exists to double-fire (LEAD-01).
+- **Phase 21 — Per-Theme Favicon:** Shared `faviconPalette` module (5 accent-strong colors + SVG template) + `useFavicon` orchestrator hook with dual-event cross-tab sync (`storage` + `hrv:prefs-changed`) and gated `matchMedia` system resolve; pre-paint inline script in `index.html` applies the persisted-theme favicon before first paint with no FOUC; `favicon.sync.test.ts` guards palette/`theme.css` drift (FAVI-01/02/03).
+- **Phase 22 — BPM Stretch Session:** Piecewise-constant `stretchRamp.ts` ramp engine — sub-0.5-BPM step invariant, cycle-aligned segment table so BPM steps land only on Out→In boundaries — on the existing one-clock SessionFrame. Stretch settings persist via the existing forward-compat localStorage envelope with no `STATE_VERSION` bump; `sessionController` dispatches frame computation to the segment table; `SettingsForm` renders the Standard/Stretch mode picker + conditional 5-field block + gate hint + computed-total readout; `SessionReadout` shows the live BPM chip + stage label; App.tsx audio boundary effect computes per-cycle offsets so dual-anchor scheduling holds across the ramp (STRETCH-01..08).
+
+### What Worked
+
+- **Smallest-blast-radius ordering held.** Phase 20 (single button label) → Phase 21 (asset + DOM) → Phase 22 (engine + UI) sequenced the highest-risk work last. Phases 20 and 21 closed fast; Phase 22's risk was isolated as planned.
+- **Stretch rode the one-clock contract unchanged.** The v1.0 "one accurate clock, many consumers" invariant absorbed the BPM ramp as a piecewise-constant segment table without a second clock or timing abstraction — the cycle-aligned segment table was the right shape to keep BPM steps on Out→In boundaries.
+- **Dual-anchor audio survived the ramp.** Phase 3 D-13/D-14 dual-anchor scheduling held across every BPM step with only a per-cycle offset computation added — no per-segment cue variants needed. Third milestone the dual-anchor invariant has paid off (Phase 5.1 reconstruction, then v1.2 ramp).
+- **Pre-paint inline-script pattern reused cleanly.** The favicon FOUC-prevention script mirrors the Phase 16 theme FOUC script — same `index.html` inline-script slot, same persisted-theme read. Sibling-of-an-existing-pattern again shipped fast.
+- **Forward-compat envelope absorbed stretch settings with no schema bump.** Phase 8 D-01/D-04a spread-then-override read meant 4 new stretch fields persisted via per-field `coerceSettings` fallback — `STATE_VERSION` untouched.
+
+### What Was Inefficient
+
+- **Stretch UX was redesigned mid-checkpoint after implementation.** Operator UAT on Phase 22 rejected the planned minimum-duration gate and second-clock-style stage model; the redesign (gate removed, minute-based stages, stage renames) landed in commit `8eb35bd` after the feature was already built. The engine survived (segment table was the right primitive) but the settings surface and strings were reworked. **Lesson:** stretch/ramp UX assumptions (gating, stage vocabulary) needed an operator sketch-review *before* SettingsForm implementation, not after.
+- **MILESTONES.md auto-accomplishments produced 3 `One-liner:` stubs again.** The `milestone.complete` SDK call extracted empty stubs for the 3 phases whose SUMMARY.md frontmatter used a different one-liner key/format. Same fragility flagged in the v1.1 retro — curated rewrite required both times.
+
+### Patterns Established
+
+- **Cycle-aligned segment table** for any piecewise-constant parameter ramp on the one-clock SessionFrame — discretize the change so it lands only on cycle boundaries, keeping every downstream consumer (visual, audio) coherent without re-anchoring mid-cycle.
+- **Sync-guard test for cross-file constant drift** (`favicon.sync.test.ts`) — when a constant is duplicated across a TS module and a CSS file by necessity, a plain-regex parse test asserting equality blocks silent drift. Generalizes the v1.1 `theme.no-hardcoded-classes.test.ts` guard idea.
+- **Pre-paint inline script** as the standard FOUC-prevention slot in `index.html` — theme (Phase 16) and favicon (Phase 21) both use it; any future persisted-visual-state read at load should follow.
+
+### Key Lessons
+
+1. **UX assumptions for novel interaction models need a pre-implementation operator checkpoint.** The stretch mode was a genuinely new interaction (multi-stage ramp config); the plan's gate + stage model was operator-rejected only at post-build UAT. New interaction models are exactly where a sketch/spec review earns its cost.
+2. **The one-clock contract keeps absorbing new consumers.** v1.0 visuals/audio/wake-lock, v1.1 variants/timbres, now v1.2 BPM ramp — four milestones, zero parallel timers. Hold this line.
+3. **`milestone.complete` accomplishment extraction is unreliable** — budget for a curated MILESTONES.md rewrite at every close until SUMMARY.md frontmatter one-liner keys are standardized.
+4. **Skipping the milestone audit is viable for a small, fully-checked milestone.** v1.2 had 12/12 requirements checked and 3 phases each with SUMMARY + VERIFICATION; the operator chose to skip `/gsd-audit-milestone`. Acceptable when the requirement table is small and trace rows are current — but it removes the cross-phase integration check, so reserve the skip for low-phase-count milestones.
+
+### Cost Observations
+
+- Sessions: discuss → plan → execute → verify → close per phase; Phase 22 carried an extra session for the mid-checkpoint UX redesign.
+- Notable: the only significant rework was the Phase 22 stretch-UX redesign — Phases 20 and 21 executed plan-as-written.
+- Test growth: 712 → 839 (+127) across the 3 phases.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -173,6 +218,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.0 | 7 | 30 | Established phase/plan/wave structure, decimal-phase insertion pattern, pre-close audit workflow |
 | v1.0.1 | 6 | 12 | Strict TS + ESLint baseline as compiler floor; per-commit green-gate as invariant; `// Reason:` policy for hook-deps disables; worktree-mode merge protocol shaken out (untracked-file merge gotcha) |
 | v1.1 | 10 | 47 | Worktree parallel waves with intra-wave `files_modified` overlap check; sibling-pattern verbatim cloning for picker/hook trios; `Record<LocaleId, X>` per-render lookup; frozen-EN byte-equality guard for locked copy; decimal-phase inserts (16.1, 16.2, 16.3) for emergent UAT-driven scope; locale-aware date formatter via optional arg (Phase 4 D-19 preserved) |
+| v1.2 | 3 | 8 | Cycle-aligned segment table for piecewise-constant ramps on the one-clock SessionFrame; sync-guard test for cross-file constant drift; pre-paint inline-script standardized as the FOUC slot; milestone audit skipped for a small fully-checked milestone |
 
 ### Cumulative Quality
 
@@ -181,6 +227,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.0 | 363/363 pass | 27 | ~9,032 |
 | v1.0.1 | 409/409 pass | 29 | ~10,925 |
 | v1.1 | 712/712 pass | 54 | ~14,500 (est.) |
+| v1.2 | 839/839 pass | — | ~19,161 |
 
 ### Top Lessons (Verified Across Milestones)
 

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: BPM Stretch
-status: milestone_complete
+status: Awaiting next milestone
 stopped_at: Phase 22 UI-SPEC approved
-last_updated: "2026-05-15T06:08:36.716Z"
-last_activity: 2026-05-15 -- Phase 22 execution started
+last_updated: "2026-05-15T18:51:37.078Z"
+last_activity: 2026-05-15 — Milestone v1.2 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 8
-  completed_plans: 3
+  completed_plans: 8
   percent: 100
 ---
 
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-14 — v1.2 BPM Stretch milestone opened)
+See: .planning/PROJECT.md (updated 2026-05-15 — after v1.2 BPM Stretch milestone close)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 22 — bpm-stretch-session
+**Current focus:** Planning next milestone — `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: 22
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-15
+Phase: Milestone v1.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-15 — Milestone v1.2 completed and archived
 
 ## Performance Metrics
 
@@ -37,8 +37,7 @@ Last activity: 2026-05-15
 - Total plans completed (v1.0): 30
 - Total plans completed (v1.0.1): 12
 - Total plans completed (v1.1): 47
-- Average duration: N/A (v1.2 not started)
-- Total execution time: 0.0 hours (v1.2)
+- Total plans completed (v1.2): 8
 
 **By Phase (v1.1):**
 
@@ -59,9 +58,9 @@ Last activity: 2026-05-15
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 20. Session Start Polish | TBD | Pending |
-| 21. Per-Theme Favicon | TBD | Pending |
-| 22. BPM Stretch Session | TBD | Pending |
+| 20. Session Start Polish | 1 | Complete (2026-05-15 — LEAD-01; Cancel/Cancelar lead-in label) |
+| 21. Per-Theme Favicon | 2 | Complete (2026-05-15 — FAVI-01..03; faviconPalette + useFavicon + pre-paint script) |
+| 22. BPM Stretch Session | 5 | Complete (2026-05-15 — STRETCH-01..08; stretchRamp engine + segment table + UI; operator-UAT UX redesign) |
 
 ## Accumulated Context
 
@@ -100,17 +99,12 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- v1.2: `/gsd-plan-phase 20` (Session Start Polish — disable Start button during `appPhase === 'lead-in'`)
-- v1.2: `/gsd-plan-phase 21` (Per-Theme Favicon — 5 palette variants; swap on data-theme change; no FOUC on load)
-- v1.2: `/gsd-plan-phase 22` (BPM Stretch Session — engine ramp + settings surface + persistence + audio invariant)
-- v1.2 deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
+- v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
+- Open todos (4) tracked under `.planning/todos/` — see Deferred Items below. Triage at next-milestone scoping.
 
 ### Blockers/Concerns
 
-None at roadmap creation. Technical risk flags:
-
-- **Phase 22 (highest risk):** BPM ramp step calculation + one-clock SessionFrame integration + dual-anchor re-anchor on each step + localStorage schema bump. Sequenced last to isolate failure mode.
-- **Phase 21 (medium risk):** Favicon swap must cover same-tab `data-theme` mutation, cross-tab `storage` event, and initial-load FOUC prevention — three separate code paths.
+None — v1.2 shipped clean. No open blockers.
 
 ### Quick Tasks Completed
 
@@ -140,19 +134,24 @@ Items acknowledged and carried forward from previous milestone close:
 | procedural | Phase 18 VERIFICATION.md status "human_needed" | All items resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
 | procedural | Quick task `260510-tc9` listed "missing" status by audit-open scanner | Bug fixes shipped in commit `0db8f5d` (Phase 5.1 close) — status field gap only | 2026-05-15 v1.1 close |
 | v1.x carry-forward | Pending todo `2026-05-13-themes-aesthetic-refresh.md` (medium) | Aesthetic refresh deferred behind 16.3 thorough redesign; revisit if 16.3 results show further gaps | 2026-05-15 v1.1 close |
+| procedural | Quick task `260510-tc9` still listed "missing" by audit-open scanner | Bug fixes shipped in commit `0db8f5d`; status field gap only — re-acknowledged at v1.2 close | 2026-05-15 v1.2 close |
+| todo | Pending todo `2026-05-15-add-forrest-native-app-links-to-learn-page.md` (ui) | New v1.x candidate — add links to Forrest's native Resonant Breathing apps on the Learn surface; triage at next-milestone scoping | 2026-05-15 v1.2 close |
+| todo | Pending todo `2026-05-15-add-labels-vs-icons-toggle-for-session-indicator.md` (ui) | New v1.x candidate — labels-vs-icons toggle for the session indicator; triage at next-milestone scoping | 2026-05-15 v1.2 close |
+| todo | Pending todo `2026-05-15-add-license-to-repo-and-update-readme.md` (docs) | New v1.x candidate — add a LICENSE file and update README; triage at next-milestone scoping | 2026-05-15 v1.2 close |
 
 **Audit references:**
 
 - `.planning/milestones/v1.0-MILESTONE-AUDIT.md` — PASSED 23/23
 - `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md` — PASSED 27/27
+- v1.2 — no milestone audit run (operator chose to proceed without `/gsd-audit-milestone`; 12/12 requirements checked off, all 3 phases complete)
 
 ## Session Continuity
 
-Last session: 2026-05-15T05:41:16.632Z
-Stopped at: Phase 22 UI-SPEC approved
-Resume file: .planning/phases/22-bpm-stretch-session/22-UI-SPEC.md
-Next command: `/gsd-plan-phase 20`
+Last session: 2026-05-15 — v1.2 BPM Stretch milestone completed and archived
+Stopped at: Milestone v1.2 complete
+Resume file: —
+Next command: `/gsd-new-milestone`
 
 ## Operator Next Steps
 
-- Plan Phase 20 with `/gsd-plan-phase 20`
+- Start the next milestone with /gsd-new-milestone
