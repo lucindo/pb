@@ -20,6 +20,23 @@ const sampleFrame: SessionFrame = {
   isComplete: false,
 }
 
+// Stretch-shaped frame: SessionFrame carrying the optional stretch live-state fields.
+const stretchFrame: SessionFrame = {
+  phase: 'in',
+  phaseLabel: 'In',
+  elapsedMs: 0,
+  remainingMs: 600_000,
+  phaseProgress: 0,
+  cycleIndex: 0,
+  isComplete: false,
+  currentBpm: 5.5,
+  stage: 'ramp',
+  cycleStartMs: 0,
+  currentCycleMs: 10_909,
+  currentInhaleMs: 4_363,
+  currentExhaleMs: 6_545,
+}
+
 function renderReadout(props: Partial<SessionReadoutProps> = {}) {
   return render(
     <SessionReadout
@@ -65,5 +82,43 @@ describe('SessionReadout', () => {
   it('isLeadInPlaceholder absent + status "idle" + null frame + no completion headline → component returns null', () => {
     const { container } = renderReadout({ status: 'idle', frame: null })
     expect(container.firstChild).toBeNull()
+  })
+})
+
+describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
+  it('a standard frame (no currentBpm) renders no BPM chip and no stage label', () => {
+    renderReadout({ frame: sampleFrame, status: 'running' })
+    expect(screen.queryByText('BPM')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ramp')).not.toBeInTheDocument()
+  })
+
+  it('a running stretch frame renders the live BPM chip to one decimal + the unit label', () => {
+    renderReadout({ frame: stretchFrame, status: 'running' })
+    expect(screen.getByText('5.5')).toBeInTheDocument()
+    expect(screen.getByText('BPM')).toBeInTheDocument()
+  })
+
+  it('maps each stretch stage to its label', () => {
+    const cases: { stage: NonNullable<SessionFrame['stage']>; label: string }[] = [
+      { stage: 'hold-initial', label: 'Warm-up' },
+      { stage: 'ramp', label: 'Ramp' },
+      { stage: 'hold-target', label: 'Cool-down' },
+    ]
+    for (const { stage, label } of cases) {
+      const { unmount } = renderReadout({ frame: { ...stretchFrame, stage }, status: 'running' })
+      expect(screen.getByText(label)).toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  it('a completed stretch session renders no BPM chip', () => {
+    renderReadout({ frame: stretchFrame, status: 'complete', showCompletionHeadline: true })
+    expect(screen.queryByText('5.5')).not.toBeInTheDocument()
+  })
+
+  it('the lead-in placeholder branch never renders the BPM chip for a stretch frame', () => {
+    renderReadout({ isLeadInPlaceholder: true, frame: stretchFrame, status: 'idle' })
+    expect(screen.queryByText('5.5')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ramp')).not.toBeInTheDocument()
   })
 })
