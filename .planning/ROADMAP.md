@@ -10,9 +10,16 @@
   5. The default cue style is `'labels'` (Text), so users who never open SettingsDialog see today's exact rendering with zero regression.
 **Plans**: 5 plans
 Plans:
+**Wave 1**
 - [ ] 25-01-PLAN.md — Cue dimension foundation: domain enum + prefs envelope coerce + i18n strings
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 25-02-PLAN.md — Cue hook pair: useCueChoice (picker-side) + useVisualCue (App-side orchestrator)
 - [ ] 25-03-PLAN.md — Cue rendering: CueGlyph (labels/arrow/nose SVGs + a11y) threaded through all 3 shapes
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 25-04-PLAN.md — CuePicker radiogroup component wired into SettingsDialog
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 25-05-PLAN.md — App.tsx capture-at-Start wiring + operator visual-review checkpoint
 **UI hint**: yes
