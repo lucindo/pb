@@ -94,6 +94,7 @@ export interface UiStrings {
     readonly announcementAriaLabel: string
     readonly sessionComplete: string
     readonly currentBpmLabel: string
+    readonly stageLabel: string
     readonly stageHoldInitial: string
     readonly stageRamp: string
     readonly stageHoldTarget: string
@@ -210,6 +211,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       announcementAriaLabel: 'Session announcement',
       sessionComplete: 'Session complete',
       currentBpmLabel: 'BPM',
+      stageLabel: 'Stage',
       stageHoldInitial: 'Warm-up',
       stageRamp: 'Stretch',
       stageHoldTarget: 'Settle',
@@ -327,6 +329,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       announcementAriaLabel: 'Anúncio da sessão', // TODO: native-speaker review
       sessionComplete: 'Sessão concluída', // TODO: native-speaker review
       currentBpmLabel: 'BPM', // TODO: native-speaker review
+      stageLabel: 'Estágio', // TODO: native-speaker review
       stageHoldInitial: 'Aquecimento', // TODO: native-speaker review
       stageRamp: 'Alongamento', // TODO: native-speaker review
       stageHoldTarget: 'Acalmar', // TODO: native-speaker review

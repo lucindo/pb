@@ -46,12 +46,14 @@ export function SettingsStepper<T extends string | number>({
         <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
           {label}
         </legend>
-        <output
-          aria-live="polite"
-          className="mt-3 block rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
-        >
-          {formatValue(value)}
-        </output>
+        <div className="mt-3 flex items-center justify-center">
+          <output
+            aria-live="polite"
+            className="min-w-32 rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
+          >
+            {formatValue(value)}
+          </output>
+        </div>
       </fieldset>
     )
   }

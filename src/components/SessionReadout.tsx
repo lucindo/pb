@@ -93,31 +93,37 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.sessionComplete}</p>
         ) : null}
       </div>
-      {/* D-13/D-14: a running stretch session shows Stage · Remaining · BPM on
-          one centered, evenly-spaced line. D-15: the Stretch→Settle transition
-          is silent (no cue/marker). Standard sessions keep the plain timer chip. */}
+      {/* D-13/D-14: a running stretch session shows Stage · Remaining · BPM as
+          three labeled cells in one row — fits mobile, each value distinct.
+          D-15: the Stretch→Settle transition is silent (no cue/marker).
+          Standard sessions keep the plain timer chip. */}
       {isStretchRunning && frame.currentBpm !== undefined ? (
         <div
           aria-live="off"
-          className="mt-4 inline-flex items-baseline justify-center gap-6 rounded-full bg-[var(--color-breathing-surface)]/80 px-6 py-3 text-[var(--color-breathing-accent-strong)]"
+          className="mt-4 flex items-stretch rounded-[1.25rem] bg-[var(--color-breathing-surface)]/80 px-2 py-3 text-[var(--color-breathing-accent-strong)]"
         >
-          {frame.stage !== undefined ? (
-            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-              {stageText(frame.stage, strings)}
+          <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
+              {strings.stageLabel}
             </span>
-          ) : null}
-          <span className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+            <span className="text-lg font-semibold">
+              {frame.stage !== undefined ? stageText(frame.stage, strings) : ''}
+            </span>
+          </div>
+          <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
+          <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
               {timeLabel}
             </span>
-            <span className="font-mono text-2xl font-semibold">{timeValue}</span>
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-semibold">{frame.currentBpm.toFixed(1)}</span>
-            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+            <span className="font-mono text-lg font-semibold">{timeValue}</span>
+          </div>
+          <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
+          <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
               {strings.currentBpmLabel}
             </span>
-          </span>
+            <span className="font-mono text-lg font-semibold">{frame.currentBpm.toFixed(1)}</span>
+          </div>
         </div>
       ) : showTimeChip ? (
         <div

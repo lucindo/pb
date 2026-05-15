@@ -117,6 +117,7 @@ describe('Phase 22 stretch string keys EN/PT-BR parity', () => {
 
   const stretchReadoutKeys = [
     'currentBpmLabel',
+    'stageLabel',
     'stageHoldInitial',
     'stageRamp',
     'stageHoldTarget',
