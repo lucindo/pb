@@ -13,8 +13,8 @@ Requirements for the v1.3 release. Each maps to one roadmap phase.
 
 ### Documentation
 
-- [ ] **DOCS-01**: The repository has a `LICENSE` file containing the MIT License.
-- [ ] **DOCS-02**: The `README` accurately describes the app, local dev/build setup, and the project's claim-safe positioning (guided breathing practice, inspired by Forrest Knutson's teachings — no medical claims).
+- [x] **DOCS-01**: The repository has a `LICENSE` file containing the MIT License.
+- [x] **DOCS-02**: The `README` accurately describes the app, local dev/build setup, and the project's claim-safe positioning (guided breathing practice, inspired by Forrest Knutson's teachings — no medical claims).
 
 ### Learn Surface
 
@@ -96,8 +96,8 @@ Which phases cover which requirements. Filled during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCS-01 | Phase 23 | Pending |
-| DOCS-02 | Phase 23 | Pending |
+| DOCS-01 | Phase 23 | Complete |
+| DOCS-02 | Phase 23 | Complete |
 | LEARN-01 | Phase 24 | Pending |
 | CUE-01 | Phase 25 | Pending |
 | CUE-02 | Phase 25 | Pending |

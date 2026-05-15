@@ -78,7 +78,7 @@ Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 
 ### ð§ v1.3 Release Polish (Phases 23â27) â IN PROGRESS
 
-- [ ] **Phase 23: LICENSE + README** â MIT `LICENSE` file added + a claim-safe, accurate README for repo distribution-readiness.
+- [x] **Phase 23: LICENSE + README** â MIT `LICENSE` file added + a claim-safe, accurate README for repo distribution-readiness. (completed 2026-05-15)
 - [ ] **Phase 24: Forrest Native-App Links** â Two outbound Resonant Breathing store links (iOS + Android) on the Learn surface, EN + PT-BR.
 - [ ] **Phase 25: Labels-vs-Icons Cue Toggle** â A 5th SettingsDialog picker switching the in-orb In/Out cue between text labels and arrow icons, accessible across all 3 variants.
 - [ ] **Phase 26: PT-BR Native-Speaker Review** â Every `// TODO: native-speaker review` marker resolved and removed by a native-speaker pass; locked-copy guards intact.
@@ -99,7 +99,7 @@ Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 **Plans**: 1 plan
 
 Plans:
-- [ ] 23-01-PLAN.md — Add MIT LICENSE file + refresh README.md for v1.3 accuracy and claim-safe positioning
+- [x] 23-01-PLAN.md — Add MIT LICENSE file + refresh README.md for v1.3 accuracy and claim-safe positioning
 
 ### Phase 24: Forrest Native-App Links
 **Goal**: Users can reach Forrest Knutson's native Resonant Breathing apps directly from the Learn surface.
@@ -181,7 +181,7 @@ Plans:
 | 20. Session Start Polish | v1.2 | 1/1 | Complete | 2026-05-15 |
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete | 2026-05-15 |
 | 22. BPM Stretch Session | v1.2 | 5/5 | Complete | 2026-05-15 |
-| 23. LICENSE + README | v1.3 | 0/1 | Planned | - |
+| 23. LICENSE + README | v1.3 | 1/1 | Complete   | 2026-05-15 |
 | 24. Forrest Native-App Links | v1.3 | 0/? | Not started | - |
 | 25. Labels-vs-Icons Cue Toggle | v1.3 | 0/? | Not started | - |
 | 26. PT-BR Native-Speaker Review | v1.3 | 0/? | Not started | - |
