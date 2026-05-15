@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createBreathingPlan } from './breathingPlan'
 import { getSessionFrame, formatDuration } from './sessionMath'
+import { DEFAULT_SETTINGS } from './settings'
 
-const timedPlan = createBreathingPlan({ bpm: 5, ratio: '40:60', durationMinutes: 10 })
-const openEndedPlan = createBreathingPlan({ bpm: 5, ratio: '40:60', durationMinutes: 'open-ended' })
+const timedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })
+const openEndedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 'open-ended' })
 
 describe('session frame derivation', () => {
   it('starts in the In phase with zero progress and cycle index zero', () => {
@@ -56,7 +57,7 @@ describe('session frame derivation', () => {
   // and the orb finish their In/Out before transitioning to 'complete'.
   it('holds completion until the current cycle finishes when total duration falls mid-cycle', () => {
     // bpm 5.5 → cycle ≈ 10909.09 ms; 5 min total → 27.5 cycles (mid-cycle).
-    const offsetPlan = createBreathingPlan({ bpm: 5.5, ratio: '40:60', durationMinutes: 5 })
+    const offsetPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '40:60', durationMinutes: 5 })
     const cycleMs = offsetPlan.cycleMs
     const cycleEnd = Math.ceil(300_000 / cycleMs) * cycleMs
 

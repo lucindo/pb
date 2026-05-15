@@ -34,33 +34,33 @@ describe('coerceSettings (D-15)', () => {
   })
 
   it('preserves all valid fields verbatim', () => {
-    const valid: SessionSettings = { bpm: 4, ratio: '50:50', durationMinutes: 5 }
+    const valid: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50', durationMinutes: 5 }
     expect(coerceSettings(valid)).toEqual(valid)
   })
 
   it('accepts open-ended duration', () => {
     expect(coerceSettings({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' }))
-      .toEqual({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' })
+      .toMatchObject({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' })
   })
 
   it('falls back PER FIELD when bpm is invalid (D-15) — keeps ratio + duration', () => {
     expect(coerceSettings({ bpm: 99, ratio: '50:50', durationMinutes: 5 }))
-      .toEqual({ bpm: DEFAULT_SETTINGS.bpm, ratio: '50:50', durationMinutes: 5 })
+      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, ratio: '50:50', durationMinutes: 5 })
   })
 
   it('falls back PER FIELD when ratio is invalid (D-15) — keeps bpm + duration', () => {
     expect(coerceSettings({ bpm: 4, ratio: '11:22', durationMinutes: 5 }))
-      .toEqual({ bpm: 4, ratio: DEFAULT_SETTINGS.ratio, durationMinutes: 5 })
+      .toMatchObject({ bpm: 4, ratio: DEFAULT_SETTINGS.ratio, durationMinutes: 5 })
   })
 
   it('falls back PER FIELD when duration is invalid (D-15) — keeps bpm + ratio', () => {
     expect(coerceSettings({ bpm: 4, ratio: '50:50', durationMinutes: 7 }))
-      .toEqual({ bpm: 4, ratio: '50:50', durationMinutes: DEFAULT_SETTINGS.durationMinutes })
+      .toMatchObject({ bpm: 4, ratio: '50:50', durationMinutes: DEFAULT_SETTINGS.durationMinutes })
   })
 
   it('rejects bpm of wrong type (string) and falls back', () => {
     expect(coerceSettings({ bpm: '5.5', ratio: '40:60', durationMinutes: 10 }))
-      .toEqual({ bpm: DEFAULT_SETTINGS.bpm, ratio: '40:60', durationMinutes: 10 })
+      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, ratio: '40:60', durationMinutes: 10 })
   })
 
   it('rejects bpm = NaN / Infinity', () => {
@@ -96,7 +96,7 @@ describe('loadSettings / saveSettings round-trip', () => {
   })
 
   it('round-trips a valid settings object', () => {
-    const next: SessionSettings = { bpm: 4, ratio: '50:50', durationMinutes: 5 }
+    const next: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50', durationMinutes: 5 }
     saveSettings(next)
     expect(loadSettings()).toEqual(next)
   })
@@ -107,7 +107,7 @@ describe('loadSettings / saveSettings round-trip', () => {
       mute: true,
       stats: { totalSessions: 3, totalElapsedSeconds: 120, lastSessionAtMs: 1000, lastSessionDurationSeconds: 60 },
     }))
-    saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    saveSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
     // Reason: STATE_KEY is always present after saveSettings; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
@@ -118,7 +118,7 @@ describe('loadSettings / saveSettings round-trip', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })
-    expect(() => { saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 }) }).not.toThrow()
+    expect(() => { saveSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 }) }).not.toThrow()
   })
 
   it('falls back to defaults when stored JSON is corrupt (D-17)', () => {
@@ -140,7 +140,7 @@ describe('loadMute / saveMute round-trip', () => {
   })
 
   it('preserves settings + stats fields when saving mute (envelope merge)', () => {
-    saveSettings({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    saveSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
     saveMute(true)
     // Reason: STATE_KEY is always present after saveMute; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

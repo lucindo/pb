@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SessionSettings } from './settings'
+import { DEFAULT_SETTINGS } from './settings'
 import {
   completeIfNeeded,
   endSession,
@@ -9,6 +10,7 @@ import {
 } from './sessionController'
 
 const baseSettings: SessionSettings = {
+  ...DEFAULT_SETTINGS,
   bpm: 5.5,
   ratio: '40:60',
   durationMinutes: 10,

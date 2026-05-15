@@ -10,7 +10,7 @@ import { createBreathingPlan } from './breathingPlan'
 
 describe('supported breathing settings', () => {
   it('uses the locked default settings', () => {
-    expect(DEFAULT_SETTINGS).toEqual({
+    expect(DEFAULT_SETTINGS).toMatchObject({
       bpm: 5.5,
       ratio: '40:60',
       durationMinutes: 10,
@@ -46,13 +46,13 @@ describe('supported breathing settings', () => {
   })
 
   it('rejects unsupported settings instead of clamping silently', () => {
-    expect(() => validateSettings({ bpm: 7.5, ratio: '40:60', durationMinutes: 10 })).toThrow(
+    expect(() => validateSettings({ ...DEFAULT_SETTINGS, bpm: 7.5 })).toThrow(
       /Unsupported BPM/,
     )
-    expect(() => validateSettings({ bpm: 5.5, ratio: '60:40' as never, durationMinutes: 10 })).toThrow(
+    expect(() => validateSettings({ ...DEFAULT_SETTINGS, ratio: '60:40' as never })).toThrow(
       /Unsupported ratio/,
     )
-    expect(() => validateSettings({ bpm: 5.5, ratio: '40:60', durationMinutes: 65 })).toThrow(
+    expect(() => validateSettings({ ...DEFAULT_SETTINGS, durationMinutes: 65 })).toThrow(
       /Unsupported duration/,
     )
   })
@@ -60,7 +60,7 @@ describe('supported breathing settings', () => {
 
 describe('breathing plan math', () => {
   it('converts BPM, ratio, and duration into continuous inhale/exhale timing', () => {
-    expect(createBreathingPlan({ bpm: 5, ratio: '40:60', durationMinutes: 10 })).toEqual({
+    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })).toEqual({
       bpm: 5,
       ratio: '40:60',
       cycleMs: 12_000,
@@ -71,6 +71,6 @@ describe('breathing plan math', () => {
   })
 
   it('uses null total duration for open-ended sessions', () => {
-    expect(createBreathingPlan({ bpm: 5.5, ratio: '50:50', durationMinutes: 'open-ended' }).totalMs).toBeNull()
+    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '50:50', durationMinutes: 'open-ended' }).totalMs).toBeNull()
   })
 })

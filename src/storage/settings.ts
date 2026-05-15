@@ -7,9 +7,14 @@
 
 import {
   DEFAULT_SETTINGS,
+  DEFAULT_STRETCH_SETTINGS,
   isValidBpm,
   isValidRatio,
   isValidDuration,
+  isValidMode,
+  isValidHoldSeconds,
+  isValidHoldTarget,
+  isValidRampDuration,
   type SessionSettings,
 } from '../domain/settings'
 
@@ -20,9 +25,15 @@ export function coerceSettings(raw: unknown): SessionSettings {
     ? raw as Record<string, unknown>
     : {}
   return {
-    bpm:             isValidBpm(r.bpm)             ? r.bpm             : DEFAULT_SETTINGS.bpm,
-    ratio:           isValidRatio(r.ratio)         ? r.ratio           : DEFAULT_SETTINGS.ratio,
-    durationMinutes: isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes,
+    bpm:                 isValidBpm(r.bpm)                     ? r.bpm                     : DEFAULT_SETTINGS.bpm,
+    ratio:               isValidRatio(r.ratio)                 ? r.ratio                   : DEFAULT_SETTINGS.ratio,
+    durationMinutes:     isValidDuration(r.durationMinutes)    ? r.durationMinutes         : DEFAULT_SETTINGS.durationMinutes,
+    mode:                isValidMode(r.mode)                   ? r.mode                    : DEFAULT_SETTINGS.mode,
+    initialBpm:          isValidBpm(r.initialBpm)              ? r.initialBpm              : DEFAULT_STRETCH_SETTINGS.initialBpm,
+    targetBpm:           isValidBpm(r.targetBpm)               ? r.targetBpm               : DEFAULT_STRETCH_SETTINGS.targetBpm,
+    holdInitialSeconds:  isValidHoldSeconds(r.holdInitialSeconds) ? r.holdInitialSeconds   : DEFAULT_STRETCH_SETTINGS.holdInitialSeconds,
+    holdTargetSeconds:   isValidHoldTarget(r.holdTargetSeconds)   ? r.holdTargetSeconds    : DEFAULT_STRETCH_SETTINGS.holdTargetSeconds,
+    rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes) ? r.rampDurationMinutes : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
   }
 }
 
