@@ -113,7 +113,21 @@ Plans:
   3. User runs a session whose BPM steps are strictly less than 0.5 BPM throughout the ramp — the transition is sub-perceptual and the step invariant is enforced by the engine on the existing one-clock SessionFrame
   4. User hears phase-aligned audio cues across the entire ramp — the dual-anchor scheduling (Phase 3 D-13/D-14) holds across every BPM step change with no scheduling gap or misalignment
   5. User's stretch settings (initialBpm, targetBpm, holdInitialSeconds, holdTargetSeconds) persist across reloads via the existing localStorage envelope (refuse-downgrade write, forward-compat read), and the total session duration shown reflects `hold initial + ramp + hold target`
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+- [ ] 22-01-PLAN.md — Stretch settings schema, predicates, validation + stretchRamp.ts ramp engine (segment table, frame lookup, gate predicate) (STRETCH-02..06)
+- [ ] 22-03-PLAN.md — Stretch UI strings (EN + PT-BR) for the settings surface and in-session readout (STRETCH-01/03/06)
+
+**Wave 2** *(blocked on 22-01)*
+- [ ] 22-02-PLAN.md — coerceSettings stretch persistence + stretch-aware sessionController (segment build, frame dispatch) (STRETCH-04/05/07)
+
+**Wave 3** *(blocked on 22-01, 22-02, 22-03)*
+- [ ] 22-04-PLAN.md — SettingsForm mode picker + stretch fields + 15-min gate + computed total; SessionReadout live BPM + stage label (STRETCH-01/02/03/06)
+
+**Wave 4** *(blocked on 22-02, 22-04)*
+- [ ] 22-05-PLAN.md — Stretch-aware App.tsx audio boundary effect + end-to-end human verification (STRETCH-04/08)
 
 ## Progress
 
@@ -144,7 +158,7 @@ Plans:
 | 19. Language Switching | v1.1 | 9/9 | Complete | 2026-05-15 |
 | 20. Session Start Polish | v1.2 | 1/1 | Complete    | 2026-05-15 |
 | 21. Per-Theme Favicon | v1.2 | 2/2 | Complete    | 2026-05-15 |
-| 22. BPM Stretch Session | v1.2 | 0/? | Not started | - |
+| 22. BPM Stretch Session | v1.2 | 0/5 | Planned | - |
 
 ## Backlog
 
