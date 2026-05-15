@@ -1,14 +1,15 @@
 import { useEffect, useRef, type MouseEventHandler } from 'react'
 
-import { LEARN_CONTENT } from '../content/learnContent'
-import { LOCKED_COPY } from '../content/lockedCopy'
+import type { LearnContent } from '../content/learnContent'
+import type { LockedCopy } from '../content/lockedCopy'
+import type { UiStrings } from '../content/strings'
 
 // CONTEXT.md D-05: native <dialog> with imperative showModal/close.
 // D-07: every external link carries target="_blank" rel="noopener noreferrer".
 // D-08: three-section explainer in fixed order (hrv → timing → forrest).
-// Phase 19 D-03/D-04 stop-gap: locked Forrest phrase + affiliation now read from
-//   LOCKED_COPY.en (direct access); Plan 08 will swap .en stop-gap for prop-driven
-//   lockedCopy resolved via useLocale(). D-05/D-07/D-08/D-14/D-15 attribution below.
+// Phase 19 D-03/D-04: locked Forrest phrase + affiliation flow through props
+//   (learnContent / lockedCopy resolved by useLocale() in App.tsx). Plan 08 stop-gap removed.
+// D-05/D-07/D-08/D-14/D-15 attribution below.
 // D-14: two disclaimer micro-lines inline (not in learnContent.ts).
 // D-15: disclaimer copy lives ONLY inside this modal — not on the main screen.
 // Deviation D-12 amendment: six link keys rendered in order:
@@ -17,9 +18,12 @@ import { LOCKED_COPY } from '../content/lockedCopy'
 export interface LearnDialogProps {
   open: boolean
   onClose(this: void): void
+  learnContent: LearnContent
+  lockedCopy: LockedCopy
+  strings: UiStrings['learn']
 }
 
-export function LearnDialog({ open, onClose }: LearnDialogProps) {
+export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }: LearnDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -67,7 +71,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
     }
   }
 
-  const { explainer, links } = LEARN_CONTENT.en
+  const { explainer, links } = learnContent
 
   return (
     <dialog
@@ -77,7 +81,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
       className="modal-fade m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
-        <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">About this practice</h2>
+        <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.title}</h2>
 
         {/* D-08: three explainer sections in fixed order */}
         <div className="grid gap-4">
@@ -94,7 +98,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             {explainer.forrest.body.split('\n\n').map((paragraph, idx) => (
               <p key={idx} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
             ))}
-            <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{LOCKED_COPY.en.inspiredByForrest}</p>
+            <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{lockedCopy.inspiredByForrest}</p>
           </div>
         </div>
 
@@ -105,7 +109,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             Render order within each section preserves D-12. Every <a> carries
             target="_blank" rel="noopener noreferrer" (T-06-07 mitigation). */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">Forrest Knutson Resources</h3>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
           <div className="mt-1 grid gap-2">
             <a
               href={links.youtubeChannel.url}
@@ -144,7 +148,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
         </div>
 
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">Selected HRV Breathing Videos</h3>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.videosHeading}</h3>
           <div className="mt-1 grid gap-2">
             <a
               href={links.heroVideo.url}
@@ -172,7 +176,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             micro-line was moved from this modal to the main breathing card
             (D-15 amendment). Only the affiliation micro-line remains here. */}
         <p className="text-center text-xs text-[var(--color-breathing-muted)]">
-          {LOCKED_COPY.en.affiliationLine}
+          {lockedCopy.affiliationLine}
         </p>
 
         {/* T-06-08 mitigation: default focus lands here (Close), not on any link.
@@ -183,7 +187,7 @@ export function LearnDialog({ open, onClose }: LearnDialogProps) {
             type="button"
             onClick={onClose}
             className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >Close</button>
+          >{strings.close}</button>
         </div>
       </div>
     </dialog>
