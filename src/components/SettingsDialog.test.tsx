@@ -138,6 +138,13 @@ describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 5
     const radiogroups = screen.getAllByRole('radiogroup')
     // CuePicker is the 3rd radiogroup (index 2)
     const cueRadiogroup = radiogroups[2]
+    // NOTE (WR-04): CuePicker sets aria-disabled={disabled} with a raw boolean.
+    // React special-cases aria-* attributes and serializes `false` to the string
+    // "false" (the attribute is NOT dropped). This literal-"false" serialization
+    // is load-bearing for the assertion below — if CuePicker is ever refactored
+    // to aria-disabled={disabled || undefined} (a common a11y lint suggestion),
+    // the attribute would be omitted and this assertion would need to flip to
+    // `not.toHaveAttribute('aria-disabled', 'true')`.
     expect(cueRadiogroup).toHaveAttribute('aria-disabled', 'false')
   })
 })
