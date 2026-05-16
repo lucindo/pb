@@ -139,6 +139,7 @@ export interface UiStrings {
     readonly iosStep1: string
     readonly iosStep2: string
     readonly iosStep3: string
+    readonly settingsLabel: string    // Phase 29 D-03: benefit-describing section label for the Settings install row
   }
 }
 
@@ -276,6 +277,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       iosStep1: "Tap the Share button in Safari's toolbar",
       iosStep2: 'Tap "Add to Home Screen"',
       iosStep3: 'Tap "Add" to confirm',
+      settingsLabel: 'Install for offline use',
     },
   },
   'pt-BR': {
@@ -413,6 +415,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       iosStep1: 'Toque no botão Compartilhar na barra do Safari',
       iosStep2: 'Toque em "Adicionar à Tela de Início"',
       iosStep3: 'Toque em "Adicionar" para confirmar',
+      settingsLabel: 'Instalar para uso offline',
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>
