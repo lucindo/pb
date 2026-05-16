@@ -96,13 +96,21 @@ function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
   // Modern browsers: cancelAndHoldAtTime is the right primitive — it preserves the
   // current automation curve up to `now` and discards everything after.
   // Safari < 16.4 (Pitfall 9 in 03-RESEARCH.md) lacks cancelAndHoldAtTime; fall back
-  // to (cancelScheduledValues + setValueAtTime) which is the equivalent freeze-then-ramp pair.
+  // to cancelScheduledValues alone.
+  //
+  // AH-WR-06: the fallback does NOT re-assert the current value via
+  // setValueAtTime(gainParam.value, now). On the Safari <16.4 fallback path,
+  // gainParam.value returns the last value set explicitly via an automation
+  // call (peakGain), NOT the live ramped value mid-decay — Safari does not
+  // reflect setTargetAtTime progress back into .value. Re-asserting it would
+  // freeze the envelope back UP to peakGain before fading, producing an audible
+  // click/swell when muting mid-decay. cancelScheduledValues(now) discards the
+  // pending automation; the subsequent setTargetAtTime then ramps from whatever
+  // value the param actually holds at `now` toward silence.
   if (typeof gainParam.cancelAndHoldAtTime === 'function') {
     gainParam.cancelAndHoldAtTime(now)
   } else {
-    const currentValue = gainParam.value
     gainParam.cancelScheduledValues(now)
-    gainParam.setValueAtTime(currentValue, now)
   }
   gainParam.setTargetAtTime(MIN_GAIN_VALUE, now, MUTE_FADE_TIME_CONSTANT)
 }

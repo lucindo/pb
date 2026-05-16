@@ -378,7 +378,7 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('cancelAndHoldAtTime fallback (Pitfall 9): when undefined, uses cancelScheduledValues + setValueAtTime', async () => {
+  it('cancelAndHoldAtTime fallback (Pitfall 9 / AH-WR-06): when undefined, uses cancelScheduledValues + setTargetAtTime only', async () => {
     const { handle, fns } = makeMockCueHandle({ withCancelAndHold: false })
     vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(handle)
     const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -387,8 +387,12 @@ describe('audioEngine', () => {
     engine.setMuted(true)
 
     expect(fns.cancelScheduledValues).toHaveBeenCalledTimes(1)
-    expect(fns.setValueAtTime).toHaveBeenCalledTimes(1)
-    // The fallback also still applies the setTargetAtTime ramp.
+    // AH-WR-06: the fallback no longer re-asserts the current value via
+    // setValueAtTime — on Safari <16.4 gainParam.value reports the last
+    // explicitly-set value (peakGain), not the live ramped value, so
+    // re-asserting it would freeze the envelope back up and click/swell.
+    expect(fns.setValueAtTime).not.toHaveBeenCalled()
+    // The fallback relies on cancelScheduledValues + setTargetAtTime alone.
     expect(fns.setTargetAtTime).toHaveBeenCalledTimes(1)
 
     await engine.close()
