@@ -34,3 +34,16 @@ Plans:
 Plans:
 **Wave 1**
 - [x] 26-01-PLAN.md — Operator-reviewed pt-BR sweep of both content catalogs (98 markers resolved) + marker-guard drift test
+
+### Phase 27: PWA Install & Offline
+
+**Goal**: The HRV breathing app is an installable, offline-capable PWA — a Web App Manifest makes it addable to home screen/desktop, a service worker precaches the app shell so a started session runs fully offline, and updates roll out without serving a stale shell or interrupting a running session.
+**Depends on**: Phase 26
+**Requirements**: PWA-01, PWA-02, PWA-03
+**Success Criteria** (what must be TRUE):
+  1. A user can install the app to their home screen / desktop via the browser-native affordance — Web App Manifest has correct `start_url`/`scope` for the `/hrv/` base path, maskable icons, and an Apple touch icon.
+  2. A user can run a started breathing session fully offline — a service worker precaches the app shell and all static assets.
+  3. The installed app updates to the latest deployed version without serving a stale app shell, and an update never interrupts a running breathing session.
+  4. Real-device iOS standalone-mode UAT confirms install, offline session, audio, and Wake Lock behavior — this is a named deliverable, not a deferred carry-forward (iOS < 18.4 Wake Lock limitation documented per WebKit bug 254545).
+  5. The zero-net-new-*runtime*-deps invariant holds: `dependencies` stays `react` + `react-dom`; `vite-plugin-pwa` enters as a build-time dependency only.
+**UI hint**: no
