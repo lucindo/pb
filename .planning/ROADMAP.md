@@ -64,7 +64,7 @@ Earlier milestones (v1.0 â†’ v1.2) are archived under `.planning/milestones/` â€
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 28. Phone Install Banner | 3/3 | Complete   | 2026-05-16 |
+| 28. Phone Install Banner | 3/3 | Complete    | 2026-05-16 |
 | 29. Settings Install Entry & Localization | 0/TBD | Not started | - |
 
 ---
