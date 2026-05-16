@@ -27,7 +27,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 ### v1.4 Install Helper
 
-- [ ] **Phase 28: Phone Install Banner** — Slim dismissible banner on phone browsers: Android native prompt + iOS guided instructions, never shown when already installed
+- [x] **Phase 28: Phone Install Banner** — Slim dismissible banner on phone browsers: Android native prompt + iOS guided instructions, never shown when already installed (completed 2026-05-16)
 - [ ] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces
 
 ## Phase Details
@@ -45,7 +45,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 3 plans
 - [x] 28-01-PLAN.md — Foundations: dismissal-persistence storage helper + UiStrings.install copy block (EN final, PT-BR draft)
 - [x] 28-02-PLAN.md — Detection hooks: useBeforeInstallPrompt (Android capture) + useIsStandaloneOrPhone (phone/standalone)
-- [ ] 28-03-PLAN.md — InstallBanner component (Android + iOS paths) and App.tsx integration behind the showBanner gate
+- [x] 28-03-PLAN.md — InstallBanner component (Android + iOS paths) and App.tsx integration behind the showBanner gate
 **UI hint**: yes
 
 ### Phase 29: Settings Install Entry & Localization
@@ -64,7 +64,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 28. Phone Install Banner | 2/3 | In Progress|  |
+| 28. Phone Install Banner | 3/3 | Complete   | 2026-05-16 |
 | 29. Settings Install Entry & Localization | 0/TBD | Not started | - |
 
 ---
