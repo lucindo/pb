@@ -214,7 +214,10 @@ export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETT
       }
 
       try {
-        return extendTimedSession(currentState, durationMinutes)
+        // DS-WR-01: pass a fresh clock reading so `extendTimedSession` recomputes
+        // `lastFrame` from `nowMs - startedAtMs`, mirroring how `startSession` is
+        // called above (`startSession(..., performance.now())`).
+        return extendTimedSession(currentState, durationMinutes, performance.now())
       } catch (error) {
         if (error instanceof RangeError) {
           return currentState

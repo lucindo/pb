@@ -34,7 +34,7 @@ describe('session lifecycle controller', () => {
 
   it('ends running sessions by clearing active state while preserving selected settings', () => {
     const running = startSession(baseSettings, 1_000)
-    const extended = extendTimedSession(running, 15)
+    const extended = extendTimedSession(running, 15, 1_000)
 
     expect(endSession(extended)).toEqual({
       status: 'idle',
@@ -81,24 +81,24 @@ describe('session lifecycle controller', () => {
   it('extends only timed running sessions to greater finite durations', () => {
     const running = startSession({ ...baseSettings, durationMinutes: 10 }, 0)
 
-    const extended = extendTimedSession(running, 15)
+    const extended = extendTimedSession(running, 15, 0)
 
     expect(extended.selectedSettings.durationMinutes).toBe(15)
     expect(extended.lockedSettings.durationMinutes).toBe(15)
     expect(extended.plan.totalMs).toBe(15 * 60_000)
 
-    expect(() => extendTimedSession(extended, 15)).toThrow(RangeError)
-    expect(() => extendTimedSession(extended, 10)).toThrow(RangeError)
-    expect(() => extendTimedSession(extended, Number.POSITIVE_INFINITY)).toThrow(RangeError)
+    expect(() => extendTimedSession(extended, 15, 0)).toThrow(RangeError)
+    expect(() => extendTimedSession(extended, 10, 0)).toThrow(RangeError)
+    expect(() => extendTimedSession(extended, Number.POSITIVE_INFINITY, 0)).toThrow(RangeError)
 
     const openEnded = startSession({ ...baseSettings, durationMinutes: 'open-ended' }, 0)
-    expect(() => extendTimedSession(openEnded, 60)).toThrow(RangeError)
+    expect(() => extendTimedSession(openEnded, 60, 0)).toThrow(RangeError)
   })
 
   it('throws RangeError for a finite durationMinutes not in DURATION_OPTIONS (D-01 allowlist boundary)', () => {
     const running = startSession({ ...baseSettings, durationMinutes: 10 }, 0)
     // 7 is finite but not in DURATION_OPTIONS (which contains 5,10,15,...,60,'open-ended')
-    expect(() => extendTimedSession(running, 7)).toThrow(RangeError)
+    expect(() => extendTimedSession(running, 7, 0)).toThrow(RangeError)
   })
 })
 
@@ -165,6 +165,6 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
 
   it('extendTimedSession throws RangeError for a stretch session (CONTEXT D-02)', () => {
     const running = startSession(stretchSettings, 0)
-    expect(() => extendTimedSession(running, 30)).toThrow(RangeError)
+    expect(() => extendTimedSession(running, 30, 0)).toThrow(RangeError)
   })
 })

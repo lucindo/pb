@@ -76,10 +76,14 @@ export function endSession(state: RunningSessionState | CompleteSessionState): I
 export function extendTimedSession(
   state: RunningSessionState,
   durationMinutes: number,
+  nowMs: number,
 ): RunningSessionState {
   // CONTEXT D-02: stretch duration is governed by the rampDurationMinutes picker
   // and the computed segment-table total, never by the durationMinutes stepper.
-  if (state.stretchSegments !== null) {
+  // DS-WR-07: assert on `mode` explicitly — `stretchSegments !== null` alone is an
+  // unasserted proxy; a malformed stretch state with `stretchSegments === null`
+  // would otherwise slip past this guard.
+  if (state.lockedSettings.mode === 'stretch' || state.stretchSegments !== null) {
     throw new RangeError('Stretch sessions cannot be extended via durationMinutes')
   }
 
@@ -105,12 +109,19 @@ export function extendTimedSession(
   }
   const plan = createBreathingPlan(lockedSettings)
 
+  // DS-WR-01: recompute `lastFrame` from the live clock (`nowMs - startedAtMs`)
+  // rather than the stale `state.lastFrame.elapsedMs`. `lastFrame` is only
+  // refreshed on rAF ticks; an extend invoked between ticks would otherwise make
+  // the next `completeIfNeeded` jump elapsed time discontinuously. This mirrors
+  // how `startSession` / `completeIfNeeded` derive elapsed from `startedAtMs`.
+  const elapsedMs = nowMs - state.startedAtMs
+
   return {
     ...state,
     selectedSettings,
     lockedSettings,
     plan,
-    lastFrame: getSessionFrame(plan, state.lastFrame.elapsedMs),
+    lastFrame: getSessionFrame(plan, elapsedMs),
   }
 }
 
