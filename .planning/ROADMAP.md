@@ -57,7 +57,9 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   2. The Settings install entry is present even after the phone banner has been dismissed, providing a persistent re-entry path
   3. When the user has selected PT-BR, all install banner copy and the Settings install entry appear in Portuguese; when EN is selected, all copy appears in English
   4. The Settings install entry is absent when the app is already running in standalone (installed) mode
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 29-01-PLAN.md — Extract shared IosInstallSteps component, refactor InstallBanner, add settingsLabel string key
+- [ ] 29-02-PLAN.md — Mount install row in SettingsDialog (prop-drilled from App.tsx), finalize PT-BR install copy
 **UI hint**: yes
 
 ## Progress
@@ -65,7 +67,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 28. Phone Install Banner | 3/3 | Complete    | 2026-05-16 |
-| 29. Settings Install Entry & Localization | 0/TBD | Not started | - |
+| 29. Settings Install Entry & Localization | 0/2 | In progress | - |
 
 ---
 
