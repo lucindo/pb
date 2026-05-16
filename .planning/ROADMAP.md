@@ -49,7 +49,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 **Wave 1**
-- [ ] 27-01-PLAN.md — Install vite-plugin-pwa (devDep) + create the five static PWA icon PNGs
+- [x] 27-01-PLAN.md — Install vite-plugin-pwa (devDep) + create the five static PWA icon PNGs
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 27-02-PLAN.md — Register VitePWA() in vite.config.ts + iOS PWA meta tags in index.html
