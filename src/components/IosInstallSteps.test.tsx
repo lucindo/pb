@@ -33,4 +33,13 @@ describe('IosInstallSteps', () => {
     const svg = container.querySelector('svg[aria-hidden="true"]')
     expect(svg).not.toBeNull()
   })
+
+  // TDD RED: GAP-1 - steps 2 & 3 must carry theme-aware muted token class
+  it('TDD-RED: steps 2 and 3 carry theme-aware muted token class', () => {
+    const { container } = renderSteps()
+    const listItems = container.querySelectorAll('li')
+    expect(listItems).toHaveLength(3)
+    expect(listItems[1]?.className).toContain('text-[var(--color-breathing-muted)]')
+    expect(listItems[2]?.className).toContain('text-[var(--color-breathing-muted)]')
+  })
 })
