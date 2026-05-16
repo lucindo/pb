@@ -28,7 +28,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 ### v1.4 Install Helper
 
 - [x] **Phase 28: Phone Install Banner** — Slim dismissible banner on phone browsers: Android native prompt + iOS guided instructions, never shown when already installed (completed 2026-05-16)
-- [x] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces (completed 2026-05-16)
+- [ ] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces (gap closure pending — dark-theme readability)
 
 ## Phase Details
 
@@ -67,7 +67,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 28. Phone Install Banner | 3/3 | Complete    | 2026-05-16 |
-| 29. Settings Install Entry & Localization | 2/2 | Complete   | 2026-05-16 |
+| 29. Settings Install Entry & Localization | 2/2 | Gaps Found | 2026-05-16 |
 
 ---
 
