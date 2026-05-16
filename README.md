@@ -63,6 +63,10 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 - Honors `prefers-reduced-motion` — the visual guide swaps from a breathing scale animation to a fixed mid-scale gradient crossfade.
 - Responsive: pocket-sized on mobile, fits comfortably on tablet and desktop without zoom.
 
+### Known Limitations
+
+**iOS < 18.4 standalone-mode Wake Lock.** When the app is installed to the iOS Home Screen (standalone PWA mode), the Screen Wake Lock API is unavailable on iOS before version 18.4 due to [WebKit bug 254545](https://bugs.webkit.org/show_bug.cgi?id=254545) — the screen may dim during a session on those devices. iOS 18.4 and later, and Safari browser tabs on iOS 16.4 and later, are unaffected. Wake Lock is treated as a progressive enhancement throughout the app; a session runs correctly regardless of whether the screen stays on.
+
 ---
 
 ## Tech
