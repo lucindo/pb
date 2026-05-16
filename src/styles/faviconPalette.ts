@@ -25,10 +25,11 @@ export const FAVICON_SVG_TEMPLATE =
 
 // D-03: Produces a runtime-recolored SVG data-URI from the single template.
 // No new static per-theme files are created in public/.
-// The # is URL-encoded to %23 so the data-URI is well-formed in a <link href> attribute.
+// CS-WR-01: The whole SVG payload is percent-encoded via encodeURIComponent so the
+// data-URI is RFC 2397-conformant — raw `<`, `>`, `"`, and spaces are all escaped,
+// not just the `#` in the hex color.
 export function buildFaviconDataUri(theme: Exclude<ThemeId, 'system'>): string {
   const hex = FAVICON_COLORS[theme]
-  const encodedHex = hex.replace('#', '%23')
-  const svg = FAVICON_SVG_TEMPLATE.replace('__FILL__', encodedHex)
-  return `data:image/svg+xml,${svg}`
+  const svg = FAVICON_SVG_TEMPLATE.replace('__FILL__', hex)
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
