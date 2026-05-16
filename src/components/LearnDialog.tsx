@@ -33,7 +33,14 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
     const dialog = dialogRef.current
     if (!dialog) return
     if (open && !dialog.open) {
-      dialog.showModal()
+      // AC-WR-05: a force-closed dialog can leave dialog.open === false while
+      // React still believes open === true; showModal() then throws
+      // InvalidStateError if the dialog is actually already open non-modally.
+      try {
+        dialog.showModal()
+      } catch {
+        /* already modal — safe to ignore */
+      }
       dialog.scrollTop = 0
       closeButtonRef.current?.focus({ preventScroll: true })
       // iOS Safari does not always honor preventScroll: true and ends up

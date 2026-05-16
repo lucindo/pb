@@ -19,7 +19,14 @@ export function ResetStatsDialog({ open, onConfirm, onCancel, strings }: ResetSt
     const dialog = dialogRef.current
     if (!dialog) return
     if (open && !dialog.open) {
-      dialog.showModal()
+      // AC-WR-05: a force-closed dialog can leave dialog.open === false while
+      // React still believes open === true; showModal() then throws
+      // InvalidStateError if the dialog is actually already open non-modally.
+      try {
+        dialog.showModal()
+      } catch {
+        /* already modal — safe to ignore */
+      }
       cancelButtonRef.current?.focus()
     } else if (!open && dialog.open) {
       dialog.close()
