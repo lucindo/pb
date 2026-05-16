@@ -80,7 +80,9 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Active
 
-v1.3 Release Polish — requirements defined in `.planning/REQUIREMENTS.md`: LICENSE + README, Forrest native-app links, labels-vs-icons toggle, PT-BR native-speaker review (I18N-07), PWA install (PWA-01).
+v1.3 Release Polish — requirements defined in `.planning/REQUIREMENTS.md`: LICENSE + README, Forrest native-app links, labels-vs-icons toggle, PWA install (PWA-01).
+
+- [x] **I18N-07** — PT-BR native-speaker review. Validated in Phase 26: all 98 `// TODO: native-speaker review` markers removed from `src/content/`; pt-BR catalogs corrected to native quality (RPM/VFC glossary applied, operator override kept short `Puxa`/`Solta` inhale/exhale labels for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state. Frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -193,4 +195,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 — v1.3 Release Polish milestone opened*
+*Last updated: 2026-05-16 — Phase 26 complete (I18N-07 PT-BR native-speaker review validated)*
