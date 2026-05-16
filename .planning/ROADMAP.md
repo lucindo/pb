@@ -46,4 +46,14 @@ Plans:
   3. The installed app updates to the latest deployed version without serving a stale app shell, and an update never interrupts a running breathing session.
   4. Real-device iOS standalone-mode UAT confirms install, offline session, audio, and Wake Lock behavior — this is a named deliverable, not a deferred carry-forward (iOS < 18.4 Wake Lock limitation documented per WebKit bug 254545).
   5. The zero-net-new-*runtime*-deps invariant holds: `dependencies` stays `react` + `react-dom`; `vite-plugin-pwa` enters as a build-time dependency only.
+**Plans**: 3 plans
+Plans:
+**Wave 1**
+- [ ] 27-01-PLAN.md — Install vite-plugin-pwa (devDep) + create the five static PWA icon PNGs
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 27-02-PLAN.md — Register VitePWA() in vite.config.ts + iOS PWA meta tags in index.html
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 27-03-PLAN.md — README Wake Lock limitation note + real-device iOS standalone-mode UAT
 **UI hint**: no
