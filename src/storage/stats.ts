@@ -52,6 +52,15 @@ function isFiniteNonNegativeNumberOrNull(v: unknown): v is number | null {
   return v === null || isFiniteNonNegativeNumber(v)
 }
 
+// DS-WR-05: lastSessionDurationSeconds is produced by the SAME
+// Math.floor(ms/1000) integer expression as totalElapsedSeconds, so it must use
+// the same integer predicate — otherwise an asymmetry lets one field survive a
+// fractional value while the other coerces to 0 (partial data loss). Only the
+// genuine timestamp lastSessionAtMs keeps the float-tolerant check.
+function isFiniteNonNegativeIntOrNull(v: unknown): v is number | null {
+  return v === null || isFiniteNonNegativeInt(v)
+}
+
 export function coerceStats(raw: unknown): PersistedStats {
   const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
     ? raw as Record<string, unknown>
@@ -60,7 +69,7 @@ export function coerceStats(raw: unknown): PersistedStats {
     totalSessions:              isFiniteNonNegativeInt(r.totalSessions)                 ? r.totalSessions             : 0,
     totalElapsedSeconds:        isFiniteNonNegativeInt(r.totalElapsedSeconds)           ? r.totalElapsedSeconds       : 0,
     lastSessionAtMs:            isFiniteNonNegativeNumberOrNull(r.lastSessionAtMs)      ? r.lastSessionAtMs           : null,
-    lastSessionDurationSeconds: isFiniteNonNegativeNumberOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
+    lastSessionDurationSeconds: isFiniteNonNegativeIntOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
   }
 }
 
@@ -83,6 +92,14 @@ export function recordSession(
   // UI consistency restored via the STORAGE-03 storage-event listener in App.tsx.
   const env = readEnvelope(deps)
   const stats = coerceStats(env.stats)
+  // DS-WR-06: reject NaN/Infinity/negative elapsedMs up front. `elapsedMs <
+  // COUNT_THRESHOLD_MS` is `false` for NaN/Infinity, so a bad frame would
+  // otherwise fall through, count, and poison totalElapsedSeconds with
+  // NaN/Infinity — which the next loadStats() silently coerces to 0, losing the
+  // entire cumulative total. Return stats unchanged on a bad reading.
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    return stats
+  }
   // D-01: count if elapsed >= 30s OR isComplete (completion bypasses threshold)
   if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
     return stats
