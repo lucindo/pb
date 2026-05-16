@@ -16,6 +16,7 @@ import { useAudioCues } from '../hooks/useAudioCues'
 import { useFavicon } from '../hooks/useFavicon'
 import { useTheme } from '../hooks/useTheme'
 import { useVisualVariant } from '../hooks/useVisualVariant'
+import { useVisualCue } from '../hooks/useVisualCue'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { createBreathingPlan, type BreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
@@ -37,7 +38,7 @@ import {
   STATE_KEY,
   type PersistedStats,
 } from '../storage'
-import type { SessionSettings, VisualVariantId } from '../domain/settings'
+import type { SessionSettings, VisualVariantId, CueStyleId } from '../domain/settings'
 import { useLocale } from '../hooks/useLocale'
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
@@ -168,6 +169,7 @@ export default function App() {
   useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
   useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
   const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
+  const { cue: liveCue } = useVisualCue() // Phase 25 CUE-01..03: live cue state + cross-tab/same-tab sync
   const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
   const learnContent = LEARN_CONTENT[locale] // per-render catalog resolution (D-06 hook return shape)
   const lockedCopy = LOCKED_COPY[locale] // per-render catalog resolution (D-04 composition rule)
@@ -210,6 +212,12 @@ export default function App() {
   // (for the JSX render path — react-hooks/refs disallows reading .current in render).
   const sessionVariantRef = useRef<VisualVariantId | null>(null)
   const [sessionVariant, setSessionVariant] = useState<VisualVariantId | null>(null)
+
+  // Phase 25 D-09: captured-at-Start snapshot for cue (mirrors sessionVariantRef / sessionVariant).
+  // T-25-09: freezes the cue at onStartClick — a cross-tab 'storage' event cannot alter the
+  // running session's cue because BreathingShape reads sessionCue (frozen) not liveCue.
+  const sessionCueRef = useRef<CueStyleId | null>(null)
+  const [sessionCue, setSessionCue] = useState<CueStyleId | null>(null)
 
   // Refs to track in-flight lead-in timeouts so end-during-lead-in can cancel them cleanly.
   const leadInTimeoutsRef = useRef<number[]>([])
@@ -347,6 +355,8 @@ export default function App() {
       planRef.current = null
       sessionVariantRef.current = null  // Phase 17 D-10 tidy clear (redundant with leave-running effect but avoids 1 frame of stale ref)
       setSessionVariant(null)
+      sessionCueRef.current = null  // Phase 25 D-09 tidy clear (mirrors sessionVariantRef clear)
+      setSessionCue(null)
       void audioStop()
       void wakeLockRelease() // Phase 5 D-07/D-08: idempotent if no lock held
       return
@@ -364,6 +374,11 @@ export default function App() {
     // Ref for synchronous write (pre-await guard); state for the JSX render path.
     sessionVariantRef.current = liveVariant
     setSessionVariant(liveVariant)
+    // Phase 25 D-09: capture cue at session start (mirrors variant capture above).
+    // T-25-09: sessionCueRef freezes the cue; mid-session cross-tab changes feed liveCue only,
+    // which is not read while sessionCue is non-null. Applies on next Start.
+    sessionCueRef.current = liveCue
+    setSessionCue(liveCue)
 
     setAppPhase('lead-in')
     setLeadInDigit(3)
@@ -418,7 +433,7 @@ export default function App() {
       session.start()
     }, LEAD_IN_DURATION_MS)
     leadInTimeoutsRef.current = [t1, t2, t3]
-  }, [appPhase, liveVariant, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
+  }, [appPhase, liveVariant, liveCue, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
@@ -536,6 +551,8 @@ export default function App() {
       planRef.current = null
       sessionVariantRef.current = null  // Phase 17 D-10 release the captured variant so next Start re-reads liveVariant
       setSessionVariant(null)  // Phase 17 D-10 release the captured variant for the JSX render path
+      sessionCueRef.current = null  // Phase 25 D-09 release captured cue so next Start re-reads liveCue
+      setSessionCue(null)  // Phase 25 D-09 release captured cue for the JSX render path
       lastBoundaryKeyRef.current = null
 
       // Phase 4 LOCL-02 + Phase 10 HOOKS-02 (D-06/D-09): single write site for
@@ -666,8 +683,10 @@ export default function App() {
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           {/* Phase 17 D-09: sessionVariant is the captured-at-Start frozen value (non-null during lead-in + running); liveVariant is the fallback at idle. */}
+          {/* Phase 25 D-09: sessionCue is the captured-at-Start frozen value (T-25-09); liveCue is the fallback at idle. */}
           <BreathingShape
             variant={sessionVariant ?? liveVariant}
+            cue={sessionCue ?? liveCue}
             frame={appPhase === 'running' ? session.liveFrame : null}
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
             strings={uiStrings.breathing}
