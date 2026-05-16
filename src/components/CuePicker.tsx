@@ -48,12 +48,12 @@ export function CuePicker({ disabled, strings, sectionLabel }: CuePickerProps) {
               onClick={() => { setCue(id) }}
               className={`${baseClasses} ${selected ? selectedClasses : unselectedClasses}`}
             >
-              {/* Preview glyph: CueGlyph wrapped in a small fixed-size container
-                  so it renders as a picker swatch (not the full in-orb display size).
-                  Using a scaled wrapper — overflow-hidden clips the glyph to swatch size. */}
+              {/* Preview glyph: CueGlyph in preview mode — picker-swatch color token
+                  (matches VariantPicker swatches) and a "T" for the text option.
+                  Scaled wrapper renders it at swatch size, not in-orb display size. */}
               <span className="block w-8 h-8 overflow-hidden flex items-center justify-center" aria-hidden="true">
                 <span className="scale-50 origin-center block">
-                  <CueGlyph cue={id} phase="in" phaseLabel={label} />
+                  <CueGlyph cue={id} phase="in" phaseLabel={label} preview />
                 </span>
               </span>
               <span>{label}</span>

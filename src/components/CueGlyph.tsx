@@ -16,6 +16,10 @@ export interface CueGlyphProps {
   cue: CueStyleId
   phase: 'in' | 'out'
   phaseLabel: string
+  // preview: picker-swatch rendering. Uses the variant-picker swatch color token
+  // (--color-orb-in-from) so the glyph stays visible on dark themes, and renders a
+  // single "T" for labels mode instead of the full phase word (which overflows the swatch).
+  preview?: boolean
 }
 
 // ── Arrow SVG path data (candidate F — soft solid chevron) ───────────────────
@@ -53,10 +57,15 @@ const NOSE_OUT_ARROWS = {
   arrowheads: ['31,84 37,91 43,84', '57,84 63,91 69,84'],
 }
 
-export function CueGlyph({ cue, phase, phaseLabel }: CueGlyphProps): React.ReactElement {
-  // Token-only color (D-23) — applied both to the labels span and the SVG wrapper
-  const colorToken =
-    phase === 'in' ? 'var(--color-orb-in-text)' : 'var(--color-orb-out-text)'
+export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphProps): React.ReactElement {
+  // Token-only color (D-23) — applied both to the labels span and the SVG wrapper.
+  // Preview swatches follow the VariantPicker swatch coloring (--color-orb-in-from)
+  // so the glyph reads on every theme; in-orb glyphs keep the phase in/out text tokens.
+  const colorToken = preview
+    ? 'var(--color-orb-in-from)'
+    : phase === 'in'
+      ? 'var(--color-orb-in-text)'
+      : 'var(--color-orb-out-text)'
 
   // ── labels mode: byte-identical to the existing phase-label span (zero regression) ──
   if (cue === 'labels') {
@@ -65,7 +74,7 @@ export function CueGlyph({ cue, phase, phaseLabel }: CueGlyphProps): React.React
         className="relative z-10 text-5xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-6xl"
         style={{ color: colorToken }}
       >
-        {phaseLabel}
+        {preview ? 'T' : phaseLabel}
       </span>
     )
   }

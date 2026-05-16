@@ -225,3 +225,44 @@ describe('CueGlyph — nose mode (candidate D2)', () => {
     expect(svg!.getAttribute('stroke')).toBe('currentColor')
   })
 })
+
+// ── preview mode (picker swatch) ─────────────────────────────────────────────
+
+describe('CueGlyph — preview mode', () => {
+  it('labels preview renders a single "T", not the phase word', () => {
+    render(<CueGlyph cue="labels" phase="in" phaseLabel="Text" preview />)
+    expect(screen.getByText('T')).toBeInTheDocument()
+    expect(screen.queryByText('Text')).not.toBeInTheDocument()
+  })
+
+  it('labels preview uses the variant-picker swatch token var(--color-orb-in-from)', () => {
+    const { container } = render(<CueGlyph cue="labels" phase="in" phaseLabel="Text" preview />)
+    const span = container.querySelector('span')
+    expect(span).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(span!.getAttribute('style') ?? '').toContain('var(--color-orb-in-from)')
+  })
+
+  it('arrow preview uses var(--color-orb-in-from) instead of the in/out text tokens', () => {
+    const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" preview />)
+    const wrapper = container.querySelector('span')
+    expect(wrapper).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const style = wrapper!.getAttribute('style') ?? ''
+    expect(style).toContain('var(--color-orb-in-from)')
+    expect(style).not.toContain('var(--color-orb-in-text)')
+  })
+
+  it('nose preview uses var(--color-orb-in-from)', () => {
+    const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" preview />)
+    const wrapper = container.querySelector('span')
+    expect(wrapper).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(wrapper!.getAttribute('style') ?? '').toContain('var(--color-orb-in-from)')
+  })
+
+  it('non-preview labels mode still renders the full phase word (in-orb unchanged)', () => {
+    render(<CueGlyph cue="labels" phase="in" phaseLabel="In" />)
+    expect(screen.getByText('In')).toBeInTheDocument()
+  })
+})
