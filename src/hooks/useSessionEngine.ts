@@ -76,6 +76,17 @@ export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETT
   // DELETED in Task 3; the hook is now the single writer.
   const runningSnapshotRef = useRef<RunningSnapshot | null>(null)
 
+  // AH-WR-05 INVARIANT — STALE-CLOSURE TRAP: the dep array below is
+  // intentionally `[state.status]` only, so this effect (and its rAF loop) is
+  // created ONCE per session and NOT re-created on every per-frame state
+  // update. Consequently the `state` value captured in this effect's closure
+  // is FROZEN at the value it had when the session entered `running`. Every
+  // per-frame value (elapsedMs, lastFrame, cycleIndex, phaseProgress, ...) MUST
+  // be read inside the `setState((currentState) => ...)` updater via
+  // `currentState` — NEVER from the outer-closure `state`. Reading `state`
+  // (or anything derived from it) from inside `tick` would silently observe
+  // first-frame-stale data for the entire session. Any future value the loop
+  // needs must be threaded through `currentState`, not the closure.
   useEffect(() => {
     if (state.status !== 'running') {
       // HOOKS-02 / D-06: DO NOT null the snapshot here. Hook effects (custom-
