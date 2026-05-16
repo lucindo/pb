@@ -1,7 +1,8 @@
 ---
 phase: 29-settings-install-entry-localization
 verified: 2026-05-16T18:12:00Z
-status: human_needed
+status: passed
+human_uat: passed 2026-05-16 — all 5 items confirmed via operator device testing (29-HUMAN-UAT.md)
 score: 8/8 must-haves verified
 overrides_applied: 0
 re_verification:
@@ -33,7 +34,7 @@ human_verification:
 
 **Phase Goal:** Users on any browser (including desktop and post-dismissal phone) can always reach an install option through SettingsDialog, and all install copy appears in the user's selected language
 **Verified:** 2026-05-16T18:12:00Z
-**Status:** human_needed
+**Status:** passed (operator UAT confirmed all 5 human-verification items 2026-05-16)
 **Re-verification:** Yes — after GAP-1 closure (plan 29-03)
 
 ## Re-Verification Summary

@@ -18,7 +18,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). See STATE.md `## Deferred Items` for the full register.
 
-**In progress:** v1.4 Install Helper — Phase 28 Phone Install Banner complete (2026-05-16): phone-class + standalone detection hooks, Android `beforeinstallprompt` capture, `InstallBanner` (Android button + iOS guided steps) wired into `App.tsx` behind the `showBanner` gate, dismissal persisted in `localStorage`. 987/987 tests pass. Phase 29 (Settings install entry + EN/PT-BR localization) remains.
+**In progress:** v1.4 Install Helper — all phases complete. Phase 28 Phone Install Banner (2026-05-16): phone-class + standalone detection hooks, Android `beforeinstallprompt` capture, `InstallBanner` (Android button + iOS guided steps) wired into `App.tsx` behind the `showBanner` gate, dismissal persisted in `localStorage`. Phase 29 Settings Install Entry & Localization complete (2026-05-16): persistent install row in `SettingsDialog` (gated `installable && !isStandalone`), shared `IosInstallSteps` component consumed by both install surfaces, EN + PT-BR install copy, GAP-1 (dark-theme step readability) closed via theme-aware `--color-breathing-muted` token. 997/997 tests pass. Operator UAT 5/5 passed. Milestone ready to close.
 
 ## Current Milestone: v1.4 Install Helper
 
@@ -89,13 +89,11 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 **v1.4 Install Helper:**
 
 - [x] **INSTALL-01..05 (Phase 28)** — Phone install banner: `useIsStandaloneOrPhone` gates on `(pointer: coarse)` for phone-class + `(display-mode: standalone)`/`navigator.standalone` for installed-PWA state; `useBeforeInstallPrompt` captures the Android `beforeinstallprompt` and replays it from the user-gesture chain; `InstallBanner` shows the Android install-button path and the iOS inline-expand "Share → Add to Home Screen" steps; wired into `App.tsx` behind the composed `showBanner` gate (phone, not standalone, not dismissed, idle, iOS-or-deferredPrompt); dismissal persisted in `localStorage` (`hrv:install-dismissed`); EN copy final, PT-BR draft; 987/987 tests pass. Validated in Phase 28: Phone Install Banner (automated 5/5; 6 human-device UAT items tracked in `28-HUMAN-UAT.md`).
+- [x] **INSTALL-06..07 (Phase 29)** — Settings install entry & localization: persistent install row in `SettingsDialog` gated `installable && !isStandalone`, rendered below the Language picker; non-iOS path triggers `onInstall`/`triggerInstall`, iOS path inline-expands the shared `IosInstallSteps` component (also consumed by `InstallBanner` — single source of truth); `UiStrings.install.settingsLabel` added with EN + PT-BR values; GAP-1 (iOS steps unreadable on dark themes) closed in plan 29-03 — steps 2 & 3 carry theme-aware `text-[var(--color-breathing-muted)]`; 997/997 tests pass. Validated in Phase 29: Settings Install Entry & Localization (automated 8/8; operator UAT 5/5 passed).
 
 ### Active
 
-**v1.4 Install Helper (defining requirements 2026-05-16):**
-
-- [ ] Persistent install option in SettingsDialog whenever running in a browser
-- [ ] Localized EN + PT-BR copy for both install surfaces
+_(none — v1.4 Install Helper requirements all validated)_
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -215,4 +213,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after Phase 28 Phone Install Banner completion*
+*Last updated: 2026-05-16 after Phase 29 Settings Install Entry & Localization completion*

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Install Helper
-status: executing
+status: milestone_complete
 stopped_at: Phase 29 UI-SPEC approved
-last_updated: "2026-05-16T19:30:02.061Z"
-last_activity: 2026-05-16 -- Phase 29 planning complete
+last_updated: "2026-05-16T21:01:46.374Z"
+last_activity: 2026-05-16 -- Phase 29 execution started
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
   completed_plans: 5
-  percent: 83
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-16 after v1.3 Release Polish mileston
 
 ## Current Position
 
-Phase: 29 (settings-install-entry-localization) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-05-16 -- Phase 29 planning complete
+Phase: 29
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-05-16
 
 Progress: [██████████] 100%
 

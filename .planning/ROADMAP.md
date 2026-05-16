@@ -28,7 +28,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 ### v1.4 Install Helper
 
 - [x] **Phase 28: Phone Install Banner** — Slim dismissible banner on phone browsers: Android native prompt + iOS guided instructions, never shown when already installed (completed 2026-05-16)
-- [ ] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces (gap closure pending — dark-theme readability)
+- [x] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces (gap closure pending — dark-theme readability) (completed 2026-05-16)
 
 ## Phase Details
 
@@ -60,7 +60,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 3 plans
 - [x] 29-01-PLAN.md — Extract shared IosInstallSteps component, refactor InstallBanner, add settingsLabel string key
 - [x] 29-02-PLAN.md — Mount install row in SettingsDialog (prop-drilled from App.tsx), finalize PT-BR install copy
-- [ ] 29-03-PLAN.md — Gap closure: theme-aware text color for iOS install steps (fixes dark-theme readability)
+- [x] 29-03-PLAN.md — Gap closure: theme-aware text color for iOS install steps (fixes dark-theme readability)
 **UI hint**: yes
 
 ## Progress
@@ -68,7 +68,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 28. Phone Install Banner | 3/3 | Complete    | 2026-05-16 |
-| 29. Settings Install Entry & Localization | 2/3 | Gap Closure | 2026-05-16 |
+| 29. Settings Install Entry & Localization | 3/3 | Complete    | 2026-05-16 |
 
 ---
 
