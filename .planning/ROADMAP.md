@@ -14,8 +14,8 @@ Plans:
 - [x] 25-01-PLAN.md — Cue dimension foundation: domain enum + prefs envelope coerce + i18n strings
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 25-02-PLAN.md — Cue hook pair: useCueChoice (picker-side) + useVisualCue (App-side orchestrator)
-- [ ] 25-03-PLAN.md — Cue rendering: CueGlyph (labels/arrow/nose SVGs + a11y) threaded through all 3 shapes
+- [x] 25-02-PLAN.md — Cue hook pair: useCueChoice (picker-side) + useVisualCue (App-side orchestrator)
+- [x] 25-03-PLAN.md — Cue rendering: CueGlyph (labels/arrow/nose SVGs + a11y) threaded through all 3 shapes
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 25-04-PLAN.md — CuePicker radiogroup component wired into SettingsDialog
