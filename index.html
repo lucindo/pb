@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <!-- PWA: plugin auto-injects the manifest link at build time — DO NOT add it here manually -->
+    <!-- iOS install icon — MUST use %BASE_URL% (Phase 12 D-04 pattern) -->
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" sizes="180x180">
+    <!-- iOS standalone mode -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="HRV Breathing">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Chrome/Android browser tab + PWA theme color -->
+    <meta name="theme-color" content="#5e81ac">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Phase 16 THEME-04: pre-paint theme attribute. SYNC WITH src/storage/storage.ts STATE_KEY. -->
     <!-- SYNC WITH src/styles/faviconPalette.ts FAVICON_COLORS / src/styles/theme.css --color-breathing-accent-strong -->
