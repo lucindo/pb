@@ -11,6 +11,7 @@ import { LearnAnchor } from '../components/LearnAnchor'
 import { LearnDialog } from '../components/LearnDialog'
 import { SettingsAnchor } from '../components/SettingsAnchor'
 import { SettingsDialog } from '../components/SettingsDialog'
+import { InstallBanner } from '../components/InstallBanner'
 import { useSessionEngine } from '../hooks/useSessionEngine'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useFavicon } from '../hooks/useFavicon'
@@ -18,6 +19,8 @@ import { useTheme } from '../hooks/useTheme'
 import { useVisualVariant } from '../hooks/useVisualVariant'
 import { useVisualCue } from '../hooks/useVisualCue'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
+import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { createBreathingPlan, type BreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import {
@@ -37,6 +40,8 @@ import {
   ZERO_STATS,
   STATE_KEY,
   type PersistedStats,
+  loadInstallDismissed,
+  saveInstallDismissed,
 } from '../storage'
 import type { SessionSettings, VisualVariantId, CueStyleId } from '../domain/settings'
 import { useLocale } from '../hooks/useLocale'
@@ -75,6 +80,9 @@ export default function App() {
   // useMemo([]) ensures one synchronous read per app load, before children mount.
   const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
   const initialMute = useMemo<boolean>(() => loadMute(), [])
+  // Phase 28 INSTALL-04: single synchronous read at mount; setInstallDismissed(true)
+  // on dismiss triggers immediate re-gate via showBanner.
+  const [installDismissed, setInstallDismissed] = useState<boolean>(() => loadInstallDismissed())
 
   // Phase 4 LOCL-02: stats are loaded once at mount, then mutated through three
   // sites (recordSession at end-transition, resetStats from the dialog, and the
@@ -168,6 +176,8 @@ export default function App() {
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
   useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
   useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
+  const { isPhone, isStandalone } = useIsStandaloneOrPhone() // Phase 28: phone + standalone detection
+  const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt() // Phase 28: Android install prompt capture
   const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
   const { cue: liveCue } = useVisualCue() // Phase 25 CUE-01..03: live cue state + cross-tab/same-tab sync
   const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
@@ -181,6 +191,17 @@ export default function App() {
   // Without this the countdown 3-2-1 fires on the configuration screen, then
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
+
+  // Phase 28: iOS detection — navigator.standalone is Apple-specific (not in TS DOM lib).
+  interface SafariNavigator extends Navigator { standalone?: boolean }
+  const isIOS = (navigator as SafariNavigator).standalone !== undefined
+
+  // Phase 28 showBanner — AND of all five gates (INSTALL-01/02/03/04/05, D-01/D-02/D-08/SC5):
+  // isPhone guards desktop (SC5), !isStandalone blocks installed PWA (INSTALL-05),
+  // !installDismissed blocks dismissed state (INSTALL-04), appPhase==='idle' hides
+  // during sessions (D-01), and (isIOS || deferredPrompt !== null) ensures Android
+  // only shows when install prompt is available (D-08).
+  const showBanner = isPhone && !isStandalone && !installDismissed && appPhase === 'idle' && (isIOS || deferredPrompt !== null)
   // Pre-session readout chip shown during lead-in so the layout doesn't shift
   // when the In phase begins. Synthesises an elapsed=0 frame from the locked
   // settings (Remaining = configured duration; Elapsed 0:00 for open-ended).
@@ -526,6 +547,13 @@ export default function App() {
     setSettingsDialogOpen(false)
   }, [])
 
+  // Phase 28 INSTALL-04: dismiss handler — persists to localStorage and gates the
+  // banner out of the React tree immediately.
+  const handleInstallDismiss = useCallback(() => {
+    saveInstallDismissed()
+    setInstallDismissed(true)
+  }, [])
+
   // D-11 + D-16: when the session reaches 'complete', the last cue tail naturally rings out
   // (cues already scheduled in the audio thread; AC.close() resolves after they finish).
   // Reset appPhase to 'idle' so the orb stops rendering the last frame, and clear the dual anchors.
@@ -764,6 +792,17 @@ export default function App() {
           <StatsFooter stats={stats} onResetClick={onResetClick} strings={uiStrings.stats} locale={locale} />
         )}
       </section>
+      {/* Phase 28 D-02: banner in normal document flow, below section content.
+          showBanner gates all five conditions: phone + not standalone + not
+          dismissed + idle + (iOS or deferredPrompt available). */}
+      {showBanner && (
+        <InstallBanner
+          isIOS={isIOS}
+          onInstall={triggerInstall}
+          onDismiss={handleInstallDismiss}
+          strings={uiStrings.install}
+        />
+      )}
       <EndSessionDialog
         open={endDialogOpen}
         onConfirm={confirmEnd}
