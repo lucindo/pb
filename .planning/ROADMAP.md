@@ -21,5 +21,5 @@ Plans:
 - [x] 25-04-PLAN.md — CuePicker radiogroup component wired into SettingsDialog
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 25-05-PLAN.md — App.tsx capture-at-Start wiring + operator visual-review checkpoint
+- [x] 25-05-PLAN.md — App.tsx capture-at-Start wiring + operator visual-review checkpoint
 **UI hint**: yes
