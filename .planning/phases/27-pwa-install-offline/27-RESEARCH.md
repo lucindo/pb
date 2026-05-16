@@ -726,7 +726,7 @@ For this project, extending to `['**/*.{js,wasm,css,html,png,svg}']` covers:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`background_color` exact hex value**
    - What we know: D-07 says "light-theme surface"; the light palette uses Nord Snow Storm 0 = `#eceff4`
