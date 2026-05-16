@@ -478,7 +478,7 @@ const REVIEW_MARKER = 'TODO: native-speaker review'
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact prop name for "is there an install path" in SettingsDialog**
    - What we know: App.tsx has `isIOS`, `deferredPrompt !== null` (via `useBeforeInstallPrompt`)
