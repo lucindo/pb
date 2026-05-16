@@ -34,12 +34,19 @@ export function InstallBanner({ isIOS, onInstall, onDismiss, strings }: InstallB
           // polished banner. bannerText already conveys the meaning.
           onError={(e) => { e.currentTarget.style.display = 'none' }}
         />
-        <span className="flex-1 truncate text-sm text-[var(--color-breathing-muted)]">
+        {/* WR-05: allow the install message to wrap rather than truncate —
+            clipping the banner's single most important sentence (especially the
+            longer PT-BR copy) defeats its purpose. The banner grows vertically. */}
+        <span className="flex-1 break-words text-sm text-[var(--color-breathing-muted)]">
           {strings.bannerText}
         </span>
         {isIOS ? (
           <button
             type="button"
+            // WR-03: disclosure pattern — expose open/closed state and point at
+            // the steps container so assistive tech announces it as a toggle.
+            aria-expanded={iosExpanded}
+            aria-controls="install-ios-steps"
             onClick={() => { setIosExpanded(prev => !prev) }}
             className="min-h-[44px] text-sm font-semibold text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
@@ -66,14 +73,18 @@ export function InstallBanner({ isIOS, onInstall, onDismiss, strings }: InstallB
       </div>
       {/* iOS expanded steps D-05/D-06 — shown inline below the banner row */}
       {isIOS && iosExpanded && (
-        <div aria-live="polite" className="pt-4 text-sm leading-6">
-          <p className="text-[var(--color-breathing-accent-strong)]">
-            {strings.iosStep1}
-            {' '}
-            <IOsShareIcon />
-          </p>
-          <p>{strings.iosStep2}</p>
-          <p>{strings.iosStep3}</p>
+        <div id="install-ios-steps" aria-live="polite" className="pt-4 text-sm leading-6">
+          {/* WR-04: ordered list conveys the sequential step relationship both
+              visually (numbering) and to assistive tech. */}
+          <ol className="list-decimal pl-5">
+            <li className="text-[var(--color-breathing-accent-strong)]">
+              {strings.iosStep1}
+              {' '}
+              <IOsShareIcon />
+            </li>
+            <li>{strings.iosStep2}</li>
+            <li>{strings.iosStep3}</li>
+          </ol>
         </div>
       )}
     </div>
