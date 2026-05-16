@@ -44,7 +44,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   5. On desktop browsers, no install banner appears (banner is phone-only)
 **Plans**: 3 plans
 - [x] 28-01-PLAN.md — Foundations: dismissal-persistence storage helper + UiStrings.install copy block (EN final, PT-BR draft)
-- [ ] 28-02-PLAN.md — Detection hooks: useBeforeInstallPrompt (Android capture) + useIsStandaloneOrPhone (phone/standalone)
+- [x] 28-02-PLAN.md — Detection hooks: useBeforeInstallPrompt (Android capture) + useIsStandaloneOrPhone (phone/standalone)
 - [ ] 28-03-PLAN.md — InstallBanner component (Android + iOS paths) and App.tsx integration behind the showBanner gate
 **UI hint**: yes
 
@@ -64,7 +64,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 28. Phone Install Banner | 1/3 | In Progress|  |
+| 28. Phone Install Banner | 2/3 | In Progress|  |
 | 29. Settings Install Entry & Localization | 0/TBD | Not started | - |
 
 ---
