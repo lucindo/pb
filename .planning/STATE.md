@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Release Polish
-status: Awaiting next milestone
-stopped_at: v1.3 Release Polish milestone complete and archived
-last_updated: "2026-05-16T07:00:00.000Z"
-last_activity: 2026-05-16 — Milestone v1.3 completed and archived
+milestone: v1.4
+milestone_name: Install Helper
+status: planning
+last_updated: "2026-05-16T14:02:26.719Z"
+last_activity: 2026-05-16
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-16 after v1.3 Release Polish mileston
 
 ## Current Position
 
-Phase: Milestone v1.3 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-16 — Milestone v1.3 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-16 — Milestone v1.4 started
 
 ## Performance Metrics
 

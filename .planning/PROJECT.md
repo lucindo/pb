@@ -18,7 +18,21 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). See STATE.md `## Deferred Items` for the full register.
 
-**Next milestone:** not yet defined — run `/gsd-new-milestone` to start the next cycle.
+**Next milestone:** v1.4 Install Helper — surface install-to-home-screen discovery UX (dismissible phone banner + persistent Settings option) on top of the Phase 27 PWA infrastructure.
+
+## Current Milestone: v1.4 Install Helper
+
+**Goal:** Detect when the app runs in a browser (not installed) and help users install it to their home screen — via a dismissible phone banner plus a persistent install option in Settings.
+
+**Target features:**
+- Phone detection — show the install banner only on phone-class browsers, and never when already running as an installed PWA (standalone display mode)
+- Android Chrome — capture `beforeinstallprompt`; the banner CTA fires the native install prompt
+- iOS Safari — banner shows guided "Share → Add to Home Screen" instructions (no install API exists on iOS)
+- Dismissible banner UI — slim, non-modal, never blocks the breathing flow; dismissal persists permanently in `localStorage` (never re-shown)
+- Settings install option — whenever the app runs in a browser (not installed), SettingsDialog shows an install entry; persistent, available even after the banner is dismissed, and covers desktop browsers
+- Localized EN + PT-BR copy for both surfaces
+
+**Key context:** PWA infrastructure (manifest, Workbox service worker, install icons) shipped in Phase 27 — v1.4 adds only the install *discovery* UX layer. Two surfaces: the banner is phone-only and dismissible; the Settings option is the persistent fallback. Continues phase numbering from 28.
 
 ## Requirements
 
@@ -74,7 +88,12 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ### Active
 
-(None — v1.3 Release Polish shipped 2026-05-16. Next milestone not yet defined; run `/gsd-new-milestone`.)
+**v1.4 Install Helper (defining requirements 2026-05-16):**
+
+- [ ] Detect phone-class browsers and the installed-PWA (standalone) state to gate install UX
+- [ ] Dismissible phone install banner — Android native prompt + iOS guided instructions
+- [ ] Persistent install option in SettingsDialog whenever running in a browser
+- [ ] Localized EN + PT-BR copy for both install surfaces
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -194,4 +213,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after v1.3 Release Polish milestone*
+*Last updated: 2026-05-16 after v1.4 Install Helper milestone start*
