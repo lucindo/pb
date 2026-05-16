@@ -73,7 +73,7 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 
 - React 19 + TypeScript, built with Vite.
 - Tailwind CSS v4 via `@tailwindcss/vite`.
-- Vitest + Testing Library for unit + behavior tests (839 tests across the codebase as of v1.3).
+- Vitest + Testing Library for unit + behavior tests (959 tests across the codebase).
 - ESLint (TypeScript + React Hooks + React Refresh rule packs).
 - Web APIs: `<dialog>` (top-layer modals), `AudioContext` (generated cues), Page Visibility / Wake Lock (resume / screen-on), `localStorage` (settings + stats).
 - No backend, no telemetry, no analytics, no third-party scripts.
