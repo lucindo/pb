@@ -5,8 +5,7 @@
 // D-14 native-endonym LOCALE_DISPLAY_NAMES: picker labels use native endonyms.
 // D-15 template-fn entries: interpolated strings are typed as functions.
 // EN values are the literals currently shipped in source components.
-// PT-BR values are machine-translated; every translatable entry carries
-// "// TODO: native-speaker review" per I18N-07.
+// PT-BR values reviewed by a native speaker in Phase 26 per I18N-07.
 
 import type { LocaleId } from '../domain/settings'
 
@@ -261,128 +260,128 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
   },
   'pt-BR': {
     app: {
-      header: 'PRÁTICA VFC', // TODO: native-speaker review
-      title: 'Respiração VFC', // TODO: native-speaker review
+      header: 'PRÁTICA VFC',
+      title: 'Respiração VFC',
     },
     controls: {
-      startSession: 'Iniciar sessão', // TODO: native-speaker review
-      endSession: 'Encerrar sessão', // TODO: native-speaker review
-      cancel: 'Cancelar', // TODO: native-speaker review
+      startSession: 'Iniciar sessão',
+      endSession: 'Encerrar sessão',
+      cancel: 'Cancelar',
     },
     endSessionDialog: {
-      title: 'Encerrar esta sessão?', // TODO: native-speaker review
-      confirm: 'Encerrar', // TODO: native-speaker review
-      cancel: 'Continuar', // TODO: native-speaker review
+      title: 'Encerrar esta sessão?',
+      confirm: 'Encerrar',
+      cancel: 'Continuar',
     },
     resetStatsDialog: {
-      title: 'Reiniciar estatísticas?', // TODO: native-speaker review
-      confirm: 'Reiniciar', // TODO: native-speaker review
-      cancel: 'Manter', // TODO: native-speaker review
+      title: 'Zerar estatísticas de prática?',
+      confirm: 'Zerar',
+      cancel: 'Manter',
     },
     settings: {
-      title: 'Configurações', // TODO: native-speaker review
-      close: 'Fechar', // TODO: native-speaker review
-      themeLabel: 'Tema', // TODO: native-speaker review
-      variantLabel: 'Variante', // TODO: native-speaker review
-      cueLabel: 'Estilo de sinal', // TODO: native-speaker review
-      timbreLabel: 'Timbre', // TODO: native-speaker review
-      languageLabel: 'Idioma', // TODO: native-speaker review
+      title: 'Configurações',
+      close: 'Fechar',
+      themeLabel: 'Tema',
+      variantLabel: 'Variante',
+      cueLabel: 'Estilo de guia',
+      timbreLabel: 'Timbre',
+      languageLabel: 'Idioma',
     },
     themes: {
-      light: 'Claro', // TODO: native-speaker review
-      dark: 'Escuro', // TODO: native-speaker review
-      system: 'Sistema', // TODO: native-speaker review
-      moss: 'Musgo', // TODO: native-speaker review
-      slate: 'Ardósia', // TODO: native-speaker review
-      dusk: 'Crepúsculo', // TODO: native-speaker review
+      light: 'Claro',
+      dark: 'Escuro',
+      system: 'Sistema',
+      moss: 'Musgo',
+      slate: 'Ardósia',
+      dusk: 'Crepúsculo',
     },
     variants: {
-      orb: 'Esfera', // TODO: native-speaker review
-      square: 'Quadrado', // TODO: native-speaker review
-      diamond: 'Losango', // TODO: native-speaker review
+      orb: 'Esfera',
+      square: 'Quadrado',
+      diamond: 'Losango',
     },
     cue: {
-      labels: 'Texto', // TODO: native-speaker review
-      arrow: 'Seta', // TODO: native-speaker review
-      nose: 'Nariz', // TODO: native-speaker review
+      labels: 'Texto',
+      arrow: 'Seta',
+      nose: 'Nariz',
     },
     timbres: {
-      bowl: 'Taça', // TODO: native-speaker review
-      bell: 'Sino', // TODO: native-speaker review
-      sine: 'Senoidal', // TODO: native-speaker review
-      chime: 'Carrilhão', // TODO: native-speaker review
+      bowl: 'Tigela',
+      bell: 'Sino',
+      sine: 'Senoidal',
+      chime: 'Carrilhão',
     },
     settingsForm: {
-      ariaLabel: 'Configurações da sessão', // TODO: native-speaker review
-      bpmLabel: 'BPM', // TODO: native-speaker review
-      ratioLabel: 'Proporção', // TODO: native-speaker review
-      durationLabel: 'Duração', // TODO: native-speaker review
-      openEndedLabel: 'Aberta', // TODO: native-speaker review
-      bpmUnit: 'BPM', // TODO: native-speaker review
-      minutesUnit: 'min', // TODO: native-speaker review
+      ariaLabel: 'Configurações da sessão',
+      bpmLabel: 'RPM',
+      ratioLabel: 'Proporção',
+      durationLabel: 'Duração',
+      openEndedLabel: 'Sem limite',
+      bpmUnit: 'RPM',
+      minutesUnit: 'min',
       stepper: {
         fieldAriaLabel: (l) => l,
-        decreaseLabel: (l) => `Diminuir ${l}`, // TODO: native-speaker review
-        increaseLabel: (l) => `Aumentar ${l}`, // TODO: native-speaker review
+        decreaseLabel: (l) => `Diminuir ${l}`,
+        increaseLabel: (l) => `Aumentar ${l}`,
       },
-      sessionModeLabel: 'Modo de sessão', // TODO: native-speaker review
-      modeStandard: 'Padrão', // TODO: native-speaker review
-      modeStretch: 'Alongamento', // TODO: native-speaker review
-      initialBpmLabel: 'BPM inicial', // TODO: native-speaker review
-      targetBpmLabel: 'BPM alvo', // TODO: native-speaker review
-      holdInitialLabel: 'Aquecimento', // TODO: native-speaker review
-      holdTargetLabel: 'Acalmar', // TODO: native-speaker review
-      rampDurationLabel: 'Alongamento', // TODO: native-speaker review
-      holdOpenEndedLabel: 'Aberto', // TODO: native-speaker review
+      sessionModeLabel: 'Modo de sessão',
+      modeStandard: 'Padrão',
+      modeStretch: 'Progressivo',
+      initialBpmLabel: 'RPM inicial',
+      targetBpmLabel: 'RPM alvo',
+      holdInitialLabel: 'Aquecimento',
+      holdTargetLabel: 'Estabilizar',
+      rampDurationLabel: 'Progressão',
+      holdOpenEndedLabel: 'Sem limite',
     },
     mute: {
-      mute: 'Silenciar áudio', // TODO: native-speaker review
-      unmute: 'Reativar áudio', // TODO: native-speaker review
-      resume: 'Retomar áudio', // TODO: native-speaker review
-      unavailable: 'Áudio indisponível neste navegador', // TODO: native-speaker review
-      audioPausedAnnouncement: 'Áudio pausado, toque para retomar', // TODO: native-speaker review
+      mute: 'Silenciar sons',
+      unmute: 'Reativar sons',
+      resume: 'Retomar áudio',
+      unavailable: 'Áudio indisponível neste navegador',
+      audioPausedAnnouncement: 'Áudio pausado, toque para retomar',
     },
     readout: {
-      elapsed: 'Decorrido', // TODO: native-speaker review
-      remaining: 'Restante', // TODO: native-speaker review
-      readoutAriaLabel: 'Leitura da sessão', // TODO: native-speaker review
-      announcementAriaLabel: 'Anúncio da sessão', // TODO: native-speaker review
-      sessionComplete: 'Sessão concluída', // TODO: native-speaker review
-      currentBpmLabel: 'BPM', // TODO: native-speaker review
-      stageLabel: 'Estágio', // TODO: native-speaker review
-      stageHoldInitial: 'Aquecimento', // TODO: native-speaker review
-      stageRamp: 'Alongamento', // TODO: native-speaker review
-      stageHoldTarget: 'Acalmar', // TODO: native-speaker review
+      elapsed: 'Decorrido',
+      remaining: 'Restante',
+      readoutAriaLabel: 'Informações da sessão',
+      announcementAriaLabel: 'Anúncio da sessão',
+      sessionComplete: 'Sessão concluída',
+      currentBpmLabel: 'RPM',
+      stageLabel: 'Fase',
+      stageHoldInitial: 'Aquecimento',
+      stageRamp: 'Progressão',
+      stageHoldTarget: 'Estabilizar',
     },
     anchors: {
-      settings: 'Configurações', // TODO: native-speaker review
-      settingsDisabled: 'Configurações (indisponíveis durante a sessão)', // TODO: native-speaker review
-      learn: 'Aprenda', // TODO: native-speaker review
-      learnDisabled: 'Aprenda (indisponível durante a sessão)', // TODO: native-speaker review
+      settings: 'Configurações',
+      settingsDisabled: 'Configurações (indisponível durante a sessão)',
+      learn: 'Saiba mais',
+      learnDisabled: 'Saiba mais (indisponível durante a sessão)',
     },
     stats: {
       sessionsCount: (n) =>
-        n === 1 ? '1 sessão' : `${String(n)} sessões`, // TODO: native-speaker review
+        n === 1 ? '1 sessão' : `${String(n)} sessões`,
       totalMinutes: (seconds) => {
         const minutes = Math.round(seconds / 60)
-        return `${String(minutes)} min` // TODO: native-speaker review
+        return `${String(minutes)} min`
       },
-      lastSessionPrefix: (date, duration) => `Último: ${date} · ${duration}`, // TODO: native-speaker review
-      totalSuffix: 'total', // TODO: native-speaker review
-      reset: 'Zerar', // TODO: native-speaker review
+      lastSessionPrefix: (date, duration) => `Última sessão: ${date} · ${duration}`,
+      totalSuffix: 'total',
+      reset: 'Zerar',
     },
     breathing: {
-      inhale: 'Puxa', // TODO: native-speaker review
-      exhale: 'Solta', // TODO: native-speaker review
-      breathingShapeAriaLabel: 'Forma da respiração', // TODO: native-speaker review
-      leadInAriaLabel: (d) => `Contagem regressiva ${String(d)}`, // TODO: native-speaker review
+      inhale: 'Puxa',
+      exhale: 'Solta',
+      breathingShapeAriaLabel: 'Forma de respiração',
+      leadInAriaLabel: (d) => `Contagem regressiva ${String(d)}`,
     },
     learn: {
-      title: 'Sobre esta prática', // TODO: native-speaker review
-      close: 'Fechar', // TODO: native-speaker review
-      resourcesHeading: 'Links do Forrest Knutson', // TODO: native-speaker review
-      videosHeading: 'Vídeos selecionados de respiração VFC', // TODO: native-speaker review
-      nativeAppsHeading: 'App Resonant Breathing', // TODO: native-speaker review
+      title: 'Sobre esta prática',
+      close: 'Fechar',
+      resourcesHeading: 'Recursos do Forrest Knutson',
+      videosHeading: 'Vídeos selecionados de respiração VFC',
+      nativeAppsHeading: 'App Resonant Breathing',
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>

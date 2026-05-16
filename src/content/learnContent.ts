@@ -100,43 +100,33 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
   'pt-BR': {
     explainer: {
       hrv: {
-        // TODO: native-speaker review
         title: 'O que é VFC / respiração de ressonância',
-        // TODO: native-speaker review
-        body: 'A respiração VFC é uma prática calma de respirações lentas, geralmente menos de sete por minuto. Nessa frequência baixa, sua respiração se alinha suavemente com o ritmo natural do seu coração — um estado por vezes chamado de respiração de ressonância. Esta é uma prática tranquila, não um procedimento clínico nem uma medição do seu coração.',
+        body: 'A respiração VFC é uma prática calma de respirações lentas, geralmente menos de sete por minuto. Nessa frequência baixa, sua respiração se alinha suavemente com o ritmo natural do coração — um estado por vezes chamado de respiração de ressonância. Esta é uma prática tranquila, não um procedimento clínico nem uma medição do coração.',
       },
       timing: {
-        // TODO: native-speaker review
-        title: 'Como este app cronometra sua respiração',
-        // TODO: native-speaker review
-        body: 'Este app guia uma inspiração e expiração contínuas, sem pausa entre elas. Você escolhe uma frequência lenta abaixo de sete respirações por minuto e, para padrões assimétricos, a expiração é sempre o lado mais longo. O orbe na tela e os tons opcionais semelhantes a tigelas simplesmente marcam onde você está em cada respiração.',
+        title: 'Como este app guia sua respiração',
+        body: 'Este app guia uma inspiração e expiração contínuas, sem pausa entre elas. Escolha uma frequência lenta de menos de sete respirações por minuto; nos padrões assimétricos, a expiração é sempre a parte mais longa. O orbe na tela e os tons suaves de tigela marcam apenas onde você está em cada respiração.',
       },
       forrest: {
-        // TODO: native-speaker review
         title: 'Quem é Forrest Knutson',
-        // TODO: native-speaker review
         // NOTE: "inspirado nos ensinamentos do Forrest" MUST NOT appear here — lives in lockedCopy.ts (Phase 19 D-04)
-        body: "Forrest Knutson é um guru de Kriya Yoga, professor de meditação, autor e educador online conhecido por simplificar práticas yóguicas e contemplativas ancestrais para o público moderno. Por meio de seus vídeos e ensinamentos, ele explica técnicas relacionadas a exercícios respiratórios, meditação, regulação do sistema nervoso e desenvolvimento espiritual. Seu trabalho é apreciado por combinar instrução prática com explicações claras e fundamentadas na ciência, tornando conceitos espirituais complexos mais acessíveis.\n\nEste é um aplicativo web independente feito para que qualquer pessoa possa acompanhar uma respiração calma e pausada pelo navegador. Os links abaixo apontam para o canal dele, seu site e vídeos iniciais selecionados.",
+        body: "Forrest Knutson é um guru de Kriya Yoga, professor de meditação, autor e educador online, reconhecido por tornar práticas yóguicas e contemplativas milenares acessíveis ao público moderno. Por meio de seus vídeos e ensinamentos, ele explica técnicas de respiração, meditação, regulação do sistema nervoso e desenvolvimento espiritual. Seu trabalho é valorizado pela combinação de instrução prática com explicações claras e embasadas na ciência, tornando conceitos espirituais complexos mais compreensíveis.\n\nEste é um aplicativo web independente criado para que qualquer pessoa possa seguir um ritmo de respiração calmo pelo navegador. Os links abaixo apontam para o canal, o site e vídeos de introdução selecionados.",
       },
     },
     links: {
       youtubeChannel: {
-        // TODO: native-speaker review
         label: 'Canal do YouTube',
         url: 'https://www.youtube.com/@ForrestKnutson',
       },
       website: {
-        // TODO: native-speaker review
         label: 'Site/Treinamentos',
         url: 'https://www.meditativemellows.com/',
       },
       book: {
-        // TODO: native-speaker review
         label: 'Livro "Mastering Meditation"',
         url: 'https://www.amazon.com/Mastering-Meditation-Eight-Steps-Beginner-ebook/dp/B0CCFWP4W8?sr=8-1&linkId=1a5a2958fc89bdb6769b54d0bc9a4d17&language=en_US',
       },
       patreon: {
-        // TODO: native-speaker review
         label: 'Patreon',
         url: 'https://www.patreon.com/forrestknutson',
       },
@@ -163,11 +153,11 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
         },
       ],
       appStoreIos: {
-        label: 'Resonant Breathing na App Store', // TODO: native-speaker review
+        label: 'Resonant Breathing na App Store',
         url: 'https://apps.apple.com/us/app/resonant-breathing/id1568058013',
       },
       googlePlayAndroid: {
-        label: 'Resonant Breathing no Google Play', // TODO: native-speaker review
+        label: 'Resonant Breathing no Google Play',
         url: 'https://play.google.com/store/apps/details?id=com.johngoodstadt.knutson.meditation',
       },
     },
