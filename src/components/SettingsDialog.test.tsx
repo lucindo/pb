@@ -97,24 +97,47 @@ describe('SettingsDialog — open→close transition', () => {
   })
 })
 
-describe('SettingsDialog — inSessionView picker disable threading', () => {
-  it('renders all four pickers when open=true with inSessionView=true (Landmine 7)', () => {
+describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 5 pickers)', () => {
+  it('renders all five pickers when open=true with inSessionView=true (Landmine 7)', () => {
     renderDialog({ open: true, inSessionView: true })
     // Phase 16: ThemePicker is now a real radiogroup; assert section label.
-    // The Phase 15 stub text "Theme: system" is replaced by the real picker.
     expect(screen.getByText('Theme')).toBeInTheDocument()
-    // Phase 17: VariantPicker is now a real radiogroup too.
-    // Phase 19: LanguagePicker is now a real radiogroup too — all 4 pickers (Theme + Variant + Timbre + Language)
-    // have aria-disabled=true when inSessionView=true. Use getAllByRole since there are now 4 radiogroups.
+    // Phase 17: VariantPicker is now a real radiogroup.
+    expect(screen.getByText('Variant')).toBeInTheDocument()
+    // Phase 25 (Plan 04): CuePicker is wired — assert "Cue style" section label.
+    expect(screen.getByText('Cue style')).toBeInTheDocument()
+    // Phase 18: TimbrePicker section label.
+    expect(screen.getByText('Timbre')).toBeInTheDocument()
+    // Phase 19: LanguagePicker section label.
+    expect(screen.getByText('Language')).toBeInTheDocument()
+    // D-11 (updated): Theme → Variant → Cue → Timbre → Language — all 5 radiogroups disabled.
     const radiogroups = screen.getAllByRole('radiogroup')
+    expect(radiogroups).toHaveLength(5)
     for (const rg of radiogroups) {
       expect(rg).toHaveAttribute('aria-disabled', 'true')
     }
-    // Phase 17: VariantPicker stub text "Variant: orb" replaced by real picker section label.
-    expect(screen.getByText('Variant')).toBeInTheDocument()
-    // Phase 18: TimbrePicker stub text "Timbre: bowl" replaced by real picker section label.
-    expect(screen.getByText('Timbre')).toBeInTheDocument()
-    // Phase 19: LanguagePicker stub text "Language: en" replaced by real picker section label.
-    expect(screen.getByText('Language')).toBeInTheDocument()
+  })
+
+  it('CuePicker is disabled when inSessionView=true (T-25-08 mitigation)', () => {
+    renderDialog({ open: true, inSessionView: true })
+    // The CuePicker radiogroup is aria-disabled; all its buttons are disabled
+    const radiogroups = screen.getAllByRole('radiogroup')
+    // CuePicker is the 3rd radiogroup (Theme=0, Variant=1, Cue=2, Timbre=3, Language=4)
+    const cueRadiogroup = radiogroups[2]
+    expect(cueRadiogroup).toHaveAttribute('aria-disabled', 'true')
+    // All radio buttons within should be disabled
+    const cueRadios = Array.from(cueRadiogroup?.querySelectorAll('[role="radio"]') ?? [])
+    expect(cueRadios).toHaveLength(3)
+    for (const radio of cueRadios) {
+      expect(radio).toBeDisabled()
+    }
+  })
+
+  it('CuePicker is enabled (not disabled) when inSessionView=false', () => {
+    renderDialog({ open: true, inSessionView: false })
+    const radiogroups = screen.getAllByRole('radiogroup')
+    // CuePicker is the 3rd radiogroup (index 2)
+    const cueRadiogroup = radiogroups[2]
+    expect(cueRadiogroup).toHaveAttribute('aria-disabled', 'false')
   })
 })
