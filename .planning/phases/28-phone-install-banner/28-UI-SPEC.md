@@ -1,10 +1,11 @@
 ---
 phase: 28
 slug: phone-install-banner
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-16
+reviewed_at: 2026-05-16T00:00:00Z
 ---
 
 # Phase 28 — UI Design Contract
