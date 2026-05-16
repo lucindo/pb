@@ -6,6 +6,8 @@ import { OrbShape } from './OrbShape'
 import type { SessionFrame } from '../domain/sessionMath'
 import { UI_STRINGS } from '../content/strings'
 
+// Phase 25 Plan 03 — cue prop threading tests are at the bottom of this file.
+
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame for the existing-Phase-2-behavior tests. `remainingMs` is part of
@@ -280,5 +282,67 @@ describe('OrbShape — Phase 5.1 Plan 04 WR-03 structural contract (D-24, carrie
       expect(style).toMatch(/width:\s*5[78](\.\d+)?%/)
       expect(style).toMatch(/height:\s*5[78](\.\d+)?%/)
     })
+  })
+})
+
+// ── Phase 25 Plan 03: cue prop threading ─────────────────────────────────────
+describe('OrbShape — cue prop (Phase 25 Plan 03)', () => {
+  it('defaults cue to "labels" when no cue prop passed — phaseLabel text visible (zero regression)', () => {
+    render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByText('In')).toBeVisible()
+  })
+
+  it('cue="labels" renders the localized phaseLabel text for "in"', () => {
+    render(<OrbShape cue="labels" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByText('In')).toBeVisible()
+  })
+
+  it('cue="arrow", phase="in" renders an aria-hidden SVG in the phase slot', () => {
+    const { container } = render(
+      <OrbShape cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+    )
+    const svg = container.querySelector('svg[aria-hidden="true"]')
+    expect(svg).not.toBeNull()
+  })
+
+  it('cue="arrow" renders sr-only phaseLabel (CUE-03 — screen reader parity)', () => {
+    render(<OrbShape cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    const srSpan = screen.getByText('In')
+    expect(srSpan.className).toContain('sr-only')
+  })
+
+  it('cue="arrow", phase="out" renders SVG (out sampleFrame)', () => {
+    const outFrame: SessionFrame = { ...sampleFrame, phase: 'out', phaseLabel: 'Out' }
+    const { container } = render(
+      <OrbShape cue="arrow" frame={outFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+    )
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('cue="nose" renders an aria-hidden SVG for "in"', () => {
+    const { container } = render(
+      <OrbShape cue="nose" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+    )
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('cue="nose" renders sr-only phaseLabel (CUE-03)', () => {
+    render(<OrbShape cue="nose" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    const srSpan = screen.getByText('In')
+    expect(srSpan.className).toContain('sr-only')
+  })
+
+  it('root role=img aria-label is unchanged in arrow mode (shape root unaffected)', () => {
+    render(<OrbShape cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    // The root aria-label still contains the localized shape label + phaseLabel
+    expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
+  })
+
+  it('lead-in digit is unchanged when cue="arrow" (D-07 — OrbLeadIn has no cue param)', () => {
+    render(<OrbShape cue="arrow" frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByText('2')).toBeVisible()
+    // Lead-in does NOT use CueGlyph — the digit should be raw text, not sr-only
+    const digit = screen.getByText('2')
+    expect(digit.className).not.toContain('sr-only')
   })
 })

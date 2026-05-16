@@ -232,3 +232,43 @@ describe('DiamondShape', () => {
     expect((layerOut as HTMLElement).style.background).toBe('')
   })
 })
+
+// ── Phase 25 Plan 03: cue prop threading ─────────────────────────────────────
+describe('DiamondShape — cue prop (Phase 25 Plan 03)', () => {
+  it('defaults cue to "labels" when no cue prop passed — phaseLabel text visible (zero regression)', () => {
+    render(<DiamondShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByText('In')).toBeVisible()
+  })
+
+  it('cue="arrow" renders an aria-hidden SVG in the phase slot for "in"', () => {
+    const { container } = render(
+      <DiamondShape cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+    )
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('cue="arrow" renders sr-only phaseLabel (CUE-03)', () => {
+    render(<DiamondShape cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    const srSpan = screen.getByText('In')
+    expect(srSpan.className).toContain('sr-only')
+  })
+
+  it('cue="nose" renders an aria-hidden SVG for "in"', () => {
+    const { container } = render(
+      <DiamondShape cue="nose" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+    )
+    expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('root role=img aria-label is unchanged in arrow mode (shape root unaffected)', () => {
+    render(<DiamondShape cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
+  })
+
+  it('lead-in digit is unchanged when cue="arrow" (D-07 — DiamondLeadIn has no cue param)', () => {
+    render(<DiamondShape cue="arrow" frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />)
+    expect(screen.getByText('2')).toBeVisible()
+    const digit = screen.getByText('2')
+    expect(digit.className).not.toContain('sr-only')
+  })
+})

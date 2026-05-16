@@ -7,6 +7,11 @@ import type { SessionFrame } from '../domain/sessionMath'
 import type { VisualVariantId } from '../domain/settings'
 import { UI_STRINGS } from '../content/strings'
 
+// ── cue prop threading (Phase 25 Plan 03) ────────────────────────────────────
+// BreathingShape must forward cue to all 3 sibling shapes. Verified by asserting
+// the arrow SVG is rendered (cue='arrow') or the text label is rendered (cue='labels')
+// in the dispatched shape's output.
+
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame for dispatcher-level smoke tests. BreathingShape.test.tsx
@@ -87,4 +92,46 @@ describe('BreathingShape', () => {
     const root = container.querySelector('[role="img"]')
     expect(root).toHaveAttribute('data-variant', 'orb')
   })
+
+  // ── cue prop forwarding (Phase 25 Plan 03) ───────────────────────────────
+  it('defaults cue to "labels" when no cue prop is passed — text label visible (zero regression)', () => {
+    render(<BreathingShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />)
+    // The phaseLabel "In" should appear as visible text (labels mode)
+    expect(screen.getByText('In')).toBeVisible()
+  })
+
+  it.each<VisualVariantId>(['orb', 'square', 'diamond'])(
+    'forwards cue="arrow" to variant="%s" — chevron SVG present',
+    (variant) => {
+      const { container } = render(
+        <BreathingShape variant={variant} cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+      )
+      expect(container.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+    },
+  )
+
+  it.each<VisualVariantId>(['orb', 'square', 'diamond'])(
+    'forwards cue="arrow" to variant="%s" — sr-only phaseLabel present (CUE-03)',
+    (variant) => {
+      render(
+        <BreathingShape variant={variant} cue="arrow" frame={sampleFrame} strings={EN_STRINGS_FIXTURE.breathing} />,
+      )
+      const srSpan = screen.getByText('In')
+      expect(srSpan.className).toContain('sr-only')
+    },
+  )
+
+  it.each<VisualVariantId>(['orb', 'square', 'diamond'])(
+    'lead-in digit is unchanged when cue="arrow" for variant="%s" (D-07)',
+    (variant) => {
+      const { container } = render(
+        <BreathingShape variant={variant} cue="arrow" frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.breathing} />,
+      )
+      // Lead-in digit present
+      expect(screen.getByText('2')).toBeVisible()
+      // Lead-in has no data-phase (it's the pre-state)
+      const root = container.querySelector('[role="img"]')
+      expect(root).not.toHaveAttribute('data-phase')
+    },
+  )
 })
