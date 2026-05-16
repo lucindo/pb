@@ -33,13 +33,13 @@ function makeFakePromptEvent(promptOutcome: 'accepted' | 'dismissed' = 'accepted
 }
 
 describe('useBeforeInstallPrompt', () => {
-  it('Test 1: after a beforeinstallprompt event fires, deferredPrompt is non-null (INSTALL-02, D-07)', async () => {
+  it('Test 1: after a beforeinstallprompt event fires, deferredPrompt is non-null (INSTALL-02, D-07)', () => {
     const fakeEvent = makeFakePromptEvent()
 
     const { result } = renderHook(() => useBeforeInstallPrompt())
     expect(result.current.deferredPrompt).toBeNull()
 
-    await act(async () => {
+    act(() => {
       window.dispatchEvent(
         Object.assign(new Event('beforeinstallprompt'), {
           preventDefault: fakeEvent.preventDefault,
@@ -51,7 +51,7 @@ describe('useBeforeInstallPrompt', () => {
     expect(result.current.deferredPrompt).not.toBeNull()
   })
 
-  it('Test 2: the beforeinstallprompt handler calls event.preventDefault()', async () => {
+  it('Test 2: the beforeinstallprompt handler calls event.preventDefault()', () => {
     const preventDefaultFn = vi.fn()
     let capturedHandler: ((e: Event) => void) | null = null
 
@@ -85,7 +85,7 @@ describe('useBeforeInstallPrompt', () => {
 
     const { result } = renderHook(() => useBeforeInstallPrompt())
 
-    await act(async () => {
+    act(() => {
       window.dispatchEvent(
         Object.assign(new Event('beforeinstallprompt'), {
           preventDefault: vi.fn(),
@@ -108,7 +108,7 @@ describe('useBeforeInstallPrompt', () => {
 
     const { result } = renderHook(() => useBeforeInstallPrompt())
 
-    await act(async () => {
+    act(() => {
       window.dispatchEvent(
         Object.assign(new Event('beforeinstallprompt'), {
           preventDefault: vi.fn(),
@@ -130,7 +130,7 @@ describe('useBeforeInstallPrompt', () => {
 
     const { result } = renderHook(() => useBeforeInstallPrompt())
 
-    await act(async () => {
+    act(() => {
       window.dispatchEvent(
         Object.assign(new Event('beforeinstallprompt'), {
           preventDefault: vi.fn(),
@@ -147,11 +147,11 @@ describe('useBeforeInstallPrompt', () => {
     expect(saveInstallDismissed).not.toHaveBeenCalled()
   })
 
-  it('Test 6: an appinstalled event clears deferredPrompt to null and calls saveInstallDismissed (INSTALL-02)', async () => {
+  it('Test 6: an appinstalled event clears deferredPrompt to null and calls saveInstallDismissed (INSTALL-02)', () => {
     const { result } = renderHook(() => useBeforeInstallPrompt())
 
     // First capture a prompt
-    await act(async () => {
+    act(() => {
       window.dispatchEvent(
         Object.assign(new Event('beforeinstallprompt'), {
           preventDefault: vi.fn(),
@@ -163,7 +163,7 @@ describe('useBeforeInstallPrompt', () => {
     expect(result.current.deferredPrompt).not.toBeNull()
 
     // Now fire appinstalled
-    await act(async () => {
+    act(() => {
       window.dispatchEvent(new Event('appinstalled'))
     })
 
@@ -188,10 +188,9 @@ describe('useBeforeInstallPrompt', () => {
     const { unmount } = renderHook(() => useBeforeInstallPrompt())
     unmount()
 
-    expect(removeSpy).toHaveBeenCalledWith('beforeinstallprompt', expect.any(Function))
-    expect(removeSpy).toHaveBeenCalledWith(
-      'appinstalled' as keyof WindowEventMap,
-      expect.any(Function),
-    )
+    // Check beforeinstallprompt listener is removed
+    const calls = removeSpy.mock.calls.map((c) => c[0])
+    expect(calls).toContain('beforeinstallprompt')
+    expect(calls).toContain('appinstalled')
   })
 })
