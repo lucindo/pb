@@ -176,7 +176,7 @@ export default function App() {
   const wakeLock = useWakeLock() // Phase 5: imperative resource — D-11/D-12 (no React state surface)
   useTheme() // Phase 16 THEME-01..04: orchestrates <html data-theme> writes (S-01/S-04), cross-tab + same-tab sync (A-03/A-04)
   useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
-  const { isPhone, isStandalone } = useIsStandaloneOrPhone() // Phase 28: phone + standalone detection
+  const { isPhone, isStandalone, isIOS } = useIsStandaloneOrPhone() // Phase 28: phone + standalone + iOS detection
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt() // Phase 28: Android install prompt capture
   const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
   const { cue: liveCue } = useVisualCue() // Phase 25 CUE-01..03: live cue state + cross-tab/same-tab sync
@@ -191,10 +191,6 @@ export default function App() {
   // Without this the countdown 3-2-1 fires on the configuration screen, then
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
-
-  // Phase 28: iOS detection — navigator.standalone is Apple-specific (not in TS DOM lib).
-  interface SafariNavigator extends Navigator { standalone?: boolean }
-  const isIOS = (navigator as SafariNavigator).standalone !== undefined
 
   // Phase 28 showBanner — AND of all five gates (INSTALL-01/02/03/04/05, D-01/D-02/D-08/SC5):
   // isPhone guards desktop (SC5), !isStandalone blocks installed PWA (INSTALL-05),

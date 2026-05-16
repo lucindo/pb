@@ -1,17 +1,31 @@
+import { useEffect, useState } from 'react'
+
 // navigator.standalone is an Apple-specific property not present in TS 6.0.3 lib.dom.d.ts.
 // Declared locally per the project's non-standard-API typing convention (see useWakeLock.ts).
 interface SafariNavigator extends Navigator {
   standalone?: boolean
 }
 
-import { useEffect, useState } from 'react'
-
 const STANDALONE_QUERY = '(display-mode: standalone)'
 const PHONE_QUERY = '(pointer: coarse)'
+
+// CR-01: explicit iOS platform detection. The presence of `navigator.standalone`
+// is NOT a reliable iOS signal — it is undefined on iPadOS 13+ desktop-mode
+// Safari, and any future browser exposing a `standalone` property would be
+// misclassified. Detect the platform from the user-agent instead: iPhone/iPod/iPad
+// directly, plus iPadOS 13+ which reports as "Macintosh" with multi-touch support.
+function detectIsIOS(): boolean {
+  const ua = navigator.userAgent
+  return (
+    /iP(hone|od|ad)/.test(ua) ||
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+  )
+}
 
 export interface UseIsStandaloneOrPhone {
   isStandalone: boolean
   isPhone: boolean
+  isIOS: boolean
 }
 
 /**
@@ -89,5 +103,9 @@ export function useIsStandaloneOrPhone(): UseIsStandaloneOrPhone {
     }
   }, [])
 
-  return { isStandalone, isPhone }
+  // CR-01/WR-01: iOS is a fixed platform fact for the page lifetime — compute
+  // once in lazy state initializer so it is not recomputed on every render.
+  const [isIOS] = useState<boolean>(detectIsIOS)
+
+  return { isStandalone, isPhone, isIOS }
 }
