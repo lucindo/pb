@@ -72,6 +72,13 @@ const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
  */
 export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabel): StretchSegment[] {
   const { initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes } = settings
+  // DS-WR-02: this is an exported pure function that does not call validateSettings.
+  // A 0, negative, or NaN rampDurationMinutes yields a degenerate or NaN/Infinity
+  // segment table. Reject it defensively so the engine never silently produces a
+  // poisoned table.
+  if (!Number.isFinite(rampDurationMinutes) || rampDurationMinutes <= 0) {
+    throw new RangeError('rampDurationMinutes must be a positive finite number')
+  }
   const ratioParts = RATIO_PARTS[ratio]
   const segments: StretchSegment[] = []
   let cursorMs = 0
@@ -156,7 +163,20 @@ export function getStretchFrame(
     }
   }
 
-  const elapsedInSegment = safeElapsedMs - activeSeg.startMs
+  // DS-WR-03: when safeElapsedMs lands exactly on the last bounded segment's
+  // endMs, no segment satisfies `safeElapsedMs < seg.endMs` and `activeSeg`
+  // falls through to that final segment. An unclamped `elapsedInSegment` would
+  // then equal the full segment span, making `cycleInSegment` compute exactly
+  // `cycleCount` — one past the last valid index — and the completion frame
+  // would carry a phantom extra in-phase cycle. Clamp `elapsedInSegment` to
+  // just inside a bounded segment's span so the final frame stays on the last
+  // real cycle. The open-ended final segment (endMs === Infinity) is left
+  // unclamped.
+  const rawElapsedInSegment = safeElapsedMs - activeSeg.startMs
+  const elapsedInSegment =
+    activeSeg.endMs === Infinity
+      ? rawElapsedInSegment
+      : Math.min(rawElapsedInSegment, activeSeg.endMs - activeSeg.startMs - activeSeg.cycleMs / 2)
   const cycleInSegment = Math.floor(elapsedInSegment / activeSeg.cycleMs)
   const absoluteCycleIndex = activeSeg.cycleBaseIndex + cycleInSegment
   const cycleStartMs = activeSeg.startMs + cycleInSegment * activeSeg.cycleMs
