@@ -815,7 +815,18 @@ export default function App() {
           opened from the corner anchor in idle state only (D-03/D-05). */}
       <LearnDialog open={learnDialogOpen} onClose={onLearnClose} learnContent={learnContent} lockedCopy={lockedCopy} strings={uiStrings.learn} />
       {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/VariantPicker/TimbrePicker/LanguagePicker stubs. */}
-      <SettingsDialog open={settingsDialogOpen} onClose={onSettingsClose} inSessionView={inSessionView} strings={uiStrings} />
+      {/* Phase 29 INSTALL-06: prop-drill install state (isIOS/isStandalone from useIsStandaloneOrPhone,
+          installable computed per D-08, triggerInstall from useBeforeInstallPrompt — single listener). */}
+      <SettingsDialog
+        open={settingsDialogOpen}
+        onClose={onSettingsClose}
+        inSessionView={inSessionView}
+        strings={uiStrings}
+        isIOS={isIOS}
+        isStandalone={isStandalone}
+        installable={isIOS || deferredPrompt !== null}
+        onInstall={triggerInstall}
+      />
     </main>
   )
 }

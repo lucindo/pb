@@ -16,18 +16,31 @@ import { UI_STRINGS } from '../content/strings'
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 function renderDialog(
-  props: Partial<{ open: boolean; onClose: () => void; inSessionView: boolean }> = {},
+  props: Partial<{
+    open: boolean
+    onClose: () => void
+    inSessionView: boolean
+    isIOS: boolean
+    isStandalone: boolean
+    installable: boolean
+    onInstall: () => Promise<void>
+  }> = {},
 ) {
   const onClose = props.onClose ?? vi.fn()
+  const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
   const utils = render(
     <SettingsDialog
       open={props.open ?? false}
       onClose={onClose}
       inSessionView={props.inSessionView ?? false}
       strings={EN_STRINGS_FIXTURE}
+      isIOS={props.isIOS ?? false}
+      isStandalone={props.isStandalone ?? false}
+      installable={props.installable ?? false}
+      onInstall={onInstall}
     />,
   )
-  return { ...utils, onClose }
+  return { ...utils, onClose, onInstall }
 }
 
 describe('SettingsDialog — closed state', () => {
@@ -92,7 +105,7 @@ describe('SettingsDialog — open→close transition', () => {
     const { container, rerender } = renderDialog({ open: true })
     const dialog = container.querySelector('dialog') as HTMLDialogElement
     expect(dialog.open).toBe(true)
-    rerender(<SettingsDialog open={false} onClose={vi.fn()} inSessionView={false} strings={EN_STRINGS_FIXTURE} />)
+    rerender(<SettingsDialog open={false} onClose={vi.fn()} inSessionView={false} strings={EN_STRINGS_FIXTURE} isIOS={false} isStandalone={false} installable={false} onInstall={vi.fn().mockResolvedValue(undefined)} />)
     expect(dialog.open).toBe(false)
   })
 })
@@ -146,5 +159,44 @@ describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 5
     // the attribute would be omitted and this assertion would need to flip to
     // `not.toHaveAttribute('aria-disabled', 'true')`.
     expect(cueRadiogroup).toHaveAttribute('aria-disabled', 'false')
+  })
+})
+
+describe('SettingsDialog — install row (Phase 29 INSTALL-06)', () => {
+  it('install row absent when installable=false', () => {
+    renderDialog({ open: true, installable: false })
+    expect(screen.queryByText(EN_STRINGS_FIXTURE.install.settingsLabel)).not.toBeInTheDocument()
+  })
+
+  it('install row absent when isStandalone=true even if installable=true', () => {
+    renderDialog({ open: true, installable: true, isStandalone: true })
+    expect(screen.queryByText(EN_STRINGS_FIXTURE.install.settingsLabel)).not.toBeInTheDocument()
+  })
+
+  it('install row visible when installable=true and isStandalone=false', () => {
+    renderDialog({ open: true, installable: true, isStandalone: false })
+    expect(screen.getByText(EN_STRINGS_FIXTURE.install.settingsLabel)).toBeInTheDocument()
+  })
+
+  it('Android path: install button rendered and clicking calls onInstall', async () => {
+    const user = userEvent.setup()
+    const { onInstall } = renderDialog({ open: true, installable: true, isIOS: false })
+    const btn = screen.getByRole('button', { name: EN_STRINGS_FIXTURE.install.installButton })
+    await user.click(btn)
+    expect(onInstall).toHaveBeenCalledTimes(1)
+  })
+
+  it('iOS path: steps-toggle button rendered, no native install button', () => {
+    renderDialog({ open: true, installable: true, isIOS: true })
+    expect(screen.getByRole('button', { name: EN_STRINGS_FIXTURE.install.iosStepsButton })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: EN_STRINGS_FIXTURE.install.installButton })).not.toBeInTheDocument()
+  })
+
+  it('iOS path: steps expand inline after clicking the toggle', async () => {
+    const user = userEvent.setup()
+    renderDialog({ open: true, installable: true, isIOS: true })
+    expect(screen.queryByText(EN_STRINGS_FIXTURE.install.iosStep1)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: EN_STRINGS_FIXTURE.install.iosStepsButton }))
+    expect(screen.getByText(EN_STRINGS_FIXTURE.install.iosStep1)).toBeInTheDocument()
   })
 })
