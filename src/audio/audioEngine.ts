@@ -163,7 +163,11 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // bounded over a long session and avoids re-fading already-silent envelopes.
   function pruneExpiredCues(): void {
     const now = audioCtx.currentTime
-    for (const cue of activeCues) {
+    // AH-WR-07: iterate a snapshot, not the live Set. Deleting from a Set during
+    // a for...of over that same Set is defined for the current element but
+    // fragile, and outright unsafe if this loop body is ever extended to add().
+    // The spread copy decouples iteration from mutation.
+    for (const cue of [...activeCues]) {
       if (cue.cleanupAt < now) activeCues.delete(cue)
     }
   }
