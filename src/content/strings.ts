@@ -405,7 +405,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
     },
-    // DRAFT: Phase 29 will finalize PT-BR install copy
+    // TODO: native-speaker review
     install: {
       regionLabel: 'Instalar app',
       bannerText: 'Adicione à sua tela inicial para uso offline',
