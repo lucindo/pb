@@ -4,14 +4,14 @@ milestone: v1.4
 milestone_name: Install Helper
 status: executing
 stopped_at: Phase 29 UI-SPEC approved
-last_updated: "2026-05-16T19:09:32.636Z"
-last_activity: 2026-05-16
+last_updated: "2026-05-16T19:30:02.061Z"
+last_activity: 2026-05-16 -- Phase 29 planning complete
 progress:
   total_phases: 2
-  completed_phases: 2
-  total_plans: 5
+  completed_phases: 1
+  total_plans: 6
   completed_plans: 5
-  percent: 100
+  percent: 83
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-16 after v1.3 Release Polish mileston
 Phase: 29 (settings-install-entry-localization) — EXECUTING
 Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-05-16
+Last activity: 2026-05-16 -- Phase 29 planning complete
 
 Progress: [██████████] 100%
 
