@@ -394,7 +394,17 @@ export function useAudioCues(
   // reconstruct". The cost is negligible (~tens of ms of AC construction +
   // node setup) and the recovery is reliable.
   const resume = useCallback(async (): Promise<void> => {
-    if (engineRef.current === null) return
+    // AH-WR-02: a consumer reading audioStatus === 'needs-resume' while the
+    // engine has already been closed (engineRef.current === null) would
+    // otherwise hit a silent no-op — the resume affordance becomes a dead
+    // button with no state transition and no user feedback. Surface the
+    // terminal 'unavailable' status so the UI drops the affordance and falls
+    // back to the visuals-only path (Phase 3 D-10) instead of stalling.
+    if (engineRef.current === null) {
+      setAudioStatus('unavailable')
+      setAudioAvailable(false)
+      return
+    }
     await reconstructEngine()
   }, [reconstructEngine])
 
