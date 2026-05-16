@@ -1,10 +1,11 @@
 ---
 phase: 29
 slug: settings-install-entry-localization
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-16
+reviewed_at: 2026-05-16T00:00:00Z
 ---
 
 # Phase 29 — UI Design Contract
