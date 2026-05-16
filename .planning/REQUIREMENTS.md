@@ -32,9 +32,9 @@ Requirements for the v1.3 release. Each maps to one roadmap phase.
 
 ### Progressive Web App
 
-- [ ] **PWA-01**: User can install the app to their home screen / desktop — Web App Manifest with correct `start_url`/`scope` for the `/hrv/` base path, maskable icons, and an Apple touch icon.
-- [ ] **PWA-02**: User can run a started breathing session fully offline — a service worker precaches the app shell and all static assets.
-- [ ] **PWA-03**: The installed app updates to the latest deployed version without serving a stale app shell, and an update never interrupts a running breathing session.
+- [x] **PWA-01**: User can install the app to their home screen / desktop — Web App Manifest with correct `start_url`/`scope` for the `/hrv/` base path, maskable icons, and an Apple touch icon.
+- [x] **PWA-02**: User can run a started breathing session fully offline — a service worker precaches the app shell and all static assets.
+- [x] **PWA-03**: The installed app updates to the latest deployed version without serving a stale app shell, and an update never interrupts a running breathing session.
 
 ## Future Requirements
 
@@ -103,6 +103,6 @@ Which phases cover which requirements. Filled during roadmap creation.
 | CUE-02 | Phase 25 | Complete |
 | CUE-03 | Phase 25 | Complete |
 | I18N-07 | Phase 26 | Complete |
-| PWA-01 | Phase 27 | Pending |
-| PWA-02 | Phase 27 | Pending |
-| PWA-03 | Phase 27 | Pending |
+| PWA-01 | Phase 27 | Complete |
+| PWA-02 | Phase 27 | Complete |
+| PWA-03 | Phase 27 | Complete |
