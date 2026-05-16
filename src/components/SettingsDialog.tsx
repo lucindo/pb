@@ -1,5 +1,6 @@
 import { useEffect, useRef, type MouseEventHandler } from 'react'
 
+import { CuePicker } from './CuePicker'
 import { LanguagePicker } from './LanguagePicker'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
@@ -29,7 +30,7 @@ export interface SettingsDialogProps {
   open: boolean
   onClose(this: void): void
   inSessionView: boolean
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'timbres'>
+  strings: Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'cue' | 'timbres'>
 }
 
 export function SettingsDialog({ open, onClose, inSessionView, strings }: SettingsDialogProps) {
@@ -80,9 +81,10 @@ export function SettingsDialog({ open, onClose, inSessionView, strings }: Settin
     >
       <div className="grid gap-5 p-6 sm:p-7">
         <h2 id="settings-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.settings.title}</h2>
-        {/* D-10: Theme → Variant → Timbre → Language order (Landmine 7: each receives disabled={inSessionView}) */}
+        {/* D-10 (updated Phase 25 Plan 04): Theme → Variant → Cue → Timbre → Language order (Landmine 7: each receives disabled={inSessionView}) */}
         <ThemePicker disabled={inSessionView} strings={strings.themes} sectionLabel={strings.settings.themeLabel} />
         <VariantPicker disabled={inSessionView} strings={strings.variants} sectionLabel={strings.settings.variantLabel} />
+        <CuePicker disabled={inSessionView} strings={strings.cue} sectionLabel={strings.settings.cueLabel} />
         <TimbrePicker disabled={inSessionView} strings={strings.timbres} sectionLabel={strings.settings.timbreLabel} />
         <LanguagePicker disabled={inSessionView} sectionLabel={strings.settings.languageLabel} />
         {/* D-11 + D-18: explicit Close button — primary mobile dismiss path */}
