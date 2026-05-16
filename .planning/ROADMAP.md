@@ -29,8 +29,8 @@ Plans:
 **Goal:** Every machine-translated PT-BR string in `src/content/` is reviewed by a native speaker, corrected where needed, and every `// TODO: native-speaker review` marker is removed — with the frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
 **Requirements**: I18N-07
 **Depends on:** Phase 25
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 26-01-PLAN.md — Operator-reviewed pt-BR sweep of both content catalogs (98 markers resolved) + marker-guard drift test
+- [x] 26-01-PLAN.md — Operator-reviewed pt-BR sweep of both content catalogs (98 markers resolved) + marker-guard drift test

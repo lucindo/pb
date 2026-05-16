@@ -28,7 +28,7 @@ Requirements for the v1.3 release. Each maps to one roadmap phase.
 
 ### Internationalization
 
-- [ ] **I18N-07**: All machine-translated PT-BR strings (`src/content/` catalogs) are reviewed by a native speaker, corrected where needed, and every `// TODO: native-speaker review` marker is removed — with the frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
+- [x] **I18N-07**: All machine-translated PT-BR strings (`src/content/` catalogs) are reviewed by a native speaker, corrected where needed, and every `// TODO: native-speaker review` marker is removed — with the frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
 
 ### Progressive Web App
 
@@ -102,7 +102,7 @@ Which phases cover which requirements. Filled during roadmap creation.
 | CUE-01 | Phase 25 | Complete |
 | CUE-02 | Phase 25 | Complete |
 | CUE-03 | Phase 25 | Complete |
-| I18N-07 | Phase 26 | Pending |
+| I18N-07 | Phase 26 | Complete |
 | PWA-01 | Phase 27 | Pending |
 | PWA-02 | Phase 27 | Pending |
 | PWA-03 | Phase 27 | Pending |
