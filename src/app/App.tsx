@@ -435,6 +435,11 @@ export default function App() {
       // of the rAF jitter. firstInAudioTime is sample-accurate on the audio clock
       // (= engine.now() + LEAD_IN_DURATION_SEC at schedule time). null when AC unavailable
       // → Task 1b's effect treats null as "skip cue scheduling" (D-10 visuals-only fallback).
+      // AC-WR-01: this audioAnchorRef write MUST precede setAppPhase('running'). The
+      // boundary-audio effect (see ~line 613) reads audioAnchorRef.current on the first
+      // non-cycleIndex:0/in frame; if 'running' committed before this write, the effect
+      // would observe a null anchor. The effect now retries instead of dropping the cue,
+      // but keeping the write first avoids the retry path entirely on the happy path.
       audioAnchorRef.current = firstInAudioTime
       setAppPhase('running')
       session.start()
@@ -634,6 +639,15 @@ export default function App() {
 
     const audioAnchor = audioAnchorRef.current
     const plan = planRef.current
+    // AC-WR-01: the t3 callback writes audioAnchorRef.current then setAppPhase('running').
+    // If this non-initial frame commits before that write lands, audioAnchor is still null
+    // even though AC is available. Reset lastBoundaryKeyRef so the NEXT frame retries this
+    // boundary instead of permanently dropping the cue. (plan is set synchronously at start,
+    // so a null plan here is the genuine D-10 visuals-only fallback — no retry needed.)
+    if (audioAnchor === null && plan !== null) {
+      lastBoundaryKeyRef.current = null
+      return
+    }
     // D-10 fallback: AC unavailable → no-op (visual session continues uninterrupted).
     if (audioAnchor === null || plan === null) return
 
