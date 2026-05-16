@@ -131,6 +131,7 @@ export interface UiStrings {
     readonly nativeAppsHeading: string
   }
   readonly install: {
+    readonly regionLabel: string
     readonly bannerText: string
     readonly installButton: string
     readonly iosStepsButton: string
@@ -267,6 +268,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nativeAppsHeading: 'Resonant Breathing app',
     },
     install: {
+      regionLabel: 'Install app',
       bannerText: 'Add to your home screen for offline use',
       installButton: 'Install',
       iosStepsButton: 'How to install',
@@ -403,6 +405,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     },
     // DRAFT: Phase 29 will finalize PT-BR install copy
     install: {
+      regionLabel: 'Instalar app',
       bannerText: 'Adicione à sua tela inicial para uso offline',
       installButton: 'Instalar',
       iosStepsButton: 'Como instalar',

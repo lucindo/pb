@@ -76,10 +76,10 @@ describe('InstallBanner', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
-  // Test 5: banner container has role="region" and aria-label="Install app"
-  it('banner container has role="region" and aria-label="Install app"', () => {
+  // Test 5: banner container has role="region" and a localized aria-label
+  it('banner container has role="region" and a localized aria-label', () => {
     renderBanner()
-    const region = screen.getByRole('region', { name: 'Install app' })
+    const region = screen.getByRole('region', { name: UI_STRINGS.en.install.regionLabel })
     expect(region).toBeInTheDocument()
   })
 

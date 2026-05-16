@@ -20,7 +20,7 @@ export function InstallBanner({ isIOS, onInstall, onDismiss, strings }: InstallB
   return (
     <div
       role="region"
-      aria-label="Install app"
+      aria-label={strings.regionLabel}
       className="mt-6 border-t border-[var(--color-breathing-accent)] bg-[var(--color-breathing-bg-soft)] px-4 py-2"
     >
       {/* Banner row: icon + text + action + dismiss — D-03 */}
