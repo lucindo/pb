@@ -18,7 +18,8 @@
     margin: 0;
   }
 
-  body::selection {
+  /* CS-WR-03: bare ::selection — the UI lives under #root, so body::selection never matched app text. */
+  ::selection {
     color: var(--color-breathing-on-accent);
     background: var(--color-breathing-accent);
   }
