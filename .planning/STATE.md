@@ -61,6 +61,7 @@ Last activity: 2026-05-16
 
 ### Roadmap Evolution
 
+- Phase 26 re-added to ROADMAP.md 2026-05-15 — PT-BR Native-Speaker Review (I18N-07); rolling roadmap had been trimmed to Phase 25 only.
 - v1.2 BPM Stretch roadmap created 2026-05-15 — 3 phases (20 Session Start Polish, 21 Per-Theme Favicon, 22 BPM Stretch Session) ordered smallest-blast-radius first; backlog items 999.1 and 999.2 promoted into Phases 21 and 20 respectively; 12/12 requirements mapped.
 - v1.3 Release Polish roadmap created 2026-05-15 — 5 phases (23 LICENSE + README, 24 Forrest Native-App Links, 25 Labels-vs-Icons Cue Toggle, 26 PT-BR Native-Speaker Review, 27 PWA Install & Offline) in a clean 1:1 feature-to-phase mapping, ordered smallest-blast-radius first; 10/10 requirements mapped; phases form a linear dependency chain (23→24→25→26→27). Phase 26 (PT-BR review) deliberately sequenced after Phases 24 and 25 so the single native-speaker pass also covers the new strings those phases introduce. Phase 27 (PWA) sequenced last so service-worker caching wraps a frozen, verified app; it carries a first-class real-device UAT success criterion (iOS installed standalone mode), not a deferred carry-forward. Three deferred-item todos (Forrest links, labels-vs-icons toggle, LICENSE/README) promoted into Phases 24/25/23; PWA install promoted from the v2 backlog into Phase 27.
 

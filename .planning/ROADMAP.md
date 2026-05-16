@@ -23,3 +23,13 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 - [x] 25-05-PLAN.md — App.tsx capture-at-Start wiring + operator visual-review checkpoint
 **UI hint**: yes
+
+### Phase 26: PT-BR Native-Speaker Review
+
+**Goal:** Every machine-translated PT-BR string in `src/content/` is reviewed by a native speaker, corrected where needed, and every `// TODO: native-speaker review` marker is removed — with the frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
+**Requirements**: I18N-07
+**Depends on:** Phase 25
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 26 to break down)
