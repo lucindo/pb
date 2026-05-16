@@ -18,7 +18,7 @@ Plans:
 - [x] 25-03-PLAN.md — Cue rendering: CueGlyph (labels/arrow/nose SVGs + a11y) threaded through all 3 shapes
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 25-04-PLAN.md — CuePicker radiogroup component wired into SettingsDialog
+- [x] 25-04-PLAN.md — CuePicker radiogroup component wired into SettingsDialog
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 25-05-PLAN.md — App.tsx capture-at-Start wiring + operator visual-review checkpoint
