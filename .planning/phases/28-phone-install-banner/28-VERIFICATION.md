@@ -1,8 +1,10 @@
 ---
 phase: 28-phone-install-banner
 verified: 2026-05-16T12:18:00Z
-status: human_needed
+status: passed
+human_verified: 2026-05-16T12:55:00Z
 score: 5/5 must-haves verified
+human_verification_result: 6/6 passed (see 28-HUMAN-UAT.md)
 overrides_applied: 0
 human_verification:
   - test: "On Android Chrome (phone, not installed): load the app, verify the slim banner appears below the app content while idle. Tap Install button — confirm the browser's native install dialog appears."
