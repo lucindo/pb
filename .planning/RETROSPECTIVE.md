@@ -209,6 +209,50 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v1.3 — Release Polish
+
+**Shipped:** 2026-05-16
+**Phases:** 5 (23, 24, 25, 26, 27) | **Plans:** 11 | **Timeline:** ~1 day (2026-05-15 → 2026-05-16)
+
+### What Was Built
+
+- **Phase 23 — License & README:** Net-new MIT `LICENSE` at the repo root + a v1.3-accurate README refresh — corrected BPM range and test count, complete Features list, real MIT-pointer License section (DOCS-01/02).
+- **Phase 24 — Forrest Native-App Links:** Third Learn-dialog link section linking Forrest Knutson's iOS App Store and Google Play "Resonant Breathing" apps; neutral claim-safe copy, both EN and PT-BR, `rel="noopener noreferrer"` on every anchor (LEARN-01).
+- **Phase 25 — Labels-vs-Icons Cue Toggle:** Three-option SettingsDialog cue picker (text labels / directional arrow icons / nose-airflow drawing) via a shared `CueGlyph` component threaded through all 3 visual variants; choice persists in the prefs envelope with no `STATE_VERSION` bump; visually-hidden localized In/Out announcement keeps arrow and drawing modes accessible (CUE-01/02/03).
+- **Phase 26 — PT-BR Native-Speaker Review:** Operator-reviewed sweep of both `src/content/` catalogs — 98 `// TODO: native-speaker review` markers resolved to native quality (short `Puxa`/`Solta` labels kept for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state (I18N-07).
+- **Phase 27 — PWA Install & Offline:** `vite-plugin-pwa` wired as a build-time devDependency; `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell for full offline sessions; `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell; dark orb-glow install icons; real-device iOS standalone UAT (iOS 18.7.9) passed all 6 scenarios (PWA-01/02/03).
+
+### What Worked
+
+- **Smallest-blast-radius ordering held a second milestone.** Docs → links → cue picker → i18n → PWA sequenced the highest-integration work (PWA service worker) last; the first four phases closed fast.
+- **Build-time-only dependency kept the zero-runtime-deps invariant.** `vite-plugin-pwa` entered as a devDependency — `dependencies` stays `react` + `react-dom` for a fourth milestone. Tooling that ships nothing to the runtime bundle is the right way to add a capability under that invariant.
+- **Real-device UAT drove a concrete fix.** The iOS standalone UAT exposed the light orb install icon washing out against neighboring home-screen icons; the operator-confirmed dark orb-glow redesign (commit `29425f1`) landed before final sign-off.
+- **fs-scan drift-guard locked an i18n done-state.** `content.no-review-markers.test.ts` scans the content files for the review marker so the 98-marker cleanup cannot silently regress — the sync-guard idea (v1.2 `favicon.sync.test.ts`) generalized to a whole-file invariant.
+
+### What Was Inefficient
+
+- **ROADMAP.md drifted — it only ever contained phases 25–27.** Phases 23 and 24 were executed but never written into ROADMAP.md, so `milestone.complete` undercounted the milestone as 3 phases / 9 plans instead of the actual 5 / 11. The MILESTONES.md entry needed a manual correction. **Lesson:** keep every executed phase in ROADMAP.md, or the close-time CLI counts are wrong.
+- **MILESTONES.md auto-accomplishments produced `One-liner:` / `CueGlyph` stubs again.** Third consecutive milestone the `milestone.complete` SUMMARY.md extraction failed — curated rewrite required every time.
+
+### Patterns Established
+
+- **Build-time-only dependency** for adding tooling-driven capability (PWA service worker) — keeps the runtime bundle and `dependencies` list unchanged; verify the dep lands in `devDependencies` at planning.
+- **fs-scan drift-guard test** — when a cleanup removes every instance of a marker/pattern, a test that scans the source tree for that pattern locks the done-state against silent regression.
+
+### Key Lessons
+
+1. **ROADMAP.md must hold every executed phase.** Close-time tooling (`milestone.complete`) derives phase/plan counts from ROADMAP.md — missing phases silently undercount the milestone.
+2. **`milestone.complete` accomplishment extraction is still unreliable** — budget a curated MILESTONES.md rewrite at every close until SUMMARY.md one-liner keys are standardized (flagged in v1.1, v1.2, now v1.3).
+3. **A full-codebase review pairs well with a release-polish milestone close.** The 2026-05-16 deep review (4 parallel domain reviewers) found 0 critical / 23 warning / 28 info; all 23 warnings were fixed same-day, info deferred — a clean quality checkpoint before tagging.
+
+### Cost Observations
+
+- Sessions: discuss → plan → execute → verify → close per phase; plus one close-session full-codebase review + fix sweep.
+- Notable: only rework was the post-UAT PWA icon redesign — the other four phases executed plan-as-written.
+- Test growth: 839 → 959 (+120) across the 5 phases.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -219,6 +263,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.0.1 | 6 | 12 | Strict TS + ESLint baseline as compiler floor; per-commit green-gate as invariant; `// Reason:` policy for hook-deps disables; worktree-mode merge protocol shaken out (untracked-file merge gotcha) |
 | v1.1 | 10 | 47 | Worktree parallel waves with intra-wave `files_modified` overlap check; sibling-pattern verbatim cloning for picker/hook trios; `Record<LocaleId, X>` per-render lookup; frozen-EN byte-equality guard for locked copy; decimal-phase inserts (16.1, 16.2, 16.3) for emergent UAT-driven scope; locale-aware date formatter via optional arg (Phase 4 D-19 preserved) |
 | v1.2 | 3 | 8 | Cycle-aligned segment table for piecewise-constant ramps on the one-clock SessionFrame; sync-guard test for cross-file constant drift; pre-paint inline-script standardized as the FOUC slot; milestone audit skipped for a small fully-checked milestone |
+| v1.3 | 5 | 11 | Build-time-only dependency for tooling-driven capability (zero runtime deps held a 4th milestone); fs-scan drift-guard test locks cleanup done-states; full-codebase parallel review at milestone close; ROADMAP.md drift undercounted phases at close |
 
 ### Cumulative Quality
 
@@ -228,6 +273,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.0.1 | 409/409 pass | 29 | ~10,925 |
 | v1.1 | 712/712 pass | 54 | ~14,500 (est.) |
 | v1.2 | 839/839 pass | — | ~19,161 |
+| v1.3 | 959/959 pass | 65 | — |
 
 ### Top Lessons (Verified Across Milestones)
 

@@ -1,5 +1,25 @@
 # Milestones
 
+## v1.3 Release Polish (Shipped: 2026-05-16)
+
+**Phases completed:** 5 phases (23, 24, 25, 26, 27), 11 plans
+
+**Delivered:** Distribution-ready release — MIT LICENSE + refreshed README, Forrest Knutson's native Resonant Breathing apps linked from the Learn surface, a three-way in-orb cue picker, native-quality PT-BR catalogs, and an installable, offline-capable PWA. Zero net-new runtime dependencies; 959/959 tests pass.
+
+**Key accomplishments:**
+
+1. **Phase 23 — License & README:** Net-new MIT `LICENSE` at the repo root + a v1.3-accurate README refresh — corrected BPM range and test count, complete Features list, real MIT-pointer License section (DOCS-01/02).
+2. **Phase 24 — Forrest Native-App Links:** Third Learn-dialog link section linking Forrest's iOS App Store and Google Play "Resonant Breathing" apps, neutral claim-safe copy, both EN and PT-BR, `rel="noopener noreferrer"` on every anchor (LEARN-01).
+3. **Phase 25 — Labels-vs-Icons Cue Toggle:** New three-option SettingsDialog cue picker — text labels / directional arrow icons / nose-airflow drawing — via a `CueGlyph` component threaded through all 3 visual variants; choice persists in the prefs envelope with no `STATE_VERSION` bump; visually-hidden localized In/Out announcement keeps arrow and drawing modes accessible (CUE-01/02/03).
+4. **Phase 26 — PT-BR Native-Speaker Review:** Operator-reviewed sweep of both `src/content/` catalogs — 98 `// TODO: native-speaker review` markers resolved to native quality (short `Puxa`/`Solta` labels kept for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state; frozen-EN `LOCKED_COPY` byte-equality guard intact (I18N-07).
+5. **Phase 27 — PWA Install & Offline:** `vite-plugin-pwa` wired as a build-time devDependency; `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell for full offline sessions; `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell; dark orb-glow install icons; real-device iOS standalone UAT (iOS 18.7.9) passed all 6 scenarios (PWA-01/02/03).
+
+**Gaps resolved at close:** 3 stale shipped-work todos moved to completed; phase 24 and 26 human-UAT browser checks recorded PASS; phase 24 `human_needed` verification closed.
+
+**Test count progression:** v1.2 close 839 → v1.3 close 959 (+120).
+
+---
+
 ## v1.2 BPM Stretch (Shipped: 2026-05-15)
 
 **Phases completed:** 3 phases (20, 21, 22), 8 plans, 8 tasks

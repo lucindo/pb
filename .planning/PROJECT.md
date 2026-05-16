@@ -12,27 +12,13 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ## Current State
 
-**Shipped:** v1.2 BPM Stretch (2026-05-15) — 3 phases (20–22), 8 plans, 8 tasks, 839/839 Vitest tests pass (712 → 839). All 12 v1.2 requirements validated. BPM stretch session pattern (Warm-up → Stretch ramp → Settle) on the existing one-clock SessionFrame with a cycle-aligned segment table and sub-perceptual BPM steps, per-theme favicons across the 5 palettes, and lead-in double-start prevention. Zero net-new runtime dependencies.
+**Shipped:** v1.3 Release Polish (2026-05-16) — 5 phases (23–27), 11 plans, 959/959 Vitest tests pass (839 → 959). All 10 v1.3 requirements validated. MIT `LICENSE` + distribution-ready README, Forrest Knutson's native Resonant Breathing apps linked from the Learn surface, a three-way in-orb cue picker (text / arrow / nose-airflow), native-quality PT-BR catalogs (98 review markers removed), and an installable offline-capable PWA (Workbox app-shell precache, `/hrv/`-scoped manifest, real-device iOS standalone UAT 6/6). Zero net-new runtime dependencies.
 
-**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27. v1.1 Customization (2026-05-15) — 47 plans, SettingsDialog + 5 named palettes + 3 visual variants + 4 audio timbres + EN/PT-BR language switching.
+**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27. v1.1 Customization (2026-05-15) — 47 plans, SettingsDialog + 5 named palettes + 3 visual variants + 4 audio timbres + EN/PT-BR language switching. v1.2 BPM Stretch (2026-05-15) — 8 plans, Warm-up → Stretch ramp → Settle on the one-clock SessionFrame.
 
-**v1.x carry-forward (next milestone):** PT-BR native-speaker review of 76 `// TODO: native-speaker review` markers (I18N-07). iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. See STATE.md `## Deferred Items` for the full register.
+**v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). See STATE.md `## Deferred Items` for the full register.
 
-**v2 backlog:** (none — PWA install promoted into v1.3).
-
-## Current Milestone: v1.3 Release Polish
-
-**Goal:** Make the app distribution-ready — proper licensing, an installable offline-capable PWA, completed PT-BR translations, and two small UX additions.
-
-**Target features (operator-ordered, smallest-blast-radius first):**
-- LICENSE file added to the repo + README updated (docs)
-- Forrest native-app links (Resonant Breathing iPhone/Android) on the Learn surface (ui)
-- Labels-vs-icons toggle — new SettingsDialog picker switching the in-orb In/Out cue between text labels and arrow icons (ui)
-- PT-BR native-speaker review (I18N-07) — all 76 machine-translated strings reviewed by a native speaker; `// TODO: native-speaker review` markers removed
-- PWA install (PWA-01) — Web App Manifest + maskable icons + Apple touch icon + service worker caching the app shell for full offline session use
-
-**Phase numbering:** Continues from v1.2 (starts at Phase 23).
-**Note:** PWA service-worker tooling may introduce a build-time dependency (e.g. Vite PWA plugin) — the zero-net-new-*runtime*-deps invariant still holds; flag at planning.
+**Next milestone:** not yet defined — run `/gsd-new-milestone` to start the next cycle.
 
 ## Requirements
 
@@ -78,12 +64,17 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] **FAVI-01/02/03 (Phase 21)** — Per-palette favicon for each of the 5 themes; swaps on theme change (same-tab + cross-tab); persisted-theme favicon applied pre-paint with no FOUC.
 - [x] **STRETCH-01..08 (Phase 22)** — BPM stretch session mode (Warm-up → Stretch ramp → Settle) on the one-clock SessionFrame; cycle-aligned segment table with sub-0.5-BPM steps; minute-based stage durations + computed-total Duration readout; stretch settings persist via the existing localStorage envelope; dual-anchor audio (Phase 3 D-13/D-14) holds across the ramp.
 
+**v1.3 Release Polish (validated 2026-05-16 — see `.planning/milestones/v1.3-REQUIREMENTS.md` for full traceability):**
+
+- [x] **DOCS-01/02 (Phase 23)** — MIT `LICENSE` at the repo root; README refreshed to v1.3 accuracy (corrected BPM range + test count, complete Features list, real MIT-pointer License section).
+- [x] **LEARN-01 (Phase 24)** — Forrest Knutson's native iOS App Store + Google Play "Resonant Breathing" apps linked from a third Learn-dialog section; neutral claim-safe copy, both locales, `rel="noopener noreferrer"` on every anchor.
+- [x] **CUE-01/02/03 (Phase 25)** — Three-option in-orb cue picker (text labels / arrow icons / nose-airflow drawing) via `CueGlyph` threaded through all 3 visual variants; choice persists in the prefs envelope with no `STATE_VERSION` bump; visually-hidden localized In/Out announcement keeps arrow and drawing modes accessible.
+- [x] **I18N-07 (Phase 26)** — PT-BR native-speaker review: all 98 `// TODO: native-speaker review` markers removed from `src/content/`; pt-BR catalogs corrected to native quality (RPM/VFC glossary applied, operator override kept short `Puxa`/`Solta` inhale/exhale labels for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state. Frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
+- [x] **PWA-01/02/03 (Phase 27)** — Installable, offline-capable PWA: `vite-plugin-pwa` wired as a build-time devDependency (zero net-new runtime deps — `dependencies` stays `react` + `react-dom`); `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell (17 entries) for full offline sessions; silent `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell or interrupting a running session; dark orb-glow install icons; iOS PWA meta tags; README documents the iOS < 18.4 standalone Wake Lock limitation (WebKit bug 254545). Real-device iOS standalone UAT (iOS 18.7.9) passed all six scenarios.
+
 ### Active
 
-v1.3 Release Polish — requirements defined in `.planning/REQUIREMENTS.md`: LICENSE + README, Forrest native-app links, labels-vs-icons toggle, PWA install (PWA-01).
-
-- [x] **I18N-07** — PT-BR native-speaker review. Validated in Phase 26: all 98 `// TODO: native-speaker review` markers removed from `src/content/`; pt-BR catalogs corrected to native quality (RPM/VFC glossary applied, operator override kept short `Puxa`/`Solta` inhale/exhale labels for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state. Frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
-- [x] **PWA-01/02/03** — Installable, offline-capable PWA. Validated in Phase 27: `vite-plugin-pwa` wired as a build-time devDependency (zero net-new runtime deps — `dependencies` stays `react` + `react-dom`); `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell (17 entries) for full offline sessions; silent `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell or interrupting a running session; dark orb-glow install icons; iOS PWA meta tags; README documents the iOS < 18.4 standalone Wake Lock limitation (WebKit bug 254545). Real-device iOS standalone UAT (iOS 18.7.9) passed all six scenarios.
+(None — v1.3 Release Polish shipped 2026-05-16. Next milestone not yet defined; run `/gsd-new-milestone`.)
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -93,6 +84,8 @@ v1.3 Release Polish — requirements defined in `.planning/REQUIREMENTS.md`: LIC
 - [ ] iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3 Open Question 5).
 - [ ] Inner-ring UX symmetry (Issue B, Phase 5.1) — separate planning candidate.
 - [ ] Phase 12 `VALIDATION.md` + `SECURITY.md` retroactive close (advisory; threat model inlined in `12-01-PLAN.md`).
+- [ ] iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) — product decision whether to detect and warn (surfaced by PWA-01, documented in README).
+- [ ] 28 Info-severity findings from the 2026-05-16 full-codebase deep review (low priority — the 23 Warning-severity findings were fixed the same day; re-run `/gsd-code-review 27 --fix --all` to sweep).
 
 ### Out of Scope
 
@@ -122,7 +115,7 @@ Normal user-selected options:
 
 **Tech stack:** React 18 + Vite + TypeScript (strict + `strictTypeChecked`) + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/` (includes `isValidBpm`/`isValidRatio`/`isValidDuration` shared predicates since v1.0.1), hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope (forward-compat read + refuse-downgrade write + cross-tab listener since v1.0.1). Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement with in-flight + release-during-await guards.
 
-**Codebase size at v1.2 ship:** ~19,161 LOC in `src/` (TS/TSX); 839/839 Vitest tests. Stretch ramp engine added under `src/domain/stretchRamp.ts`; favicon palette module under `src/styles/faviconPalette.ts`. (v1.0.1 baseline: ~10,925 LOC / 409 tests.)
+**Codebase size at v1.3 ship:** 959/959 Vitest tests (839 → 959). Cue dimension added under `src/domain/` + `CueGlyph` component; `vite-plugin-pwa` build-time integration in `vite.config.ts`; static PWA icons under `public/`. (v1.2 baseline: ~19,161 LOC / 839 tests; v1.0.1 baseline: ~10,925 LOC / 409 tests.)
 
 ## Constraints
 
@@ -177,6 +170,11 @@ Normal user-selected options:
 | Stretch settings ride the existing localStorage envelope (Phase 22) | Per-field `coerceSettings` fallback on read; no `STATE_VERSION` bump — forward-compat read + refuse-downgrade write contract (Phase 8 D-01/D-04a) unchanged | ✓ Validated v1.2 — STRETCH-07 |
 | Stretch audio reuses dual-anchor scheduling (Phase 22) | Phase 3 D-13/D-14 dual-anchor invariant holds across every BPM step; per-cycle audio-clock offsets computed from the segment table; no per-segment cue variants | ✓ Validated v1.2 — STRETCH-08 |
 | Operator UAT as deviation source-of-truth (Phase 22) | Mid-checkpoint UAT redesigned the stretch UX (gate removed, minute-based stages, stage renames); plan accommodated a fix-now deviation at the close checkpoint | ✓ Validated v1.2 — commit `8eb35bd` |
+| Cue style rides the existing prefs envelope (Phase 25) | New `cue` field added via per-field `coerceSettings` fallback; no `STATE_VERSION` bump — forward-compat read + refuse-downgrade write contract unchanged | ✓ Validated v1.3 — CUE-02 |
+| Single `CueGlyph` component threaded through all 3 shapes (Phase 25) | One a11y-complete glyph renderer (labels/arrow/nose SVGs + visually-hidden localized text) beats per-variant duplication | ✓ Validated v1.3 — CUE-03 |
+| Operator as the PT-BR native reviewer (Phase 26) | The operator is a native pt-BR speaker; an `fs`-scan `content.no-review-markers.test.ts` drift-guard locks the done-state so markers cannot silently return | ✓ Validated v1.3 — I18N-07 |
+| `vite-plugin-pwa` enters as a build-time devDependency only (Phase 27) | The zero-net-new-*runtime*-deps invariant holds — `dependencies` stays `react` + `react-dom`; Workbox `generateSW` + `autoUpdate` rolls updates without a stale shell | ✓ Validated v1.3 — PWA-01/02/03 |
+| Dark orb-glow PWA install icons, redesigned post-UAT (Phase 27) | The original light orb washed out against neighboring home-screen icons; real-device UAT drove a dark `#2e3440` + frost-blue glow redesign re-confirmed by the operator | ✓ Validated v1.3 — commit `29425f1` |
 
 ## Evolution
 
@@ -196,4 +194,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 — Phase 27 complete (PWA-01/02/03 installable offline PWA validated; last phase of v1.3 Release Polish)*
+*Last updated: 2026-05-16 after v1.3 Release Polish milestone*
