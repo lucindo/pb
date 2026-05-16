@@ -130,6 +130,15 @@ export interface UiStrings {
     readonly videosHeading: string
     readonly nativeAppsHeading: string
   }
+  readonly install: {
+    readonly bannerText: string
+    readonly installButton: string
+    readonly iosStepsButton: string
+    readonly dismiss: string
+    readonly iosStep1: string
+    readonly iosStep2: string
+    readonly iosStep3: string
+  }
 }
 
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
@@ -257,6 +266,15 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       videosHeading: 'Selected HRV Breathing Videos',
       nativeAppsHeading: 'Resonant Breathing app',
     },
+    install: {
+      bannerText: 'Add to your home screen for offline use',
+      installButton: 'Install',
+      iosStepsButton: 'How to install',
+      dismiss: 'Dismiss install banner',
+      iosStep1: "Tap the Share button in Safari's toolbar",
+      iosStep2: 'Tap "Add to Home Screen"',
+      iosStep3: 'Tap "Add" to confirm',
+    },
   },
   'pt-BR': {
     app: {
@@ -382,6 +400,16 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resourcesHeading: 'Recursos do Forrest Knutson',
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
+    },
+    // DRAFT: Phase 29 will finalize PT-BR install copy
+    install: {
+      bannerText: 'Adicione à sua tela inicial para uso offline',
+      installButton: 'Instalar',
+      iosStepsButton: 'Como instalar',
+      dismiss: 'Fechar banner de instalação',
+      iosStep1: 'Toque no botão Compartilhar na barra do Safari',
+      iosStep2: 'Toque em "Adicionar à Tela de Início"',
+      iosStep3: 'Toque em "Adicionar" para confirmar',
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>

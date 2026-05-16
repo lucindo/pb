@@ -4,8 +4,8 @@ milestone: v1.4
 milestone_name: Install Helper
 status: executing
 stopped_at: Phase 28 UI-SPEC approved
-last_updated: "2026-05-16T14:52:14.668Z"
-last_activity: 2026-05-16 -- Phase 28 planning complete
+last_updated: "2026-05-16T14:53:38.705Z"
+last_activity: 2026-05-16 -- Phase 28 execution started
 progress:
   total_phases: 2
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16 after v1.3 Release Polish milestone)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** v1.4 Install Helper — Phase 28: Phone Install Banner
+**Current focus:** Phase 28 — phone-install-banner
 
 ## Current Position
 
-Phase: 28 — Phone Install Banner
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-16 -- Phase 28 planning complete
+Phase: 28 (phone-install-banner) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 28
+Last activity: 2026-05-16 -- Phase 28 execution started
 
 Progress: `░░░░░░░░░░` 0% (0/2 phases)
 
