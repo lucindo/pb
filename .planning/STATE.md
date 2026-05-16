@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Install Helper
-status: planning
-last_updated: "2026-05-16T14:02:26.719Z"
+status: active
+last_updated: "2026-05-16T14:30:00.000Z"
 last_activity: 2026-05-16
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16 after v1.3 Release Polish milestone)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Planning next milestone — run `/gsd-new-milestone`.
+**Current focus:** v1.4 Install Helper — Phase 28: Phone Install Banner
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 28 — Phone Install Banner
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-16 — Milestone v1.4 started
+Status: Roadmap created, ready to plan Phase 28
+Last activity: 2026-05-16 — v1.4 roadmap created (2 phases, 7 requirements)
+
+Progress: `░░░░░░░░░░` 0% (0/2 phases)
 
 ## Performance Metrics
 
@@ -35,15 +37,12 @@ Last activity: 2026-05-16 — Milestone v1.4 started
 
 - v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11
 
-**v1.3 phases (all complete):**
+**v1.4 phases:**
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 23. LICENSE + README | 1 | Complete (2026-05-15 — DOCS-01/02) |
-| 24. Forrest Native-App Links | 1 | Complete (2026-05-15 — LEARN-01) |
-| 25. Labels-vs-Icons Cue Toggle | 5 | Complete (2026-05-15 — CUE-01/02/03) |
-| 26. PT-BR Native-Speaker Review | 1 | Complete (2026-05-16 — I18N-07) |
-| 27. PWA Install & Offline | 3 | Complete (2026-05-16 — PWA-01/02/03) |
+| 28. Phone Install Banner | TBD | Not started |
+| 29. Settings Install Entry & Localization | TBD | Not started |
 
 ## Accumulated Context
 
@@ -58,7 +57,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ### Blockers/Concerns
 
 - **[PROJECT.md stack line stale]** PROJECT.md Context still says "React 18" — the shipped stack is React 19.2 + Vite 8.0 + TypeScript 6. Correct when convenient.
-- None blocking the next milestone.
+- None blocking v1.4.
 
 ### Quick Tasks Completed
 
@@ -92,11 +91,11 @@ Items acknowledged and carried forward across milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-05-16T07:00:00.000Z
-Stopped at: v1.3 Release Polish milestone complete and archived
+Last session: 2026-05-16T14:30:00.000Z
+Stopped at: v1.4 roadmap created — Phase 28 ready to plan
 Resume file: None
-Next command: /gsd-new-milestone
+Next command: /gsd-plan-phase 28
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 28 with `/gsd-plan-phase 28`

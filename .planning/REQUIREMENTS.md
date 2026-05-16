@@ -41,19 +41,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INSTALL-01 | TBD | Pending |
-| INSTALL-02 | TBD | Pending |
-| INSTALL-03 | TBD | Pending |
-| INSTALL-04 | TBD | Pending |
-| INSTALL-05 | TBD | Pending |
-| INSTALL-06 | TBD | Pending |
-| INSTALL-07 | TBD | Pending |
+| INSTALL-01 | Phase 28 | Pending |
+| INSTALL-02 | Phase 28 | Pending |
+| INSTALL-03 | Phase 28 | Pending |
+| INSTALL-04 | Phase 28 | Pending |
+| INSTALL-05 | Phase 28 | Pending |
+| INSTALL-06 | Phase 29 | Pending |
+| INSTALL-07 | Phase 29 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 7 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 7 ⚠️
+- Mapped to phases: 7 (Phase 28: 5, Phase 29: 2)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-16*
-*Last updated: 2026-05-16 after v1.4 milestone definition*
+*Last updated: 2026-05-16 after v1.4 roadmap creation*
