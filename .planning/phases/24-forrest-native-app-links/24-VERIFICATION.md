@@ -1,13 +1,14 @@
 ---
 phase: 24-forrest-native-app-links
 verified: 2026-05-15T22:30:00Z
-status: human_needed
+status: verified
 score: 6/6 must-haves verified
 overrides_applied: 0
 human_verification:
   - test: "Open the Learn dialog in a browser and confirm the third link section heading, App Store link, and Google Play link appear below the videos block and above the affiliation micro-line — in both EN and pt-BR locales."
     expected: "Heading 'Resonant Breathing app' (EN) / 'App Resonant Breathing' (PT-BR) is visible. Two plainly styled links appear: one opens apps.apple.com in a new tab, one opens play.google.com in a new tab."
     why_human: "DOM ordering and link opening behavior in a real browser (new tab) cannot be confirmed by grep or unit tests alone; the component is a native <dialog> that requires showModal()."
+    result: "PASS — operator confirmed in browser 2026-05-16 (see 24-HUMAN-UAT.md)."
 ---
 
 # Phase 24: Forrest Native-App Links Verification Report
