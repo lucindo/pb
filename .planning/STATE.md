@@ -4,14 +4,14 @@ milestone: v1.3
 milestone_name: Release Polish
 status: executing
 stopped_at: Phase 27 context gathered
-last_updated: "2026-05-16T05:22:15.057Z"
-last_activity: 2026-05-16 -- Phase 27 execution started
+last_updated: "2026-05-16T12:00:00.000Z"
+last_activity: 2026-05-16 -- Phase 27 plan 27-03 complete (real-device iOS UAT 6/6 PASS)
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 6
-  percent: 67
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-15 — v1.3 Release Polish milestone 
 
 ## Current Position
 
-Phase: 27 (pwa-install-offline) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 27
-Last activity: 2026-05-16 -- Phase 27 execution started
+Phase: 27 (pwa-install-offline) — COMPLETE
+Plan: 3 of 3 (all plans complete)
+Status: Phase 27 complete — all three plans executed, real-device iOS UAT passed 6/6
+Last activity: 2026-05-16 -- Phase 27 plan 27-03 complete (real-device iOS UAT 6/6 PASS)
 
 ## Performance Metrics
 
@@ -55,7 +55,7 @@ Last activity: 2026-05-16 -- Phase 27 execution started
 | 24. Forrest Native-App Links | TBD | Not started |
 | 25. Labels-vs-Icons Cue Toggle | TBD | Not started |
 | 26. PT-BR Native-Speaker Review | TBD | Not started |
-| 27. PWA Install & Offline | TBD | Not started |
+| 27. PWA Install & Offline | 3 | Complete (2026-05-16 — PWA-01..03; VitePWA+manifest+SW, iOS meta tags, Wake Lock README, real-device UAT 6/6 PASS, dark orb-glow icons) |
 | Phase 26-pt-br-native-speaker-review P01 | 53 | 4 tasks | 3 files |
 
 ## Accumulated Context
@@ -128,12 +128,13 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-16T04:55:02.726Z
-Stopped at: Phase 27 context gathered
-Resume file: .planning/phases/27-pwa-install-offline/27-CONTEXT.md
-Next command: `/gsd-plan-phase 23`
+Last session: 2026-05-16T12:00:00.000Z
+Stopped at: Phase 27 plan 27-03 complete — all Phase 27 plans done
+Resume file: None
+Next command: v1.3 milestone complete — all 5 phases (23–27) delivered
 
 ## Operator Next Steps
 
-- Review `.planning/ROADMAP.md` (v1.3 group, Phases 23–27) and `.planning/REQUIREMENTS.md` traceability.
-- Plan the first phase with `/gsd-plan-phase 23`.
+- v1.3 Release Polish milestone is complete (Phases 23–27 all executed).
+- All Phase 27 success criteria satisfied: installable PWA, offline session, SW update, real-device iOS UAT 6/6 PASS.
+- Consider running `/gsd-audit-milestone` to formally close v1.3.

@@ -55,5 +55,5 @@ Plans:
 - [x] 27-02-PLAN.md — Register VitePWA() in vite.config.ts + iOS PWA meta tags in index.html
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 27-03-PLAN.md — README Wake Lock limitation note + real-device iOS standalone-mode UAT
+- [x] 27-03-PLAN.md — README Wake Lock limitation note + real-device iOS standalone-mode UAT
 **UI hint**: no
