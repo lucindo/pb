@@ -15,17 +15,25 @@
 //   dispatches a different key per dimension; useVisualCue filters on detail.key === 'cue'.
 //   D-22: one event name ('hrv:prefs-changed'), key-filtered consumers — Phase 16/17/18/19/25.
 //
-// Why the local state mirror is kept:
-//   Optimistic-UI for the picker — the option button shows the new selection instantly
-//   without waiting for the custom-event round-trip through App (A-02 requirement).
+// AC-WR-03: single source of truth.
+//   `cue` is no longer a separate useState mirror — it is read straight from
+//   useVisualCue, the same hook App reads. useVisualCue already subscribes to
+//   both the cross-tab 'storage' event and the same-tab 'hrv:prefs-changed'
+//   CustomEvent, so the picker reflects ANY write to prefs.cue (including a
+//   direct savePrefs from elsewhere) and can never desync from the running app.
+//   setCue's own dispatch below reaches useVisualCue's same-tab listener, which
+//   still gives optimistic-UI: the picker updates on the very next render after
+//   the event, without an App round-trip. useCueChoice now owns only the writer.
 
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 
 import { loadPrefs, savePrefs } from '../storage/prefs'
+import { useVisualCue } from './useVisualCue'
 import type { CueStyleId } from '../domain/settings'
 
 export function useCueChoice(): { cue: CueStyleId; setCue: (next: CueStyleId) => void } {
-  const [cue, setCueState] = useState<CueStyleId>(() => loadPrefs().cue)
+  // Single source of truth — same hook App reads (AC-WR-03).
+  const { cue } = useVisualCue()
 
   // useCallback with empty deps for stable identity — mirrors App.tsx:218-224 persistedSetSettings pattern.
   // Callers (CuePicker) won't churn re-renders when the hook re-renders for other reasons.
@@ -34,9 +42,9 @@ export function useCueChoice(): { cue: CueStyleId; setCue: (next: CueStyleId) =>
     const current = loadPrefs()
     // 2. Write merged envelope — preserves theme/timbre/variant/locale per Phase 14 D-17 per-field isolation.
     savePrefs({ ...current, cue: next })
-    // 3. Update local React state for optimistic-UI (picker reflects change immediately).
-    setCueState(next)
-    // 4. Dispatch custom event so useVisualCue (in App) re-reads loadPrefs() and updates local state.
+    // 3. Dispatch custom event so useVisualCue re-reads loadPrefs() and updates state.
+    //    This is now the SOLE state-update path — the picker's `cue` comes from
+    //    useVisualCue, so this dispatch also drives the picker's optimistic-UI.
     //    Fresh CustomEvent per dispatch — event objects are stateful (currentTarget, timeStamp, etc.).
     window.dispatchEvent(
       new CustomEvent('hrv:prefs-changed', { detail: { key: 'cue', value: next } }),
