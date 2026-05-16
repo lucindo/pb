@@ -13,7 +13,10 @@ import { loadPrefs } from '../storage/prefs'
 import { STATE_KEY } from '../storage'
 import type { CueStyleId } from '../domain/settings'
 
-export function useVisualCue(): { cue: CueStyleId; setCue: (next: CueStyleId) => void } {
+export function useVisualCue(): { cue: CueStyleId } {
+  // setCue is intentionally NOT returned — it is the raw useState setter, used
+  // only by the sync effects below. The hook surface exposes a read-only `cue`,
+  // matching useVisualVariant. Writes go through useCueChoice (savePrefs + event).
   const [cue, setCue] = useState<CueStyleId>(() => loadPrefs().cue)
 
   // Cross-tab 'storage' listener — A-04. Empty deps: setCue + loadPrefs + STATE_KEY are stable.
@@ -45,5 +48,5 @@ export function useVisualCue(): { cue: CueStyleId; setCue: (next: CueStyleId) =>
     }
   }, [])
 
-  return { cue, setCue }
+  return { cue }
 }
