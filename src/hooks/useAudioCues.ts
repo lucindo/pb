@@ -370,7 +370,16 @@ export function useAudioCues(
     // additionally subtracts session-elapsed time so boundary math lands near
     // the new AC.currentTime instead of in its distant future (kitchen-sink
     // re-anchor offset fix).
-    onReanchorRequiredRef.current?.(newEngine.now())
+    // AH-WR-04: repopulate firstInCueTimeRef against the reconstructed engine's
+    // origin. reconstructEngine() nulled it above (alongside engineRef) so a
+    // setMuted()/start() racing the await would not deref a stale anchor. Left
+    // null, a post-reconstruction defensive start() call would return raw null,
+    // which App.tsx aliases as "AC failed" (D-10) — misreporting a healthy
+    // reconstructed engine as broken. newEngine.now() is the live anchor for the
+    // reconstructed AC (same value handed to the re-anchor callback below).
+    const reanchorAudioTime = newEngine.now()
+    firstInCueTimeRef.current = reanchorAudioTime
+    onReanchorRequiredRef.current?.(reanchorAudioTime)
     // The new AC starts in 'running' via the WR-06 constructor path. Set
     // audioStatus = 'ok' synchronously — the statechange listener will also
     // fire but may race with the React render.
