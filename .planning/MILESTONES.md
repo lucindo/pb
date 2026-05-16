@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.4 Install Helper (Shipped: 2026-05-16)
+
+**Phases completed:** 2 phases (28–29), 6 plans, 11 tasks
+
+**Delivered:** Detect when the app runs in a browser (not installed) and help users add it to their home screen — a dismissible phone install banner plus a persistent install option in Settings, fully localized EN + PT-BR.
+
+**Key accomplishments:**
+
+1. **Phase 28 — Phone Install Banner:** Slim, non-blocking, dismissible phone banner — Android `beforeinstallprompt` capture/replay and iOS guided "Share → Add to Home Screen" steps; dismissal persisted in `localStorage` (`hrv:install-dismissed`); phone-class + standalone detection via `useIsStandaloneOrPhone` + `useBeforeInstallPrompt` hooks; wired into `App.tsx` behind the composed `showBanner` gate (INSTALL-01..05).
+2. **Phase 29 — Settings Install Entry & Localization:** Persistent install row in `SettingsDialog` gated `installable && !isStandalone` — reachable on any browser including desktop and post-dismissal phone; shared `IosInstallSteps` component as single source of truth for both install surfaces; EN + native-quality PT-BR install copy; GAP-1 closed (theme-aware `--color-breathing-muted` token restores WCAG AA contrast on all 5 themes) (INSTALL-06/07).
+
+**Verification:** Phase 28 5/5, Phase 29 8/8; milestone audit `passed` (7/7 requirements, 12/12 integration, 7/7 E2E flows); 997/997 tests; operator UAT 5/5. Both phases Nyquist-compliant and threat-secure.
+
+---
+
 ## v1.3 Release Polish (Shipped: 2026-05-16)
 
 **Phases completed:** 5 phases (23, 24, 25, 26, 27), 11 plans

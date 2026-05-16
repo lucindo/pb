@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Install Helper
-status: milestone_complete
-stopped_at: Phase 29 UI-SPEC approved
-last_updated: "2026-05-16T21:01:46.374Z"
-last_activity: 2026-05-16 -- Phase 29 execution started
+status: Awaiting next milestone
+stopped_at: Milestone v1.4 closed
+last_updated: "2026-05-16T23:50:00.000Z"
+last_activity: 2026-05-16 — Milestone v1.4 completed and archived
 progress:
   total_phases: 2
   completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 100
 ---
 
@@ -18,32 +18,30 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-16 after v1.3 Release Polish milestone)
+See: .planning/PROJECT.md (updated 2026-05-16 after v1.4 Install Helper milestone)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 29 — settings-install-entry-localization
+**Current focus:** Planning next milestone — run /gsd-new-milestone
 
 ## Current Position
 
-Phase: 29
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-16
-
-Progress: [██████████] 100%
+Phase: Milestone v1.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-16 — Milestone v1.4 completed and archived
 
 ## Performance Metrics
 
 **Velocity (plans completed per milestone):**
 
-- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11
+- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6
 
-**v1.4 phases:**
+**v1.4 phases (shipped 2026-05-16):**
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 28. Phone Install Banner | TBD | Not started |
-| 29. Settings Install Entry & Localization | TBD | Not started |
+| 28. Phone Install Banner | 3/3 | Complete |
+| 29. Settings Install Entry & Localization | 3/3 | Complete |
 
 ## Accumulated Context
 
@@ -58,7 +56,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ### Blockers/Concerns
 
 - **[PROJECT.md stack line stale]** PROJECT.md Context still says "React 18" — the shipped stack is React 19.2 + Vite 8.0 + TypeScript 6. Correct when convenient.
-- None blocking v1.4.
+- None blocking. v1.4 shipped 2026-05-16; awaiting next milestone.
 
 ### Quick Tasks Completed
 
@@ -83,20 +81,23 @@ Items acknowledged and carried forward across milestone closes:
 | procedural | Phase 15 / Phase 18 VERIFICATION.md status "human_needed" | Resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
 | v1.x carry-forward | iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) | Documented in README at Phase 27; product decision whether to detect + warn | 2026-05-15 v1.3 scoping |
 | v1.x debt | 28 Info-severity findings from the 2026-05-16 full-codebase deep review | Low priority — 23 Warnings fixed same-day; re-run `/gsd-code-review 27 --fix --all` to sweep | 2026-05-16 v1.3 close |
+| v1.x debt | Code review WR-01 — `IosInstallSteps` `<ol>` `::marker` numbering themed implicitly via per-`<li>` color inheritance | Advisory; correct today, fragile under future refactor — centralize color on the `<ol>` | 2026-05-16 v1.4 close |
+| procedural | 28-01 / 28-03 SUMMARY doc drift (field count, superseded `SafariNavigator`) | Code correct; SUMMARYs are earlier snapshots | 2026-05-16 v1.4 close |
 
 **Audit references:**
 
 - `.planning/milestones/v1.0-MILESTONE-AUDIT.md` — PASSED 23/23
 - `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md` — PASSED 27/27
 - v1.2, v1.3 — no milestone audit run (operator proceeded without `/gsd-audit-milestone`; requirements fully checked, all phases complete). v1.3 open-artifact gaps were resolved (not deferred) at close.
+- `.planning/milestones/v1.4-MILESTONE-AUDIT.md` — PASSED (7/7 requirements, 12/12 integration, 7/7 E2E flows). Two coverage-doc gaps (29-VALIDATION.md stale, 29-SECURITY.md missing) closed at audit time via `/gsd-validate-phase 29` + `/gsd-secure-phase 29`.
 
 ## Session Continuity
 
-Last session: 2026-05-16T19:09:32.630Z
-Stopped at: Phase 29 UI-SPEC approved
+Last session: 2026-05-16T23:50:00.000Z
+Stopped at: Milestone v1.4 closed and archived
 Resume file: None
-Next command: /gsd-plan-phase 28
+Next command: /gsd-new-milestone
 
 ## Operator Next Steps
 
-- Plan Phase 28 with `/gsd-plan-phase 28`
+- Start the next milestone with /gsd-new-milestone

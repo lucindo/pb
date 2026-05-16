@@ -253,6 +253,48 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v1.4 — Install Helper
+
+**Shipped:** 2026-05-16
+**Phases:** 2 (28, 29) | **Plans:** 6 | **Timeline:** ~1 day (2026-05-16)
+
+### What Was Built
+
+- **Phase 28 — Phone Install Banner:** Phone-class + standalone detection hooks (`useIsStandaloneOrPhone` on `pointer: coarse` + `display-mode: standalone`/`navigator.standalone`; `useBeforeInstallPrompt` capturing and replaying the Android `beforeinstallprompt`); `InstallBanner` with the Android install-button path and the iOS inline-expand "Share → Add to Home Screen" steps; wired into `App.tsx` behind the composed `showBanner` gate; dismissal persisted in `localStorage` (`hrv:install-dismissed`) (INSTALL-01..05).
+- **Phase 29 — Settings Install Entry & Localization:** Persistent `SettingsDialog` install row gated `installable && !isStandalone` (no `isPhone` check — desktop included); shared `IosInstallSteps` component extracted as the single source of truth for both install surfaces; `UiStrings.install.settingsLabel` + native-quality PT-BR install copy; install state prop-drilled from `App.tsx`. GAP-1 (iOS steps unreadable on dark themes) closed in plan 29-03 via a theme-aware `--color-breathing-muted` token (INSTALL-06/07).
+
+### What Worked
+
+- **Shared component caught a defect once and fixed it everywhere.** Extracting `IosInstallSteps` (D-06) meant the GAP-1 dark-theme readability fix landed in one file and corrected both `InstallBanner` and `SettingsDialog`.
+- **Operator UAT caught a real defect automated tests structurally cannot.** JSDOM does not resolve CSS custom properties, so the unreadable iOS steps on dark themes passed every automated suite. Operator device UAT flagged it; gap-closure plan 29-03 closed it with a regression test pinning the token classes.
+- **Gap-closure-as-plan kept the loop tight.** GAP-1 became a `gap_closure: true` plan (29-03) in the same phase rather than a new phase — discuss/plan overhead skipped, re-verification confirmed closure.
+- **Zero net-new runtime dependencies held a fifth milestone.** All install UX is React + browser APIs; `dependencies` stays `react` + `react-dom`.
+
+### What Was Inefficient
+
+- **`milestone.complete` accomplishment extraction failed again** — Phase 28 SUMMARYs produced `One-liner:` stubs; curated MILESTONES.md rewrite required. Fourth consecutive milestone (flagged v1.1/v1.2/v1.3).
+- **VALIDATION.md and SECURITY.md were not closed during execution.** `29-VALIDATION.md` stayed `status: draft` / `nyquist_compliant: false` despite the tests existing and passing; `29-SECURITY.md` was never created. The milestone audit caught both; `/gsd-validate-phase 29` and `/gsd-secure-phase 29` reconciled them at close (0 gaps, 8 accepted threats). Process artifacts, not functional gaps — but they should close inside the phase.
+- **SUMMARY doc drift.** 28-01 SUMMARY listed 7 `UiStrings.install` fields (now 9); 28-03 described a `SafariNavigator`/`const isIOS` later superseded by Phase 29 CR-01. Code correct; SUMMARYs are stale snapshots.
+
+### Patterns Established
+
+- **Gap-closure plan (`gap_closure: true`) for UAT-surfaced defects** — a VERIFICATION.md gap becomes a single-phase plan, not a new phase; re-verification reruns after.
+- **Shared presentational component as single source of truth** — when two surfaces render the same UI block, extract it so one fix (and one regression test) covers both.
+
+### Key Lessons
+
+1. **JSDOM cannot verify resolved CSS — theme/contrast defects need device UAT.** `getComputedStyle` returns the literal `var()` string; readability on a real theme background is only confirmable by a human. Budget human-verification items for any theme-token UI.
+2. **Close VALIDATION.md and SECURITY.md inside the phase, not at milestone audit.** Both Phase 29 coverage docs were left stale/missing and only reconciled at close — the audit caught them, but that is the safety net, not the plan.
+3. **`milestone.complete` accomplishment extraction remains unreliable** — fourth milestone running; the curated MILESTONES.md rewrite is now an expected close-time step until SUMMARY one-liner keys are standardized.
+
+### Cost Observations
+
+- Sessions: gap-closure execute (29-03) → verify → milestone audit → validate-phase + secure-phase → milestone close.
+- Notable: the only execution rework was the GAP-1 dark-theme fix — both phases otherwise executed plan-as-written.
+- Test growth: 959 → 997 (+38) across the 2 phases.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -264,6 +306,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.1 | 10 | 47 | Worktree parallel waves with intra-wave `files_modified` overlap check; sibling-pattern verbatim cloning for picker/hook trios; `Record<LocaleId, X>` per-render lookup; frozen-EN byte-equality guard for locked copy; decimal-phase inserts (16.1, 16.2, 16.3) for emergent UAT-driven scope; locale-aware date formatter via optional arg (Phase 4 D-19 preserved) |
 | v1.2 | 3 | 8 | Cycle-aligned segment table for piecewise-constant ramps on the one-clock SessionFrame; sync-guard test for cross-file constant drift; pre-paint inline-script standardized as the FOUC slot; milestone audit skipped for a small fully-checked milestone |
 | v1.3 | 5 | 11 | Build-time-only dependency for tooling-driven capability (zero runtime deps held a 4th milestone); fs-scan drift-guard test locks cleanup done-states; full-codebase parallel review at milestone close; ROADMAP.md drift undercounted phases at close |
+| v1.4 | 2 | 6 | Gap-closure plan (`gap_closure: true`) for UAT-surfaced defects within the phase; shared presentational component as single source of truth (one fix covers both surfaces); VALIDATION/SECURITY docs left stale, reconciled by audit at close |
 
 ### Cumulative Quality
 
@@ -274,6 +317,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.1 | 712/712 pass | 54 | ~14,500 (est.) |
 | v1.2 | 839/839 pass | — | ~19,161 |
 | v1.3 | 959/959 pass | 65 | — |
+| v1.4 | 997/997 pass | 70 | — |
 
 ### Top Lessons (Verified Across Milestones)
 

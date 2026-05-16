@@ -12,27 +12,15 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 ## Current State
 
-**Shipped:** v1.3 Release Polish (2026-05-16) — 5 phases (23–27), 11 plans, 959/959 Vitest tests pass (839 → 959). All 10 v1.3 requirements validated. MIT `LICENSE` + distribution-ready README, Forrest Knutson's native Resonant Breathing apps linked from the Learn surface, a three-way in-orb cue picker (text / arrow / nose-airflow), native-quality PT-BR catalogs (98 review markers removed), and an installable offline-capable PWA (Workbox app-shell precache, `/hrv/`-scoped manifest, real-device iOS standalone UAT 6/6). Zero net-new runtime dependencies.
+**Shipped:** v1.4 Install Helper (2026-05-16) — 2 phases (28–29), 6 plans, 997/997 Vitest tests pass (959 → 997). All 7 v1.4 requirements validated. Dismissible phone install banner (Android `beforeinstallprompt` capture/replay + iOS guided "Share → Add to Home Screen" steps, dismissal persisted in `localStorage`), persistent `SettingsDialog` install entry for any browser including desktop, shared `IosInstallSteps` component, EN + native-quality PT-BR install copy. Milestone audit `passed` (7/7 requirements, 12/12 integration, 7/7 E2E flows); both phases Nyquist-compliant + threat-secure; operator UAT 5/5.
 
-**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27. v1.1 Customization (2026-05-15) — 47 plans, SettingsDialog + 5 named palettes + 3 visual variants + 4 audio timbres + EN/PT-BR language switching. v1.2 BPM Stretch (2026-05-15) — 8 plans, Warm-up → Stretch ramp → Settle on the one-clock SessionFrame.
+**Prior milestones:** v1.0 MVP (2026-05-11) — 30 plans, audit PASSED 23/23. v1.0.1 Code Review Patch (2026-05-12) — 12 plans, audit PASSED 27/27. v1.1 Customization (2026-05-15) — 47 plans, SettingsDialog + 5 named palettes + 3 visual variants + 4 audio timbres + EN/PT-BR language switching. v1.2 BPM Stretch (2026-05-15) — 8 plans, Warm-up → Stretch ramp → Settle on the one-clock SessionFrame. v1.3 Release Polish (2026-05-16) — 11 plans, MIT LICENSE + README, Forrest native-app links, three-way cue picker, native-quality PT-BR catalogs, installable offline PWA.
 
-**v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). See STATE.md `## Deferred Items` for the full register.
+**v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). Code review WR-01 — `IosInstallSteps` `::marker` color coupling. See STATE.md `## Deferred Items` for the full register.
 
-**In progress:** v1.4 Install Helper — all phases complete. Phase 28 Phone Install Banner (2026-05-16): phone-class + standalone detection hooks, Android `beforeinstallprompt` capture, `InstallBanner` (Android button + iOS guided steps) wired into `App.tsx` behind the `showBanner` gate, dismissal persisted in `localStorage`. Phase 29 Settings Install Entry & Localization complete (2026-05-16): persistent install row in `SettingsDialog` (gated `installable && !isStandalone`), shared `IosInstallSteps` component consumed by both install surfaces, EN + PT-BR install copy, GAP-1 (dark-theme step readability) closed via theme-aware `--color-breathing-muted` token. 997/997 tests pass. Operator UAT 5/5 passed. Milestone ready to close.
+## Next Milestone
 
-## Current Milestone: v1.4 Install Helper
-
-**Goal:** Detect when the app runs in a browser (not installed) and help users install it to their home screen — via a dismissible phone banner plus a persistent install option in Settings.
-
-**Target features:**
-- Phone detection — show the install banner only on phone-class browsers, and never when already running as an installed PWA (standalone display mode)
-- Android Chrome — capture `beforeinstallprompt`; the banner CTA fires the native install prompt
-- iOS Safari — banner shows guided "Share → Add to Home Screen" instructions (no install API exists on iOS)
-- Dismissible banner UI — slim, non-modal, never blocks the breathing flow; dismissal persists permanently in `localStorage` (never re-shown)
-- Settings install option — whenever the app runs in a browser (not installed), SettingsDialog shows an install entry; persistent, available even after the banner is dismissed, and covers desktop browsers
-- Localized EN + PT-BR copy for both surfaces
-
-**Key context:** PWA infrastructure (manifest, Workbox service worker, install icons) shipped in Phase 27 — v1.4 adds only the install *discovery* UX layer. Two surfaces: the banner is phone-only and dismissible; the Settings option is the persistent fallback. Continues phase numbering from 28.
+No milestone is currently active. v1.4 Install Helper shipped 2026-05-16. Start the next milestone with `/gsd-new-milestone` — it gathers goals, research, and requirements before producing a roadmap. Carry-forward tech debt (above) is a candidate source for the next milestone scope.
 
 ## Requirements
 
@@ -86,7 +74,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] **I18N-07 (Phase 26)** — PT-BR native-speaker review: all 98 `// TODO: native-speaker review` markers removed from `src/content/`; pt-BR catalogs corrected to native quality (RPM/VFC glossary applied, operator override kept short `Puxa`/`Solta` inhale/exhale labels for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state. Frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
 - [x] **PWA-01/02/03 (Phase 27)** — Installable, offline-capable PWA: `vite-plugin-pwa` wired as a build-time devDependency (zero net-new runtime deps — `dependencies` stays `react` + `react-dom`); `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell (17 entries) for full offline sessions; silent `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell or interrupting a running session; dark orb-glow install icons; iOS PWA meta tags; README documents the iOS < 18.4 standalone Wake Lock limitation (WebKit bug 254545). Real-device iOS standalone UAT (iOS 18.7.9) passed all six scenarios.
 
-**v1.4 Install Helper:**
+**v1.4 Install Helper (validated 2026-05-16 — see `.planning/milestones/v1.4-REQUIREMENTS.md` for full traceability):**
 
 - [x] **INSTALL-01..05 (Phase 28)** — Phone install banner: `useIsStandaloneOrPhone` gates on `(pointer: coarse)` for phone-class + `(display-mode: standalone)`/`navigator.standalone` for installed-PWA state; `useBeforeInstallPrompt` captures the Android `beforeinstallprompt` and replays it from the user-gesture chain; `InstallBanner` shows the Android install-button path and the iOS inline-expand "Share → Add to Home Screen" steps; wired into `App.tsx` behind the composed `showBanner` gate (phone, not standalone, not dismissed, idle, iOS-or-deferredPrompt); dismissal persisted in `localStorage` (`hrv:install-dismissed`); EN copy final, PT-BR draft; 987/987 tests pass. Validated in Phase 28: Phone Install Banner (automated 5/5; 6 human-device UAT items tracked in `28-HUMAN-UAT.md`).
 - [x] **INSTALL-06..07 (Phase 29)** — Settings install entry & localization: persistent install row in `SettingsDialog` gated `installable && !isStandalone`, rendered below the Language picker; non-iOS path triggers `onInstall`/`triggerInstall`, iOS path inline-expands the shared `IosInstallSteps` component (also consumed by `InstallBanner` — single source of truth); `UiStrings.install.settingsLabel` added with EN + PT-BR values; GAP-1 (iOS steps unreadable on dark themes) closed in plan 29-03 — steps 2 & 3 carry theme-aware `text-[var(--color-breathing-muted)]`; 997/997 tests pass. Validated in Phase 29: Settings Install Entry & Localization (automated 8/8; operator UAT 5/5 passed).
@@ -134,7 +122,7 @@ Normal user-selected options:
 
 **Tech stack:** React 18 + Vite + TypeScript (strict + `strictTypeChecked`) + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/` (includes `isValidBpm`/`isValidRatio`/`isValidDuration` shared predicates since v1.0.1), hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope (forward-compat read + refuse-downgrade write + cross-tab listener since v1.0.1). Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement with in-flight + release-during-await guards.
 
-**Codebase size at v1.3 ship:** 959/959 Vitest tests (839 → 959). Cue dimension added under `src/domain/` + `CueGlyph` component; `vite-plugin-pwa` build-time integration in `vite.config.ts`; static PWA icons under `public/`. (v1.2 baseline: ~19,161 LOC / 839 tests; v1.0.1 baseline: ~10,925 LOC / 409 tests.)
+**Codebase size at v1.4 ship:** 997/997 Vitest tests (959 → 997). v1.4 added `src/storage/installDismissed.ts`, `useIsStandaloneOrPhone`/`useBeforeInstallPrompt` hooks, `InstallBanner` + shared `IosInstallSteps` components, and `SettingsDialog` install row — zero net-new runtime dependencies (`dependencies` stays `react` + `react-dom`). (v1.3 baseline: 959 tests; v1.2 baseline: ~19,161 LOC / 839 tests; v1.0.1 baseline: ~10,925 LOC / 409 tests.)
 
 ## Constraints
 
@@ -194,6 +182,10 @@ Normal user-selected options:
 | Operator as the PT-BR native reviewer (Phase 26) | The operator is a native pt-BR speaker; an `fs`-scan `content.no-review-markers.test.ts` drift-guard locks the done-state so markers cannot silently return | ✓ Validated v1.3 — I18N-07 |
 | `vite-plugin-pwa` enters as a build-time devDependency only (Phase 27) | The zero-net-new-*runtime*-deps invariant holds — `dependencies` stays `react` + `react-dom`; Workbox `generateSW` + `autoUpdate` rolls updates without a stale shell | ✓ Validated v1.3 — PWA-01/02/03 |
 | Dark orb-glow PWA install icons, redesigned post-UAT (Phase 27) | The original light orb washed out against neighboring home-screen icons; real-device UAT drove a dark `#2e3440` + frost-blue glow redesign re-confirmed by the operator | ✓ Validated v1.3 — commit `29425f1` |
+| Single shared `IosInstallSteps` component for both install surfaces (Phase 29 D-06) | One iOS-steps renderer consumed by both `InstallBanner` and `SettingsDialog` (distinct `id` props) — one fix corrects both surfaces; GAP-1 dark-theme readability fix landed once | ✓ Validated v1.4 — INSTALL-06 |
+| `installable = isIOS \|\| deferredPrompt !== null` derived boolean, prop-drilled from `App.tsx` (Phase 29) | Settings install row gates on `installable && !isStandalone` with no `isPhone` check — desktop browsers included; D-07 ensures a visible row is never a dead button | ✓ Validated v1.4 — INSTALL-06 |
+| Permanent banner dismissal; Settings is the persistent re-entry path (Phase 28/29) | Dismissal persisted in `localStorage` (`hrv:install-dismissed`) is never re-surfaced; the `SettingsDialog` install entry is the always-available fallback for all browsers | ✓ Validated v1.4 — INSTALL-04/06 |
+| Theme-aware `--color-breathing-muted` token on iOS install steps (Phase 29-03 GAP-1) | Operator UAT found steps 2–3 unreadable on dark themes (no text-color class); applying the WCAG-AA muted token restored contrast on all 5 themes in one change | ✓ Validated v1.4 — INSTALL-06 gap closure |
 
 ## Evolution
 
@@ -213,4 +205,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after Phase 29 Settings Install Entry & Localization completion*
+*Last updated: 2026-05-16 after v1.4 Install Helper milestone*
