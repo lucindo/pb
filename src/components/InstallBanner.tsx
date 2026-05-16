@@ -29,6 +29,10 @@ export function InstallBanner({ isIOS, onInstall, onDismiss, strings }: InstallB
           src={`${import.meta.env.BASE_URL}pwa-192x192.png`}
           alt="HRV app icon"
           className="size-8 rounded-lg"
+          // WR-02: if the icon asset is missing/mis-pathed/blocked, hide the
+          // element rather than render the browser's broken-image glyph in a
+          // polished banner. bannerText already conveys the meaning.
+          onError={(e) => { e.currentTarget.style.display = 'none' }}
         />
         <span className="flex-1 truncate text-sm text-[var(--color-breathing-muted)]">
           {strings.bannerText}
