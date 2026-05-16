@@ -22,9 +22,9 @@ Requirements for the v1.3 release. Each maps to one roadmap phase.
 
 ### Cue Indicator
 
-- [ ] **CUE-01**: User can choose how the in-orb In/Out breathing cue is shown — text labels, directional arrow icons, or a nose-airflow drawing — via a new SettingsDialog picker with three options.
-- [ ] **CUE-02**: User's cue-style choice persists across reloads via the existing localStorage prefs envelope (forward-compat read, refuse-downgrade write, no `STATE_VERSION` bump).
-- [ ] **CUE-03**: Arrow and drawing modes keep an accessible localized In/Out announcement (visually-hidden localized text + `aria-hidden` SVG) and render correctly across all 3 visual variants (Orb, Square, Diamond) and under reduced-motion.
+- [x] **CUE-01**: User can choose how the in-orb In/Out breathing cue is shown — text labels, directional arrow icons, or a nose-airflow drawing — via a new SettingsDialog picker with three options.
+- [x] **CUE-02**: User's cue-style choice persists across reloads via the existing localStorage prefs envelope (forward-compat read, refuse-downgrade write, no `STATE_VERSION` bump).
+- [x] **CUE-03**: Arrow and drawing modes keep an accessible localized In/Out announcement (visually-hidden localized text + `aria-hidden` SVG) and render correctly across all 3 visual variants (Orb, Square, Diamond) and under reduced-motion.
 
 ### Internationalization
 
@@ -99,9 +99,9 @@ Which phases cover which requirements. Filled during roadmap creation.
 | DOCS-01 | Phase 23 | Complete |
 | DOCS-02 | Phase 23 | Complete |
 | LEARN-01 | Phase 24 | Complete |
-| CUE-01 | Phase 25 | Pending |
-| CUE-02 | Phase 25 | Pending |
-| CUE-03 | Phase 25 | Pending |
+| CUE-01 | Phase 25 | Complete |
+| CUE-02 | Phase 25 | Complete |
+| CUE-03 | Phase 25 | Complete |
 | I18N-07 | Phase 26 | Pending |
 | PWA-01 | Phase 27 | Pending |
 | PWA-02 | Phase 27 | Pending |
