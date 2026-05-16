@@ -95,8 +95,8 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
           </div>
           <div>
             <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
-            {explainer.forrest.body.split('\n\n').map((paragraph, idx) => (
-              <p key={idx} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
+            {explainer.forrest.body.split('\n\n').map((paragraph) => (
+              <p key={paragraph} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
             ))}
             <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{lockedCopy.inspiredByForrest}</p>
           </div>
