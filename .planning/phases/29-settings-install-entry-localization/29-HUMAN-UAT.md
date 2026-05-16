@@ -18,7 +18,7 @@ result: [pending]
 
 ### 2. Settings install row on iOS Safari — Add to Home Screen flow completes
 expected: Tapping 'How to install' in SettingsDialog on iOS Safari expands the three-step iOS instructions; following the steps successfully adds the app to the Home Screen
-result: [pending]
+result: ISSUE — iOS install-step instructions are difficult/impossible to read on both dark themes (low text contrast in shared IosInstallSteps component). See Gaps.
 
 ### 3. Settings install row absent when standalone (installed PWA)
 expected: When the app is opened as an installed PWA (standalone display mode), the Settings dialog contains no install row
@@ -32,9 +32,14 @@ result: [pending]
 
 total: 4
 passed: 0
-issues: 0
-pending: 4
+issues: 1
+pending: 3
 skipped: 0
 blocked: 0
 
 ## Gaps
+
+### GAP-1: iOS install instructions unreadable on dark themes
+status: failed
+source: operator manual UAT 2026-05-16
+detail: Shared IosInstallSteps step text has insufficient contrast on both dark themes — hard/impossible to read. Affects both InstallBanner and SettingsDialog. Fix: theme-aware text color tokens for the step <li> text.
