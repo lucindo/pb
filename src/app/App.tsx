@@ -250,6 +250,13 @@ export default function App() {
   const audioStop = audio.stop
   const audioStart = audio.start
   const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
+  // AC-WR-02: hoist the primitives/callback that onMuteOrResumeClick reads so the
+  // handler's useCallback deps are stable values, not the fresh `audio` object literal
+  // useAudioCues returns each render (which churned the handler every animation frame
+  // during a running session). Same hoisting pattern as audioStop/audioStart above.
+  const audioStatus = audio.audioStatus
+  const audioResume = audio.resume
+  const audioMuted = audio.muted
   // Phase 9 AUDIO-02: stable reference for the boundary effect's caller-side clamp.
   // audio.audioNow is a useCallback([]) — identity is stable; hoisted to avoid
   // re-firing the boundary effect on every render (same pattern as audioNotifyPhaseBoundary).
@@ -287,11 +294,11 @@ export default function App() {
   // When audioStatus !== 'needs-resume', this collapses to the pre-Plan-06
   // persistedSetMuted(!audio.muted) behavior verbatim.
   const onMuteOrResumeClick = useCallback(async () => {
-    if (audio.audioStatus === 'needs-resume') {
-      await audio.resume()
+    if (audioStatus === 'needs-resume') {
+      await audioResume()
     }
-    persistedSetMuted(!audio.muted)
-  }, [audio, persistedSetMuted])
+    persistedSetMuted(!audioMuted)
+  }, [audioStatus, audioResume, audioMuted, persistedSetMuted])
 
   // WR-01: Auto-close the confirmation modal when the session leaves the running
   // state on its own (e.g. timer reaches the end while the modal is open). Without
