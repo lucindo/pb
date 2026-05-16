@@ -62,6 +62,28 @@ export interface Envelope {
 
 const EMPTY_ENVELOPE: Envelope = { version: STATE_VERSION }
 
+/**
+ * DS-WR-04: explicit migrate-on-read seam.
+ *
+ * The dual-versioning comment above promises "migrate-on-read", but until now no
+ * migration hook existed — any future STATE_VERSION bump silently relied on the
+ * per-field coercers tolerating every shape difference, with no structural,
+ * test-enforceable contract that a vN read of v(N-1) data is lossless.
+ *
+ * This function is the contract. For v1 it is a deliberate no-op passthrough
+ * (`fromVersion` is unused today); when a non-trivial schema change lands, the
+ * migration logic for each version step belongs here, applied in `readEnvelope`
+ * before the envelope reaches the per-field coercers. The forward-compatible
+ * top-level spread is preserved: this returns `{ ...env }` so unknown top-level
+ * fields written by a newer build survive the read+write round-trip.
+ */
+export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
+  // v1: no migration steps. Future versions add `if (fromVersion < N) { ... }`
+  // ladders here. `void fromVersion` keeps noUnusedParameters happy until then.
+  void fromVersion
+  return { ...env }
+}
+
 export function readEnvelope(deps: StorageDeps = {}): Envelope {
   const storage = deps.storage ?? window.localStorage
   try {
@@ -99,7 +121,11 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
         typeof p.version === 'number' && Number.isFinite(p.version)
           ? p.version
           : STATE_VERSION
-      return { ...p, version: onDiskVersion }
+      // DS-WR-04: route every on-disk read through the explicit migration seam
+      // so the migrate-on-read contract is structurally present and testable.
+      // No-op passthrough for v1; the seam preserves the forward-compatible
+      // top-level spread.
+      return migrateEnvelope({ ...p, version: onDiskVersion }, onDiskVersion)
     }
     return { ...EMPTY_ENVELOPE }
   } catch {
