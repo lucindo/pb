@@ -2,7 +2,13 @@
 plan: 27-03
 type: uat-record
 artifact: real-device iOS standalone-mode UAT
-status: pending-operator
+status: passed
+uat-summary:
+  total: 6
+  passed: 6
+  failed: 0
+  skipped: 0
+  pending: 0
 ---
 
 # Phase 27 Plan 03: Real-Device iOS Standalone-Mode UAT
@@ -29,13 +35,13 @@ status: pending-operator
 
 | Field | Value |
 |-------|-------|
-| Device model | _(fill in — e.g. iPhone 15 Pro)_ |
-| iOS version | _(fill in — e.g. iOS 18.3.2)_ |
-| Safari version | _(fill in — e.g. Safari 17.x)_ |
-| Test date | _(fill in)_ |
-| Tester | _(fill in)_ |
+| Device model | not captured by operator |
+| iOS version | not captured by operator |
+| Safari version | not captured by operator |
+| Test date | 2026-05-16 |
+| Tester | not captured by operator |
 
-> **Note for iOS-3:** Wake Lock behavior depends on the iOS version above. On iOS **>= 18.4** the screen should stay on throughout the session. On iOS **< 18.4** the screen may dim mid-session — this is the documented WebKit bug 254545 behavior and counts as a **PASS** (expected, not a regression).
+> **Note for iOS-3:** Wake Lock behavior depends on the iOS version above. On iOS **>= 18.4** the screen should stay on throughout the session. On iOS **< 18.4** the screen may dim mid-session — this is the documented WebKit bug 254545 behavior and counts as a **PASS** (expected, not a regression). The device iOS version was not captured; the operator approved this scenario accepting the documented limitation.
 
 ---
 
@@ -43,14 +49,22 @@ status: pending-operator
 
 | # | Scenario | Pass Criteria | Result | Notes |
 |---|----------|---------------|--------|-------|
-| iOS-1 | Install via Safari Share → Add to Home Screen | App icon appears correctly; opens in standalone mode (no browser chrome) | | |
-| iOS-2 | Launch from Home Screen, disable network, start session | Session runs; audio cues play; orb animates — fully offline | | |
-| iOS-3 | Run a 2-min session, then put device to sleep | Session resumes correctly on wake if iOS ≥ 18.4; screen dims on iOS < 18.4 (documented behavior — PASS) | | |
-| iOS-4 | Check app icon on Home Screen | Correct orb icon, not a screenshot thumbnail | | |
-| iOS-5 | Check status bar in standalone mode | Theme color visible; no browser address bar | | |
-| iOS-6 | Verify app name on Home Screen | Shows "HRV Breathing" | | |
+| iOS-1 | Install via Safari Share → Add to Home Screen | App icon appears correctly; opens in standalone mode (no browser chrome) | PASS | Operator confirmed via screenshot: app installs to home screen, opens in standalone mode with no browser chrome. Install icon was initially the light orb (#5e81ac on #eceff4), then redesigned to dark orb-glow (commit 29425f1) after initial UAT; operator re-added to home screen and confirmed the new icon. |
+| iOS-2 | Launch from Home Screen, disable network, start session | Session runs; audio cues play; orb animates — fully offline | PASS | Operator approved. Session ran fully offline in standalone mode. |
+| iOS-3 | Run a 2-min session, then put device to sleep | Session resumes correctly on wake if iOS ≥ 18.4; screen dims on iOS < 18.4 (documented behavior — PASS) | PASS | Accepted per documentation. The device iOS version was not captured by the operator; Wake Lock behavior is accepted per the documented WebKit bug 254545 limitation (screen may dim in iOS < 18.4 standalone mode — expected, not a regression). Operator approved this scenario. |
+| iOS-4 | Check app icon on Home Screen | Correct orb icon, not a screenshot thumbnail | PASS | Operator confirmed correct orb icon on home screen. After initial UAT, icons were redesigned to dark orb-glow (commit 29425f1 — dark #2e3440 background + frost-blue glowing orb) because the original light orb was washed out against neighboring app icons. Operator re-confirmed the new dark orb-glow icon: "it worked, better icon, approved". |
+| iOS-5 | Check status bar in standalone mode | Theme color visible; no browser address bar | PASS | Operator approved. App runs in standalone mode with no browser address bar. |
+| iOS-6 | Verify app name on Home Screen | Shows "HRV Breathing" | PASS | Operator confirmed home-screen name reads "HRV Breathing" — confirmed via operator screenshot. |
 
 **Result values:** `PASS` / `FAIL` / `SKIP` (with reason)
+
+---
+
+## UAT Summary
+
+**Total:** 6 | **Passed:** 6 | **Failed:** 0 | **Skipped:** 0
+
+**Operator sign-off:** Approved on 2026-05-16. All six scenarios passed. Icon redesign (commit 29425f1) was done post-initial-UAT and re-confirmed by operator before final sign-off.
 
 ---
 
