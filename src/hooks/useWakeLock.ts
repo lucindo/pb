@@ -31,7 +31,15 @@ export function useWakeLock(): UseWakeLock {
   const sentinelRef = useRef<WakeLockSentinel | null>(null)
   const wasAcquiredRef = useRef<boolean>(false)
   const requestInFlightRef = useRef<boolean>(false)              // WAKELOCK-01: concurrent-request gate.
-  const releaseCalledDuringRequestRef = useRef<boolean>(false)   // WAKELOCK-01: release-during-await signal.
+  // AH-WR-01: monotonic generation counter (mirror of reconstructGenerationRef in
+  // useAudioCues). A request() → release() → request() sequence within a single
+  // await window cannot be expressed by a single discard boolean — the boolean
+  // could be cleared by the wrong request, leaving wasAcquiredRef leaked `true`
+  // with no live sentinel. The counter is stamped at the top of request(),
+  // re-checked post-await, and bumped in release() and unmount cleanup; a stamp
+  // mismatch means a release()/unmount/newer-request ran during the await, so the
+  // freshly-acquired sentinel is discarded and no state is mutated.
+  const requestGenerationRef = useRef<number>(0)
 
   const request = useCallback(async (): Promise<void> => {
     // D-09: silent fallback when API absent (RESEARCH Pitfall 4 — non-optional in types
@@ -41,12 +49,14 @@ export function useWakeLock(): UseWakeLock {
     if (sentinelRef.current !== null) return
     // WAKELOCK-01: second concurrent caller no-ops while first await is pending.
     if (requestInFlightRef.current) return
+    // AH-WR-01: stamp this request's generation token before the await.
+    const gen = requestGenerationRef.current
     try {
       requestInFlightRef.current = true
       const sentinel = await navigator.wakeLock.request('screen')
-      // WAKELOCK-01: release()/unmount ran during the await; discard the freshly-acquired sentinel.
-      if (releaseCalledDuringRequestRef.current) {
-        releaseCalledDuringRequestRef.current = false
+      // AH-WR-01: release()/unmount/a newer request ran during the await; discard
+      // the freshly-acquired sentinel and leave all state untouched.
+      if (gen !== requestGenerationRef.current) {
         void sentinel.release().catch(() => undefined)
         return
       }
@@ -73,8 +83,11 @@ export function useWakeLock(): UseWakeLock {
   }, [])
 
   const release = useCallback(async (): Promise<void> => {
-    // WAKELOCK-01: if request() is awaiting, signal post-await to discard.
-    if (requestInFlightRef.current) releaseCalledDuringRequestRef.current = true
+    // AH-WR-01: bump the generation counter so any in-flight request() discards
+    // its sentinel post-await. Always bumped (not gated on requestInFlightRef) so
+    // a request() that starts and resolves entirely between two release() calls
+    // still observes a stamp mismatch.
+    ++requestGenerationRef.current
     // Synchronous-null-then-async-close mirrors useAudioCues.stop() (useAudioCues.ts:123-135).
     // wasAcquiredRef cleared synchronously to halt visibility re-acquires (D-04 inverse).
     wasAcquiredRef.current = false
@@ -102,8 +115,9 @@ export function useWakeLock(): UseWakeLock {
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
-      // WAKELOCK-01: unmount-during-await orphans the in-flight sentinel; signal post-await to discard.
-      if (requestInFlightRef.current) releaseCalledDuringRequestRef.current = true
+      // AH-WR-01: unmount-during-await orphans the in-flight sentinel; bump the
+      // generation counter so request() discards it post-await.
+      ++requestGenerationRef.current
       // Pitfall 6: unmount-cleanup race against in-flight request(). Synchronously
       // null the sentinel ref BEFORE the await on release() so a fast new request()
       // arriving during the unmount window doesn't see a half-released sentinel.
