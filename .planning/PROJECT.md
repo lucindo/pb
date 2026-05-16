@@ -83,6 +83,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 v1.3 Release Polish — requirements defined in `.planning/REQUIREMENTS.md`: LICENSE + README, Forrest native-app links, labels-vs-icons toggle, PWA install (PWA-01).
 
 - [x] **I18N-07** — PT-BR native-speaker review. Validated in Phase 26: all 98 `// TODO: native-speaker review` markers removed from `src/content/`; pt-BR catalogs corrected to native quality (RPM/VFC glossary applied, operator override kept short `Puxa`/`Solta` inhale/exhale labels for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state. Frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
+- [x] **PWA-01/02/03** — Installable, offline-capable PWA. Validated in Phase 27: `vite-plugin-pwa` wired as a build-time devDependency (zero net-new runtime deps — `dependencies` stays `react` + `react-dom`); `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell (17 entries) for full offline sessions; silent `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell or interrupting a running session; dark orb-glow install icons; iOS PWA meta tags; README documents the iOS < 18.4 standalone Wake Lock limitation (WebKit bug 254545). Real-device iOS standalone UAT (iOS 18.7.9) passed all six scenarios.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -195,4 +196,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 — Phase 26 complete (I18N-07 PT-BR native-speaker review validated)*
+*Last updated: 2026-05-16 — Phase 27 complete (PWA-01/02/03 installable offline PWA validated; last phase of v1.3 Release Polish)*
