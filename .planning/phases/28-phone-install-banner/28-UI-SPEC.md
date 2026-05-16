@@ -113,8 +113,8 @@ established in MuteToggle.tsx and SettingsStepper.tsx.
 - Action button (Android: "Install" / iOS: "How to install") is right of text,
   left of × dismiss button
 - Dismiss × is the rightmost element; 44×44px touch target
-- Total banner height: 56px (padding 6px top/bottom + 44px content row). This
-  is the minimum that provides 44px touch targets without visual padding waste.
+- Total banner height: 60px (padding 8px top/bottom (py-2, sm token) + 44px content row).
+  This is the minimum that provides 44px touch targets without visual padding waste.
 - Horizontal padding: 16px left and right (px-4)
 - Position: normal document flow, bottom of page content, below StatsFooter.
   D-02 source: 28-CONTEXT.md
