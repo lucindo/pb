@@ -17,8 +17,10 @@ export interface CueGlyphProps {
   phase: 'in' | 'out'
   phaseLabel: string
   // preview: picker-swatch rendering. Uses the variant-picker swatch color token
-  // (--color-orb-in-from) so the glyph stays visible on dark themes, and renders a
-  // single "T" for labels mode instead of the full phase word (which overflows the swatch).
+  // (--color-orb-in-from) so the glyph stays visible on dark themes, and renders the
+  // first character of phaseLabel for labels mode instead of the full phase word
+  // (which overflows the swatch). Preview glyphs are purely decorative — the arrow/nose
+  // branches skip the sr-only span entirely so the picker swatch emits no a11y node.
   preview?: boolean
 }
 
@@ -74,7 +76,7 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
         className="relative z-10 text-5xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-6xl"
         style={{ color: colorToken }}
       >
-        {preview ? 'T' : phaseLabel}
+        {preview ? phaseLabel.charAt(0) : phaseLabel}
       </span>
     )
   }
@@ -87,14 +89,17 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
         {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint */}
         <svg
           aria-hidden="true"
+          focusable="false"
           viewBox="0 0 100 100"
           className="h-12 w-12 sm:h-16 sm:w-16"
           fill="currentColor"
         >
           <path d={pathD} />
         </svg>
-        {/* CUE-03: visually-hidden localized In/Out word for screen readers */}
-        <span className="sr-only">{phaseLabel}</span>
+        {/* CUE-03: visually-hidden localized In/Out word for screen readers.
+            Skipped in preview mode — picker swatches are decorative (CuePicker
+            wraps them in aria-hidden) and should emit no accessibility node. */}
+        {!preview && <span className="sr-only">{phaseLabel}</span>}
       </span>
     )
   }
@@ -106,6 +111,7 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
       {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint */}
       <svg
         aria-hidden="true"
+        focusable="false"
         viewBox="0 0 100 100"
         className="h-12 w-12 sm:h-16 sm:w-16"
         fill="none"
@@ -126,8 +132,10 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
           <polyline key={pts} points={pts} />
         ))}
       </svg>
-      {/* CUE-03: visually-hidden localized In/Out word for screen readers */}
-      <span className="sr-only">{phaseLabel}</span>
+      {/* CUE-03: visually-hidden localized In/Out word for screen readers.
+          Skipped in preview mode — picker swatches are decorative (CuePicker
+          wraps them in aria-hidden) and should emit no accessibility node. */}
+      {!preview && <span className="sr-only">{phaseLabel}</span>}
     </span>
   )
 }
