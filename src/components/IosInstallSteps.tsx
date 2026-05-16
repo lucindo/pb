@@ -17,14 +17,17 @@ export function IosInstallSteps({ id, strings }: IosInstallStepsProps) {
     <div id={id} aria-live="polite" className="pt-4 text-sm leading-6">
       {/* WR-04: ordered list conveys the sequential step relationship both
           visually (numbering) and to assistive tech. */}
+      {/* All three steps carry explicit theme-aware var(--color-breathing-*) tokens:
+          step 1 = accent-strong (first-step highlight per 29-UI-SPEC §Color);
+          steps 2 & 3 = muted (clears WCAG AA 4.5 on all 5 themes, dark muted-vs-bg = 5.36). */}
       <ol className="list-decimal pl-5">
         <li className="text-[var(--color-breathing-accent-strong)]">
           {strings.iosStep1}
           {' '}
           <IOsShareIcon />
         </li>
-        <li>{strings.iosStep2}</li>
-        <li>{strings.iosStep3}</li>
+        <li className="text-[var(--color-breathing-muted)]">{strings.iosStep2}</li>
+        <li className="text-[var(--color-breathing-muted)]">{strings.iosStep3}</li>
       </ol>
     </div>
   )
