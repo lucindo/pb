@@ -1,184 +1,102 @@
 ---
 phase: 29-settings-install-entry-localization
-reviewed: 2026-05-16T00:00:00Z
+reviewed: 2026-05-16T18:08:00Z
 depth: standard
-files_reviewed: 7
+files_reviewed: 2
 files_reviewed_list:
-  - src/app/App.tsx
-  - src/components/InstallBanner.tsx
-  - src/components/IosInstallSteps.test.tsx
   - src/components/IosInstallSteps.tsx
-  - src/components/SettingsDialog.test.tsx
-  - src/components/SettingsDialog.tsx
-  - src/content/strings.ts
+  - src/components/IosInstallSteps.test.tsx
 findings:
   critical: 0
-  warning: 3
-  info: 4
-  total: 7
+  warning: 1
+  info: 1
+  total: 2
 status: issues_found
 ---
 
-# Phase 29: Code Review Report
+# Phase 29: Code Review Report (gap-closure 29-03)
 
-**Reviewed:** 2026-05-16T00:00:00Z
+**Reviewed:** 2026-05-16T18:08:00Z
 **Depth:** standard
-**Files Reviewed:** 7
+**Files Reviewed:** 2
 **Status:** issues_found
+
+> Scope note: This review covers only the GAP-1 gap-closure changes from plan
+> 29-03 (`src/components/IosInstallSteps.tsx` and its test). It supersedes the
+> earlier full-phase review of this file. The earlier review's IN-04
+> ("first `<li>` has an explicit color class the other two lack") is the exact
+> defect GAP-1 closed and is now resolved.
 
 ## Summary
 
-Phase 29 extracts the iOS install step list into a shared `IosInstallSteps`
-component and adds an install entry row to `SettingsDialog`, with localized
-strings for both EN and PT-BR. The diff is small and the implementation is
-generally sound: the shared component is correctly parameterized with a unique
-`id` prop, prop drilling from `App.tsx` is consistent, and the new strings are
-fully typed in both locales.
+Plan 29-03 closes GAP-1: the iOS install steps rendered near-black text that was
+unreadable on dark theme backgrounds. The fix applies theme-aware
+`var(--color-breathing-*)` text-color tokens to all three step `<li>` elements
+(step 1 = `accent-strong`, steps 2 & 3 = `muted`) and adds a regression test
+asserting the contract.
 
-No critical (BLOCKER) issues found — no security defects, no crashes, no data
-loss paths. Three WARNING-level defects exist: a stale-state bug where the iOS
-expander does not reset across dialog open/close cycles, an install-row that
-disappears under the user's cursor after an Android install, and a missing test
-for the most important Settings-install behavior (the disabled state during a
-session). Four INFO items cover minor quality concerns.
+The change is correct and minimal. Both tokens are confirmed defined in all five
+`[data-theme]` blocks of `src/styles/theme.css`, and the usage matches the
+existing convention in sibling components (`InstallBanner.tsx`, `StatsFooter.tsx`,
+`App.tsx`). All 4 tests pass.
+
+No critical (BLOCKER) issues. One WARNING (the `<ol>` numbering markers are an
+unverified part of the fix) and one INFO (the regression test is string-based,
+not style-based).
 
 ## Warnings
 
-### WR-01: `iosExpanded` state is not reset when SettingsDialog closes
+### WR-01: Ordered-list numbering markers are not explicitly themed — partial GAP-1 surface uncovered
 
-**File:** `src/components/SettingsDialog.tsx:44`
-**Issue:** `iosExpanded` is component-local `useState` that lives for the entire
-mounted lifetime of `SettingsDialog`. The dialog is never unmounted — `App.tsx`
-keeps `<SettingsDialog>` in the tree always and toggles visibility via the
-`open` prop and the imperative `showModal()` / `close()` effect (lines 48-64).
-Consequently, if an iOS user expands the install steps, closes the dialog, and
-re-opens it, the steps are still expanded from the previous session. The
-disclosure button's `aria-expanded` will correctly read `true`, but the user
-expected a fresh (collapsed) dialog. This also means the `aria-live="polite"`
-region in `IosInstallSteps` is present in the DOM immediately on re-open rather
-than being announced as a fresh expansion.
-**Fix:** Reset `iosExpanded` to `false` when the dialog transitions to closed.
-Add to the existing open/close effect:
+**File:** `src/components/IosInstallSteps.tsx:23-31`
+**Issue:** GAP-1 is "near-black text unreadable on dark backgrounds." The fix
+colors the *step text* by setting `color` on each `<li>`. The `list-decimal`
+numbering markers ("1.", "2.", "3.") are rendered by the `::marker` pseudo-element,
+which inherits `color` from its `<li>`. Because each `<li>` now sets a color, the
+markers happen to be themed correctly today — but this coupling is implicit and
+fragile. A common future refactor (moving the color onto an inner `<span>` inside
+the `<li>`, or extracting step text into a child component) would leave the `<li>`
+without a `color`, silently reverting the markers to the near-black page default
+and partially reopening GAP-1. The regression test (see IN-01) asserts the `<li>`
+className string, so it would still pass after such a regression — the marker
+readability would not be caught.
+**Fix:** Centralize the color on the `<ol>` so every descendant (markers + all
+step text) is themed from one place, then layer the step-1 emphasis on top:
 ```tsx
-} else if (!open && dialog.open) {
-  dialog.close()
-  setIosExpanded(false)  // reset disclosure so a re-open starts collapsed
-}
+<ol className="list-decimal pl-5 text-[var(--color-breathing-muted)]">
+  <li className="text-[var(--color-breathing-accent-strong)]">
+    {strings.iosStep1} <IOsShareIcon />
+  </li>
+  <li>{strings.iosStep2}</li>
+  <li>{strings.iosStep3}</li>
+</ol>
 ```
-Note `InstallBanner.tsx` does not have this problem — it is conditionally
-mounted/unmounted by the `showBanner` gate in `App.tsx`, so its `iosExpanded`
-state is destroyed and recreated each time.
-
-### WR-02: Android install row vanishes under the cursor after a successful install
-
-**File:** `src/components/SettingsDialog.tsx:107`, `src/app/App.tsx:827`
-**Issue:** The install row visibility is `installable && !isStandalone`, where
-`installable = isIOS || deferredPrompt !== null` is computed in `App.tsx:827`.
-On Android, after the user clicks the install button, `triggerInstall()` calls
-`deferredPrompt.prompt()` and then `setDeferredPrompt(null)`
-(`useBeforeInstallPrompt.ts`). On the next render `installable` becomes `false`
-and the entire install row unmounts — while the SettingsDialog itself stays
-open. The user's focus was on the (now-removed) install button; native
-`<dialog>` focus is left dangling and the dialog content visibly shifts. If the
-user *dismissed* the native prompt (outcome `'dismissed'`), the row also
-disappears even though no install happened, giving no way to retry without
-closing and reopening Settings.
-**Fix:** Either keep the row visible after `prompt()` is consumed (track a
-separate "install completed" flag and only hide on confirmed `appinstalled`),
-or, at minimum, close the SettingsDialog as part of the install action so the
-content does not mutate under the user. Closing the dialog on install click is
-the smaller change:
-```tsx
-onClick={() => { void onInstall(); onClose() }}
-```
-
-### WR-03: No test covers the install row / iOS toggle disabled state during a session
-
-**File:** `src/components/SettingsDialog.test.tsx:165-202`
-**Issue:** `SettingsDialog.tsx` threads `disabled={inSessionView}` onto both the
-iOS steps-toggle button (line 119) and the Android install button (line 130).
-The phase's stated invariant is that all interactive Settings controls are
-inert during a session (Landmine 7 — every picker receives `disabled`). The new
-`install row` describe block exercises `installable`, `isStandalone`, `isIOS`,
-and the click handlers, but never renders with `inSessionView: true`, so the
-`disabled` wiring on the two install buttons is completely unverified. A
-regression that drops `disabled={inSessionView}` from either button would let a
-user trigger `onInstall()` mid-session and ship green.
-**Fix:** Add a test in the install-row describe block:
-```tsx
-it('install button is disabled during a session (inSessionView=true)', () => {
-  renderDialog({ open: true, installable: true, isIOS: false, inSessionView: true })
-  expect(screen.getByRole('button', { name: EN_STRINGS_FIXTURE.install.installButton }))
-    .toBeDisabled()
-})
-it('iOS steps-toggle is disabled during a session (inSessionView=true)', () => {
-  renderDialog({ open: true, installable: true, isIOS: true, inSessionView: true })
-  expect(screen.getByRole('button', { name: EN_STRINGS_FIXTURE.install.iosStepsButton }))
-    .toBeDisabled()
-})
-```
+This guarantees no element in the subtree falls back to the page default. (Note:
+the current per-`<li>` token assertions in the test would need to be relaxed for
+steps 2 & 3 if this fix is adopted.) If the per-`<li>` approach is kept
+intentionally, add a code comment stating that `::marker` color is deliberately
+driven by the `<li>` `color` property so the coupling is not lost in a refactor.
 
 ## Info
 
-### IN-01: `onInstall` rejection is swallowed silently in both consumers
+### IN-01: Regression test asserts static class strings, not resolved color
 
-**File:** `src/components/InstallBanner.tsx:59`, `src/components/SettingsDialog.tsx:131`
-**Issue:** Both call sites invoke the install action as `() => { void onInstall() }`.
-`onInstall` is typed `Promise<void>` and `triggerInstall` awaits
-`deferredPrompt.prompt()`, which can reject (browser-internal failure). The
-`void` discards the promise, so a rejection becomes an unhandled promise
-rejection with no user-visible feedback. The current `triggerInstall` body
-happens not to throw on the no-op path, but the type contract allows rejection
-and a future change to `prompt()` handling would surface here.
-**Fix:** Attach a catch at the call site, e.g.
-`onClick={() => { onInstall().catch(() => {}) }}`, or have `triggerInstall`
-guarantee it never rejects (wrap the `prompt()` call in try/catch).
-
-### IN-02: `IosInstallSteps` is rendered in two places with two hardcoded ids — collision is one edit away
-
-**File:** `src/components/InstallBanner.tsx:77`, `src/components/SettingsDialog.tsx:125`
-**Issue:** The shared component was correctly built to take an `id` prop so no
-literal is baked into `IosInstallSteps` itself (Pitfall 3). But the two
-consumers each hardcode their own literal — `"install-ios-steps"` and
-`"settings-ios-steps"` — and the matching `aria-controls` literals are repeated
-separately on the toggle buttons (`InstallBanner.tsx:50`,
-`SettingsDialog.tsx:118`). The banner and the dialog can both be in the DOM at
-the same time (idle + Settings open), so if a future edit accidentally aligns
-the two literals, two elements would share an id and `aria-controls` would be
-ambiguous, with no test catching it. Consider deriving the `id` from a shared
-constant or `useId()` so the toggle button and the steps container cannot drift
-apart.
-**Fix:** Low priority. Co-locate each `id`/`aria-controls` pair as a single
-`const` per consumer, or use React's `useId()` and pass the same value to both
-`aria-controls` and the `IosInstallSteps` `id` prop.
-
-### IN-03: `IosInstallSteps` test does not assert step ordering or the `<ol>` semantics
-
-**File:** `src/components/IosInstallSteps.test.tsx:18-23`
-**Issue:** The component's WR-04 comment states the ordered-list semantics are
-load-bearing (sequential steps conveyed to assistive tech via `<ol>`). The test
-asserts all three step texts are present and the SVG exists, but never asserts
-the container is an `<ol>` / `list-decimal`, nor that the steps appear in
-1-2-3 order. A refactor to an unordered `<ul>` or a `<div>` stack would not be
-caught.
-**Fix:** Add `expect(container.querySelector('ol')).not.toBeNull()` and assert
-the three `<li>` texts appear in document order.
-
-### IN-04: `IosInstallSteps` first `<li>` has an explicit color class the other two lack
-
-**File:** `src/components/IosInstallSteps.tsx:21-27`
-**Issue:** The first `<li>` carries
-`className="text-[var(--color-breathing-accent-strong)]"` while `<li>` 2 and 3
-have no className and inherit the parent `<div>`'s default text color. This is
-an inconsistent style with no stated reason — likely a copy artifact from the
-pre-extraction `InstallBanner` markup. It produces a subtly two-toned step list
-(step 1 visually emphasized, steps 2-3 muted). Either apply the color
-uniformly to all three steps or remove it from step 1 for a consistent list.
-**Fix:** Move the color class to the parent `<ol>` (or `<div>`) so all steps
-render identically, or drop it.
+**File:** `src/components/IosInstallSteps.test.tsx:41-56`
+**Issue:** The GAP-1 regression test verifies `li.className` contains the literal
+substring `var(--color-breathing-`. This confirms the JSX still carries the
+class, but does not verify the token resolves to a readable color, nor that the
+`::marker` is themed (see WR-01). The assertion essentially restates the source
+JSX, so it would not catch a CSS-side regression — e.g. a token removed from
+`theme.css`, or the Tailwind arbitrary-value class failing to compile. This is an
+acceptable structural guard given jsdom does not resolve CSS custom properties;
+flagged as INFO, not a defect.
+**Fix:** No change required for this phase. For stronger coverage later, assert
+on `getComputedStyle` in a browser-mode/Playwright test where the theme CSS is
+actually applied, or assert the tokens exist in `theme.css`.
 
 ---
 
-_Reviewed: 2026-05-16T00:00:00Z_
+_Reviewed: 2026-05-16T18:08:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
+</content>
