@@ -18,7 +18,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). See STATE.md `## Deferred Items` for the full register.
 
-**Next milestone:** v1.4 Install Helper — surface install-to-home-screen discovery UX (dismissible phone banner + persistent Settings option) on top of the Phase 27 PWA infrastructure.
+**In progress:** v1.4 Install Helper — Phase 28 Phone Install Banner complete (2026-05-16): phone-class + standalone detection hooks, Android `beforeinstallprompt` capture, `InstallBanner` (Android button + iOS guided steps) wired into `App.tsx` behind the `showBanner` gate, dismissal persisted in `localStorage`. 987/987 tests pass. Phase 29 (Settings install entry + EN/PT-BR localization) remains.
 
 ## Current Milestone: v1.4 Install Helper
 
@@ -86,12 +86,14 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] **I18N-07 (Phase 26)** — PT-BR native-speaker review: all 98 `// TODO: native-speaker review` markers removed from `src/content/`; pt-BR catalogs corrected to native quality (RPM/VFC glossary applied, operator override kept short `Puxa`/`Solta` inhale/exhale labels for UI fit); new `content.no-review-markers.test.ts` fs-scan drift-guard locks the done-state. Frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type completeness intact.
 - [x] **PWA-01/02/03 (Phase 27)** — Installable, offline-capable PWA: `vite-plugin-pwa` wired as a build-time devDependency (zero net-new runtime deps — `dependencies` stays `react` + `react-dom`); `/hrv/`-scoped Web App Manifest with maskable + Apple touch icons; Workbox `generateSW` service worker precaches the app shell (17 entries) for full offline sessions; silent `autoUpdate` + `cleanupOutdatedCaches` rolls updates without a stale shell or interrupting a running session; dark orb-glow install icons; iOS PWA meta tags; README documents the iOS < 18.4 standalone Wake Lock limitation (WebKit bug 254545). Real-device iOS standalone UAT (iOS 18.7.9) passed all six scenarios.
 
+**v1.4 Install Helper:**
+
+- [x] **INSTALL-01..05 (Phase 28)** — Phone install banner: `useIsStandaloneOrPhone` gates on `(pointer: coarse)` for phone-class + `(display-mode: standalone)`/`navigator.standalone` for installed-PWA state; `useBeforeInstallPrompt` captures the Android `beforeinstallprompt` and replays it from the user-gesture chain; `InstallBanner` shows the Android install-button path and the iOS inline-expand "Share → Add to Home Screen" steps; wired into `App.tsx` behind the composed `showBanner` gate (phone, not standalone, not dismissed, idle, iOS-or-deferredPrompt); dismissal persisted in `localStorage` (`hrv:install-dismissed`); EN copy final, PT-BR draft; 987/987 tests pass. Validated in Phase 28: Phone Install Banner (automated 5/5; 6 human-device UAT items tracked in `28-HUMAN-UAT.md`).
+
 ### Active
 
 **v1.4 Install Helper (defining requirements 2026-05-16):**
 
-- [ ] Detect phone-class browsers and the installed-PWA (standalone) state to gate install UX
-- [ ] Dismissible phone install banner — Android native prompt + iOS guided instructions
 - [ ] Persistent install option in SettingsDialog whenever running in a browser
 - [ ] Localized EN + PT-BR copy for both install surfaces
 
@@ -213,4 +215,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after v1.4 Install Helper milestone start*
+*Last updated: 2026-05-16 after Phase 28 Phone Install Banner completion*
