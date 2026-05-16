@@ -35,13 +35,13 @@ uat-summary:
 
 | Field | Value |
 |-------|-------|
-| Device model | not captured by operator |
-| iOS version | not captured by operator |
+| Device model | iPhone (notch-class) |
+| iOS version | iOS 18.7.9 |
 | Safari version | not captured by operator |
 | Test date | 2026-05-16 |
-| Tester | not captured by operator |
+| Tester | operator (lucindo) |
 
-> **Note for iOS-3:** Wake Lock behavior depends on the iOS version above. On iOS **>= 18.4** the screen should stay on throughout the session. On iOS **< 18.4** the screen may dim mid-session — this is the documented WebKit bug 254545 behavior and counts as a **PASS** (expected, not a regression). The device iOS version was not captured; the operator approved this scenario accepting the documented limitation.
+> **Note for iOS-3:** The test device runs iOS **18.7.9** (>= 18.4), so Wake Lock is available in standalone PWA mode — the screen stays on throughout a session. The documented WebKit bug 254545 limitation (screen dims in iOS < 18.4 standalone mode) does NOT apply to this device; iOS-3 passed on the normal Wake Lock path.
 
 ---
 
@@ -51,7 +51,7 @@ uat-summary:
 |---|----------|---------------|--------|-------|
 | iOS-1 | Install via Safari Share → Add to Home Screen | App icon appears correctly; opens in standalone mode (no browser chrome) | PASS | Operator confirmed via screenshot: app installs to home screen, opens in standalone mode with no browser chrome. Install icon was initially the light orb (#5e81ac on #eceff4), then redesigned to dark orb-glow (commit 29425f1) after initial UAT; operator re-added to home screen and confirmed the new icon. |
 | iOS-2 | Launch from Home Screen, disable network, start session | Session runs; audio cues play; orb animates — fully offline | PASS | Operator approved. Session ran fully offline in standalone mode. |
-| iOS-3 | Run a 2-min session, then put device to sleep | Session resumes correctly on wake if iOS ≥ 18.4; screen dims on iOS < 18.4 (documented behavior — PASS) | PASS | Accepted per documentation. The device iOS version was not captured by the operator; Wake Lock behavior is accepted per the documented WebKit bug 254545 limitation (screen may dim in iOS < 18.4 standalone mode — expected, not a regression). Operator approved this scenario. |
+| iOS-3 | Run a 2-min session, then put device to sleep | Session resumes correctly on wake if iOS ≥ 18.4; screen dims on iOS < 18.4 (documented behavior — PASS) | PASS | Device runs iOS 18.7.9 (>= 18.4) — Wake Lock works in standalone PWA mode; session continued correctly on wake. The WebKit bug 254545 < 18.4 limitation does not apply to this device. Operator approved this scenario. |
 | iOS-4 | Check app icon on Home Screen | Correct orb icon, not a screenshot thumbnail | PASS | Operator confirmed correct orb icon on home screen. After initial UAT, icons were redesigned to dark orb-glow (commit 29425f1 — dark #2e3440 background + frost-blue glowing orb) because the original light orb was washed out against neighboring app icons. Operator re-confirmed the new dark orb-glow icon: "it worked, better icon, approved". |
 | iOS-5 | Check status bar in standalone mode | Theme color visible; no browser address bar | PASS | Operator approved. App runs in standalone mode with no browser address bar. |
 | iOS-6 | Verify app name on Home Screen | Shows "HRV Breathing" | PASS | Operator confirmed home-screen name reads "HRV Breathing" — confirmed via operator screenshot. |
