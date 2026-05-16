@@ -229,6 +229,19 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // Plan 06 D-36: remove the statechange listener BEFORE close() so a final
       // 'closed' transition does not fire after the hook has nulled engineRef.
       audioCtx.removeEventListener('statechange', onStateChange)
+      // AH-WR-03: node cleanup is otherwise driven entirely by the oscillator
+      // 'ended' event (AUDIO-04 explicit-disconnect contract in cueSynth). The
+      // Web Audio spec does NOT guarantee 'ended' fires for an oscillator whose
+      // stopAt is still in the future when audioCtx.close() runs — so a cue
+      // scheduled close to the close() call could leak its node chain. Before
+      // closing the context, explicitly disconnect every in-flight cue's
+      // envelope (the GainNode wired to destination — the only node the
+      // CueHandle exposes; tearing this edge severs the chain from the graph
+      // output) and clear the Set so the handles become GC-able.
+      for (const cue of [...activeCues]) {
+        try { cue.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+      }
+      activeCues.clear()
       // Pitfall 8: in-flight cue tails (up to ~5× decayTimeConstant) ring out via the audio
       // thread's already-scheduled gain ramps. We close immediately and trust those ramps
       // to drain naturally. D-11: closing AudioContext releases the system audio resources.
