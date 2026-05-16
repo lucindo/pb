@@ -1,6 +1,7 @@
-import { useEffect, useRef, type MouseEventHandler } from 'react'
+import { useEffect, useRef, useState, type MouseEventHandler } from 'react'
 
 import { CuePicker } from './CuePicker'
+import { IosInstallSteps } from './IosInstallSteps'
 import { LanguagePicker } from './LanguagePicker'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
@@ -30,11 +31,17 @@ export interface SettingsDialogProps {
   open: boolean
   onClose(this: void): void
   inSessionView: boolean
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'cue' | 'timbres'>
+  strings: Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'cue' | 'timbres' | 'install'>
+  // Phase 29 additions (D-01 through D-10):
+  isIOS: boolean
+  isStandalone: boolean
+  installable: boolean          // = isIOS || deferredPrompt !== null, pre-computed in App.tsx
+  onInstall(this: void): Promise<void>
 }
 
-export function SettingsDialog({ open, onClose, inSessionView, strings }: SettingsDialogProps) {
+export function SettingsDialog({ open, onClose, inSessionView, strings, isIOS, isStandalone, installable, onInstall }: SettingsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const [iosExpanded, setIosExpanded] = useState<boolean>(false)
 
   // Imperative open/close so the browser sets up <dialog>'s top-layer + inert behavior.
   // D-13: no explicit focus call — SettingsDialog has no destructive default; native focus-return only.
@@ -94,6 +101,42 @@ export function SettingsDialog({ open, onClose, inSessionView, strings }: Settin
         <CuePicker disabled={inSessionView} strings={strings.cue} sectionLabel={strings.settings.cueLabel} />
         <TimbrePicker disabled={inSessionView} strings={strings.timbres} sectionLabel={strings.settings.timbreLabel} />
         <LanguagePicker disabled={inSessionView} sectionLabel={strings.settings.languageLabel} />
+        {/* D-01/D-02: install row — last block before Close, below Language picker.
+            D-04/D-08: shown only when installable AND not already standalone.
+            D-09/D-10: no isPhone check — present on desktop Chrome/Edge too. */}
+        {installable && !isStandalone && (
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">
+              {strings.install.settingsLabel}
+            </p>
+            <div className="mt-2">
+              {isIOS ? (
+                <>
+                  <button
+                    type="button"
+                    aria-expanded={iosExpanded}
+                    aria-controls="settings-ios-steps"
+                    disabled={inSessionView}
+                    onClick={() => { setIosExpanded(prev => !prev) }}
+                    className="min-h-[44px] text-sm font-semibold text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {strings.install.iosStepsButton}
+                  </button>
+                  {iosExpanded && <IosInstallSteps id="settings-ios-steps" strings={strings.install} />}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled={inSessionView}
+                  onClick={() => { void onInstall() }}
+                  className="min-h-[44px] rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-sm font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {strings.install.installButton}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {/* D-11 + D-18: explicit Close button — primary mobile dismiss path */}
         <div className="flex justify-center">
           <button
