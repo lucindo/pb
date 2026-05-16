@@ -47,8 +47,12 @@ export function SettingsStepper<T extends string | number>({
           {label}
         </legend>
         <div className="mt-3 flex items-center justify-center">
+          {/* AC-WR-06: read-only computed field — aria-live="off" so locale swaps
+              (the minutesUnit suffix changing) and mount do not produce screen-reader
+              noise on a value the user cannot directly change. The interactive
+              steppers below keep aria-live="polite". */}
           <output
-            aria-live="polite"
+            aria-live="off"
             className="min-w-32 rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
           >
             {formatValue(value)}
