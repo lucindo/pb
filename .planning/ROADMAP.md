@@ -28,7 +28,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 ### v1.4 Install Helper
 
 - [x] **Phase 28: Phone Install Banner** — Slim dismissible banner on phone browsers: Android native prompt + iOS guided instructions, never shown when already installed (completed 2026-05-16)
-- [ ] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces
+- [x] **Phase 29: Settings Install Entry & Localization** — Persistent install option in SettingsDialog for all browsers, plus EN + PT-BR copy on both install surfaces (completed 2026-05-16)
 
 ## Phase Details
 
@@ -59,7 +59,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   4. The Settings install entry is absent when the app is already running in standalone (installed) mode
 **Plans**: 2 plans
 - [x] 29-01-PLAN.md — Extract shared IosInstallSteps component, refactor InstallBanner, add settingsLabel string key
-- [ ] 29-02-PLAN.md — Mount install row in SettingsDialog (prop-drilled from App.tsx), finalize PT-BR install copy
+- [x] 29-02-PLAN.md — Mount install row in SettingsDialog (prop-drilled from App.tsx), finalize PT-BR install copy
 **UI hint**: yes
 
 ## Progress
@@ -67,7 +67,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 28. Phone Install Banner | 3/3 | Complete    | 2026-05-16 |
-| 29. Settings Install Entry & Localization | 1/2 | In Progress|  |
+| 29. Settings Install Entry & Localization | 2/2 | Complete   | 2026-05-16 |
 
 ---
 

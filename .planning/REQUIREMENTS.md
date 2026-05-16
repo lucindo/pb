@@ -15,8 +15,8 @@ Builds on the Phase 27 PWA infrastructure (manifest, Workbox service worker, ins
 - [x] **INSTALL-03**: User on iOS Safari sees guided "Share → Add to Home Screen" steps in the banner (no native install prompt exists on iOS)
 - [x] **INSTALL-04**: User who dismisses the banner never sees it again — dismissal persists across visits
 - [x] **INSTALL-05**: User already running the app installed (standalone display mode) sees no install banner
-- [ ] **INSTALL-06**: User can find a persistent install option in SettingsDialog whenever the app runs in a browser, including desktop
-- [ ] **INSTALL-07**: User sees all install banner and Settings copy in their selected language (EN and PT-BR)
+- [x] **INSTALL-06**: User can find a persistent install option in SettingsDialog whenever the app runs in a browser, including desktop
+- [x] **INSTALL-07**: User sees all install banner and Settings copy in their selected language (EN and PT-BR)
 
 ## Future Requirements
 
@@ -46,8 +46,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INSTALL-03 | Phase 28 | Complete |
 | INSTALL-04 | Phase 28 | Complete |
 | INSTALL-05 | Phase 28 | Complete |
-| INSTALL-06 | Phase 29 | Pending |
-| INSTALL-07 | Phase 29 | Pending |
+| INSTALL-06 | Phase 29 | Complete |
+| INSTALL-07 | Phase 29 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 7 total
