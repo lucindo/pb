@@ -38,6 +38,15 @@ function readEnvelope(): Record<string, unknown> | null {
   return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
 }
 
+// Phase 30: after the v1→v2 migration the authoritative resonant stats live at
+// env.practices.resonant.stats — recordResonantSession / resetPracticeStats
+// write here, not the flat env.stats orphan. This helper extracts that subtree.
+function resonantStatsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
+  const practices = env?.['practices'] as Record<string, unknown> | undefined
+  const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
+  return resonant?.['stats'] as Record<string, unknown> | undefined
+}
+
 async function startAndAdvancePastLeadIn() {
   fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
   await act(async () => {
@@ -133,9 +142,10 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Advance an extra minute so the surrounding cycle finishes (Phase 3 fix).
     await advanceTime(6 * 60_000)
     const env = readEnvelope()
-    expect(env).toMatchObject({ stats: { totalSessions: 1 } })
+    // Phase 30 Pitfall 3: the session records into practices.resonant.stats.
+    const stats = resonantStatsOf(env)
+    expect(stats?.['totalSessions']).toBe(1)
     // elapsed is at least 300s for a 5-min session
-    const stats = env?.['stats'] as Record<string, unknown> | undefined
     expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(300)
     expect(stats?.['lastSessionAtMs']).toEqual(expect.any(Number))
   })
@@ -150,8 +160,8 @@ describe('LOCL-02 — stats record on each end path', () => {
     await act(async () => { await Promise.resolve() })
     // Open-ended: no modal. End fires directly. Stats written in cleanup effect.
     const env = readEnvelope()
-    expect(env).toMatchObject({ stats: { totalSessions: 1 } })
-    const stats = env?.['stats'] as Record<string, unknown> | undefined
+    const stats = resonantStatsOf(env)
+    expect(stats?.['totalSessions']).toBe(1)
     expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(35)
   })
 
@@ -163,7 +173,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     await act(async () => { await Promise.resolve() })
     const env = readEnvelope()
-    const sessions = (env?.['stats'] as Record<string, unknown> | undefined)?.['totalSessions'] as number | undefined
+    const sessions = resonantStatsOf(env)?.['totalSessions'] as number | undefined
     expect(sessions ?? 0).toBe(0)
   })
 
@@ -180,7 +190,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await advanceTime(0)
     const env = readEnvelope()
-    const sessions2 = (env?.['stats'] as Record<string, unknown> | undefined)?.['totalSessions'] as number | undefined
+    const sessions2 = resonantStatsOf(env)?.['totalSessions'] as number | undefined
     expect(sessions2 ?? 0).toBe(0)
   })
 
@@ -194,7 +204,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // recordedSessionKeyRef prevents double-write via idempotency key.
     await advanceTime(100)
     const env = readEnvelope()
-    expect(env).toMatchObject({ stats: { totalSessions: 1 } })  // exactly one, not two (Pitfall 1)
+    expect(resonantStatsOf(env)?.['totalSessions']).toBe(1)  // exactly one, not two (Pitfall 1)
   })
 })
 
@@ -256,7 +266,8 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await act(async () => { await Promise.resolve() })
-    expect(screen.getByRole('dialog', { name: 'Reset practice stats?' })).toBeInTheDocument()
+    // Phase 30 D-08: the dialog title names the active practice being reset.
+    expect(screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })).toBeInTheDocument()
   })
 
   it('confirming Reset wipes stats subtree and re-hides footer (D-11)', async () => {
@@ -274,17 +285,18 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await act(async () => { await Promise.resolve() })
     // The dialog has a Reset button inside — use within(dialog) to target it
-    const dialog = screen.getByRole('dialog', { name: 'Reset practice stats?' })
+    const dialog = screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })
     const dialogResetBtn = within(dialog).getByRole('button', { name: 'Reset' })
     fireEvent.click(dialogResetBtn)
     await act(async () => { await Promise.resolve() })
 
-    // Stats subtree is zero (D-11 — resetStats() clears only stats)
+    // Phase 30 D-08 / Pitfall 4: resetPracticeStats zeroes the resonant
+    // practice's stats subtree.
     const env = readEnvelope()
-    expect(env).toMatchObject({
-      stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null },
+    expect(resonantStatsOf(env)).toMatchObject({
+      totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null,
     })
-    // Settings + mute survive (D-11)
+    // Settings + mute survive as forward-compat orphans (D-11)
     expect(env).toMatchObject({
       settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 },
       mute: true,
@@ -305,12 +317,12 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await act(async () => { await Promise.resolve() })
-    const dialog = screen.getByRole('dialog', { name: 'Reset practice stats?' })
+    const dialog = screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })
     const keepBtn = within(dialog).getByRole('button', { name: 'Keep' })
     fireEvent.click(keepBtn)
     await act(async () => { await Promise.resolve() })
 
-    // Stats unchanged
+    // Stats unchanged — cancel writes nothing, the seeded v1 disk is untouched.
     const env = readEnvelope()
     expect(env).toMatchObject({ stats: { totalSessions: 3 } })
     // Footer still present

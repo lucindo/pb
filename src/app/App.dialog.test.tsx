@@ -348,17 +348,16 @@ describe('WR-09 in-session dialog auto-close', () => {
     render(<App />)
 
     // Open the Reset stats modal before starting (visible "Reset" text on the button).
-    // The dialog itself is labelled by its h2 "Reset practice stats?" — see
-    // ResetStatsDialog.tsx:61.
+    // Phase 30 D-08: the dialog is labelled by its practice-named h2 title.
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
-    expect(screen.getByRole('dialog', { name: 'Reset practice stats?' })).toBeVisible()
+    expect(screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })).toBeVisible()
 
     // Start the session — inSessionView flips to true on appPhase = 'lead-in'.
     await startAndAdvancePastLeadIn()
 
     // The ResetStatsDialog must auto-close on the inSessionView transition.
     expect(
-      screen.queryByRole('dialog', { name: 'Reset practice stats?' }),
+      screen.queryByRole('dialog', { name: 'Reset Resonant Breathing stats?' }),
     ).not.toBeInTheDocument()
   })
 })

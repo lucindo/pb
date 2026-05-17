@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BreathingShape } from '../components/BreathingShape'
 import { EndSessionDialog } from '../components/EndSessionDialog'
 import { SettingsForm } from '../components/SettingsForm'
+import { PracticeToggle } from '../components/PracticeToggle'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
 import { StatsFooter } from '../components/StatsFooter'
@@ -33,15 +34,18 @@ import {
   saveSettings,
   loadMute,
   saveMute,
-  loadStats,
-  recordSession,
-  resetStats,
   loadPrefs,
   ZERO_STATS,
   STATE_KEY,
   type PersistedStats,
   loadInstallDismissed,
   saveInstallDismissed,
+  loadPractices,
+  loadActivePractice,
+  saveActivePractice,
+  recordResonantSession,
+  resetPracticeStats,
+  type PracticeId,
 } from '../storage'
 import type { SessionSettings, VisualVariantId, CueStyleId } from '../domain/settings'
 import { useLocale } from '../hooks/useLocale'
@@ -80,14 +84,22 @@ export default function App() {
   // useMemo([]) ensures one synchronous read per app load, before children mount.
   const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
   const initialMute = useMemo<boolean>(() => loadMute(), [])
+  // Phase 30 PRACTICE-02/04: restore the per-practice envelope at mount. The
+  // v1→v2 migration (plan 30-03) runs inside loadPractices so a returning
+  // single-practice user's data surfaces as practices.resonant.
+  const initialPractices = useMemo(() => loadPractices(), [])
+  const initialActivePractice = useMemo(() => loadActivePractice(), [])
   // Phase 28 INSTALL-04: single synchronous read at mount; setInstallDismissed(true)
   // on dismiss triggers immediate re-gate via showBanner.
   const [installDismissed, setInstallDismissed] = useState<boolean>(() => loadInstallDismissed())
 
-  // Phase 4 LOCL-02: stats are loaded once at mount, then mutated through three
-  // sites (recordSession at end-transition, resetStats from the dialog, and the
-  // initial loadStats here). React state holds the current snapshot for rendering.
-  const [stats, setStats] = useState<PersistedStats>(() => loadStats())
+  // Phase 30 D-07: per-practice stats. Each practice keeps its own snapshot;
+  // the render path selects the active practice's slice. They are mutated at
+  // three sites — recordResonantSession at end-transition, resetPracticeStats
+  // from the dialog, and the cross-tab storage listener.
+  const [activePractice, setActivePractice] = useState<PracticeId>(initialActivePractice)
+  const [resonantStats, setResonantStats] = useState<PersistedStats>(() => initialPractices.resonant.stats)
+  const [naviKriyaStats, setNaviKriyaStats] = useState<PersistedStats>(() => initialPractices.naviKriya.stats)
   const [resetDialogOpen, setResetDialogOpen] = useState<boolean>(false)
 
   const session = useSessionEngine(initialSettings)
@@ -152,10 +164,16 @@ export default function App() {
   //   mount of this tab.
   // Empty deps `[]` are correct — `setStats` is stable from useState,
   // and `loadStats` + `STATE_KEY` are module-level imports.
+  // Phase 30 Pitfall 6: read the per-practice subtree, not the flat env.stats.
+  // After the v1→v2 migration env.stats is an orphaned field; the old
+  // loadStats() would coerce undefined → ZERO_STATS and wrongly blank the
+  // footer. loadPractices() refreshes both practices' stats slices.
   useEffect(() => {
     const onStorage = (e: StorageEvent): void => {
       if (e.key === STATE_KEY) {
-        setStats(loadStats())
+        const practices = loadPractices()
+        setResonantStats(practices.resonant.stats)
+        setNaviKriyaStats(practices.naviKriya.stats)
       }
     }
     window.addEventListener('storage', onStorage)
@@ -191,6 +209,15 @@ export default function App() {
   // Without this the countdown 3-2-1 fires on the configuration screen, then
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
+
+  // Phase 30 D-07/D-08: render-time selection of the active practice's data.
+  // StatsFooter shows only the active slice; the reset dialog names the
+  // practice being reset.
+  const activeStats = activePractice === 'resonant' ? resonantStats : naviKriyaStats
+  const activePracticeName =
+    activePractice === 'resonant'
+      ? uiStrings.practice.resonantName
+      : uiStrings.practice.naviKriyaName
 
   // Phase 28 showBanner — AND of all five gates (INSTALL-01/02/03/04/05, D-01/D-02/D-08/SC5):
   // isPhone guards desktop (SC5), !isStandalone blocks installed PWA (INSTALL-05),
@@ -299,6 +326,15 @@ export default function App() {
     audioSetMuted(next)
     saveMute(next)
   }, [audioSetMuted])
+
+  // Phase 30 PRACTICE-01/03 (T-30-09): switch the active practice and persist
+  // it. The `inSessionView` early-return is defense-in-depth behind
+  // PracticeToggle's `disabled` prop — no practice switch can occur mid-session.
+  const onSwitchPractice = useCallback((next: PracticeId) => {
+    if (inSessionView) return
+    setActivePractice(next)
+    saveActivePractice(next)
+  }, [inSessionView])
 
   // Plan 06 D-31 / D-33: gesture-attached recovery click handler.
   // When audioStatus === 'needs-resume', the click IS a user gesture — chain
@@ -505,15 +541,16 @@ export default function App() {
 
   const confirmReset = useCallback(() => {
     // WR-08: optimistic UI — set RAM state from a known zero-state, not from
-    // a re-read of disk. If resetStats() fails silently (D-16 quota / Safari
-    // ITP / private mode), the disk still holds the OLD stats; loadStats()
-    // would return them; the footer would keep showing them despite the
-    // user clicking Reset. RAM-side state must reflect the user's intent
-    // regardless of disk-write success — same posture as Phase 3 D-10.
-    resetStats()           // D-11: stats only (settings + mute survive)
-    setStats(ZERO_STATS)   // optimistic — disk may or may not have synced
+    // a re-read of disk. If resetPracticeStats() fails silently (D-16 quota /
+    // Safari ITP / private mode), RAM-side state must still reflect the user's
+    // intent — same posture as Phase 3 D-10.
+    // Phase 30 D-08 / Pitfall 4 / T-30-11: reset wipes ONLY the active
+    // practice's stats; the other practice's history is untouched.
+    resetPracticeStats(activePractice)
+    if (activePractice === 'resonant') setResonantStats({ ...ZERO_STATS })
+    else setNaviKriyaStats({ ...ZERO_STATS })
     setResetDialogOpen(false)
-  }, [])
+  }, [activePractice])
 
   const cancelReset = useCallback(() => {
     setResetDialogOpen(false)
@@ -618,8 +655,10 @@ export default function App() {
           isComplete && completedAtMs !== null
             ? completedAtMs - snap.startedAtMs
             : snap.lastElapsedMs
-        const updated = recordSession(elapsedMs, isComplete)
-        setStats(updated)
+        // Phase 30 Pitfall 3 / T-30-08: the resonant session engine records
+        // into the resonant practice subtree, not the flat env.stats.
+        const updated = recordResonantSession(elapsedMs, isComplete)
+        setResonantStats(updated)
         recordedSessionKeyRef.current = snap.key
       }
     }
@@ -726,6 +765,22 @@ export default function App() {
           <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={uiStrings.anchors} />
         </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
+          {/* Phase 30 PRACTICE-01/03: practice switcher — new first child of the
+              main card, above the orb. Disabled during a session (D-06). */}
+          <div className="mb-5">
+            <PracticeToggle
+              active={activePractice}
+              disabled={inSessionView}
+              onSwitch={onSwitchPractice}
+              strings={{
+                toggleLabel: uiStrings.practice.toggleLabel,
+                practiceNames: {
+                  resonant: uiStrings.practice.resonantName,
+                  naviKriya: uiStrings.practice.naviKriyaName,
+                },
+              }}
+            />
+          </div>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           {/* Phase 17 D-09: sessionVariant is the captured-at-Start frozen value (non-null during lead-in + running); liveVariant is the fallback at idle. */}
           {/* Phase 25 D-09: sessionCue is the captured-at-Start frozen value (T-25-09); liveCue is the fallback at idle. */}
@@ -744,25 +799,35 @@ export default function App() {
             strings={uiStrings.readout}
           />
           <SettingsForm
+            activePractice={activePractice}
             settings={state.selectedSettings}
             isRunning={inSessionView}
             onChange={persistedSetSettings}
             onExtendDuration={session.extendDuration}
             strings={uiStrings.settingsForm}
+            practiceStrings={uiStrings.practice}
+            startSessionLabel={uiStrings.controls.startSession}
           />
-          <SessionControls
-            status={state.status}
-            onStart={() => { void onStartClick() }}
-            onEnd={requestEnd}
-            strings={uiStrings.controls}
-            muted={audio.muted}
-            audioAvailable={audio.audioAvailable}
-            needsResume={audio.audioStatus === 'needs-resume'}
-            resumeHintId="mute-toggle-resume-hint"
-            muteStrings={uiStrings.mute}
-            onMuteToggle={() => { void onMuteOrResumeClick() }}
-            inLeadIn={appPhase === 'lead-in'}
-          />
+          {/* Phase 30 D-01: the live Resonant session controls render only for
+              the Resonant practice. The Navi Kriya scaffold supplies its own
+              disabled Start stub inside SettingsForm (no NK engine in Phase 30),
+              so the real CTA must not also render — that would give two Start
+              buttons and a clickable Start for an engine-less practice. */}
+          {activePractice === 'resonant' && (
+            <SessionControls
+              status={state.status}
+              onStart={() => { void onStartClick() }}
+              onEnd={requestEnd}
+              strings={uiStrings.controls}
+              muted={audio.muted}
+              audioAvailable={audio.audioAvailable}
+              needsResume={audio.audioStatus === 'needs-resume'}
+              resumeHintId="mute-toggle-resume-hint"
+              muteStrings={uiStrings.mute}
+              onMuteToggle={() => { void onMuteOrResumeClick() }}
+              inLeadIn={appPhase === 'lead-in'}
+            />
+          )}
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
               Lives at the App level (discretion #6) so the announcement fires once on
               transition, not on every MuteToggle re-render. Empty string when not in
@@ -784,8 +849,8 @@ export default function App() {
             {lockedCopy.medicalAdviceLine}
           </p>
         </div>
-        {!inSessionView && stats.totalSessions > 0 && (
-          <StatsFooter stats={stats} onResetClick={onResetClick} strings={uiStrings.stats} locale={locale} />
+        {!inSessionView && activeStats.totalSessions > 0 && (
+          <StatsFooter stats={activeStats} onResetClick={onResetClick} strings={uiStrings.stats} locale={locale} />
         )}
       </section>
       {/* Phase 28 D-02: banner in normal document flow, below section content.
@@ -810,6 +875,7 @@ export default function App() {
         onConfirm={confirmReset}
         onCancel={cancelReset}
         strings={uiStrings.resetStatsDialog}
+        title={uiStrings.practice.resetStatsTitle(activePracticeName)}
       />
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}
