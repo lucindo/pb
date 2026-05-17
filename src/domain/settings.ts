@@ -55,6 +55,9 @@ export const STRETCH_INITIAL_BPM_OPTIONS: readonly number[] = (BPM_OPTIONS as re
 export const RATIO_OPTIONS = ['50:50', '40:60', '30:70', '20:80'] as const satisfies readonly RatioLabel[]
 
 export const DURATION_OPTIONS = [
+  // TEMPORARY (testing aid): 1-minute option for quick session-end testing.
+  // Remove before release.
+  1,
   5,
   10,
   15,

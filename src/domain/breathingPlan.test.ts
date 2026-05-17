@@ -29,6 +29,8 @@ describe('supported breathing settings', () => {
 
   it('supports 5 through 60 minute durations plus open-ended', () => {
     expect(DURATION_OPTIONS).toEqual([
+      // TEMPORARY testing aid — 1-minute option (see settings.ts).
+      1,
       5,
       10,
       15,
