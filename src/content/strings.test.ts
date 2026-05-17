@@ -168,6 +168,45 @@ describe('Phase 22 stretch string keys EN/PT-BR parity', () => {
   })
 })
 
+describe('Phase 30 practice string keys', () => {
+  const practiceStringKeys = [
+    'toggleLabel',
+    'resonantName',
+    'naviKriyaName',
+    'resonantHeading',
+    'naviKriyaHeading',
+    'naviKriyaControlsPlaceholder',
+    'naviKriyaStatsEmptyBody',
+  ] as const
+
+  it('every practice.* string key exists and is non-empty in both en and pt-BR', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      for (const key of practiceStringKeys) {
+        const value = UI_STRINGS[locale].practice[key]
+        expect(typeof value, `practice.${key} in ${locale}`).toBe('string')
+        expect(value.length, `practice.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('practice.resetStatsTitle is a function returning non-empty string containing the practice name in both locales', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      const result = UI_STRINGS[locale].practice.resetStatsTitle('Resonant Breathing')
+      expect(typeof result).toBe('string')
+      expect(result.length).toBeGreaterThan(0)
+      expect(result).toContain('Resonant Breathing')
+    }
+  })
+
+  it('EN practice.resetStatsTitle("Resonant Breathing") returns "Reset Resonant Breathing stats?"', () => {
+    expect(UI_STRINGS.en.practice.resetStatsTitle('Resonant Breathing')).toBe('Reset Resonant Breathing stats?')
+  })
+
+  it('EN practice.naviKriyaName equals "Navi Kriya" (D-05: untranslated Sanskrit proper noun)', () => {
+    expect(UI_STRINGS.en.practice.naviKriyaName).toBe('Navi Kriya')
+  })
+})
+
 describe('LOCALE_DISPLAY_NAMES (D-14 native endonyms)', () => {
   it('en label is "English"', () => {
     expect(LOCALE_DISPLAY_NAMES.en).toBe('English')
