@@ -54,6 +54,12 @@ Exceptions:
 - Touch target minimum: 44px (`min-h-[44px]`) on all external links — carried from existing dialog.
 - Close button minimum: 48px (`min-h-12`) — carried from existing dialog.
 
+**Justified exceptions — values not in standard set {4, 8, 16, 24, 32, 48, 64}:**
+- `section-gap: 20px` (`gap-5`) — carried unchanged from the existing shipped LearnDialog container. Altering this value would require restyling the dialog container layout, which is out of scope for Phase 32. This phase extends the dialog into practice-aware rendering; it does not restyle the container.
+- `xl: 28px` (`sm:p-7`) — carried unchanged from the existing shipped LearnDialog container for the same reason. The sm-breakpoint padding is an established part of the dialog's responsive sizing and must not change.
+
+Both values are multiples of 4 and are intentional carry-forwards from the shipped container, not ad-hoc additions.
+
 Source: `src/components/LearnDialog.tsx` className audit.
 
 ---
@@ -68,9 +74,9 @@ All sizes and weights are carried directly from the existing `LearnDialog.tsx` �
 | Section heading (`h3`) | 16px (`text-base`) | 600 (`font-semibold`) | — | `text-base font-semibold` |
 | Body paragraph | 16px (`text-base`) | 400 (regular) | 24px (`leading-6`) | `text-base leading-6` |
 | Affiliation micro-line | 12px (`text-xs`) | 400 (regular) | — | `text-xs text-center` |
-| External links | 16px (`text-base`) | 500 (`font-medium`) | — | `text-base font-medium` |
+| External links | 16px (`text-base`) | 600 (`font-semibold`) | — | `text-base font-semibold` |
 
-Two weights in use: 400 (body, micro-line) and 500/600 (links/headings).
+Two weights in use: 400 (regular) and 600 (semibold).
 
 Source: `src/components/LearnDialog.tsx` className audit.
 
@@ -145,7 +151,7 @@ The locked `inspiredByForrest` phrase is NOT in the Navi Kriya description secti
 - No padding to match resonant's count. Fewer-is-fine (D-06).
 - Video titles stay in English in both EN and PT-BR catalogs (D-12, consistent with existing resonant video title pattern).
 
-All video links render identically to existing links: `inline-flex min-h-[44px] items-center text-base font-medium` in `accent` color with hover to `accent-strong`, focus ring on `breathing-accent`.
+All video links render identically to existing links: `inline-flex min-h-[44px] items-center text-base font-semibold` in `accent` color with hover to `accent-strong`, focus ring on `breathing-accent`.
 
 ### Shared: Forrest Knutson Resources
 
