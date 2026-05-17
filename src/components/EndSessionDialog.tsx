@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEventHandler } from 'react'
+import { useEffect, useRef, type MouseEventHandler, type ReactNode } from 'react'
 
 import type { UiStrings } from '../content/strings'
 
@@ -7,9 +7,13 @@ export interface EndSessionDialogProps {
   onConfirm(this: void): void
   onCancel(this: void): void
   strings: UiStrings['endSessionDialog']
+  // D-12: optional summary slot rendered between the title and the action
+  // buttons — the Navi Kriya completion dialog uses it for the rounds/duration
+  // summary. When absent the dialog behaves byte-identically to before.
+  body?: ReactNode
 }
 
-export function EndSessionDialog({ open, onConfirm, onCancel, strings }: EndSessionDialogProps) {
+export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: EndSessionDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -70,6 +74,9 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings }: EndSess
         >
           {strings.title}
         </h2>
+        {body !== undefined && (
+          <div className="text-sm text-[var(--color-breathing-muted)]">{body}</div>
+        )}
         {/* F2: drop flex-col-reverse so mobile column order matches DOM order
             (Keep going on top, End below). Previously column-reverse stacked the
             destructive End above Keep going on mobile, which inverts the safety

@@ -87,6 +87,29 @@ describe('EndSessionDialog — open state (D-12 locked copy + default focus)', (
   })
 })
 
+describe('EndSessionDialog — optional body slot (D-12 NK completion summary)', () => {
+  it('renders the body node when a body prop is provided', () => {
+    render(
+      <EndSessionDialog
+        open
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+        strings={EN_STRINGS_FIXTURE.endSessionDialog}
+        body={<p>3 rounds complete</p>}
+      />,
+    )
+    expect(screen.getByText('3 rounds complete')).toBeVisible()
+  })
+
+  it('renders no extra body content when body is absent (unchanged early-end behavior)', () => {
+    renderDialog({ open: true })
+    // Only the title and the two action buttons — no summary node.
+    expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Keep going' })).toBeVisible()
+    expect(screen.queryByText('3 rounds complete')).not.toBeInTheDocument()
+  })
+})
+
 describe('EndSessionDialog — open->close transition', () => {
   it('closes the dialog when open transitions from true to false', () => {
     const { container, rerender } = renderDialog({ open: true })
