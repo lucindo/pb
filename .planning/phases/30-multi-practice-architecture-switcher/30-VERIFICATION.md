@@ -1,7 +1,7 @@
 ---
 phase: 30-multi-practice-architecture-switcher
 verified: 2026-05-17T10:00:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 overrides_applied: 1
 overrides:
@@ -9,7 +9,7 @@ overrides:
     reason: "Operator checkpoint feedback (Task 3, plan 30-04) overrode D-04. The inline <h3> was removed from SettingsForm. The active practice is named in the app header ('HRV practice'/'Navi practice') and page title ('HRV Breathing'/'Navi Kriya') instead. The intent — the user can see which practice is active — is satisfied by the header/title naming. Documented in 30-04-SUMMARY.md key-decisions."
     accepted_by: "operator (human UAT checkpoint)"
     accepted_at: "2026-05-17T00:00:00Z"
-re_verification: null
+re_verification: "Human-verification items resolved 2026-05-17 — operator confirmed all 3 items (switcher end-to-end, in-session lock, returning-user PRACTICE-04 persistence) at the plan 30-04 Task 3 checkpoint and signed off at phase verification. See 30-HUMAN-UAT.md (3/3 passed)."
 gaps: []
 human_verification:
   - test: "Switcher end-to-end — segmented control above the orb"

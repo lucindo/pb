@@ -1,5 +1,5 @@
 ---
-status: partial
+status: complete
 phase: 30-multi-practice-architecture-switcher
 source: [30-VERIFICATION.md]
 started: 2026-05-17T13:03:21Z
@@ -8,7 +8,7 @@ updated: 2026-05-17T13:03:21Z
 
 ## Current Test
 
-[all items verified by operator at the plan 30-04 Task 3 checkpoint]
+[complete — all 3 items verified by operator at the plan 30-04 Task 3 checkpoint and signed off at phase verification]
 
 ## Tests
 
