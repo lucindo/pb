@@ -24,7 +24,7 @@ export function PracticeToggle({
   strings,
 }: PracticeToggleProps) {
   const containerClass = [
-    'flex rounded-full bg-[var(--color-breathing-surface)] p-1',
+    'flex rounded-full bg-[var(--color-breathing-bg-soft)] p-1',
     disabled ? 'opacity-50 cursor-not-allowed' : '',
   ]
     .filter(Boolean)
@@ -38,7 +38,7 @@ export function PracticeToggle({
           'flex-1 rounded-full min-h-[44px] px-4 py-2 text-sm',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2',
           isActive
-            ? 'bg-white shadow font-semibold text-[var(--color-breathing-accent-strong)]'
+            ? 'bg-[var(--color-breathing-surface)] shadow font-semibold text-[var(--color-breathing-accent-strong)]'
             : 'font-normal text-[var(--color-breathing-muted)]',
         ].join(' ')
 
