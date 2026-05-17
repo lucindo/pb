@@ -7,7 +7,7 @@ import App from './App'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
 import type { TimbreId, VisualVariantId } from '../domain/settings'
-import { NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
+import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
 function settingGroup(name: string) {
   return screen.getByRole('group', { name })
@@ -609,10 +609,11 @@ function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'na
 const NK_COUNTDOWN = 3000
 
 // Full Navi session wall-time (ms), start() → natural completion. Every round
-// is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in;
-// every OM — including the last of each phase — runs for omMs. Derived from
-// the engine constants so these integration timings track any NK_LEAD_MS
-// change instead of hardcoding a fixed advance.
+// is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in.
+// Every OM runs for omMs, except the last OM of each phase, which holds for
+// NK_LAST_OM_HOLD_MULTIPLIER × omMs — so each phase carries one extra
+// (multiplier − 1) × omMs, two per round. Derived from the engine constants so
+// these timings track any change instead of hardcoding a fixed advance.
 function nkSessionMs(
   frontCount: number,
   omLength: 'fast' | 'medium' | 'slow',
@@ -620,7 +621,8 @@ function nkSessionMs(
 ): number {
   const omMs = NK_OM_SECONDS[omLength] * 1000
   const backCount = frontCount / 4
-  const perRound = 2 * NK_LEAD_MS + (frontCount + backCount) * omMs
+  const lastOmExtra = 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1) * omMs
+  const perRound = 2 * NK_LEAD_MS + (frontCount + backCount) * omMs + lastOmExtra
   return perRound * rounds
 }
 

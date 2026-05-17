@@ -21,7 +21,7 @@ import {
   type NaviKriyaSettings,
   type OmLength,
 } from '../domain/naviKriyaSettings'
-import { NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
+import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
 import { UI_STRINGS, type UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage/practices'
 import { ModeToggle } from './ModeToggle'
@@ -118,9 +118,14 @@ export function SettingsForm({
   // IN-01: each round has two phases (front + back) and the engine fires an
   // NK_LEAD_MS lead-in at the start of every phase — rounds * 2 lead-ins
   // total — so the estimate must account for that overhead too.
+  // Phase 31 UAT: the last OM of each phase holds NK_LAST_OM_HOLD_MULTIPLIER ×
+  // omMs, so each round carries an extra 2 × (multiplier − 1) OM-times.
   const nkBackCount = nkSettings.frontCount / 4
+  const nkOmMs = NK_OM_SECONDS[nkSettings.omLength] * 1000
   const estimatedMinutes = Math.round(
-    (nkSettings.rounds * (nkSettings.frontCount + nkBackCount) * NK_OM_SECONDS[nkSettings.omLength] * 1000
+    (nkSettings.rounds
+      * (nkSettings.frontCount + nkBackCount + 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1))
+      * nkOmMs
       + nkSettings.rounds * 2 * NK_LEAD_MS
       + NK_SETTLE_MS) / 60_000,
   )

@@ -42,25 +42,27 @@ describe('useNKEngine', () => {
     expect(result.current.nkPhase).toBe('front')
     expect(result.current.nkRunning).toBe(true)
 
-    // Timing — every OM, including the last of a phase, runs for omMs before
-    // the transition (D-11 fix):
+    // Timing — every OM runs for omMs, except the LAST OM of a phase, which
+    // holds for NK_LAST_OM_HOLD_MULTIPLIER × omMs (= 2×) before the transition:
     //   front OM #k fires at t = NK_LEAD_MS + (k-1)*omMs, k = 1..8
-    //   front->back transition at t = NK_LEAD_MS + 8*omMs (count to 0, back marker)
+    //   front OM #8 (last) holds 2×omMs -> front->back transition at
+    //   t = NK_LEAD_MS + 7*omMs + 2*omMs = NK_LEAD_MS + 9*omMs
     const omMs = NK_OM_SECONDS['medium'] * 1000
 
     // Advance through the front lead-in + all 8 front OMs + the transition —
     // stop +500 into the back lead-in, before the first back OM.
     act(() => {
-      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 8 + 500)
+      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 9 + 500)
     })
 
     // Should now be in 'back' phase with count reset to 0
     expect(result.current.nkPhase).toBe('back')
     expect(result.current.nkCount).toBe(0)
 
-    // Back lead-in + 2 back OMs + the final transition -> 'done'.
+    // Back lead-in + 2 back OMs (the 2nd held 2×omMs) + the final transition
+    // -> 'done'.
     act(() => {
-      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 2 + 100)
+      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 3 + 100)
     })
 
     // Should be 'done'
@@ -105,9 +107,10 @@ describe('useNKEngine', () => {
       result.current.start(settings, cbs, onComplete)
     })
 
-    // Each round: lead(NK_LEAD_MS) + 4 front OMs + lead(NK_LEAD_MS) + 1 back OM.
+    // Each round: front = lead + 3 OMs + the last OM held 2×omMs (= lead +
+    // 5*omMs); back = lead + the single OM held 2×omMs (= lead + 2*omMs).
     // 3 rounds total.
-    const perRoundMs = NK_LEAD_MS + omMs * 4 + NK_LEAD_MS + omMs * 1
+    const perRoundMs = NK_LEAD_MS + omMs * 5 + NK_LEAD_MS + omMs * 2
     act(() => {
       vi.advanceTimersByTime(perRoundMs * 3 + 500)
     })

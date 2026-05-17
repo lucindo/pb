@@ -28,6 +28,11 @@ export const NK_LEAD_MS = 5000
 // D-11: settle delay before the first frontMarker fires at session start (~3–5 s)
 export const NK_SETTLE_MS = 3500
 
+// D-11 (Phase 31 UAT): the LAST OM of each phase holds for this multiple of a
+// normal OM before the phase transition — a longer, smoother settle into the
+// next phase. Applies to the last front OM and the last back OM of every round.
+export const NK_LAST_OM_HOLD_MULTIPLIER = 2
+
 // ---------------------------------------------------------------------------
 // Types
 
@@ -168,13 +173,17 @@ export function useNKEngine(): NKEngineApi {
 
     const target = e.phase === 'front' ? e.frontCount : e.backCount
 
-    // Every OM — including the last of a phase — runs for omMs. The last OM
-    // additionally arms pendingTransition so the next stepOm changes phase
-    // instead of counting (D-11 fix: the last count is shown, not flashed).
     if (e.count >= target) {
+      // Last OM of the phase: arm pendingTransition so the NEXT stepOm changes
+      // phase instead of counting (D-11 fix — the last count is shown, not
+      // flashed). It also holds longer than a normal OM
+      // (NK_LAST_OM_HOLD_MULTIPLIER × omMs) for a smoother settle into the
+      // next phase.
       e.pendingTransition = true
+      schedule(e.omMs * NK_LAST_OM_HOLD_MULTIPLIER)
+    } else {
+      schedule(e.omMs)
     }
-    schedule(e.omMs)
   }, [schedule])
 
   const start = useCallback((

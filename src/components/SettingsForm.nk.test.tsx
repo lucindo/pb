@@ -12,20 +12,22 @@ import {
   NK_FRONT_COUNT_OPTIONS,
   type NaviKriyaSettings,
 } from '../domain/naviKriyaSettings'
-import { NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
+import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
 
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice
 const NK = UI_STRINGS.en.nkControls
 
-// Mirrors SettingsForm's D-14 estimate (front+back OMs per round, two
-// NK_LEAD_MS lead-ins per round, one-time NK_SETTLE_MS). Derived from the
-// engine constants so the assertion tracks NK_LEAD_MS instead of hardcoding a
-// minute count that drifts when the lead-in changes.
+// Mirrors SettingsForm's D-14 estimate (front+back OMs per round, the last OM
+// of each phase held NK_LAST_OM_HOLD_MULTIPLIER × omMs, two NK_LEAD_MS lead-ins
+// per round, one-time NK_SETTLE_MS). Derived from the engine constants so the
+// assertion tracks them instead of hardcoding a minute count that drifts.
 function estimatedMinutes(settings: NaviKriyaSettings): number {
   const back = settings.frontCount / 4
   return Math.round(
-    (settings.rounds * (settings.frontCount + back) * NK_OM_SECONDS[settings.omLength] * 1000
+    (settings.rounds
+      * (settings.frontCount + back + 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1))
+      * NK_OM_SECONDS[settings.omLength] * 1000
       + settings.rounds * 2 * NK_LEAD_MS
       + NK_SETTLE_MS) / 60_000,
   )
