@@ -21,7 +21,7 @@ import {
   type NaviKriyaSettings,
   type OmLength,
 } from '../domain/naviKriyaSettings'
-import { NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
+import { NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
 import { UI_STRINGS, type UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage/practices'
 import { ModeToggle } from './ModeToggle'
@@ -121,9 +121,13 @@ export function SettingsForm({
   // D-14: estimated session duration — derived in render (never memoized) so it
   // tracks every NK settings change live. Total OMs per round = front + back,
   // back = front / 4; plus the one-time settle overhead before the first round.
+  // IN-01: each round has two phases (front + back) and the engine fires an
+  // NK_LEAD_MS lead-in at the start of every phase — rounds * 2 lead-ins
+  // total — so the estimate must account for that overhead too.
   const nkBackCount = nkSettings.frontCount / 4
   const estimatedMinutes = Math.round(
     (nkSettings.rounds * (nkSettings.frontCount + nkBackCount) * NK_OM_SECONDS[nkSettings.omLength] * 1000
+      + nkSettings.rounds * 2 * NK_LEAD_MS
       + NK_SETTLE_MS) / 60_000,
   )
 
