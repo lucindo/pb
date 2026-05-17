@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Install Helper
-status: Awaiting next milestone
-stopped_at: Milestone v1.4 closed
-last_updated: "2026-05-16T23:50:00.000Z"
-last_activity: 2026-05-16 — Milestone v1.4 completed and archived
+milestone: v1.5
+milestone_name: Navi Kriya Practice
+status: planning
+last_updated: "2026-05-17T05:13:37.490Z"
+last_activity: 2026-05-17
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-16 after v1.4 Install Helper mileston
 
 ## Current Position
 
-Phase: Milestone v1.4 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-16 — Milestone v1.4 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-17 — Milestone v1.5 started
 
 ## Performance Metrics
 
@@ -55,8 +54,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-- **[PROJECT.md stack line stale]** PROJECT.md Context still says "React 18" — the shipped stack is React 19.2 + Vite 8.0 + TypeScript 6. Correct when convenient.
-- None blocking. v1.4 shipped 2026-05-16; awaiting next milestone.
+- None blocking. v1.5 Navi Kriya Practice started 2026-05-17. (PROJECT.md "React 18" stale-fact corrected to React 19 on milestone start.)
 
 ### Quick Tasks Completed
 

@@ -18,9 +18,20 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). Code review WR-01 — `IosInstallSteps` `::marker` color coupling. See STATE.md `## Deferred Items` for the full register.
 
-## Next Milestone
+## Current Milestone: v1.5 Navi Kriya Practice
 
-No milestone is currently active. v1.4 Install Helper shipped 2026-05-16. Start the next milestone with `/gsd-new-milestone` — it gathers goals, research, and requirements before producing a roadmap. Carry-forward tech debt (above) is a candidate source for the next milestone scope.
+**Goal:** Add Navi Kriya as a second Forrest Knutson practice alongside Resonant Breathing — one app, switchable, each practice with its own settings and stats.
+
+**Target features:**
+- Multi-practice architecture — a `practice` concept above the existing `mode`; per-practice session settings + stats; theme/timbre/variant/cue/locale stay shared app-wide chrome
+- Practice switcher — top segmented control above the orb, disabled while a session is in progress
+- Navi Kriya engine — app-paced OM-counting practice (front/back phase machine, fixed 4:1 ratio default 100/25, configurable rounds + OM length, four cue sounds via the existing `audioEngine`/timbres)
+- Navi Kriya per-practice stats — sessions / rounds / minutes, isolated from Resonant's
+- Settings split — separate `SettingsDialog` shared-chrome settings from per-practice controls
+- Learn screen — shared sections (Who is Forrest, Forrest Resources) + per-practice video links & description
+- Localization — EN + native-quality PT-BR for all new copy
+
+**Blueprint:** validated across 3 spikes (`.planning/spikes/`), packaged in the `spike-findings-hrv` skill. Carry-forward tech debt stays deferred — this milestone is focused on the second practice.
 
 ## Requirements
 
@@ -81,7 +92,7 @@ No milestone is currently active. v1.4 Install Helper shipped 2026-05-16. Start 
 
 ### Active
 
-_(none — v1.4 Install Helper requirements all validated)_
+**v1.5 Navi Kriya Practice** — requirements defined 2026-05-17; see `.planning/REQUIREMENTS.md` for full traceability.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -120,7 +131,7 @@ Normal user-selected options:
 - Inhale/exhale ratio: 50:50, 40:60, 30:70, 20:80.
 - Session time: 5 to 60 minutes, step 5, plus unlimited/uncapped.
 
-**Tech stack:** React 18 + Vite + TypeScript (strict + `strictTypeChecked`) + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/` (includes `isValidBpm`/`isValidRatio`/`isValidDuration` shared predicates since v1.0.1), hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope (forward-compat read + refuse-downgrade write + cross-tab listener since v1.0.1). Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement with in-flight + release-during-await guards.
+**Tech stack:** React 19 + Vite + TypeScript (strict + `strictTypeChecked`) + Tailwind + Vitest + jsdom. Pure domain math under `src/domain/` (includes `isValidBpm`/`isValidRatio`/`isValidDuration` shared predicates since v1.0.1), hooks under `src/hooks/`, components under `src/components/`, app shell under `src/app/`. Local-only state via `localStorage` with silent-fallback envelope (forward-compat read + refuse-downgrade write + cross-tab listener since v1.0.1). Audio via Web Audio API with FakeAudioContext test polyfill. Wake Lock via Screen Wake Lock API as progressive enhancement with in-flight + release-during-await guards.
 
 **Codebase size at v1.4 ship:** 997/997 Vitest tests (959 → 997). v1.4 added `src/storage/installDismissed.ts`, `useIsStandaloneOrPhone`/`useBeforeInstallPrompt` hooks, `InstallBanner` + shared `IosInstallSteps` components, and `SettingsDialog` install row — zero net-new runtime dependencies (`dependencies` stays `react` + `react-dom`). (v1.3 baseline: 959 tests; v1.2 baseline: ~19,161 LOC / 839 tests; v1.0.1 baseline: ~10,925 LOC / 409 tests.)
 
@@ -205,4 +216,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after v1.4 Install Helper milestone*
+*Last updated: 2026-05-17 — milestone v1.5 Navi Kriya Practice started*
