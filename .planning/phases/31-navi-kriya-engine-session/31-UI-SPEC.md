@@ -67,12 +67,24 @@ Exceptions:
 All font values are inherited from the established design system. NK components
 MUST use the exact classes used by equivalent resonant components.
 
+**NK type scale: exactly 4 sizes.** The NK session UI introduces these sizes:
+
 | Role | Size class | Weight class | Line Height | Usage |
 |------|-----------|--------------|-------------|-------|
 | Display (count inside shape) | `text-7xl` / `sm:text-8xl` | `font-semibold` (600) | 1.0 (number, no line) | NK OM count centered inside shape — mirrors OrbLeadIn digit scale |
 | Heading (readout strip label, dialog title) | `text-2xl` | `font-semibold` (600) | 1.3 (`tracking-tight`) | NKSessionReadout round label, EndSessionDialog title |
-| Body / value (readout strip value, stepper output) | `text-lg` / `text-2xl` | `font-semibold` (600) | auto | Stepper output: `text-2xl font-semibold`; readout value cells: `text-lg font-semibold` |
-| Label (uppercase caps label above values) | `text-[0.65rem]` / `text-sm` | `font-semibold` (600) | — | Readout cell labels: `text-[0.65rem] font-semibold uppercase tracking-[0.16em]`; stepper legend: `text-sm font-semibold uppercase tracking-[0.18em]` |
+| Body / value (readout strip value, stepper output) | `text-lg` | `font-semibold` (600) | `leading-none` (1.0) | Readout value cells: `text-lg font-semibold leading-none`; verified from `SessionReadout.tsx` stretch cells (lines 109, 118, 125) which use `text-lg font-semibold` in a `flex flex-col items-center justify-center gap-1` container |
+| Label (uppercase caps label above values) | `text-[0.65rem]` | `font-semibold` (600) | — | Readout cell labels: `text-[0.65rem] font-semibold uppercase tracking-[0.16em]`; verified from `SessionReadout.tsx` stretch cells (lines 106, 115, 122) |
+
+> **Note on `text-sm` and `text-2xl` in adjacent components:**
+> - `text-sm` (0.875rem) appears in the existing `SettingsStepper` legend
+>   (`text-sm font-semibold uppercase tracking-[0.18em]`) and in the standard
+>   non-stretch pill chip of `SessionReadout`. These classes are **not part of
+>   the NK type scale** — they are inherited verbatim from those pre-existing
+>   components and are not newly declared for Phase 31.
+> - `text-2xl` appears in both the Heading role above and in the stepper output
+>   value (`text-2xl font-semibold` in `SettingsStepper`) — that is one size
+>   serving two roles, not two distinct sizes.
 
 Weights used: 400 (not used directly in UI chrome — no body-weight text in NK
 UI) and 600 (`font-semibold` — all visible numeric and label text). This is
@@ -195,8 +207,8 @@ for the three NK readout values.
   | Round | `strings.nkReadout.roundLabel` → "Round" | e.g. `"2 / 3"` (current round / total rounds) |
   | Count | `strings.nkReadout.countLabel` → "Count" | e.g. `"100"` (target for current phase) |
 
-- Cell label class: `text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]` — same as stretch readout.
-- Cell value class: `text-lg font-semibold` — same as stretch readout.
+- Cell label class: `text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]` — byte-identical to `SessionReadout.tsx` stretch cells (lines 106, 115, 122).
+- Cell value class: `text-lg font-semibold leading-none` — byte-identical to `SessionReadout.tsx` stretch cells (lines 109, 118, 125), with explicit `leading-none` per line-height contract above.
 - `aria-label` on container `<section>`: `strings.nkReadout.readoutAriaLabel` → `"Navi Kriya session readout"`.
 - `aria-live="polite"` on the round/phase cells so screen readers announce phase transitions.
 
@@ -237,7 +249,7 @@ four `SettingsStepper` rows + one duration estimate line.
 
 5. **Duration estimate line**
    - Position: below the last stepper, above the Start button (D-14).
-   - Style: `text-sm text-center text-[var(--color-breathing-muted)]` — low-prominence secondary label.
+   - Style: `text-sm text-center text-[var(--color-breathing-muted)]` — low-prominence secondary label. (`text-sm` here is inherited from the existing `SettingsStepper` legend pattern — not a newly-declared NK size.)
    - Content: `strings.nkControls.estimatedDuration(minutes)` → `"~7 min"` (computed live from `rounds × (frontCount + frontCount/4) × omMs / 60000 + settle overhead`).
    - `aria-live="polite"` so screen readers announce updates when the user changes settings.
    - Updates live as the user changes rounds / front count / OM length — D-14 locked.
@@ -324,7 +336,7 @@ All strings are added to `strings.ts` under new sub-objects.
 | `title` | `"Practice complete"` | Dialog `<h2>` — replaces generic "End this session?" for natural completion |
 | `roundsCompleted(n, total)` | `(n, t) => n === t ? \`${n} rounds complete\` : \`${n} of ${t} rounds\`` | Session summary line |
 | `sessionDuration(minutes)` | `(m) => \`~${m} min\`` | Duration line |
-| `close` | `"Close"` | Confirm/close button for natural completion dialog |
+| `close` | `"Close summary"` | Confirm/close button for natural completion dialog — verb + noun CTA |
 
 **Early-end dialog:** Reuses existing `endSessionDialog.title` ("End this
 session?"), `endSessionDialog.confirm` ("End"), `endSessionDialog.cancel`
@@ -390,7 +402,7 @@ Default focus in EndSessionDialog: "Keep going" (cancel) button — D-12 locked 
 
 ### Focus management
 
-- NK completion dialog: initial focus on the "Close" button (safe default — not destructive). Follows `EndSessionDialog` focus pattern.
+- NK completion dialog: initial focus on the "Close summary" button (safe default — not destructive). Follows `EndSessionDialog` focus pattern.
 - Early end dialog: initial focus on "Keep going" (cancel) — D-12 locked, existing `EndSessionDialog` behavior.
 
 ### Reduced-motion
@@ -433,7 +445,7 @@ No new npm dependencies are introduced by Phase 31 (RESEARCH confirmed).
 | RESEARCH.md | Component inventory, architecture patterns, string keys |
 | `src/styles/theme.css` | All color tokens, all theme variants |
 | `src/index.css` | Font, base styles |
-| `src/components/SessionReadout.tsx` | NKSessionReadout container/cell CSS classes |
+| `src/components/SessionReadout.tsx` | NKSessionReadout container/cell CSS classes; line-height verified from stretch cells (lines 106, 109, 115, 118, 122, 125) |
 | `src/components/SessionControls.tsx` | Start/End button CSS classes |
 | `src/components/EndSessionDialog.tsx` | Dialog pattern, focus management, CSS classes |
 | `src/components/SettingsForm.tsx` | NK controls slot location, SettingsStepper integration |
