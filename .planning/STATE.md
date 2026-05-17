@@ -3,8 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Navi Kriya Practice
 status: planning
-last_updated: "2026-05-17T06:00:00.000Z"
-last_activity: 2026-05-17
+stopped_at: Phase 30 context gathered
+last_updated: "2026-05-17T05:35:56.733Z"
+last_activity: 2026-05-17 — v1.5 roadmap revised (3 phases, NK-08 merged into Phase 31, 18/18 requirements mapped)
 progress:
   total_phases: 3
   completed_phases: 0
@@ -102,9 +103,9 @@ Items acknowledged and carried forward across milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-05-17T06:00:00.000Z
-Stopped at: v1.5 roadmap revised — Phases 30–32, NK-08 merged into Phase 31, 18/18 requirements mapped
-Resume file: None
+Last session: 2026-05-17T05:35:56.716Z
+Stopped at: Phase 30 context gathered
+Resume file: .planning/phases/30-multi-practice-architecture-switcher/30-CONTEXT.md
 Next command: /gsd-plan-phase 30
 
 ## Operator Next Steps
