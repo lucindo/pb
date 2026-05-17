@@ -10,6 +10,7 @@ import {
   saveResonantSettings,
   saveNaviKriyaSettings,
   recordResonantSession,
+  recordNaviKriyaSession,
   resetPracticeStats,
 } from './practices'
 import { coerceSettings } from './settings'
@@ -206,6 +207,59 @@ describe('recordResonantSession (Pitfall 3 / T-30-08)', () => {
   it('rejects a NaN / negative elapsedMs without poisoning stats', () => {
     expect(recordResonantSession(Number.NaN, true).totalSessions).toBe(0)
     expect(recordResonantSession(-100, true).totalSessions).toBe(0)
+  })
+})
+
+describe('recordNaviKriyaSession (NK-08 / D-13 / T-31-07 / T-31-08)', () => {
+  it('increments practices.naviKriya.stats totalSessions and roundsCompleted', () => {
+    const next = recordNaviKriyaSession(60_000, 3, true, { now: () => 1_700_000_000_000 })
+    expect(next.totalSessions).toBe(1)
+    expect(next.totalElapsedSeconds).toBe(60)
+    expect(next.roundsCompleted).toBe(3)
+    expect(next.lastSessionAtMs).toBe(1_700_000_000_000)
+    expect(next.lastSessionDurationSeconds).toBe(60)
+  })
+
+  it('accumulates roundsCompleted across multiple NK sessions', () => {
+    recordNaviKriyaSession(60_000, 2, true, { now: () => 1 })
+    const next = recordNaviKriyaSession(90_000, 3, true, { now: () => 2 })
+    expect(next.totalSessions).toBe(2)
+    expect(next.roundsCompleted).toBe(5)
+  })
+
+  it('NK-08 isolation: practices.resonant.stats is unchanged after recordNaviKriyaSession', () => {
+    // Seed resonant with some stats first.
+    recordResonantSession(40_000, false, { now: () => 1_700_000_000_000 })
+    // Then record an NK session.
+    recordNaviKriyaSession(50_000, 2, true, { now: () => 2_000_000_000_000 })
+    const map = loadPractices()
+    // Resonant stats must be exactly what recordResonantSession wrote.
+    expect(map.resonant.stats.totalSessions).toBe(1)
+    expect(map.resonant.stats.totalElapsedSeconds).toBe(40)
+    // naviKriya received the NK session.
+    expect(map.naviKriya.stats.totalSessions).toBe(1)
+    expect(map.naviKriya.stats.roundsCompleted).toBe(2)
+  })
+
+  it('does not count a sub-threshold incomplete session (early end below COUNT_THRESHOLD_MS)', () => {
+    // D-13: below-threshold early end is NOT recorded.
+    const next = recordNaviKriyaSession(5_000, 2, false)
+    expect(next.totalSessions).toBe(0)
+    expect(next.roundsCompleted).toBeUndefined()
+    expect(loadPractices().naviKriya.stats.totalSessions).toBe(0)
+  })
+
+  it('D-13: above-threshold early end records completed rounds and elapsed minutes', () => {
+    // Early end but above COUNT_THRESHOLD_MS — should record.
+    const next = recordNaviKriyaSession(35_000, 1, false, { now: () => 1_700_000_000_000 })
+    expect(next.totalSessions).toBe(1)
+    expect(next.totalElapsedSeconds).toBe(35)
+    expect(next.roundsCompleted).toBe(1)
+  })
+
+  it('rejects NaN / negative elapsedMs without poisoning stats (T-31-08)', () => {
+    expect(recordNaviKriyaSession(Number.NaN, 3, true).totalSessions).toBe(0)
+    expect(recordNaviKriyaSession(-100, 3, true).totalSessions).toBe(0)
   })
 })
 

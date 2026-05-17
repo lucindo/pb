@@ -15,6 +15,11 @@ export interface PersistedStats {
   totalElapsedSeconds: number
   lastSessionAtMs: number | null
   lastSessionDurationSeconds: number | null
+  // NK-08: optional — only Navi Kriya sessions write this field; resonant always
+  // writes undefined. Omitting it from ZERO_STATS is intentional — the optional
+  // field may be absent and coerceStats returns undefined (not 0) so an existing
+  // resonant stats record stays byte-shaped as before (backward-compatible).
+  roundsCompleted?: number
 }
 
 // WR-08: exported so App.tsx confirmReset can update React state optimistically
@@ -70,6 +75,10 @@ export function coerceStats(raw: unknown): PersistedStats {
     totalElapsedSeconds:        isFiniteNonNegativeInt(r.totalElapsedSeconds)           ? r.totalElapsedSeconds       : 0,
     lastSessionAtMs:            isFiniteNonNegativeNumberOrNull(r.lastSessionAtMs)      ? r.lastSessionAtMs           : null,
     lastSessionDurationSeconds: isFiniteNonNegativeIntOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
+    // T-31-06: validate roundsCompleted — a corrupted value coerces to undefined
+    // (not 0) so the field stays absent for resonant records and only appears for
+    // NK records that actually wrote it. Per-field non-throwing coercion (ASVS V5).
+    roundsCompleted:            isFiniteNonNegativeInt(r.roundsCompleted) ? r.roundsCompleted : undefined,
   }
 }
 

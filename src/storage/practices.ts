@@ -157,6 +157,53 @@ export function recordResonantSession(
   return next
 }
 
+// NK-08: Navi Kriya analogue of recordResonantSession. Mirrors the same
+// COUNT_THRESHOLD_MS / Number.isFinite guard logic but reads from and writes to
+// practices.naviKriya.stats ONLY — the resonant slice is passed through untouched
+// (T-31-07 isolation guarantee).
+//
+// D-13: when isComplete is false (early end) the roundsCompleted argument carries
+// only the fully-completed rounds and elapsedMs the partial elapsed time — both are
+// recorded the same way, so an early-ended session still adds its completed rounds
+// and minutes to the NK history.
+export function recordNaviKriyaSession(
+  elapsedMs: number,
+  roundsCompleted: number,
+  isComplete: boolean,
+  deps: StorageDeps = {},
+): PersistedStats {
+  const env = readEnvelope(deps)
+  const practices = coercePractices(env.practices)
+  const stats = practices.naviKriya.stats
+  // T-31-08: reject NaN/Infinity/negative elapsedMs so a bad frame cannot
+  // poison totalElapsedSeconds (DS-WR-06 parity).
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    return stats
+  }
+  // D-01 parity: count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
+    return stats
+  }
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const now = deps.now ?? Date.now
+  const next: PersistedStats = {
+    ...stats,
+    totalSessions: stats.totalSessions + 1,
+    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
+    lastSessionAtMs: now(),
+    lastSessionDurationSeconds: elapsedSeconds,
+    // NK-08: accumulate rounds across sessions. Spread stats above keeps any
+    // pre-existing fields; this line explicitly updates roundsCompleted.
+    roundsCompleted: (stats.roundsCompleted ?? 0) + roundsCompleted,
+  }
+  // T-31-07: write ONLY the naviKriya slice — resonant is passed through unchanged.
+  writeEnvelope(
+    { ...env, practices: { ...practices, naviKriya: { ...practices.naviKriya, stats: next } } },
+    deps,
+  )
+  return next
+}
+
 // Pitfall 4: practice-scoped reset. Writes ZERO_STATS into the named practice's
 // stats slice ONLY — the other practice's slice (settings and stats) is left
 // untouched.

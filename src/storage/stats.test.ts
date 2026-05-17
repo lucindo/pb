@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { loadStats, recordSession, resetStats, COUNT_THRESHOLD_MS } from './stats'
+import { coerceStats, loadStats, recordSession, resetStats, COUNT_THRESHOLD_MS } from './stats'
 import { saveSettings, saveMute, loadSettings, loadMute } from './settings'
 import { STATE_KEY } from './storage'
 import { DEFAULT_SETTINGS } from '../domain/settings'
@@ -114,6 +114,31 @@ describe('resetStats (D-11)', () => {
       throw new Error('quota')
     })
     expect(() => { resetStats() }).not.toThrow()
+  })
+})
+
+describe('coerceStats roundsCompleted (NK-08 / T-31-06)', () => {
+  it('preserves a valid integer roundsCompleted', () => {
+    const result = coerceStats({ totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null, roundsCompleted: 5 })
+    expect(result.roundsCompleted).toBe(5)
+  })
+
+  it('returns undefined for roundsCompleted when the field is absent', () => {
+    const result = coerceStats({ totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null })
+    expect(result.roundsCompleted).toBeUndefined()
+  })
+
+  it('returns undefined for roundsCompleted when the value is invalid (string / negative / float / NaN)', () => {
+    expect(coerceStats({ roundsCompleted: 'bad' }).roundsCompleted).toBeUndefined()
+    expect(coerceStats({ roundsCompleted: -3 }).roundsCompleted).toBeUndefined()
+    expect(coerceStats({ roundsCompleted: 1.5 }).roundsCompleted).toBeUndefined()
+    expect(coerceStats({ roundsCompleted: Number.NaN }).roundsCompleted).toBeUndefined()
+    expect(coerceStats({ roundsCompleted: Number.POSITIVE_INFINITY }).roundsCompleted).toBeUndefined()
+  })
+
+  it('preserves 0 as a valid roundsCompleted value', () => {
+    const result = coerceStats({ roundsCompleted: 0 })
+    expect(result.roundsCompleted).toBe(0)
   })
 })
 
