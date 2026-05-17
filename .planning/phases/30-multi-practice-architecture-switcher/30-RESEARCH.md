@@ -636,17 +636,19 @@ export function resetPracticeStats(practice: PracticeId, deps: StorageDeps = {})
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Per-practice mute or shared mute?**
    - What we know: The current `mute` field is flat on the envelope; it is shared chrome in effect.
    - What's unclear: The CONTEXT.md does not address this. Navi Kriya will have its own `perOmCue` toggle (D-02), but the master mute button on the session controls may need scoping.
    - Recommendation: Treat mute as shared chrome in Phase 30 (match the existing behavior). Phase 31 can revisit if NK's cue behavior requires separate mute.
+   - RESOLVED: `mute` stays a shared envelope field for Phase 30 — it is NOT moved into the per-practice map. Decided in plan 30-04 (SettingsDialog scope keeps `mute` as shared chrome). Phase 31 may revisit if NK cue behavior requires a separate mute.
 
 2. **`loadStats` in cross-tab storage event listener**
    - What we know: App.tsx line 157-159 calls `loadStats()` on `storage` event — reads flat `env.stats`.
    - What's unclear: After migration, `env.stats` is undefined (v2 envelope has no flat stats). The listener will incorrectly return `ZERO_STATS` for both practices on cross-tab writes.
    - Recommendation: Update the storage event handler to call `loadPractices()` and refresh both stats slices.
+   - RESOLVED: The cross-tab `storage` event handler is updated in plan 30-04 to call `loadPractices()` and refresh BOTH `setResonantStats` and `setNaviKriyaStats` — never the orphaned flat `env.stats` via `loadStats()` (Pitfall 6 handling; threat T-30-10).
 
 ---
 
