@@ -33,6 +33,11 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 - Navi Kriya is **app-paced** (metronome ticks each OM at the chosen OM length) and
   **auto-advances** front → back → next round, marking each transition with sound.
   (Operator decision, spike 003.)
+- Navi Kriya structure: 1 round = front OMs + back OMs at a fixed **4:1 ratio**; base
+  front count configurable (default 100); rounds configurable (default 3); four cue
+  roles — front marker, back marker, per-OM tick (toggle), end chord. Real tempo
+  ≈ 2.16s/OM (Forrest's follow-along ≈ 4m30s/round); fast/medium/slow values finalized
+  in the build. Sounds route through the existing `audioEngine`/timbres. (Spike 003.)
 - The **Learn screen** is not spiked — shared sections (Who is Forrest, Forrest
   Resources) plus per-practice sections (videos, description) is a content-architecture
   task, not a feasibility risk.
@@ -43,4 +48,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 |-----|-----------------------|------------|-----------|---------|------|
 | 001 | multi-practice-shell  | standard   | Tabbed shell hosting Resonant + Navi Kriya keeps per-practice settings/stats isolated with shared chrome, without feeling bloated | VALIDATED | architecture, navigation, multi-practice |
 | 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | VALIDATED — winner: B (top segmented control) | navigation, ux, comparison |
-| 003 | navi-kriya-practice   | standard   | App-paced Navi Kriya counting practice — 100 front / 25 back OM per round, N rounds, marker + per-OM sounds — works as a usable in-app meditation | PENDING | practice, navi-kriya, audio, counting |
+| 003 | navi-kriya-practice   | standard   | App-paced Navi Kriya counting practice — 100 front / 25 back OM per round, N rounds, marker + per-OM sounds — works as a usable in-app meditation | VALIDATED | practice, navi-kriya, audio, counting |

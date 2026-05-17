@@ -3,7 +3,7 @@ spike: 003
 name: navi-kriya-practice
 type: standard
 validates: "Given an app-paced Navi Kriya session at a chosen OM length, when it runs, then it metronome-ticks 100 front OMs then 25 back OMs per round for N rounds, marking each transition and the end with sound, and feels like a usable counting meditation"
-verdict: PENDING
+verdict: VALIDATED
 related: [001]
 tags: [practice, navi-kriya, audio, counting]
 ---
@@ -32,9 +32,10 @@ operator supplied:
 - App-paced (operator decision): the app ticks each OM at the OM-length tempo; the user
   chants along. Auto-advances front → back → next round with marker sounds.
 
-**Open / seeded — needs operator tuning:** the seconds-per-OM for fast/medium/slow are
-seeded at 3 / 5 / 8s. These are guesses — the spike exposes them so the operator can
-confirm the right tempo for a real chant.
+**Tempo reference (operator):** Forrest's follow-along video runs ~1 round (125 OM) in
+**~4m30s ≈ 2.16s per OM** — faster than the original 3/5/8s seed. Seed revised to
+fast 1.75 / medium 2.5 / slow 4s as a closer provisional bracket; exact values are
+deferred to the build ("we may adjust later").
 
 ## How to Run
 
@@ -82,7 +83,21 @@ No export; the practice structure is short enough to read inline.
   sine, end = low three-note chord). Front counts restricted to multiples of 4 so the
   back count is always an integer; small values (4/8/20) included so a full round is
   verifiable in seconds.
+- v2 — Operator verified the practice "looks good." Tempo calibration: real pace is
+  faster (~2.16s/OM vs. the 3/5/8s seed). Seed nudged to 1.75/2.5/4s; exact tempo
+  deferred to the build.
 
 ## Results
 
-_Pending operator verification — does it feel like a meditation, and is the tempo right?_
+**VALIDATED.** App-paced Navi Kriya works as an in-app practice — the front→back→round
+counting flow with marker sounds and an optional per-OM cue reads as a usable counting
+meditation, not a mechanical timer. Operator: "this looks good."
+
+**Build signal:**
+- Engine shape confirmed: app-paced OM ticks, auto-advance front→back→next round, four
+  cue roles (front marker / back marker / per-OM tick / end chord).
+- Real tempo is ~2.16s/OM (Forrest's follow-along ≈ 4m30s/round). Final fast/medium/slow
+  values to be set during the build — keep them adjustable.
+- 4:1 front:back ratio is fixed; base front count is configurable (default 100).
+- Sounds in the real app should route through the existing `audioEngine`/timbres rather
+  than the spike's ad-hoc Web Audio tones.

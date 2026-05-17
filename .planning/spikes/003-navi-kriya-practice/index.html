@@ -26,7 +26,9 @@
     // Front counts chosen so back = front/4 is always integer. 4/8/20 are for
     // quick verification; 100 is the real default.
     const FRONT_OPTIONS = [4, 8, 20, 100]
-    const OM_SECONDS = { fast: 3, medium: 5, slow: 8 } // seconds per OM — adjustable seed
+    // seconds per OM — PROVISIONAL, tuned later. Reference: Forrest's follow-along
+    // video runs ~1 round (125 OM) in ~4m30s ≈ 2.16s/OM, so the real pace is faster.
+    const OM_SECONDS = { fast: 1.75, medium: 2.5, slow: 4 }
     const ROUND_OPTIONS = [1, 2, 3, 4, 5]
     const LEAD_MS = 700 // gap after a marker sound before the phase's first OM
 
