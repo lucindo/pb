@@ -1,73 +1,37 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-10T20:00:25.394Z",
-  "phase": "05.1",
-  "phase_name": "hands-off-resilience-polish",
-  "phase_dir": ".planning/phases/05.1-hands-off-resilience-polish",
-  "plan": 3,
-  "task": 2,
-  "total_tasks": 4,
+  "timestamp": "2026-05-17T19:52:51.056Z",
+  "phase": "31",
+  "phase_name": "navi-kriya-engine-session",
+  "phase_dir": ".planning/phases/31-navi-kriya-engine-session",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
   "status": "paused",
   "completed_tasks": [
-    {"id": "05.1-01", "name": "iOS Safari audio resume listener (useAudioCues + audioEngine.resume + tests)", "status": "shipped_but_insufficient", "commit": "a988c8c→cced07b→178caaf→e1ac686→f3cc646", "note": "Code matches D-01..D-09 spec exactly. Empirical iOS UAT FAILED — see blocker."},
-    {"id": "05.1-02", "name": "Outer-ring 1.5px border-box compensation", "status": "shipped_superseded", "commit": "85235b5→8fb5057→a0e4f53", "note": "Partial fix; Plan 04 supersedes the .orb sizing piece."},
-    {"id": "05.1-03 Task 1", "name": "Auto regression suite (vitest + tsc)", "status": "PASS", "commit": "e174687", "note": "294/294 tests pass; tsc exit 0. Original was 280; +14 D-24 structural assertions from Plan 04."},
-    {"id": "05.1-03 Task 3", "name": "Safari Desktop orb-to-outer-ring visual UAT", "status": "PASS", "commit": "7e883d6", "note": "After Plan 04 + 5 hotfixes. PASS on Safari Desktop / iOS Safari / Chrome / Firefox-with-FF-01-caveat."},
-    {"id": "05.1-04", "name": "Safari .orb WR-03 sizing re-fix", "status": "shipped", "commit": "9ed80c3→39eee56→52719c0→67c03fb→4f4dea4→9e4889e→b717175→425fa5a", "note": "Final form: 4-edge anchoring + transition removed + will-change:transform + inline translate3d(0,0,0) scale(s). Kitchen-sink (scale3d + backface-visibility) reverted at user request."}
+    {"id": 1, "name": "Align Navi Kriya practice flow with HRV (switcher labels HRV/Navi, 3-2-1 countdown + Cancel, no pause button, inline completion headline, mute toggle on the config screen, shared countdown beep, shared end chord, dead-string cleanup)", "status": "done", "commit": "c19c0e1"},
+    {"id": 2, "name": "Temporary 1-minute HRV duration option for testing", "status": "done", "commit": "9a26bf0"},
+    {"id": 3, "name": "Clear resonant completion headline on practice switch", "status": "done", "commit": "b09dec2"},
+    {"id": 4, "name": "Add 'Status' legend to the session status panel (new StatusPanel component)", "status": "done", "commit": "e22d40f"},
+    {"id": 5, "name": "Show the stretch readout during the HRV stretch lead-in", "status": "done", "commit": "d2bdcaf"}
   ],
   "remaining_tasks": [
-    {"id": "05.1-03 Task 2", "name": "iOS Safari audio resume after lock/unlock — REAL DEVICE UAT", "status": "BLOCKED — Plan 01 fix empirically inadequate; needs root-cause diagnosis"},
-    {"id": "05.1-03 Task 4", "name": "Phase 1-5 regression sweep on real Safari", "status": "not_started", "note": "Skip Phase 5 wake-lock check on iPhone-over-HTTP; use macOS Safari for that piece."},
-    {"id": "05.1-03 sign-off", "name": "Fill Sign-off block in 05.1-UAT.md", "status": "not_started"},
-    {"id": "05.1-03 SUMMARY.md", "name": "Create plan summary after UAT closes", "status": "not_started"},
-    {"id": "Phase verification + completion", "name": "Final goal-backward verification + STATE.md/ROADMAP.md close", "status": "not_started"},
-    {"id": "05.1-05", "name": "Inner-ring UX symmetry (Issue B) — separate discuss→plan→execute cycle", "status": "deferred until 5.1-03 closes"}
+    {"id": 6, "name": "Rework the Navi RUNNING session — the window between the 3-2-1 countdown ending and end-session. Bug fixes and behavior changes, scoped strictly to that window. Specific feedback to be provided by the operator after /clear.", "status": "not_started"}
   ],
-  "blockers": [
-    {
-      "description": "Plan 05.1-01 audio-resume fix does NOT actually resume audio on real iPhone iOS Safari. Symptoms: <30s lock → session continues running, AC apparently dead, mute/unmute toggle doesn't restore audio, only starting a NEW session restores audio. ≥30s lock → iOS discards the tab entirely (full reload to setup screen — out of app's reach). The Plan 01 spec assumed iOS only SUSPENDS the AudioContext on lock; empirical behavior is that iOS likely CLOSES the AC, so audioCtx.resume() rejects (silently absorbed per D-09) and there's no recovery path without reconstructing the engine.",
-      "type": "technical",
-      "workaround": "Diagnose first via Mac+iPhone Safari Web Inspector to confirm audioCtx.state ('suspended' vs 'closed') after unlock + whether visibilitychange→visible fires + whether engine.resume() is called and resolves vs rejects."
-    },
-    {
-      "description": "iOS Safari ≥30s background discard. Tab is killed under memory pressure; React/JS state is lost. Plan 01 cannot help here. Phase 4 persistence restores user-facing settings, which is the maximum recovery possible without redesigning around server-side session state. Document as known iOS limitation; not a Plan 01 bug.",
-      "type": "external",
-      "workaround": "None at app level. Document in UAT log."
-    },
-    {
-      "description": "Firefox Desktop scale-animation flicker (FF-01) — slight residual flicker during orb scaling. Mitigation stack applied (will-change + translate3d) reduced but did not eliminate. Kitchen-sink (scale3d + backface-visibility) was reverted at user request. Phase 5.1 success criterion #2 names Safari only; Firefox is not a primary target. Acceptable as carry-forward to v1.x or Phase 6.",
-      "type": "technical",
-      "workaround": "Logged in 05.1-UAT.md Task 3 Caveats section. Real fix likely requires CSS-keyframe-driven animation instead of per-frame React inline transform writes — out of Phase 5.1 budget."
-    }
-  ],
+  "blockers": [],
   "human_actions_pending": [
-    {
-      "action": "User runs Mac+iPhone Safari Web Inspector diagnostic on the audio resume bug. Connect iPhone to Mac via USB; Safari menu → Develop → [iPhone] → inspect the running tab. Capture: (1) audioCtx.state value after unlock, (2) whether the 'visibilitychange' event fires on unlock (add console.log in onVisibility handler temporarily, OR set a breakpoint), (3) whether engine.resume() resolves or rejects, (4) any console errors during lock/unlock cycle.",
-      "context": "Determines which of three root causes is real: (a) AC closed not suspended → need full engine reconstruction, (b) listener not firing → need different event hook, (c) resume() succeeds but cue scheduler events stale → need re-anchoring on resume. Choice between Plan 05.1-06 designs depends on this answer.",
-      "blocking": true
-    },
-    {
-      "action": "User runs UAT Task 4 (Phase 1-5 regression sweep) on real Safari (desktop OR iOS) after Task 2 audio-resume bug is resolved. Skip the wake-lock part on iPhone-over-HTTP; use macOS Safari over localhost for wake-lock check. Record per-phase PASS/FAIL with notes in 05.1-UAT.md Task 4 block.",
-      "context": "Phase 5.1 success criterion #3: Phase 1-5 must remain green. Auto suite (Task 1) is PASS; manual sweep on real Safari is the human-verification half.",
-      "blocking": true
-    },
-    {
-      "action": "User fills Sign-off block in 05.1-UAT.md and types 'approved' (or describes failure mode for plan-checker escalation).",
-      "context": "Phase 5.1 closes only when sign-off is written.",
-      "blocking": true
-    }
+    {"action": "Operator provides the Navi running-session feedback (the specific fixes/changes wanted)", "context": "Will be described conversationally after /clear", "blocking": true},
+    {"action": "Remove the temporary 1-minute HRV duration before release", "context": "Added in commit 9a26bf0 as a testing aid; marked TEMPORARY in src/domain/settings.ts and src/domain/breathingPlan.test.ts. Revert with `git revert 9a26bf0` (or delete the marked lines).", "blocking": false},
+    {"action": "Resume the 4-item Navi human UAT (31-HUMAN-UAT.md, status: partial)", "context": "Audio cue quality, per-OM shape pulse, completion UX, reduced-motion fallback — still pending; deferred while the Navi session itself is reworked", "blocking": false}
   ],
   "decisions": [
-    {"decision": "Phase 5.1 was inserted AFTER Phase 5 closed, to hold the carry-forward defects from 05-04-UAT-LOG.md Findings 1+2 (orb visual gap + iOS audio resume).", "rationale": "Surgical scope; doesn't reopen Phase 5 milestone.", "phase": "05.1"},
-    {"decision": "Plan 05.1-04 was inserted AFTER Task 3 of Plan 03 UAT FAILED on Safari Desktop. Plan 02's 1.5px border fix was insufficient — root cause was deeper grid+abs-pos sizing collapse.", "rationale": "Web Inspector data showed .orb width = 209px (58% of 360 container) due to WR-03 quirk on absolutely-positioned grid children with inset-0 on Safari Desktop.", "phase": "05.1"},
-    {"decision": "Plan 04 final form: 4-edge anchoring (left:0/right:0/top:0/bottom:0, NOT width:100%/height:100%) on .orb + drop the .orb {transition: transform 200ms} + will-change:transform + inline translate3d(0,0,0) scale(s). 5 commits of iteration.", "rationale": "Initial Plan 04 used width:100%/height:100% which sized correctly but FROZE Safari's transform transition (computed stuck at scale(0.58) despite inline scale(0.99) — Safari restarts transition on every inline-style reassignment when sizing properties are present). Removing transition + 4-edge anchoring fixed Safari/iOS/Chrome. Firefox needed GPU-promotion hints (will-change + translate3d combo) to suppress flicker; kitchen-sink scale3d + backface-visibility was reverted as marginal.", "phase": "05.1"},
-    {"decision": "Plan 05.1-05 (Issue B inner-ring UX symmetry — out-phase has no 'approaching boundary' cue) is DEFERRED until Plan 5.1-03 closes and Plan 01 audio bug is resolved.", "rationale": "Out-of-scope for Plan 02 per D-11 (inner ring untouched). User chose to expand Phase 5.1 to include it via separate discuss→plan→execute cycle. Sequence: fix audio bug → close UAT → ship 05.1-04 visual fixes (already shipped) → spec/plan/execute 05.1-05.", "phase": "05.1"}
+    {"decision": "HRV (resonant) is the source of truth; the Navi flow mirrors it", "rationale": "Operator directive for the consistency pass", "phase": "31"},
+    {"decision": "Countdown beep (scheduleCountdownTick) and the Navi per-OM tick (scheduleNKTick) are SEPARATE functions with separate constants", "rationale": "Semantically distinct — a change to one must not affect the other", "phase": "31"},
+    {"decision": "The end chord (scheduleEndChord) is a SINGLE shared function used by both HRV and Navi completion", "rationale": "It is the same practice-ending sound; a change should apply to both", "phase": "31"},
+    {"decision": "Countdown duration stays 3s (LEAD_IN_DURATION_SEC / LEAD_IN_TICK_INTERVAL_SEC in audioEngine.ts)", "rationale": "Operator explicitly said 'do not change' after asking about the timing", "phase": "31"},
+    {"decision": "Navi natural completion shows an inline 'Session complete' headline (no popup), cleared on practice switch", "rationale": "HRV parity — HRV uses an inline SessionReadout headline", "phase": "31"}
   ],
-  "uncommitted_files": [
-    ".planning/phases/02-visual-guide-accessible-responsive-interface/02-PATTERNS.md",
-    ".planning/phases/05-mobile-hands-off-resilience/SECURITY.md",
-    ".planning/ui-reviews/"
-  ],
-  "next_action": "User runs Mac+iPhone Safari Web Inspector diagnostic on the audio-resume bug (see human_actions_pending #1). Goal: determine audioCtx.state after iOS Safari unlock — is it 'suspended' (resume() should work; bug elsewhere) or 'closed' (need engine reconstruction)? Once answered, agent specs Plan 05.1-06 to fix the audio bug accordingly, OR scopes the bug as carry-forward to v1.x. After audio fix lands, user runs Task 4 regression sweep + writes sign-off block. Then agent creates 05.1-03-SUMMARY, closes Phase 5.1, and routes to Plan 05.1-05 (Issue B).",
-  "context_notes": "Phase 5.1 was scoped as a surgical 2-3 plan polish phase; it has now consumed 4 plans + 8+ commits of post-UAT iteration on Plan 04 + an uncovered Plan 01 spec inadequacy. The scope-creep path was driven entirely by real-device UAT findings, all of which were correct calls — no rework was wasted. The orb visual fix is empirically solid across 4 browsers (Firefox flicker is a known caveat). The audio fix is the remaining blocker. Plan 01 code matches its spec verbatim; the spec itself underestimated iOS Safari's auto-close behavior on lock. Diagnosis-then-decide is the right next move (vs preemptively shipping Plan 05.1-06)."
+  "uncommitted_files": [],
+  "next_action": "Wait for the operator's Navi running-session feedback, then fix/change behavior in the window between the countdown ending and end-session. Read src/hooks/useNKEngine.ts and the Navi handlers + running render in src/app/App.tsx first.",
+  "context_notes": "This session was a UAT-driven consistency pass on the already-implemented Phase 31 — not plan execution. All 5 changes are committed to main (c19c0e1..d2bdcaf); working tree clean; 1124 tests pass; tsc + eslint clean (1 pre-existing react-refresh warning in App.tsx). Next work is scoped strictly to the Navi RUNNING session (countdown-end through end-session) — the useNKEngine engine behavior and the running-state render. The countdown flow, the Cancel path, the end-session confirmation dialog, the completion handling, and all of HRV are considered settled this session — do not rework them unless the operator's feedback explicitly calls for it. Verify after every change: `npx tsc -b --force`, `npx eslint <files>`, `npx vitest run` (must stay at 1124 passing). Commits go directly to main, conventional-commit style, scope (31)."
 }
