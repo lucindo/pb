@@ -14,6 +14,11 @@
 // Phase 19: Path A (translate at component layer). The component computes translated
 // strings via strings.sessionsCount / strings.totalMinutes / strings.lastSessionPrefix
 // instead of the EN-only format.ts helpers. format.ts is NOT edited (D-19 minimal-diff).
+//
+// NK-08 (Phase 31): when showRounds is true (Navi Kriya practice), an additional
+// "X Rounds" line is rendered between Line 1 and Line 2. When showRounds is absent
+// or false (Resonant practice), the component renders exactly as before — no layout
+// change (Pitfall 8 guard).
 
 import type { PersistedStats } from '../storage'
 import { formatLastSessionDate, formatLastSessionDuration } from '../storage/format'
@@ -25,9 +30,12 @@ export interface StatsFooterProps {
   onResetClick(this: void): void
   strings: UiStrings['stats']
   locale?: LocaleId
+  // NK-08: when true, render the rounds-completed figure (Navi Kriya practice only).
+  // Absent or false → Resonant practice behaviour, unchanged from Phase 4.
+  showRounds?: boolean
 }
 
-export function StatsFooter({ stats, onResetClick, strings, locale }: StatsFooterProps) {
+export function StatsFooter({ stats, onResetClick, strings, locale, showRounds }: StatsFooterProps) {
   // Phase 19 D-25: pass current UI locale into the date formatter so PT-BR users
   // see month/day rendered in Portuguese (e.g. "14 de mai." instead of "May 14").
   // Phase 19 Path A: translate at component layer; format.ts now accepts an optional locale arg.
@@ -50,6 +58,14 @@ export function StatsFooter({ stats, onResetClick, strings, locale }: StatsFoote
         {strings.sessionsCount(stats.totalSessions)} · {strings.totalMinutes(stats.totalElapsedSeconds)}{' '}
         {strings.totalSuffix}
       </p>
+      {/* NK-08: rounds-completed row — Navi Kriya only. Sits inside the existing
+          StatsFooter card so no new container is introduced; the line inherits
+          the card's text styling with no dark/dusk border concern (Pitfall 8). */}
+      {showRounds && (
+        <p>
+          {String(stats.roundsCompleted ?? 0)} {strings.roundsCompletedLabel}
+        </p>
+      )}
       {/* WR-04: line 2 wraps the optional "Last: …" text + Reset button in a
           flex container that handles vertical alignment explicitly. Previously
           the <p> contained a 44 px inline-flex button inside a 24 px line-height
