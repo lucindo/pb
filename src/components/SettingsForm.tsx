@@ -48,7 +48,6 @@ export interface SettingsFormProps {
   nkSettings?: NaviKriyaSettings
   onNKSettingsChange?: (this: void, settings: NaviKriyaSettings) => void
   onNKStartClick?: (this: void) => void
-  isNKSessionRunning?: boolean
   // NK control copy lives at the UiStrings top level, not under settingsForm.
   nkControlsStrings?: UiStrings['nkControls']
 }
@@ -64,7 +63,6 @@ export function SettingsForm({
   nkSettings = DEFAULT_NK_SETTINGS,
   onNKSettingsChange = () => undefined,
   onNKStartClick = () => undefined,
-  isNKSessionRunning = false,
   nkControlsStrings = UI_STRINGS.en.nkControls,
 }: SettingsFormProps) {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
@@ -247,12 +245,14 @@ export function SettingsForm({
         // button. The practice is named in the app header (App.tsx), not by an
         // inline heading; no resonant knobs render in this branch.
         <>
+          {/* WR-04: no disabled gating on the NK steppers — the whole form is
+              unmounted by App.tsx while a session is active, so these are
+              never reachable mid-session. */}
           <SettingsStepper<number>
             label={nkControlsStrings.roundsLabel}
             value={nkSettings.rounds}
             options={NK_ROUNDS_OPTIONS}
             onChange={(rounds) => { updateNkSettings({ rounds }) }}
-            disabled={isNKSessionRunning}
             strings={strings.stepper}
           />
           <SettingsStepper<number>
@@ -260,7 +260,6 @@ export function SettingsForm({
             value={nkSettings.frontCount}
             options={NK_FRONT_COUNT_OPTIONS}
             onChange={(frontCount) => { updateNkSettings({ frontCount }) }}
-            disabled={isNKSessionRunning}
             strings={strings.stepper}
           />
           <SettingsStepper<OmLength>
@@ -269,7 +268,6 @@ export function SettingsForm({
             options={OM_LENGTH_OPTIONS}
             formatValue={formatOmLength}
             onChange={(omLength) => { updateNkSettings({ omLength }) }}
-            disabled={isNKSessionRunning}
             strings={strings.stepper}
           />
           {/* D-07: the per-OM tick toggle stays interactive while a session
@@ -293,7 +291,6 @@ export function SettingsForm({
           <button
             type="button"
             onClick={onNKStartClick}
-            disabled={isNKSessionRunning}
             className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {startSessionLabel}

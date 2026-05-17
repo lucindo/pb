@@ -23,12 +23,10 @@ const START_LABEL = UI_STRINGS.en.controls.startSession
 // "updates live" assertions to mean anything.
 function NKHarness({
   initial = DEFAULT_NK_SETTINGS,
-  isNKSessionRunning = false,
   onChangeSpy,
   onStartSpy,
 }: {
   initial?: NaviKriyaSettings
-  isNKSessionRunning?: boolean
   onChangeSpy?: (settings: NaviKriyaSettings) => void
   onStartSpy?: () => void
 }) {
@@ -48,7 +46,6 @@ function NKHarness({
       setNk(next)
     },
     onNKStartClick: () => { onStartSpy?.() },
-    isNKSessionRunning,
     nkControlsStrings: NK,
   }
   return <SettingsForm {...props} />
@@ -119,11 +116,11 @@ describe('SettingsForm — Navi Kriya controls (Plan 31-05, NK-02/03/04/06, D-14
     expect(screen.getByText(NK.estimatedDuration(18))).toBeInTheDocument()
   })
 
-  it('while a session runs, the steppers are disabled but the per-OM toggle stays enabled', () => {
-    render(<NKHarness isNKSessionRunning />)
-    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.roundsLabel) })).toBeDisabled()
-    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.frontCountLabel) })).toBeDisabled()
-    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.omLengthLabel) })).toBeDisabled()
+  it('WR-04: the NK steppers and per-OM toggle render enabled (the form is unmounted mid-session, so there is no in-session disabled state)', () => {
+    render(<NKHarness />)
+    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.roundsLabel) })).toBeEnabled()
+    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.frontCountLabel) })).toBeEnabled()
+    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.omLengthLabel) })).toBeEnabled()
     // D-07: the per-OM tick toggle is stale-closure-safe and must remain live.
     expect(screen.getByRole('switch', { name: NK.perOmCueLabel })).toBeEnabled()
   })
@@ -136,10 +133,5 @@ describe('SettingsForm — Navi Kriya controls (Plan 31-05, NK-02/03/04/06, D-14
     expect(startButton).toBeEnabled()
     await user.click(startButton)
     expect(onStartSpy).toHaveBeenCalledTimes(1)
-  })
-
-  it('with a session running, the Start button is disabled', () => {
-    render(<NKHarness isNKSessionRunning />)
-    expect(screen.getByRole('button', { name: START_LABEL })).toBeDisabled()
   })
 })
