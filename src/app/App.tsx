@@ -885,11 +885,18 @@ export default function App() {
           endCue: () => undefined,
         }
       }
+      // IN-03: schedule each cue a small look-ahead ahead of currentTime
+      // rather than exactly at it. Starting a Web Audio node at currentTime
+      // leaves no headroom — the audio thread can already be past that
+      // instant by the time the node is wired up, producing clicks on slower
+      // devices. SAFE_LEAD_SEC is the same single-source-of-truth guard the
+      // resonant cue path applies (audioEngine.ts).
+      const cueWhen = (): number => ctx.currentTime + SAFE_LEAD_SEC
       return {
-        frontMarker: () => { scheduleNKFrontMarker(ctx, ctx.currentTime, ctx.destination, timbre) },
-        backMarker: () => { scheduleNKBackMarker(ctx, ctx.currentTime, ctx.destination, timbre) },
-        tick: () => { scheduleNKTick(ctx, ctx.currentTime, ctx.destination, timbre) },
-        endCue: () => { scheduleNKEndChord(ctx, ctx.currentTime, ctx.destination, timbre) },
+        frontMarker: () => { scheduleNKFrontMarker(ctx, cueWhen(), ctx.destination, timbre) },
+        backMarker: () => { scheduleNKBackMarker(ctx, cueWhen(), ctx.destination, timbre) },
+        tick: () => { scheduleNKTick(ctx, cueWhen(), ctx.destination, timbre) },
+        endCue: () => { scheduleNKEndChord(ctx, cueWhen(), ctx.destination, timbre) },
       }
     })()
 
