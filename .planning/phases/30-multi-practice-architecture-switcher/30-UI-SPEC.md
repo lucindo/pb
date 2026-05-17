@@ -33,18 +33,20 @@ Declared values (must be multiples of 4). Derived from existing Tailwind usage i
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Tight inline gaps (`gap-x-1` = 4px between stats items) |
-| sm | 8px | Pill inner padding (`p-1` = 4px, `py-1.5` = 6px — see exception below) |
+| xs | 4px | Tight inline gaps (`gap-x-1` = 4px between stats items); PracticeToggle container inner padding (`p-1`) |
+| sm | 8px | Pill inner vertical padding (`py-2` = 8px); stepper minor gaps |
 | md | 16px | Default element spacing (`gap-4`, stepper rows, form grid gap) |
-| lg | 20px | Card inner padding (`p-5` = 20px, established by main card in `App.tsx`) |
 | xl | 24px | Dialog inner padding (`p-6` = 24px, `mt-6` stats footer offset) |
 | 2xl | 32px | Desktop card padding (`sm:p-6`, section-level gaps) |
 | 3xl | 48px | Top layout breathing room (`py-6`, `py-8` page padding) |
 
+**Inherited (not modified this phase):**
+- Main card padding `p-5` (20px) in `App.tsx` line 728: `rounded-[2rem] ... p-5 ... sm:p-6` — this is the existing card container, inherited unchanged. It is NOT part of the declared spacing scale for Phase 30 and Phase 30 introduces no new 20px values.
+
 **Exceptions:**
-- Pill buttons use `py-1.5` (6px vertical) — non-multiple-of-4 permitted for pill aesthetics; matches spike-002 reference (D-05, RESEARCH Pattern 3).
 - Touch targets: minimum 44x44px enforced via `min-h-[44px] min-w-[44px]` on all interactive text-link buttons (established pattern in `StatsFooter.tsx` Reset button). Apply to any inline-text interactive element this phase.
-- `PracticeToggle` wrapping pill: `p-1` (4px) inner padding around segment buttons, `rounded-full` container — this matches the spike-002 `SegmentedShell` pattern exactly.
+- `PracticeToggle` wrapping pill: `p-1` (4px) inner padding around segment buttons, `rounded-full` container — matches the spike-002 `SegmentedShell` pattern.
+- `PracticeToggle` pill buttons use `py-2` (8px) vertical padding. With `text-sm` (20px line height) this yields a minimum button height of ~36px; enforce `min-h-[44px]` on the pill `<button>` elements to meet the 44px touch-target floor.
 
 Source: `src/app/App.tsx`, `src/components/StatsFooter.tsx`, `src/components/ResetStatsDialog.tsx` [VERIFIED: codebase]. Spike pattern: `.claude/skills/spike-findings-hrv/sources/002-switcher-ux/index.html` [VERIFIED: spike].
 
@@ -52,24 +54,26 @@ Source: `src/app/App.tsx`, `src/components/StatsFooter.tsx`, `src/components/Res
 
 ## Typography
 
-Sizes derived from existing component usage. The project uses 4 type roles:
+Sizes derived from existing component usage. The project uses exactly 4 type roles:
 
 | Role | Size | Weight | Line Height | Tailwind Class | Used In |
 |------|------|--------|-------------|----------------|---------|
-| Body | 14px | 400 (regular) | 1.5 | `text-sm leading-6` | StatsFooter, dialog body, medical disclaimer |
+| Body | 14px | 400 (regular) | 1.5 | `text-sm leading-6` | StatsFooter, dialog body, medical disclaimer, switcher pill labels (inactive + active) |
 | Label | 16px | 600 (semibold) | 1.5 | `text-base font-semibold` | Dialog buttons, form labels, CTA buttons |
-| Heading | 24px | 600 (semibold) | 1.3 | `text-2xl font-semibold tracking-tight` | Dialog titles (`ResetStatsDialog`, `SettingsDialog`) |
+| Heading | 24px | 600 (semibold) | 1.3 | `text-2xl font-semibold tracking-tight` | Dialog titles (`ResetStatsDialog`, `SettingsDialog`); practice headings below switcher ("Resonant Breathing" / "Navi Kriya") |
 | Display | 36px | 600 (semibold) | 1.2 | `text-4xl font-semibold tracking-tight` | App title `h1` in `App.tsx` |
 
-**New typography for Phase 30:**
+**Phase 30 additions:**
 
 | Role | Size | Weight | Line Height | Tailwind Class | Used In |
 |------|------|--------|-------------|----------------|---------|
-| Practice heading | 20px | 600 (semibold) | 1.3 | `text-xl font-semibold` | Active practice heading below switcher (D-04) — "Resonant Breathing" / "Navi Kriya" |
-| Switcher pill | 14px | 500 (medium) or 600 (semibold) active | 1.0 | `text-sm font-medium` / `text-sm font-semibold` | PracticeToggle inactive / active pill labels (D-05, RESEARCH Pattern 3) |
+| Switcher pill (inactive) | 14px | 400 (regular) | 1.0 | `text-sm font-normal` | PracticeToggle inactive pill labels |
+| Switcher pill (active) | 14px | 600 (semibold) | 1.0 | `text-sm font-semibold` | PracticeToggle active pill label |
 
 **Constraints:**
-- Maximum 2 font weights in use: 400 (regular) and 600 (semibold). Use 600 for active pill state, labels, headings, and buttons. Use 400 for body copy and muted secondary text.
+- Exactly 4 font sizes: 14px, 16px, 24px, 36px. No new sizes introduced.
+- Maximum 2 font weights: 400 (regular) and 600 (semibold). Weight 500 (`font-medium`) is NOT used anywhere in this phase.
+- Practice headings use the existing Heading role: `text-2xl font-semibold` at 24px — not a new 20px size.
 - Font: Inter only (inherited via `:root { font-family: Inter, ... }` in `src/index.css`).
 
 Source: `src/styles/theme.css`, `src/components/ResetStatsDialog.tsx`, `src/app/App.tsx` [VERIFIED: codebase].
@@ -92,6 +96,8 @@ All values are CSS custom property references — never raw hex in component cod
 | Destructive | `#bf616a` (not yet tokenized) | `#bf616a` | Reset Stats confirm button only |
 | Modal backdrop | `var(--color-modal-backdrop)` | `rgb(46 52 64 / 0.30)` | Dialog backdrop |
 
+**Focal point:** The breathing orb remains the primary visual anchor; the PracticeToggle is a secondary navigation element positioned above it.
+
 **PracticeToggle color specifics (from RESEARCH Pattern 3 and spike-002):**
 - Container background: `bg-[var(--color-breathing-surface)]` (white/surface) with `p-1`
 - Active pill: `bg-white` (or `bg-[var(--color-breathing-surface)]`) with `shadow` + text `text-[var(--color-breathing-accent-strong)]`
@@ -105,7 +111,7 @@ All values are CSS custom property references — never raw hex in component cod
 - Reset text link in StatsFooter
 - Active pill shadow
 
-**Accent is NOT for:** body text, dialog body, stats figures, practice heading, inactive pill labels.
+**Accent is NOT for:** body text, dialog body, stats figures, practice headings, inactive pill labels.
 
 Source: `src/styles/theme.css` [VERIFIED: codebase]. RESEARCH Pattern 3 [VERIFIED: spike reference].
 
@@ -121,9 +127,9 @@ Location: src/components/PracticeToggle.tsx
 Layout:
   <div role="group" aria-label="{strings.practiceToggleLabel}">
     rounded-full container, bg-[var(--color-breathing-surface)], p-1, flex
-    Two <button> children, flex-1, rounded-full
-    Active pill: bg-white shadow text-[var(--color-breathing-accent-strong)] px-4 py-1.5 text-sm font-semibold
-    Inactive pill: text-[var(--color-breathing-muted)] px-4 py-1.5 text-sm font-medium
+    Two <button> children, flex-1, rounded-full, min-h-[44px]
+    Active pill: bg-white shadow text-[var(--color-breathing-accent-strong)] px-4 py-2 text-sm font-semibold
+    Inactive pill: text-[var(--color-breathing-muted)] px-4 py-2 text-sm font-normal
     Disabled container: opacity-50 cursor-not-allowed (wraps both pills)
 
 Placement: above orb, below app header — new first child inside the main card
@@ -138,11 +144,11 @@ New prop: activePractice: PracticeId
 
 When activePractice === 'resonant':
   Renders existing resonant knobs (unchanged)
-  Preceded by practice heading: <h3 class="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">Resonant Breathing</h3>
+  Preceded by practice heading: <h3 class="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">Resonant Breathing</h3>
 
 When activePractice === 'naviKriya':
   Renders NK scaffold: practice heading + empty controls slot + disabled Start stub
-  Heading: <h3 class="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">Navi Kriya</h3>
+  Heading: <h3 class="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">Navi Kriya</h3>
   Empty slot: <div aria-label="Practice controls — coming soon" class="text-sm text-[var(--color-breathing-muted)]">{strings.naviKriyaControlsPlaceholder}</div>
   No knobs rendered (Phase 30 — controls slot is empty, Phase 31 fills it)
 ```
@@ -200,7 +206,7 @@ readonly practice: {
 **Destructive action — Reset Stats:**
 - Trigger: "Reset" text link in StatsFooter
 - Confirmation dialog: `ResetStatsDialog` with practice-named title
-- Confirmation copy: "Reset" (confirm) / "Keep" (cancel — default focus per existing D-12)
+- Confirmation copy: "Reset" (confirm) / "Keep" (cancel — default focus per existing `cancelButtonRef`)
 - Scope: wipes only the active practice's stats; the other practice's history is untouched (D-08)
 - No "undo" — destructive and immediate on confirm
 
@@ -224,8 +230,8 @@ readonly practice: {
 
 | activePractice | Renders |
 |----------------|---------|
-| `'resonant'` | Practice heading "Resonant Breathing" + existing resonant knobs |
-| `'naviKriya'` | Practice heading "Navi Kriya" + placeholder text + disabled Start stub |
+| `'resonant'` | Practice heading "Resonant Breathing" (`text-2xl font-semibold`) + existing resonant knobs |
+| `'naviKriya'` | Practice heading "Navi Kriya" (`text-2xl font-semibold`) + placeholder text + disabled Start stub |
 
 ### StatsFooter Practice Switch
 
@@ -264,7 +270,7 @@ readonly practice: {
 - Practice heading (`h3`): screen-readable label naming the active practice — satisfies need for knob context after a switch (D-04).
 - NK controls placeholder: `aria-label="Practice controls — coming soon"` on the empty slot container.
 - Stub Start button (NK scaffold): `disabled` attribute set — not just visually dimmed (D-01).
-- All touch targets: minimum 44x44px (established pattern via `min-h-[44px] min-w-[44px]`).
+- All touch targets: minimum 44x44px (`min-h-[44px] min-w-[44px]` on pill `<button>` elements and all interactive text-link buttons).
 - Reset dialog: `aria-labelledby="reset-stats-title"` already in `ResetStatsDialog.tsx`; title string changes but the `id` stays.
 
 ---
@@ -300,10 +306,11 @@ No third-party component registries. All new components are hand-rolled followin
 | CONTEXT.md | 8 (D-01 through D-08: all locked decisions) |
 | RESEARCH.md | Pattern 3 (PracticeToggle), Pattern 4 (App.tsx rewiring), Standard Stack, copy string key names |
 | `src/styles/theme.css` | Full color token system, all 5 theme variants |
-| `src/app/App.tsx` | Spacing scale, layout structure, in-session disabling pattern |
+| `src/app/App.tsx` | Spacing scale, layout structure, in-session disabling pattern, confirmed `p-5` card padding (inherited, not modified) |
 | `src/components/StatsFooter.tsx` | Touch target pattern (44px), muted text color, mt-6 spacing |
 | `src/components/ResetStatsDialog.tsx` | Dialog typography (text-2xl heading, text-base buttons), destructive color `#bf616a` |
 | `src/components/SettingsForm.tsx` | `grid w-full gap-4` form grid pattern |
 | `src/content/strings.ts` | Existing string catalog structure, new keys designed to match |
 | Spike-002 `002-switcher-ux/index.html` | PracticeToggle pill layout, active/inactive classes, disabled pattern |
+| Checker revision | Fixed 4 blocking issues: 5→4 font sizes (20px merged into 24px heading), 3→2 font weights (removed 500/medium), py-1.5→py-2 (6px→8px), p-5 moved to inherited-not-modified note |
 | User input | 0 (all questions answered by upstream artifacts) |
