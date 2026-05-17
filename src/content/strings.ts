@@ -147,6 +147,7 @@ export interface UiStrings {
     readonly naviKriyaName: string
     readonly resonantHeading: string
     readonly naviKriyaHeading: string
+    readonly naviKriyaHeader: string
     readonly naviKriyaControlsPlaceholder: string
     readonly naviKriyaStatsEmptyBody: string
     readonly resetStatsTitle: (practiceName: string) => string
@@ -295,6 +296,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaName: 'Navi Kriya',
       resonantHeading: 'Resonant Breathing',
       naviKriyaHeading: 'Navi Kriya',
+      naviKriyaHeader: 'Navi practice',
       naviKriyaControlsPlaceholder: 'Controls coming soon',
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
@@ -442,6 +444,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaName: 'Navi Kriya',
       resonantHeading: 'Resonant Breathing',
       naviKriyaHeading: 'Navi Kriya',
+      naviKriyaHeader: 'Navi practice',
       naviKriyaControlsPlaceholder: 'Controls coming soon',
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,

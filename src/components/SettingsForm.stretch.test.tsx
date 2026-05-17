@@ -92,12 +92,9 @@ describe('SettingsForm — stretch surface (Plan 22-04 / 22-05 redesign)', () =>
 })
 
 describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/D-03/D-04)', () => {
-  it('activePractice="resonant": renders the resonant knobs and a heading naming the practice', () => {
+  it('activePractice="resonant": renders the resonant knobs', () => {
     renderForm({ activePractice: 'resonant', settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
     expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { level: 3, name: PRACTICE.resonantHeading }),
-    ).toBeInTheDocument()
   })
 
   it('activePractice="naviKriya": renders the NK scaffold with NO resonant knobs', () => {
@@ -110,12 +107,12 @@ describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/
     expect(screen.queryByRole('switch', { name: 'Session mode' })).not.toBeInTheDocument()
   })
 
-  it('activePractice="naviKriya": shows the Navi Kriya heading and controls placeholder', () => {
+  it('activePractice="naviKriya": shows the controls placeholder and no inline practice heading', () => {
     renderForm({ activePractice: 'naviKriya' })
-    expect(
-      screen.getByRole('heading', { level: 3, name: PRACTICE.naviKriyaHeading }),
-    ).toBeInTheDocument()
     expect(screen.getByText(PRACTICE.naviKriyaControlsPlaceholder)).toBeInTheDocument()
+    // Checkpoint feedback: the practice is named in the app header/title,
+    // not by an inline heading inside SettingsForm.
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   })
 
   it('activePractice="naviKriya": the Start-stub button carries the disabled attribute', () => {

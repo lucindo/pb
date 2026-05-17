@@ -218,6 +218,13 @@ export default function App() {
     activePractice === 'resonant'
       ? uiStrings.practice.resonantName
       : uiStrings.practice.naviKriyaName
+  // Phase 30 (checkpoint feedback): the active practice is named in the app
+  // header + title, not in a separate inline heading. Resonant keeps the
+  // existing app copy; Navi Kriya swaps both lines.
+  const appHeader =
+    activePractice === 'resonant' ? uiStrings.app.header : uiStrings.practice.naviKriyaHeader
+  const appTitle =
+    activePractice === 'resonant' ? uiStrings.app.title : uiStrings.practice.naviKriyaName
 
   // Phase 28 showBanner — AND of all five gates (INSTALL-01/02/03/04/05, D-01/D-02/D-08/SC5):
   // isPhone guards desktop (SC5), !isStandalone blocks installed PWA (INSTALL-05),
@@ -756,10 +763,10 @@ export default function App() {
             lead-in and running (D-03 disable-not-hide). */}
         <div className="relative w-full">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[var(--color-breathing-accent)]">
-            {uiStrings.app.header}
+            {appHeader}
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
-            {uiStrings.app.title}
+            {appTitle}
           </h1>
           <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} strings={uiStrings.anchors} />
           <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={uiStrings.anchors} />
@@ -791,13 +798,19 @@ export default function App() {
             leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
             strings={uiStrings.breathing}
           />
-          <SessionReadout
-            frame={leadInPlaceholderFrame ?? session.liveFrame}
-            status={state.status}
-            isLeadInPlaceholder={appPhase === 'lead-in'}
-            showCompletionHeadline={state.status === 'complete' && !inSessionView}
-            strings={uiStrings.readout}
-          />
+          {/* Phase 30 (checkpoint feedback): the SessionReadout reflects the
+              Resonant session engine. It must not render under Navi Kriya —
+              otherwise a completed Resonant session leaks a stale "Session
+              complete" headline onto the Navi Kriya scaffold. */}
+          {activePractice === 'resonant' && (
+            <SessionReadout
+              frame={leadInPlaceholderFrame ?? session.liveFrame}
+              status={state.status}
+              isLeadInPlaceholder={appPhase === 'lead-in'}
+              showCompletionHeadline={state.status === 'complete' && !inSessionView}
+              strings={uiStrings.readout}
+            />
+          )}
           <SettingsForm
             activePractice={activePractice}
             settings={state.selectedSettings}

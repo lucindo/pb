@@ -91,16 +91,10 @@ export function SettingsForm({
     updateSettings({ initialBpm })
   }
 
-  // Phase 30 D-04: the inline controls area is preceded by a heading naming the
-  // active practice.
-  const headingClass =
-    'text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]'
-
   return (
     <div className="grid w-full gap-4" aria-label={strings.ariaLabel}>
       {activePractice === 'resonant' ? (
         <>
-          <h3 className={headingClass}>{practiceStrings.resonantHeading}</h3>
           {/* D-05: Standard/Stretch switch — next-session-only, hidden while running. */}
           {!isRunning && (
             <ModeToggle
@@ -205,11 +199,11 @@ export function SettingsForm({
           )}
         </>
       ) : (
-        // Phase 30 D-01: Navi Kriya structural scaffold — practice heading, an
-        // empty controls slot, and a disabled Start stub. The real NK controls
-        // and engine arrive in Phase 31; no resonant knobs render here.
+        // Phase 30 D-01: Navi Kriya structural scaffold — an empty controls
+        // slot and a disabled Start stub. The active practice is named in the
+        // app header/title (App.tsx), not by an inline heading. The real NK
+        // controls and engine arrive in Phase 31; no resonant knobs render here.
         <>
-          <h3 className={headingClass}>{practiceStrings.naviKriyaHeading}</h3>
           <div
             aria-label="Practice controls — coming soon"
             className="text-sm text-[var(--color-breathing-muted)]"
