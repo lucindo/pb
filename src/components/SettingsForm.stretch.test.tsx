@@ -8,17 +8,22 @@ import { UI_STRINGS } from '../content/strings'
 import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
 
 const EN = UI_STRINGS.en.settingsForm
+const PRACTICE = UI_STRINGS.en.practice
+const START_LABEL = UI_STRINGS.en.controls.startSession
 
 function renderForm(overrides: Partial<SettingsFormProps> = {}) {
   const onChange = vi.fn()
   const onExtendDuration = vi.fn()
   render(
     <SettingsForm
+      activePractice={overrides.activePractice ?? 'resonant'}
       settings={overrides.settings ?? DEFAULT_SETTINGS}
       isRunning={overrides.isRunning ?? false}
       onChange={overrides.onChange ?? onChange}
       onExtendDuration={overrides.onExtendDuration ?? onExtendDuration}
       strings={overrides.strings ?? EN}
+      practiceStrings={overrides.practiceStrings ?? PRACTICE}
+      startSessionLabel={overrides.startSessionLabel ?? START_LABEL}
     />,
   )
   return { onChange, onExtendDuration }
@@ -83,5 +88,38 @@ describe('SettingsForm — stretch surface (Plan 22-04 / 22-05 redesign)', () =>
     renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch', coolDownMinutes: 'open-ended' } })
     const duration = screen.getByRole('group', { name: 'Duration' })
     expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
+  })
+})
+
+describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/D-03/D-04)', () => {
+  it('activePractice="resonant": renders the resonant knobs and a heading naming the practice', () => {
+    renderForm({ activePractice: 'resonant', settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
+    expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 3, name: PRACTICE.resonantHeading }),
+    ).toBeInTheDocument()
+  })
+
+  it('activePractice="naviKriya": renders the NK scaffold with NO resonant knobs', () => {
+    renderForm({ activePractice: 'naviKriya' })
+    // No resonant knobs in the Navi Kriya branch (D-01 structural scaffold only).
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+    for (const group of STRETCH_GROUPS) {
+      expect(screen.queryByRole('group', { name: group })).not.toBeInTheDocument()
+    }
+    expect(screen.queryByRole('switch', { name: 'Session mode' })).not.toBeInTheDocument()
+  })
+
+  it('activePractice="naviKriya": shows the Navi Kriya heading and controls placeholder', () => {
+    renderForm({ activePractice: 'naviKriya' })
+    expect(
+      screen.getByRole('heading', { level: 3, name: PRACTICE.naviKriyaHeading }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(PRACTICE.naviKriyaControlsPlaceholder)).toBeInTheDocument()
+  })
+
+  it('activePractice="naviKriya": the Start-stub button carries the disabled attribute', () => {
+    renderForm({ activePractice: 'naviKriya' })
+    expect(screen.getByRole('button', { name: START_LABEL })).toBeDisabled()
   })
 })

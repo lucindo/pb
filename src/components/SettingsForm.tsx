@@ -14,23 +14,36 @@ import {
 } from '../domain/settings'
 import { computeStretchTotalMs } from '../domain/stretchRamp'
 import type { UiStrings } from '../content/strings'
+import type { PracticeId } from '../storage/practices'
 import { ModeToggle } from './ModeToggle'
 import { SettingsStepper } from './SettingsStepper'
 
 export interface SettingsFormProps {
+  // Phase 30 D-03: SettingsForm is the practice-aware inline controls host —
+  // it dispatches on activePractice between the resonant knobs and the Navi
+  // Kriya structural scaffold.
+  activePractice: PracticeId
   settings: SessionSettings
   isRunning: boolean
   onChange(this: void, settings: SessionSettings): void
   onExtendDuration(this: void, durationMinutes: number): void
   strings: UiStrings['settingsForm']
+  // Phase 30: practice display copy (heading per practice, NK placeholder).
+  practiceStrings: UiStrings['practice']
+  // Phase 30: label for the disabled NK Start stub (D-01) — App.tsx passes
+  // uiStrings.controls.startSession so the scaffold matches the resonant CTA.
+  startSessionLabel: string
 }
 
 export function SettingsForm({
+  activePractice,
   settings,
   isRunning,
   onChange,
   onExtendDuration,
   strings,
+  practiceStrings,
+  startSessionLabel,
 }: SettingsFormProps) {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
   const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
@@ -78,109 +91,139 @@ export function SettingsForm({
     updateSettings({ initialBpm })
   }
 
+  // Phase 30 D-04: the inline controls area is preceded by a heading naming the
+  // active practice.
+  const headingClass =
+    'text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]'
+
   return (
     <div className="grid w-full gap-4" aria-label={strings.ariaLabel}>
-      {/* D-05: Standard/Stretch switch — next-session-only, hidden while running. */}
-      {!isRunning && (
-        <ModeToggle
-          isStretch={isStretch}
-          modeLabel={strings.sessionModeLabel}
-          standardLabel={strings.modeStandard}
-          stretchLabel={strings.modeStretch}
-          onChange={(toStretch) => { updateSettings({ mode: toStretch ? 'stretch' : 'standard' }) }}
-        />
-      )}
-      {!isRunning && (isStretch ? (
+      {activePractice === 'resonant' ? (
         <>
-          <SettingsStepper
-            label={strings.initialBpmLabel}
-            value={settings.initialBpm}
-            options={STRETCH_INITIAL_BPM_OPTIONS}
-            formatValue={formatBpm}
-            onChange={updateInitialBpm}
-            strings={strings.stepper}
-          />
-          <SettingsStepper
-            label={strings.targetBpmLabel}
-            value={settings.targetBpm}
-            options={targetBpmOptions}
-            formatValue={formatBpm}
-            onChange={(targetBpm) => { updateSettings({ targetBpm }) }}
-            strings={strings.stepper}
-          />
-          <SettingsStepper<RatioLabel>
-            label={strings.ratioLabel}
-            value={settings.ratio}
-            options={RATIO_OPTIONS}
-            onChange={(ratio) => { updateSettings({ ratio }) }}
-            strings={strings.stepper}
-          />
-          <SettingsStepper<WarmUpMinutes>
-            label={strings.holdInitialLabel}
-            value={settings.warmUpMinutes}
-            options={WARMUP_MINUTES_OPTIONS}
-            formatValue={formatMinutes}
-            onChange={(warmUpMinutes) => { updateSettings({ warmUpMinutes }) }}
-            strings={strings.stepper}
-          />
-          <SettingsStepper
-            label={strings.rampDurationLabel}
-            value={settings.rampDurationMinutes}
-            options={RAMP_DURATION_OPTIONS}
-            formatValue={formatMinutes}
-            onChange={(rampDurationMinutes) => { updateSettings({ rampDurationMinutes }) }}
-            strings={strings.stepper}
-          />
-          <SettingsStepper<CoolDownMinutes>
-            label={strings.holdTargetLabel}
-            value={settings.coolDownMinutes}
-            options={COOLDOWN_OPTIONS}
-            formatValue={formatCoolDown}
-            onChange={(coolDownMinutes) => { updateSettings({ coolDownMinutes }) }}
-            strings={strings.stepper}
-          />
+          <h3 className={headingClass}>{practiceStrings.resonantHeading}</h3>
+          {/* D-05: Standard/Stretch switch — next-session-only, hidden while running. */}
+          {!isRunning && (
+            <ModeToggle
+              isStretch={isStretch}
+              modeLabel={strings.sessionModeLabel}
+              standardLabel={strings.modeStandard}
+              stretchLabel={strings.modeStretch}
+              onChange={(toStretch) => { updateSettings({ mode: toStretch ? 'stretch' : 'standard' }) }}
+            />
+          )}
+          {!isRunning && (isStretch ? (
+            <>
+              <SettingsStepper
+                label={strings.initialBpmLabel}
+                value={settings.initialBpm}
+                options={STRETCH_INITIAL_BPM_OPTIONS}
+                formatValue={formatBpm}
+                onChange={updateInitialBpm}
+                strings={strings.stepper}
+              />
+              <SettingsStepper
+                label={strings.targetBpmLabel}
+                value={settings.targetBpm}
+                options={targetBpmOptions}
+                formatValue={formatBpm}
+                onChange={(targetBpm) => { updateSettings({ targetBpm }) }}
+                strings={strings.stepper}
+              />
+              <SettingsStepper<RatioLabel>
+                label={strings.ratioLabel}
+                value={settings.ratio}
+                options={RATIO_OPTIONS}
+                onChange={(ratio) => { updateSettings({ ratio }) }}
+                strings={strings.stepper}
+              />
+              <SettingsStepper<WarmUpMinutes>
+                label={strings.holdInitialLabel}
+                value={settings.warmUpMinutes}
+                options={WARMUP_MINUTES_OPTIONS}
+                formatValue={formatMinutes}
+                onChange={(warmUpMinutes) => { updateSettings({ warmUpMinutes }) }}
+                strings={strings.stepper}
+              />
+              <SettingsStepper
+                label={strings.rampDurationLabel}
+                value={settings.rampDurationMinutes}
+                options={RAMP_DURATION_OPTIONS}
+                formatValue={formatMinutes}
+                onChange={(rampDurationMinutes) => { updateSettings({ rampDurationMinutes }) }}
+                strings={strings.stepper}
+              />
+              <SettingsStepper<CoolDownMinutes>
+                label={strings.holdTargetLabel}
+                value={settings.coolDownMinutes}
+                options={COOLDOWN_OPTIONS}
+                formatValue={formatCoolDown}
+                onChange={(coolDownMinutes) => { updateSettings({ coolDownMinutes }) }}
+                strings={strings.stepper}
+              />
+            </>
+          ) : (
+            <>
+              <SettingsStepper
+                label={strings.bpmLabel}
+                value={settings.bpm}
+                options={BPM_OPTIONS}
+                formatValue={formatBpm}
+                onChange={(bpm) => { updateSettings({ bpm }) }}
+                strings={strings.stepper}
+              />
+              <SettingsStepper<RatioLabel>
+                label={strings.ratioLabel}
+                value={settings.ratio}
+                options={RATIO_OPTIONS}
+                onChange={(ratio) => { updateSettings({ ratio }) }}
+                strings={strings.stepper}
+              />
+            </>
+          ))}
+          {/* Duration: read-only computed total in stretch mode (warm-up + ramp +
+              cool-down); the extendable stepper in standard mode. */}
+          {isStretch ? (
+            <SettingsStepper<string>
+              label={strings.durationLabel}
+              value={stretchDurationText}
+              options={[stretchDurationText]}
+              readOnly
+              onChange={() => undefined}
+              strings={strings.stepper}
+            />
+          ) : (
+            <SettingsStepper<DurationOption>
+              label={strings.durationLabel}
+              value={settings.durationMinutes}
+              options={durationOptions}
+              formatValue={formatDuration}
+              onChange={updateDuration}
+              disableDecrease={isRunning}
+              disableIncrease={isRunning && typeof nextDuration !== 'number'}
+              strings={strings.stepper}
+            />
+          )}
         </>
       ) : (
+        // Phase 30 D-01: Navi Kriya structural scaffold — practice heading, an
+        // empty controls slot, and a disabled Start stub. The real NK controls
+        // and engine arrive in Phase 31; no resonant knobs render here.
         <>
-          <SettingsStepper
-            label={strings.bpmLabel}
-            value={settings.bpm}
-            options={BPM_OPTIONS}
-            formatValue={formatBpm}
-            onChange={(bpm) => { updateSettings({ bpm }) }}
-            strings={strings.stepper}
-          />
-          <SettingsStepper<RatioLabel>
-            label={strings.ratioLabel}
-            value={settings.ratio}
-            options={RATIO_OPTIONS}
-            onChange={(ratio) => { updateSettings({ ratio }) }}
-            strings={strings.stepper}
-          />
+          <h3 className={headingClass}>{practiceStrings.naviKriyaHeading}</h3>
+          <div
+            aria-label="Practice controls — coming soon"
+            className="text-sm text-[var(--color-breathing-muted)]"
+          >
+            {practiceStrings.naviKriyaControlsPlaceholder}
+          </div>
+          <button
+            type="button"
+            disabled
+            className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 opacity-50 cursor-not-allowed"
+          >
+            {startSessionLabel}
+          </button>
         </>
-      ))}
-      {/* Duration: read-only computed total in stretch mode (warm-up + ramp +
-          cool-down); the extendable stepper in standard mode. */}
-      {isStretch ? (
-        <SettingsStepper<string>
-          label={strings.durationLabel}
-          value={stretchDurationText}
-          options={[stretchDurationText]}
-          readOnly
-          onChange={() => undefined}
-          strings={strings.stepper}
-        />
-      ) : (
-        <SettingsStepper<DurationOption>
-          label={strings.durationLabel}
-          value={settings.durationMinutes}
-          options={durationOptions}
-          formatValue={formatDuration}
-          onChange={updateDuration}
-          disableDecrease={isRunning}
-          disableIncrease={isRunning && typeof nextDuration !== 'number'}
-          strings={strings.stepper}
-        />
       )}
     </div>
   )

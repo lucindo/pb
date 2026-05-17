@@ -7,9 +7,14 @@ export interface ResetStatsDialogProps {
   onConfirm(this: void): void
   onCancel(this: void): void
   strings: UiStrings['resetStatsDialog']
+  // Phase 30 D-08: when provided, this practice-named title (e.g. "Reset
+  // Resonant Breathing stats?") overrides the generic strings.title so the
+  // dialog names the practice being reset. App.tsx resolves it via
+  // uiStrings.practice.resetStatsTitle(activePracticeName).
+  title?: string
 }
 
-export function ResetStatsDialog({ open, onConfirm, onCancel, strings }: ResetStatsDialogProps) {
+export function ResetStatsDialog({ open, onConfirm, onCancel, strings, title }: ResetStatsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -68,7 +73,7 @@ export function ResetStatsDialog({ open, onConfirm, onCancel, strings }: ResetSt
           id="reset-stats-title"
           className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]"
         >
-          {strings.title}
+          {title ?? strings.title}
         </h2>
         {/* Same row layout as Phase 2 dialog: Keep on top (mobile col), Keep left / Reset right (desktop row). */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
