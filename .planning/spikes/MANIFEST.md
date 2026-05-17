@@ -28,4 +28,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | #   | Name                  | Type       | Validates | Verdict | Tags |
 |-----|-----------------------|------------|-----------|---------|------|
 | 001 | multi-practice-shell  | standard   | Tabbed shell hosting Resonant + Navi Kriya keeps per-practice settings/stats isolated with shared chrome, without feeling bloated | VALIDATED | architecture, navigation, multi-practice |
-| 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | PENDING | navigation, ux, comparison |
+| 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | PENDING (awaiting operator head-to-head) | navigation, ux, comparison |

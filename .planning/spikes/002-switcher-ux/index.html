@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spike 002 — Switcher UX comparison</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <style>
+    @keyframes breathe { 0%,100% { transform: scale(0.55); } 50% { transform: scale(1); } }
+    .orb { animation-name: breathe; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+  <div id="root"></div>
+
+  <script type="module">
+    import React, { useState, useEffect } from 'https://esm.sh/react@19.0.0'
+    import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client'
+    import htm from 'https://esm.sh/htm@3.1.1'
+    const html = htm.bind(React.createElement)
+
+    const PRACTICES = [
+      { id: 'resonant',  name: 'Resonant Breathing', blurb: 'Slow paced breathing at your resonance frequency.', cycle: 11, tint: 'from-sky-300 to-indigo-400' },
+      { id: 'naviKriya', name: 'Navi Kriya',         blurb: 'Navel-centered Kriya practice — fewer settings.',   cycle: 10, tint: 'from-amber-300 to-rose-400' },
+    ]
+    const byId = (id) => PRACTICES.find((p) => p.id === id)
+
+    // ── Shared practice screen (identical content across all 3 switchers) ──
+    function PracticeContent({ practice, running, onStart, onEnd }) {
+      return html`
+        <div class="space-y-5">
+          <div>
+            <h2 class="text-xl font-semibold">${practice.name}</h2>
+            <p class="text-sm opacity-60">${practice.blurb}</p>
+          </div>
+          <div class="flex items-center justify-center h-44">
+            <div
+              class=${`orb h-36 w-36 rounded-full bg-gradient-to-br ${practice.tint} shadow-lg`}
+              style=${{ animationDuration: `${practice.cycle}s`, animationPlayState: running ? 'running' : 'paused' }}
+            ></div>
+          </div>
+          <div class="flex justify-center">
+            ${running
+              ? html`<button class="rounded-full bg-rose-500 text-white px-6 py-2 font-medium" onClick=${onEnd}>End session</button>`
+              : html`<button class="rounded-full bg-indigo-500 text-white px-6 py-2 font-medium" onClick=${onStart}>Start</button>`}
+          </div>
+          ${running && html`<p class="text-center text-xs text-emerald-600 dark:text-emerald-400">● session in progress — switching is locked</p>`}
+        </div>
+      `
+    }
+
+    // ── Variant A: bottom tab bar ──────────────────────────────────────────
+    function TabBarShell({ active, setActive, running, onStart, onEnd }) {
+      return html`
+        <div class="pb-20">
+          <${PracticeContent} practice=${byId(active)} running=${running} onStart=${onStart} onEnd=${onEnd} />
+          <nav class="fixed bottom-0 inset-x-0 border-t border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 backdrop-blur">
+            <div class="mx-auto max-w-md flex">
+              ${PRACTICES.map((p) => html`
+                <button key=${p.id} disabled=${running}
+                  class=${`flex-1 py-3 text-sm font-medium ${active === p.id ? 'text-indigo-500' : 'opacity-50'} ${running ? 'cursor-not-allowed opacity-30' : ''}`}
+                  onClick=${() => setActive(p.id)}>
+                  ${p.name}
+                </button>
+              `)}
+            </div>
+          </nav>
+        </div>
+      `
+    }
+
+    // ── Variant B: top segmented control ───────────────────────────────────
+    function SegmentedShell({ active, setActive, running, onStart, onEnd }) {
+      return html`
+        <div>
+          <div class=${`mb-5 flex rounded-full bg-slate-200 dark:bg-slate-700 p-1 ${running ? 'opacity-40' : ''}`}>
+            ${PRACTICES.map((p) => html`
+              <button key=${p.id} disabled=${running}
+                class=${`flex-1 rounded-full py-1.5 text-sm font-medium transition ${active === p.id ? 'bg-white dark:bg-slate-900 shadow text-indigo-500' : 'opacity-60'} ${running ? 'cursor-not-allowed' : ''}`}
+                onClick=${() => setActive(p.id)}>
+                ${p.name}
+              </button>
+            `)}
+          </div>
+          <${PracticeContent} practice=${byId(active)} running=${running} onStart=${onStart} onEnd=${onEnd} />
+        </div>
+      `
+    }
+
+    // ── Variant C: launch / home screen ────────────────────────────────────
+    function HomeShell({ active, setActive, entered, setEntered, running, onStart, onEnd }) {
+      if (!entered) {
+        return html`
+          <div>
+            <h2 class="text-lg font-semibold mb-1">Choose a practice</h2>
+            <p class="text-sm opacity-60 mb-4">Pick how you want to practice today.</p>
+            <div class="space-y-3">
+              ${PRACTICES.map((p) => html`
+                <button key=${p.id}
+                  class="w-full text-left rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm hover:ring-2 hover:ring-indigo-400 transition"
+                  onClick=${() => { setActive(p.id); setEntered(true) }}>
+                  <div class="flex items-center gap-3">
+                    <div class=${`h-10 w-10 rounded-full bg-gradient-to-br ${p.tint}`}></div>
+                    <div>
+                      <div class="font-medium">${p.name}</div>
+                      <div class="text-xs opacity-60">${p.blurb}</div>
+                    </div>
+                  </div>
+                </button>
+              `)}
+            </div>
+          </div>
+        `
+      }
+      return html`
+        <div>
+          <button disabled=${running}
+            class=${`mb-4 text-sm font-medium ${running ? 'cursor-not-allowed opacity-30' : 'text-indigo-500'}`}
+            onClick=${() => setEntered(false)}>
+            ← Practices
+          </button>
+          <${PracticeContent} practice=${byId(active)} running=${running} onStart=${onStart} onEnd=${onEnd} />
+        </div>
+      `
+    }
+
+    // ── Spike harness ──────────────────────────────────────────────────────
+    const SWITCHERS = [
+      { id: 'tabbar',    label: 'A · Bottom tab bar' },
+      { id: 'segmented', label: 'B · Top segmented' },
+      { id: 'home',      label: 'C · Home screen' },
+    ]
+
+    function App() {
+      const [switcher, setSwitcher] = useState('tabbar')
+      const [theme, setTheme] = useState('light')
+      const [active, setActive] = useState('resonant')
+      const [entered, setEntered] = useState(false)
+      const [running, setRunning] = useState(false)
+
+      useEffect(() => {
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+      }, [theme])
+
+      // changing switcher resets transient nav state so each is felt fresh
+      const pickSwitcher = (id) => {
+        setSwitcher(id)
+        setRunning(false)
+        setEntered(false)
+      }
+
+      const shellProps = {
+        active, setActive, running,
+        onStart: () => setRunning(true),
+        onEnd: () => setRunning(false),
+      }
+
+      return html`
+        <div>
+          <!-- harness bar (NOT part of the product — the comparison control) -->
+          <div class="bg-slate-800 text-slate-100 text-xs">
+            <div class="mx-auto max-w-md px-4 py-2 flex items-center gap-2 flex-wrap">
+              <span class="opacity-50 uppercase tracking-wide">Switcher:</span>
+              ${SWITCHERS.map((sw) => html`
+                <button key=${sw.id}
+                  class=${`rounded-md px-2 py-1 ${switcher === sw.id ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                  onClick=${() => pickSwitcher(sw.id)}>
+                  ${sw.label}
+                </button>
+              `)}
+              <button class="ml-auto rounded-md bg-slate-700 px-2 py-1"
+                onClick=${() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}>
+                ${theme === 'light' ? '☾' : '☀'}
+              </button>
+            </div>
+          </div>
+
+          <div class="mx-auto max-w-md px-4 pt-5 min-h-screen">
+            ${switcher === 'tabbar'    && html`<${TabBarShell} ...${shellProps} />`}
+            ${switcher === 'segmented' && html`<${SegmentedShell} ...${shellProps} />`}
+            ${switcher === 'home'      && html`<${HomeShell} ...${shellProps} entered=${entered} setEntered=${setEntered} />`}
+          </div>
+        </div>
+      `
+    }
+
+    createRoot(document.getElementById('root')).render(html`<${App} />`)
+  </script>
+</body>
+</html>
