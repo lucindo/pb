@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spike 003 — Navi Kriya practice</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <style>
+    @keyframes pop  { 0% { transform: scale(0.92); } 35% { transform: scale(1.06); } 100% { transform: scale(1); } }
+    @keyframes ring { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.5); opacity: 0; } }
+    .pop  { animation: pop 0.45s ease-out; }
+    .ring { animation: ring 0.7s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+  <div id="root"></div>
+
+  <script type="module">
+    import React, { useState, useRef } from 'https://esm.sh/react@19.0.0'
+    import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client'
+    import htm from 'https://esm.sh/htm@3.1.1'
+    const html = htm.bind(React.createElement)
+
+    // ── Parameters ─────────────────────────────────────────────────────────
+    // Front counts chosen so back = front/4 is always integer. 4/8/20 are for
+    // quick verification; 100 is the real default.
+    const FRONT_OPTIONS = [4, 8, 20, 100]
+    const OM_SECONDS = { fast: 3, medium: 5, slow: 8 } // seconds per OM — adjustable seed
+    const ROUND_OPTIONS = [1, 2, 3, 4, 5]
+    const LEAD_MS = 700 // gap after a marker sound before the phase's first OM
+
+    // ── Web Audio — synthesized cue tones ──────────────────────────────────
+    function makeAudio() {
+      const Ctx = window.AudioContext || window.webkitAudioContext
+      const ctx = new Ctx()
+      function tone(freq, durSec, type, gain, offsetSec = 0) {
+        const osc = ctx.createOscillator()
+        const g = ctx.createGain()
+        osc.type = type
+        osc.frequency.value = freq
+        osc.connect(g); g.connect(ctx.destination)
+        const t0 = ctx.currentTime + offsetSec
+        g.gain.setValueAtTime(0.0001, t0)
+        g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02)
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + durSec)
+        osc.start(t0); osc.stop(t0 + durSec + 0.05)
+      }
+      return {
+        resume: () => { if (ctx.state === 'suspended') ctx.resume() },
+        tick:        () => tone(660, 0.12, 'sine', 0.12),
+        frontMarker: () => { tone(392, 0.30, 'triangle', 0.22); tone(523, 0.42, 'triangle', 0.22, 0.30) },
+        backMarker:  () => { tone(523, 0.30, 'triangle', 0.22); tone(392, 0.42, 'triangle', 0.22, 0.30) },
+        endCue:      () => { tone(261.6, 1.7, 'sine', 0.16); tone(329.6, 1.7, 'sine', 0.13); tone(392, 1.7, 'sine', 0.10) },
+      }
+    }
+
+    const fmtTime = (sec) => `${Math.floor(sec / 60)}:${String(Math.round(sec) % 60).padStart(2, '0')}`
+
+    function App() {
+      // setup controls
+      const [frontCount, setFrontCount] = useState(100)
+      const [omLabel, setOmLabel] = useState('medium')
+      const [rounds, setRounds] = useState(3)
+      const [cueOn, setCueOn] = useState(true)
+      const [theme, setTheme] = useState('light')
+
+      // live session state (for display)
+      const [phase, setPhase] = useState('idle') // idle | front | back | done
+      const [round, setRound] = useState(1)
+      const [count, setCount] = useState(0)
+      const [running, setRunning] = useState(false)
+      const [logs, setLogs] = useState([])
+
+      const eng = useRef({})
+      const timer = useRef(null)
+      const audio = useRef(null)
+
+      const omSec = OM_SECONDS[omLabel]
+      const backCount = frontCount / 4
+      const totalSec = rounds * (frontCount + backCount) * omSec
+      const inSession = phase === 'front' || phase === 'back'
+      const target = phase === 'back' ? eng.current.backCount : eng.current.frontCount
+
+      const addLog = (text) =>
+        setLogs((l) => [...l, { t: new Date().toISOString().slice(14, 19), text }])
+
+      const schedule = (delayMs) => { timer.current = setTimeout(stepOm, delayMs) }
+
+      function stepOm() {
+        const e = eng.current
+        e.count += 1
+        setCount(e.count)
+        if (e.cueOn) audio.current.tick()
+
+        const tgt = e.phase === 'front' ? e.frontCount : e.backCount
+        if (e.count < tgt) { schedule(e.omMs); return }
+
+        // phase target reached
+        if (e.phase === 'front') {
+          e.phase = 'back'; e.count = 0
+          setPhase('back'); setCount(0)
+          addLog(`Round ${e.round}: front complete (${tgt} OM) → back`)
+          audio.current.backMarker()
+          schedule(LEAD_MS)
+        } else {
+          addLog(`Round ${e.round} complete`)
+          if (e.round < e.rounds) {
+            e.round += 1; e.phase = 'front'; e.count = 0
+            setRound(e.round); setPhase('front'); setCount(0)
+            audio.current.frontMarker()
+            schedule(LEAD_MS)
+          } else {
+            e.phase = 'done'
+            setPhase('done'); setRunning(false)
+            addLog('Practice complete')
+            audio.current.endCue()
+          }
+        }
+      }
+
+      function start() {
+        if (!audio.current) audio.current = makeAudio()
+        audio.current.resume()
+        eng.current = {
+          phase: 'front', round: 1, count: 0,
+          frontCount, backCount, rounds, omMs: omSec * 1000, cueOn,
+        }
+        setPhase('front'); setRound(1); setCount(0); setRunning(true)
+        setLogs([])
+        addLog(`Started — ${rounds} round(s), ${frontCount}/${backCount} OM, ${omLabel} (${omSec}s/OM)`)
+        audio.current.frontMarker()
+        schedule(LEAD_MS)
+      }
+
+      function pause() { clearTimeout(timer.current); setRunning(false); addLog('Paused') }
+      function resume() { setRunning(true); addLog('Resumed'); schedule(eng.current.omMs) }
+      function end() {
+        clearTimeout(timer.current)
+        setRunning(false); setPhase('idle'); setCount(0); setRound(1)
+        addLog('Ended manually')
+      }
+
+      // ── render ───────────────────────────────────────────────────────────
+      const dark = theme === 'dark'
+      if (dark) document.documentElement.classList.add('dark')
+      else document.documentElement.classList.remove('dark')
+
+      const phaseTint = phase === 'back' ? 'from-amber-300 to-rose-400' : 'from-sky-300 to-indigo-400'
+      const phaseLabel = phase === 'back' ? 'BACK' : phase === 'front' ? 'FRONT' : ''
+
+      return html`
+        <div class="mx-auto max-w-md px-4 py-5 min-h-screen">
+          <header class="flex items-center justify-between mb-5">
+            <span class="font-semibold tracking-tight">Navi Kriya — practice spike</span>
+            <button class="rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm"
+              onClick=${() => setTheme(dark ? 'light' : 'dark')}>${dark ? '☀' : '☾'}</button>
+          </header>
+
+          ${phase === 'idle' && html`
+            <div class="space-y-4">
+              <div class="rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm space-y-4">
+                <h3 class="text-sm font-semibold uppercase tracking-wide opacity-60">Set up the practice</h3>
+
+                <label class="block text-sm">
+                  <div class="mb-1 flex justify-between"><span>Front OM count</span><span class="opacity-60">back = ${backCount}</span></div>
+                  <div class="flex gap-2">
+                    ${FRONT_OPTIONS.map((n) => html`
+                      <button key=${n} onClick=${() => setFrontCount(n)}
+                        class=${`flex-1 rounded-md py-1.5 text-sm ${frontCount === n ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                        ${n}${n === 100 ? '' : ''}
+                      </button>`)}
+                  </div>
+                  <div class="mt-1 text-xs opacity-50">4 / 8 / 20 are for quick testing; 100 is the real default. Ratio fixed 4:1.</div>
+                </label>
+
+                <label class="block text-sm">
+                  <div class="mb-1">OM length</div>
+                  <div class="flex gap-2">
+                    ${Object.keys(OM_SECONDS).map((k) => html`
+                      <button key=${k} onClick=${() => setOmLabel(k)}
+                        class=${`flex-1 rounded-md py-1.5 text-sm capitalize ${omLabel === k ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                        ${k} · ${OM_SECONDS[k]}s
+                      </button>`)}
+                  </div>
+                </label>
+
+                <label class="block text-sm">
+                  <div class="mb-1">Rounds</div>
+                  <div class="flex gap-2">
+                    ${ROUND_OPTIONS.map((n) => html`
+                      <button key=${n} onClick=${() => setRounds(n)}
+                        class=${`flex-1 rounded-md py-1.5 text-sm ${rounds === n ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                        ${n}</button>`)}
+                  </div>
+                </label>
+
+                <label class="flex items-center justify-between text-sm">
+                  <span>Audible cue on each OM</span>
+                  <input type="checkbox" checked=${cueOn} onChange=${(e) => setCueOn(e.target.checked)}
+                    class="h-4 w-4" />
+                </label>
+
+                <div class="text-sm opacity-60 border-t border-slate-200 dark:border-slate-700 pt-3">
+                  ${rounds} round(s) × (${frontCount} + ${backCount}) OM × ${omSec}s
+                  → estimated <strong>${fmtTime(totalSec)}</strong>
+                </div>
+              </div>
+              <button class="w-full rounded-full bg-indigo-500 text-white py-3 font-medium" onClick=${start}>
+                Start practice
+              </button>
+            </div>
+          `}
+
+          ${inSession && html`
+            <div class="space-y-6">
+              <div class="text-center">
+                <div class="text-sm opacity-60">Round ${round} / ${eng.current.rounds}</div>
+                <div class=${`mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-semibold tracking-widest
+                  ${phase === 'back' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400' : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'}`}>
+                  ${phaseLabel}
+                </div>
+              </div>
+
+              <div class="relative flex items-center justify-center h-60">
+                <div key=${'r' + count} class=${`ring absolute h-44 w-44 rounded-full bg-gradient-to-br ${phaseTint}`}></div>
+                <div key=${count} class=${`pop relative h-44 w-44 rounded-full bg-gradient-to-br ${phaseTint} shadow-lg flex flex-col items-center justify-center`}>
+                  <div class="text-5xl font-bold text-white tabular-nums">${count}</div>
+                  <div class="text-white/80 text-sm">/ ${target}</div>
+                </div>
+              </div>
+
+              <div class="flex justify-center gap-3">
+                ${running
+                  ? html`<button class="rounded-full bg-slate-500 text-white px-6 py-2 font-medium" onClick=${pause}>Pause</button>`
+                  : html`<button class="rounded-full bg-indigo-500 text-white px-6 py-2 font-medium" onClick=${resume}>Resume</button>`}
+                <button class="rounded-full bg-rose-500 text-white px-6 py-2 font-medium" onClick=${end}>End</button>
+              </div>
+            </div>
+          `}
+
+          ${phase === 'done' && html`
+            <div class="space-y-5 text-center">
+              <div class="text-2xl font-semibold">Practice complete</div>
+              <p class="opacity-60 text-sm">${eng.current.rounds} round(s) of ${eng.current.frontCount}/${eng.current.backCount} OM.</p>
+              <button class="rounded-full bg-indigo-500 text-white px-6 py-2 font-medium"
+                onClick=${() => { setPhase('idle'); setCount(0); setRound(1) }}>
+                Back to setup
+              </button>
+            </div>
+          `}
+
+          <!-- session log -->
+          <div class="mt-6 rounded-xl bg-slate-800 text-slate-100 text-xs font-mono">
+            <div class="px-3 py-2 font-semibold">Session log (${logs.length})</div>
+            <div class="max-h-44 overflow-y-auto px-3 pb-3 space-y-1">
+              ${logs.length === 0 && html`<div class="opacity-40">—</div>`}
+              ${logs.map((l, i) => html`
+                <div key=${i}><span class="opacity-40">${l.t}</span><span class="ml-2">${l.text}</span></div>`)}
+            </div>
+          </div>
+        </div>
+      `
+    }
+
+    createRoot(document.getElementById('root')).render(html`<${App} />`)
+  </script>
+</body>
+</html>

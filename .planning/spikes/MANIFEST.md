@@ -25,6 +25,17 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 - **The practice switcher is a top segmented control** — a compact pill toggle above the
   orb, disabled during a session. Holds comfortably for ~3–4 practices; revisit if the
   catalog grows past that. (Spike 002, operator decision.)
+- **One shared chrome-settings screen** (theme, language, visual variant, cue style)
+  serves both practices unchanged — these are app-wide, per the spike-001 split. Practice
+  controls stay per-practice and are NOT unified. The current `SettingsDialog` mixes both
+  and will need to separate shared chrome from per-practice controls. (Operator
+  clarification.)
+- Navi Kriya is **app-paced** (metronome ticks each OM at the chosen OM length) and
+  **auto-advances** front → back → next round, marking each transition with sound.
+  (Operator decision, spike 003.)
+- The **Learn screen** is not spiked — shared sections (Who is Forrest, Forrest
+  Resources) plus per-practice sections (videos, description) is a content-architecture
+  task, not a feasibility risk.
 
 ## Spikes
 
@@ -32,3 +43,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 |-----|-----------------------|------------|-----------|---------|------|
 | 001 | multi-practice-shell  | standard   | Tabbed shell hosting Resonant + Navi Kriya keeps per-practice settings/stats isolated with shared chrome, without feeling bloated | VALIDATED | architecture, navigation, multi-practice |
 | 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | VALIDATED — winner: B (top segmented control) | navigation, ux, comparison |
+| 003 | navi-kriya-practice   | standard   | App-paced Navi Kriya counting practice — 100 front / 25 back OM per round, N rounds, marker + per-OM sounds — works as a usable in-app meditation | PENDING | practice, navi-kriya, audio, counting |
