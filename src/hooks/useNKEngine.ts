@@ -37,6 +37,11 @@ interface NKEngineRecord {
   cueOn: boolean           // mirrors perOmCue; mutable for live toggle via toggleCue()
   startedAtMs: number      // performance.now() at start — for elapsed stats
   completedRounds: number  // fully-completed rounds (for early-end stats)
+  // WR-02: delay (ms) of the currently-pending step timer. Phase markers
+  // schedule the next step with NK_LEAD_MS (700 ms); per-OM steps use omMs.
+  // resume() reschedules with THIS value so a pause during a lead-in window
+  // restores the 700 ms lead-in instead of the longer omMs gap.
+  pendingDelayMs: number
 }
 
 export interface NKAudioCallbacks {
@@ -82,9 +87,12 @@ export function useNKEngine(): NKEngineApi {
   const cbsRef        = useRef<NKAudioCallbacks | null>(null)
   const onCompleteRef = useRef<NKOnComplete | null>(null)
 
-  // schedule: internal helper used inside stepOm and other stable callbacks
+  // schedule: internal helper used inside stepOm and other stable callbacks.
+  // WR-02: records delayMs on the engine record so resume() can reschedule
+  // with the delay the cancelled timer was using (lead-in vs per-OM).
   const schedule = useCallback((delayMs: number) => {
     if (timer.current !== null) clearTimeout(timer.current)
+    if (eng.current) eng.current.pendingDelayMs = delayMs
     // Reason: stepOm is declared below; the ref indirection breaks the circular dep.
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     timer.current = setTimeout(stepOm, delayMs)
@@ -170,6 +178,8 @@ export function useNKEngine(): NKEngineApi {
       cueOn: settings.perOmCue,
       startedAtMs: performance.now(),
       completedRounds: 0,
+      // start() schedules the first step with NK_LEAD_MS below.
+      pendingDelayMs: NK_LEAD_MS,
     }
 
     // Capture callbacks in refs so stepOm reads them without stale closure
@@ -185,8 +195,13 @@ export function useNKEngine(): NKEngineApi {
     schedule(NK_LEAD_MS)
   }, [schedule])
 
+  // CR-01: pause/resume must be inert in the terminal 'done' phase. On natural
+  // completion stepOm sets phase='done' but does NOT null eng.current (only
+  // end() does), so without a phase guard a resume() during 'done' would
+  // re-drive stepOm, re-fire endCue(), and double-count completedRounds.
   const pause = useCallback(() => {
-    if (!eng.current) return
+    const e = eng.current
+    if (!e || e.phase === 'done') return
     if (timer.current !== null) {
       clearTimeout(timer.current)
       timer.current = null
@@ -196,9 +211,11 @@ export function useNKEngine(): NKEngineApi {
 
   const resume = useCallback(() => {
     const e = eng.current
-    if (!e) return
+    if (!e || e.phase === 'done') return
     setNkRunning(true)
-    schedule(e.omMs)
+    // WR-02: reschedule with the delay the cancelled timer was using — a pause
+    // during a lead-in window must resume on the 700 ms lead-in, not omMs.
+    schedule(e.pendingDelayMs)
   }, [schedule])
 
   const end = useCallback(() => {
