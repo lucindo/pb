@@ -12,12 +12,21 @@ export interface OrbShapeProps {
   // Phase 25 Plan 03: OPTIONAL, default 'labels' — zero-regression for callers
   // that pre-date Phase 25. OrbLeadIn does NOT receive cue (D-07).
   cue?: CueStyleId
+  // Phase 31: NKShape renders the locked MID_SCALE shell beneath its own live
+  // OM count. nkLocked yields that shell with NO countdown numeral — passing
+  // leadInDigit={1} (the old approach) drew a stray "1" that leaked from behind
+  // any count other than 1.
+  nkLocked?: boolean
 }
 
 // D-04: OrbShape does NOT own the idle null-return — the BreathingShape
 // dispatcher (Plan 05) guards that and never invokes OrbShape with both
 // frame=null AND leadInDigit=null.
-export function OrbShape({ frame, leadInDigit, strings, cue = 'labels' }: OrbShapeProps) {
+export function OrbShape({ frame, leadInDigit, strings, cue = 'labels', nkLocked = false }: OrbShapeProps) {
+  if (nkLocked) {
+    // Phase 31: locked shell, no numeral — NKShape overlays the OM count.
+    return <OrbLeadIn digit={null} strings={strings} />
+  }
   if (leadInDigit != null) {
     // OrbLeadIn does NOT receive cue — D-07: lead-in countdown digit is unchanged
     return <OrbLeadIn digit={leadInDigit} strings={strings} />
@@ -145,11 +154,15 @@ function OrbBody({ frame, strings, cue }: { frame: SessionFrame; strings: UiStri
 // No data-phase / data-progress on the root — those attributes belong to the
 // active phase loop. The lead-in is pre-state and exposes only the aria-label
 // "Lead-in: N" for assistive tech.
-function OrbLeadIn({ digit, strings }: { digit: 1 | 2 | 3; strings: UiStrings['breathing'] }) {
+// digit === null: Phase 31 NK locked shell — renders the MID_SCALE geometry
+// only, with no countdown numeral. NKShape supplies its own role/aria-label on
+// the wrapper and overlays the live OM count, so this subtree stays decorative.
+function OrbLeadIn({ digit, strings }: { digit: 1 | 2 | 3 | null; strings: UiStrings['breathing'] }) {
+  const labelProps =
+    digit != null ? { role: 'img' as const, 'aria-label': strings.leadInAriaLabel(digit) } : {}
   return (
     <div
-      role="img"
-      aria-label={strings.leadInAriaLabel(digit)}
+      {...labelProps}
       data-variant="orb"
       className="relative mx-auto my-12 grid place-items-center"
       style={{
@@ -201,13 +214,16 @@ function OrbLeadIn({ digit, strings }: { digit: 1 | 2 | 3; strings: UiStrings['b
       />
       {/* D-14: digit in the same large-display position as the In/Out label,
           one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
-          so the countdown reads as dominant. */}
-      <span
-        className="relative z-10 text-7xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-8xl"
-        style={{ color: 'var(--color-orb-in-text)' }}
-      >
-        {digit}
-      </span>
+          so the countdown reads as dominant. Omitted in the NK locked shell
+          (digit === null) — NKShape draws the OM count instead. */}
+      {digit != null && (
+        <span
+          className="relative z-10 text-7xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-8xl"
+          style={{ color: 'var(--color-orb-in-text)' }}
+        >
+          {digit}
+        </span>
+      )}
     </div>
   )
 }

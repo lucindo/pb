@@ -66,55 +66,55 @@ export function NKShape({
   const ariaLabel = `Navi Kriya session: OM ${String(count)}, phase ${phaseLabel}`
 
   // The NKShape renders the underlying shape component locked at MID_SCALE.
-  // We pass frame=null and leadInDigit=undefined so neither path fires;
-  // the shape renders a neutral lead-in-like locked state.
-  // Then we overlay the count number absolutely inside the shape.
   //
   // ARCHITECTURE: Since the shape components (OrbShape/SquareShape/DiamondShape)
-  // don't have an NK mode, we use the OrbLeadIn pattern from each shape as the
-  // structural model — the shape locked at MID_SCALE with only the `in` gradient.
-  // We render the shape with leadInDigit=1 to get the MID_SCALE locked state,
-  // then overlay our own count number via a wrapper div.
+  // don't have a full NK mode, each exposes an `nkLocked` prop that renders its
+  // LeadIn structure (MID_SCALE host + `in` gradient + reference rings) WITHOUT
+  // a countdown numeral. We then overlay our own live OM count via a wrapper div.
   //
-  // This approach reuses the exact CSS/DOM structure from each shape's LeadIn
-  // (which is already tested and known good) while supplying our own count content.
+  // This reuses the exact CSS/DOM structure from each shape's LeadIn (already
+  // tested and known good) while supplying our own count content.
   //
-  // IMPORTANT: We render using leadInDigit=1 as a MID_SCALE locked trigger; the
-  // digit "1" is rendered by the shape but our wrapper hides it via z-index layering
-  // — the count span sits at z-10 above the shape's own content.
+  // Phase 31 fix: the earlier approach passed leadInDigit={1} and relied on
+  // z-index layering to hide the shape's own "1". That "1" leaked from behind
+  // any count other than 1 (e.g. a "2" left the "1" stroke visible). `nkLocked`
+  // suppresses the numeral at the source, so nothing is left behind.
 
   return (
     <div
       data-variant={variant}
-      className={`relative mx-auto grid place-items-center${pulseClass ? ` ${pulseClass}` : ''}`}
+      // my-12 mirrors the vertical margin OrbShape/OrbLeadIn carry — without it
+      // the shape box collapses and the StatusPanel rides up over the shape
+      // (visible as a jump when the countdown hands off to the running session).
+      className={`relative mx-auto my-12 grid place-items-center${pulseClass ? ` ${pulseClass}` : ''}`}
       style={{
         width: 'var(--orb-size)',
         height: 'var(--orb-size)',
-        // Ensure the wrapper doesn't add extra margin beyond what the shape provides
       }}
       aria-label={ariaLabel}
       role="img"
     >
-      {/* Render the variant shape locked at MID_SCALE using the LeadIn branch.
-          The shape's own aria-label/role are suppressed via aria-hidden since
-          the parent div carries the NK-specific aria-label. */}
+      {/* Render the variant shape locked at MID_SCALE via nkLocked — no numeral.
+          The shape's role/aria-label are suppressed (nkLocked renders a
+          decorative subtree) and the wrapper is aria-hidden, since the parent
+          div carries the NK-specific aria-label. */}
       <div aria-hidden="true" className="absolute inset-0">
         {variant === 'orb' ? (
           <OrbShape
             frame={null}
-            leadInDigit={1}
+            nkLocked
             strings={strings}
           />
         ) : variant === 'square' ? (
           <SquareShape
             frame={null}
-            leadInDigit={1}
+            nkLocked
             strings={strings}
           />
         ) : (
           <DiamondShape
             frame={null}
-            leadInDigit={1}
+            nkLocked
             strings={strings}
           />
         )}
