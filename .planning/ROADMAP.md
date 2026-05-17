@@ -77,7 +77,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 31-03-PLAN.md — Per-practice NK stats — PersistedStats roundsCompleted + recordNaviKriyaSession + StatsFooter
 - [x] 31-04-PLAN.md — NK session-screen display — NKShape, NKSessionReadout, nk-om-pulse CSS, NK strings
 - [x] 31-05-PLAN.md — NK controls in SettingsForm (rounds, front count, OM length, tick toggle, duration estimate)
-- [ ] 31-06-PLAN.md — App.tsx NK engine wiring, session screen, completion dialog, stats, CR-01 fix
+- [x] 31-06-PLAN.md — App.tsx NK engine wiring, session screen, completion dialog, stats, CR-01 fix
 **UI hint**: yes
 
 ### Phase 32: Learn & Localization
@@ -107,5 +107,5 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 30. Multi-Practice Architecture & Switcher | 4/4 | Complete    | 2026-05-17 |
-| 31. Navi Kriya Engine & Session | 5/6 | In Progress|  |
+| 31. Navi Kriya Engine & Session | 6/6 | Complete   | 2026-05-17 |
 | 32. Learn & Localization | 0/? | Not started | - |
