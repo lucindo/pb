@@ -1,4 +1,5 @@
 import type { UiStrings } from '../content/strings'
+import { StatusPanel } from './StatusPanel'
 
 // D-03: NKSessionReadout is the compact strip below the NKShape, carrying
 // phase (Front/Back), round (N / total), and phase target count.
@@ -14,14 +15,9 @@ export interface NKSessionReadoutProps {
 
 export function NKSessionReadout({ phase, round, totalRounds, target, strings }: NKSessionReadoutProps) {
   return (
-    // Byte-identical outer class to SessionReadout's <section> (D-03, UI-SPEC).
-    // Explicit border satisfies the dark/dusk theme token-collapse constraint
-    // (project memory: bg-soft === surface on dark/dusk; border makes it readable).
-    <section
-      aria-label={strings.readoutAriaLabel}
-      aria-live="polite"
-      className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
-    >
+    // Shares the StatusPanel wrapper with SessionReadout — one bordered box
+    // with the "Status" legend, consistent across both practices.
+    <StatusPanel legend={strings.statusLabel} ariaLabel={strings.readoutAriaLabel} ariaLive="polite">
       {/* Three-cell stretch row — byte-identical container to SessionReadout stretch row */}
       <div
         aria-live="off"
@@ -61,6 +57,6 @@ export function NKSessionReadout({ phase, round, totalRounds, target, strings }:
           </span>
         </div>
       </div>
-    </section>
+    </StatusPanel>
   )
 }

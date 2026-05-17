@@ -6,6 +6,7 @@ import { SettingsForm } from '../components/SettingsForm'
 import { NKShape } from '../components/NKShape'
 import { NKSessionReadout } from '../components/NKSessionReadout'
 import { MuteToggle } from '../components/MuteToggle'
+import { StatusPanel } from '../components/StatusPanel'
 import { PracticeToggle } from '../components/PracticeToggle'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
@@ -1106,9 +1107,9 @@ export default function App() {
               completion popup. Shown on the config screen after a natural
               completion, mirroring the resonant SessionReadout headline. */}
           {activePractice === 'naviKriya' && nkJustCompleted && !nkSessionActive && (
-            <section
-              aria-label={uiStrings.nkReadout.readoutAriaLabel}
-              className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
+            <StatusPanel
+              legend={uiStrings.nkReadout.statusLabel}
+              ariaLabel={uiStrings.nkReadout.readoutAriaLabel}
             >
               <div role="status" aria-live="polite" aria-atomic="true">
                 {/* Same headline copy as the resonant SessionReadout — HRV
@@ -1117,7 +1118,7 @@ export default function App() {
                   {uiStrings.readout.sessionComplete}
                 </p>
               </div>
-            </section>
+            </StatusPanel>
           )}
           {/* The configuration form (resonant knobs or NK controls) is hidden
               while a Navi Kriya session occupies the screen. */}

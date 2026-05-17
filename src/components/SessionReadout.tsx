@@ -3,6 +3,7 @@ import { formatDuration } from '../domain/sessionMath'
 import type { SessionStatus } from '../domain/sessionController'
 import type { StretchStage } from '../domain/stretchRamp'
 import type { UiStrings } from '../content/strings'
+import { StatusPanel } from './StatusPanel'
 
 // Exhaustive stage→label map — a new StretchStage without a case is a compile error.
 function stageText(stage: StretchStage, strings: UiStrings['readout']): string {
@@ -42,10 +43,7 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
       ? formatDuration(frame.remainingMs ?? frame.elapsedMs)
       : '0:00'
     return (
-      <section
-        aria-label={strings.readoutAriaLabel}
-        className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
-      >
+      <StatusPanel legend={strings.statusLabel} ariaLabel={strings.readoutAriaLabel}>
         <div
           role="status"
           aria-label={strings.announcementAriaLabel}
@@ -61,7 +59,7 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           </span>
           <span className="font-mono text-2xl font-semibold">{placeholderValue}</span>
         </div>
-      </section>
+      </StatusPanel>
     )
   }
 
@@ -79,10 +77,7 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
   const isStretchRunning = showTimeChip && frame.currentBpm !== undefined
 
   return (
-    <section
-      aria-label={strings.readoutAriaLabel}
-      className="mb-6 rounded-[1.75rem] border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)]/80 p-5 text-center shadow-inner shadow-teal-900/5"
-    >
+    <StatusPanel legend={strings.statusLabel} ariaLabel={strings.readoutAriaLabel}>
       <div
         role="status"
         aria-label={strings.announcementAriaLabel}
@@ -136,6 +131,6 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           <span className="font-mono text-2xl font-semibold">{timeValue}</span>
         </div>
       ) : null}
-    </section>
+    </StatusPanel>
   )
 }

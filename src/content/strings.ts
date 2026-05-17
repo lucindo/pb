@@ -98,6 +98,7 @@ export interface UiStrings {
   readonly readout: {
     readonly elapsed: string
     readonly remaining: string
+    readonly statusLabel: string
     readonly readoutAriaLabel: string
     readonly announcementAriaLabel: string
     readonly sessionComplete: string
@@ -159,6 +160,7 @@ export interface UiStrings {
     readonly resetStatsTitle: (practiceName: string) => string
   }
   readonly nkReadout: {
+    readonly statusLabel: string
     readonly readoutAriaLabel: string
     readonly phaseLabel: string
     readonly front: string
@@ -270,6 +272,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     readout: {
       elapsed: 'Elapsed',
       remaining: 'Remaining',
+      statusLabel: 'Status',
       readoutAriaLabel: 'Session readout',
       announcementAriaLabel: 'Session announcement',
       sessionComplete: 'Session complete',
@@ -334,6 +337,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
     },
     nkReadout: {
+      statusLabel: 'Status',
       readoutAriaLabel: 'Navi Kriya session readout',
       phaseLabel: 'Phase',
       front: 'Front',
@@ -443,6 +447,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     readout: {
       elapsed: 'Decorrido',
       remaining: 'Restante',
+      statusLabel: 'Status',
       readoutAriaLabel: 'Informações da sessão',
       announcementAriaLabel: 'Anúncio da sessão',
       sessionComplete: 'Sessão concluída',
@@ -508,6 +513,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resetStatsTitle: (practiceName) => `Zerar estatísticas de ${practiceName}?`,
     },
     nkReadout: {
+      statusLabel: 'Status',
       readoutAriaLabel: 'Resumo da sessão de Navi Kriya',
       phaseLabel: 'Fase',
       front: 'Frente',
