@@ -141,6 +141,16 @@ export interface UiStrings {
     readonly iosStep3: string
     readonly settingsLabel: string    // Phase 29 D-03: benefit-describing section label for the Settings install row
   }
+  readonly practice: {
+    readonly toggleLabel: string
+    readonly resonantName: string
+    readonly naviKriyaName: string
+    readonly resonantHeading: string
+    readonly naviKriyaHeading: string
+    readonly naviKriyaControlsPlaceholder: string
+    readonly naviKriyaStatsEmptyBody: string
+    readonly resetStatsTitle: (practiceName: string) => string
+  }
 }
 
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
@@ -279,6 +289,16 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       iosStep3: 'Tap "Add" to confirm',
       settingsLabel: 'Install for offline use',
     },
+    practice: {
+      toggleLabel: 'Switch practice',
+      resonantName: 'Resonant Breathing',
+      naviKriyaName: 'Navi Kriya',
+      resonantHeading: 'Resonant Breathing',
+      naviKriyaHeading: 'Navi Kriya',
+      naviKriyaControlsPlaceholder: 'Controls coming soon',
+      naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
+      resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
+    },
   },
   'pt-BR': {
     app: {
@@ -415,6 +435,16 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       iosStep2: 'Toque em "Adicionar à Tela de Início"',
       iosStep3: 'Toque em "Adicionar" para confirmar',
       settingsLabel: 'Instalar para uso offline',
+    },
+    practice: {
+      toggleLabel: 'Switch practice',
+      resonantName: 'Resonant Breathing',
+      naviKriyaName: 'Navi Kriya',
+      resonantHeading: 'Resonant Breathing',
+      naviKriyaHeading: 'Navi Kriya',
+      naviKriyaControlsPlaceholder: 'Controls coming soon',
+      naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
+      resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>
