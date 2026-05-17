@@ -53,7 +53,11 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. User cannot operate the switcher while a session is in progress — it is disabled until the session ends
   4. A returning user with existing saved Resonant Breathing settings and stats sees them intact after the upgrade — nothing is lost
   5. User adjusts shared app-wide settings (theme, language, visual variant, cue style) from one settings screen, and sees only the active practice's practice-specific controls
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 30-01-PLAN.md — Navi Kriya settings domain model + validators (D-02)
+- [ ] 30-02-PLAN.md — PracticeToggle segmented control + practice copy strings
+- [ ] 30-03-PLAN.md — STATE_VERSION v1→v2 migration + per-practice storage module
+- [ ] 30-04-PLAN.md — App.tsx rewiring, practice-aware SettingsForm, switcher integration
 **UI hint**: yes
 
 ### Phase 31: Navi Kriya Engine & Session
