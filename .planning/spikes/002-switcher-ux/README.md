@@ -3,7 +3,8 @@ spike: 002
 name: switcher-ux
 type: comparison
 validates: "Given the multi-practice shell, when the practice switcher is rendered as (a) bottom tab bar, (b) top segmented control, or (c) launch/home screen, then one feels right for a calm, mid-practice breathing app"
-verdict: PENDING
+verdict: VALIDATED
+winner: "B · top segmented control"
 related: [001]
 tags: [navigation, ux, comparison, switcher]
 ---
@@ -74,7 +75,21 @@ None — this is a pure feel comparison. Judgment is the operator's.
 - v1 — Built all three switchers against one shared `PracticeContent` so only the
   navigation chrome differs. Harness bar lets the operator flip between them live for a
   true head-to-head rather than three separate files.
+- v2 — Operator head-to-head verdict: **B · top segmented control wins.**
 
 ## Results
 
-_Pending operator head-to-head verdict — which switcher wins, and why._
+**VALIDATED — winner: B, the top segmented control.**
+
+A compact pill toggle at the top of the screen, above the orb. Rationale: it sits out of
+the breathing field of view (unlike the bottom tab bar, which keeps permanent chrome
+competing with the calm orb), and it reads clearly as "pick one practice" without the
+extra choose → enter tap that the home screen imposes. It is the lightest mechanism that
+still keeps both practices one tap apart.
+
+**Carried into the build:**
+- The practice switcher is a **top segmented control**, disabled while a session is in
+  progress (the spike 001 lock rule).
+- Known ceiling: a segmented control caps at roughly 3–4 practices. With 2 practices
+  today (Resonant + Navi Kriya) this is comfortable; if the practice catalog later grows
+  past ~4, the switcher should be revisited.

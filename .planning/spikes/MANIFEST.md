@@ -22,10 +22,13 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   disabled while a session is in progress; the user must end the session first. No
   background/multi-practice session state exists — one practice active, one session
   possible. (Spike 001, operator decision.)
+- **The practice switcher is a top segmented control** — a compact pill toggle above the
+  orb, disabled during a session. Holds comfortably for ~3–4 practices; revisit if the
+  catalog grows past that. (Spike 002, operator decision.)
 
 ## Spikes
 
 | #   | Name                  | Type       | Validates | Verdict | Tags |
 |-----|-----------------------|------------|-----------|---------|------|
 | 001 | multi-practice-shell  | standard   | Tabbed shell hosting Resonant + Navi Kriya keeps per-practice settings/stats isolated with shared chrome, without feeling bloated | VALIDATED | architecture, navigation, multi-practice |
-| 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | PENDING (awaiting operator head-to-head) | navigation, ux, comparison |
+| 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | VALIDATED — winner: B (top segmented control) | navigation, ux, comparison |
