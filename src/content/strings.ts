@@ -155,6 +155,33 @@ export interface UiStrings {
     readonly naviKriyaStatsEmptyBody: string
     readonly resetStatsTitle: (practiceName: string) => string
   }
+  readonly nkReadout: {
+    readonly readoutAriaLabel: string
+    readonly phaseLabel: string
+    readonly front: string
+    readonly back: string
+    readonly roundLabel: string
+    readonly countLabel: string
+    readonly roundOf: (current: number, total: number) => string
+  }
+  readonly nkControls: {
+    readonly roundsLabel: string
+    readonly frontCountLabel: string
+    readonly omLengthLabel: string
+    readonly omLengthFast: string
+    readonly omLengthMedium: string
+    readonly omLengthSlow: string
+    readonly perOmCueLabel: string
+    readonly perOmCueOn: string
+    readonly perOmCueOff: string
+    readonly estimatedDuration: (minutes: number) => string
+  }
+  readonly nkCompletion: {
+    readonly title: string
+    readonly roundsCompleted: (n: number, total: number) => string
+    readonly sessionDuration: (minutes: number) => string
+    readonly close: string
+  }
 }
 
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
@@ -305,6 +332,33 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
     },
+    nkReadout: {
+      readoutAriaLabel: 'Navi Kriya session readout',
+      phaseLabel: 'Phase',
+      front: 'Front',
+      back: 'Back',
+      roundLabel: 'Round',
+      countLabel: 'Count',
+      roundOf: (c, t) => `${String(c)} / ${String(t)}`,
+    },
+    nkControls: {
+      roundsLabel: 'Rounds',
+      frontCountLabel: 'Front OMs',
+      omLengthLabel: 'OM pace',
+      omLengthFast: 'Fast',
+      omLengthMedium: 'Medium',
+      omLengthSlow: 'Slow',
+      perOmCueLabel: 'OM tick',
+      perOmCueOn: 'On',
+      perOmCueOff: 'Off',
+      estimatedDuration: (m) => `~${String(m)} min`,
+    },
+    nkCompletion: {
+      title: 'Practice complete',
+      roundsCompleted: (n, t) => n === t ? `${String(n)} rounds complete` : `${String(n)} of ${String(t)} rounds`,
+      sessionDuration: (m) => `~${String(m)} min`,
+      close: 'Close summary',
+    },
   },
   'pt-BR': {
     app: {
@@ -453,6 +507,33 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaControlsPlaceholder: 'Controls coming soon',
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
+    },
+    nkReadout: {
+      readoutAriaLabel: 'Navi Kriya session readout',
+      phaseLabel: 'Phase',
+      front: 'Front',
+      back: 'Back',
+      roundLabel: 'Round',
+      countLabel: 'Count',
+      roundOf: (c, t) => `${String(c)} / ${String(t)}`,
+    },
+    nkControls: {
+      roundsLabel: 'Rounds',
+      frontCountLabel: 'Front OMs',
+      omLengthLabel: 'OM pace',
+      omLengthFast: 'Fast',
+      omLengthMedium: 'Medium',
+      omLengthSlow: 'Slow',
+      perOmCueLabel: 'OM tick',
+      perOmCueOn: 'On',
+      perOmCueOff: 'Off',
+      estimatedDuration: (m) => `~${String(m)} min`,
+    },
+    nkCompletion: {
+      title: 'Practice complete',
+      roundsCompleted: (n, t) => n === t ? `${String(n)} rounds complete` : `${String(n)} of ${String(t)} rounds`,
+      sessionDuration: (m) => `~${String(m)} min`,
+      close: 'Close summary',
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>
