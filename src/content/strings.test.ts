@@ -202,8 +202,17 @@ describe('Phase 30 practice string keys', () => {
     expect(UI_STRINGS.en.practice.resetStatsTitle('Resonant Breathing')).toBe('Reset Resonant Breathing stats?')
   })
 
-  it('EN practice.naviKriyaName equals "Navi Kriya" (D-05: untranslated Sanskrit proper noun)', () => {
-    expect(UI_STRINGS.en.practice.naviKriyaName).toBe('Navi Kriya')
+  it('practice switcher labels are the short mobile-friendly names', () => {
+    expect(UI_STRINGS.en.practice.resonantName).toBe('HRV')
+    expect(UI_STRINGS.en.practice.naviKriyaName).toBe('Navi')
+    expect(UI_STRINGS['pt-BR'].practice.resonantName).toBe('HRV')
+    expect(UI_STRINGS['pt-BR'].practice.naviKriyaName).toBe('Navi')
+  })
+
+  it('practice headings keep the full names (D-05: untranslated Sanskrit proper noun)', () => {
+    expect(UI_STRINGS.en.practice.naviKriyaHeading).toBe('Navi Kriya')
+    expect(UI_STRINGS['pt-BR'].practice.naviKriyaHeading).toBe('Navi Kriya')
+    expect(UI_STRINGS.en.practice.resonantHeading).toBe('Resonant Breathing')
   })
 })
 

@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { createAudioEngine, SAFE_LEAD_SEC } from './audioEngine'
 import * as cueSynth from './cueSynth'
+import * as nkCueSynth from './nkCueSynth'
 import type { CueHandle } from './cueSynth'
 
 const samplePlan: BreathingPlan = {
@@ -84,7 +85,8 @@ describe('audioEngine', () => {
   })
 
   it('scheduleLeadIn schedules 3 ticks at t/+1/+2 and an In cue at +3', async () => {
-    const tickSpy = vi.spyOn(cueSynth, 'scheduleTick')
+    // Consistency: the countdown beep is the shared scheduleCountdownTick.
+    const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
 

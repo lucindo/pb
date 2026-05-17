@@ -16,7 +16,6 @@ import {
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice
 const NK = UI_STRINGS.en.nkControls
-const START_LABEL = UI_STRINGS.en.controls.startSession
 
 // Stateful harness — the duration estimate and stepper values are derived from
 // the nkSettings prop, so changes must flow through a real state holder for the
@@ -24,11 +23,9 @@ const START_LABEL = UI_STRINGS.en.controls.startSession
 function NKHarness({
   initial = DEFAULT_NK_SETTINGS,
   onChangeSpy,
-  onStartSpy,
 }: {
   initial?: NaviKriyaSettings
   onChangeSpy?: (settings: NaviKriyaSettings) => void
-  onStartSpy?: () => void
 }) {
   const [nk, setNk] = useState<NaviKriyaSettings>(initial)
   const props: SettingsFormProps = {
@@ -39,13 +36,11 @@ function NKHarness({
     onExtendDuration: () => undefined,
     strings: EN,
     practiceStrings: PRACTICE,
-    startSessionLabel: START_LABEL,
     nkSettings: nk,
     onNKSettingsChange: (next) => {
       onChangeSpy?.(next)
       setNk(next)
     },
-    onNKStartClick: () => { onStartSpy?.() },
     nkControlsStrings: NK,
   }
   return <SettingsForm {...props} />
@@ -123,15 +118,5 @@ describe('SettingsForm — Navi Kriya controls (Plan 31-05, NK-02/03/04/06, D-14
     expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.omLengthLabel) })).toBeEnabled()
     // D-07: the per-OM tick toggle is stale-closure-safe and must remain live.
     expect(screen.getByRole('switch', { name: NK.perOmCueLabel })).toBeEnabled()
-  })
-
-  it('the Start session button is rendered enabled and clicking it calls onNKStartClick', async () => {
-    const user = userEvent.setup()
-    const onStartSpy = vi.fn()
-    render(<NKHarness onStartSpy={onStartSpy} />)
-    const startButton = screen.getByRole('button', { name: START_LABEL })
-    expect(startButton).toBeEnabled()
-    await user.click(startButton)
-    expect(onStartSpy).toHaveBeenCalledTimes(1)
   })
 })

@@ -9,7 +9,6 @@ import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
 
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice
-const START_LABEL = UI_STRINGS.en.controls.startSession
 
 function renderForm(overrides: Partial<SettingsFormProps> = {}) {
   const onChange = vi.fn()
@@ -23,7 +22,6 @@ function renderForm(overrides: Partial<SettingsFormProps> = {}) {
       onExtendDuration={overrides.onExtendDuration ?? onExtendDuration}
       strings={overrides.strings ?? EN}
       practiceStrings={overrides.practiceStrings ?? PRACTICE}
-      startSessionLabel={overrides.startSessionLabel ?? START_LABEL}
     />,
   )
   return { onChange, onExtendDuration }
@@ -117,10 +115,7 @@ describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/
     // The practice is named in the app header/title, not by an inline heading.
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   })
-
-  it('activePractice="naviKriya": the Start button is live (enabled)', () => {
-    renderForm({ activePractice: 'naviKriya' })
-    // Phase 31 (Plan 31-05): the disabled Phase 30 stub is now a live button.
-    expect(screen.getByRole('button', { name: START_LABEL })).toBeEnabled()
-  })
+  // Phase 31 (mute-parity refactor): the Navi Start button moved out of
+  // SettingsForm into App.tsx (next to the MuteToggle), so the former
+  // "Start button is live" assertion now lives in the App integration tests.
 })

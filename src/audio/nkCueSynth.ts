@@ -31,13 +31,23 @@ const MARKER_TONE_DURATION_SEC = 0.42
 const NK_TICK_DURATION_SEC = 0.12
 const NK_TICK_PEAK_GAIN = 0.08 // quiet — peripheral hearing only
 const NK_TICK_DECAY_TAU = 0.05
-// D-08 end chord: three tones forming a resolved low chord, rings out
-const NK_END_CHORD_DURATION_SEC = 1.8
-const NK_END_CHORD_PEAK_GAIN = 0.12
-const NK_END_CHORD_DECAY_TAU = 0.8
+// Countdown beep: the 3-2-1 lead-in tick, shared by the HRV and Navi
+// countdowns. Identical in sound to the per-OM tick today, but kept on its
+// own constants + function so the countdown beep and the OM tick can be
+// explored independently — they are not semantically related.
+const COUNTDOWN_TICK_DURATION_SEC = 0.12
+const COUNTDOWN_TICK_PEAK_GAIN = 0.08
+const COUNTDOWN_TICK_DECAY_TAU = 0.05
+// D-08 end chord: three tones forming a resolved low chord, rings out. This is
+// the shared practice-ending sound — both the Navi Kriya completion and the
+// HRV session completion play scheduleEndChord, so a future change lands in
+// both practices at once.
+const END_CHORD_DURATION_SEC = 1.8
+const END_CHORD_PEAK_GAIN = 0.12
+const END_CHORD_DECAY_TAU = 0.8
 // Low chord pitch ratios relative to preset fundamentalHzOut (the lower pitch):
 //   root (×1.0), major third (×1.25), perfect fifth (×1.5) — C major chord shape
-const NK_END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
+const END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
 
 // ---
 
@@ -201,11 +211,44 @@ export function scheduleNKTick(
 }
 
 /**
- * D-08: Resolved low multi-note chord that rings out — a clear, restful "practice complete".
- * Three tones (root, major-third, fifth) based on preset fundamentalHzOut, scheduled
- * simultaneously at `when` with a long decay. Returns the handle of the longest-lived tone.
+ * Countdown beep — the 3-2-1 lead-in tick shared by the HRV and Navi
+ * countdowns. Currently byte-identical in sound to scheduleNKTick (the per-OM
+ * tick), but a SEPARATE function on its own constants: the countdown beep and
+ * the per-OM tick are semantically distinct, so either can be changed without
+ * affecting the other.
  */
-export function scheduleNKEndChord(
+export function scheduleCountdownTick(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  timbre: TimbreId,
+): CueHandle {
+  const preset = TIMBRE_PRESETS[timbre]
+  const t = buildNKToneNodes(
+    audioCtx, preset.fundamentalHzIn, COUNTDOWN_TICK_DURATION_SEC, when,
+    destination, preset, COUNTDOWN_TICK_PEAK_GAIN, COUNTDOWN_TICK_DECAY_TAU,
+  )
+  // Disconnect the tick nodes on 'ended' (mirrors scheduleNKTick / T-31-04).
+  t.osc.addEventListener('ended', () => {
+    try { t.osc.disconnect() } catch { /* silent */ }
+    try { t.partialGain.disconnect() } catch { /* silent */ }
+    try { t.filter.disconnect() } catch { /* silent */ }
+    try { t.envelope.disconnect() } catch { /* silent */ }
+  }, { once: true })
+
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt }
+}
+
+/**
+ * D-08: Resolved low multi-note chord that rings out — a clear, restful
+ * session/practice-ending sound. SHARED: both the Navi Kriya completion and
+ * the HRV session completion play this, so the ending sound stays identical
+ * across practices and a future change applies to both.
+ * Three tones (root, major-third, fifth) based on preset fundamentalHzOut,
+ * scheduled simultaneously at `when` with a long decay. Returns the handle of
+ * the longest-lived tone.
+ */
+export function scheduleEndChord(
   audioCtx: AudioContext,
   when: number,
   destination: AudioNode,
@@ -215,10 +258,10 @@ export function scheduleNKEndChord(
   let lastEnvelope: GainNode | null = null
   let lastCleanupAt = 0
 
-  for (const ratio of NK_END_CHORD_RATIOS) {
+  for (const ratio of END_CHORD_RATIOS) {
     const t = buildNKToneNodes(
-      audioCtx, preset.fundamentalHzOut * ratio, NK_END_CHORD_DURATION_SEC, when,
-      destination, preset, NK_END_CHORD_PEAK_GAIN, NK_END_CHORD_DECAY_TAU,
+      audioCtx, preset.fundamentalHzOut * ratio, END_CHORD_DURATION_SEC, when,
+      destination, preset, END_CHORD_PEAK_GAIN, END_CHORD_DECAY_TAU,
     )
     // T-31-04: disconnect each chord tone's nodes on 'ended'
     t.osc.addEventListener('ended', () => {
@@ -231,8 +274,8 @@ export function scheduleNKEndChord(
     lastCleanupAt = t.cleanupAt
   }
 
-  // NK_END_CHORD_RATIOS is a non-empty const tuple; loop always executes 3 iterations.
-  // Reason: NK_END_CHORD_RATIOS always has 3 elements — lastEnvelope is guaranteed non-null.
+  // END_CHORD_RATIOS is a non-empty const tuple; loop always executes 3 iterations.
+  // Reason: END_CHORD_RATIOS always has 3 elements — lastEnvelope is guaranteed non-null.
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return { envelope: lastEnvelope!, scheduledAt: when, cleanupAt: lastCleanupAt }
 }

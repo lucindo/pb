@@ -179,12 +179,6 @@ export interface UiStrings {
     readonly perOmCueOff: string
     readonly estimatedDuration: (minutes: number) => string
   }
-  readonly nkCompletion: {
-    readonly title: string
-    readonly roundsCompleted: (n: number, total: number) => string
-    readonly sessionDuration: (minutes: number) => string
-    readonly close: string
-  }
 }
 
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
@@ -328,8 +322,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     },
     practice: {
       toggleLabel: 'Switch practice',
-      resonantName: 'Resonant Breathing',
-      naviKriyaName: 'Navi Kriya',
+      // Switcher labels — kept short so the toggle fits on mobile. The full
+      // names live in *Heading (used for the app title + reset dialog).
+      resonantName: 'HRV',
+      naviKriyaName: 'Navi',
       resonantHeading: 'Resonant Breathing',
       naviKriyaHeading: 'Navi Kriya',
       naviKriyaHeader: 'Navi practice',
@@ -357,12 +353,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       perOmCueOn: 'On',
       perOmCueOff: 'Off',
       estimatedDuration: (m) => `~${String(m)} min`,
-    },
-    nkCompletion: {
-      title: 'Practice complete',
-      roundsCompleted: (n, t) => n === t ? `${String(n)} rounds complete` : `${String(n)} of ${String(t)} rounds`,
-      sessionDuration: (m) => `~${String(m)} min`,
-      close: 'Close summary',
     },
   },
   'pt-BR': {
@@ -506,8 +496,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     },
     practice: {
       toggleLabel: 'Trocar de prática',
-      resonantName: 'Resonant Breathing',
-      naviKriyaName: 'Navi Kriya',
+      // Switcher labels — kept short so the toggle fits on mobile. The full
+      // names live in *Heading (used for the app title + reset dialog).
+      resonantName: 'HRV',
+      naviKriyaName: 'Navi',
       resonantHeading: 'Resonant Breathing',
       naviKriyaHeading: 'Navi Kriya',
       naviKriyaHeader: 'Prática Navi',
@@ -535,12 +527,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       perOmCueOn: 'Ligado',
       perOmCueOff: 'Desligado',
       estimatedDuration: (m) => `~${String(m)} min`,
-    },
-    nkCompletion: {
-      title: 'Prática concluída',
-      roundsCompleted: (n, t) => n === t ? `${String(n)} rodadas concluídas` : `${String(n)} de ${String(t)} rodadas`,
-      sessionDuration: (m) => `~${String(m)} min`,
-      close: 'Fechar resumo',
     },
   },
 } as const satisfies Readonly<Record<LocaleId, UiStrings>>

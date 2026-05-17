@@ -603,7 +603,9 @@ function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'na
   return slice?.['stats'] as Record<string, unknown> | undefined
 }
 
-const NK_SETTLE = 3500
+// The Navi pre-session window is now a 3-2-1 countdown reusing HRV's lead-in
+// (LEAD_IN_DURATION_MS = 3000ms), not the old silent settle.
+const NK_COUNTDOWN = 3000
 
 describe('Navi Kriya session integration (Phase 31)', () => {
   beforeEach(() => {
@@ -618,20 +620,23 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     window.localStorage.clear()
   })
 
-  it('runs a session end to end: counts OMs, completes, opens the completion dialog, records NK stats (NK-01/08/09, D-12)', async () => {
+  it('runs a session end to end: counts OMs, completes, shows the inline completion headline, records NK stats (NK-01/08/09)', async () => {
     seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    // Settle window, then the full self-rescheduling OM chain (4 front + 1 back).
+    // Countdown, then the full self-rescheduling OM chain (4 front + 1 back).
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_SETTLE + 15_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + 15_000)
       await Promise.resolve()
     })
 
-    // D-12: a naturally completed session shows the completion dialog.
-    expect(screen.getByText('Practice complete')).toBeVisible()
+    // HRV parity: a naturally completed session shows the inline completion
+    // headline (no popup) and returns to the config screen. Same "Session
+    // complete" copy as the resonant practice.
+    expect(screen.getByText('Session complete')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
 
     // NK-08: the session is recorded into the naviKriya stats slice.
     const env = readEnv()
@@ -646,7 +651,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_SETTLE + 15_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + 15_000)
       await Promise.resolve()
     })
 
@@ -657,25 +662,29 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
   })
 
-  it('pausing a running session freezes the OM count (NK-07)', async () => {
-    seedNK({ frontCount: 40, omLength: 'fast', rounds: 1 })
+  it('cancels during the countdown before the engine starts (HRV parity)', async () => {
+    seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    // Settle + lead (700) + two OMs (1750 each) — count reaches 3.
+    // Part-way into the 3-2-1 countdown the primary button reads 'Cancel'.
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_SETTLE + 700 + 1750 * 2)
+      vi.advanceTimersByTime(1000)
     })
-    expect(screen.getByRole('img', { name: /OM 3,/ })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
-    // Pause — the count must not advance while paused.
-    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    // Advance well past when the engine would have started and completed.
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(1750 * 5)
+      vi.advanceTimersByTime(NK_COUNTDOWN + 15_000)
+      await Promise.resolve()
     })
-    expect(screen.getByRole('img', { name: /OM 3,/ })).toBeInTheDocument()
+
+    // The session never started — no stats recorded, config screen restored.
+    const env = readEnv()
+    expect((statsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
   })
 
   it('ending early records the completed rounds and elapsed time (NK-07, D-13)', async () => {
@@ -685,10 +694,10 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    // Settle + enough to finish round 1 and enter round 2 (~41s of OM ticks).
+    // Countdown + enough to finish round 1 and enter round 2 (~41s of OM ticks).
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_SETTLE + 42_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + 42_000)
     })
 
     // End early — the NK control opens the confirmation dialog.

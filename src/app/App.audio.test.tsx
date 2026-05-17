@@ -235,6 +235,15 @@ describe('App — audio cues (Phase 3)', () => {
 
     expect(screen.getByText('Session complete')).toBeVisible()
     expect(acInstance).not.toBeNull()
+
+    // HRV parity with Navi: completion plays the shared end chord, and the
+    // engine defers the AudioContext teardown until the chord rings out
+    // (~2s). Advance past that ring-out window so close() reaches audioCtx.close().
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+    await flushMicrotasks()
+
     const closeMock = (acInstance as unknown as { close: ReturnType<typeof vi.fn> }).close
     expect(closeMock).toHaveBeenCalled()
   })

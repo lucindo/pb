@@ -67,6 +67,10 @@ export interface UseAudioCues {
   /** Returns audioCtx.currentTime, or null if AC unavailable. App.tsx uses this for
    *  the dual-anchor (Pitfall 2). */
   audioNow(this: void): number | null
+  /** Play the shared session-ending chord — App.tsx calls this on a natural
+   *  HRV completion (parity with the Navi Kriya end cue). No-op if the AC is
+   *  unavailable or muted; the engine keeps the AC alive until it rings out. */
+  playEndChord(this: void): void
   /** Plan 06 D-34: see AudioStatusFlag JSDoc. App.tsx reads this to drive
    *  MuteToggle's needsResume prop. */
   audioStatus: AudioStatusFlag
@@ -434,6 +438,10 @@ export function useAudioCues(
     return engineRef.current?.now() ?? null
   }, [])
 
+  const playEndChord = useCallback((): void => {
+    engineRef.current?.playEndChord()
+  }, [])
+
   return {
     status,
     audioAvailable,
@@ -443,6 +451,7 @@ export function useAudioCues(
     setMuted,
     notifyPhaseBoundary,
     audioNow,
+    playEndChord,
     audioStatus,
     resume,
   }

@@ -39,15 +39,11 @@ export interface SettingsFormProps {
   strings: UiStrings['settingsForm']
   // Phase 30: practice display copy (heading per practice, NK placeholder).
   practiceStrings: UiStrings['practice']
-  // Phase 30: label for the NK Start button — App.tsx passes
-  // uiStrings.controls.startSession so the NK CTA matches the resonant one.
-  startSessionLabel: string
   // Phase 31 (NK-02/03/04/06, D-14): the editable Navi Kriya session
-  // parameters and their callbacks. Optional so App.tsx keeps compiling until
-  // Plan 31-06 wires the real state; the NK branch falls back to safe defaults.
+  // parameters and their callbacks. The Start/Cancel/End controls live in
+  // App.tsx (alongside the MuteToggle) so the NK CTA row matches HRV.
   nkSettings?: NaviKriyaSettings
   onNKSettingsChange?: (this: void, settings: NaviKriyaSettings) => void
-  onNKStartClick?: (this: void) => void
   // NK control copy lives at the UiStrings top level, not under settingsForm.
   nkControlsStrings?: UiStrings['nkControls']
 }
@@ -59,10 +55,8 @@ export function SettingsForm({
   onChange,
   onExtendDuration,
   strings,
-  startSessionLabel,
   nkSettings = DEFAULT_NK_SETTINGS,
   onNKSettingsChange = () => undefined,
-  onNKStartClick = () => undefined,
   nkControlsStrings = UI_STRINGS.en.nkControls,
 }: SettingsFormProps) {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
@@ -245,8 +239,9 @@ export function SettingsForm({
       ) : (
         // Phase 31 (NK-02/03/04/06, D-14): the real Navi Kriya controls fill
         // the slot the Phase 30 stub held — rounds, front OM count, OM pace, a
-        // per-OM tick toggle, a live duration estimate, and a live Start
-        // button. The practice is named in the app header (App.tsx), not by an
+        // per-OM tick toggle, and a live duration estimate. The Start button
+        // lives in App.tsx (next to the MuteToggle) so the CTA row matches
+        // HRV. The practice is named in the app header (App.tsx), not by an
         // inline heading; no resonant knobs render in this branch.
         <>
           {/* WR-04: no disabled gating on the NK steppers — the whole form is
@@ -292,13 +287,6 @@ export function SettingsForm({
           >
             {nkControlsStrings.estimatedDuration(estimatedMinutes)}
           </p>
-          <button
-            type="button"
-            onClick={onNKStartClick}
-            className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {startSessionLabel}
-          </button>
         </>
       )}
     </div>

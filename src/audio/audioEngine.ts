@@ -20,7 +20,8 @@
 //     (useAudioCues) catches and falls back to visuals-only mode.
 
 import type { BreathingPlan } from '../domain/breathingPlan'
-import { scheduleInCueForTimbre, scheduleOutCueForTimbre, scheduleTick, type CueHandle } from './cueSynth'
+import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
+import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
 import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
@@ -37,6 +38,10 @@ export interface AudioEngine {
    *  (260510-tc9 Bug 2). The boundary scheduler in App.tsx derives this from
    *  plan.inhaleMs / plan.exhaleMs. */
   scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
+  /** Schedule the shared session-ending chord on this engine's AudioContext —
+   *  the same sound the Navi Kriya completion plays. No-op when closed or
+   *  muted. close() defers AudioContext teardown until the chord rings out. */
+  playEndChord(): void
   /** Toggle mute. Mid-cue: applies a soft fade-out to the active cue's envelope.
    *  Mid-phase unmute: does NOT fire a make-up cue (D-08). */
   setMuted(muted: boolean): void
@@ -158,6 +163,10 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // forward this value to scheduleInCueForTimbre / scheduleOutCueForTimbre.
   const sessionTimbre: TimbreId = opts.timbre
   let closed = false
+  // Audio-clock time at which the end-chord tail finishes. close() defers the
+  // AudioContext teardown until this instant so the session-ending chord
+  // (playEndChord) is never cut off. 0 = no end chord scheduled.
+  let endChordTailUntil = 0
 
   // Drop cues whose tails have already finished (cleanupAt < now). Keeps the Set
   // bounded over a long session and avoids re-fading already-silent envelopes.
@@ -179,10 +188,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (muted) return firstInCueTime
 
       // 3 ticks at +0/+1/+2 (D-14 lead-in). Track each so mid-lead-in mute can
-      // fade them out (WR-08).
-      activeCues.add(scheduleTick(audioCtx, startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
-      activeCues.add(scheduleTick(audioCtx, startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
-      activeCues.add(scheduleTick(audioCtx, startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination))
+      // fade them out (WR-08). Consistency: the countdown beep is the shared
+      // scheduleCountdownTick — the same beep the Navi Kriya countdown uses —
+      // and honours the session timbre.
+      activeCues.add(scheduleCountdownTick(audioCtx, startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination, sessionTimbre))
+      activeCues.add(scheduleCountdownTick(audioCtx, startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination, sessionTimbre))
+      activeCues.add(scheduleCountdownTick(audioCtx, startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination, sessionTimbre))
       // First In cue at +3 (numerals replaced by the In phase label at t=0; bowl strikes).
       // 260510-tc9 Bug 2: pass the upcoming In-phase duration so the decay envelope
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does
@@ -206,6 +217,16 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
           ? scheduleInCueForTimbre(audioCtx, clampedAudioTime, audioCtx.destination, sessionTimbre, phaseDurationSec)
           : scheduleOutCueForTimbre(audioCtx, clampedAudioTime, audioCtx.destination, sessionTimbre, phaseDurationSec)
       activeCues.add(cue)
+    },
+
+    playEndChord(): void {
+      if (closed) return
+      if (muted) return // consistent with the Navi end cue — muted = silent.
+      const when = audioCtx.currentTime + SAFE_LEAD_SEC
+      const cue = scheduleEndChord(audioCtx, when, audioCtx.destination, sessionTimbre)
+      activeCues.add(cue)
+      // Record the tail end so close() can defer teardown until it rings out.
+      endChordTailUntil = cue.cleanupAt
     },
 
     setMuted(next: boolean): void {
@@ -241,6 +262,17 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // Plan 06 D-36: remove the statechange listener BEFORE close() so a final
       // 'closed' transition does not fire after the hook has nulled engineRef.
       audioCtx.removeEventListener('statechange', onStateChange)
+      // If playEndChord scheduled a session-ending chord, defer teardown until
+      // its tail rings out — otherwise the disconnect loop below would sever
+      // the chord mid-ring. Skipped entirely when no end chord was scheduled
+      // (endChordTailUntil = 0), so the manual-end / open-ended paths close
+      // immediately as before.
+      const tailRemainingSec = endChordTailUntil - audioCtx.currentTime
+      if (tailRemainingSec > 0) {
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, tailRemainingSec * 1000)
+        })
+      }
       // AH-WR-03: node cleanup is otherwise driven entirely by the oscillator
       // 'ended' event (AUDIO-04 explicit-disconnect contract in cueSynth). The
       // Web Audio spec does NOT guarantee 'ended' fires for an oscillator whose
