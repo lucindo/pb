@@ -164,7 +164,10 @@ function OrbLeadIn({ digit, strings }: { digit: 1 | 2 | 3 | null; strings: UiStr
     <div
       {...labelProps}
       data-variant="orb"
-      className="relative mx-auto my-12 grid place-items-center"
+      // my-12 only on the standalone countdown lead-in; the NK locked shell
+      // (digit === null) fills NKShape's box, which owns the margin itself —
+      // a second my-12 here would shove the orb graphic down inside NKShape.
+      className={`relative mx-auto grid place-items-center${digit != null ? ' my-12' : ''}`}
       style={{
         width: 'var(--orb-size)',
         height: 'var(--orb-size)',
