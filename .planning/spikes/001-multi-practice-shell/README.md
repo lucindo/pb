@@ -3,7 +3,7 @@ spike: 001
 name: multi-practice-shell
 type: standard
 validates: "Given a tabbed shell hosting Resonant + Navi Kriya stubs, when I switch practices, then each practice keeps its own settings/stats while theme/audio/language stay shared — and the app doesn't feel bloated"
-verdict: PENDING
+verdict: VALIDATED
 related: [002]
 tags: [architecture, navigation, multi-practice, react, shell]
 ---
@@ -61,10 +61,9 @@ No build step. React 19 + htm + Tailwind load from CDN (needs network on first o
 1. Change Resonant BPM → switch to Navi Kriya → change its pace → switch back.
    Resonant's BPM is preserved. (per-practice isolation)
 2. Toggle theme on one tab → switch tabs. Theme persists. (shared chrome)
-3. Start a Resonant session → switch to Navi Kriya mid-session → come back.
-   Session still running, timer advanced. (per-practice session survival)
-4. Run both practices' sessions at once. Both tick independently.
-5. Ask yourself: does carrying two practices' settings + stats make the app feel
+3. Start a session → the tab bar locks (🔒 "switching disabled"). End the session
+   to unlock it. Navigation and an active session are mutually exclusive.
+4. Ask yourself: does carrying two practices' settings + stats make the app feel
    heavier, or is it fine?
 
 ## Observability
@@ -74,12 +73,28 @@ Built-in event log (bottom panel). Categories: `app`, `switch`, `setting`, `sess
 
 ## Investigation Trail
 
-- v1 — Built the shell with a bottom tab bar as the baseline switcher (spike 002 will
-  compare tab bar against other mechanisms). Chose to keep sessions running across tab
-  switches rather than pausing/discarding them, because discarding a live breathing
-  session on a tab tap would be a hostile surprise. Whether that is the *right* default
-  is itself a finding for the operator to react to.
+- v1 — Built the shell with a bottom tab bar as the baseline switcher (spike 002
+  compares tab bar against other mechanisms). Initial v1 kept sessions running across
+  tab switches rather than pausing/discarding them, surfacing the "is my session still
+  alive?" ambiguity as an open question for the operator.
+- v2 — Operator verdict: do **not** keep sessions alive across switches. Instead, **lock
+  navigation while a session is in progress** — the tab bar disables, showing
+  "🔒 session in progress — switching disabled." A session must be ended before changing
+  practices. This removes background-session state entirely and makes "one practice
+  active at a time" a hard invariant.
 
 ## Results
 
-_Pending operator verification._
+**VALIDATED.** Hosting two practices in one app is viable and does not feel bloated —
+per-practice settings/stats stay cleanly isolated while theme and locale behave as shared
+app-wide chrome. The architecture mirrors the existing `src/domain/settings.ts` split
+(session settings per-practice; theme/timbre/variant/cue/locale app-wide).
+
+**Key decision captured:** navigation and an active session are mutually exclusive. The
+tab bar locks during a session; no background/multi-session state exists. This both
+simplifies the architecture (one active practice, one possible session) and avoids a
+confusing UX. Promoted to a MANIFEST requirement.
+
+**Carried into spike 002:** the switcher mechanism (bottom tab bar vs. alternatives) is
+the remaining open question — the spike 002 comparison must account for the lock-during-
+session behavior in each variant.

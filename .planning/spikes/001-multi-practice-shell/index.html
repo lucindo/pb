@@ -200,21 +200,25 @@
     }
 
     // ── Tab bar (baseline switcher — spike 002 explores variants) ──────────
-    function TabBar({ active, onSwitch, runningMap }) {
+    // Locked while a session runs: switching practices mid-session is disabled
+    // rather than leaving a session alive in the background.
+    function TabBar({ active, onSwitch, locked }) {
       return html`
         <nav class="fixed bottom-0 inset-x-0 border-t border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 backdrop-blur">
           <div class="mx-auto max-w-md flex">
             ${PRACTICE_ORDER.map((pid) => html`
               <button
                 key=${pid}
-                class=${`flex-1 py-3 text-sm font-medium ${active === pid ? 'text-indigo-500' : 'opacity-50'}`}
+                disabled=${locked}
+                title=${locked ? 'End the session to switch practices' : ''}
+                class=${`flex-1 py-3 text-sm font-medium ${active === pid ? 'text-indigo-500' : 'opacity-50'} ${locked ? 'cursor-not-allowed opacity-30' : ''}`}
                 onClick=${() => onSwitch(pid)}
               >
                 ${PRACTICES[pid].name}
-                ${runningMap[pid] && html`<span class="ml-1 text-emerald-500">●</span>`}
               </button>
             `)}
           </div>
+          ${locked && html`<div class="mx-auto max-w-md text-center text-[10px] pb-1 opacity-50">🔒 session in progress — switching disabled</div>`}
         </nav>
       `
     }
@@ -305,9 +309,9 @@
 
       const switchPractice = (pid) => {
         if (pid === active) return
-        const runningElsewhere = sessions[active] && sessions[active].running
-        log('switch', `${PRACTICES[active].name} → ${PRACTICES[pid].name}`
-          + (runningElsewhere ? ` (left ${PRACTICES[active].name} session RUNNING in background)` : ''))
+        // Navigation is locked during a session — guard defensively.
+        if (sessions[active] && sessions[active].running) return
+        log('switch', `${PRACTICES[active].name} → ${PRACTICES[pid].name}`)
         setActive(pid)
       }
 
@@ -375,7 +379,7 @@
 
           <${EventLog} events=${events} s=${s} />
 
-          <${TabBar} active=${active} onSwitch=${switchPractice} runningMap=${runningMap} />
+          <${TabBar} active=${active} onSwitch=${switchPractice} locked=${runningMap[active]} />
         </div>
       `
     }
