@@ -42,10 +42,16 @@ interface NKEngineRecord {
   startedAtMs: number      // performance.now() at start — for elapsed stats
   completedRounds: number  // fully-completed rounds (for early-end stats)
   // WR-02: delay (ms) of the currently-pending step timer. Phase markers
-  // schedule the next step with NK_LEAD_MS (700 ms); per-OM steps use omMs.
+  // schedule the next step with NK_LEAD_MS; per-OM steps use omMs.
   // resume() reschedules with THIS value so a pause during a lead-in window
-  // restores the 700 ms lead-in instead of the longer omMs gap.
+  // restores the lead-in instead of the longer omMs gap.
   pendingDelayMs: number
+  // D-11 fix: armed when an OM reaches the phase target. The phase transition
+  // does NOT run in the same tick that counted the last OM — that flashed the
+  // final count for 0 ms (back's single OM never showed "1"). Instead the last
+  // OM runs for its full omMs like any other, and the NEXT stepOm — seeing this
+  // flag — performs the transition.
+  pendingTransition: boolean
 }
 
 export interface NKAudioCallbacks {
@@ -112,6 +118,48 @@ export function useNKEngine(): NKEngineApi {
     if (!e) return
     const cbs = cbsRef.current
 
+    // D-11 fix: pendingTransition means the previous OM was the last of its
+    // phase and has now had its full omMs of display time. Perform the phase
+    // change — do NOT count another OM this tick.
+    if (e.pendingTransition) {
+      e.pendingTransition = false
+      if (e.phase === 'front') {
+        e.phase = 'back'
+        e.count = 0
+        setNkPhase('back')
+        setNkCount(0)
+        if (cbs) cbs.backMarker()
+        schedule(NK_LEAD_MS)
+      } else if (e.round < e.rounds) {
+        // Back phase complete — advance to next round
+        e.completedRounds += 1
+        e.round += 1
+        e.phase = 'front'
+        e.count = 0
+        setNkRound(e.round)
+        setNkPhase('front')
+        setNkCount(0)
+        if (cbs) cbs.frontMarker()
+        schedule(NK_LEAD_MS)
+      } else {
+        // Final back phase complete — session done
+        e.completedRounds += 1
+        e.phase = 'done'
+        setNkPhase('done')
+        setNkRunning(false)
+        if (cbs) cbs.endCue()
+        const elapsedMs = performance.now() - e.startedAtMs
+        if (onCompleteRef.current) {
+          onCompleteRef.current({
+            completedRounds: e.completedRounds,
+            elapsedMs,
+            isComplete: true,
+          })
+        }
+      }
+      return
+    }
+
     e.count += 1
     setNkCount(e.count)
 
@@ -119,46 +167,13 @@ export function useNKEngine(): NKEngineApi {
 
     const target = e.phase === 'front' ? e.frontCount : e.backCount
 
-    if (e.count < target) {
-      schedule(e.omMs)
-      return
+    // Every OM — including the last of a phase — runs for omMs. The last OM
+    // additionally arms pendingTransition so the next stepOm changes phase
+    // instead of counting (D-11 fix: the last count is shown, not flashed).
+    if (e.count >= target) {
+      e.pendingTransition = true
     }
-
-    // Phase target reached
-    if (e.phase === 'front') {
-      e.phase = 'back'
-      e.count = 0
-      setNkPhase('back')
-      setNkCount(0)
-      if (cbs) cbs.backMarker()
-      schedule(NK_LEAD_MS)
-    } else if (e.round < e.rounds) {
-      // Back phase complete — advance to next round
-      e.completedRounds += 1
-      e.round += 1
-      e.phase = 'front'
-      e.count = 0
-      setNkRound(e.round)
-      setNkPhase('front')
-      setNkCount(0)
-      if (cbs) cbs.frontMarker()
-      schedule(NK_LEAD_MS)
-    } else {
-      // Final back phase complete — session done
-      e.completedRounds += 1
-      e.phase = 'done'
-      setNkPhase('done')
-      setNkRunning(false)
-      if (cbs) cbs.endCue()
-      const elapsedMs = performance.now() - e.startedAtMs
-      if (onCompleteRef.current) {
-        onCompleteRef.current({
-          completedRounds: e.completedRounds,
-          elapsedMs,
-          isComplete: true,
-        })
-      }
-    }
+    schedule(e.omMs)
   }, [schedule])
 
   const start = useCallback((
@@ -184,6 +199,7 @@ export function useNKEngine(): NKEngineApi {
       completedRounds: 0,
       // start() schedules the first step with NK_LEAD_MS below.
       pendingDelayMs: NK_LEAD_MS,
+      pendingTransition: false,
     }
 
     // Capture callbacks in refs so stepOm reads them without stale closure

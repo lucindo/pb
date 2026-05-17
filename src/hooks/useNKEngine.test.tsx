@@ -42,25 +42,23 @@ describe('useNKEngine', () => {
     expect(result.current.nkPhase).toBe('front')
     expect(result.current.nkRunning).toBe(true)
 
-    // Timing: start() calls schedule(NK_LEAD_MS).
-    //   OM #1 fires at t=NK_LEAD_MS (count→1), OM #2 at t=NK_LEAD_MS+omMs, ...
-    //   OM #8 fires at t=NK_LEAD_MS+omMs*7 (count→8) → front→back transition,
-    //   count reset to 0, schedule(NK_LEAD_MS) for the first back OM.
+    // Timing — every OM, including the last of a phase, runs for omMs before
+    // the transition (D-11 fix):
+    //   front OM #k fires at t = NK_LEAD_MS + (k-1)*omMs, k = 1..8
+    //   front->back transition at t = NK_LEAD_MS + 8*omMs (count to 0, back marker)
     const omMs = NK_OM_SECONDS['medium'] * 1000
 
-    // Advance through lead-in + all 8 front OMs — stop BEFORE the first back OM.
-    // First back OM fires at t = NK_LEAD_MS + omMs*7 + NK_LEAD_MS.
-    // Stop +500 into the back lead-in (well before it completes).
+    // Advance through the front lead-in + all 8 front OMs + the transition —
+    // stop +500 into the back lead-in, before the first back OM.
     act(() => {
-      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 7 + 500)
+      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 8 + 500)
     })
 
     // Should now be in 'back' phase with count reset to 0
     expect(result.current.nkPhase).toBe('back')
     expect(result.current.nkCount).toBe(0)
 
-    // Advance through the back lead-in + all 2 back OMs
-    // First back OM at t = NK_LEAD_MS+omMs*7+NK_LEAD_MS (count→1), second +omMs (count→2→done)
+    // Back lead-in + 2 back OMs + the final transition -> 'done'.
     act(() => {
       vi.advanceTimersByTime(NK_LEAD_MS + omMs * 2 + 100)
     })

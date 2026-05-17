@@ -609,9 +609,10 @@ function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'na
 const NK_COUNTDOWN = 3000
 
 // Full Navi session wall-time (ms), start() → natural completion. Every round
-// is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in.
-// Derived from the engine constants so these integration timings track any
-// NK_LEAD_MS change instead of hardcoding a fixed advance.
+// is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in;
+// every OM — including the last of each phase — runs for omMs. Derived from
+// the engine constants so these integration timings track any NK_LEAD_MS
+// change instead of hardcoding a fixed advance.
 function nkSessionMs(
   frontCount: number,
   omLength: 'fast' | 'medium' | 'slow',
@@ -619,7 +620,7 @@ function nkSessionMs(
 ): number {
   const omMs = NK_OM_SECONDS[omLength] * 1000
   const backCount = frontCount / 4
-  const perRound = NK_LEAD_MS + (frontCount - 1) * omMs + NK_LEAD_MS + (backCount - 1) * omMs
+  const perRound = 2 * NK_LEAD_MS + (frontCount + backCount) * omMs
   return perRound * rounds
 }
 
