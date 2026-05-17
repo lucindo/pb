@@ -23,8 +23,11 @@ export function PracticeToggle({
   onSwitch,
   strings,
 }: PracticeToggleProps) {
+  // The muted border bounds the control on every theme — on dark/dusk the
+  // bg-soft container fill is identical to surface, so without a border the
+  // switcher dissolves into the card (matches the SESSION MODE fieldset).
   const containerClass = [
-    'flex rounded-full bg-[var(--color-breathing-bg-soft)] p-1',
+    'flex rounded-full border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)] p-1',
     disabled ? 'opacity-50 cursor-not-allowed' : '',
   ]
     .filter(Boolean)
@@ -34,12 +37,18 @@ export function PracticeToggle({
     <div role="group" aria-label={strings.toggleLabel} className={containerClass}>
       {PRACTICE_IDS.map((id) => {
         const isActive = active === id
+        // The active pill carries an accent border (the codebase's raised-
+        // interactive convention — stepper buttons, the mode-toggle track);
+        // inactive pills keep a transparent border so there is no layout
+        // shift between states. On dark/dusk this accent outline is what
+        // distinguishes the selected pill, since its surface fill matches
+        // the bg-soft container.
         const pillClass = [
-          'flex-1 rounded-full min-h-[44px] px-4 py-2 text-sm',
+          'flex-1 rounded-full min-h-[44px] border px-4 py-2 text-sm',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2',
           isActive
-            ? 'bg-[var(--color-breathing-surface)] shadow font-semibold text-[var(--color-breathing-accent-strong)]'
-            : 'font-normal text-[var(--color-breathing-muted)]',
+            ? 'border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] shadow font-semibold text-[var(--color-breathing-accent-strong)]'
+            : 'border-transparent font-normal text-[var(--color-breathing-muted)]',
         ].join(' ')
 
         return (
