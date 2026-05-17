@@ -47,9 +47,30 @@ describe('NKShape', () => {
     expect(screen.getByText('47')).toBeInTheDocument()
   })
 
-  it('count=0 renders no digit (settle period)', () => {
+  it('Phase 31: count=0 renders "0" (post-marker lead-in window)', () => {
     renderShape({ count: 0 })
-    expect(screen.queryByText('0')).not.toBeInTheDocument()
+    expect(screen.getByText('0')).toBeInTheDocument()
+  })
+
+  it('Phase 31: phase="front" renders the shell at data-phase="in" (In gradient)', () => {
+    const { container } = renderShape({ phase: 'front' })
+    expect(container.querySelector('[data-phase="in"]')).not.toBeNull()
+    expect(container.querySelector('[data-phase="out"]')).toBeNull()
+  })
+
+  it('Phase 31: phase="back" renders the shell at data-phase="out" (Out gradient)', () => {
+    const { container } = renderShape({ phase: 'back' })
+    expect(container.querySelector('[data-phase="out"]')).not.toBeNull()
+  })
+
+  it('Phase 31: count digit uses the In text color on the Front phase', () => {
+    renderShape({ count: 7, phase: 'front' })
+    expect(screen.getByText('7')).toHaveStyle({ color: 'var(--color-orb-in-text)' })
+  })
+
+  it('Phase 31: count digit uses the Out text color on the Back phase', () => {
+    renderShape({ count: 7, phase: 'back' })
+    expect(screen.getByText('7')).toHaveStyle({ color: 'var(--color-orb-out-text)' })
   })
 
   it('isPaused=true applies opacity-50 to the count span', () => {

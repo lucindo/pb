@@ -12,20 +12,20 @@ export interface SquareShapeProps {
   // Phase 25 Plan 03: OPTIONAL, default 'labels' — zero-regression for callers
   // that pre-date Phase 25. SquareLeadIn does NOT receive cue (D-07).
   cue?: CueStyleId
-  // Phase 31: NKShape renders the locked MID_SCALE shell beneath its own live
-  // OM count. nkLocked yields that shell with NO countdown numeral — passing
-  // leadInDigit={1} (the old approach) drew a stray "1" that leaked from behind
-  // any count other than 1.
-  nkLocked?: boolean
+  // Phase 31: when set, NKShape is rendering its locked MID_SCALE shell beneath
+  // its own live OM count. The shell carries NO countdown numeral, and the value
+  // ('front' | 'back') drives the In/Out gradient the same way frame.phase does
+  // for the live breathing body — Front shows the In color, Back the Out.
+  nkPhase?: 'front' | 'back'
 }
 
 // D-04: SquareShape does NOT own the idle null-return — the BreathingShape
 // dispatcher (Plan 05) guards that and never invokes SquareShape with both
 // frame=null AND leadInDigit=null.
-export function SquareShape({ frame, leadInDigit, strings, cue = 'labels', nkLocked = false }: SquareShapeProps) {
-  if (nkLocked) {
+export function SquareShape({ frame, leadInDigit, strings, cue = 'labels', nkPhase }: SquareShapeProps) {
+  if (nkPhase != null) {
     // Phase 31: locked shell, no numeral — NKShape overlays the OM count.
-    return <SquareLeadIn digit={null} strings={strings} />
+    return <SquareLeadIn digit={null} nkPhase={nkPhase} strings={strings} />
   }
   if (leadInDigit != null) {
     // SquareLeadIn does NOT receive cue — D-07: lead-in countdown digit is unchanged
@@ -164,12 +164,24 @@ function SquareBody({ frame, strings, cue }: { frame: SessionFrame; strings: UiS
 // digit === null: Phase 31 NK locked shell — renders the MID_SCALE geometry
 // only, with no countdown numeral. NKShape supplies its own role/aria-label on
 // the wrapper and overlays the live OM count, so this subtree stays decorative.
-function SquareLeadIn({ digit, strings }: { digit: 1 | 2 | 3 | null; strings: UiStrings['breathing'] }) {
+// nkPhase (NK shell only) drives data-phase so theme.css crossfades the shape
+// to the Out gradient on Back, mirroring the live breathing body's In/Out cue.
+function SquareLeadIn({
+  digit,
+  strings,
+  nkPhase,
+}: {
+  digit: 1 | 2 | 3 | null
+  strings: UiStrings['breathing']
+  nkPhase?: 'front' | 'back'
+}) {
   const labelProps =
     digit != null ? { role: 'img' as const, 'aria-label': strings.leadInAriaLabel(digit) } : {}
+  const phaseProps = nkPhase != null ? { 'data-phase': nkPhase === 'back' ? 'out' : 'in' } : {}
   return (
     <div
       {...labelProps}
+      {...phaseProps}
       data-variant="square"
       // my-12 only on the standalone countdown lead-in; the NK locked shell
       // (digit === null) fills NKShape's box, which owns the margin itself —
@@ -190,13 +202,12 @@ function SquareLeadIn({ digit, strings }: { digit: 1 | 2 | 3 | null; strings: Ui
         className="shape-marker--outer absolute border-solid"
         style={{ left: '-1.5px', top: '-1.5px', right: '-1.5px', bottom: '-1.5px' }}
       />
-      {/* Orb host locked at MID_SCALE — neutral pre-state. Only the In gradient
-          is rendered (no Out crossfade) so the lead-in feels like a still pool
-          of water awaiting the first breath. Phase 5.1 Plan 04 D-20 + D-22 +
-          post-UAT hotfix: same four-edge anchoring as SquareBody. The
-          lead-in is locked at MID_SCALE so the transition-freeze symptom
-          doesn't show up here, but match the body for D-22 invariant + so any
-          future "lead-in animates" change inherits the working CSS shape.
+      {/* Orb host locked at MID_SCALE. Countdown lead-in: only the In gradient
+          (still-pool pre-state). NK locked shell (nkPhase set): both gradient
+          layers so data-phase='out' can crossfade to the Back color. Phase 5.1
+          Plan 04 D-20 + D-22 + post-UAT hotfix: same four-edge anchoring as
+          SquareBody. The lead-in is locked at MID_SCALE so the transition-freeze
+          symptom doesn't show up here, but match the body for D-22 invariant.
           Phase 17 D-05: `rounded-[18%]` and `rounded-[inherit]` on layers — matching SquareBody. */}
       <div
         className="orb absolute rounded-[18%] motion-reduce:transition-none"
@@ -213,6 +224,12 @@ function SquareLeadIn({ digit, strings }: { digit: 1 | 2 | 3 | null; strings: Ui
           aria-hidden="true"
           className="orb-layer--in absolute inset-0 rounded-[inherit]"
         />
+        {nkPhase != null && (
+          <span
+            aria-hidden="true"
+            className="orb-layer--out absolute inset-0 rounded-[inherit]"
+          />
+        )}
       </div>
       {/* Inner reference ring (Phase 2 D-04 + 260510-tc9 Bug 1) — rendered AFTER
           the orb so it sits on top of the opaque gradient fill. D-22 mirror of
