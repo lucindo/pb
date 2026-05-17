@@ -4,14 +4,14 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  SettingsForm,
-  NK_FRONT_COUNT_OPTIONS,
-  type SettingsFormProps,
-} from './SettingsForm'
+import { SettingsForm, type SettingsFormProps } from './SettingsForm'
 import { UI_STRINGS } from '../content/strings'
 import { DEFAULT_SETTINGS } from '../domain/settings'
-import { DEFAULT_NK_SETTINGS, type NaviKriyaSettings } from '../domain/naviKriyaSettings'
+import {
+  DEFAULT_NK_SETTINGS,
+  NK_FRONT_COUNT_OPTIONS,
+  type NaviKriyaSettings,
+} from '../domain/naviKriyaSettings'
 
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice

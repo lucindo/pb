@@ -13,7 +13,16 @@ import {
   type WarmUpMinutes,
 } from '../domain/settings'
 import { computeStretchTotalMs } from '../domain/stretchRamp'
-import type { UiStrings } from '../content/strings'
+import {
+  DEFAULT_NK_SETTINGS,
+  NK_FRONT_COUNT_OPTIONS,
+  NK_ROUNDS_OPTIONS,
+  OM_LENGTH_OPTIONS,
+  type NaviKriyaSettings,
+  type OmLength,
+} from '../domain/naviKriyaSettings'
+import { NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
+import { UI_STRINGS, type UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage/practices'
 import { ModeToggle } from './ModeToggle'
 import { SettingsStepper } from './SettingsStepper'
@@ -30,9 +39,18 @@ export interface SettingsFormProps {
   strings: UiStrings['settingsForm']
   // Phase 30: practice display copy (heading per practice, NK placeholder).
   practiceStrings: UiStrings['practice']
-  // Phase 30: label for the disabled NK Start stub (D-01) — App.tsx passes
-  // uiStrings.controls.startSession so the scaffold matches the resonant CTA.
+  // Phase 30: label for the NK Start button — App.tsx passes
+  // uiStrings.controls.startSession so the NK CTA matches the resonant one.
   startSessionLabel: string
+  // Phase 31 (NK-02/03/04/06, D-14): the editable Navi Kriya session
+  // parameters and their callbacks. Optional so App.tsx keeps compiling until
+  // Plan 31-06 wires the real state; the NK branch falls back to safe defaults.
+  nkSettings?: NaviKriyaSettings
+  onNKSettingsChange?: (this: void, settings: NaviKriyaSettings) => void
+  onNKStartClick?: (this: void) => void
+  isNKSessionRunning?: boolean
+  // NK control copy lives at the UiStrings top level, not under settingsForm.
+  nkControlsStrings?: UiStrings['nkControls']
 }
 
 export function SettingsForm({
@@ -42,8 +60,12 @@ export function SettingsForm({
   onChange,
   onExtendDuration,
   strings,
-  practiceStrings,
   startSessionLabel,
+  nkSettings = DEFAULT_NK_SETTINGS,
+  onNKSettingsChange = () => undefined,
+  onNKStartClick = () => undefined,
+  isNKSessionRunning = false,
+  nkControlsStrings = UI_STRINGS.en.nkControls,
 }: SettingsFormProps) {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
   const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
@@ -89,6 +111,26 @@ export function SettingsForm({
       return
     }
     updateSettings({ initialBpm })
+  }
+
+  const formatOmLength = (value: OmLength): string =>
+    value === 'fast'
+      ? nkControlsStrings.omLengthFast
+      : value === 'slow'
+        ? nkControlsStrings.omLengthSlow
+        : nkControlsStrings.omLengthMedium
+
+  // D-14: estimated session duration — derived in render (never memoized) so it
+  // tracks every NK settings change live. Total OMs per round = front + back,
+  // back = front / 4; plus the one-time settle overhead before the first round.
+  const nkBackCount = nkSettings.frontCount / 4
+  const estimatedMinutes = Math.round(
+    (nkSettings.rounds * (nkSettings.frontCount + nkBackCount) * NK_OM_SECONDS[nkSettings.omLength] * 1000
+      + NK_SETTLE_MS) / 60_000,
+  )
+
+  const updateNkSettings = (next: Partial<NaviKriyaSettings>) => {
+    onNKSettingsChange({ ...nkSettings, ...next })
   }
 
   return (
@@ -199,21 +241,60 @@ export function SettingsForm({
           )}
         </>
       ) : (
-        // Phase 30 D-01: Navi Kriya structural scaffold — an empty controls
-        // slot and a disabled Start stub. The active practice is named in the
-        // app header/title (App.tsx), not by an inline heading. The real NK
-        // controls and engine arrive in Phase 31; no resonant knobs render here.
+        // Phase 31 (NK-02/03/04/06, D-14): the real Navi Kriya controls fill
+        // the slot the Phase 30 stub held — rounds, front OM count, OM pace, a
+        // per-OM tick toggle, a live duration estimate, and a live Start
+        // button. The practice is named in the app header (App.tsx), not by an
+        // inline heading; no resonant knobs render in this branch.
         <>
-          <div
-            aria-label="Practice controls — coming soon"
-            className="text-sm text-[var(--color-breathing-muted)]"
+          <SettingsStepper<number>
+            label={nkControlsStrings.roundsLabel}
+            value={nkSettings.rounds}
+            options={NK_ROUNDS_OPTIONS}
+            onChange={(rounds) => { updateNkSettings({ rounds }) }}
+            disabled={isNKSessionRunning}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<number>
+            label={nkControlsStrings.frontCountLabel}
+            value={nkSettings.frontCount}
+            options={NK_FRONT_COUNT_OPTIONS}
+            onChange={(frontCount) => { updateNkSettings({ frontCount }) }}
+            disabled={isNKSessionRunning}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<OmLength>
+            label={nkControlsStrings.omLengthLabel}
+            value={nkSettings.omLength}
+            options={OM_LENGTH_OPTIONS}
+            formatValue={formatOmLength}
+            onChange={(omLength) => { updateNkSettings({ omLength }) }}
+            disabled={isNKSessionRunning}
+            strings={strings.stepper}
+          />
+          {/* D-07: the per-OM tick toggle stays interactive while a session
+              runs — the engine reads cueOn from its mutable ref, so a live flip
+              is stale-closure-safe. Hence no isNKSessionRunning gating here. */}
+          <ModeToggle
+            isStretch={nkSettings.perOmCue}
+            modeLabel={nkControlsStrings.perOmCueLabel}
+            standardLabel={nkControlsStrings.perOmCueOff}
+            stretchLabel={nkControlsStrings.perOmCueOn}
+            onChange={(perOmCue) => { updateNkSettings({ perOmCue }) }}
+          />
+          {/* D-14: live estimated session duration — low-prominence secondary
+              label; aria-live so screen readers announce updates. */}
+          <p
+            aria-live="polite"
+            className="text-sm text-center text-[var(--color-breathing-muted)]"
           >
-            {practiceStrings.naviKriyaControlsPlaceholder}
-          </div>
+            {nkControlsStrings.estimatedDuration(estimatedMinutes)}
+          </p>
           <button
             type="button"
-            disabled
-            className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 opacity-50 cursor-not-allowed"
+            onClick={onNKStartClick}
+            disabled={isNKSessionRunning}
+            className="mt-6 min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {startSessionLabel}
           </button>

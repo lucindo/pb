@@ -2,6 +2,15 @@ export type OmLength = 'fast' | 'medium' | 'slow'
 
 export const OM_LENGTH_OPTIONS = ['fast', 'medium', 'slow'] as const satisfies readonly OmLength[]
 
+// NK-02: selectable round counts for the SettingsForm rounds stepper.
+export const NK_ROUNDS_OPTIONS: readonly number[] = [1, 2, 3, 4, 5]
+
+// NK-04: selectable front OM counts. Every entry MUST be a multiple of 4 so
+// backCount = frontCount / 4 is never fractional — paired with isValidFrontCount.
+export const NK_FRONT_COUNT_OPTIONS: readonly number[] = [
+  4, 8, 12, 20, 40, 60, 80, 100, 120, 140, 160,
+]
+
 export interface NaviKriyaSettings {
   frontCount: number   // base front OM count; backCount = frontCount / 4; must be multiple of 4
   omLength: OmLength

@@ -107,16 +107,20 @@ describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/
     expect(screen.queryByRole('switch', { name: 'Session mode' })).not.toBeInTheDocument()
   })
 
-  it('activePractice="naviKriya": shows the controls placeholder and no inline practice heading', () => {
+  it('activePractice="naviKriya": renders the real NK controls and no inline practice heading', () => {
     renderForm({ activePractice: 'naviKriya' })
-    expect(screen.getByText(PRACTICE.naviKriyaControlsPlaceholder)).toBeInTheDocument()
-    // Checkpoint feedback: the practice is named in the app header/title,
-    // not by an inline heading inside SettingsForm.
+    // Phase 31 (Plan 31-05): the Phase 30 placeholder stub is replaced by the
+    // real NK controls — full coverage lives in SettingsForm.nk.test.tsx.
+    expect(
+      screen.getByRole('group', { name: UI_STRINGS.en.nkControls.roundsLabel }),
+    ).toBeInTheDocument()
+    // The practice is named in the app header/title, not by an inline heading.
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   })
 
-  it('activePractice="naviKriya": the Start-stub button carries the disabled attribute', () => {
+  it('activePractice="naviKriya": the Start button is live (enabled)', () => {
     renderForm({ activePractice: 'naviKriya' })
-    expect(screen.getByRole('button', { name: START_LABEL })).toBeDisabled()
+    // Phase 31 (Plan 31-05): the disabled Phase 30 stub is now a live button.
+    expect(screen.getByRole('button', { name: START_LABEL })).toBeEnabled()
   })
 })
