@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
-import { NK_OM_SECONDS, useNKEngine } from './useNKEngine'
+import { NK_LEAD_MS, NK_OM_SECONDS, useNKEngine } from './useNKEngine'
 
 // Default small settings so tests finish quickly under fake timers
 const defaultSettings: NaviKriyaSettings = {
@@ -42,17 +42,17 @@ describe('useNKEngine', () => {
     expect(result.current.nkPhase).toBe('front')
     expect(result.current.nkRunning).toBe(true)
 
-    // Timing: start() calls schedule(NK_LEAD_MS=700).
-    //   OM #1 fires at t=700 (count→1), OM #2 at t=700+omMs (count→2), ...
-    //   OM #8 fires at t=700+omMs*7 (count→8) → phase transition → front→back,
-    //   count reset to 0, schedule(NK_LEAD_MS=700) for first back OM.
+    // Timing: start() calls schedule(NK_LEAD_MS).
+    //   OM #1 fires at t=NK_LEAD_MS (count→1), OM #2 at t=NK_LEAD_MS+omMs, ...
+    //   OM #8 fires at t=NK_LEAD_MS+omMs*7 (count→8) → front→back transition,
+    //   count reset to 0, schedule(NK_LEAD_MS) for the first back OM.
     const omMs = NK_OM_SECONDS['medium'] * 1000
 
-    // Advance through lead-in + all 8 front OMs — stop BEFORE first back OM fires
-    // First back OM fires at t = 700 + omMs*7 + 700 = 700 + omMs*7 + 700
-    // Stop just before it: 700 + omMs*7 + 500 (well before back lead-in completes)
+    // Advance through lead-in + all 8 front OMs — stop BEFORE the first back OM.
+    // First back OM fires at t = NK_LEAD_MS + omMs*7 + NK_LEAD_MS.
+    // Stop +500 into the back lead-in (well before it completes).
     act(() => {
-      vi.advanceTimersByTime(700 + omMs * 7 + 500)
+      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 7 + 500)
     })
 
     // Should now be in 'back' phase with count reset to 0
@@ -60,9 +60,9 @@ describe('useNKEngine', () => {
     expect(result.current.nkCount).toBe(0)
 
     // Advance through the back lead-in + all 2 back OMs
-    // First back OM fires at t = 700+omMs*7+700 (count→1), second at t=700+omMs*7+700+omMs (count→2→done)
+    // First back OM at t = NK_LEAD_MS+omMs*7+NK_LEAD_MS (count→1), second +omMs (count→2→done)
     act(() => {
-      vi.advanceTimersByTime(700 + omMs * 2 + 100)
+      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 2 + 100)
     })
 
     // Should be 'done'
@@ -107,9 +107,9 @@ describe('useNKEngine', () => {
       result.current.start(settings, cbs, onComplete)
     })
 
-    // Each round: lead(700) + 4 front OMs + lead(700) + 1 back OM = ~5 OMs + 1400ms lead
-    // 3 rounds total
-    const perRoundMs = 700 + omMs * 4 + 700 + omMs * 1
+    // Each round: lead(NK_LEAD_MS) + 4 front OMs + lead(NK_LEAD_MS) + 1 back OM.
+    // 3 rounds total.
+    const perRoundMs = NK_LEAD_MS + omMs * 4 + NK_LEAD_MS + omMs * 1
     act(() => {
       vi.advanceTimersByTime(perRoundMs * 3 + 500)
     })
@@ -137,17 +137,18 @@ describe('useNKEngine', () => {
     expect(result.current.nkCount).toBe(0)
 
     // Timing:
-    //   t=0:     start() → schedule(NK_LEAD_MS=700)
-    //   t=700:   OM #1 fires → count=1 → schedule(omMs)
-    //   t=700+omMs: OM #2 fires → count=2
+    //   t=0:               start() → schedule(NK_LEAD_MS)
+    //   t=NK_LEAD_MS:      OM #1 fires → count=1 → schedule(omMs)
+    //   t=NK_LEAD_MS+omMs: OM #2 fires → count=2
     //
-    // Verify: advance by 600ms (less than lead-in 700ms) → count still 0
+    // Verify: advance to just before the lead-in completes → count still 0
     act(() => {
-      vi.advanceTimersByTime(600)
+      vi.advanceTimersByTime(NK_LEAD_MS - 100)
     })
     expect(result.current.nkCount).toBe(0)
 
-    // Advance past lead-in: t=700+10 → OM #1 fires → count=1
+    // Advance just past the lead-in (t = NK_LEAD_MS + 10) → OM #1 fires → count=1.
+    // Keep the overshoot small so the omMs-window assertions below stay precise.
     act(() => {
       vi.advanceTimersByTime(110)
     })
@@ -186,7 +187,7 @@ describe('useNKEngine', () => {
       const { result, unmount } = renderHook(() => useNKEngine())
       act(() => { result.current.start(settings, cbs, vi.fn()) })
       act(() => {
-        vi.advanceTimersByTime(700 + omMs * 4 + 100)
+        vi.advanceTimersByTime(NK_LEAD_MS + omMs * 4 + 100)
       })
       expect(cbs.tick).not.toHaveBeenCalled()
       unmount()
@@ -208,7 +209,7 @@ describe('useNKEngine', () => {
       act(() => { result.current.start(settings, cbs, vi.fn()) })
       // Advance through just front phase (4 OMs)
       act(() => {
-        vi.advanceTimersByTime(700 + omMs * 4 + 100)
+        vi.advanceTimersByTime(NK_LEAD_MS + omMs * 4 + 100)
       })
       // Should have been called once per front OM = 4 times (back phase not yet complete)
       expect(cbs.tick.mock.calls.length).toBeGreaterThanOrEqual(4)
@@ -230,7 +231,7 @@ describe('useNKEngine', () => {
 
     // Advance through lead-in + 2 OMs
     act(() => {
-      vi.advanceTimersByTime(700 + omMs * 2 + 10)
+      vi.advanceTimersByTime(NK_LEAD_MS + omMs * 2 + 10)
     })
 
     const countBeforePause = result.current.nkCount

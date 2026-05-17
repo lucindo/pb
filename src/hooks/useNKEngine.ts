@@ -17,8 +17,12 @@ export const NK_OM_SECONDS: Record<OmLength, number> = {
   slow: 3.0,
 }
 
-// D-11: lead-in delay between a phase marker and the first OM of that phase
-export const NK_LEAD_MS = 700
+// D-11: lead-in delay between a phase marker and the first OM of that phase.
+// Applies to every phase start — round 1 Front, and the Front + Back of every
+// round (the window where the user performs the neck-lock head movement).
+// TEMPORARY: bumped 700 → 1400 for testing visibility (operator request
+// 2026-05-17) — restore to 700, or the finalized value, before release.
+export const NK_LEAD_MS = 1400
 
 // D-11: settle delay before the first frontMarker fires at session start (~3–5 s)
 export const NK_SETTLE_MS = 3500
