@@ -855,7 +855,15 @@ export default function App() {
   // handler (browser autoplay policy — RESEARCH Pitfall 2).
   const onNKStartClick = useCallback(() => {
     if (nkSessionActive) return
-    const audioCtx = new AudioContext()
+    // WR-03: AudioContext construction can throw (browser without Web Audio,
+    // hardened privacy config). Treat audio as fail-soft — match the resonant
+    // path: the visual engine still starts, only the cues go silent.
+    let audioCtx: AudioContext | null = null
+    try {
+      audioCtx = new AudioContext()
+    } catch {
+      audioCtx = null
+    }
     nkAudioCtxRef.current = audioCtx
     const timbre = loadPrefs().timbre
     sessionVariantRef.current = liveVariant
@@ -864,12 +872,26 @@ export default function App() {
     nkRecordedRef.current = false
     setNkStarting(true)
 
-    const callbacks: NKAudioCallbacks = {
-      frontMarker: () => { scheduleNKFrontMarker(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
-      backMarker: () => { scheduleNKBackMarker(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
-      tick: () => { scheduleNKTick(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
-      endCue: () => { scheduleNKEndChord(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
-    }
+    // WR-03: with no AudioContext the cue callbacks become no-ops so the engine
+    // runs silently rather than aborting the session. The non-null branch binds
+    // a const so TypeScript narrows it inside the cue closures.
+    const callbacks: NKAudioCallbacks = (() => {
+      const ctx = audioCtx
+      if (ctx === null) {
+        return {
+          frontMarker: () => undefined,
+          backMarker: () => undefined,
+          tick: () => undefined,
+          endCue: () => undefined,
+        }
+      }
+      return {
+        frontMarker: () => { scheduleNKFrontMarker(ctx, ctx.currentTime, ctx.destination, timbre) },
+        backMarker: () => { scheduleNKBackMarker(ctx, ctx.currentTime, ctx.destination, timbre) },
+        tick: () => { scheduleNKTick(ctx, ctx.currentTime, ctx.destination, timbre) },
+        endCue: () => { scheduleNKEndChord(ctx, ctx.currentTime, ctx.destination, timbre) },
+      }
+    })()
 
     // D-11: a quiet settle, then the engine starts — useNKEngine.start() fires
     // the front marker and schedules the first OM after NK_LEAD_MS internally,
@@ -978,8 +1000,10 @@ export default function App() {
               key={`nk-${String(nkCount)}`}
               variant={sessionVariant ?? liveVariant}
               count={nkCount}
+              phase={nkPhase === 'back' ? 'back' : 'front'}
               isPaused={!nkRunning}
               strings={uiStrings.breathing}
+              nkReadoutStrings={uiStrings.nkReadout}
             />
           ) : (
             <BreathingShape
@@ -1029,7 +1053,6 @@ export default function App() {
               nkSettings={nkSettings}
               onNKSettingsChange={onNKSettingsChange}
               onNKStartClick={onNKStartClick}
-              isNKSessionRunning={nkStarting}
               nkControlsStrings={uiStrings.nkControls}
             />
           )}

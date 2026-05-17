@@ -16,7 +16,9 @@ function renderShape(overrides: Partial<NKShapeProps> = {}) {
   const defaults: NKShapeProps = {
     variant: 'orb',
     count: 1,
+    phase: 'front',
     strings: EN_STRINGS,
+    nkReadoutStrings: UI_STRINGS.en.nkReadout,
   }
   return render(<NKShape {...defaults} {...overrides} />)
 }
@@ -67,6 +69,22 @@ describe('NKShape', () => {
     const { container } = renderShape({ count: 10 })
     const countSpan = container.querySelector('span.text-7xl')
     expect(countSpan).not.toBeNull()
+  })
+
+  it('WR-01: aria-label announces the Front phase during the front phase', () => {
+    const { container } = renderShape({ count: 12, phase: 'front' })
+    const root = container.querySelector('[role="img"]')
+    expect(root?.getAttribute('aria-label')).toBe(
+      `Navi Kriya session: OM 12, phase ${UI_STRINGS.en.nkReadout.front}`,
+    )
+  })
+
+  it('WR-01: aria-label announces the Back phase during the back phase', () => {
+    const { container } = renderShape({ count: 3, phase: 'back' })
+    const root = container.querySelector('[role="img"]')
+    expect(root?.getAttribute('aria-label')).toBe(
+      `Navi Kriya session: OM 3, phase ${UI_STRINGS.en.nkReadout.back}`,
+    )
   })
 })
 

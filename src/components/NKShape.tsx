@@ -22,11 +22,21 @@ import { DiamondShape } from './DiamondShape'
 export interface NKShapeProps {
   variant: VisualVariantId      // 'orb' | 'square' | 'diamond'
   count: number                 // live OM count (0 during settle)
+  phase: 'front' | 'back'       // WR-01: real NK phase, drives the aria-label
   isPaused?: boolean            // dims count to opacity-50 when true
   strings: UiStrings['breathing']
+  // WR-01: NK phase copy ('Front' / 'Back') for the screen-reader label.
+  nkReadoutStrings: UiStrings['nkReadout']
 }
 
-export function NKShape({ variant, count, isPaused = false, strings }: NKShapeProps) {
+export function NKShape({
+  variant,
+  count,
+  phase,
+  isPaused = false,
+  strings,
+  nkReadoutStrings,
+}: NKShapeProps) {
   const reducedMotion = usePrefersReducedMotion()
 
   // D-04: apply .nk-om-pulse only when reduced-motion is off.
@@ -48,11 +58,12 @@ export function NKShape({ variant, count, isPaused = false, strings }: NKShapePr
   ) : null
 
   // D-02: aria-label announces the current OM count and phase for screen readers.
-  // The phase label is derived from strings.inhale/exhale — NK uses Front/Back but
-  // the UiStrings['breathing'] type is the prop type per the plan interface contract.
+  // WR-01: the phase label is the REAL NK phase (Front/Back) sourced from
+  // nkReadoutStrings, not strings.inhale — a blind user must hear the practice
+  // move from Front to Back.
   // The aria-label format is locked: "Navi Kriya session: OM ${count}, phase ${phaseLabel}"
-  // We use the breathing shape label as the base (accessible name updates per count).
-  const ariaLabel = `Navi Kriya session: OM ${String(count)}, phase ${strings.inhale}`
+  const phaseLabel = phase === 'back' ? nkReadoutStrings.back : nkReadoutStrings.front
+  const ariaLabel = `Navi Kriya session: OM ${String(count)}, phase ${phaseLabel}`
 
   // The NKShape renders the underlying shape component locked at MID_SCALE.
   // We pass frame=null and leadInDigit=undefined so neither path fires;
