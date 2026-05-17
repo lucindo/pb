@@ -72,10 +72,10 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   5. User sees the current OM count, the active phase (front/back), and the current round on screen throughout the session
   6. A completed Navi Kriya session records its own stats — total sessions, rounds completed, and total minutes — tracked separately from Resonant Breathing stats; it updates only the Navi Kriya numbers and leaves Resonant Breathing stats unchanged
 **Plans**: 6 plans
-- [ ] 31-01-PLAN.md — useNKEngine OM-counting engine hook (front/back phase machine, 4:1, auto-advance)
-- [ ] 31-02-PLAN.md — NK cue synthesis (front/back markers, per-OM tick, end chord) through timbres
-- [ ] 31-03-PLAN.md — Per-practice NK stats — PersistedStats roundsCompleted + recordNaviKriyaSession + StatsFooter
-- [ ] 31-04-PLAN.md — NK session-screen display — NKShape, NKSessionReadout, nk-om-pulse CSS, NK strings
+- [x] 31-01-PLAN.md — useNKEngine OM-counting engine hook (front/back phase machine, 4:1, auto-advance)
+- [x] 31-02-PLAN.md — NK cue synthesis (front/back markers, per-OM tick, end chord) through timbres
+- [x] 31-03-PLAN.md — Per-practice NK stats — PersistedStats roundsCompleted + recordNaviKriyaSession + StatsFooter
+- [x] 31-04-PLAN.md — NK session-screen display — NKShape, NKSessionReadout, nk-om-pulse CSS, NK strings
 - [ ] 31-05-PLAN.md — NK controls in SettingsForm (rounds, front count, OM length, tick toggle, duration estimate)
 - [ ] 31-06-PLAN.md — App.tsx NK engine wiring, session screen, completion dialog, stats, CR-01 fix
 **UI hint**: yes
@@ -107,5 +107,5 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 30. Multi-Practice Architecture & Switcher | 4/4 | Complete    | 2026-05-17 |
-| 31. Navi Kriya Engine & Session | 0/6 | Planned     | - |
+| 31. Navi Kriya Engine & Session | 4/6 | In Progress|  |
 | 32. Learn & Localization | 0/? | Not started | - |
