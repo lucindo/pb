@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { readEnvelope, writeEnvelope, STATE_KEY, STATE_VERSION } from './storage'
+import { readEnvelope, writeEnvelope, migrateEnvelope, STATE_KEY, STATE_VERSION } from './storage'
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -21,7 +21,11 @@ describe('readEnvelope', () => {
       version: 1, settings: { bpm: 4 }, mute: true, stats: null,
     }))
     const env = readEnvelope()
-    expect(env.version).toBe(STATE_VERSION)
+    // readEnvelope preserves the on-disk numeric version (1 here) rather than
+    // overwriting it with STATE_VERSION — the v1→v2 migration runs in-memory but
+    // does not restamp `version` (writeEnvelope stamps STATE_VERSION on the next
+    // write). The flat settings subtree round-trips unchanged.
+    expect(env.version).toBe(1)
     expect(env.settings).toEqual({ bpm: 4 })
     expect(env.mute).toBe(true)
   })
@@ -55,7 +59,7 @@ describe('writeEnvelope', () => {
     expect(raw).not.toBeNull()
     // Reason: raw non-null asserted by expect().not.toBeNull() immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(raw!) as unknown).toMatchObject({ version: 1, settings: { bpm: 4 } })
+    expect(JSON.parse(raw!) as unknown).toMatchObject({ version: STATE_VERSION, settings: { bpm: 4 } })
   })
 
   it('silently absorbs QuotaExceededError on setItem (D-16)', () => {
@@ -75,16 +79,17 @@ describe('writeEnvelope', () => {
   })
 
   it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
-    // Seed a v2 envelope (simulates a future schema written by a newer build
-    // in another tab). `prefs` is the forward-compat probe — STORAGE-01's
-    // D-01 spread must let it survive the readEnvelope round-trip.
+    // Seed a v3 envelope (simulates a future schema written by a newer build
+    // in another tab). Must be > STATE_VERSION (2) to exercise the future-version
+    // guard. `prefs` is the forward-compat probe — STORAGE-01's D-01 spread must
+    // let it survive the readEnvelope round-trip.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 2, settings: { bpm: 4 }, prefs: { theme: 'dark' },
+      version: 3, settings: { bpm: 4 }, prefs: { theme: 'dark' },
     }))
-    // STORAGE-01: readEnvelope returns the on-disk numeric version (2),
-    // NOT STATE_VERSION (1). The known settings subtree round-trips.
+    // STORAGE-01: readEnvelope returns the on-disk numeric version (3),
+    // NOT STATE_VERSION (2). The known settings subtree round-trips.
     const env = readEnvelope()
-    expect(env.version).toBe(2)
+    expect(env.version).toBe(3)
     expect(env.settings).toEqual({ bpm: 4 })
     // STORAGE-01 / D-01: unknown top-level fields survive the read (positive
     // forward-compat coverage). Type-cast required because Envelope.prefs is
@@ -95,21 +100,22 @@ describe('writeEnvelope', () => {
     // proves the write was refused, not that the read preserved the field.
     expect((env as unknown as Record<string, unknown>).prefs)
       .toEqual({ theme: 'dark' })
-    // STORAGE-02 / D-04a: disk version 2 > STATE_VERSION 1 → write refused.
+    // STORAGE-02 / D-04a: disk version 3 > STATE_VERSION 2 → write refused.
     // The caller's `version: 1` does NOT require an `as any` cast because
-    // Envelope.version is widened to `number` (Task 1).
+    // Envelope.version is widened to `number`.
     writeEnvelope({ version: 1, settings: { bpm: 5 } })
-    // Disk unchanged: the refused write left the v2 envelope intact.
+    // Disk unchanged: the refused write left the v3 envelope intact.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 2, settings: { bpm: 4 } })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 3, settings: { bpm: 4 } })
   })
 
   it('writeEnvelope refuses to overwrite a future-version on-disk envelope (STORAGE-02)', () => {
-    // Seed a v2-only envelope (no known subtrees) to isolate the version guard.
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 2 }))
+    // Seed a v3-only envelope (no known subtrees) to isolate the version guard.
+    // v3 > STATE_VERSION (2) makes it a genuine future schema.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 3 }))
     // Caller attempts to land 99-session stats on top of the v2 envelope.
     // The 99-session probe gives the negative assertion something concrete
     // to test — if the guard fails, the stats subtree appears on disk.
@@ -122,14 +128,87 @@ describe('writeEnvelope', () => {
         lastSessionDurationSeconds: null,
       },
     })
-    // D-03 silent refusal: disk envelope unchanged at version: 2.
+    // D-03 silent refusal: disk envelope unchanged at version: 3.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 2 })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 3 })
     // Negative: 99-session probe was NOT written.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(rawAfter!) as unknown).not.toMatchObject({ stats: { totalSessions: 99 } })
+  })
+})
+
+describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
+  // A returning user's flat v1 envelope. settings/stats are deliberately shaped
+  // like real subtrees so the lossless-fold assertions are concrete.
+  const V1_SETTINGS = { bpm: 4, ratio: '40:60', durationMinutes: 10 }
+  const V1_STATS = {
+    totalSessions: 7,
+    totalElapsedSeconds: 4200,
+    lastSessionAtMs: 1_700_000_000_000,
+    lastSessionDurationSeconds: 600,
+  }
+
+  it('folds a flat v1 envelope into practices.resonant losslessly', () => {
+    const migrated = migrateEnvelope(
+      { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
+      1,
+    )
+    const practices = migrated.practices as {
+      resonant: { settings: unknown; stats: unknown }
+    }
+    // The flat resonant data is carried into practices.resonant verbatim —
+    // downstream coercers validate it field-by-field as always.
+    expect(practices.resonant.settings).toEqual(V1_SETTINGS)
+    expect(practices.resonant.stats).toEqual(V1_STATS)
+    expect(migrated.activePractice).toBe('resonant')
+  })
+
+  it('does not delete the original flat settings/stats fields (forward-compat orphans)', () => {
+    const migrated = migrateEnvelope(
+      { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
+      1,
+    )
+    // The flat fields survive as harmless orphans — the top-level spread in
+    // readEnvelope preserves them; this is what keeps the migration lossless.
+    expect(migrated.settings).toEqual(V1_SETTINGS)
+    expect(migrated.stats).toEqual(V1_STATS)
+  })
+
+  it('is idempotent on already-migrated v2 data (fromVersion >= 2 skips the ladder)', () => {
+    const v2Envelope = {
+      version: 2,
+      practices: { resonant: { settings: V1_SETTINGS, stats: V1_STATS } },
+      activePractice: 'naviKriya',
+    }
+    const out = migrateEnvelope(v2Envelope, 2)
+    // The fromVersion < 2 guard is false — practices/activePractice pass through
+    // unchanged, including a non-default activePractice.
+    expect(out.practices).toEqual(v2Envelope.practices)
+    expect(out.activePractice).toBe('naviKriya')
+  })
+
+  it('populates practices.resonant when a seeded v1 envelope is read back', () => {
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 1, settings: V1_SETTINGS, stats: V1_STATS,
+    }))
+    const env = readEnvelope()
+    const practices = env.practices as {
+      resonant: { settings: unknown; stats: unknown }
+    }
+    expect(practices.resonant.settings).toEqual(V1_SETTINGS)
+    expect(practices.resonant.stats).toEqual(V1_STATS)
+    expect(env.activePractice).toBe('resonant')
+  })
+
+  it('STATE_KEY stays exactly "hrv:state:v1" after a write (no accidental key bump)', () => {
+    // Pitfall 1: the :v1 suffix is the key NAME, not the version field. Bumping
+    // STATE_VERSION must never touch STATE_KEY (index.html FOUC script depends on it).
+    expect(STATE_KEY).toBe('hrv:state:v1')
+    writeEnvelope({ version: STATE_VERSION, settings: V1_SETTINGS })
+    expect(window.localStorage.getItem('hrv:state:v1')).not.toBeNull()
+    expect(STATE_KEY).toBe('hrv:state:v1')
   })
 })

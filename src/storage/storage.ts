@@ -23,10 +23,10 @@
 //     orphaned (not user-data-loss because we never had cloud sync — they would
 //     just see defaults on first load of the new code).
 //
-// v1 has no migration framework; D-15's per-field coercers absorb soft drift.
-// A migration framework will be added when a non-trivial schema change lands
-// (deferred per 04-CONTEXT.md "Storage schema versioning / migration framework"
-// and 04-RESEARCH.md R-02).
+// Phase 30 PRACTICE-04: the first real migration step lands here. STATE_VERSION
+// is bumped 1→2 and `migrateEnvelope` gains a v1→v2 ladder that folds a returning
+// user's flat `settings`/`stats` into the new per-practice `practices.resonant`
+// subtree. STATE_KEY is deliberately unchanged — v1 data is fully migratable.
 //
 // Tests should NOT depend on the literal STATE_KEY string; assert through the
 // public load*/save* API where possible. Tests that DO use STATE_KEY directly
@@ -35,7 +35,7 @@
 // SYNC WITH index.html FOUC SCRIPT — when bumping the :v1 suffix, update the
 // hardcoded 'hrv:state:v1' string in index.html's <head> theme-resolve script.
 export const STATE_KEY = 'hrv:state:v1'
-export const STATE_VERSION = 1 as const
+export const STATE_VERSION = 2 as const
 
 export interface StorageDeps {
   now?: () => number       // D-18 — defaults to Date.now (consumed by stats.ts / format.ts)
@@ -58,6 +58,12 @@ export interface Envelope {
   // by the prefs probe at storage.test.ts:79-99. `unknown` mirrors settings/mute/stats;
   // coercer narrows at the boundary. Avoids storage→domain typed circular import.
   prefs?: unknown
+  // Phase 30 PRACTICE-02/04: the v2 per-practice subtree. `practices` holds a
+  // { resonant, naviKriya } map of settings+stats slices; `activePractice` is the
+  // selected practice id. Both `unknown` per Pitfall 7 — coercePractices /
+  // coerceActivePractice (src/storage/practices.ts) narrow at the boundary.
+  practices?: unknown
+  activePractice?: unknown
 }
 
 const EMPTY_ENVELOPE: Envelope = { version: STATE_VERSION }
@@ -65,23 +71,39 @@ const EMPTY_ENVELOPE: Envelope = { version: STATE_VERSION }
 /**
  * DS-WR-04: explicit migrate-on-read seam.
  *
- * The dual-versioning comment above promises "migrate-on-read", but until now no
- * migration hook existed — any future STATE_VERSION bump silently relied on the
- * per-field coercers tolerating every shape difference, with no structural,
- * test-enforceable contract that a vN read of v(N-1) data is lossless.
+ * The dual-versioning comment above promises "migrate-on-read"; this function is
+ * the contract. It is applied in `readEnvelope` before the envelope reaches the
+ * per-field coercers. The forward-compatible top-level spread is preserved — the
+ * returned envelope is a `{ ...env }` superset so unknown top-level fields written
+ * by a newer build survive the read+write round-trip.
  *
- * This function is the contract. For v1 it is a deliberate no-op passthrough
- * (`fromVersion` is unused today); when a non-trivial schema change lands, the
- * migration logic for each version step belongs here, applied in `readEnvelope`
- * before the envelope reaches the per-field coercers. The forward-compatible
- * top-level spread is preserved: this returns `{ ...env }` so unknown top-level
- * fields written by a newer build survive the read+write round-trip.
+ * v1→v2 ladder (Phase 30 PRACTICE-04): when `fromVersion < 2`, a pre-existing flat
+ * v1 envelope is folded into the v2 per-practice shape. The user's flat
+ * `settings`/`stats` become `practices.resonant.{settings,stats}` (still `unknown`
+ * — downstream coercers validate them field-by-field as always), and
+ * `activePractice` is seeded to `'resonant'`. The flat `settings`/`stats` fields
+ * are deliberately NOT deleted: the forward-compat spread preserves them as
+ * harmless orphans, keeping the migration lossless. naviKriya is intentionally
+ * absent so coercePractices supplies defaults. The ladder is idempotent — a v2
+ * envelope (`fromVersion >= 2`) skips the step and passes through unchanged.
  */
 export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
-  // v1: no migration steps. Future versions add `if (fromVersion < N) { ... }`
-  // ladders here. `void fromVersion` keeps noUnusedParameters happy until then.
-  void fromVersion
-  return { ...env }
+  let out: Envelope = { ...env }
+
+  if (fromVersion < 2) {
+    // Coerce a flat v1 envelope into the v2 per-practice shape. out.settings /
+    // out.stats are the existing resonant data (unknown — coercers validate
+    // downstream). naviKriya is omitted so coercePractices supplies defaults.
+    out = {
+      ...out,
+      practices: {
+        resonant: { settings: out.settings, stats: out.stats },
+      },
+      activePractice: 'resonant',
+    }
+  }
+
+  return out
 }
 
 export function readEnvelope(deps: StorageDeps = {}): Envelope {
