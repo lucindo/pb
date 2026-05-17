@@ -23,6 +23,7 @@ function renderFooter(props: Partial<StatsFooterProps> = {}) {
       stats={props.stats ?? baseStats}
       onResetClick={onResetClick}
       strings={props.strings ?? EN_STRINGS_FIXTURE.stats}
+      showRounds={props.showRounds}
     />,
   )
   return { ...utils, onResetClick }
@@ -58,6 +59,34 @@ describe('StatsFooter (D-08)', () => {
     })
     expect(screen.queryByText(/^Last:/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument()
+  })
+})
+
+describe('StatsFooter rounds-completed (NK-08 / Pitfall 8)', () => {
+  it('renders the rounds figure for Navi Kriya when showRounds=true and roundsCompleted=5', () => {
+    renderFooter({
+      stats: { ...baseStats, roundsCompleted: 5 },
+      showRounds: true,
+    })
+    expect(screen.getByText(/5 Rounds/)).toBeInTheDocument()
+  })
+
+  it('renders "0 Rounds" when showRounds=true and roundsCompleted is undefined', () => {
+    renderFooter({ showRounds: true })
+    expect(screen.getByText(/0 Rounds/)).toBeInTheDocument()
+  })
+
+  it('does NOT render a rounds figure for Resonant (showRounds absent)', () => {
+    renderFooter()
+    expect(screen.queryByText(/Rounds/)).not.toBeInTheDocument()
+    // Existing figures still render correctly (no layout regression).
+    expect(screen.getByText(/12 sessions · 47 min total/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument()
+  })
+
+  it('does NOT render a rounds figure for Resonant (showRounds=false)', () => {
+    renderFooter({ showRounds: false })
+    expect(screen.queryByText(/Rounds/)).not.toBeInTheDocument()
   })
 })
 

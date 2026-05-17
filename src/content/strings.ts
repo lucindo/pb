@@ -116,6 +116,9 @@ export interface UiStrings {
     readonly lastSessionPrefix: (date: string, duration: string) => string
     readonly totalSuffix: string
     readonly reset: string
+    // NK-08: label for the rounds-completed figure in StatsFooter (Navi Kriya only).
+    // PT-BR stub; real translation in Phase 32.
+    readonly roundsCompletedLabel: string
   }
   readonly breathing: {
     readonly inhale: string
@@ -265,6 +268,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       lastSessionPrefix: (date, duration) => `Last: ${date} · ${duration}`,
       totalSuffix: 'total',
       reset: 'Reset',
+      roundsCompletedLabel: 'Rounds',
     },
     breathing: {
       inhale: 'In',
@@ -413,6 +417,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       lastSessionPrefix: (date, duration) => `Última sessão: ${date} · ${duration}`,
       totalSuffix: 'total',
       reset: 'Zerar',
+      roundsCompletedLabel: 'Rounds', // TODO Phase 32: PT-BR translation
     },
     breathing: {
       inhale: 'Puxa',
