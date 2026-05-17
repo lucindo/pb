@@ -63,6 +63,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ### Pending Todos
 
 - v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
+- Review all app config values and defaults (HRV + Navi — every default/min/max/step) before milestone close — `.planning/todos/pending/2026-05-17-review-all-app-config-values-and-defaults.md`.
 
 ### Blockers/Concerns
 
