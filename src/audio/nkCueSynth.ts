@@ -3,8 +3,11 @@
 // NK-05 + D-05: All four cue functions read TIMBRE_PRESETS[timbre] and route
 // through the user's chosen timbre (Bowl / Bell / Sine / Chime).
 //
-// D-06: Front marker = rising two-tone gesture (fundamentalHzOut → fundamentalHzIn).
-//       Back marker = falling two-tone gesture (fundamentalHzIn → fundamentalHzOut).
+// D-06 (revised Phase 31 UAT): Front/Back markers are a single pitch-gliding
+//       tone. Front = upward glide (fundamentalHzOut → fundamentalHzIn).
+//       Back  = downward glide (fundamentalHzIn → fundamentalHzOut).
+//       The earlier two-tone gesture read as a hesitant two-note phrase rather
+//       than a decisive marker.
 // D-07: Per-OM tick = soft, short, barely-there tone (quiet + short duration).
 // D-08: End chord = resolved low three-note chord that rings out.
 //
@@ -23,10 +26,13 @@ const NEAR_SILENCE = 0.0001 // setTargetAtTime cannot ramp to true zero
 
 // --- NK-specific cue constants ---
 
-// D-06 two-tone markers: tone 1 at when, tone 2 at when + TWO_TONE_GAP_SEC
-const TWO_TONE_GAP_SEC = 0.30
-// Duration of each tone in the two-tone gesture
-const MARKER_TONE_DURATION_SEC = 0.42
+// D-06 (revised Phase 31): the Front/Back markers are one tone whose pitch
+// glides between the timbre fundamentals — Front up, Back down. Adjustable by
+// ear: GLIDE is the sweep length, ATTACK the click-free ramp-in, RELEASE the
+// fade-out after the sweep lands.
+const MARKER_GLIDE_SEC = 0.5
+const MARKER_ATTACK_SEC = 0.02
+const MARKER_RELEASE_SEC = 0.4
 // D-07 per-OM tick: soft and short
 const NK_TICK_DURATION_SEC = 0.12
 const NK_TICK_PEAK_GAIN = 0.08 // quiet — peripheral hearing only
@@ -98,12 +104,69 @@ function buildNKToneNodes(
   return { osc, partialGain, filter, envelope, stopAt, cleanupAt }
 }
 
+/**
+ * Private helper: build one oscillator whose pitch glides from startHz to
+ * endHz over MARKER_GLIDE_SEC. The gain envelope is a quick attack, a hold at
+ * peak through the glide, then a linear release to silence — a clean swept
+ * tone with no click at either end. Caller registers the 'ended' cleanup
+ * listener (T-31-04).
+ */
+function buildNKGlideToneNodes(
+  audioCtx: AudioContext,
+  startHz: number,
+  endHz: number,
+  when: number,
+  destination: AudioNode,
+  preset: TimbrePreset,
+  peakGain: number,
+): { osc: OscillatorNode; partialGain: GainNode; filter: BiquadFilterNode; envelope: GainNode; stopAt: number; cleanupAt: number } {
+  const filter = audioCtx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.value = preset.filterFreqHz
+  filter.Q.value = preset.filterQ
+
+  const glideEnd = when + MARKER_GLIDE_SEC
+  const stopAt = glideEnd + MARKER_RELEASE_SEC
+  const cleanupAt = stopAt + CLEANUP_PADDING_SEC
+
+  // Envelope: NEAR_SILENCE → peak (attack), hold at peak through the glide,
+  // peak → NEAR_SILENCE (release). The explicit setValueAtTime at glideEnd
+  // anchors the release ramp's start value.
+  const envelope = audioCtx.createGain()
+  envelope.gain.setValueAtTime(NEAR_SILENCE, when)
+  envelope.gain.linearRampToValueAtTime(peakGain, when + MARKER_ATTACK_SEC)
+  envelope.gain.setValueAtTime(peakGain, glideEnd)
+  envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, stopAt)
+
+  const osc = audioCtx.createOscillator()
+  osc.type = preset.oscillatorType
+  // Pitch glide: an exponential ramp — pitch is perceived logarithmically, so
+  // an exponential sweep reads as an even, musical slide. Both endpoints are
+  // the timbre fundamentals (220/440 Hz), always > 0 as exponentialRamp needs.
+  osc.frequency.setValueAtTime(startHz, when)
+  osc.frequency.exponentialRampToValueAtTime(endHz, glideEnd)
+
+  // partialGain: unity — NK tones are single-partial; peakGain drives loudness
+  const partialGain = audioCtx.createGain()
+  partialGain.gain.value = 1.0
+
+  osc.connect(partialGain)
+  partialGain.connect(filter)
+  filter.connect(envelope)
+  envelope.connect(destination)
+
+  osc.start(when)
+  osc.stop(stopAt)
+
+  return { osc, partialGain, filter, envelope, stopAt, cleanupAt }
+}
+
 // --- Exported NK cue builders ---
 
 /**
- * D-06: Rising two-tone gesture — tone 1 on lower pitch (fundamentalHzOut) at `when`,
- * tone 2 on higher pitch (fundamentalHzIn) at `when + TWO_TONE_GAP_SEC`.
- * Returns CueHandle with scheduledAt = when (gesture start) and cleanupAt from tone 2.
+ * D-06: Front marker — a single tone gliding UP, from the lower fundamental
+ * (fundamentalHzOut) to the higher one (fundamentalHzIn). Returns a CueHandle
+ * with scheduledAt = when (glide start) and cleanupAt past the release.
  */
 export function scheduleNKFrontMarker(
   audioCtx: AudioContext,
@@ -112,40 +175,25 @@ export function scheduleNKFrontMarker(
   timbre: TimbreId,
 ): CueHandle {
   const preset = TIMBRE_PRESETS[timbre]
-  // Tone 1: lower pitch (rising from fundamentalHzOut)
-  const t1 = buildNKToneNodes(
-    audioCtx, preset.fundamentalHzOut, MARKER_TONE_DURATION_SEC, when,
-    destination, preset, preset.peakGain, preset.decayTauOut,
+  const t = buildNKGlideToneNodes(
+    audioCtx, preset.fundamentalHzOut, preset.fundamentalHzIn, when,
+    destination, preset, preset.peakGain,
   )
-  // T-31-04: disconnect tone 1 nodes on 'ended'
-  t1.osc.addEventListener('ended', () => {
-    try { t1.osc.disconnect() } catch { /* silent */ }
-    try { t1.partialGain.disconnect() } catch { /* silent */ }
-    try { t1.filter.disconnect() } catch { /* silent */ }
-    try { t1.envelope.disconnect() } catch { /* silent */ }
+  // T-31-04: disconnect the glide tone's nodes on 'ended'
+  t.osc.addEventListener('ended', () => {
+    try { t.osc.disconnect() } catch { /* silent */ }
+    try { t.partialGain.disconnect() } catch { /* silent */ }
+    try { t.filter.disconnect() } catch { /* silent */ }
+    try { t.envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
-  // Tone 2: higher pitch (landing on fundamentalHzIn) — longest-lived
-  const t2 = buildNKToneNodes(
-    audioCtx, preset.fundamentalHzIn, MARKER_TONE_DURATION_SEC, when + TWO_TONE_GAP_SEC,
-    destination, preset, preset.peakGain, preset.decayTauIn,
-  )
-  // T-31-04: disconnect tone 2 nodes on 'ended'
-  t2.osc.addEventListener('ended', () => {
-    try { t2.osc.disconnect() } catch { /* silent */ }
-    try { t2.partialGain.disconnect() } catch { /* silent */ }
-    try { t2.filter.disconnect() } catch { /* silent */ }
-    try { t2.envelope.disconnect() } catch { /* silent */ }
-  }, { once: true })
-
-  // scheduledAt anchors to gesture start (when), cleanupAt from longer-lived tone 2
-  return { envelope: t2.envelope, scheduledAt: when, cleanupAt: t2.cleanupAt }
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt }
 }
 
 /**
- * D-06: Falling two-tone gesture — tone 1 on higher pitch (fundamentalHzIn) at `when`,
- * tone 2 on lower pitch (fundamentalHzOut) at `when + TWO_TONE_GAP_SEC`.
- * Returns CueHandle with scheduledAt = when (gesture start) and cleanupAt from tone 2.
+ * D-06: Back marker — a single tone gliding DOWN, from the higher fundamental
+ * (fundamentalHzIn) to the lower one (fundamentalHzOut). Returns a CueHandle
+ * with scheduledAt = when (glide start) and cleanupAt past the release.
  */
 export function scheduleNKBackMarker(
   audioCtx: AudioContext,
@@ -154,34 +202,19 @@ export function scheduleNKBackMarker(
   timbre: TimbreId,
 ): CueHandle {
   const preset = TIMBRE_PRESETS[timbre]
-  // Tone 1: higher pitch (falling from fundamentalHzIn)
-  const t1 = buildNKToneNodes(
-    audioCtx, preset.fundamentalHzIn, MARKER_TONE_DURATION_SEC, when,
-    destination, preset, preset.peakGain, preset.decayTauIn,
+  const t = buildNKGlideToneNodes(
+    audioCtx, preset.fundamentalHzIn, preset.fundamentalHzOut, when,
+    destination, preset, preset.peakGain,
   )
-  // T-31-04: disconnect tone 1 nodes on 'ended'
-  t1.osc.addEventListener('ended', () => {
-    try { t1.osc.disconnect() } catch { /* silent */ }
-    try { t1.partialGain.disconnect() } catch { /* silent */ }
-    try { t1.filter.disconnect() } catch { /* silent */ }
-    try { t1.envelope.disconnect() } catch { /* silent */ }
+  // T-31-04: disconnect the glide tone's nodes on 'ended'
+  t.osc.addEventListener('ended', () => {
+    try { t.osc.disconnect() } catch { /* silent */ }
+    try { t.partialGain.disconnect() } catch { /* silent */ }
+    try { t.filter.disconnect() } catch { /* silent */ }
+    try { t.envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
-  // Tone 2: lower pitch (landing on fundamentalHzOut) — longest-lived
-  const t2 = buildNKToneNodes(
-    audioCtx, preset.fundamentalHzOut, MARKER_TONE_DURATION_SEC, when + TWO_TONE_GAP_SEC,
-    destination, preset, preset.peakGain, preset.decayTauOut,
-  )
-  // T-31-04: disconnect tone 2 nodes on 'ended'
-  t2.osc.addEventListener('ended', () => {
-    try { t2.osc.disconnect() } catch { /* silent */ }
-    try { t2.partialGain.disconnect() } catch { /* silent */ }
-    try { t2.filter.disconnect() } catch { /* silent */ }
-    try { t2.envelope.disconnect() } catch { /* silent */ }
-  }, { once: true })
-
-  // scheduledAt anchors to gesture start (when), cleanupAt from longer-lived tone 2
-  return { envelope: t2.envelope, scheduledAt: when, cleanupAt: t2.cleanupAt }
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt }
 }
 
 /**
