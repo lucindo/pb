@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Navi Kriya Practice
 status: planning
-last_updated: "2026-05-17T05:13:37.490Z"
+last_updated: "2026-05-17T06:00:00.000Z"
 last_activity: 2026-05-17
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-16 after v1.4 Install Helper milestone)
+See: .planning/PROJECT.md (updated 2026-05-17 — milestone v1.5 Navi Kriya Practice started)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Planning next milestone — run /gsd-new-milestone
+**Current focus:** v1.5 Navi Kriya Practice — roadmap created (Phases 30–32); ready to plan Phase 30.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 30 — Multi-Practice Architecture & Switcher (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-17 — Milestone v1.5 started
+Status: Roadmap created — ready to plan Phase 30
+Last activity: 2026-05-17 — v1.5 roadmap revised (3 phases, NK-08 merged into Phase 31, 18/18 requirements mapped)
+Progress: [░░░░░░░░░░] 0% — 0/3 phases complete
 
 ## Performance Metrics
 
@@ -35,12 +36,13 @@ Last activity: 2026-05-17 — Milestone v1.5 started
 
 - v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6
 
-**v1.4 phases (shipped 2026-05-16):**
+**v1.5 phases (roadmap revised 2026-05-17):**
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 28. Phone Install Banner | 3/3 | Complete |
-| 29. Settings Install Entry & Localization | 3/3 | Complete |
+| 30. Multi-Practice Architecture & Switcher | 0/? | Not started |
+| 31. Navi Kriya Engine & Session | 0/? | Not started |
+| 32. Learn & Localization | 0/? | Not started |
 
 ## Accumulated Context
 
@@ -48,13 +50,22 @@ Last activity: 2026-05-17 — Milestone v1.5 started
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
+**v1.5 blueprint (validated across 3 spikes, packaged in `spike-findings-hrv` skill):**
+
+- A `practice` concept (`'resonant' | 'naviKriya'`) sits one level above the existing intra-practice `mode` (standard/stretch). Per-practice session settings + stats; theme/timbre/variant/cue/locale stay shared app-wide chrome.
+- Adding the `practices` map + `activePractice` to the prefs envelope is a `STATE_VERSION` migration — existing single-practice users coerce into `practices.resonant` (covers PRACTICE-04).
+- The practice switcher is a top segmented control above the orb, disabled during a session (spike 002 winner over bottom tab bar / launch screen).
+- `src/components/SettingsDialog.tsx` mixes shared chrome and per-practice controls — it must be split (PRACTICE-05/06).
+- Navi Kriya: app-paced metronome, fixed 4:1 front:back ratio (default 100/25), auto-advance, four cue sounds (front marker / back marker / per-OM tick / end chord) routed through the existing `src/audio/audioEngine.ts` + timbres. Self-rescheduling timer chain; ~700ms LEAD_MS after a marker; provisional tempo fast 1.75 / medium 2.5 / slow 4s (real ~2.16s/OM) — finalize in the build, keep adjustable. `frontCount` must stay a multiple of 4.
+- Navi Kriya per-practice stats (NK-08) ship with the engine phase — a completed Navi Kriya session is what records sessions/rounds/minutes, so stats belong with "the practice works end to end" rather than as a standalone phase.
+
 ### Pending Todos
 
 - v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
 
 ### Blockers/Concerns
 
-- None blocking. v1.5 Navi Kriya Practice started 2026-05-17. (PROJECT.md "React 18" stale-fact corrected to React 19 on milestone start.)
+- None blocking. v1.5 Navi Kriya Practice roadmap revised 2026-05-17 — 3 phases (30–32), NK-08 merged into Phase 31, all 18 requirements mapped, no orphans.
 
 ### Quick Tasks Completed
 
@@ -91,11 +102,11 @@ Items acknowledged and carried forward across milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-05-16T23:50:00.000Z
-Stopped at: Milestone v1.4 closed and archived
+Last session: 2026-05-17T06:00:00.000Z
+Stopped at: v1.5 roadmap revised — Phases 30–32, NK-08 merged into Phase 31, 18/18 requirements mapped
 Resume file: None
-Next command: /gsd-new-milestone
+Next command: /gsd-plan-phase 30
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first v1.5 phase with /gsd-plan-phase 30

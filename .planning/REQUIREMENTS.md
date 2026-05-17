@@ -70,30 +70,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PRACTICE-01 | TBD | Pending |
-| PRACTICE-02 | TBD | Pending |
-| PRACTICE-03 | TBD | Pending |
-| PRACTICE-04 | TBD | Pending |
-| PRACTICE-05 | TBD | Pending |
-| PRACTICE-06 | TBD | Pending |
-| NK-01 | TBD | Pending |
-| NK-02 | TBD | Pending |
-| NK-03 | TBD | Pending |
-| NK-04 | TBD | Pending |
-| NK-05 | TBD | Pending |
-| NK-06 | TBD | Pending |
-| NK-07 | TBD | Pending |
-| NK-08 | TBD | Pending |
-| NK-09 | TBD | Pending |
-| LEARN-02 | TBD | Pending |
-| LEARN-03 | TBD | Pending |
-| I18N-08 | TBD | Pending |
+| PRACTICE-01 | Phase 30 | Pending |
+| PRACTICE-02 | Phase 30 | Pending |
+| PRACTICE-03 | Phase 30 | Pending |
+| PRACTICE-04 | Phase 30 | Pending |
+| PRACTICE-05 | Phase 30 | Pending |
+| PRACTICE-06 | Phase 30 | Pending |
+| NK-01 | Phase 31 | Pending |
+| NK-02 | Phase 31 | Pending |
+| NK-03 | Phase 31 | Pending |
+| NK-04 | Phase 31 | Pending |
+| NK-05 | Phase 31 | Pending |
+| NK-06 | Phase 31 | Pending |
+| NK-07 | Phase 31 | Pending |
+| NK-08 | Phase 31 | Pending |
+| NK-09 | Phase 31 | Pending |
+| LEARN-02 | Phase 32 | Pending |
+| LEARN-03 | Phase 32 | Pending |
+| I18N-08 | Phase 32 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 18 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 18 ⚠️
+- Mapped to phases: 18 ✓
+- Unmapped: 0 ✓
+
+**Per-phase breakdown:**
+- Phase 30 — Multi-Practice Architecture & Switcher: PRACTICE-01..06 (6)
+- Phase 31 — Navi Kriya Engine & Session: NK-01..09 (9)
+- Phase 32 — Learn & Localization: LEARN-02, LEARN-03, I18N-08 (3)
 
 ---
 *Requirements defined: 2026-05-17*
-*Last updated: 2026-05-17 at milestone v1.5 start*
+*Last updated: 2026-05-17 — roadmap revised, NK-08 merged into Phase 31; 18/18 requirements mapped to Phases 30–32*
