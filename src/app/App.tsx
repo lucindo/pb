@@ -1098,15 +1098,18 @@ export default function App() {
               strings={uiStrings.readout}
             />
           )}
-          {/* Phase 31 (NK-09): the phase / round / target strip below the
+          {/* Phase 31 (NK-09): the phase / round / count strip below the
               NKShape. HRV parity — it is also shown during the countdown
               (mirroring the resonant lead-in placeholder readout), seeded with
-              the about-to-start values: Front phase, round 1, front target. */}
+              the about-to-start values: Front phase, round 1, count 0.
+              The Count cell tracks the live OM count (0 during the countdown
+              and every lead-in window), mirroring the number on the shape. */}
           {nkSessionActive && (
             <NKSessionReadout
               phase={!nkStarting && nkPhase === 'back' ? 'back' : 'front'}
               round={nkStarting ? 1 : nkRound}
               totalRounds={nkSettings.rounds}
+              count={nkStarting ? 0 : nkCount}
               target={!nkStarting && nkPhase === 'back' ? nkSettings.frontCount / 4 : nkSettings.frontCount}
               strings={uiStrings.nkReadout}
             />

@@ -12,6 +12,7 @@ function renderReadout(overrides: Partial<NKSessionReadoutProps> = {}) {
     phase: 'front',
     round: 1,
     totalRounds: 3,
+    count: 0,
     target: 100,
     strings: EN_STRINGS,
   }
@@ -35,9 +36,15 @@ describe('NKSessionReadout', () => {
     expect(screen.getByText('2 / 3')).toBeInTheDocument()
   })
 
-  it('target=100 renders "100" in the Count cell', () => {
-    renderReadout({ target: 100 })
-    expect(screen.getByText('100')).toBeInTheDocument()
+  it('count=7, target=100 renders the live "7 / 100" in the Count cell', () => {
+    renderReadout({ count: 7, target: 100 })
+    // EN countOf: (c, t) => `${c} / ${t}`
+    expect(screen.getByText('7 / 100')).toBeInTheDocument()
+  })
+
+  it('count=0 (lead-in window) renders "0 / target" in the Count cell', () => {
+    renderReadout({ count: 0, target: 20 })
+    expect(screen.getByText('0 / 20')).toBeInTheDocument()
   })
 
   it('container section carries aria-label = strings.readoutAriaLabel', () => {

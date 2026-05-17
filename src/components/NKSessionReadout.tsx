@@ -2,18 +2,21 @@ import type { UiStrings } from '../content/strings'
 import { StatusPanel } from './StatusPanel'
 
 // D-03: NKSessionReadout is the compact strip below the NKShape, carrying
-// phase (Front/Back), round (N / total), and phase target count.
-// The shape itself holds the live OM count.
+// phase (Front/Back), round (N / total), and the live OM count (N / target).
+// Phase 31: the Count cell tracks the live count the same way the Round cell
+// tracks the round — it counts up through the phase and resets to 0 on each
+// phase transition (the shape mirrors the same count).
 
 export interface NKSessionReadoutProps {
   phase: 'front' | 'back'
   round: number
   totalRounds: number
+  count: number           // live OM count for the current phase (0 during lead-in)
   target: number          // target OM count for the current phase
   strings: UiStrings['nkReadout']
 }
 
-export function NKSessionReadout({ phase, round, totalRounds, target, strings }: NKSessionReadoutProps) {
+export function NKSessionReadout({ phase, round, totalRounds, count, target, strings }: NKSessionReadoutProps) {
   return (
     // Shares the StatusPanel wrapper with SessionReadout — one bordered box
     // with the "Status" legend, consistent across both practices.
@@ -47,13 +50,13 @@ export function NKSessionReadout({ phase, round, totalRounds, target, strings }:
 
         <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
 
-        {/* Cell 3: Count (target OM count for current phase) */}
+        {/* Cell 3: Count (live OM count / phase target) */}
         <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
           <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
             {strings.countLabel}
           </span>
           <span className="text-lg font-semibold leading-none">
-            {String(target)}
+            {strings.countOf(count, target)}
           </span>
         </div>
       </div>

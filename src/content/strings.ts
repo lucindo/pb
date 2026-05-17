@@ -168,6 +168,7 @@ export interface UiStrings {
     readonly roundLabel: string
     readonly countLabel: string
     readonly roundOf: (current: number, total: number) => string
+    readonly countOf: (current: number, total: number) => string
   }
   readonly nkControls: {
     readonly roundsLabel: string
@@ -345,6 +346,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       roundLabel: 'Round',
       countLabel: 'Count',
       roundOf: (c, t) => `${String(c)} / ${String(t)}`,
+      countOf: (c, t) => `${String(c)} / ${String(t)}`,
     },
     nkControls: {
       roundsLabel: 'Rounds',
@@ -521,6 +523,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       roundLabel: 'Rodada',
       countLabel: 'Contagem',
       roundOf: (c, t) => `${String(c)} / ${String(t)}`,
+      countOf: (c, t) => `${String(c)} / ${String(t)}`,
     },
     nkControls: {
       roundsLabel: 'Rodadas',
