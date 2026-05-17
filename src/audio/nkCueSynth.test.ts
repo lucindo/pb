@@ -103,16 +103,16 @@ describe('nkCueSynth', () => {
     expect(tickDuration).toBeLessThan(endDuration)
   })
 
-  // -- D-06: directional pitch-glide markers work for every timbre -----------
+  // -- D-06: markers reuse the HRV breath cues for every timbre --------------
 
-  it('scheduleNKFrontMarker does not throw for any TimbreId (D-06 pitch glide)', () => {
+  it('scheduleNKFrontMarker does not throw for any TimbreId (D-06 reuses HRV in-cue)', () => {
     const ac = createAc()
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleNKFrontMarker(ac, 1.0, ac.destination, timbre)).not.toThrow()
     }
   })
 
-  it('scheduleNKBackMarker does not throw for any TimbreId (D-06 pitch glide)', () => {
+  it('scheduleNKBackMarker does not throw for any TimbreId (D-06 reuses HRV out-cue)', () => {
     const ac = createAc()
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleNKBackMarker(ac, 1.0, ac.destination, timbre)).not.toThrow()
