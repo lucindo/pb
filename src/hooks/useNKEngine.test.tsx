@@ -42,12 +42,17 @@ describe('useNKEngine', () => {
     expect(result.current.nkPhase).toBe('front')
     expect(result.current.nkRunning).toBe(true)
 
-    // Advance through all 8 front OMs (each omMs apart, started after NK_LEAD_MS)
+    // Timing: start() calls schedule(NK_LEAD_MS=700).
+    //   OM #1 fires at t=700 (count→1), OM #2 at t=700+omMs (count→2), ...
+    //   OM #8 fires at t=700+omMs*7 (count→8) → phase transition → front→back,
+    //   count reset to 0, schedule(NK_LEAD_MS=700) for first back OM.
     const omMs = NK_OM_SECONDS['medium'] * 1000
 
-    // Advance through the lead-in + all 8 front OMs
+    // Advance through lead-in + all 8 front OMs — stop BEFORE first back OM fires
+    // First back OM fires at t = 700 + omMs*7 + 700 = 700 + omMs*7 + 700
+    // Stop just before it: 700 + omMs*7 + 500 (well before back lead-in completes)
     act(() => {
-      vi.advanceTimersByTime(700 + omMs * 8 + 100)
+      vi.advanceTimersByTime(700 + omMs * 7 + 500)
     })
 
     // Should now be in 'back' phase with count reset to 0
@@ -55,6 +60,7 @@ describe('useNKEngine', () => {
     expect(result.current.nkCount).toBe(0)
 
     // Advance through the back lead-in + all 2 back OMs
+    // First back OM fires at t = 700+omMs*7+700 (count→1), second at t=700+omMs*7+700+omMs (count→2→done)
     act(() => {
       vi.advanceTimersByTime(700 + omMs * 2 + 100)
     })
@@ -130,19 +136,36 @@ describe('useNKEngine', () => {
     // Initial state: front, count 0, running
     expect(result.current.nkCount).toBe(0)
 
-    const omMs = NK_OM_SECONDS['medium'] * 1000
-
-    // Advance by lead (700ms) but less than one OM — count should still be 0
+    // Timing:
+    //   t=0:     start() → schedule(NK_LEAD_MS=700)
+    //   t=700:   OM #1 fires → count=1 → schedule(omMs)
+    //   t=700+omMs: OM #2 fires → count=2
+    //
+    // Verify: advance by 600ms (less than lead-in 700ms) → count still 0
     act(() => {
-      vi.advanceTimersByTime(700 + omMs - 50)
+      vi.advanceTimersByTime(600)
     })
     expect(result.current.nkCount).toBe(0)
 
-    // Advance past one OM — count should be 1
+    // Advance past lead-in: t=700+10 → OM #1 fires → count=1
+    act(() => {
+      vi.advanceTimersByTime(110)
+    })
+    expect(result.current.nkCount).toBe(1)
+
+    const omMs = NK_OM_SECONDS['medium'] * 1000
+
+    // Advance by less than omMs — count should still be 1
+    act(() => {
+      vi.advanceTimersByTime(omMs - 50)
+    })
+    expect(result.current.nkCount).toBe(1)
+
+    // Advance past one full omMs — count should be 2
     act(() => {
       vi.advanceTimersByTime(100)
     })
-    expect(result.current.nkCount).toBe(1)
+    expect(result.current.nkCount).toBe(2)
 
     unmount()
   })
