@@ -560,3 +560,146 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
     expect(firstCallArgs![3]).toBe('bowl')
   })
 })
+
+// ---------------------------------------------------------------------------
+// Phase 31 — Navi Kriya session integration (NK-01/05/07/08/09, D-11/12/13)
+// ---------------------------------------------------------------------------
+
+interface NKSeed {
+  frontCount?: number
+  omLength?: 'fast' | 'medium' | 'slow'
+  rounds?: number
+  perOmCue?: boolean
+}
+
+// Seed the practices envelope so App mounts on the Navi Kriya practice with the
+// given NK settings (loadActivePractice + loadPractices read this at mount).
+function seedNK(nk: NKSeed = {}): void {
+  window.localStorage.setItem(STATE_KEY, JSON.stringify({
+    version: 2,
+    activePractice: 'naviKriya',
+    practices: {
+      naviKriya: {
+        settings: {
+          frontCount: nk.frontCount ?? 4,
+          omLength: nk.omLength ?? 'fast',
+          rounds: nk.rounds ?? 1,
+          perOmCue: nk.perOmCue ?? false,
+        },
+      },
+    },
+  }))
+}
+
+function readEnv(): Record<string, unknown> | null {
+  const raw = window.localStorage.getItem(STATE_KEY)
+  // Reason: test helper reads raw localStorage; shape validated by downstream assertions.
+  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
+}
+
+function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'naviKriya') {
+  const practices = env?.['practices'] as Record<string, unknown> | undefined
+  const slice = practices?.[practice] as Record<string, unknown> | undefined
+  return slice?.['stats'] as Record<string, unknown> | undefined
+}
+
+const NK_SETTLE = 3500
+
+describe('Navi Kriya session integration (Phase 31)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    window.localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+    window.localStorage.clear()
+  })
+
+  it('runs a session end to end: counts OMs, completes, opens the completion dialog, records NK stats (NK-01/08/09, D-12)', async () => {
+    seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    // Settle window, then the full self-rescheduling OM chain (4 front + 1 back).
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(NK_SETTLE + 15_000)
+      await Promise.resolve()
+    })
+
+    // D-12: a naturally completed session shows the completion dialog.
+    expect(screen.getByText('Practice complete')).toBeVisible()
+
+    // NK-08: the session is recorded into the naviKriya stats slice.
+    const env = readEnv()
+    expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
+    expect(statsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
+  })
+
+  it('does not touch Resonant stats when a Navi Kriya session completes (NK-08 isolation)', async () => {
+    seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(NK_SETTLE + 15_000)
+      await Promise.resolve()
+    })
+
+    const env = readEnv()
+    // The naviKriya slice advanced...
+    expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
+    // ...the resonant slice did not.
+    expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+  })
+
+  it('pausing a running session freezes the OM count (NK-07)', async () => {
+    seedNK({ frontCount: 40, omLength: 'fast', rounds: 1 })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    // Settle + lead (700) + two OMs (1750 each) — count reaches 3.
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(NK_SETTLE + 700 + 1750 * 2)
+    })
+    expect(screen.getByRole('img', { name: /OM 3,/ })).toBeInTheDocument()
+
+    // Pause — the count must not advance while paused.
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(1750 * 5)
+    })
+    expect(screen.getByRole('img', { name: /OM 3,/ })).toBeInTheDocument()
+  })
+
+  it('ending early records the completed rounds and elapsed time (NK-07, D-13)', async () => {
+    // A 2-round slow session: round 1 (12 front + 3 back OMs) runs well past the
+    // 30s recording threshold, so an early end after round 1 is recorded.
+    seedNK({ frontCount: 12, omLength: 'slow', rounds: 2 })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    // Settle + enough to finish round 1 and enter round 2 (~41s of OM ticks).
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(NK_SETTLE + 42_000)
+    })
+
+    // End early — the NK control opens the confirmation dialog.
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    await act(async () => { await Promise.resolve() })
+
+    const env = readEnv()
+    // D-13: the one fully-completed round is recorded; resonant stays untouched.
+    expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
+    expect(statsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
+    expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+  })
+})

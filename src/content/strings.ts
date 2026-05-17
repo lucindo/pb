@@ -18,6 +18,9 @@ export interface UiStrings {
     readonly startSession: string
     readonly endSession: string
     readonly cancel: string
+    // Phase 31 (NK-07): Navi Kriya session pause/resume affordance.
+    readonly pause: string
+    readonly resume: string
   }
   readonly endSessionDialog: {
     readonly title: string
@@ -194,6 +197,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       startSession: 'Start session',
       endSession: 'End session',
       cancel: 'Cancel',
+      pause: 'Pause',
+      resume: 'Resume',
     },
     endSessionDialog: {
       title: 'End this session?',
@@ -369,6 +374,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       startSession: 'Iniciar sessão',
       endSession: 'Encerrar sessão',
       cancel: 'Cancelar',
+      pause: 'Pausar',
+      resume: 'Retomar',
     },
     endSessionDialog: {
       title: 'Encerrar esta sessão?',

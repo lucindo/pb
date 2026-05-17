@@ -47,6 +47,14 @@ function resonantStatsOf(env: Record<string, unknown> | null): Record<string, un
   return resonant?.['stats'] as Record<string, unknown> | undefined
 }
 
+// CR-01 (Phase 31): resonant settings now persist to practices.resonant.settings
+// via saveResonantSettings — NOT the legacy flat env.settings write path.
+function resonantSettingsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
+  const practices = env?.['practices'] as Record<string, unknown> | undefined
+  const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
+  return resonant?.['settings'] as Record<string, unknown> | undefined
+}
+
 async function startAndAdvancePastLeadIn() {
   fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
   await act(async () => {
@@ -118,15 +126,17 @@ describe('LOCL-01 — persistence on change', () => {
     expect(readEnvelope()).toMatchObject({ mute: true })
   })
 
-  it('persists settings change via the stepper interaction (LOCL-01)', async () => {
+  it('persists settings change to the resonant practice slice (LOCL-01 / CR-01)', async () => {
     render(<App />)
     // Click the BPM decrease button — default is 5.5 BPM; decrease goes to 5 BPM.
     const bpmGroup = screen.getByRole('group', { name: 'BPM' })
     fireEvent.click(within(bpmGroup).getByRole('button', { name: 'Decrease BPM' }))
     await act(async () => { await Promise.resolve() })
     const env = readEnvelope()
-    // After one decrease from 5.5, bpm should be 5
-    expect(env).toMatchObject({ settings: { bpm: 5 } })
+    // CR-01: the write target is practices.resonant.settings via
+    // saveResonantSettings — the legacy flat env.settings write is no longer used.
+    expect(resonantSettingsOf(env)).toMatchObject({ bpm: 5 })
+    expect(env?.['settings']).toBeUndefined()
   })
 })
 

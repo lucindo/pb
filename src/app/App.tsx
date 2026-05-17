@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BreathingShape } from '../components/BreathingShape'
 import { EndSessionDialog } from '../components/EndSessionDialog'
 import { SettingsForm } from '../components/SettingsForm'
+import { NKShape } from '../components/NKShape'
+import { NKSessionReadout } from '../components/NKSessionReadout'
 import { PracticeToggle } from '../components/PracticeToggle'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
@@ -14,6 +16,18 @@ import { SettingsAnchor } from '../components/SettingsAnchor'
 import { SettingsDialog } from '../components/SettingsDialog'
 import { InstallBanner } from '../components/InstallBanner'
 import { useSessionEngine } from '../hooks/useSessionEngine'
+import {
+  useNKEngine,
+  NK_SETTLE_MS,
+  type NKAudioCallbacks,
+  type NKOnComplete,
+} from '../hooks/useNKEngine'
+import {
+  scheduleNKFrontMarker,
+  scheduleNKBackMarker,
+  scheduleNKTick,
+  scheduleNKEndChord,
+} from '../audio/nkCueSynth'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useFavicon } from '../hooks/useFavicon'
 import { useTheme } from '../hooks/useTheme'
@@ -31,7 +45,6 @@ import {
 } from '../audio/audioEngine'
 import {
   loadSettings,
-  saveSettings,
   loadMute,
   saveMute,
   loadPrefs,
@@ -44,10 +57,14 @@ import {
   loadActivePractice,
   saveActivePractice,
   recordResonantSession,
+  recordNaviKriyaSession,
+  saveResonantSettings,
+  saveNaviKriyaSettings,
   resetPracticeStats,
   type PracticeId,
 } from '../storage'
 import type { SessionSettings, VisualVariantId, CueStyleId } from '../domain/settings'
+import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import { useLocale } from '../hooks/useLocale'
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
@@ -107,6 +124,39 @@ export default function App() {
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
   const [learnDialogOpen, setLearnDialogOpen] = useState<boolean>(false)
   const [settingsDialogOpen, setSettingsDialogOpen] = useState<boolean>(false)
+
+  // Phase 31: Navi Kriya engine + session state. The engine is audio-agnostic
+  // (cues injected as callbacks); App owns the AudioContext, the settle timer,
+  // the NK settings draft, and the completion/early-end dialogs.
+  const nkEngine = useNKEngine()
+  const { nkPhase, nkRound, nkCount, nkRunning } = nkEngine
+  const nkStart = nkEngine.start
+  const nkPause = nkEngine.pause
+  const nkResume = nkEngine.resume
+  const nkEnd = nkEngine.end
+  const nkToggleCue = nkEngine.toggleCue
+  const [nkSettings, setNkSettings] = useState<NaviKriyaSettings>(
+    () => initialPractices.naviKriya.settings,
+  )
+  // True from the Start tap through the settle window until the engine's first
+  // phase commits — keeps the NK session screen visible during the settle
+  // (D-11, UI-SPEC step 3-4) and blocks a double-start.
+  const [nkStarting, setNkStarting] = useState<boolean>(false)
+  // D-12 natural-completion dialog + its rounds/duration summary payload.
+  const [nkCompletionOpen, setNkCompletionOpen] = useState<boolean>(false)
+  const [nkCompletionInfo, setNkCompletionInfo] = useState<{ rounds: number; minutes: number } | null>(null)
+  // D-13 early-end confirmation dialog.
+  const [nkEndDialogOpen, setNkEndDialogOpen] = useState<boolean>(false)
+  // AudioContext for the NK session (born in the Start gesture — autoplay
+  // policy). Held in a ref so end/cleanup can close it. The settle-timer id is
+  // held so an end-during-settle can cancel the pending engine start (T-31-13).
+  const nkAudioCtxRef = useRef<AudioContext | null>(null)
+  const nkSettleTimerRef = useRef<number | null>(null)
+  // Dedup: onNKComplete fires once on natural completion and again when the
+  // completion dialog closes (nkEnd resets the engine) — record stats once.
+  const nkRecordedRef = useRef<boolean>(false)
+  // True whenever an NK session occupies the screen (settle + running + done).
+  const nkSessionActive = activePractice === 'naviKriya' && (nkStarting || nkPhase !== 'idle')
   // Anchor for Pitfall 2 dual-clock alignment. Captured at lead-in completion (t=0).
   // - audioAnchorRef.current = the firstInAudioTime returned by audioStart (deterministic
   //   on the audio clock — WR-01) → null if AC unavailable (D-10 fallback)
@@ -326,7 +376,10 @@ export default function App() {
 
   const persistedSetSettings = useCallback((next: SessionSettings) => {
     sessionSetSelectedSettings(next)
-    saveSettings(next)
+    // CR-01 (Phase 30 carry-forward): resonant settings persist into the
+    // per-practice envelope (practices.resonant.settings) via
+    // saveResonantSettings — NOT the legacy flat env.settings path.
+    saveResonantSettings(next)
   }, [sessionSetSelectedSettings])
 
   const persistedSetMuted = useCallback((next: boolean) => {
@@ -338,10 +391,12 @@ export default function App() {
   // it. The `inSessionView` early-return is defense-in-depth behind
   // PracticeToggle's `disabled` prop — no practice switch can occur mid-session.
   const onSwitchPractice = useCallback((next: PracticeId) => {
-    if (inSessionView) return
+    // Phase 31: also block a switch while a Navi Kriya session occupies the
+    // screen — otherwise the NK engine would keep ticking with no UI.
+    if (inSessionView || nkSessionActive) return
     setActivePractice(next)
     saveActivePractice(next)
-  }, [inSessionView])
+  }, [inSessionView, nkSessionActive])
 
   // Plan 06 D-31 / D-33: gesture-attached recovery click handler.
   // When audioStatus === 'needs-resume', the click IS a user gesture — chain
@@ -753,6 +808,130 @@ export default function App() {
     }
   }, [clearLeadInTimeouts])
 
+  // -------------------------------------------------------------------------
+  // Phase 31: Navi Kriya session handlers.
+
+  // D-12 / D-13: fired by the engine on natural completion (isComplete) and on
+  // early end (nkEnd → isComplete false). The completion-dialog close also
+  // calls nkEnd, re-firing this — nkRecordedRef dedups so stats record once.
+  const onNKComplete = useCallback<NKOnComplete>((result) => {
+    if (nkRecordedRef.current) return
+    nkRecordedRef.current = true
+    // NK-08 / D-13: records the fully-completed rounds + elapsed minutes for
+    // both natural completion and early end; writes only the naviKriya slice.
+    const updated = recordNaviKriyaSession(result.elapsedMs, result.completedRounds, result.isComplete)
+    setNaviKriyaStats(updated)
+    void wakeLockRelease()
+    sessionVariantRef.current = null
+    setSessionVariant(null)
+    if (result.isComplete) {
+      // D-12: keep the AudioContext open so the end chord rings out — it is
+      // closed when the completion dialog is dismissed.
+      setNkEndDialogOpen(false)
+      setNkCompletionInfo({
+        rounds: result.completedRounds,
+        minutes: Math.round(result.elapsedMs / 60_000),
+      })
+      setNkCompletionOpen(true)
+    } else {
+      // Early end — no end chord scheduled; close the AudioContext now.
+      void nkAudioCtxRef.current?.close()
+      nkAudioCtxRef.current = null
+    }
+  }, [wakeLockRelease])
+
+  // NK-06 / D-07: persist the NK settings draft. A live perOmCue flip during a
+  // running session is pushed straight to the engine ref (stale-closure-safe).
+  const onNKSettingsChange = useCallback((next: NaviKriyaSettings) => {
+    if (next.perOmCue !== nkSettings.perOmCue) {
+      nkToggleCue(next.perOmCue)
+    }
+    setNkSettings(next)
+    saveNaviKriyaSettings(next)
+  }, [nkSettings, nkToggleCue])
+
+  // D-11: no 3-2-1 countdown — the settle pause plus the front marker carry the
+  // start. The AudioContext is created synchronously inside this gesture
+  // handler (browser autoplay policy — RESEARCH Pitfall 2).
+  const onNKStartClick = useCallback(() => {
+    if (nkSessionActive) return
+    const audioCtx = new AudioContext()
+    nkAudioCtxRef.current = audioCtx
+    const timbre = loadPrefs().timbre
+    sessionVariantRef.current = liveVariant
+    setSessionVariant(liveVariant)
+    void wakeLockRequest()
+    nkRecordedRef.current = false
+    setNkStarting(true)
+
+    const callbacks: NKAudioCallbacks = {
+      frontMarker: () => { scheduleNKFrontMarker(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
+      backMarker: () => { scheduleNKBackMarker(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
+      tick: () => { scheduleNKTick(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
+      endCue: () => { scheduleNKEndChord(audioCtx, audioCtx.currentTime, audioCtx.destination, timbre) },
+    }
+
+    // D-11: a quiet settle, then the engine starts — useNKEngine.start() fires
+    // the front marker and schedules the first OM after NK_LEAD_MS internally,
+    // so App does not pre-fire the marker (that would double it).
+    nkSettleTimerRef.current = window.setTimeout(() => {
+      nkSettleTimerRef.current = null
+      setNkStarting(false)
+      nkStart(nkSettings, callbacks, onNKComplete)
+    }, NK_SETTLE_MS)
+  }, [nkSessionActive, liveVariant, wakeLockRequest, nkSettings, nkStart, onNKComplete])
+
+  // NK-07: pause/resume toggle for the running session.
+  const onNKPauseResumeClick = useCallback(() => {
+    if (nkRunning) nkPause()
+    else nkResume()
+  }, [nkRunning, nkPause, nkResume])
+
+  // NK-07: end early — open the confirmation dialog.
+  const onNKEndClick = useCallback(() => {
+    setNkEndDialogOpen(true)
+  }, [])
+
+  const confirmNKEnd = useCallback(() => {
+    setNkEndDialogOpen(false)
+    if (nkSettleTimerRef.current !== null) {
+      // Ended during the settle window — the engine never started. Cancel the
+      // pending start and tear down the session directly (no stats to record).
+      window.clearTimeout(nkSettleTimerRef.current)
+      nkSettleTimerRef.current = null
+      setNkStarting(false)
+      void nkAudioCtxRef.current?.close()
+      nkAudioCtxRef.current = null
+      void wakeLockRelease()
+      sessionVariantRef.current = null
+      setSessionVariant(null)
+      return
+    }
+    // D-13: nkEnd fires onNKComplete with isComplete:false → records partial.
+    nkEnd()
+  }, [nkEnd, wakeLockRelease])
+
+  const cancelNKEnd = useCallback(() => {
+    setNkEndDialogOpen(false)
+  }, [])
+
+  // D-12: dismiss the completion dialog — close the (still-ringing) AudioContext
+  // and reset the engine to idle. nkEnd re-fires onNKComplete; nkRecordedRef
+  // suppresses the duplicate stats write.
+  const onNKCompletionClose = useCallback(() => {
+    setNkCompletionOpen(false)
+    void nkAudioCtxRef.current?.close()
+    nkAudioCtxRef.current = null
+    nkEnd()
+  }, [nkEnd])
+
+  // T-31-13: cancel a pending settle timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (nkSettleTimerRef.current !== null) window.clearTimeout(nkSettleTimerRef.current)
+    }
+  }, [])
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_var(--color-breathing-bg-edge))] px-4 py-6 text-[var(--color-breathing-accent-strong)] sm:px-6 sm:py-8">
       <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-center text-center sm:min-h-[calc(100vh-4rem)]">
@@ -768,8 +947,8 @@ export default function App() {
           <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
             {appTitle}
           </h1>
-          <SettingsAnchor disabled={inSessionView} onClick={onSettingsClick} strings={uiStrings.anchors} />
-          <LearnAnchor disabled={inSessionView} onClick={onLearnClick} strings={uiStrings.anchors} />
+          <SettingsAnchor disabled={inSessionView || nkSessionActive} onClick={onSettingsClick} strings={uiStrings.anchors} />
+          <LearnAnchor disabled={inSessionView || nkSessionActive} onClick={onLearnClick} strings={uiStrings.anchors} />
         </div>
         <div className={`${inSessionView ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
           {/* Phase 30 PRACTICE-01/03: practice switcher — new first child of the
@@ -777,7 +956,7 @@ export default function App() {
           <div className="mb-5">
             <PracticeToggle
               active={activePractice}
-              disabled={inSessionView}
+              disabled={inSessionView || nkSessionActive}
               onSwitch={onSwitchPractice}
               strings={{
                 toggleLabel: uiStrings.practice.toggleLabel,
@@ -791,13 +970,26 @@ export default function App() {
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
           {/* Phase 17 D-09: sessionVariant is the captured-at-Start frozen value (non-null during lead-in + running); liveVariant is the fallback at idle. */}
           {/* Phase 25 D-09: sessionCue is the captured-at-Start frozen value (T-25-09); liveCue is the fallback at idle. */}
-          <BreathingShape
-            variant={sessionVariant ?? liveVariant}
-            cue={sessionCue ?? liveCue}
-            frame={appPhase === 'running' ? session.liveFrame : null}
-            leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
-            strings={uiStrings.breathing}
-          />
+          {/* Phase 31: an active Navi Kriya session replaces the resonant
+              breathing shape with the OM-counting NKShape. The key restarts
+              the nk-om-pulse animation on every OM (NKShape caller contract). */}
+          {nkSessionActive ? (
+            <NKShape
+              key={`nk-${String(nkCount)}`}
+              variant={sessionVariant ?? liveVariant}
+              count={nkCount}
+              isPaused={!nkRunning}
+              strings={uiStrings.breathing}
+            />
+          ) : (
+            <BreathingShape
+              variant={sessionVariant ?? liveVariant}
+              cue={sessionCue ?? liveCue}
+              frame={appPhase === 'running' ? session.liveFrame : null}
+              leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}
+              strings={uiStrings.breathing}
+            />
+          )}
           {/* Phase 30 (checkpoint feedback): the SessionReadout reflects the
               Resonant session engine. It must not render under Navi Kriya —
               otherwise a completed Resonant session leaks a stale "Session
@@ -811,16 +1003,36 @@ export default function App() {
               strings={uiStrings.readout}
             />
           )}
-          <SettingsForm
-            activePractice={activePractice}
-            settings={state.selectedSettings}
-            isRunning={inSessionView}
-            onChange={persistedSetSettings}
-            onExtendDuration={session.extendDuration}
-            strings={uiStrings.settingsForm}
-            practiceStrings={uiStrings.practice}
-            startSessionLabel={uiStrings.controls.startSession}
-          />
+          {/* Phase 31 (NK-09): the live phase / round / target strip below the
+              NKShape during a Navi Kriya session. */}
+          {nkSessionActive && (
+            <NKSessionReadout
+              phase={nkPhase === 'back' ? 'back' : 'front'}
+              round={nkRound}
+              totalRounds={nkSettings.rounds}
+              target={nkPhase === 'back' ? nkSettings.frontCount / 4 : nkSettings.frontCount}
+              strings={uiStrings.nkReadout}
+            />
+          )}
+          {/* The configuration form (resonant knobs or NK controls) is hidden
+              while a Navi Kriya session occupies the screen. */}
+          {!nkSessionActive && (
+            <SettingsForm
+              activePractice={activePractice}
+              settings={state.selectedSettings}
+              isRunning={inSessionView}
+              onChange={persistedSetSettings}
+              onExtendDuration={session.extendDuration}
+              strings={uiStrings.settingsForm}
+              practiceStrings={uiStrings.practice}
+              startSessionLabel={uiStrings.controls.startSession}
+              nkSettings={nkSettings}
+              onNKSettingsChange={onNKSettingsChange}
+              onNKStartClick={onNKStartClick}
+              isNKSessionRunning={nkStarting}
+              nkControlsStrings={uiStrings.nkControls}
+            />
+          )}
           {/* Phase 30 D-01: the live Resonant session controls render only for
               the Resonant practice. The Navi Kriya scaffold supplies its own
               disabled Start stub inside SettingsForm (no NK engine in Phase 30),
@@ -840,6 +1052,26 @@ export default function App() {
               onMuteToggle={() => { void onMuteOrResumeClick() }}
               inLeadIn={appPhase === 'lead-in'}
             />
+          )}
+          {/* Phase 31 (NK-07): Navi Kriya session controls — a pause/resume
+              toggle plus an End button that opens the confirmation dialog. */}
+          {nkSessionActive && (
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={onNKPauseResumeClick}
+                className="min-h-11 w-full rounded-full bg-[var(--color-breathing-accent-strong)] px-6 py-4 text-lg font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-teal-900/20 transition hover:bg-[var(--color-breathing-accent)] active:bg-[var(--color-breathing-accent-strong)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              >
+                {nkRunning ? uiStrings.controls.pause : uiStrings.controls.resume}
+              </button>
+              <button
+                type="button"
+                onClick={onNKEndClick}
+                className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              >
+                {uiStrings.controls.endSession}
+              </button>
+            </div>
           )}
           {/* Plan 06 D-32b: aria-live region for the needs-resume state transition.
               Lives at the App level (discretion #6) so the announcement fires once on
@@ -862,8 +1094,14 @@ export default function App() {
             {lockedCopy.medicalAdviceLine}
           </p>
         </div>
-        {!inSessionView && activeStats.totalSessions > 0 && (
-          <StatsFooter stats={activeStats} onResetClick={onResetClick} strings={uiStrings.stats} locale={locale} />
+        {!inSessionView && !nkSessionActive && activeStats.totalSessions > 0 && (
+          <StatsFooter
+            stats={activeStats}
+            onResetClick={onResetClick}
+            strings={uiStrings.stats}
+            locale={locale}
+            showRounds={activePractice === 'naviKriya'}
+          />
         )}
       </section>
       {/* Phase 28 D-02: banner in normal document flow, below section content.
@@ -882,6 +1120,34 @@ export default function App() {
         onConfirm={confirmEnd}
         onCancel={cancelEnd}
         strings={uiStrings.endSessionDialog}
+      />
+      {/* Phase 31 D-13: early-end confirmation for a Navi Kriya session. */}
+      <EndSessionDialog
+        open={nkEndDialogOpen}
+        onConfirm={confirmNKEnd}
+        onCancel={cancelNKEnd}
+        strings={uiStrings.endSessionDialog}
+      />
+      {/* Phase 31 D-12: natural-completion dialog — reuses EndSessionDialog with
+          the optional body slot carrying the rounds/duration summary. Both
+          buttons close (a completion dialog has no destructive choice). */}
+      <EndSessionDialog
+        open={nkCompletionOpen}
+        onConfirm={onNKCompletionClose}
+        onCancel={onNKCompletionClose}
+        strings={{
+          title: uiStrings.nkCompletion.title,
+          confirm: uiStrings.nkCompletion.close,
+          cancel: uiStrings.nkCompletion.close,
+        }}
+        body={
+          nkCompletionInfo && (
+            <>
+              <p>{uiStrings.nkCompletion.roundsCompleted(nkCompletionInfo.rounds, nkSettings.rounds)}</p>
+              <p>{uiStrings.nkCompletion.sessionDuration(nkCompletionInfo.minutes)}</p>
+            </>
+          )
+        }
       />
       <ResetStatsDialog
         open={resetDialogOpen}
