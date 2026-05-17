@@ -1,6 +1,23 @@
 @import 'tailwindcss';
 @import './styles/theme.css';
 
+/* D-04: NK per-OM pulse animation — gentle scale up to MAX then back to MID.
+   No expanding ring (D-04 locked). key={`nk-${count}`} on the NKShape caller
+   triggers a React remount that restarts the animation on each OM. */
+@keyframes nk-om-pulse {
+  0%   { transform: translate3d(0,0,0) scale(var(--orb-scale-mid)); }
+  30%  { transform: translate3d(0,0,0) scale(var(--orb-scale-max)); }
+  100% { transform: translate3d(0,0,0) scale(var(--orb-scale-mid)); }
+}
+.nk-om-pulse {
+  animation: nk-om-pulse 500ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nk-om-pulse {
+    animation: none;
+  }
+}
+
 @layer base {
   :root {
     color: var(--color-breathing-accent-strong);
