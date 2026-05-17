@@ -855,6 +855,13 @@ export default function App() {
   // handler (browser autoplay policy — RESEARCH Pitfall 2).
   const onNKStartClick = useCallback(() => {
     if (nkSessionActive) return
+    // IN-04: defensively clear any stale completion / early-end dialog state
+    // from a prior session before starting a new one. Today this is dismissed
+    // via onNKCompletionClose before the Start button is reachable again, but
+    // the handler should not depend on that ordering.
+    setNkCompletionOpen(false)
+    setNkEndDialogOpen(false)
+    setNkCompletionInfo(null)
     // WR-03: AudioContext construction can throw (browser without Web Audio,
     // hardened privacy config). Treat audio as fail-soft — match the resonant
     // path: the visual engine still starts, only the cues go silent.
