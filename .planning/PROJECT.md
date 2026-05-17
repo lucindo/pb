@@ -33,6 +33,8 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Blueprint:** validated across 3 spikes (`.planning/spikes/`), packaged in the `spike-findings-hrv` skill. Carry-forward tech debt stays deferred — this milestone is focused on the second practice.
 
+**Progress:** Phase 30 (Multi-Practice Architecture & Switcher) complete 2026-05-17 — the `practice` concept, v1→v2 per-practice persistence, and the top switcher all ship. Phases 31–32 remaining.
+
 ## Requirements
 
 ### Validated
@@ -90,9 +92,13 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 - [x] **INSTALL-01..05 (Phase 28)** — Phone install banner: `useIsStandaloneOrPhone` gates on `(pointer: coarse)` for phone-class + `(display-mode: standalone)`/`navigator.standalone` for installed-PWA state; `useBeforeInstallPrompt` captures the Android `beforeinstallprompt` and replays it from the user-gesture chain; `InstallBanner` shows the Android install-button path and the iOS inline-expand "Share → Add to Home Screen" steps; wired into `App.tsx` behind the composed `showBanner` gate (phone, not standalone, not dismissed, idle, iOS-or-deferredPrompt); dismissal persisted in `localStorage` (`hrv:install-dismissed`); EN copy final, PT-BR draft; 987/987 tests pass. Validated in Phase 28: Phone Install Banner (automated 5/5; 6 human-device UAT items tracked in `28-HUMAN-UAT.md`).
 - [x] **INSTALL-06..07 (Phase 29)** — Settings install entry & localization: persistent install row in `SettingsDialog` gated `installable && !isStandalone`, rendered below the Language picker; non-iOS path triggers `onInstall`/`triggerInstall`, iOS path inline-expands the shared `IosInstallSteps` component (also consumed by `InstallBanner` — single source of truth); `UiStrings.install.settingsLabel` added with EN + PT-BR values; GAP-1 (iOS steps unreadable on dark themes) closed in plan 29-03 — steps 2 & 3 carry theme-aware `text-[var(--color-breathing-muted)]`; 997/997 tests pass. Validated in Phase 29: Settings Install Entry & Localization (automated 8/8; operator UAT 5/5 passed).
 
+**v1.5 Navi Kriya Practice (in progress — phases validated as completed):**
+
+- [x] **PRACTICE-01..06 (Phase 30)** — Multi-practice architecture & switcher: a `practice` concept (`'resonant' | 'naviKriya'`) above the existing `mode`; per-practice settings + stats persisted via a `STATE_VERSION` v1→v2 `migrateEnvelope` ladder that losslessly and idempotently folds a returning user's flat envelope into `practices.resonant` (PRACTICE-04); new `src/storage/practices.ts` per-practice persistence module with prototype-pollution-safe coercers; top segmented `PracticeToggle` above the orb, disabled during a session (PRACTICE-01/03); practice-aware `SettingsForm` (resonant knobs vs. the Navi Kriya structural scaffold) with shared chrome unchanged in the single `SettingsDialog` (PRACTICE-05/06); active practice named in the app header/title (operator override of D-04's inline heading). 1057/1057 tests pass. Validated in Phase 30 (automated 5/5; operator UAT signed off — switcher end-to-end, in-session lock, returning-user persistence, dark-theme switcher visibility). Carry-forward: code-review CR-01 — resonant settings still persist via the legacy flat `env.settings` path; `practices.resonant.settings` is not yet the write target (resolve when Phase 31 wires Navi Kriya settings).
+
 ### Active
 
-**v1.5 Navi Kriya Practice** — requirements defined 2026-05-17; see `.planning/REQUIREMENTS.md` for full traceability.
+**v1.5 Navi Kriya Practice** — Phase 30 complete (2026-05-17); Phases 31 (Navi Kriya Engine & Session) and 32 (Learn & Localization) remaining. See `.planning/REQUIREMENTS.md` for full traceability.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -216,4 +222,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 — milestone v1.5 Navi Kriya Practice started*
+*Last updated: 2026-05-17 — Phase 30 (Multi-Practice Architecture & Switcher) complete*
