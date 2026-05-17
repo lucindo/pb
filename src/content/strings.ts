@@ -478,7 +478,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       lastSessionPrefix: (date, duration) => `Última sessão: ${date} · ${duration}`,
       totalSuffix: 'total',
       reset: 'Zerar',
-      roundsCompletedLabel: 'Rounds', // TODO Phase 32: PT-BR translation
+      roundsCompletedLabel: 'Rodadas',
     },
     breathing: {
       inhale: 'Puxa',
