@@ -20,8 +20,10 @@ export const NK_OM_SECONDS: Record<OmLength, number> = {
 // D-11: lead-in delay between a phase marker and the first OM of that phase.
 // Applies to every phase start — round 1 Front, and the Front + Back of every
 // round (the window where the user performs the neck-lock head movement).
-// 4000ms finalized via Phase 31 UAT (operator-confirmed 2026-05-17).
-export const NK_LEAD_MS = 4000
+// 5000ms finalized via Phase 31 UAT (operator-confirmed 2026-05-17): long
+// enough that the marker — the HRV breath cue, ~4-5s natural tail — has
+// decayed before the first OM, so the cue does not bleed into the count.
+export const NK_LEAD_MS = 5000
 
 // D-11: settle delay before the first frontMarker fires at session start (~3–5 s)
 export const NK_SETTLE_MS = 3500
