@@ -394,6 +394,10 @@ export default function App() {
   // The wrapped functions are passed to children in place of the raw setters.
   const sessionSetSelectedSettings = session.setSelectedSettings
   const audioSetMuted = audio.setMuted
+  // session.end is useCallback([])-stable; hoist so callbacks that depend on it
+  // (onSwitchPractice, confirmEnd) keep a stable identity without depending on
+  // the fresh `session` object literal re-created each render.
+  const sessionEnd = session.end
 
   const persistedSetSettings = useCallback((next: SessionSettings) => {
     sessionSetSelectedSettings(next)
@@ -415,10 +419,15 @@ export default function App() {
     // Phase 31: also block a switch while a Navi Kriya session occupies the
     // screen — otherwise the NK engine would keep ticking with no UI.
     if (inSessionView || nkSessionActive) return
-    setNkJustCompleted(false) // drop a stale completion headline on switch
+    setNkJustCompleted(false) // drop a stale Navi completion headline on switch
+    // Consistency with Navi: switching practices also clears a finished
+    // resonant session so its "Session complete" headline does not linger or
+    // reappear on switch-back. end() from 'complete' resolves to 'idle'; from
+    // 'idle' it is a no-op.
+    sessionEnd()
     setActivePractice(next)
     saveActivePractice(next)
-  }, [inSessionView, nkSessionActive])
+  }, [inSessionView, nkSessionActive, sessionEnd])
 
   // Plan 06 D-31 / D-33: gesture-attached recovery click handler.
   // When audioStatus === 'needs-resume', the click IS a user gesture — chain
@@ -603,11 +612,8 @@ export default function App() {
   // [onCancel]) does not tear down and re-attach on every parent render.
   // App re-renders on every animation frame while a session is running, which
   // would otherwise produce hundreds of addEventListener/removeEventListener
-  // pairs per second on long sessions.
-  // Note: depend on session.end (which is stable — useSessionEngine wraps it in
-  // useCallback([])) rather than session itself. The session object literal is
-  // re-created each render, so [session] would not memoize.
-  const sessionEnd = session.end
+  // pairs per second on long sessions. Depends on the hoisted stable
+  // `sessionEnd` (session.end), not the fresh `session` object literal.
   const confirmEnd = useCallback(() => {
     setEndDialogOpen(false)
     sessionEnd()
