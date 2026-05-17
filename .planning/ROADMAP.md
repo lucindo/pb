@@ -100,6 +100,6 @@ Earlier milestones (v1.0 â†’ v1.2) are archived under `.planning/milestones/` â€
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 30. Multi-Practice Architecture & Switcher | 4/4 | Complete   | 2026-05-17 |
+| 30. Multi-Practice Architecture & Switcher | 4/4 | Complete    | 2026-05-17 |
 | 31. Navi Kriya Engine & Session | 0/? | Not started | - |
 | 32. Learn & Localization | 0/? | Not started | - |

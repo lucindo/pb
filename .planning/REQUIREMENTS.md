@@ -11,12 +11,12 @@ Requirements for milestone v1.5. Each maps to exactly one roadmap phase.
 
 ### Multi-Practice Architecture
 
-- [ ] **PRACTICE-01**: User can switch between Resonant Breathing and Navi Kriya using a top segmented control above the orb
-- [ ] **PRACTICE-02**: User's last-used practice and each practice's own settings persist across reloads
-- [ ] **PRACTICE-03**: User cannot switch practices while a session is in progress — the switcher is disabled until the session ends
-- [ ] **PRACTICE-04**: A returning user's existing saved Resonant Breathing settings and stats survive the upgrade to multi-practice
-- [ ] **PRACTICE-05**: User can adjust shared app-wide settings (theme, language, visual variant, cue style) from one settings screen that serves both practices
-- [ ] **PRACTICE-06**: User sees the practice-specific controls for whichever practice is currently active
+- [x] **PRACTICE-01**: User can switch between Resonant Breathing and Navi Kriya using a top segmented control above the orb
+- [x] **PRACTICE-02**: User's last-used practice and each practice's own settings persist across reloads
+- [x] **PRACTICE-03**: User cannot switch practices while a session is in progress — the switcher is disabled until the session ends
+- [x] **PRACTICE-04**: A returning user's existing saved Resonant Breathing settings and stats survive the upgrade to multi-practice
+- [x] **PRACTICE-05**: User can adjust shared app-wide settings (theme, language, visual variant, cue style) from one settings screen that serves both practices
+- [x] **PRACTICE-06**: User sees the practice-specific controls for whichever practice is currently active
 
 ### Navi Kriya
 
@@ -70,12 +70,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PRACTICE-01 | Phase 30 | Pending |
-| PRACTICE-02 | Phase 30 | Pending |
-| PRACTICE-03 | Phase 30 | Pending |
-| PRACTICE-04 | Phase 30 | Pending |
-| PRACTICE-05 | Phase 30 | Pending |
-| PRACTICE-06 | Phase 30 | Pending |
+| PRACTICE-01 | Phase 30 | Complete |
+| PRACTICE-02 | Phase 30 | Complete |
+| PRACTICE-03 | Phase 30 | Complete |
+| PRACTICE-04 | Phase 30 | Complete |
+| PRACTICE-05 | Phase 30 | Complete |
+| PRACTICE-06 | Phase 30 | Complete |
 | NK-01 | Phase 31 | Pending |
 | NK-02 | Phase 31 | Pending |
 | NK-03 | Phase 31 | Pending |
