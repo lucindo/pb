@@ -17,6 +17,68 @@ function stageText(stage: StretchStage, strings: UiStrings['readout']): string {
   }
 }
 
+// Plain timer chip — standard (non-stretch) sessions.
+function TimerChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      aria-live="off"
+      className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
+    >
+      <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
+        {label}
+      </span>
+      <span className="font-mono text-2xl font-semibold">{value}</span>
+    </div>
+  )
+}
+
+// Stretch readout — Stage · Remaining · BPM in three labeled cells. Shared by
+// the running stretch session AND the lead-in placeholder so the countdown
+// previews the same readout the session will show (D-13/D-14).
+function StretchRow({
+  frame,
+  timeLabel,
+  timeValue,
+  strings,
+}: {
+  frame: SessionFrame
+  timeLabel: string
+  timeValue: string
+  strings: UiStrings['readout']
+}) {
+  return (
+    <div
+      aria-live="off"
+      className="mt-4 flex items-stretch rounded-[1.25rem] bg-[var(--color-breathing-surface)]/80 px-2 py-3 text-[var(--color-breathing-accent-strong)]"
+    >
+      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
+          {strings.stageLabel}
+        </span>
+        <span className="text-lg font-semibold">
+          {frame.stage !== undefined ? stageText(frame.stage, strings) : ''}
+        </span>
+      </div>
+      <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
+      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
+          {timeLabel}
+        </span>
+        <span className="font-mono text-lg font-semibold">{timeValue}</span>
+      </div>
+      <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
+      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
+          {strings.currentBpmLabel}
+        </span>
+        <span className="font-mono text-lg font-semibold">
+          {frame.currentBpm !== undefined ? frame.currentBpm.toFixed(1) : ''}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   status: SessionStatus
@@ -27,14 +89,13 @@ export interface SessionReadoutProps {
   strings: UiStrings['readout']
   /** UI-01 / WR-08: when true, the component is rendering the pre-session
    *  lead-in placeholder. The caller commits to providing a non-null `frame`.
-   *  The component renders the timer chip (label + formatted duration) and
-   *  ignores `status`. Documents the lead-in contract at the component boundary
-   *  so callers no longer override `status` to 'idle'. */
+   *  Renders the same readout the running session will show (plain timer chip,
+   *  or the Stage/Remaining/BPM row for a stretch session) and ignores `status`. */
   isLeadInPlaceholder?: boolean
 }
 
 export function SessionReadout({ frame, status, showCompletionHeadline, strings, isLeadInPlaceholder }: SessionReadoutProps) {
-  // UI-01 / WR-08: lead-in placeholder branch fires FIRST so the timer chip
+  // UI-01 / WR-08: lead-in placeholder branch fires FIRST so the readout
   // renders unconditionally, ignoring status and message. Caller commits to a
   // non-null frame when this is true (typed-only contract — no runtime assert).
   if (isLeadInPlaceholder) {
@@ -42,6 +103,9 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
     const placeholderValue = frame
       ? formatDuration(frame.remainingMs ?? frame.elapsedMs)
       : '0:00'
+    // A stretch session's lead-in preview shows the Stage/Remaining/BPM row —
+    // the same readout the running session shows — instead of a plain chip.
+    const isStretchPlaceholder = frame !== null && frame.currentBpm !== undefined
     return (
       <StatusPanel legend={strings.statusLabel} ariaLabel={strings.readoutAriaLabel}>
         <div
@@ -50,15 +114,11 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           aria-live="polite"
           aria-atomic="true"
         />
-        <div
-          aria-live="off"
-          className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
-        >
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-            {placeholderLabel}
-          </span>
-          <span className="font-mono text-2xl font-semibold">{placeholderValue}</span>
-        </div>
+        {isStretchPlaceholder ? (
+          <StretchRow frame={frame} timeLabel={placeholderLabel} timeValue={placeholderValue} strings={strings} />
+        ) : (
+          <TimerChip label={placeholderLabel} value={placeholderValue} />
+        )}
       </StatusPanel>
     )
   }
@@ -92,44 +152,10 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
           three labeled cells in one row — fits mobile, each value distinct.
           D-15: the Stretch→Settle transition is silent (no cue/marker).
           Standard sessions keep the plain timer chip. */}
-      {isStretchRunning && frame.currentBpm !== undefined ? (
-        <div
-          aria-live="off"
-          className="mt-4 flex items-stretch rounded-[1.25rem] bg-[var(--color-breathing-surface)]/80 px-2 py-3 text-[var(--color-breathing-accent-strong)]"
-        >
-          <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
-              {strings.stageLabel}
-            </span>
-            <span className="text-lg font-semibold">
-              {frame.stage !== undefined ? stageText(frame.stage, strings) : ''}
-            </span>
-          </div>
-          <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
-          <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
-              {timeLabel}
-            </span>
-            <span className="font-mono text-lg font-semibold">{timeValue}</span>
-          </div>
-          <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
-          <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
-              {strings.currentBpmLabel}
-            </span>
-            <span className="font-mono text-lg font-semibold">{frame.currentBpm.toFixed(1)}</span>
-          </div>
-        </div>
+      {isStretchRunning ? (
+        <StretchRow frame={frame} timeLabel={timeLabel} timeValue={timeValue} strings={strings} />
       ) : showTimeChip ? (
-        <div
-          aria-live="off"
-          className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
-        >
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-            {timeLabel}
-          </span>
-          <span className="font-mono text-2xl font-semibold">{timeValue}</span>
-        </div>
+        <TimerChip label={timeLabel} value={timeValue} />
       ) : null}
     </StatusPanel>
   )

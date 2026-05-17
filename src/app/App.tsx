@@ -40,6 +40,7 @@ import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { createBreathingPlan, type BreathingPlan } from '../domain/breathingPlan'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
+import { buildStretchSegments, getStretchFrame } from '../domain/stretchRamp'
 import {
   LEAD_IN_DURATION_MS,
   LEAD_IN_TICK_INTERVAL_MS,
@@ -306,7 +307,14 @@ export default function App() {
   // settings (Remaining = configured duration; Elapsed 0:00 for open-ended).
   const leadInPlaceholderFrame = useMemo(() => {
     if (appPhase !== 'lead-in') return null
-    return getSessionFrame(createBreathingPlan(state.selectedSettings), 0)
+    const settings = state.selectedSettings
+    // A stretch session's readout is Stage/Remaining/BPM, not a plain timer —
+    // build the same segment table startSession will use so the lead-in
+    // preview matches the running session (mirrors sessionController.ts).
+    if (settings.mode === 'stretch') {
+      return getStretchFrame(buildStretchSegments(settings, settings.ratio), 0)
+    }
+    return getSessionFrame(createBreathingPlan(settings), 0)
   }, [appPhase, state.selectedSettings])
   // null when not in lead-in OR when the lead-in has reached t=0 (the In phase label takes over).
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)

@@ -116,9 +116,12 @@ describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
     expect(screen.queryByText('5.5')).not.toBeInTheDocument()
   })
 
-  it('the lead-in placeholder branch never renders the BPM chip for a stretch frame', () => {
+  it('the lead-in placeholder branch previews the stretch readout for a stretch frame', () => {
+    // The countdown must preview the same Stage/Remaining/BPM readout the
+    // running stretch session shows — not a plain timer chip.
     renderReadout({ isLeadInPlaceholder: true, frame: stretchFrame, status: 'idle' })
-    expect(screen.queryByText('5.5')).not.toBeInTheDocument()
-    expect(screen.queryByText('Ramp')).not.toBeInTheDocument()
+    expect(screen.getByText('5.5')).toBeInTheDocument()
+    expect(screen.getByText('BPM')).toBeInTheDocument()
+    expect(screen.getByText('Stretch')).toBeInTheDocument()
   })
 })
