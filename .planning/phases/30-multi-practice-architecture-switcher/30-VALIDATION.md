@@ -1,10 +1,11 @@
 ---
 phase: 30
 slug: multi-practice-architecture-switcher
-status: ready
+status: verified
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-05-17
+audited: 2026-05-17
 ---
 
 # Phase 30 — Validation Strategy
@@ -39,11 +40,11 @@ created: 2026-05-17
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 30-01-01 | 01 | 1 | PRACTICE-02 | T-30-01 | `isValidFrontCount` rejects non-finite / non-integer / non-multiple-of-4 (no fractional `backCount`) | unit | `npx tsc --noEmit` + grep | ❌ W0 | ⬜ pending |
-| 30-01-02 | 01 | 1 | PRACTICE-02 | T-30-01 / T-30-02 | NK validator suite proves 102→false (Pitfall 5 regression guard) | unit | `npm run test:run -- src/domain/naviKriyaSettings.test.ts` | ❌ W0 | ⬜ pending |
-| 30-02 | 02 | — | PRACTICE-01, PRACTICE-05 | — | N/A (string catalog + presentational toggle) | unit | `npm run test:run -- src/components/PracticeToggle.test.tsx` | ❌ W0 | ⬜ pending |
-| 30-03 | 03 | — | PRACTICE-02, PRACTICE-04 | T-30 (V5 coercer) | `coercePractices`/`coerceActivePractice`/`coerceNaviKriyaSettings` non-throwing, per-field, prototype-pollution-safe | unit | `npm run test:run -- src/storage/practices.test.ts src/storage/storage.test.ts` | ❌ W0 / ❌ extend | ⬜ pending |
-| 30-04 | 04 | — | PRACTICE-03, PRACTICE-06 | T-30-10 | Cross-tab `storage` listener reads `loadPractices()` (coerced) — orphaned flat `env.stats` never zeroes display | unit | `npm run test:run -- src/components/SettingsForm.test.tsx` | ❌ extend | ⬜ pending |
+| 30-01-01 | 01 | 1 | PRACTICE-02 | T-30-01 | `isValidFrontCount` rejects non-finite / non-integer / non-multiple-of-4 (no fractional `backCount`) | unit | `npx tsc --noEmit` + grep | ✅ | ✅ green |
+| 30-01-02 | 01 | 1 | PRACTICE-02 | T-30-01 / T-30-02 | NK validator suite proves 102→false (Pitfall 5 regression guard) | unit | `npm run test:run -- src/domain/naviKriyaSettings.test.ts` | ✅ | ✅ green |
+| 30-02 | 02 | — | PRACTICE-01, PRACTICE-05 | — | N/A (string catalog + presentational toggle) | unit | `npm run test:run -- src/components/PracticeToggle.test.tsx` | ✅ | ✅ green |
+| 30-03 | 03 | — | PRACTICE-02, PRACTICE-04 | T-30 (V5 coercer) | `coercePractices`/`coerceActivePractice`/`coerceNaviKriyaSettings` non-throwing, per-field, prototype-pollution-safe | unit | `npm run test:run -- src/storage/practices.test.ts src/storage/storage.test.ts` | ✅ | ✅ green |
+| 30-04 | 04 | — | PRACTICE-03, PRACTICE-06 | T-30-10 | Cross-tab `storage` listener reads `loadPractices()` (coerced) — orphaned flat `env.stats` never zeroes display | unit | `npm run test:run -- src/components/SettingsForm.stretch.test.tsx src/app/App.persistence.test.tsx` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,31 +52,32 @@ created: 2026-05-17
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| PRACTICE-01 | PracticeToggle renders two pills; clicking switches active practice | unit | `npm run test:run -- src/components/PracticeToggle.test.tsx` | ❌ Wave 0 |
-| PRACTICE-01 | PracticeToggle passes correct `aria-pressed` | unit | same | ❌ Wave 0 |
-| PRACTICE-02 | `loadPractices` returns coerced resonant settings from stored data | unit | `npm run test:run -- src/storage/practices.test.ts` | ❌ Wave 0 |
-| PRACTICE-02 | `saveActivePractice` persists; `loadActivePractice` reads it back | unit | same | ❌ Wave 0 |
-| PRACTICE-02 | `coerceNaviKriyaSettings` returns defaults for unknown input | unit | `npm run test:run -- src/domain/naviKriyaSettings.test.ts` | ❌ Wave 0 |
-| PRACTICE-02 | `coerceNaviKriyaSettings` rounds non-multiple-of-4 `frontCount` down | unit | same | ❌ Wave 0 |
-| PRACTICE-03 | PracticeToggle disabled when `inSessionView=true`, enabled when false | unit | `npm run test:run -- src/components/PracticeToggle.test.tsx` | ❌ Wave 0 |
-| PRACTICE-04 | `migrateEnvelope(v1Envelope, 1)` coerces settings+stats into `practices.resonant` | unit | `npm run test:run -- src/storage/storage.test.ts` | ❌ extend existing |
-| PRACTICE-04 | `readEnvelope` with v1 disk data returns `practices.resonant` populated | unit | same | ❌ extend existing |
-| PRACTICE-04 | `migrateEnvelope` is idempotent on v2 data (`fromVersion=2` no-op) | unit | same | ❌ extend existing |
-| PRACTICE-05 | SettingsDialog renders all shared chrome pickers (no per-practice controls) | unit | existing tests pass | ✅ |
-| PRACTICE-06 | Practice-aware SettingsForm renders resonant knobs when `practice=resonant` | unit | `npm run test:run -- src/components/SettingsForm.test.tsx` | ❌ extend existing |
-| PRACTICE-06 | Practice-aware SettingsForm renders NK scaffold (empty) when `practice=naviKriya` | unit | same | ❌ extend existing |
+| PRACTICE-01 | PracticeToggle renders two pills; clicking switches active practice | unit | `npm run test:run -- src/components/PracticeToggle.test.tsx` | ✅ |
+| PRACTICE-01 | PracticeToggle passes correct `aria-pressed` | unit | same | ✅ |
+| PRACTICE-02 | `loadPractices` returns coerced resonant settings from stored data | unit | `npm run test:run -- src/storage/practices.test.ts` | ✅ |
+| PRACTICE-02 | `saveActivePractice` persists; `loadActivePractice` reads it back | unit | same | ✅ |
+| PRACTICE-02 | `coerceNaviKriyaSettings` returns defaults for unknown input | unit | `npm run test:run -- src/domain/naviKriyaSettings.test.ts` | ✅ |
+| PRACTICE-02 | `coerceNaviKriyaSettings` rounds non-multiple-of-4 `frontCount` down | unit | same | ✅ |
+| PRACTICE-03 | PracticeToggle disabled when `inSessionView=true`, enabled when false | unit | `npm run test:run -- src/components/PracticeToggle.test.tsx` | ✅ |
+| PRACTICE-04 | `migrateEnvelope(v1Envelope, 1)` coerces settings+stats into `practices.resonant` | unit | `npm run test:run -- src/storage/storage.test.ts` | ✅ |
+| PRACTICE-04 | `readEnvelope` with v1 disk data returns `practices.resonant` populated | unit | same | ✅ |
+| PRACTICE-04 | `migrateEnvelope` is idempotent on v2 data (`fromVersion=2` no-op) | unit | same | ✅ |
+| PRACTICE-04 | Cross-tab `storage` event refreshes both stats slices via `loadPractices()` | unit | `npm run test:run -- src/app/App.persistence.test.tsx` | ✅ |
+| PRACTICE-05 | SettingsDialog renders all shared chrome pickers (no per-practice controls) | unit | `npm run test:run -- src/components/SettingsDialog.test.tsx` | ✅ |
+| PRACTICE-06 | Practice-aware SettingsForm renders resonant knobs when `practice=resonant` | unit | `npm run test:run -- src/components/SettingsForm.stretch.test.tsx` | ✅ |
+| PRACTICE-06 | Practice-aware SettingsForm renders NK scaffold (empty) when `practice=naviKriya` | unit | same | ✅ |
 
 ---
 
 ## Wave 0 Requirements
 
-Five new/extended test files must be scaffolded before implementation:
+Five new/extended test files — all delivered:
 
-- [ ] `src/domain/naviKriyaSettings.test.ts` — new — covers PRACTICE-02 (NK coercer inputs, validators, defaults). Created by plan 30-01 Task 2 (in-wave TDD).
-- [ ] `src/storage/practices.test.ts` — new — covers PRACTICE-02 (`coercePractices`, `loadPractices`, `saveActivePractice`, `resetPracticeStats`, `recordResonantSession`).
-- [ ] `src/components/PracticeToggle.test.tsx` — new — covers PRACTICE-01, PRACTICE-03.
-- [ ] `src/storage/storage.test.ts` — extend existing — covers PRACTICE-04 (`migrateEnvelope` v1→v2 ladder, idempotency, STATE_KEY guard).
-- [ ] `src/components/SettingsForm.test.tsx` — extend existing — covers PRACTICE-06 (practice-aware dispatch).
+- [x] `src/domain/naviKriyaSettings.test.ts` — new — covers PRACTICE-02 (NK coercer inputs, validators, defaults). Created by plan 30-01 Task 2 (in-wave TDD).
+- [x] `src/storage/practices.test.ts` — new — covers PRACTICE-02 (`coercePractices`, `loadPractices`, `saveActivePractice`, `resetPracticeStats`, `recordResonantSession`).
+- [x] `src/components/PracticeToggle.test.tsx` — new — covers PRACTICE-01, PRACTICE-03.
+- [x] `src/storage/storage.test.ts` — extended — covers PRACTICE-04 (`migrateEnvelope` v1→v2 ladder, idempotency, STATE_KEY guard).
+- [x] `src/components/SettingsForm.stretch.test.tsx` — extended — covers PRACTICE-06 (practice-aware dispatch). *Plan referenced `SettingsForm.test.tsx`; execution extended the existing `SettingsForm.stretch.test.tsx` instead — same coverage, different file.*
 
 *Vitest 4.1.5 is already installed and operational from prior phases — no framework install needed.*
 
@@ -102,3 +104,15 @@ Five new/extended test files must be scaffolded before implementation:
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-05-17
+
+---
+
+## Validation Audit 2026-05-17
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All 6 requirements (PRACTICE-01..06) have automated, green coverage. Full suite: **1057 tests passing across 73 files**. The five Wave 0 test files were delivered (one as an extension of the existing `SettingsForm.stretch.test.tsx` rather than the plan-named `SettingsForm.test.tsx`). No gaps to fill — no auditor spawn required. Two manual-only verifications (visual pill styling, cross-tab timing) remain documented as intentionally manual.
