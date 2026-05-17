@@ -63,6 +63,16 @@ describe('NKShape', () => {
     expect(container.querySelector('[data-phase="out"]')).not.toBeNull()
   })
 
+  it('Phase 31: no inner reference ring on the Back phase (HRV exhale-end cue suppressed)', () => {
+    const { container } = renderShape({ phase: 'back' })
+    expect(container.querySelector('.shape-marker--inner')).toBeNull()
+  })
+
+  it('Phase 31: no inner reference ring on the Front phase either', () => {
+    const { container } = renderShape({ phase: 'front' })
+    expect(container.querySelector('.shape-marker--inner')).toBeNull()
+  })
+
   it('Phase 31: count digit uses the In text color on the Front phase', () => {
     renderShape({ count: 7, phase: 'front' })
     expect(screen.getByText('7')).toHaveStyle({ color: 'var(--color-orb-in-text)' })

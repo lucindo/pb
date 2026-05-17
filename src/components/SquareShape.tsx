@@ -233,16 +233,19 @@ function SquareLeadIn({
       </div>
       {/* Inner reference ring (Phase 2 D-04 + 260510-tc9 Bug 1) — rendered AFTER
           the orb so it sits on top of the opaque gradient fill. D-22 mirror of
-          SquareBody.
+          SquareBody. Phase 31: omitted in the NK locked shell — the inner ring
+          is HRV's exhale-end arrival cue, which has no meaning in Navi Kriya.
           Phase 17 D-07/D-15: `rounded-full` dropped; CSS handles border-radius. */}
-      <span
-        aria-hidden="true"
-        className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-solid"
-        style={{
-          width: `${(MIN_SCALE * 100).toFixed(2)}%`,
-          height: `${(MIN_SCALE * 100).toFixed(2)}%`,
-        }}
-      />
+      {nkPhase == null && (
+        <span
+          aria-hidden="true"
+          className="shape-marker--inner absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-solid"
+          style={{
+            width: `${(MIN_SCALE * 100).toFixed(2)}%`,
+            height: `${(MIN_SCALE * 100).toFixed(2)}%`,
+          }}
+        />
+      )}
       {/* D-14: digit in the same large-display position as the In/Out label,
           one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
           so the countdown reads as dominant. Omitted in the NK locked shell

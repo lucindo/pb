@@ -7,6 +7,7 @@ import App from './App'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
 import type { TimbreId, VisualVariantId } from '../domain/settings'
+import { NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
 function settingGroup(name: string) {
   return screen.getByRole('group', { name })
@@ -607,6 +608,21 @@ function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'na
 // (LEAD_IN_DURATION_MS = 3000ms), not the old silent settle.
 const NK_COUNTDOWN = 3000
 
+// Full Navi session wall-time (ms), start() → natural completion. Every round
+// is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in.
+// Derived from the engine constants so these integration timings track any
+// NK_LEAD_MS change instead of hardcoding a fixed advance.
+function nkSessionMs(
+  frontCount: number,
+  omLength: 'fast' | 'medium' | 'slow',
+  rounds: number,
+): number {
+  const omMs = NK_OM_SECONDS[omLength] * 1000
+  const backCount = frontCount / 4
+  const perRound = NK_LEAD_MS + (frontCount - 1) * omMs + NK_LEAD_MS + (backCount - 1) * omMs
+  return perRound * rounds
+}
+
 describe('Navi Kriya session integration (Phase 31)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -628,7 +644,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     // Countdown, then the full self-rescheduling OM chain (4 front + 1 back).
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + 15_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(4, 'fast', 1) + 2_000)
       await Promise.resolve()
     })
 
@@ -651,7 +667,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + 15_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(4, 'fast', 1) + 2_000)
       await Promise.resolve()
     })
 
@@ -677,7 +693,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     // Advance well past when the engine would have started and completed.
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + 15_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(4, 'fast', 1) + 2_000)
       await Promise.resolve()
     })
 
@@ -694,10 +710,13 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    // Countdown + enough to finish round 1 and enter round 2 (~41s of OM ticks).
+    // Countdown + all of round 1, then into round 2's front phase — so exactly
+    // one round is complete when we end early. nkSessionMs(.., 1) is one round.
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + 42_000)
+      vi.advanceTimersByTime(
+        NK_COUNTDOWN + nkSessionMs(12, 'slow', 1) + NK_LEAD_MS + 2 * NK_OM_SECONDS.slow * 1000,
+      )
     })
 
     // End early — the NK control opens the confirmation dialog.

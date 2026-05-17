@@ -74,8 +74,9 @@ export function NKShape({
   //
   // ARCHITECTURE: Since the shape components (OrbShape/SquareShape/DiamondShape)
   // don't have a full NK mode, each exposes an `nkPhase` prop that renders its
-  // LeadIn structure (MID_SCALE host + both gradient layers + reference rings)
-  // WITHOUT a countdown numeral. The nkPhase value ('front' | 'back') sets
+  // LeadIn structure (MID_SCALE host + both gradient layers + the outer
+  // reference ring) WITHOUT a countdown numeral. The inner ring is dropped — it
+  // is HRV's exhale-end cue and has no meaning here. The nkPhase value sets
   // data-phase so theme.css crossfades to the Out gradient on Back — the same
   // In/Out treatment as the live breathing body. We then overlay our own live
   // OM count via a wrapper div.

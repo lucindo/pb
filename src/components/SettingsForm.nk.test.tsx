@@ -12,10 +12,24 @@ import {
   NK_FRONT_COUNT_OPTIONS,
   type NaviKriyaSettings,
 } from '../domain/naviKriyaSettings'
+import { NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
 
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice
 const NK = UI_STRINGS.en.nkControls
+
+// Mirrors SettingsForm's D-14 estimate (front+back OMs per round, two
+// NK_LEAD_MS lead-ins per round, one-time NK_SETTLE_MS). Derived from the
+// engine constants so the assertion tracks NK_LEAD_MS instead of hardcoding a
+// minute count that drifts when the lead-in changes.
+function estimatedMinutes(settings: NaviKriyaSettings): number {
+  const back = settings.frontCount / 4
+  return Math.round(
+    (settings.rounds * (settings.frontCount + back) * NK_OM_SECONDS[settings.omLength] * 1000
+      + settings.rounds * 2 * NK_LEAD_MS
+      + NK_SETTLE_MS) / 60_000,
+  )
+}
 
 // Stateful harness — the duration estimate and stepper values are derived from
 // the nkSettings prop, so changes must flow through a real state holder for the
@@ -102,13 +116,14 @@ describe('SettingsForm — Navi Kriya controls (Plan 31-05, NK-02/03/04/06, D-14
 
   it('D-14: the estimated-duration line has aria-live="polite" and updates live with rounds', async () => {
     const user = userEvent.setup()
-    render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, rounds: 3 }} />)
-    // 3 * (100 + 25) * 2.16s * 1000 + 3500ms = 813500ms -> round(13.56) = 14 min
-    const line = screen.getByText(NK.estimatedDuration(14))
+    const settings3 = { ...DEFAULT_NK_SETTINGS, rounds: 3 }
+    render(<NKHarness initial={settings3} />)
+    const line = screen.getByText(NK.estimatedDuration(estimatedMinutes(settings3)))
     expect(line).toHaveAttribute('aria-live', 'polite')
     await user.click(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.roundsLabel) }))
-    // 4 * 125 * 2160 + 3500 = 1083500ms -> round(18.06) = 18 min
-    expect(screen.getByText(NK.estimatedDuration(18))).toBeInTheDocument()
+    expect(
+      screen.getByText(NK.estimatedDuration(estimatedMinutes({ ...settings3, rounds: 4 }))),
+    ).toBeInTheDocument()
   })
 
   it('WR-04: the NK steppers and per-OM toggle render enabled (the form is unmounted mid-session, so there is no in-session disabled state)', () => {

@@ -220,11 +220,15 @@ function DiamondLeadIn({
       </div>
       {/* Inner reference marker (Phase 2 D-04 + 260510-tc9 Bug 1) — rendered AFTER
           the orb so it sits on top of the opaque gradient fill. D-22 mirror of
-          DiamondBody. Phase 17 iteration 2: no inline style — CSS owns positioning. */}
-      <span
-        aria-hidden="true"
-        className="shape-marker--inner absolute border-solid"
-      />
+          DiamondBody. Phase 17 iteration 2: no inline style — CSS owns positioning.
+          Phase 31: omitted in the NK locked shell — the inner ring is HRV's
+          exhale-end arrival cue, which has no meaning in Navi Kriya. */}
+      {nkPhase == null && (
+        <span
+          aria-hidden="true"
+          className="shape-marker--inner absolute border-solid"
+        />
+      )}
       {/* D-14: digit in the same large-display position as the In/Out label,
           one step larger (text-7xl/text-8xl vs the body's text-5xl/text-6xl)
           so the countdown reads as dominant. Omitted in the NK locked shell
