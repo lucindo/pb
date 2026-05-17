@@ -24,11 +24,26 @@ unless the question requires otherwise.
   variants in one file with a top "harness bar" that swaps between them — a true live
   head-to-head beats separate files. The harness bar is visually distinct (dark) and
   labelled as NOT part of the product.
-- **Built-in event log for state-isolation claims.** When a spike claims state is
-  isolated/shared, add an on-screen colour-coded event log so the claim is observable,
-  not just asserted.
-- **Shared `PracticeContent`.** Switcher/navigation spikes keep the practice screen
+- **Built-in event/session log for verifiable claims.** When a spike claims state is
+  isolated/shared, or runs a multi-phase sequence, add an on-screen log so the behavior
+  is observable, not just asserted (colour-coded for state spikes; timestamped phase
+  transitions for sequence spikes).
+- **Shared content component.** Switcher/navigation spikes keep the practice screen
   itself in one shared component so only the chrome under test differs.
+- **Ref-held engine + mirrored state.** For timed/sequenced spikes, hold the mutable
+  engine record in a `useRef` and mirror only the display fields into React state. Drive
+  it with a self-rescheduling `setTimeout` chain.
+- **Web Audio for cue sounds.** Synthesized oscillator tones (no audio files) are enough
+  to validate sound design. Create the `AudioContext` lazily inside a user gesture (the
+  first Start tap) — browser autoplay policy blocks earlier creation.
+
+## Tools & Libraries
+
+- `react@19.0.0`, `react-dom@19.0.0` — from esm.sh.
+- `htm@3.1.1` — JSX-like templating without a build step.
+- Tailwind via `cdn.tailwindcss.com`, `darkMode: 'class'`.
+- Web Audio API (built-in) for spike cue sounds — production routes through the app's
+  own `src/audio/audioEngine.ts` instead.
 
 ## Domain notes (HRV app)
 

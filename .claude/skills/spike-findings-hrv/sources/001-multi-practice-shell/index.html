@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spike 001 — Multi-Practice Shell</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <style>
+    @keyframes breathe {
+      0%, 100% { transform: scale(0.55); }
+      50%      { transform: scale(1); }
+    }
+    .orb {
+      animation-name: breathe;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+  <div id="root"></div>
+
+  <script type="module">
+    import React, { useState, useEffect, useRef, useMemo } from 'https://esm.sh/react@19.0.0'
+    import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client'
+    import htm from 'https://esm.sh/htm@3.1.1'
+
+    const html = htm.bind(React.createElement)
+
+    // ── i18n (proves locale is SHARED chrome, not per-practice) ────────────
+    const STRINGS = {
+      en: {
+        start: 'Start', end: 'End session', settings: 'Settings', stats: 'Stats',
+        sessions: 'Sessions', totalMin: 'Total minutes', inProgress: 'in progress',
+        elapsed: 'Elapsed', bpm: 'Breaths / min', ratio: 'Ratio', duration: 'Duration',
+        pace: 'Pace (s / breath)', reps: 'Repetitions', minutes: 'min', log: 'Event log',
+        theme: 'Theme', language: 'Language',
+      },
+      'pt-BR': {
+        start: 'Iniciar', end: 'Encerrar sessão', settings: 'Ajustes', stats: 'Estatísticas',
+        sessions: 'Sessões', totalMin: 'Minutos totais', inProgress: 'em andamento',
+        elapsed: 'Decorrido', bpm: 'Respirações / min', ratio: 'Proporção', duration: 'Duração',
+        pace: 'Ritmo (s / respiração)', reps: 'Repetições', minutes: 'min', log: 'Registro de eventos',
+        theme: 'Tema', language: 'Idioma',
+      },
+    }
+
+    // ── Practice definitions ───────────────────────────────────────────────
+    // Resonant = the existing practice (3 knobs). Navi Kriya = STUB, fewer knobs.
+    const PRACTICES = {
+      resonant: {
+        id: 'resonant',
+        name: 'Resonant Breathing',
+        knobs: ['bpm', 'ratio', 'duration'],
+      },
+      naviKriya: {
+        id: 'naviKriya',
+        name: 'Navi Kriya',
+        knobs: ['pace', 'reps'],
+      },
+    }
+    const PRACTICE_ORDER = ['resonant', 'naviKriya']
+
+    const DEFAULT_PRACTICE_STATE = {
+      resonant: {
+        settings: { bpm: 5.5, ratio: '40:60', duration: 10 },
+        stats: { sessions: 0, totalMin: 0 },
+      },
+      naviKriya: {
+        settings: { pace: 10, reps: 24 },
+        stats: { sessions: 0, totalMin: 0 },
+      },
+    }
+
+    const OPTIONS = {
+      bpm: [4, 4.5, 5, 5.5, 6, 6.5],
+      ratio: ['50:50', '40:60', '30:70'],
+      duration: [5, 10, 15, 20],
+      pace: [8, 10, 12],
+      reps: [12, 24, 36],
+    }
+
+    // cycle length (s) and planned total (s) per practice
+    function cycleSec(practiceId, settings) {
+      return practiceId === 'resonant' ? 60 / settings.bpm : settings.pace
+    }
+    function plannedSec(practiceId, settings) {
+      return practiceId === 'resonant'
+        ? settings.duration * 60
+        : settings.reps * settings.pace
+    }
+
+    // ── Event log helper ───────────────────────────────────────────────────
+    function useEventLog() {
+      const [events, setEvents] = useState([])
+      const log = (cat, text) => setEvents((e) => [
+        ...e,
+        { t: new Date().toISOString().slice(11, 19), cat, text },
+      ])
+      return [events, log]
+    }
+
+    // ── Orb ────────────────────────────────────────────────────────────────
+    function Orb({ practiceId, settings, running }) {
+      const dur = cycleSec(practiceId, settings)
+      const style = {
+        animationDuration: `${dur}s`,
+        animationPlayState: running ? 'running' : 'paused',
+      }
+      const tint = practiceId === 'resonant'
+        ? 'from-sky-300 to-indigo-400'
+        : 'from-amber-300 to-rose-400'
+      return html`
+        <div class="flex items-center justify-center h-48">
+          <div
+            class=${`orb h-40 w-40 rounded-full bg-gradient-to-br ${tint} shadow-lg`}
+            style=${style}
+          ></div>
+        </div>
+      `
+    }
+
+    // ── Settings panel (per practice) ──────────────────────────────────────
+    function SettingsPanel({ practice, settings, onChange, s }) {
+      const labels = { bpm: s.bpm, ratio: s.ratio, duration: s.duration, pace: s.pace, reps: s.reps }
+      return html`
+        <div class="rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <h3 class="text-sm font-semibold uppercase tracking-wide opacity-60 mb-3">${s.settings}</h3>
+          <div class="space-y-3">
+            ${practice.knobs.map((knob) => html`
+              <label key=${knob} class="flex items-center justify-between gap-4 text-sm">
+                <span>${labels[knob]}</span>
+                <select
+                  class="rounded-md border border-slate-300 dark:border-slate-600 bg-transparent px-2 py-1"
+                  value=${settings[knob]}
+                  onChange=${(e) => {
+                    const raw = e.target.value
+                    const val = knob === 'ratio' ? raw : Number(raw)
+                    onChange(knob, val)
+                  }}
+                >
+                  ${OPTIONS[knob].map((opt) => html`
+                    <option key=${opt} value=${opt}>
+                      ${opt}${knob === 'duration' ? ' ' + s.minutes : ''}
+                    </option>
+                  `)}
+                </select>
+              </label>
+            `)}
+          </div>
+        </div>
+      `
+    }
+
+    // ── Stats panel (per practice) ─────────────────────────────────────────
+    function StatsPanel({ stats, s }) {
+      return html`
+        <div class="rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <h3 class="text-sm font-semibold uppercase tracking-wide opacity-60 mb-3">${s.stats}</h3>
+          <div class="flex gap-6 text-sm">
+            <div><div class="text-2xl font-semibold">${stats.sessions}</div><div class="opacity-60">${s.sessions}</div></div>
+            <div><div class="text-2xl font-semibold">${stats.totalMin}</div><div class="opacity-60">${s.totalMin}</div></div>
+          </div>
+        </div>
+      `
+    }
+
+    // ── Practice screen ────────────────────────────────────────────────────
+    function PracticeScreen({ practiceId, pState, session, s, onSetting, onStart, onEnd }) {
+      const practice = PRACTICES[practiceId]
+      const running = session && session.running
+      const total = plannedSec(practiceId, pState.settings)
+      const elapsed = session ? session.elapsed : 0
+      const mmss = (x) => `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`
+
+      return html`
+        <div class="space-y-4">
+          <div class="flex items-baseline justify-between">
+            <h2 class="text-xl font-semibold">${practice.name}</h2>
+            ${running && html`<span class="text-xs rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5">● ${s.inProgress}</span>`}
+          </div>
+
+          <${Orb} practiceId=${practiceId} settings=${pState.settings} running=${running} />
+
+          <div class="text-center text-sm opacity-70">
+            ${s.elapsed}: ${mmss(elapsed)} / ${mmss(total)}
+          </div>
+
+          <div class="flex justify-center">
+            ${running
+              ? html`<button class="rounded-full bg-rose-500 text-white px-6 py-2 font-medium" onClick=${onEnd}>${s.end}</button>`
+              : html`<button class="rounded-full bg-indigo-500 text-white px-6 py-2 font-medium" onClick=${onStart}>${s.start}</button>`}
+          </div>
+
+          <${SettingsPanel} practice=${practice} settings=${pState.settings} onChange=${onSetting} s=${s} />
+          <${StatsPanel} stats=${pState.stats} s=${s} />
+        </div>
+      `
+    }
+
+    // ── Tab bar (baseline switcher — spike 002 explores variants) ──────────
+    // Locked while a session runs: switching practices mid-session is disabled
+    // rather than leaving a session alive in the background.
+    function TabBar({ active, onSwitch, locked }) {
+      return html`
+        <nav class="fixed bottom-0 inset-x-0 border-t border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 backdrop-blur">
+          <div class="mx-auto max-w-md flex">
+            ${PRACTICE_ORDER.map((pid) => html`
+              <button
+                key=${pid}
+                disabled=${locked}
+                title=${locked ? 'End the session to switch practices' : ''}
+                class=${`flex-1 py-3 text-sm font-medium ${active === pid ? 'text-indigo-500' : 'opacity-50'} ${locked ? 'cursor-not-allowed opacity-30' : ''}`}
+                onClick=${() => onSwitch(pid)}
+              >
+                ${PRACTICES[pid].name}
+              </button>
+            `)}
+          </div>
+          ${locked && html`<div class="mx-auto max-w-md text-center text-[10px] pb-1 opacity-50">🔒 session in progress — switching disabled</div>`}
+        </nav>
+      `
+    }
+
+    // ── Event log panel ────────────────────────────────────────────────────
+    function EventLog({ events, s }) {
+      const [open, setOpen] = useState(true)
+      return html`
+        <div class="rounded-xl bg-slate-800 text-slate-100 text-xs font-mono mt-4">
+          <button class="w-full text-left px-3 py-2 font-semibold" onClick=${() => setOpen((o) => !o)}>
+            ${open ? '▾' : '▸'} ${s.log} (${events.length})
+          </button>
+          ${open && html`
+            <div class="max-h-44 overflow-y-auto px-3 pb-3 space-y-1">
+              ${events.length === 0 && html`<div class="opacity-40">—</div>`}
+              ${events.map((e, i) => html`
+                <div key=${i}>
+                  <span class="opacity-40">${e.t}</span>
+                  <span class=${`ml-2 ${e.cat === 'switch' ? 'text-amber-400' : e.cat === 'session' ? 'text-emerald-400' : e.cat === 'shared' ? 'text-sky-400' : 'text-slate-300'}`}>[${e.cat}]</span>
+                  <span class="ml-2">${e.text}</span>
+                </div>
+              `)}
+            </div>
+          `}
+        </div>
+      `
+    }
+
+    // ── App shell ──────────────────────────────────────────────────────────
+    function App() {
+      // SHARED chrome state
+      const [theme, setTheme] = useState('light')
+      const [locale, setLocale] = useState('en')
+      // PER-PRACTICE state
+      const [practiceState, setPracticeState] = useState(DEFAULT_PRACTICE_STATE)
+      const [sessions, setSessions] = useState({ resonant: null, naviKriya: null })
+      const [active, setActive] = useState('resonant')
+      const [events, log] = useEventLog()
+      const started = useRef(false)
+
+      const s = STRINGS[locale]
+
+      useEffect(() => {
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+      }, [theme])
+
+      useEffect(() => {
+        if (started.current) return
+        started.current = true
+        log('app', 'Shell started — Resonant + Navi Kriya hosted in one app')
+      }, [])
+
+      // session ticking — runs for BOTH practices independently
+      useEffect(() => {
+        const id = setInterval(() => {
+          setSessions((prev) => {
+            let changed = false
+            const next = { ...prev }
+            for (const pid of PRACTICE_ORDER) {
+              const sess = prev[pid]
+              if (sess && sess.running) {
+                const elapsed = sess.elapsed + 1
+                const total = plannedSec(pid, practiceState[pid].settings)
+                if (elapsed >= total) {
+                  next[pid] = { running: false, elapsed: total }
+                  setPracticeState((ps) => ({
+                    ...ps,
+                    [pid]: {
+                      ...ps[pid],
+                      stats: {
+                        sessions: ps[pid].stats.sessions + 1,
+                        totalMin: ps[pid].stats.totalMin + Math.round(total / 60),
+                      },
+                    },
+                  }))
+                  log('session', `${PRACTICES[pid].name} session COMPLETED (auto)`)
+                } else {
+                  next[pid] = { ...sess, elapsed }
+                }
+                changed = true
+              }
+            }
+            return changed ? next : prev
+          })
+        }, 1000)
+        return () => clearInterval(id)
+      }, [practiceState])
+
+      const switchPractice = (pid) => {
+        if (pid === active) return
+        // Navigation is locked during a session — guard defensively.
+        if (sessions[active] && sessions[active].running) return
+        log('switch', `${PRACTICES[active].name} → ${PRACTICES[pid].name}`)
+        setActive(pid)
+      }
+
+      const setSetting = (knob, val) => {
+        log('setting', `${PRACTICES[active].name}: ${knob} = ${val}`)
+        setPracticeState((ps) => ({
+          ...ps,
+          [active]: { ...ps[active], settings: { ...ps[active].settings, [knob]: val } },
+        }))
+      }
+
+      const startSession = () => {
+        log('session', `${PRACTICES[active].name} session started`)
+        setSessions((prev) => ({ ...prev, [active]: { running: true, elapsed: 0 } }))
+      }
+
+      const endSession = () => {
+        const sess = sessions[active]
+        const mins = sess ? Math.round(sess.elapsed / 60) : 0
+        log('session', `${PRACTICES[active].name} session ended manually (${mins} ${s.minutes})`)
+        setPracticeState((ps) => ({
+          ...ps,
+          [active]: {
+            ...ps[active],
+            stats: {
+              sessions: ps[active].stats.sessions + 1,
+              totalMin: ps[active].stats.totalMin + mins,
+            },
+          },
+        }))
+        setSessions((prev) => ({ ...prev, [active]: null }))
+      }
+
+      const runningMap = {
+        resonant: !!(sessions.resonant && sessions.resonant.running),
+        naviKriya: !!(sessions.naviKriya && sessions.naviKriya.running),
+      }
+
+      return html`
+        <div class="mx-auto max-w-md px-4 pt-4 pb-24 min-h-screen">
+          <!-- SHARED chrome -->
+          <header class="flex items-center justify-between mb-4 text-sm">
+            <span class="font-semibold tracking-tight">HRV — multi-practice spike</span>
+            <div class="flex gap-2">
+              <button
+                class="rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1"
+                onClick=${() => { const t = theme === 'light' ? 'dark' : 'light'; setTheme(t); log('shared', `${s.theme} = ${t}`) }}
+              >${theme === 'light' ? '☾' : '☀'}</button>
+              <button
+                class="rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1"
+                onClick=${() => { const l = locale === 'en' ? 'pt-BR' : 'en'; setLocale(l); log('shared', `${STRINGS[l].language} = ${l}`) }}
+              >${locale === 'en' ? 'EN' : 'PT'}</button>
+            </div>
+          </header>
+
+          <${PracticeScreen}
+            practiceId=${active}
+            pState=${practiceState[active]}
+            session=${sessions[active]}
+            s=${s}
+            onSetting=${setSetting}
+            onStart=${startSession}
+            onEnd=${endSession}
+          />
+
+          <${EventLog} events=${events} s=${s} />
+
+          <${TabBar} active=${active} onSwitch=${switchPractice} locked=${runningMap[active]} />
+        </div>
+      `
+    }
+
+    createRoot(document.getElementById('root')).render(html`<${App} />`)
+  </script>
+</body>
+</html>
