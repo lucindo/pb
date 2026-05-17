@@ -1,10 +1,11 @@
 ---
 phase: 31
 slug: navi-kriya-engine-session
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-17
+reviewed_at: 2026-05-17T00:00:00Z
 ---
 
 # Phase 31 — UI Design Contract
