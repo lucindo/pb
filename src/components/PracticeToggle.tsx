@@ -1,9 +1,14 @@
 // Phase 30 PRACTICE-01 + PRACTICE-03
 // Presentational segmented-control practice switcher.
-// PracticeId is a local alias; plan 30-04 reconciles imports to the canonical
-// PracticeId from src/storage/practices.ts once it is available.
+// Phase 34 34-03: Extended to 3 pills (resonant, stretch, naviKriya) with
+// A/B treatment branch driven by build-time __SWITCHER_TREATMENT__ (D-06/D-07/D-11).
 
-export type PracticeId = 'resonant' | 'naviKriya'
+import type { PracticeId } from '../storage/practices'
+
+// D-06: build-time only — compile-time constant injected by vite.config.ts `define`
+// D-07: invalid or missing value falls back to 'A' (smallest-surprise default)
+declare const __SWITCHER_TREATMENT__: string
+const TREATMENT: 'A' | 'B' = __SWITCHER_TREATMENT__ === 'B' ? 'B' : 'A'
 
 export interface PracticeToggleProps {
   active: PracticeId
@@ -15,7 +20,38 @@ export interface PracticeToggleProps {
   }
 }
 
-const PRACTICE_IDS: PracticeId[] = ['resonant', 'naviKriya']
+// D-11: switcher order HRV · Stretch · Navi
+const PRACTICE_IDS: PracticeId[] = ['resonant', 'stretch', 'naviKriya']
+
+// D-08: inline SVGs styled with theme tokens; currentColor follows theme tokens.
+// Exported for direct unit testing (treatment B glyph coverage without requiring
+// a separate build — see PracticeToggle.test.tsx PracticeGlyph describe block).
+export function PracticeGlyph({ id }: { id: PracticeId }) {
+  if (id === 'resonant') {
+    // Orb = circle (breathing)
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    )
+  }
+  if (id === 'stretch') {
+    // Ramp = descending diagonal line (BPM walk-down)
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <polyline points="2,4 14,12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  // naviKriya: counting dots (OM counting)
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="4" cy="8" r="1.5" fill="currentColor" />
+      <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="8" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
 
 export function PracticeToggle({
   active,
@@ -60,6 +96,7 @@ export function PracticeToggle({
             onClick={() => { onSwitch(id) }}
             className={pillClass}
           >
+            {TREATMENT === 'B' && <PracticeGlyph id={id} />}
             {strings.practiceNames[id]}
           </button>
         )

@@ -52,6 +52,13 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    // D-06: build-time only — NOT a user-facing setting
+    // D-07: invalid or missing value falls back to 'A'
+    __SWITCHER_TREATMENT__: JSON.stringify(
+      process.env.VITE_SWITCHER_TREATMENT === 'B' ? 'B' : 'A'
+    ),
+  },
   test: {
     environment: 'jsdom',
     globals: true,
