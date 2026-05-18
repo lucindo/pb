@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 
 import type { SessionFrame } from '../domain/sessionMath'
-import type { SessionSettings } from '../domain/settings'
+import type { SessionSettings, StretchSettings } from '../domain/settings'
 import { DEFAULT_SETTINGS } from '../domain/settings'
 import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
   startSession,
+  startStretchSession,
   type SessionState,
 } from '../domain/sessionController'
 
@@ -64,7 +65,10 @@ export interface SessionEngine {
   extendDuration(this: void, durationMinutes: number): void
 }
 
-export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETTINGS): SessionEngine {
+export function useSessionEngine(
+  initialSettings: SessionSettings = DEFAULT_SETTINGS,
+  stretchSettings: StretchSettings | null = null,
+): SessionEngine {
   const [state, setState] = useState<SessionState>(() => ({
     status: 'idle',
     selectedSettings: { ...initialSettings },
@@ -198,10 +202,24 @@ export function useSessionEngine(initialSettings: SessionSettings = DEFAULT_SETT
     })
   }, [])
 
+  // Capture stretchSettings in a ref so the start callback can read the latest
+  // value without re-creating the callback every time stretchSettings changes.
+  // The start callback has an intentionally-empty dep array (same pattern as
+  // end/extendDuration); the ref indirection is the stale-closure-safe approach.
+  const stretchSettingsRef = useRef<StretchSettings | null>(stretchSettings)
+  stretchSettingsRef.current = stretchSettings
+
   const start = useCallback(() => {
     setState((currentState) => {
       if (currentState.status === 'running') {
         return currentState
+      }
+
+      // Phase 34: when a stretch settings object is wired in, start a stretch
+      // session via startStretchSession instead of the standard startSession.
+      const sSettings = stretchSettingsRef.current
+      if (sSettings !== null) {
+        return startStretchSession(sSettings, performance.now())
       }
 
       return startSession(currentState.selectedSettings, performance.now())

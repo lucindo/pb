@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { SettingsForm, type SettingsFormProps } from './SettingsForm'
 import { UI_STRINGS } from '../content/strings'
-import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
+import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type StretchSettings } from '../domain/settings'
 
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice
@@ -13,6 +13,7 @@ const PRACTICE = UI_STRINGS.en.practice
 function renderForm(overrides: Partial<SettingsFormProps> = {}) {
   const onChange = vi.fn()
   const onExtendDuration = vi.fn()
+  const onStretchSettingsChange = vi.fn()
   render(
     <SettingsForm
       activePractice={overrides.activePractice ?? 'resonant'}
@@ -22,76 +23,90 @@ function renderForm(overrides: Partial<SettingsFormProps> = {}) {
       onExtendDuration={overrides.onExtendDuration ?? onExtendDuration}
       strings={overrides.strings ?? EN}
       practiceStrings={overrides.practiceStrings ?? PRACTICE}
+      stretchSettings={overrides.stretchSettings ?? DEFAULT_STRETCH_SETTINGS}
+      onStretchSettingsChange={overrides.onStretchSettingsChange ?? onStretchSettingsChange}
     />,
   )
-  return { onChange, onExtendDuration }
+  return { onChange, onExtendDuration, onStretchSettingsChange }
 }
 
 // Stepper fieldsets expose role="group" named by their legend — query by these
-// to avoid text collisions (e.g. "Stretch" is both the mode label and the
+// to avoid text collisions (e.g. "Stretch" is both the practice label and the
 // ramp-stage field label).
 const STRETCH_GROUPS = ['Start BPM', 'Target BPM', 'Warm-up', 'Stretch', 'Settle']
 
-describe('SettingsForm — stretch surface (Plan 22-04 / 22-05 redesign)', () => {
-  it('renders the Standard/Stretch mode switch', () => {
-    renderForm()
-    expect(screen.getByRole('switch', { name: 'Session mode' })).toBeInTheDocument()
+describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', () => {
+  it('activePractice="stretch": renders the stretch steppers (5 ramp groups)', () => {
+    renderForm({ activePractice: 'stretch' })
+    for (const group of STRETCH_GROUPS) {
+      expect(screen.getByRole('group', { name: group })).toBeInTheDocument()
+    }
   })
 
-  it('standard mode: single BPM stepper present, no stretch field steppers', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
+  it('activePractice="stretch": single BPM stepper is absent', () => {
+    renderForm({ activePractice: 'stretch' })
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+  })
+
+  it('activePractice="stretch": no Standard/Stretch mode switch rendered', () => {
+    renderForm({ activePractice: 'stretch' })
+    expect(screen.queryByRole('switch', { name: 'Session mode' })).not.toBeInTheDocument()
+  })
+
+  it('activePractice="resonant": standard knobs, no stretch steppers', () => {
+    renderForm({ activePractice: 'resonant' })
     expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
     for (const group of STRETCH_GROUPS) {
       expect(screen.queryByRole('group', { name: group })).not.toBeInTheDocument()
     }
   })
 
-  it('stretch mode: 5 stretch field steppers present, single BPM stepper absent', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch' } })
-    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
-    for (const group of STRETCH_GROUPS) {
-      expect(screen.getByRole('group', { name: group })).toBeInTheDocument()
-    }
-  })
-
-  it('toggling the switch from standard fires onChange with mode "stretch"', async () => {
-    const user = userEvent.setup()
-    const { onChange } = renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
-    await user.click(screen.getByRole('switch', { name: 'Session mode' }))
-    expect(onChange).toHaveBeenCalledTimes(1)
-    expect((onChange.mock.calls[0]?.[0] as SessionSettings).mode).toBe('stretch')
-  })
-
   it('lowering initialBpm auto-corrects a now-invalid targetBpm below the new initialBpm', async () => {
     const user = userEvent.setup()
-    const { onChange } = renderForm({
-      settings: { ...DEFAULT_SETTINGS, mode: 'stretch', initialBpm: 2, targetBpm: 1.5 },
+    const { onStretchSettingsChange } = renderForm({
+      activePractice: 'stretch',
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, initialBpm: 2, targetBpm: 1.5 },
     })
     await user.click(screen.getByRole('button', { name: EN.stepper.decreaseLabel('Start BPM') }))
-    expect(onChange).toHaveBeenCalledTimes(1)
-    const next = onChange.mock.calls[0]?.[0] as SessionSettings
+    expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
+    const next = onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings
     expect(next.initialBpm).toBe(1.5)
     expect(next.targetBpm).toBe(1)
     expect(next.targetBpm).toBeLessThan(next.initialBpm)
   })
 
   it('read-only Duration box shows the computed total for default stretch values', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch' } })
+    renderForm({ activePractice: 'stretch' })
     // warm-up 5 + ramp 5 + cool-down 5 = 15 min
     const duration = screen.getByRole('group', { name: 'Duration' })
     expect(within(duration).getByText('15 min')).toBeInTheDocument()
   })
 
   it('Duration box shows the open-ended label when cool-down is open-ended', () => {
-    renderForm({ settings: { ...DEFAULT_SETTINGS, mode: 'stretch', coolDownMinutes: 'open-ended' } })
+    renderForm({
+      activePractice: 'stretch',
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, coolDownMinutes: 'open-ended' },
+    })
     const duration = screen.getByRole('group', { name: 'Duration' })
     expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
+  })
+
+  it('changing ratio calls onStretchSettingsChange with updated ratio', async () => {
+    const user = userEvent.setup()
+    const { onStretchSettingsChange } = renderForm({
+      activePractice: 'stretch',
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, ratio: '40:60' },
+    })
+    const ratioGroup = screen.getByRole('group', { name: 'Ratio' })
+    await user.click(within(ratioGroup).getByRole('button', { name: EN.stepper.decreaseLabel('Ratio') }))
+    expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
+    expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).ratio).toBe('50:50')
   })
 })
 
 describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/D-03/D-04)', () => {
   it('activePractice="resonant": renders the resonant knobs', () => {
-    renderForm({ activePractice: 'resonant', settings: { ...DEFAULT_SETTINGS, mode: 'standard' } })
+    renderForm({ activePractice: 'resonant' })
     expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
   })
 

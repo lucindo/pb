@@ -516,3 +516,36 @@ describe('PRACTICE-02 — resonant settings survive remount', () => {
     expect(screen.queryByText('6 BPM')).not.toBeInTheDocument()
   })
 })
+
+// ---------------------------------------------------------------------------
+// Phase 34 — v2→v3 envelope upgrade shows migrated stretch config
+// ---------------------------------------------------------------------------
+describe('Phase 34 — v2 envelope migrates to v3 and Stretch practice shows config', () => {
+  it('a v2 envelope user mounts with the Stretch practice showing migrated config', () => {
+    // Seed a v2 envelope (no stretch slice). On mount, migrateEnvelope v2→v3 runs
+    // inside loadPractices() and seeds practices.stretch from the resonant settings blob.
+    // The user switches to the Stretch practice and sees the migrated config.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 2,
+      practices: {
+        resonant: {
+          settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 10 },
+          stats: null,
+        },
+        naviKriya: { settings: null, stats: null },
+      },
+      activePractice: 'resonant',
+    }))
+    render(<App />)
+
+    // Switch to the Stretch practice by clicking the 'Stretch' pill in PracticeToggle.
+    fireEvent.click(screen.getByRole('button', { name: 'Stretch' }))
+
+    // After switching, the stretch branch shows. Stretch settings are migrated from
+    // the resonant blob — coerced to valid StretchSettings defaults if needed.
+    // The stretch form should render Start BPM (one of the stretch knobs).
+    expect(screen.getByRole('group', { name: 'Start BPM' })).toBeInTheDocument()
+    // The Start session button should be present for the stretch practice.
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
+  })
+})

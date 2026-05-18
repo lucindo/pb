@@ -1,4 +1,4 @@
-export interface ModeToggleProps {
+export interface BooleanToggleProps {
   isStretch: boolean
   modeLabel: string
   standardLabel: string
@@ -9,13 +9,13 @@ export interface ModeToggleProps {
 // Compact iOS-style switch replacing the bulky +/- stepper for the
 // Standard/Stretch mode choice. Both labels stay visible; the active one
 // is emphasized. `role="switch"` + `aria-checked` for assistive tech.
-export function ModeToggle({
+export function BooleanToggle({
   isStretch,
   modeLabel,
   standardLabel,
   stretchLabel,
   onChange,
-}: ModeToggleProps) {
+}: BooleanToggleProps) {
   const sideLabel = (active: boolean) =>
     `text-sm font-semibold uppercase tracking-[0.18em] ${
       active

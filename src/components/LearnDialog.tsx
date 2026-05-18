@@ -85,7 +85,10 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
 
   const { explainer, links, practices } = learnContent
   // D-07: auto-tracks active practice — no in-dialog toggle; renders whichever practice the switcher is on.
-  const practiceContent = practices[activePractice]
+  // Phase 34: stretch does not yet have its own learn content; fall back to resonant content so the
+  // dialog can open without crashing (practices map only has resonant + naviKriya keys).
+  const practiceContentKey = activePractice === 'stretch' ? 'resonant' : activePractice
+  const practiceContent = practices[practiceContentKey as keyof typeof practices]
   // D-01 (SECOND): video sub-heading switches per practice; resonant uses generic heading, NK uses NK-specific heading.
   const videosHeading = activePractice === 'resonant' ? strings.videosHeading : strings.naviKriyaVideosHeading
 

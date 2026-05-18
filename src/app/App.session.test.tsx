@@ -598,7 +598,7 @@ function readEnv(): Record<string, unknown> | null {
   return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
 }
 
-function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'naviKriya') {
+function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'naviKriya' | 'stretch') {
   const practices = env?.['practices'] as Record<string, unknown> | undefined
   const slice = practices?.[practice] as Record<string, unknown> | undefined
   return slice?.['stats'] as Record<string, unknown> | undefined
@@ -732,5 +732,80 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
     expect(statsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
     expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Phase 34: Stretch session records stretch stats and leaves resonant untouched
+// ---------------------------------------------------------------------------
+
+function seedStretch(): void {
+  window.localStorage.setItem(STATE_KEY, JSON.stringify({
+    version: 3,
+    activePractice: 'stretch',
+    practices: {
+      resonant: {
+        settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 10 },
+        stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+      },
+      stretch: {
+        settings: {
+          ratio: '40:60',
+          initialBpm: 5.5,
+          targetBpm: 4.5,
+          warmUpMinutes: 5,
+          rampDurationMinutes: 5,
+          coolDownMinutes: 5,
+        },
+        stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+      },
+      naviKriya: {
+        settings: null,
+        stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+      },
+    },
+  }))
+}
+
+describe('Phase 34 — stretch session records stretch stats and leaves resonant untouched', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    window.localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('a stretch session records into stretch.stats only — resonant and naviKriya untouched', async () => {
+    seedStretch()
+    render(<App />)
+
+    // Start the session — the stretch practice uses the breathing engine
+    // (SessionControls renders for activePractice === 'stretch').
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(LEAD_IN_MS)
+    })
+
+    // Run 35s so the session exceeds the 30s recording threshold.
+    await act(async () => { vi.advanceTimersByTime(35_000) })
+
+    // End via open-ended — the default stretch session has computed duration, so
+    // we need to manually end. Use 'End session' button.
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await act(async () => { await Promise.resolve() })
+
+    const env = readEnv()
+    // Stretch stats updated:
+    expect(statsOf(env, 'stretch')?.['totalSessions']).toBe(1)
+    expect((statsOf(env, 'stretch')?.['totalElapsedSeconds'] as number | undefined) ?? 0).toBeGreaterThanOrEqual(35)
+    // Resonant and naviKriya untouched:
+    expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect((statsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
   })
 })
