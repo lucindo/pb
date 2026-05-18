@@ -8,19 +8,7 @@ import {
 } from './settings'
 import { saveResonantSettings } from './practices'
 import { STATE_KEY } from './storage'
-import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type SessionSettings } from '../domain/settings'
-
-const STRETCH_SETTINGS: SessionSettings = {
-  bpm: 5.5,
-  ratio: '40:60',
-  durationMinutes: 10,
-  mode: 'stretch',
-  initialBpm: 6,
-  targetBpm: 4,
-  warmUpMinutes: 10,
-  coolDownMinutes: 15,
-  rampDurationMinutes: 20,
-}
+import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -88,48 +76,33 @@ describe('coerceSettings (D-15)', () => {
     expect(out.polluted).toBeUndefined()
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
   })
-})
 
-describe('coerceSettings — stretch fields (Plan 22-02 / STRETCH-07)', () => {
-  it('returns all 6 stretch fields unchanged when valid', () => {
-    expect(coerceSettings(STRETCH_SETTINGS)).toEqual(STRETCH_SETTINGS)
-  })
-
-  it('forward-compat: an old envelope with no stretch keys loads with stretch defaults — no throw', () => {
-    const oldShape = { bpm: 5.5, ratio: '40:60', durationMinutes: 10 }
-    expect(() => coerceSettings(oldShape)).not.toThrow()
-    expect(coerceSettings(oldShape)).toEqual({
+  // Phase 34 D-01/D-02: coerceSettings is now standard-only (3 fields).
+  // Stretch ramp fields (mode, initialBpm, targetBpm, warmUpMinutes, coolDownMinutes,
+  // rampDurationMinutes) have moved to coerceStretchSettings in practices.ts.
+  it('returns exactly { bpm, ratio, durationMinutes } — no mode or ramp fields present', () => {
+    // A raw blob carrying old stretch fields should produce only the 3 standard fields.
+    const rawWithRampFields = {
       bpm: 5.5,
       ratio: '40:60',
       durationMinutes: 10,
-      mode: DEFAULT_SETTINGS.mode,
-      initialBpm: DEFAULT_STRETCH_SETTINGS.initialBpm,
-      targetBpm: DEFAULT_STRETCH_SETTINGS.targetBpm,
-      warmUpMinutes: DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
-      coolDownMinutes: DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
-      rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
-    })
-  })
-
-  it('falls back PER FIELD when mode is drifted — keeps valid sibling stretch fields', () => {
-    expect(coerceSettings({ ...STRETCH_SETTINGS, mode: 'foo' }))
-      .toEqual({ ...STRETCH_SETTINGS, mode: DEFAULT_SETTINGS.mode })
-  })
-
-  it('falls back PER FIELD when rampDurationMinutes is off-grid — keeps valid siblings', () => {
-    expect(coerceSettings({ ...STRETCH_SETTINGS, rampDurationMinutes: 7 }))
-      .toEqual({ ...STRETCH_SETTINGS, rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes })
-  })
-
-  it('null / non-object input yields the stretch defaults', () => {
-    expect(coerceSettings(null)).toMatchObject({
-      mode: DEFAULT_SETTINGS.mode,
-      initialBpm: DEFAULT_STRETCH_SETTINGS.initialBpm,
-      targetBpm: DEFAULT_STRETCH_SETTINGS.targetBpm,
-      warmUpMinutes: DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
-      coolDownMinutes: DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
-      rampDurationMinutes: DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
-    })
+      mode: 'stretch',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      coolDownMinutes: 5,
+      rampDurationMinutes: 5,
+    }
+    const result = coerceSettings(rawWithRampFields)
+    // Only the 3 standard keys must be present.
+    expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'ratio'])
+    expect(result.bpm).toBe(5.5)
+    expect(result.ratio).toBe('40:60')
+    expect(result.durationMinutes).toBe(10)
+    // Drifted/extra fields must NOT appear on the result.
+    const asAny = result as unknown as Record<string, unknown>
+    expect(asAny['mode']).toBeUndefined()
+    expect(asAny['initialBpm']).toBeUndefined()
   })
 })
 
