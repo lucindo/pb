@@ -1,9 +1,9 @@
 ---
 phase: 34
 slug: stretch-as-a-distinct-practice
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: planned
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-18
 ---
 
@@ -38,23 +38,34 @@ created: 2026-05-18
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 34-XX-XX | TBD | TBD | STRETCH-01 | — | N/A | unit | `npx vitest run src/components/PracticeToggle.test.tsx` | ❌ W0 | ⬜ pending |
-| 34-XX-XX | TBD | TBD | STRETCH-02 | — | N/A | unit | `npx vitest run src/components/PracticeToggle.test.tsx` | ❌ W0 | ⬜ pending |
-| 34-XX-XX | TBD | TBD | STRETCH-03 | — | `coerceStretchSettings` per-field non-throwing coercion | unit | `npx vitest run src/storage/practices.test.ts` | ✅ extend | ⬜ pending |
-| 34-XX-XX | TBD | TBD | STRETCH-04 | — | N/A | unit | `npx vitest run src/storage/practices.test.ts` | ✅ extend | ⬜ pending |
-| 34-XX-XX | TBD | TBD | STRETCH-05 | T-30-05 | `asRecord` prototype-pollution-safe guard before named-key reads | unit | `npx vitest run src/storage/storage.test.ts` | ✅ extend | ⬜ pending |
-| 34-XX-XX | TBD | TBD | STRETCH-06 | — | N/A | unit | `npx vitest run src/content/strings.test.ts` | ✅ extend | ⬜ pending |
+| 34-01-01 | 01 | 1 | STRETCH-03 | T-34-01 | `validateStretchSettings` fail-closed | unit | `npx vitest run src/domain/settings.test.ts` | ✅ extend | ⬜ pending |
+| 34-01-02 | 01 | 1 | STRETCH-03 | T-34-01 | N/A | unit | `npx vitest run src/domain/stretchRamp.test.ts src/domain/sessionController.test.ts` | ✅ extend | ⬜ pending |
+| 34-02-01 | 02 | 2 | STRETCH-05 | T-34-03 | v2→v3 step constructive, orphan-tolerant | unit | `npx vitest run src/storage/storage.test.ts src/storage/settings.test.ts` | ✅ extend | ⬜ pending |
+| 34-02-02 | 02 | 2 | STRETCH-03, STRETCH-04 | T-34-02, T-34-04 | `coerceStretchSettings` + `asRecord` prototype-pollution-safe per-field coercion | unit | `npx vitest run src/storage/practices.test.ts` | ✅ extend | ⬜ pending |
+| 34-03-01 | 03 | 3 | STRETCH-02 | T-34-05 | `VITE_SWITCHER_TREATMENT` strict `=== 'B'` build-time gate | build | `npx tsc --noEmit` | ✅ config | ⬜ pending |
+| 34-03-02 | 03 | 3 | STRETCH-01, STRETCH-02 | T-34-05, T-34-06 | N/A | unit | `npx vitest run src/components/PracticeToggle.test.tsx` | ✅ extend | ⬜ pending |
+| 34-04-01 | 04 | 3 | STRETCH-06 | T-34-07 | `LOCKED_COPY` byte-equality guard | unit | `npx vitest run src/content/strings.test.ts src/content/lockedCopy.test.ts` | ✅ extend | ⬜ pending |
+| 34-05-01 | 05 | 4 | STRETCH-01, STRETCH-06 | — | N/A | unit | `npx vitest run src/components/SettingsForm.stretch.test.tsx src/components/SettingsForm.nk.test.tsx` | ✅ extend | ⬜ pending |
+| 34-05-02 | 05 | 4 | STRETCH-03, STRETCH-04, STRETCH-05 | T-34-08, T-34-09, T-34-10 | slice-isolated `recordStretchSession`; coerced-settings engine path | integration | `npx vitest run src/hooks/useSessionEngine.test.tsx src/app/App.persistence.test.tsx src/app/App.session.test.tsx src/app/App.settings.test.tsx` | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-*Task IDs are placeholders — the planner fills the real per-plan/per-task mapping.*
+
+**No Wave 0 gaps.** Every test file in the map already exists (`PracticeToggle.test.tsx`,
+`SettingsForm.stretch.test.tsx`, and all storage/domain/content/app suites) — each is extended
+in place. The RESEARCH.md "Wave 0 Gaps" entries are superseded: `PracticeToggle.test.tsx`
+exists, and `coerceStretchSettings` coverage is added to the existing `src/storage/practices.test.ts`
+rather than a new `stretchSettings.test.ts`.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `src/components/PracticeToggle.test.tsx` — stubs for STRETCH-01 (3 pills, order HRV·Stretch·Navi) and STRETCH-02 (treatment A default when `VITE_SWITCHER_TREATMENT` unset/invalid; treatment B renders glyphs)
-- [ ] `src/domain/stretchSettings.test.ts` (or extend an existing settings test) — stubs for `coerceStretchSettings` per-field exhaustiveness
-- [ ] Existing infrastructure (Vitest) covers all remaining phase requirements — storage/strings tests are extended in place, not newly created.
+- [x] `src/components/PracticeToggle.test.tsx` — already exists; extended in Plan 03 Task 2 for
+  STRETCH-01 (3 pills, order HRV·Stretch·Navi) and STRETCH-02 (treatment A default; treatment B glyphs).
+- [x] `coerceStretchSettings` per-field exhaustiveness — covered by extending the existing
+  `src/storage/practices.test.ts` in Plan 02 Task 2 (no new `stretchSettings.test.ts` needed).
+- [x] Existing Vitest infrastructure covers all remaining phase requirements — storage/domain/strings/app
+  tests are extended in place, not newly created.
 
 ---
 
@@ -69,11 +80,11 @@ created: 2026-05-18
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references — none exist (all test files present)
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** planner-approved 2026-05-18
