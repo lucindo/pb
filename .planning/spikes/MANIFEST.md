@@ -41,6 +41,12 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 - The **Learn screen** is not spiked — shared sections (Who is Forrest, Forrest
   Resources) plus per-practice sections (videos, description) is a content-architecture
   task, not a feasibility risk.
+- The **3-2-1 countdown beep** swaps to **Crisp ping** — 660 Hz (`fundamentalHzIn ×
+  1.5`), 0.10 s, peak gain 0.12, decay τ 0.04 — replacing the current 440 Hz / 0.12 s /
+  0.08 / 0.05 beep. Single beep, **no settings picker**: the operator auditioned the
+  alternatives and chose one. The swap is the three `COUNTDOWN_TICK_*` constants plus a
+  pitch ratio in `src/audio/nkCueSynth.ts` (`scheduleCountdownTick`), and applies to both
+  the HRV and Navi Kriya countdowns. (Spike 004, operator decision.)
 
 ## Spikes
 
@@ -49,4 +55,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 001 | multi-practice-shell  | standard   | Tabbed shell hosting Resonant + Navi Kriya keeps per-practice settings/stats isolated with shared chrome, without feeling bloated | VALIDATED | architecture, navigation, multi-practice |
 | 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | VALIDATED — winner: B (top segmented control) | navigation, ux, comparison |
 | 003 | navi-kriya-practice   | standard   | App-paced Navi Kriya counting practice — 100 front / 25 back OM per round, N rounds, marker + per-OM sounds — works as a usable in-app meditation | VALIDATED | practice, navi-kriya, audio, counting |
-| 004 | countdown-beep-alternatives | comparison | Auditioning the current 3-2-1 lead-in beep against alternatives surfaces a small loudness-comfortable set worth shipping as a settings picker | PENDING | audio, countdown, sound-design, cue, comparison |
+| 004 | countdown-beep-alternatives | comparison | Auditioning the current 3-2-1 lead-in beep against alternatives surfaces the beep worth shipping | VALIDATED — winner: Crisp ping | audio, countdown, sound-design, cue, comparison |

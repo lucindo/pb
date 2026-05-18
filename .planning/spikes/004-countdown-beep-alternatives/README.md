@@ -3,7 +3,7 @@ spike: 004
 name: countdown-beep-alternatives
 type: comparison
 validates: "Given the 3-2-1 session lead-in, when the user auditions the current beep against alternatives in one harness, then a small loudness-comfortable set worth shipping as a settings picker emerges"
-verdict: PENDING
+verdict: VALIDATED — winner: Crisp ping
 related: [003]
 tags: [audio, countdown, sound-design, cue, comparison]
 ---
@@ -97,10 +97,43 @@ volume to a normal listening level before auditioning.
 4. **Added deterministic loudness.** Because "a little louder" is the operator's
    actual ask, ear-based loudness was not good enough — added the
    `OfflineAudioContext` peak measurement so loudness is a number.
-5. _(Pending operator audition — verdict to be set from the checkpoint.)_
+5. **Operator audition.** The operator auditioned all seven and picked
+   **Crisp ping** — "feels like the right one." The follow-up scope question
+   resolved decisively: ship Crisp ping as the single beep, **no picker**. The
+   original "alternatives to choose from" hedge fell away once the right beep
+   was found — the harness did its job by surfacing it.
 
 ## Results
 
-_Pending operator audition. The harness is built and self-consistent; the
-verdict (which beeps ship in the picker, and whether the default gets nudged
-louder) is an operator sound-judgement call recorded at the checkpoint._
+**Verdict: VALIDATED — winner: Crisp ping.**
+
+The operator auditioned all seven variants and selected **Crisp ping**. When
+asked whether it should ship as the single beep or as the default of a settings
+picker, the operator chose **swap outright, no picker**.
+
+**Crisp ping parameters (the beep to ship):**
+
+| Parameter | Current (today) | Crisp ping (chosen) |
+|-----------|-----------------|---------------------|
+| Pitch     | 440 Hz (`fundamentalHzIn`) | 660 Hz — exactly `fundamentalHzIn × 1.5`, a perfect fifth up |
+| Duration  | 0.12 s | 0.10 s |
+| Peak gain | 0.08 | 0.12 |
+| Decay τ   | 0.05 | 0.04 |
+| Filter    | `preset.filterFreqHz` (per-timbre) | brighter — harness used a fixed 6000 Hz |
+
+**Surprises / notes for the build:**
+
+- 660 Hz is exactly 1.5× the 440 Hz `fundamentalHzIn` shared by all four
+  timbres — the pitch change can be expressed as a ratio, no magic number.
+- The harness brightened the lowpass to a fixed 6000 Hz for Crisp ping. The
+  production `scheduleCountdownTick` currently passes `preset.filterFreqHz`
+  (3000 Bowl / 5000 Bell / 7000 Chime / 8000 Sine). The "crisp" character is
+  carried mostly by pitch + peak + decay; the build should decide whether to
+  pin the countdown filter at ~6000 Hz or keep it per-timbre. Low-risk either
+  way — pitch is the dominant cue.
+- The beep is **shared by both HRV and Navi Kriya** countdowns, so the swap
+  lands in both practices from one change to the three `COUNTDOWN_TICK_*`
+  constants (plus the pitch ratio) in `src/audio/nkCueSynth.ts`.
+- The louder-only tweak was not the answer — the operator went past it to a
+  genuinely different beep. The crisper, higher beep reads as more alerting
+  without simply being louder.
