@@ -515,7 +515,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       toggleLabel: 'Trocar de prática',
       // Switcher labels — kept short so the toggle fits on mobile. The full
       // names live in *Heading (used for the app title + reset dialog).
-      resonantName: 'HRV',
+      resonantName: 'VFC',
       naviKriyaName: 'Navi',
       resonantHeading: 'Respiração Ressonante',
       naviKriyaHeading: 'Navi Kriya',

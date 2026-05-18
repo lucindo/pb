@@ -205,7 +205,9 @@ describe('Phase 30 practice string keys', () => {
   it('practice switcher labels are the short mobile-friendly names', () => {
     expect(UI_STRINGS.en.practice.resonantName).toBe('HRV')
     expect(UI_STRINGS.en.practice.naviKriyaName).toBe('Navi')
-    expect(UI_STRINGS['pt-BR'].practice.resonantName).toBe('HRV')
+    // pt-BR uses the localized abbreviation VFC to match the rest of the
+    // pt-BR UI (header "PRÁTICA VFC", title "Respiração VFC").
+    expect(UI_STRINGS['pt-BR'].practice.resonantName).toBe('VFC')
     expect(UI_STRINGS['pt-BR'].practice.naviKriyaName).toBe('Navi')
   })
 
