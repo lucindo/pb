@@ -218,6 +218,42 @@ describe('Phase 30 practice string keys', () => {
   })
 })
 
+describe('Phase 34 stretch practice string keys (STRETCH-06)', () => {
+  it('UI_STRINGS.en.practice.stretchName equals "Stretch" (D-10: label same as heading)', () => {
+    expect(UI_STRINGS.en.practice.stretchName).toBe('Stretch')
+  })
+
+  it('UI_STRINGS.en.practice.stretchHeading equals "Stretch" (D-10: same as label)', () => {
+    expect(UI_STRINGS.en.practice.stretchHeading).toBe('Stretch')
+  })
+
+  it('UI_STRINGS[\'pt-BR\'].practice.stretchName equals "Alongar"', () => {
+    expect(UI_STRINGS['pt-BR'].practice.stretchName).toBe('Alongar')
+  })
+
+  it('UI_STRINGS[\'pt-BR\'].practice.stretchHeading equals "Alongar"', () => {
+    expect(UI_STRINGS['pt-BR'].practice.stretchHeading).toBe('Alongar')
+  })
+
+  it('stretchHeader is a non-empty string in both locales', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      expect(typeof UI_STRINGS[locale].practice.stretchHeader).toBe('string')
+      expect(UI_STRINGS[locale].practice.stretchHeader.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('every locale has all three stretch fields present and non-empty (completeness)', () => {
+    const stretchFields = ['stretchName', 'stretchHeading', 'stretchHeader'] as const
+    for (const locale of LOCALE_OPTIONS) {
+      for (const field of stretchFields) {
+        const value = UI_STRINGS[locale].practice[field]
+        expect(typeof value, `practice.${field} in ${locale}`).toBe('string')
+        expect(value.length, `practice.${field} in ${locale} must be non-empty`).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
 describe('LOCALE_DISPLAY_NAMES (D-14 native endonyms)', () => {
   it('en label is "English"', () => {
     expect(LOCALE_DISPLAY_NAMES.en).toBe('English')
