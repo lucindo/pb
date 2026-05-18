@@ -35,7 +35,9 @@
 // SYNC WITH index.html FOUC SCRIPT — when bumping the :v1 suffix, update the
 // hardcoded 'hrv:state:v1' string in index.html's <head> theme-resolve script.
 export const STATE_KEY = 'hrv:state:v1'
-export const STATE_VERSION = 2 as const
+// Phase 34 STRETCH-03: bumped 2→3. The v2→v3 ladder in migrateEnvelope seeds the
+// practices.stretch slice from the resonant blob and zeroes stretch stats.
+export const STATE_VERSION = 3 as const
 
 export interface StorageDeps {
   now?: () => number       // D-18 — defaults to Date.now (consumed by stats.ts / format.ts)
@@ -101,6 +103,33 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
       },
       activePractice: 'resonant',
     }
+  }
+
+  if (fromVersion < 3) {
+    // v2→v3: create the stretch slice.
+    // Seed settings from the resonant blob (still unknown — coerceStretchSettings validates downstream).
+    // Leave the resonant blob untouched — orphan fields are fine (v1→v2 precedent).
+    // CRITICAL: Do NOT import ZERO_STATS from stats.ts — stats.ts imports from storage.ts,
+    //           creating a circular dep. Use the inline literal instead (RESEARCH Pitfall 1).
+    const existingPractices = (out.practices ?? {}) as Record<string, unknown>
+    const resonantSlice = (existingPractices['resonant'] ?? {}) as Record<string, unknown>
+    const resonantSettings = resonantSlice['settings']  // unknown — coerceStretchSettings validates downstream
+    out = {
+      ...out,
+      practices: {
+        ...existingPractices,
+        stretch: {
+          settings: resonantSettings,  // carries ramp fields; downstream coercer validates
+          stats: {                     // inline literal — no circular dep
+            totalSessions: 0,
+            totalElapsedSeconds: 0,
+            lastSessionAtMs: null,
+            lastSessionDurationSeconds: null,
+          },
+        },
+      },
+    }
+    // resonant slice is untouched — stretch ramp fields remain there as harmless orphans
   }
 
   return out
