@@ -378,7 +378,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       endSession: 'Encerrar sessão',
       cancel: 'Cancelar',
       pause: 'Pausar',
-      resume: 'Retomar',
+      resume: 'Continuar',
     },
     endSessionDialog: {
       title: 'Encerrar esta sessão?',
@@ -482,7 +482,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       lastSessionPrefix: (date, duration) => `Última sessão: ${date} · ${duration}`,
       totalSuffix: 'total',
       reset: 'Zerar',
-      roundsCompletedLabel: 'Rodadas',
+      roundsCompletedLabel: 'OMs na frente',
     },
     breathing: {
       inhale: 'Puxa',
@@ -496,9 +496,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resourcesHeading: 'Recursos do Forrest Knutson',
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
-      naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya', // TODO: native-speaker review
-      naviKriyaDescriptionSection1Title: 'O que é Navi Kriya', // TODO: native-speaker review
-      naviKriyaDescriptionSection2Title: 'Como este app guia a prática', // TODO: native-speaker review
+      naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya',
+      naviKriyaDescriptionSection1Title: 'O que é Navi Kriya',
+      naviKriyaDescriptionSection2Title: 'Como este app guia a prática',
     },
     install: {
       regionLabel: 'Instalar app',
@@ -517,7 +517,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       // names live in *Heading (used for the app title + reset dialog).
       resonantName: 'HRV',
       naviKriyaName: 'Navi',
-      resonantHeading: 'Resonant Breathing',
+      resonantHeading: 'Respiração Ressonante',
       naviKriyaHeading: 'Navi Kriya',
       naviKriyaHeader: 'Prática Navi',
       naviKriyaControlsPlaceholder: 'Controles em breve',
