@@ -2,40 +2,21 @@
 phase: 34-stretch-as-a-distinct-practice
 reviewed: 2026-05-18T00:00:00Z
 depth: standard
-files_reviewed: 27
+files_reviewed: 8
 files_reviewed_list:
-  - src/app/App.persistence.test.tsx
-  - src/app/App.session.test.tsx
-  - src/app/App.settings.test.tsx
   - src/app/App.tsx
-  - src/components/BooleanToggle.tsx
-  - src/components/LearnDialog.test.tsx
-  - src/components/LearnDialog.tsx
-  - src/components/PracticeToggle.test.tsx
-  - src/components/PracticeToggle.tsx
-  - src/components/SettingsForm.stretch.test.tsx
+  - src/app/App.session.test.tsx
   - src/components/SettingsForm.tsx
-  - src/content/strings.test.ts
-  - src/content/strings.ts
-  - src/domain/sessionController.test.ts
-  - src/domain/sessionController.ts
-  - src/domain/settings.test.ts
-  - src/domain/settings.ts
-  - src/domain/stretchRamp.test.ts
+  - src/components/SettingsForm.stretch.test.tsx
   - src/domain/stretchRamp.ts
-  - src/hooks/useSessionEngine.test.tsx
-  - src/hooks/useSessionEngine.ts
-  - src/storage/practices.test.ts
+  - src/domain/stretchRamp.test.ts
   - src/storage/practices.ts
-  - src/storage/settings.test.ts
-  - src/storage/settings.ts
-  - src/storage/storage.test.ts
-  - src/storage/storage.ts
+  - src/storage/practices.test.ts
 findings:
-  critical: 1
-  warning: 5
+  critical: 0
+  warning: 2
   info: 3
-  total: 9
+  total: 5
 status: issues_found
 ---
 
@@ -43,215 +24,139 @@ status: issues_found
 
 **Reviewed:** 2026-05-18T00:00:00Z
 **Depth:** standard
-**Files Reviewed:** 27
+**Files Reviewed:** 8
 **Status:** issues_found
 
 ## Summary
 
-Phase 34 promotes Stretch to a first-class practice: a `StretchSettings` slice in the
-per-practice envelope, a v2→v3 storage migration, dedicated stretch steppers in
-`SettingsForm`, and a stretch branch through `useSessionEngine` / `sessionController`.
+This review covers the Phase 34 gap-closure diff (base `b02dc82^`) spanning plans 34-07
+(UAT gap fixes) and 34-08 (verification blocker CR-01). The diff is small and tightly
+scoped: four UAT gaps (rounded Duration readout, in-session stepper gating, stretch
+end-confirmation dialog, top-anchored layout) plus the CR-01 cross-field BPM invariant
+enforced in `coerceStretchSettings` and `buildStretchSegments`.
 
-The session-controller and `stretchRamp` domain layers are solid and well-tested. The
-defects concentrate at the trust boundary between the non-throwing storage coercer
-(`coerceStretchSettings`) and the runtime consumers (`buildStretchSegments`,
-`SettingsForm`). The coercer enforces every field individually but does NOT enforce the
-cross-field invariant `targetBpm < initialBpm` that `validateStretchSettings` requires,
-and the App start path never calls `validateStretchSettings` at all. A drifted or
-tampered persisted slice therefore reaches the ramp engine unvalidated. Several
-secondary issues (empty stepper options, misleading migration seeding, dead code) are
-also flagged.
+The two highest-severity findings from the prior full-phase review are now resolved:
 
-## Critical Issues
+- **CR-01 (resolved):** `coerceStretchSettings` now enforces `targetBpm < initialBpm`,
+  resetting both BPM fields to defaults atomically when violated; `buildStretchSegments`
+  adds a defensive `RangeError` guard. The `!(targetBpm < initialBpm)` form correctly
+  traps NaN. Both paths are now test-covered.
+- **WR-01 (resolved):** `coerceStretchSettings` now restricts `initialBpm` to
+  `STRETCH_INITIAL_BPM_OPTIONS` (>= 1.5), so a coerced `initialBpm` of `1` can no longer
+  collapse the `targetBpm` picker to an empty option list.
 
-### CR-01: Coerced stretch settings bypass the `targetBpm < initialBpm` invariant — degenerate ramp reaches the engine
-
-**File:** `src/storage/practices.ts:89-99`, consumed by `src/app/App.tsx:147-148,225` and `src/domain/stretchRamp.ts:76`
-
-**Issue:** `coerceStretchSettings` validates `initialBpm` and `targetBpm` independently
-with `isValidBpm`, but never enforces the cross-field constraint `targetBpm < initialBpm`
-that `validateStretchSettings` (`src/domain/settings.ts:218`) treats as mandatory. Any
-persisted stretch slice with `targetBpm >= initialBpm` — produced by localStorage
-tampering, a future build's schema drift, or a stale cross-tab write — passes the coercer
-unchanged.
-
-That object then flows directly into the engine: `App.tsx` builds `activeStretchSettings`
-from `stretchSettings` state (seeded from `loadPractices().stretch.settings`) and hands it
-to `useSessionEngine`, which calls `startStretchSession(sSettings, ...)` →
-`buildStretchSegments(settings)`. `buildStretchSegments` only guards
-`rampDurationMinutes` (DS-WR-02 at line 82); it never re-validates the BPM relationship.
-With `bpmSpan = initialBpm - targetBpm <= 0`, `numSteps` collapses to `Math.max(1, ceil(<=0))`
-= 1 and the "ramp" produces a single segment at `initialBpm` followed by a cool-down at a
-*higher* `targetBpm` — a silently inverted ramp the user never configured. The
-`StretchSegment` table is structurally valid (no crash), so the corruption is invisible
-until the session runs backwards.
-
-The same gap means `SettingsForm` will render `computeStretchTotalMs`/steppers against an
-out-of-contract object. `validateStretchSettings` exists precisely to reject this state but
-is dead code on the stretch start path — nothing calls it (confirmed: no references in
-`App.tsx`, `useSessionEngine.ts`, or `sessionController.ts`).
-
-**Fix:** Make the coercer enforce the cross-field invariant, falling back both fields to
-defaults when violated:
-```ts
-export function coerceStretchSettings(raw: unknown): StretchSettings {
-  const r = asRecord(raw)
-  let initialBpm = isValidBpm(r.initialBpm) ? r.initialBpm : DEFAULT_STRETCH_SETTINGS.initialBpm
-  let targetBpm  = isValidBpm(r.targetBpm)  ? r.targetBpm  : DEFAULT_STRETCH_SETTINGS.targetBpm
-  // Cross-field invariant (parity with validateStretchSettings): a down-only ramp.
-  if (targetBpm >= initialBpm) {
-    initialBpm = DEFAULT_STRETCH_SETTINGS.initialBpm
-    targetBpm  = DEFAULT_STRETCH_SETTINGS.targetBpm
-  }
-  return {
-    ratio: isValidRatio(r.ratio) ? r.ratio : DEFAULT_STRETCH_SETTINGS.ratio,
-    initialBpm,
-    targetBpm,
-    warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)             ? r.warmUpMinutes       : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
-    rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes) ? r.rampDurationMinutes : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
-    coolDownMinutes:     isValidCoolDown(r.coolDownMinutes)         ? r.coolDownMinutes     : DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
-  }
-}
-```
-Additionally, defensively guard `buildStretchSegments` so the engine never silently builds
-an inverted ramp (mirror the existing DS-WR-02 `rampDurationMinutes` guard):
-```ts
-if (!(targetBpm < initialBpm)) {
-  throw new RangeError('targetBpm must be strictly below initialBpm')
-}
-```
+The four UAT fixes are minimal and correct. No blockers found. Two warnings concern the
+coupling of the stretch end-confirmation gate to an internal controller field and a
+brittle layout assertion in the new test. Three info items cover guard-strictness
+divergence and test fragility.
 
 ## Warnings
 
-### WR-01: `targetBpm` stepper can receive an empty `options` array
+### WR-01: Stretch end-confirmation dialog is gated on `state.stretchSegments`, coupling App to a controller-internal field
 
-**File:** `src/components/SettingsForm.tsx:82,111-117`
+**File:** `src/app/App.tsx:646-656`
 
-**Issue:** `targetBpmOptions` is `BPM_OPTIONS.filter(v => v < stretchSettings.initialBpm)`.
-The `initialBpm` *picker* is restricted to `STRETCH_INITIAL_BPM_OPTIONS` (>= 1.5), which
-guarantees at least the value `1` survives the filter. But `stretchSettings.initialBpm`
-comes from persisted state, and `coerceStretchSettings` validates `initialBpm` against the
-full `BPM_OPTIONS` (which includes `1`). A persisted/migrated `initialBpm` of `1` yields
-`targetBpmOptions = []` and `validTargets = []` at line 113, so `updateInitialBpm` calls
-`updateStretchSettings({ initialBpm, targetBpm: validTargets[validTargets.length - 1] })`
-with `targetBpm === undefined`. The `targetBpm` stepper then renders with zero options.
-The `Pitfall 4` comment on `STRETCH_INITIAL_BPM_OPTIONS` (`settings.ts:52-56`) assumes the
-picker is the only source of `initialBpm` — it is not.
+**Issue:** `requestEnd` now reads `state.stretchSegments` to decide whether to open the
+end-confirmation dialog (`state.lockedSettings.durationMinutes !== 'open-ended' ||
+state.stretchSegments !== null`). The `useCallback` dependency array is `[state, session,
+audioStop]`, so the closure is fresh — no stale-closure bug. The concern is design
+coupling: the App-layer dialog decision now depends on an internal field of the session
+controller whose "non-null exactly for a stretch session" contract is asserted only by an
+inline comment referencing `sessionController.ts:81-89`. If a future controller change
+populates `stretchSegments` for a non-stretch session, or nulls it mid-running, the
+dialog gating breaks silently with no test catching it. The condition also conflates two
+distinct concepts — "is timed" and "is a stretch session" — into one boolean expression.
 
-**Fix:** Coerce `initialBpm` against `STRETCH_INITIAL_BPM_OPTIONS` (not the full
-`BPM_OPTIONS`) in `coerceStretchSettings`, or guard `updateInitialBpm` /
-`targetBpmOptions` against an empty list and fall back to a default `targetBpm`.
+**Fix:** Prefer an explicit, intent-revealing signal. If the controller exposes a
+practice/kind discriminator, gate on that. Otherwise extract named locals so intent is
+self-documenting, and add a regression test asserting the dialog does NOT appear for a
+stretch session if `stretchSegments` is null (or document why that combination is
+unreachable):
+```ts
+const isStretchSession = state.stretchSegments !== null
+const isTimedSession = state.lockedSettings.durationMinutes !== 'open-ended'
+const requestEnd = useCallback(() => {
+  if (state.status === 'running' && (isTimedSession || isStretchSession)) {
+    setEndDialogOpen(true)
+    return
+  }
+  session.end()
+  void audioStop()
+}, [state, session, audioStop])
+```
 
-### WR-02: v2→v3 migration seeds stretch from resonant blob, but resonant no longer carries ramp fields
+### WR-02: GAP 4 layout test selects the root section by structural class matching — brittle and non-deterministic
 
-**File:** `src/storage/storage.ts:108-133`
+**File:** `src/app/App.session.test.tsx` (GAP 4 test — `root layout section is top-anchored`)
 
-**Issue:** The v2→v3 ladder seeds `practices.stretch.settings` from
-`resonantSlice['settings']` — "carries ramp fields; downstream coercer validates" (line
-122). This was true while resonant `SessionSettings` still embedded
-`initialBpm`/`targetBpm`/`warmUpMinutes`/etc. (pre-Phase-34). But Phase 34 D-01/D-02
-explicitly trimmed `SessionSettings` to 3 fields (`settings.ts:17-23`) and removed those
-fields from `coerceSettings` (`settings.ts:8-9`). For any user who first ran a Phase 34+
-build, the resonant blob is `{bpm, ratio, durationMinutes}` only — it has no ramp fields
-to carry. The migration therefore always produces a stretch slice that
-`coerceStretchSettings` fills entirely from `DEFAULT_STRETCH_SETTINGS` (except `ratio`,
-which is shared). The seeding comment is now misleading. Worse, a user upgrading from a
-*pre-trim* v2 envelope whose resonant blob still carries orphaned ramp fields can have
-`targetBpm >= initialBpm` carried straight into the stretch slice (compounds CR-01).
+**Issue:** The test locates the root section via `document.querySelectorAll('section')`
+then `.find(s => s.classList.contains('flex') && s.classList.contains('flex-col'))`. It
+picks the *first* `<section>` carrying both `flex` and `flex-col`. If any other section
+in the tree (now or in a future change) also uses a `flex flex-col` layout, the test
+silently asserts against the wrong element while still passing. The test also pins raw
+Tailwind class names (`justify-start`/`justify-center`), so it breaks on any layout
+refactor even when the visual intent (top-anchored) is preserved. This is a low-value,
+high-fragility test pinning an implementation detail.
 
-**Fix:** Either drop the seeding pretense and seed `stretch.settings` as `undefined`
-(coercer supplies the documented defaults), or explicitly map only the ramp fields known
-to have existed in pre-trim v2 data. Update the comment to match reality.
-
-### WR-03: Early-ended stretch sessions are recorded with no integration-test coverage
-
-**File:** `src/storage/practices.ts:207-236`, `src/app/App.tsx:799-808`
-
-**Issue:** `recordStretchSession` is reached from the leave-running cleanup effect for any
-status transition out of `running`, including manual End (`status: 'idle'`) with
-`isComplete: false` — which records `snap.lastElapsedMs` (the last rAF reading). For a
-stretch session ended after, e.g., 45s, the 30s `COUNT_THRESHOLD_MS` gate lets that count
-as a recorded session. This is parity with resonant behaviour, so it is likely intentional
-— but the `App.tsx:803-806` comment conflates resonant and stretch in one branch, and no
-App-level test exercises an early-ended stretch session's recorded elapsed value (the
-practices test only calls `recordStretchSession(40_000, false, ...)` in isolation).
-
-**Fix:** Add an App-level test that ends a stretch session before completion and asserts
-the recorded `stretchStats`. If early-end stretch sessions should NOT count, gate the
-`recordStretchSession` call on `isComplete` in the `activePractice === 'stretch'` branch.
-
-### WR-04: `LearnDialog` stretch fallback is silent and the `as keyof typeof` cast masks a future missing key
-
-**File:** `src/components/LearnDialog.tsx:90-95`
-
-**Issue:** `practiceContentKey = activePractice === 'stretch' ? 'resonant' : activePractice`
-silently substitutes resonant Learn content for the stretch practice, and
-`practiceContent = practices[practiceContentKey as keyof typeof practices]` uses an `as`
-cast. A stretch user opening "About this practice" sees resonant copy with no signal. The
-dialog advertises itself as practice-aware (`activePractice` prop, D-07/D-08) but is not
-for stretch. When stretch Learn content is later added, the `as keyof typeof` cast will
-suppress the type error that would otherwise flag the missing `stretch` key, so a
-forgotten ternary update fails silently.
-
-**Fix:** Replace the `as keyof typeof` cast with an explicit lookup that fails the
-type-check when `practices` gains a `stretch` key, add a `// TODO(phase-3x)` marker, and
-track the missing stretch Learn content as an explicit follow-up rather than an inline
-silent fallback.
-
-### WR-05: `extendTimedSession` stretch rejection depends on undocumented guard ordering
-
-**File:** `src/domain/sessionController.ts:102-124`
-
-**Issue:** The stretch guard `if (state.stretchSegments !== null) throw` is correct for
-sessions created by `startStretchSession` (which always sets a non-null table). It must
-run *before* the `durationMinutes === 'open-ended'` check because a stretch session's
-`lockedSettings` is the synthetic lead-in with `durationMinutes: 'open-ended'`
-(`sessionController.ts:74-78`); a different ordering would route a stretch state into the
-open-ended / `DURATION_OPTIONS` branches instead of the intended rejection. The ordering
-is load-bearing but undocumented, and `useSessionEngine.extendDuration` swallows the
-`RangeError` (`useSessionEngine.ts:253-256`), so a wrong branch would fail silently.
-
-**Fix:** Document that the `stretchSegments` check MUST remain the first guard, and add a
-unit test asserting `extendTimedSession` on a stretch state throws regardless of
-`lockedSettings.durationMinutes`.
+**Fix:** Give the root section a stable selector hook (`data-testid="app-root-section"`
+or an accessible landmark role/label) and select on that so the assertion is
+deterministic:
+```ts
+const rootSection = screen.getByTestId('app-root-section')
+expect(rootSection).toHaveClass('justify-start')
+expect(rootSection).not.toHaveClass('justify-center')
+```
 
 ## Info
 
-### IN-01: Temporary 1-minute duration option still shipped
+### IN-01: `buildStretchSegments` and `coerceStretchSettings` CR-01 guards diverge in strictness — document the asymmetry
 
-**File:** `src/domain/settings.ts:60-63`
+**File:** `src/domain/stretchRamp.ts:90-92` and `src/storage/practices.ts:97-114`
 
-**Issue:** `DURATION_OPTIONS` includes a `1` entry flagged "TEMPORARY (testing aid) ...
-Remove before release." It is unrelated to Phase 34 but is in a reviewed file and remains
-shipped, widening the resonant duration picker for end users.
+**Issue:** `buildStretchSegments` rejects `!(targetBpm < initialBpm)` by throwing.
+`coerceStretchSettings` enforces the same cross-field invariant but restricts only
+`initialBpm` to `STRETCH_INITIAL_BPM_OPTIONS`; `targetBpm` is gated only by `isValidBpm`
+(full `BPM_OPTIONS`, which includes `1`). This is not a defect — any BPM strictly below a
+valid `initialBpm` is a legitimate ramp endpoint, so the engine accepts it — but the
+asymmetry (initialBpm option-restricted, targetBpm not) is undocumented beyond the
+WR-01-rationale comment and could surprise a future maintainer reading either function in
+isolation.
 
-**Fix:** Remove the `1` entry before release, or move it behind a DEV-only guard.
+**Fix:** Add a one-line comment in `coerceStretchSettings` stating that `targetBpm` is
+intentionally only `isValidBpm`-gated (not option-restricted) because the cross-field
+check below guarantees it lands strictly below a valid `initialBpm`.
 
-### IN-02: `recordStretchSession` duplicates `recordResonantSession` verbatim
+### IN-02: GAP 1 rounding fix has no tolerance assertion against the true completion time
 
-**File:** `src/storage/practices.ts:171-236`
+**File:** `src/components/SettingsForm.tsx:86-89`
 
-**Issue:** `recordResonantSession` and `recordStretchSession` are byte-identical except
-for the `resonant`/`stretch` slice key; `recordNaviKriyaSession` is a near-identical third
-copy. Three copies of the threshold / finite-guard / write logic invite drift.
+**Issue:** `stretchDurationText` now applies `Math.round(stretchTotalMs / 60_000)`.
+`computeStretchTotalMs` returns the snapped segment table's final `endMs`, which is not
+whole-minute-aligned, so the rounded display can differ from the actual session length by
+up to ~30s. `getStretchFrame`'s `isComplete` still fires at the true unrounded `endMs`.
+This is acceptable and acknowledged in the code comment, but the GAP 1 tests only assert
+integer-ness of the displayed value — none assert it stays within tolerance of the real
+completion time, so a future change to the snapping logic that produces a wildly-off
+display would not be caught.
 
-**Fix:** Extract a `recordPracticeSession(practice: 'resonant' | 'stretch', elapsedMs,
-isComplete, deps)` helper; keep the named exports as thin wrappers if the public API must
-stay stable.
+**Fix:** Optional — add an assertion that `Math.abs(stretchTotalMs / 60_000 -
+roundedMinutes) < 1` so the display cannot silently drift far from the true duration.
 
-### IN-03: Ramp-duration label value collides with the practice name
+### IN-03: GAP 2 `STRETCH_GROUPS` test constant is indirected through label strings — silent drift risk
 
-**File:** `src/content/strings.ts:272,352-354`
+**File:** `src/components/SettingsForm.stretch.test.tsx:37`
 
-**Issue:** `settingsForm.rampDurationLabel` has the literal value `'Stretch'`, identical to
-`practice.stretchName: 'Stretch'`. The stretch test file already works around this by
-querying steppers via `role="group"` (`SettingsForm.stretch.test.tsx:34-37`). A label
-string equal to the practice name is a maintainability hazard for any future text-based
-assertion or screen-reader audit. (PT-BR avoids the collision: `rampDurationLabel:
-'Progressão'` vs `stretchName: 'Alongar'`.)
+**Issue:** `STRETCH_GROUPS = ['Start BPM', 'Target BPM', 'Warm-up', 'Stretch',
+'Settle']`. The stretch branch renders six steppers plus Ratio and Duration; the GAP 2
+hidden/visible tests iterate `STRETCH_GROUPS` and separately assert `Ratio` and
+`Duration`. The group names are hard-coded label strings rather than derived from the
+`strings` source the component consumes. If a label string changes, `STRETCH_GROUPS`
+drifts silently and the GAP 2 visibility test passes while checking fewer (or wrong)
+groups than intended.
 
-**Fix:** Use a distinct EN label for the ramp-duration stepper (e.g. "Ramp") so it does
-not collide with the practice name.
+**Fix:** Derive the expected group list from the same `strings` source the component
+uses, or add a count assertion (`expect(screen.queryAllByRole('group')).toHaveLength(N)`)
+so the test fails loudly when a stepper is added or removed.
 
 ---
 
