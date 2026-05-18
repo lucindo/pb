@@ -82,6 +82,14 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
   if (!Number.isFinite(rampDurationMinutes) || rampDurationMinutes <= 0) {
     throw new RangeError('rampDurationMinutes must be a positive finite number')
   }
+  // CR-01 defensive guard (mirrors the rampDurationMinutes guard above): the BPM
+  // relationship must be validated up front so the engine never silently collapses
+  // an inverted or zero-span ramp to one segment via the Math.max(1, …) numSteps
+  // floor below (defense-in-depth behind coerceStretchSettings). The !(…<…) form
+  // also trips for NaN BPMs.
+  if (!(targetBpm < initialBpm)) {
+    throw new RangeError('targetBpm must be strictly below initialBpm')
+  }
   // D-02: ratio is read from settings.ratio internally
   const ratioParts = RATIO_PARTS[settings.ratio]
   const segments: StretchSegment[] = []
@@ -120,8 +128,10 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
   segments.push(makeSegment(initialBpm, warmUpMinutes * 60_000, 'hold-initial'))
 
   // Step 2: ramp — each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04).
-  // Math.max(1, …) guards a degenerate initialBpm === targetBpm call (validateSettings
-  // rejects it upstream, but the engine must not divide by a zero step count).
+  // Math.max(1, …) is a defense-in-depth floor for a legitimate near-zero-span ramp
+  // (bpmSpan tiny but positive). The BPM relationship is now validated up front by the
+  // CR-01 guard above, so this floor is no longer the primary protection against an
+  // inverted or zero-span ramp.
   const bpmSpan = initialBpm - targetBpm
   const numSteps = Math.max(1, Math.ceil(bpmSpan / 0.4999))
   const stepRequestedMs = (rampDurationMinutes * 60_000) / numSteps
