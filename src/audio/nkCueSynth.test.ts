@@ -81,6 +81,24 @@ describe('nkCueSynth', () => {
     expect(endHandle.cleanupAt).toBeGreaterThan(endHandle.scheduledAt)
   })
 
+  // -- Spike 005: end chord retuned to "Warm pad fade" -----------------------
+
+  it('scheduleEndChord rings out long enough for the Warm pad fade envelope (Spike 005)', () => {
+    const ac = createAc()
+    const when = 1.0
+    const handle = scheduleEndChord(ac, when, ac.destination, 'bowl')
+    // Warm pad fade is ~5 s; the pre-Spike-005 strike chord was 1.8 s. A span
+    // well past 4 s proves the pad-length retune is in effect.
+    expect(handle.cleanupAt - handle.scheduledAt).toBeGreaterThan(4)
+  })
+
+  it('scheduleEndChord does not throw for any TimbreId (pad envelope path)', () => {
+    const ac = createAc()
+    for (const timbre of TIMBRE_OPTIONS) {
+      expect(() => scheduleEndChord(ac, 1.0, ac.destination, timbre)).not.toThrow()
+    }
+  })
+
   // -- D-07: tick is soft and short (barely-there) ---------------------------
 
   it('scheduleNKTick returns a valid CueHandle', () => {

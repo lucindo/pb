@@ -10,7 +10,8 @@
 //       iterations — a two-tone gesture, then a pitch glide — both read as
 //       gimmicky next to the rest of the app.)
 // D-07: Per-OM tick = soft, short, barely-there tone (quiet + short duration).
-// D-08: End chord = resolved low three-note chord that rings out.
+// D-08: End chord = resolved low three-note chord. Spike 005 ("Warm pad fade")
+//       gave it a strike-free pad envelope — fades in, holds, fades out (~5 s).
 //
 // T-31-04: Every node disconnects on its 'ended' event ({ once: true }) — no leaked
 //   nodes over a long session (375+ ticks). Same discipline as cueSynth.ts AUDIO-04.
@@ -47,13 +48,18 @@ const COUNTDOWN_TICK_DECAY_TAU = 0.04
 // is 440 Hz across all timbres → 660 Hz). Expressed as a ratio so it tracks any
 // future per-timbre fundamental rather than hard-coding 660.
 const COUNTDOWN_TICK_PITCH_RATIO = 1.5
-// D-08 end chord: three tones forming a resolved low chord, rings out. This is
-// the shared practice-ending sound — both the Navi Kriya completion and the
-// HRV session completion play scheduleEndChord, so a future change lands in
-// both practices at once.
-const END_CHORD_DURATION_SEC = 1.8
-const END_CHORD_PEAK_GAIN = 0.12
-const END_CHORD_DECAY_TAU = 0.8
+// D-08 end chord: three tones forming a resolved low chord. This is the shared
+// practice-ending sound — both the Navi Kriya completion and the HRV session
+// completion play scheduleEndChord, so a change lands in both practices at once.
+//
+// Spike 005 ("Warm pad fade" — operator audition) retuned it from the original
+// 1.8 s percussive strike to a strike-free pad: fade in over END_CHORD_ATTACK_SEC,
+// hold, then a linear fade out over END_CHORD_RELEASE_SEC, ~5 s total. There is
+// no exponential decay any more — END_CHORD_DECAY_TAU is retired.
+const END_CHORD_DURATION_SEC = 5.0
+const END_CHORD_PEAK_GAIN = 0.11
+const END_CHORD_ATTACK_SEC = 0.9 // gain ramps 0 → peak over this (the fade-in)
+const END_CHORD_RELEASE_SEC = 1.4 // gain ramps peak → 0 over the last of the chord (the fade-out)
 // Low chord pitch ratios relative to preset fundamentalHzOut (the lower pitch):
 //   root (×1.0), major third (×1.25), perfect fifth (×1.5) — C major chord shape
 const END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
@@ -61,10 +67,26 @@ const END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
 // ---
 
 /**
+ * Pad envelope spec — passed to buildNKToneNodes in place of a decay τ to get
+ * a strike-free fade-in / hold / fade-out shape instead of a percussive strike.
+ * Used by the Spike 005 "Warm pad fade" end chord.
+ */
+interface PadEnvelope {
+  attackSec: number // gain ramps 0 → peak over this, starting at `when`
+  releaseSec: number // gain ramps peak → 0 over the last releaseSec of the tone
+}
+
+/**
  * Private helper: build a single oscillator → partialGain → filter → envelope chain.
  * Schedules the tone at `when` for `durationSec`, connects to `destination`, and
  * returns the constructed nodes for the caller to attach cleanup listeners.
  * Caller is responsible for registering 'ended' listeners (T-31-04).
+ *
+ * `envelopeSpec` selects the gain shape:
+ *   - a `number` → strike: instant attack to peak, exponential decay (τ = the number).
+ *   - a `PadEnvelope` → pad: linear fade in, hold, linear fade out. No strike.
+ * Strike is the original behaviour — the tick/countdown callers pass a number and
+ * are byte-identical to before this overload existed.
  */
 function buildNKToneNodes(
   audioCtx: AudioContext,
@@ -74,7 +96,7 @@ function buildNKToneNodes(
   destination: AudioNode,
   preset: TimbrePreset,
   peakGain: number,
-  decayTau: number,
+  envelopeSpec: number | PadEnvelope,
 ): { osc: OscillatorNode; partialGain: GainNode; filter: BiquadFilterNode; envelope: GainNode; stopAt: number; cleanupAt: number } {
   const filter = audioCtx.createBiquadFilter()
   filter.type = 'lowpass'
@@ -82,8 +104,20 @@ function buildNKToneNodes(
   filter.Q.value = preset.filterQ
 
   const envelope = audioCtx.createGain()
-  envelope.gain.setValueAtTime(peakGain, when)
-  envelope.gain.setTargetAtTime(NEAR_SILENCE, when + STRIKE_RAMP_OFFSET, decayTau)
+  if (typeof envelopeSpec === 'number') {
+    // Strike: instant attack, exponential decay (verbatim pre-Spike-005 behaviour).
+    envelope.gain.setValueAtTime(peakGain, when)
+    envelope.gain.setTargetAtTime(NEAR_SILENCE, when + STRIKE_RAMP_OFFSET, envelopeSpec)
+  } else {
+    // Pad: linear fade in → hold → linear fade out (Spike 005 "Warm pad fade").
+    const attackEnd = when + envelopeSpec.attackSec
+    // Clamp the fade-out start so it never precedes the fade-in end on a short tone.
+    const releaseStart = Math.max(attackEnd, when + durationSec - envelopeSpec.releaseSec)
+    envelope.gain.setValueAtTime(NEAR_SILENCE, when)
+    envelope.gain.linearRampToValueAtTime(peakGain, attackEnd)
+    envelope.gain.setValueAtTime(peakGain, releaseStart)
+    envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, when + durationSec)
+  }
 
   const stopAt = when + durationSec
   const cleanupAt = when + durationSec + CLEANUP_PADDING_SEC
@@ -197,13 +231,14 @@ export function scheduleCountdownTick(
 }
 
 /**
- * D-08: Resolved low multi-note chord that rings out — a clear, restful
- * session/practice-ending sound. SHARED: both the Navi Kriya completion and
- * the HRV session completion play this, so the ending sound stays identical
- * across practices and a future change applies to both.
+ * D-08: Resolved low multi-note chord — a clear, restful session/practice-ending
+ * sound. SHARED: both the Navi Kriya completion and the HRV session completion
+ * play this, so the ending sound stays identical across practices and a change
+ * applies to both.
  * Three tones (root, major-third, fifth) based on preset fundamentalHzOut,
- * scheduled simultaneously at `when` with a long decay. Returns the handle of
- * the longest-lived tone.
+ * scheduled simultaneously at `when`. Spike 005 ("Warm pad fade") gives it a
+ * strike-free pad envelope — fades in, holds, fades out over ~5 s. Returns the
+ * handle of the longest-lived tone.
  */
 export function scheduleEndChord(
   audioCtx: AudioContext,
@@ -218,7 +253,8 @@ export function scheduleEndChord(
   for (const ratio of END_CHORD_RATIOS) {
     const t = buildNKToneNodes(
       audioCtx, preset.fundamentalHzOut * ratio, END_CHORD_DURATION_SEC, when,
-      destination, preset, END_CHORD_PEAK_GAIN, END_CHORD_DECAY_TAU,
+      destination, preset, END_CHORD_PEAK_GAIN,
+      { attackSec: END_CHORD_ATTACK_SEC, releaseSec: END_CHORD_RELEASE_SEC },
     )
     // T-31-04: disconnect each chord tone's nodes on 'ended'
     t.osc.addEventListener('ended', () => {

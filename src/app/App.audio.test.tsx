@@ -237,10 +237,11 @@ describe('App — audio cues (Phase 3)', () => {
     expect(acInstance).not.toBeNull()
 
     // HRV parity with Navi: completion plays the shared end chord, and the
-    // engine defers the AudioContext teardown until the chord rings out
-    // (~2s). Advance past that ring-out window so close() reaches audioCtx.close().
+    // engine defers the AudioContext teardown until the chord rings out.
+    // Spike 005 retuned the end chord to the ~5s "Warm pad fade", so advance
+    // past that longer ring-out window before close() reaches audioCtx.close().
     act(() => {
-      vi.advanceTimersByTime(5_000)
+      vi.advanceTimersByTime(7_000)
     })
     await flushMicrotasks()
 
