@@ -387,6 +387,39 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
     expect(out['polluted']).toBeUndefined()
     expect((Object.prototype as Record<string, unknown>)['polluted']).toBeUndefined()
   })
+
+  // CR-01 regression: cross-field invariant enforcement
+  it('CR-01: resets BOTH BPM fields to defaults when targetBpm > initialBpm (inverted ramp)', () => {
+    // A persisted slice where targetBpm > initialBpm would silently produce an inverted ramp
+    const result = coerceStretchSettings({ initialBpm: 4, targetBpm: 5, ratio: '40:60', warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
+    expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
+    expect(result.targetBpm).toBe(DEFAULT_STRETCH_SETTINGS.targetBpm)
+    // The invariant must hold after coercion
+    expect(result.targetBpm).toBeLessThan(result.initialBpm)
+  })
+
+  it('CR-01: resets BOTH BPM fields to defaults when targetBpm === initialBpm (equal — not a down ramp)', () => {
+    // An equal-BPM slice is also invalid — the ramp span is zero
+    const result = coerceStretchSettings({ initialBpm: 4, targetBpm: 4, ratio: '40:60', warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
+    expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
+    expect(result.targetBpm).toBe(DEFAULT_STRETCH_SETTINGS.targetBpm)
+  })
+
+  it('CR-01: resets initialBpm to default when raw initialBpm is 1 (valid in BPM_OPTIONS but not STRETCH_INITIAL_BPM_OPTIONS)', () => {
+    // initialBpm: 1 is in BPM_OPTIONS but not STRETCH_INITIAL_BPM_OPTIONS (< 1.5).
+    // A coerced initialBpm of 1 would collapse the targetBpm picker to an empty list.
+    const result = coerceStretchSettings({ initialBpm: 1, targetBpm: 0.5, ratio: '40:60', warmUpMinutes: 5, rampDurationMinutes: 5, coolDownMinutes: 5 })
+    expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
+  })
+
+  it('CR-01: a fully-valid down-ramp with STRETCH_INITIAL_BPM_OPTIONS initialBpm is returned unchanged', () => {
+    // Regression: valid slices must not be affected by the new cross-field check
+    const valid = { ratio: '30:70' as const, initialBpm: 6, targetBpm: 4.5, warmUpMinutes: 10, rampDurationMinutes: 10, coolDownMinutes: 10 }
+    const result = coerceStretchSettings(valid)
+    expect(result.initialBpm).toBe(6)
+    expect(result.targetBpm).toBe(4.5)
+    expect(result.ratio).toBe('30:70')
+  })
 })
 
 describe('saveStretchSettings / loadPractices round-trip (Phase 34 T-34-02)', () => {
