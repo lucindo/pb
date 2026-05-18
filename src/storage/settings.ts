@@ -41,15 +41,6 @@ export function coerceMute(raw: unknown): boolean {
   return typeof raw === 'boolean' ? raw : false  // D-07 seed default + D-15 type check
 }
 
-export function loadSettings(deps: StorageDeps = {}): SessionSettings {
-  return coerceSettings(readEnvelope(deps).settings)
-}
-
-export function saveSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  writeEnvelope({ ...env, settings }, deps)
-}
-
 export function loadMute(deps: StorageDeps = {}): boolean {
   return coerceMute(readEnvelope(deps).mute)
 }

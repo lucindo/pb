@@ -3,11 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   coerceSettings,
   coerceMute,
-  loadSettings,
-  saveSettings,
   loadMute,
   saveMute,
 } from './settings'
+import { saveResonantSettings } from './practices'
 import { STATE_KEY } from './storage'
 import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type SessionSettings } from '../domain/settings'
 
@@ -145,48 +144,6 @@ describe('coerceMute (D-14 / D-07)', () => {
   })
 })
 
-describe('loadSettings / saveSettings round-trip', () => {
-  it('returns DEFAULT_SETTINGS when nothing is stored (LOCL-01)', () => {
-    expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
-  })
-
-  it('round-trips a valid settings object', () => {
-    const next: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50', durationMinutes: 5 }
-    saveSettings(next)
-    expect(loadSettings()).toEqual(next)
-  })
-
-  it('round-trips a full stretch-mode settings object byte-equal (STRETCH-07)', () => {
-    saveSettings(STRETCH_SETTINGS)
-    expect(loadSettings()).toEqual(STRETCH_SETTINGS)
-  })
-
-  it('preserves mute and stats fields when saving settings (envelope merge)', () => {
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 1,
-      mute: true,
-      stats: { totalSessions: 3, totalElapsedSeconds: 120, lastSessionAtMs: 1000, lastSessionDurationSeconds: 60 },
-    }))
-    saveSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
-    // Reason: STATE_KEY is always present after saveSettings; non-null asserted by storage contract.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
-    expect(raw).toMatchObject({ mute: true, stats: { totalSessions: 3 } })
-  })
-
-  it('does not throw when underlying setItem throws (D-16)', () => {
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('quota')
-    })
-    expect(() => { saveSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 }) }).not.toThrow()
-  })
-
-  it('falls back to defaults when stored JSON is corrupt (D-17)', () => {
-    window.localStorage.setItem(STATE_KEY, '{not-json')
-    expect(loadSettings()).toEqual(DEFAULT_SETTINGS)
-  })
-})
-
 describe('loadMute / saveMute round-trip', () => {
   it('returns false when nothing is stored (D-07 seed)', () => {
     expect(loadMute()).toBe(false)
@@ -199,12 +156,15 @@ describe('loadMute / saveMute round-trip', () => {
     expect(loadMute()).toBe(false)
   })
 
-  it('preserves settings + stats fields when saving mute (envelope merge)', () => {
-    saveSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
+  it('preserves resonant settings + mute when saving mute (envelope merge)', () => {
+    saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
     saveMute(true)
     // Reason: STATE_KEY is always present after saveMute; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
-    expect(raw).toMatchObject({ settings: { bpm: 4, ratio: '40:60', durationMinutes: 5 }, mute: true })
+    const practices = raw['practices'] as Record<string, unknown> | undefined
+    const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
+    expect(resonant?.['settings']).toMatchObject({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    expect(raw).toMatchObject({ mute: true })
   })
 })

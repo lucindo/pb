@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { coerceStats, loadStats, recordSession, resetStats, COUNT_THRESHOLD_MS } from './stats'
-import { saveSettings, saveMute, loadSettings, loadMute } from './settings'
+import { saveMute, loadMute } from './settings'
+import { saveResonantSettings, loadPractices } from './practices'
 import { STATE_KEY } from './storage'
 import { DEFAULT_SETTINGS } from '../domain/settings'
 
@@ -94,9 +95,9 @@ describe('recordSession aggregation (D-02)', () => {
 })
 
 describe('resetStats (D-11)', () => {
-  it('wipes stats subtree only — settings and mute survive', () => {
+  it('wipes stats subtree only — resonant settings and mute survive', () => {
     const savedSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50' as const, durationMinutes: 5 as const }
-    saveSettings(savedSettings)
+    saveResonantSettings(savedSettings)
     saveMute(true)
     recordSession(60_000, true, { now: () => 1_700_000_000_000 })
     expect(loadStats().totalSessions).toBe(1)
@@ -104,12 +105,12 @@ describe('resetStats (D-11)', () => {
     resetStats()
 
     expect(loadStats()).toEqual(ZERO)
-    expect(loadSettings()).toEqual(savedSettings)
+    expect(loadPractices().resonant.settings).toEqual(savedSettings)
     expect(loadMute()).toBe(true)
   })
 
   it('does not throw when storage write fails (D-16)', () => {
-    saveSettings(DEFAULT_SETTINGS)
+    saveResonantSettings(DEFAULT_SETTINGS)
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })

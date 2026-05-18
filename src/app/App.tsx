@@ -47,7 +47,6 @@ import {
   SAFE_LEAD_SEC,
 } from '../audio/audioEngine'
 import {
-  loadSettings,
   loadMute,
   saveMute,
   loadPrefs,
@@ -105,9 +104,12 @@ export function computeBoundaryAudioOffsets(
 }
 
 export default function App() {
-  // Phase 4 LOCL-01: restore persisted settings + mute at mount.
+  // Phase 4 LOCL-01 / Phase 33 PRACTICE-02: restore persisted settings + mute at mount.
   // useMemo([]) ensures one synchronous read per app load, before children mount.
-  const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
+  // D-01: seed from the per-practice envelope (practices.resonant.settings) — not the
+  // abandoned flat env.settings field written before Phase 31 CR-01 retargeted the write
+  // path to saveResonantSettings. Mirrors the NK symmetry at lines ~144-146.
+  const initialSettings = useMemo<SessionSettings>(() => loadPractices().resonant.settings, [])
   const initialMute = useMemo<boolean>(() => loadMute(), [])
   // Phase 30 PRACTICE-02/04: restore the per-practice envelope at mount. The
   // v1→v2 migration (plan 30-03) runs inside loadPractices so a returning

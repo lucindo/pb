@@ -4,8 +4,8 @@ milestone: v1.5
 milestone_name: Navi Kriya Practice
 status: executing
 stopped_at: Phase 33 context gathered
-last_updated: "2026-05-18T05:30:38.253Z"
-last_activity: 2026-05-18 -- Phase 33 planning complete
+last_updated: "2026-05-18T05:32:22.428Z"
+last_activity: 2026-05-18 -- Phase 33 execution started
 progress:
   total_phases: 4
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-18 — Phase 32 complete; v1.5 all phases done)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Milestone v1.5 complete — ready to close
+**Current focus:** Phase 33 — close-gap-practice-02-resonant-settings-read-write-split-bra
 
 ## Current Position
 
-Phase: 32 (complete — last phase of v1.5)
-Plan: 3/3 complete
-Status: Ready to execute
-Last activity: 2026-05-18 -- Phase 33 planning complete
+Phase: 33 (close-gap-practice-02-resonant-settings-read-write-split-bra) — EXECUTING
+Plan: 1 of 1
+Status: Executing Phase 33
+Last activity: 2026-05-18 -- Phase 33 execution started
 Progress: [██████████] 100% — 3/3 phases complete
 
 ## Performance Metrics

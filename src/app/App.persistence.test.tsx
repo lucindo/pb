@@ -453,3 +453,63 @@ describe('STORAGE-03 — cross-tab stats refresh', () => {
     expect(screen.queryByText(/3 sessions/)).not.toBeInTheDocument()
   })
 })
+
+// ---------------------------------------------------------------------------
+// PRACTICE-02 — Resonant settings survive remount (Phase 33 gap closure)
+//
+// These tests verify the read-path fix from Phase 33: App.tsx:110 seeds
+// initialSettings from practices.resonant.settings (per-practice envelope),
+// NOT the abandoned flat env.settings field. Both scenarios would FAIL if
+// Task 1's change were reverted (i.e., if loadSettings() were restored at
+// line 110).
+// ---------------------------------------------------------------------------
+
+// Seed a v2 envelope directly — flat env.settings is absent (fresh-v2 user).
+// version: 2 ensures migrateEnvelope skips the v1→v2 ladder so the test
+// exercises the post-fix read path directly, without relying on migration.
+function seedV2Envelope(resonantSettings: { bpm: number; ratio: string; durationMinutes: number }) {
+  window.localStorage.setItem(STATE_KEY, JSON.stringify({
+    version: 2,
+    practices: {
+      resonant: { settings: resonantSettings, stats: null },
+      naviKriya: { settings: null, stats: null },
+    },
+    activePractice: 'resonant',
+  }))
+}
+
+describe('PRACTICE-02 — resonant settings survive remount', () => {
+  it('fresh-v2 user: resonant settings from practices.resonant.settings survive reload', () => {
+    // Seed v2 envelope: practices.resonant.settings holds a non-default BPM.
+    // Flat env.settings is absent (fresh post-Phase-30 user, never had it).
+    // App.tsx:110 must read from practices.resonant.settings, not the absent flat field.
+    seedV2Envelope({ bpm: 4, ratio: '50:50', durationMinutes: 5 })
+    render(<App />)
+    expect(screen.getByText('4 BPM')).toBeInTheDocument()
+    expect(screen.getByText('50:50')).toBeInTheDocument()
+    expect(screen.getByText('5 min')).toBeInTheDocument()
+  })
+
+  it('v1-migrated user: practices.resonant.settings wins over stale flat env.settings on remount', () => {
+    // Simulate a user who: (1) migrated from v1 (flat env.settings = stale BPM 6),
+    // then (2) changed settings (saveResonantSettings wrote BPM 4 to practices.resonant).
+    // The flat env.settings is now a stale orphan; the read-path must prefer the
+    // per-practice value (D-04).
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 2,
+      settings: { bpm: 6, ratio: '40:60', durationMinutes: 10 },  // stale orphan
+      practices: {
+        resonant: {
+          settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 },  // newer value
+          stats: null,
+        },
+        naviKriya: { settings: null, stats: null },
+      },
+      activePractice: 'resonant',
+    }))
+    render(<App />)
+    // Must show 4 BPM (practices subtree), NOT 6 BPM (stale flat field).
+    expect(screen.getByText('4 BPM')).toBeInTheDocument()
+    expect(screen.queryByText('6 BPM')).not.toBeInTheDocument()
+  })
+})
