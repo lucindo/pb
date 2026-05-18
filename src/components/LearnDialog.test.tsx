@@ -7,12 +7,14 @@ import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
 import { UI_STRINGS } from '../content/strings'
 import type { LocaleId } from '../domain/settings'
+import type { PracticeId } from '../storage/practices'
 import { LearnDialog } from './LearnDialog'
 
 function renderDialog(
-  props: Partial<{ open: boolean; onClose: () => void; locale: LocaleId }> = {},
+  props: Partial<{ open: boolean; onClose: () => void; locale: LocaleId; activePractice: PracticeId }> = {},
 ) {
   const locale: LocaleId = props.locale ?? 'en'
+  const activePractice: PracticeId = props.activePractice ?? 'resonant'
   const onClose = props.onClose ?? vi.fn()
   const utils = render(
     <LearnDialog
@@ -21,6 +23,7 @@ function renderDialog(
       learnContent={LEARN_CONTENT[locale]}
       lockedCopy={LOCKED_COPY[locale]}
       strings={UI_STRINGS[locale].learn}
+      activePractice={activePractice}
     />,
   )
   return { ...utils, onClose }
@@ -202,5 +205,53 @@ describe('LearnDialog — native-app store links', () => {
     expect(screen.getByText(UI_STRINGS['pt-BR'].learn.nativeAppsHeading)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: LEARN_CONTENT['pt-BR'].links.appStoreIos.label })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: LEARN_CONTENT['pt-BR'].links.googlePlayAndroid.label })).toBeInTheDocument()
+  })
+})
+
+describe('LearnDialog — Navi Kriya practice-aware rendering', () => {
+  it('renders NK section1 title when activePractice=naviKriya', () => {
+    renderDialog({ open: true, activePractice: 'naviKriya' })
+    expect(screen.getByText(UI_STRINGS.en.learn.naviKriyaDescriptionSection1Title)).toBeInTheDocument()
+  })
+
+  it('renders NK section2 title when activePractice=naviKriya', () => {
+    renderDialog({ open: true, activePractice: 'naviKriya' })
+    expect(screen.getByText(UI_STRINGS.en.learn.naviKriyaDescriptionSection2Title)).toBeInTheDocument()
+  })
+
+  it('renders NK video links when activePractice=naviKriya', () => {
+    renderDialog({ open: true, activePractice: 'naviKriya' })
+    expect(screen.getByRole('link', { name: 'The Guardian In Meditation' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Navi Kriya Walkthrough' })).toBeInTheDocument()
+  })
+
+  it('D-02: does NOT render native-apps block when activePractice=naviKriya', () => {
+    renderDialog({ open: true, activePractice: 'naviKriya' })
+    expect(screen.queryByText(UI_STRINGS.en.learn.nativeAppsHeading)).not.toBeInTheDocument()
+  })
+
+  it('D-02: renders native-apps block when activePractice=resonant', () => {
+    renderDialog({ open: true, activePractice: 'resonant' })
+    expect(screen.getByText(UI_STRINGS.en.learn.nativeAppsHeading)).toBeInTheDocument()
+  })
+
+  it('renders shared forrest explainer section for activePractice=naviKriya (LEARN-03)', () => {
+    renderDialog({ open: true, activePractice: 'naviKriya' })
+    expect(screen.getByText(LEARN_CONTENT.en.explainer.forrest.title)).toBeInTheDocument()
+  })
+
+  it('renders shared forrest explainer section for activePractice=resonant (LEARN-03)', () => {
+    renderDialog({ open: true, activePractice: 'resonant' })
+    expect(screen.getByText(LEARN_CONTENT.en.explainer.forrest.title)).toBeInTheDocument()
+  })
+
+  it('every <a> in the dialog has target="_blank" and rel="noopener noreferrer" when activePractice=naviKriya (T-32-03)', () => {
+    const { container } = renderDialog({ open: true, activePractice: 'naviKriya' })
+    const links = container.querySelectorAll('a')
+    expect(links.length).toBeGreaterThanOrEqual(4)
+    links.forEach((link) => {
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    })
   })
 })

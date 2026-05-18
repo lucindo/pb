@@ -1260,7 +1260,7 @@ export default function App() {
       />
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}
-      <LearnDialog open={learnDialogOpen} onClose={onLearnClose} learnContent={learnContent} lockedCopy={lockedCopy} strings={uiStrings.learn} />
+      <LearnDialog open={learnDialogOpen} onClose={onLearnClose} learnContent={learnContent} lockedCopy={lockedCopy} strings={uiStrings.learn} activePractice={activePractice} />
       {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/VariantPicker/TimbrePicker/LanguagePicker stubs. */}
       {/* Phase 29 INSTALL-06: prop-drill install state (isIOS/isStandalone from useIsStandaloneOrPhone,
           installable computed per D-08, triggerInstall from useBeforeInstallPrompt — single listener). */}
