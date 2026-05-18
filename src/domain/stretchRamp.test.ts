@@ -299,4 +299,33 @@ describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
     }
     expect(computeStretchTotalMs(minSettings)).toBe(15 * 60_000)
   })
+
+  // CR-01 regression: computeStretchTotalMs must derive from the snapped segment
+  // table (same source of truth as getStretchFrame's isComplete check), not from
+  // the raw minute sum. Non-cycle-aligned BPMs produce drift between the two.
+  it('CR-01: equals snapped segment table final endMs for cycle-aligned baseSettings (no regression)', () => {
+    const segments = buildStretchSegments(baseSettings)
+    const snappedEnd = segments.at(-1)!.endMs
+    expect(computeStretchTotalMs(baseSettings)).toBe(snappedEnd)
+  })
+
+  it('CR-01: equals snapped segment table final endMs for non-cycle-aligned BPM (drift fixture)', () => {
+    // initialBpm: 5.5 → cycleMs ≈ 10909ms; segments do not divide evenly into integer ms.
+    // The snapped segment table endMs differs from the raw minute sum.
+    const driftSettings: StretchSettings = {
+      ratio: '40:60',
+      initialBpm: 5.5,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    }
+    const segments = buildStretchSegments(driftSettings)
+    const snappedEnd = segments.at(-1)!.endMs
+    const rawMinuteSum = (driftSettings.warmUpMinutes + driftSettings.rampDurationMinutes + driftSettings.coolDownMinutes) * 60_000
+    // The snapped end equals what computeStretchTotalMs must return (CR-01).
+    expect(computeStretchTotalMs(driftSettings)).toBe(snappedEnd)
+    // The snapped end must differ from the raw sum (proving the test exercises the drift case).
+    expect(snappedEnd).not.toBe(rawMinuteSum)
+  })
 })
