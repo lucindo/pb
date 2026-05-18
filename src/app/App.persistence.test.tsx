@@ -32,7 +32,10 @@ function seedEnvelope(opts: SeedOpts = {}) {
   }))
 }
 
-function readEnvelope(): Record<string, unknown> | null {
+// Reads raw localStorage with NO v1→v2 migration — unlike the production
+// readEnvelope in src/storage/storage.ts. Named distinctly to avoid implying
+// migration semantics this helper does not have.
+function readRawEnvelope(): Record<string, unknown> | null {
   const raw = window.localStorage.getItem(STATE_KEY)
   // Reason: test helper reads raw localStorage; shape validated by downstream test assertions.
   return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
@@ -119,11 +122,11 @@ describe('LOCL-01 — restoration on mount', () => {
 describe('LOCL-01 — persistence on change', () => {
   it('persists mute toggle to localStorage (D-14)', async () => {
     render(<App />)
-    expect(readEnvelope()?.['mute']).not.toBe(true)
+    expect(readRawEnvelope()?.['mute']).not.toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Mute audio cues' }))
     await act(async () => { await Promise.resolve() })
     // After toggle, mute=true is persisted
-    expect(readEnvelope()).toMatchObject({ mute: true })
+    expect(readRawEnvelope()).toMatchObject({ mute: true })
   })
 
   it('persists settings change to the resonant practice slice (LOCL-01 / CR-01)', async () => {
@@ -132,7 +135,7 @@ describe('LOCL-01 — persistence on change', () => {
     const bpmGroup = screen.getByRole('group', { name: 'BPM' })
     fireEvent.click(within(bpmGroup).getByRole('button', { name: 'Decrease BPM' }))
     await act(async () => { await Promise.resolve() })
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     // CR-01: the write target is practices.resonant.settings via
     // saveResonantSettings — the legacy flat env.settings write is no longer used.
     expect(resonantSettingsOf(env)).toMatchObject({ bpm: 5 })
@@ -151,7 +154,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Run past 5 minutes — the engine flips to 'complete'.
     // Advance an extra minute so the surrounding cycle finishes (Phase 3 fix).
     await advanceTime(6 * 60_000)
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     // Phase 30 Pitfall 3: the session records into practices.resonant.stats.
     const stats = resonantStatsOf(env)
     expect(stats?.['totalSessions']).toBe(1)
@@ -169,7 +172,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     await act(async () => { await Promise.resolve() })
     // Open-ended: no modal. End fires directly. Stats written in cleanup effect.
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     const stats = resonantStatsOf(env)
     expect(stats?.['totalSessions']).toBe(1)
     expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(35)
@@ -182,7 +185,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     await advanceTime(10_000)  // 10s elapsed — below 30s threshold (D-01)
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     await act(async () => { await Promise.resolve() })
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     const sessions = resonantStatsOf(env)?.['totalSessions'] as number | undefined
     expect(sessions ?? 0).toBe(0)
   })
@@ -199,7 +202,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Button label is 'Cancel' during lead-in (Phase 20 LEAD-01).
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await advanceTime(0)
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     const sessions2 = resonantStatsOf(env)?.['totalSessions'] as number | undefined
     expect(sessions2 ?? 0).toBe(0)
   })
@@ -213,7 +216,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Force any pending rAF/microtasks to flush — the cleanup effect runs here.
     // recordedSessionKeyRef prevents double-write via idempotency key.
     await advanceTime(100)
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     expect(resonantStatsOf(env)?.['totalSessions']).toBe(1)  // exactly one, not two (Pitfall 1)
   })
 })
@@ -302,7 +305,7 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
 
     // Phase 30 D-08 / Pitfall 4: resetPracticeStats zeroes the resonant
     // practice's stats subtree.
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     expect(resonantStatsOf(env)).toMatchObject({
       totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null,
     })
@@ -333,7 +336,7 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     await act(async () => { await Promise.resolve() })
 
     // Stats unchanged — cancel writes nothing, the seeded v1 disk is untouched.
-    const env = readEnvelope()
+    const env = readRawEnvelope()
     expect(env).toMatchObject({ stats: { totalSessions: 3 } })
     // Footer still present
     expect(screen.getByText(/3 sessions/)).toBeInTheDocument()
@@ -457,11 +460,11 @@ describe('STORAGE-03 — cross-tab stats refresh', () => {
 // ---------------------------------------------------------------------------
 // PRACTICE-02 — Resonant settings survive remount (Phase 33 gap closure)
 //
-// These tests verify the read-path fix from Phase 33: App.tsx:110 seeds
-// initialSettings from practices.resonant.settings (per-practice envelope),
-// NOT the abandoned flat env.settings field. Both scenarios would FAIL if
-// Task 1's change were reverted (i.e., if loadSettings() were restored at
-// line 110).
+// These tests verify the read-path fix from Phase 33: App.tsx seeds
+// initialSettings from loadPractices().resonant.settings (per-practice
+// envelope), NOT the abandoned flat env.settings field. Both scenarios
+// would FAIL if Task 1's change were reverted (i.e., if loadSettings()
+// were restored).
 // ---------------------------------------------------------------------------
 
 // Seed a v2 envelope directly — flat env.settings is absent (fresh-v2 user).
@@ -482,7 +485,7 @@ describe('PRACTICE-02 — resonant settings survive remount', () => {
   it('fresh-v2 user: resonant settings from practices.resonant.settings survive reload', () => {
     // Seed v2 envelope: practices.resonant.settings holds a non-default BPM.
     // Flat env.settings is absent (fresh post-Phase-30 user, never had it).
-    // App.tsx:110 must read from practices.resonant.settings, not the absent flat field.
+    // App.tsx must read from practices.resonant.settings, not the absent flat field.
     seedV2Envelope({ bpm: 4, ratio: '50:50', durationMinutes: 5 })
     render(<App />)
     expect(screen.getByText('4 BPM')).toBeInTheDocument()
