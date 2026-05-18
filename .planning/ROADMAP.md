@@ -137,10 +137,11 @@ Plans:
   5. A developer can switch the switcher between the two label treatments (text / icon+label) via a developer-only toggle that is NOT in the user Settings dialog
   6. User can read all new Stretch UI copy in both English and native-quality PT-BR
 **Open question:** RESOLVED — D-01: stretch moves out of HRV entirely; the resonant practice becomes standard-only.
-**Plans:** 5/5 plans complete
+**Plans:** 6 plans (5/5 original complete; 34-06 gap-closure pending)
 - [x] 34-01-PLAN.md — Split SessionSettings / new StretchSettings type + domain layer retype (settings, stretchRamp, sessionController)
 - [x] 34-02-PLAN.md — STATE_VERSION v2→v3 migration + practices.stretch storage slice (coercer, save/record)
 - [x] 34-03-PLAN.md — 3-pill PracticeToggle + A/B treatment glyphs behind VITE_SWITCHER_TREATMENT build-time env var
 - [x] 34-04-PLAN.md — Stretch practice copy (stretchName/Heading/Header) in EN + PT-BR
 - [x] 34-05-PLAN.md — Retire ModeToggle, SettingsForm stretch branch, stretch session engine path, App.tsx wiring
+- [ ] 34-06-PLAN.md — Gap closure: CR-01 computeStretchTotalMs from snapped segments, WR-01 LearnDialog heading, WR-03 preserve resonant selectedSettings
 **UI hint**: yes
