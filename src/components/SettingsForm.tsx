@@ -1,6 +1,7 @@
 import {
   BPM_OPTIONS,
   COOLDOWN_OPTIONS,
+  DEFAULT_STRETCH_SETTINGS,
   DURATION_OPTIONS,
   RAMP_DURATION_OPTIONS,
   RATIO_OPTIONS,
@@ -10,6 +11,7 @@ import {
   type DurationOption,
   type RatioLabel,
   type SessionSettings,
+  type StretchSettings,
   type WarmUpMinutes,
 } from '../domain/settings'
 import { computeStretchTotalMs } from '../domain/stretchRamp'
@@ -24,7 +26,7 @@ import {
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
 import { UI_STRINGS, type UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage/practices'
-import { ModeToggle } from './ModeToggle'
+import { BooleanToggle } from './BooleanToggle'
 import { SettingsStepper } from './SettingsStepper'
 
 export interface SettingsFormProps {
@@ -46,6 +48,10 @@ export interface SettingsFormProps {
   onNKSettingsChange?: (this: void, settings: NaviKriyaSettings) => void
   // NK control copy lives at the UiStrings top level, not under settingsForm.
   nkControlsStrings?: UiStrings['nkControls']
+  // Phase 34: stretch practice settings and their callback. Mirrors the
+  // nkSettings/onNKSettingsChange pattern.
+  stretchSettings?: StretchSettings
+  onStretchSettingsChange?: (this: void, settings: StretchSettings) => void
 }
 
 export function SettingsForm({
@@ -58,6 +64,8 @@ export function SettingsForm({
   nkSettings = DEFAULT_NK_SETTINGS,
   onNKSettingsChange = () => undefined,
   nkControlsStrings = UI_STRINGS.en.nkControls,
+  stretchSettings = DEFAULT_STRETCH_SETTINGS,
+  onStretchSettingsChange = () => undefined,
 }: SettingsFormProps) {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
   const formatMinutes = (value: number): string => `${String(value)} ${strings.minutesUnit}`
@@ -70,11 +78,10 @@ export function SettingsForm({
   const durationIndex = durationOptions.indexOf(settings.durationMinutes)
   const nextDuration = durationOptions[durationIndex + 1]
 
-  const isStretch = settings.mode === 'stretch'
   // D-01: targetBpm is a strictly-down ramp — only BPM values below initialBpm.
-  const targetBpmOptions = (BPM_OPTIONS as readonly number[]).filter((v) => v < settings.initialBpm)
+  const targetBpmOptions = (BPM_OPTIONS as readonly number[]).filter((v) => v < stretchSettings.initialBpm)
   // The stretch Duration box is read-only: warm-up + ramp + cool-down summed.
-  const stretchTotalMs = computeStretchTotalMs(settings)
+  const stretchTotalMs = computeStretchTotalMs(stretchSettings)
   const stretchDurationText = stretchTotalMs === null
     ? strings.openEndedLabel
     : `${String(stretchTotalMs / 60_000)} ${strings.minutesUnit}`
@@ -94,15 +101,20 @@ export function SettingsForm({
     updateSettings({ durationMinutes })
   }
 
+  // Stretch settings helper — mirrors updateSettings but typed to StretchSettings.
+  const updateStretchSettings = (next: Partial<StretchSettings>) => {
+    onStretchSettingsChange({ ...stretchSettings, ...next })
+  }
+
   // Lowering initialBpm can leave targetBpm at or above it; correct it down to
   // the highest valid option below the new initialBpm (Interaction Contract).
   const updateInitialBpm = (initialBpm: number) => {
-    if (settings.targetBpm >= initialBpm) {
+    if (stretchSettings.targetBpm >= initialBpm) {
       const validTargets = (BPM_OPTIONS as readonly number[]).filter((v) => v < initialBpm)
-      updateSettings({ initialBpm, targetBpm: validTargets[validTargets.length - 1] })
+      updateStretchSettings({ initialBpm, targetBpm: validTargets[validTargets.length - 1] })
       return
     }
-    updateSettings({ initialBpm })
+    updateStretchSettings({ initialBpm })
   }
 
   const formatOmLength = (value: OmLength): string =>
@@ -138,67 +150,10 @@ export function SettingsForm({
     <div className="grid w-full gap-4" aria-label={strings.ariaLabel}>
       {activePractice === 'resonant' ? (
         <>
-          {/* D-05: Standard/Stretch switch — next-session-only, hidden while running. */}
+          {/* D-01: Standard sessions only — the ModeToggle is retired.
+              Resonant practice is standard-only; the Stretch practice is
+              its own activePractice branch below. */}
           {!isRunning && (
-            <ModeToggle
-              isStretch={isStretch}
-              modeLabel={strings.sessionModeLabel}
-              standardLabel={strings.modeStandard}
-              stretchLabel={strings.modeStretch}
-              onChange={(toStretch) => { updateSettings({ mode: toStretch ? 'stretch' : 'standard' }) }}
-            />
-          )}
-          {!isRunning && (isStretch ? (
-            <>
-              <SettingsStepper
-                label={strings.initialBpmLabel}
-                value={settings.initialBpm}
-                options={STRETCH_INITIAL_BPM_OPTIONS}
-                formatValue={formatBpm}
-                onChange={updateInitialBpm}
-                strings={strings.stepper}
-              />
-              <SettingsStepper
-                label={strings.targetBpmLabel}
-                value={settings.targetBpm}
-                options={targetBpmOptions}
-                formatValue={formatBpm}
-                onChange={(targetBpm) => { updateSettings({ targetBpm }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper<RatioLabel>
-                label={strings.ratioLabel}
-                value={settings.ratio}
-                options={RATIO_OPTIONS}
-                onChange={(ratio) => { updateSettings({ ratio }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper<WarmUpMinutes>
-                label={strings.holdInitialLabel}
-                value={settings.warmUpMinutes}
-                options={WARMUP_MINUTES_OPTIONS}
-                formatValue={formatMinutes}
-                onChange={(warmUpMinutes) => { updateSettings({ warmUpMinutes }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper
-                label={strings.rampDurationLabel}
-                value={settings.rampDurationMinutes}
-                options={RAMP_DURATION_OPTIONS}
-                formatValue={formatMinutes}
-                onChange={(rampDurationMinutes) => { updateSettings({ rampDurationMinutes }) }}
-                strings={strings.stepper}
-              />
-              <SettingsStepper<CoolDownMinutes>
-                label={strings.holdTargetLabel}
-                value={settings.coolDownMinutes}
-                options={COOLDOWN_OPTIONS}
-                formatValue={formatCoolDown}
-                onChange={(coolDownMinutes) => { updateSettings({ coolDownMinutes }) }}
-                strings={strings.stepper}
-              />
-            </>
-          ) : (
             <>
               <SettingsStepper
                 label={strings.bpmLabel}
@@ -216,30 +171,80 @@ export function SettingsForm({
                 strings={strings.stepper}
               />
             </>
-          ))}
-          {/* Duration: read-only computed total in stretch mode (warm-up + ramp +
-              cool-down); the extendable stepper in standard mode. */}
-          {isStretch ? (
-            <SettingsStepper<string>
-              label={strings.durationLabel}
-              value={stretchDurationText}
-              options={[stretchDurationText]}
-              readOnly
-              onChange={() => undefined}
-              strings={strings.stepper}
-            />
-          ) : (
-            <SettingsStepper<DurationOption>
-              label={strings.durationLabel}
-              value={settings.durationMinutes}
-              options={durationOptions}
-              formatValue={formatDuration}
-              onChange={updateDuration}
-              disableDecrease={isRunning}
-              disableIncrease={isRunning && typeof nextDuration !== 'number'}
-              strings={strings.stepper}
-            />
           )}
+          <SettingsStepper<DurationOption>
+            label={strings.durationLabel}
+            value={settings.durationMinutes}
+            options={durationOptions}
+            formatValue={formatDuration}
+            onChange={updateDuration}
+            disableDecrease={isRunning}
+            disableIncrease={isRunning && typeof nextDuration !== 'number'}
+            strings={strings.stepper}
+          />
+        </>
+      ) : activePractice === 'stretch' ? (
+        // Phase 34: dedicated stretch branch — ramp steppers + read-only
+        // computed duration. All settings operate on StretchSettings, not
+        // SessionSettings. The ModeToggle is gone; practice switching is via
+        // PracticeToggle (App.tsx).
+        <>
+          <SettingsStepper
+            label={strings.initialBpmLabel}
+            value={stretchSettings.initialBpm}
+            options={STRETCH_INITIAL_BPM_OPTIONS}
+            formatValue={formatBpm}
+            onChange={updateInitialBpm}
+            strings={strings.stepper}
+          />
+          <SettingsStepper
+            label={strings.targetBpmLabel}
+            value={stretchSettings.targetBpm}
+            options={targetBpmOptions}
+            formatValue={formatBpm}
+            onChange={(targetBpm) => { updateStretchSettings({ targetBpm }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<RatioLabel>
+            label={strings.ratioLabel}
+            value={stretchSettings.ratio}
+            options={RATIO_OPTIONS}
+            onChange={(ratio) => { updateStretchSettings({ ratio }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<WarmUpMinutes>
+            label={strings.holdInitialLabel}
+            value={stretchSettings.warmUpMinutes}
+            options={WARMUP_MINUTES_OPTIONS}
+            formatValue={formatMinutes}
+            onChange={(warmUpMinutes) => { updateStretchSettings({ warmUpMinutes }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper
+            label={strings.rampDurationLabel}
+            value={stretchSettings.rampDurationMinutes}
+            options={RAMP_DURATION_OPTIONS}
+            formatValue={formatMinutes}
+            onChange={(rampDurationMinutes) => { updateStretchSettings({ rampDurationMinutes }) }}
+            strings={strings.stepper}
+          />
+          <SettingsStepper<CoolDownMinutes>
+            label={strings.holdTargetLabel}
+            value={stretchSettings.coolDownMinutes}
+            options={COOLDOWN_OPTIONS}
+            formatValue={formatCoolDown}
+            onChange={(coolDownMinutes) => { updateStretchSettings({ coolDownMinutes }) }}
+            strings={strings.stepper}
+          />
+          {/* Read-only computed duration: warm-up + ramp + cool-down */}
+          <SettingsStepper<string>
+            label={strings.durationLabel}
+            value={stretchDurationText}
+            options={[stretchDurationText]}
+            readOnly
+            onChange={() => undefined}
+            strings={strings.stepper}
+          />
         </>
       ) : (
         // Phase 31 (NK-02/03/04/06, D-14): the real Navi Kriya controls fill
@@ -277,7 +282,7 @@ export function SettingsForm({
           {/* D-07: the per-OM tick toggle stays interactive while a session
               runs — the engine reads cueOn from its mutable ref, so a live flip
               is stale-closure-safe. Hence no isNKSessionRunning gating here. */}
-          <ModeToggle
+          <BooleanToggle
             isStretch={nkSettings.perOmCue}
             modeLabel={nkControlsStrings.perOmCueLabel}
             standardLabel={nkControlsStrings.perOmCueOff}
