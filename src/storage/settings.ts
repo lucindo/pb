@@ -4,17 +4,16 @@
 // Coercers are NON-THROWING (cousin to validateSettings in src/domain/settings.ts which
 // throws — see Pitfall 3). Per-field policy means a single drifted field does NOT
 // discard the rest of the envelope.
+//
+// Phase 34 D-01/D-02: coerceSettings trimmed to standard-only (3 fields).
+// mode, initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes
+// moved to coerceStretchSettings in practices.ts.
 
 import {
   DEFAULT_SETTINGS,
-  DEFAULT_STRETCH_SETTINGS,
   isValidBpm,
   isValidRatio,
   isValidDuration,
-  isValidMode,
-  isValidWarmUp,
-  isValidCoolDown,
-  isValidRampDuration,
   type SessionSettings,
 } from '../domain/settings'
 
@@ -25,15 +24,9 @@ export function coerceSettings(raw: unknown): SessionSettings {
     ? raw as Record<string, unknown>
     : {}
   return {
-    bpm:                 isValidBpm(r.bpm)                     ? r.bpm                     : DEFAULT_SETTINGS.bpm,
-    ratio:               isValidRatio(r.ratio)                 ? r.ratio                   : DEFAULT_SETTINGS.ratio,
-    durationMinutes:     isValidDuration(r.durationMinutes)    ? r.durationMinutes         : DEFAULT_SETTINGS.durationMinutes,
-    mode:                isValidMode(r.mode)                   ? r.mode                    : DEFAULT_SETTINGS.mode,
-    initialBpm:          isValidBpm(r.initialBpm)              ? r.initialBpm              : DEFAULT_STRETCH_SETTINGS.initialBpm,
-    targetBpm:           isValidBpm(r.targetBpm)               ? r.targetBpm               : DEFAULT_STRETCH_SETTINGS.targetBpm,
-    warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)        ? r.warmUpMinutes           : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
-    coolDownMinutes:     isValidCoolDown(r.coolDownMinutes)    ? r.coolDownMinutes         : DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
-    rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes) ? r.rampDurationMinutes : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
+    bpm:             isValidBpm(r.bpm)           ? r.bpm             : DEFAULT_SETTINGS.bpm,
+    ratio:           isValidRatio(r.ratio)       ? r.ratio           : DEFAULT_SETTINGS.ratio,
+    durationMinutes: isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes,
   }
 }
 

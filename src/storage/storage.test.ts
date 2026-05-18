@@ -79,17 +79,17 @@ describe('writeEnvelope', () => {
   })
 
   it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
-    // Seed a v3 envelope (simulates a future schema written by a newer build
-    // in another tab). Must be > STATE_VERSION (2) to exercise the future-version
+    // Seed a v4 envelope (simulates a future schema written by a newer build
+    // in another tab). Must be > STATE_VERSION (3) to exercise the future-version
     // guard. `prefs` is the forward-compat probe — STORAGE-01's D-01 spread must
     // let it survive the readEnvelope round-trip.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 3, settings: { bpm: 4 }, prefs: { theme: 'dark' },
+      version: 4, settings: { bpm: 4 }, prefs: { theme: 'dark' },
     }))
-    // STORAGE-01: readEnvelope returns the on-disk numeric version (3),
-    // NOT STATE_VERSION (2). The known settings subtree round-trips.
+    // STORAGE-01: readEnvelope returns the on-disk numeric version (4),
+    // NOT STATE_VERSION (3). The known settings subtree round-trips.
     const env = readEnvelope()
-    expect(env.version).toBe(3)
+    expect(env.version).toBe(4)
     expect(env.settings).toEqual({ bpm: 4 })
     // STORAGE-01 / D-01: unknown top-level fields survive the read (positive
     // forward-compat coverage). Type-cast required because Envelope.prefs is
@@ -100,23 +100,23 @@ describe('writeEnvelope', () => {
     // proves the write was refused, not that the read preserved the field.
     expect((env as unknown as Record<string, unknown>).prefs)
       .toEqual({ theme: 'dark' })
-    // STORAGE-02 / D-04a: disk version 3 > STATE_VERSION 2 → write refused.
+    // STORAGE-02 / D-04a: disk version 4 > STATE_VERSION 3 → write refused.
     // The caller's `version: 1` does NOT require an `as any` cast because
     // Envelope.version is widened to `number`.
     writeEnvelope({ version: 1, settings: { bpm: 5 } })
-    // Disk unchanged: the refused write left the v3 envelope intact.
+    // Disk unchanged: the refused write left the v4 envelope intact.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 3, settings: { bpm: 4 } })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 4, settings: { bpm: 4 } })
   })
 
   it('writeEnvelope refuses to overwrite a future-version on-disk envelope (STORAGE-02)', () => {
-    // Seed a v3-only envelope (no known subtrees) to isolate the version guard.
-    // v3 > STATE_VERSION (2) makes it a genuine future schema.
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 3 }))
-    // Caller attempts to land 99-session stats on top of the v2 envelope.
+    // Seed a v4-only envelope (no known subtrees) to isolate the version guard.
+    // v4 > STATE_VERSION (3) makes it a genuine future schema.
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 4 }))
+    // Caller attempts to land 99-session stats on top of the v3 envelope.
     // The 99-session probe gives the negative assertion something concrete
     // to test — if the guard fails, the stats subtree appears on disk.
     writeEnvelope({
@@ -128,12 +128,12 @@ describe('writeEnvelope', () => {
         lastSessionDurationSeconds: null,
       },
     })
-    // D-03 silent refusal: disk envelope unchanged at version: 3.
+    // D-03 silent refusal: disk envelope unchanged at version: 4.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 3 })
+    expect(JSON.parse(rawAfter!) as unknown).toMatchObject({ version: 4 })
     // Negative: 99-session probe was NOT written.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(rawAfter!) as unknown).not.toMatchObject({ stats: { totalSessions: 99 } })
@@ -177,16 +177,20 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
     expect(migrated.stats).toEqual(V1_STATS)
   })
 
-  it('is idempotent on already-migrated v2 data (fromVersion >= 2 skips the ladder)', () => {
-    const v2Envelope = {
-      version: 2,
-      practices: { resonant: { settings: V1_SETTINGS, stats: V1_STATS } },
+  it('is idempotent on already-migrated v3 data (fromVersion >= 3 skips both ladder steps)', () => {
+    const v3Envelope = {
+      version: 3,
+      practices: {
+        resonant: { settings: V1_SETTINGS, stats: V1_STATS },
+        stretch: { settings: V1_SETTINGS, stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null } },
+        naviKriya: { settings: {}, stats: {} },
+      },
       activePractice: 'naviKriya',
     }
-    const out = migrateEnvelope(v2Envelope, 2)
-    // The fromVersion < 2 guard is false — practices/activePractice pass through
-    // unchanged, including a non-default activePractice.
-    expect(out.practices).toEqual(v2Envelope.practices)
+    const out = migrateEnvelope(v3Envelope, 3)
+    // Both fromVersion < 2 and fromVersion < 3 guards are false — practices/activePractice
+    // pass through unchanged, including a non-default activePractice.
+    expect(out.practices).toEqual(v3Envelope.practices)
     expect(out.activePractice).toBe('naviKriya')
   })
 
@@ -210,5 +214,85 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
     writeEnvelope({ version: STATE_VERSION, settings: V1_SETTINGS })
     expect(window.localStorage.getItem('hrv:state:v1')).not.toBeNull()
     expect(STATE_KEY).toBe('hrv:state:v1')
+  })
+})
+
+describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
+  // A v2 envelope representing a returning user with resonant ramp fields stored
+  // in their resonant settings blob.
+  const RESONANT_SETTINGS_WITH_RAMP = {
+    bpm: 5.5,
+    ratio: '40:60',
+    durationMinutes: 10,
+    initialBpm: 6,
+    targetBpm: 4,
+    warmUpMinutes: 5,
+    coolDownMinutes: 5,
+    rampDurationMinutes: 5,
+  }
+  const RESONANT_STATS = {
+    totalSessions: 3,
+    totalElapsedSeconds: 1800,
+    lastSessionAtMs: 1_700_000_000_000,
+    lastSessionDurationSeconds: 600,
+  }
+  const V2_ENVELOPE = {
+    version: 2,
+    practices: {
+      resonant: {
+        settings: RESONANT_SETTINGS_WITH_RAMP,
+        stats: RESONANT_STATS,
+      },
+      naviKriya: {
+        settings: { frontCount: 80, omLength: 'slow', rounds: 3, perOmCue: false },
+        stats: { totalSessions: 1, totalElapsedSeconds: 600, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+      },
+    },
+    activePractice: 'resonant',
+  }
+
+  const ZERO_STATS_LITERAL = {
+    totalSessions: 0,
+    totalElapsedSeconds: 0,
+    lastSessionAtMs: null,
+    lastSessionDurationSeconds: null,
+  }
+
+  it('seeds practices.stretch.settings from the resonant settings blob', () => {
+    const migrated = migrateEnvelope(V2_ENVELOPE, 2)
+    const practices = migrated.practices as Record<string, unknown>
+    const stretch = practices['stretch'] as { settings: unknown; stats: unknown }
+    expect(stretch.settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
+  })
+
+  it('seeds practices.stretch.stats with ZERO stats (inline literal)', () => {
+    const migrated = migrateEnvelope(V2_ENVELOPE, 2)
+    const practices = migrated.practices as Record<string, unknown>
+    const stretch = practices['stretch'] as { settings: unknown; stats: unknown }
+    expect(stretch.stats).toEqual(ZERO_STATS_LITERAL)
+  })
+
+  it('leaves practices.resonant byte-equal to its pre-migration value (untouched)', () => {
+    const migrated = migrateEnvelope(V2_ENVELOPE, 2)
+    const practices = migrated.practices as Record<string, { settings: unknown; stats: unknown }>
+    expect(practices['resonant'].settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
+    expect(practices['resonant'].stats).toEqual(RESONANT_STATS)
+  })
+
+  it('is idempotent — running migration twice on the same v2 envelope produces the same result', () => {
+    const once = migrateEnvelope(V2_ENVELOPE, 2)
+    // Run again simulating re-read: fromVersion is still 2 for the original envelope
+    const twice = migrateEnvelope(V2_ENVELOPE, 2)
+    expect(once).toEqual(twice)
+  })
+
+  it('skips the v2→v3 step when fromVersion >= 3 (envelope returned unchanged)', () => {
+    const v3Envelope = { version: 3, practices: { stretch: { settings: {}, stats: {} } } }
+    const out = migrateEnvelope(v3Envelope, 3)
+    expect(out.practices).toEqual(v3Envelope.practices)
+  })
+
+  it('STATE_VERSION is 3', () => {
+    expect(STATE_VERSION).toBe(3)
   })
 })

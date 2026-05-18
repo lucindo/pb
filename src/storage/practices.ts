@@ -4,6 +4,11 @@
 // `practices` map — { resonant, naviKriya } — each carrying its own settings +
 // stats slice, plus a top-level `activePractice` id.
 //
+// Phase 34 STRETCH-03/04/05: the stretch practice becomes a first-class slice.
+// PracticeId gains 'stretch'; PracticeMap gains a stretch slot; coerceStretchSettings,
+// saveStretchSettings, and recordStretchSession are added, modeled exactly on their
+// resonant counterparts.
+//
 // Coercers are NON-THROWING and prototype-pollution-safe (T-30-05), mirroring
 // prefs.ts / settings.ts: a single drifted field never discards the rest of the
 // envelope. `raw` is never spread into a prototype-accessible object — only named
@@ -14,13 +19,22 @@ import { coerceStats, ZERO_STATS, COUNT_THRESHOLD_MS, type PersistedStats } from
 import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 import type { SessionSettings } from '../domain/settings'
 import {
+  DEFAULT_STRETCH_SETTINGS,
+  isValidRatio,
+  isValidBpm,
+  isValidWarmUp,
+  isValidCoolDown,
+  isValidRampDuration,
+  type StretchSettings,
+} from '../domain/settings'
+import {
   DEFAULT_NK_SETTINGS,
   isValidOmLength,
   isValidRounds,
   type NaviKriyaSettings,
 } from '../domain/naviKriyaSettings'
 
-export type PracticeId = 'resonant' | 'naviKriya'
+export type PracticeId = 'resonant' | 'stretch' | 'naviKriya'
 
 export interface PracticeSlice<S> {
   settings: S
@@ -29,6 +43,7 @@ export interface PracticeSlice<S> {
 
 export interface PracticeMap {
   resonant: PracticeSlice<SessionSettings>
+  stretch: PracticeSlice<StretchSettings>
   naviKriya: PracticeSlice<NaviKriyaSettings>
 }
 
@@ -42,9 +57,9 @@ function asRecord(raw: unknown): Record<string, unknown> {
 }
 
 export function coerceActivePractice(raw: unknown): PracticeId {
-  // Only the two known ids survive; anything else (garbage string, null, number)
+  // Only the three known ids survive; anything else (garbage string, null, number)
   // falls back to 'resonant' — the default practice.
-  return raw === 'resonant' || raw === 'naviKriya' ? raw : 'resonant'
+  return raw === 'resonant' || raw === 'stretch' || raw === 'naviKriya' ? raw : 'resonant'
 }
 
 export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
@@ -68,9 +83,25 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
   }
 }
 
+// Phase 34 T-34-02: coerceStretchSettings modeled exactly on coerceNaviKriyaSettings.
+// Uses asRecord guard for prototype-pollution safety; per-field non-throwing fallback
+// means one drifted field never discards the rest.
+export function coerceStretchSettings(raw: unknown): StretchSettings {
+  const r = asRecord(raw)
+  return {
+    ratio:               isValidRatio(r.ratio)                       ? r.ratio               : DEFAULT_STRETCH_SETTINGS.ratio,
+    initialBpm:          isValidBpm(r.initialBpm)                    ? r.initialBpm          : DEFAULT_STRETCH_SETTINGS.initialBpm,
+    targetBpm:           isValidBpm(r.targetBpm)                     ? r.targetBpm           : DEFAULT_STRETCH_SETTINGS.targetBpm,
+    warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)              ? r.warmUpMinutes       : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
+    rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes)  ? r.rampDurationMinutes : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
+    coolDownMinutes:     isValidCoolDown(r.coolDownMinutes)          ? r.coolDownMinutes     : DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
+  }
+}
+
 // Per-practice slice coercer: settings goes through the practice-specific
-// coercer (coerceSettings for resonant, coerceNaviKriyaSettings for naviKriya),
-// stats always through coerceStats. A drifted/missing slice yields defaults.
+// coercer (coerceSettings for resonant, coerceStretchSettings for stretch,
+// coerceNaviKriyaSettings for naviKriya), stats always through coerceStats.
+// A drifted/missing slice yields defaults.
 function coercePracticeSlice<S>(
   raw: unknown,
   coerceSlotSettings: (v: unknown) => S,
@@ -86,6 +117,7 @@ export function coercePractices(raw: unknown): PracticeMap {
   const r = asRecord(raw)
   return {
     resonant:  coercePracticeSlice(r.resonant,  coerceSettings),
+    stretch:   coercePracticeSlice(r.stretch,   coerceStretchSettings),   // Phase 34 STRETCH-03
     naviKriya: coercePracticeSlice(r.naviKriya, coerceNaviKriyaSettings),
   }
 }
@@ -121,6 +153,17 @@ export function saveNaviKriyaSettings(settings: NaviKriyaSettings, deps: Storage
   )
 }
 
+// Phase 34 STRETCH-04: modeled exactly on saveResonantSettings (lines above).
+// Spreads ...practices then overrides only the stretch slice — other slices untouched.
+export function saveStretchSettings(settings: StretchSettings, deps: StorageDeps = {}): void {
+  const env = readEnvelope(deps)
+  const practices = coercePractices(env.practices)
+  writeEnvelope(
+    { ...env, practices: { ...practices, stretch: { ...practices.stretch, settings } } },
+    deps,
+  )
+}
+
 // Pitfall 3: the resonant analogue of stats.ts recordSession. Identical
 // COUNT_THRESHOLD_MS / Number.isFinite guard logic, but reads from and writes to
 // practices.resonant.stats instead of the flat env.stats — so a completed
@@ -152,6 +195,41 @@ export function recordResonantSession(
   }
   writeEnvelope(
     { ...env, practices: { ...practices, resonant: { ...practices.resonant, stats: next } } },
+    deps,
+  )
+  return next
+}
+
+// Phase 34 STRETCH-05: modeled exactly on recordResonantSession above.
+// Reads from / writes to practices.stretch.stats ONLY — resonant and naviKriya
+// slices are passed through untouched (T-34-02 isolation guarantee).
+// No `roundsCompleted` arg — Stretch does not count rounds (unlike NaviKriya).
+export function recordStretchSession(
+  elapsedMs: number,
+  isComplete: boolean,
+  deps: StorageDeps = {},
+): PersistedStats {
+  const env = readEnvelope(deps)
+  const practices = coercePractices(env.practices)
+  const stats = practices.stretch.stats
+  // DS-WR-06 parity: reject NaN/Infinity/negative elapsedMs up front.
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    return stats
+  }
+  // D-01 parity: count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
+    return stats
+  }
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const now = deps.now ?? Date.now
+  const next: PersistedStats = {
+    totalSessions: stats.totalSessions + 1,
+    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
+    lastSessionAtMs: now(),
+    lastSessionDurationSeconds: elapsedSeconds,
+  }
+  writeEnvelope(
+    { ...env, practices: { ...practices, stretch: { ...practices.stretch, stats: next } } },
     deps,
   )
   return next

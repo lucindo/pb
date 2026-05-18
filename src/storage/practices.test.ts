@@ -4,20 +4,23 @@ import {
   coercePractices,
   coerceActivePractice,
   coerceNaviKriyaSettings,
+  coerceStretchSettings,
   loadPractices,
   loadActivePractice,
   saveActivePractice,
   saveResonantSettings,
   saveNaviKriyaSettings,
+  saveStretchSettings,
   recordResonantSession,
   recordNaviKriyaSession,
+  recordStretchSession,
   resetPracticeStats,
 } from './practices'
 import { coerceSettings } from './settings'
 import { ZERO_STATS, type PersistedStats } from './stats'
 import { STATE_KEY } from './storage'
 import { DEFAULT_NK_SETTINGS, type NaviKriyaSettings } from '../domain/naviKriyaSettings'
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type StretchSettings } from '../domain/settings'
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -39,9 +42,10 @@ function statsOf(totalSessions: number): PersistedStats {
 }
 
 describe('coerceActivePractice (T-30-05)', () => {
-  it('preserves the two known practice ids', () => {
+  it('preserves the three known practice ids', () => {
     expect(coerceActivePractice('resonant')).toBe('resonant')
     expect(coerceActivePractice('naviKriya')).toBe('naviKriya')
+    expect(coerceActivePractice('stretch')).toBe('stretch')
   })
 
   it('falls back to "resonant" for garbage / null / number input', () => {
@@ -103,6 +107,7 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
 describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
   const defaultMap = {
     resonant: { settings: coerceSettings(undefined), stats: ZERO_STATS },
+    stretch: { settings: DEFAULT_STRETCH_SETTINGS, stats: ZERO_STATS },
     naviKriya: { settings: DEFAULT_NK_SETTINGS, stats: ZERO_STATS },
   }
 
@@ -113,18 +118,22 @@ describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
     expect(coercePractices(['x'])).toEqual(defaultMap)
   })
 
-  it('preserves valid resonant and naviKriya slices', () => {
+  it('preserves valid resonant, stretch, and naviKriya slices', () => {
+    const stretchSettings: StretchSettings = { ...DEFAULT_STRETCH_SETTINGS, initialBpm: 6 }
     const map = coercePractices({
       resonant: { settings: { ...DEFAULT_SETTINGS, bpm: 4 }, stats: statsOf(3) },
+      stretch: { settings: stretchSettings, stats: statsOf(2) },
       naviKriya: { settings: { frontCount: 120, omLength: 'slow', rounds: 5, perOmCue: false }, stats: statsOf(7) },
     })
     expect(map.resonant.settings.bpm).toBe(4)
     expect(map.resonant.stats).toEqual(statsOf(3))
+    expect(map.stretch.settings.initialBpm).toBe(6)
+    expect(map.stretch.stats).toEqual(statsOf(2))
     expect(map.naviKriya.settings).toEqual({ frontCount: 120, omLength: 'slow', rounds: 5, perOmCue: false })
     expect(map.naviKriya.stats).toEqual(statsOf(7))
   })
 
-  it('falls back per-field for a drifted slice without discarding the other practice', () => {
+  it('falls back per-field for a drifted slice without discarding the other practices', () => {
     const map = coercePractices({
       resonant: { settings: { bpm: 4 }, stats: statsOf(2) },
       naviKriya: { settings: { frontCount: 90, omLength: 'turbo' }, stats: 'corrupt' },
@@ -142,6 +151,7 @@ describe('loadPractices / loadActivePractice defaults', () => {
   it('returns the default practice map when nothing is stored', () => {
     expect(loadPractices()).toEqual({
       resonant: { settings: coerceSettings(undefined), stats: ZERO_STATS },
+      stretch: { settings: DEFAULT_STRETCH_SETTINGS, stats: ZERO_STATS },
       naviKriya: { settings: DEFAULT_NK_SETTINGS, stats: ZERO_STATS },
     })
   })
@@ -282,9 +292,10 @@ describe('recordNaviKriyaSession (NK-08 / D-13 / T-31-07 / T-31-08)', () => {
 describe('resetPracticeStats (Pitfall 4)', () => {
   function seedBothPractices() {
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 2,
+      version: 3,
       practices: {
         resonant: { settings: { ...DEFAULT_SETTINGS, bpm: 4 }, stats: statsOf(5) },
+        stretch: { settings: DEFAULT_STRETCH_SETTINGS, stats: statsOf(0) },
         naviKriya: { settings: DEFAULT_NK_SETTINGS, stats: statsOf(9) },
       },
       activePractice: 'resonant',
@@ -308,7 +319,7 @@ describe('resetPracticeStats (Pitfall 4)', () => {
   })
 })
 
-describe('v1→v2 migration through loadPractices (PRACTICE-04)', () => {
+describe('v1→v2→v3 migration through loadPractices (PRACTICE-04 / Phase-34)', () => {
   it('populates loadPractices().resonant from a seeded flat v1 envelope', () => {
     // A returning user's pre-Phase-30 flat envelope.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
@@ -321,8 +332,138 @@ describe('v1→v2 migration through loadPractices (PRACTICE-04)', () => {
     // coercePractices path with nothing lost.
     expect(map.resonant.settings.bpm).toBe(4)
     expect(map.resonant.stats).toEqual(statsOf(8))
+    // stretch: seeded from resonant settings blob; stats zeroed.
+    expect(map.stretch.settings).toBeDefined()
+    expect(map.stretch.stats).toEqual(ZERO_STATS)
     // naviKriya had no v1 data — the coercer supplies defaults.
     expect(map.naviKriya.settings).toEqual(DEFAULT_NK_SETTINGS)
     expect(map.naviKriya.stats).toEqual(ZERO_STATS)
+  })
+})
+
+describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
+  it('returns DEFAULT_STRETCH_SETTINGS for null / undefined / non-object / array', () => {
+    expect(coerceStretchSettings(null)).toEqual(DEFAULT_STRETCH_SETTINGS)
+    expect(coerceStretchSettings(undefined)).toEqual(DEFAULT_STRETCH_SETTINGS)
+    expect(coerceStretchSettings(42)).toEqual(DEFAULT_STRETCH_SETTINGS)
+    expect(coerceStretchSettings([])).toEqual(DEFAULT_STRETCH_SETTINGS)
+  })
+
+  it('preserves a fully valid StretchSettings object', () => {
+    const valid: StretchSettings = {
+      ratio: '30:70',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 10,
+      rampDurationMinutes: 10,
+      coolDownMinutes: 10,
+    }
+    expect(coerceStretchSettings(valid)).toEqual(valid)
+  })
+
+  it('falls back per-field — one drifted field does not discard the rest', () => {
+    // initialBpm: 'x' is invalid; all other fields are valid
+    const result = coerceStretchSettings({
+      ratio: '30:70',
+      initialBpm: 'x',   // drifted
+      targetBpm: 4,
+      warmUpMinutes: 10,
+      rampDurationMinutes: 10,
+      coolDownMinutes: 10,
+    })
+    expect(result.initialBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
+    expect(result.ratio).toBe('30:70')
+    expect(result.targetBpm).toBe(4)
+    expect(result.warmUpMinutes).toBe(10)
+    expect(result.rampDurationMinutes).toBe(10)
+    expect(result.coolDownMinutes).toBe(10)
+  })
+
+  it('rejects prototype-polluting __proto__ object and returns defaults (asRecord guard)', () => {
+    const polluted: unknown = JSON.parse(
+      '{"ratio":"30:70","initialBpm":6,"targetBpm":4,"warmUpMinutes":5,"rampDurationMinutes":5,"coolDownMinutes":5,"__proto__":{"polluted":true}}'
+    )
+    const out = coerceStretchSettings(polluted) as unknown as Record<string, unknown>
+    expect(out['polluted']).toBeUndefined()
+    expect((Object.prototype as Record<string, unknown>)['polluted']).toBeUndefined()
+  })
+})
+
+describe('saveStretchSettings / loadPractices round-trip (Phase 34 T-34-02)', () => {
+  it('saveStretchSettings → loadPractices().stretch.settings round-trips the value', () => {
+    const settings: StretchSettings = {
+      ratio: '30:70',
+      initialBpm: 6,
+      targetBpm: 4.5,
+      warmUpMinutes: 10,
+      rampDurationMinutes: 10,
+      coolDownMinutes: 15,
+    }
+    saveStretchSettings(settings)
+    expect(loadPractices().stretch.settings).toEqual(settings)
+  })
+
+  it('saveStretchSettings does not throw when underlying setItem throws (D-16)', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+    expect(() => { saveStretchSettings(DEFAULT_STRETCH_SETTINGS) }).not.toThrow()
+  })
+
+  it('saveStretchSettings leaves resonant and naviKriya slices untouched', () => {
+    saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 })
+    saveNaviKriyaSettings({ frontCount: 80, omLength: 'slow', rounds: 2, perOmCue: true })
+    saveStretchSettings({ ...DEFAULT_STRETCH_SETTINGS, initialBpm: 6 })
+    const map = loadPractices()
+    expect(map.resonant.settings.bpm).toBe(4)
+    expect(map.naviKriya.settings.frontCount).toBe(80)
+    expect(map.stretch.settings.initialBpm).toBe(6)
+  })
+})
+
+describe('recordStretchSession (Phase 34 T-34-02)', () => {
+  it('increments only practices.stretch.stats and leaves resonant and naviKriya untouched', () => {
+    const next = recordStretchSession(40_000, false, { now: () => 1_700_000_000_000 })
+    expect(next.totalSessions).toBe(1)
+    const map = loadPractices()
+    expect(map.stretch.stats.totalSessions).toBe(1)
+    expect(map.stretch.stats.totalElapsedSeconds).toBe(40)
+    expect(map.resonant.stats).toEqual(ZERO_STATS)
+    expect(map.naviKriya.stats).toEqual(ZERO_STATS)
+  })
+
+  it('does not count a sub-threshold incomplete session', () => {
+    const next = recordStretchSession(5_000, false)
+    expect(next.totalSessions).toBe(0)
+    expect(loadPractices().stretch.stats.totalSessions).toBe(0)
+  })
+
+  it('counts a sub-threshold session when isComplete is true', () => {
+    const next = recordStretchSession(5_000, true, { now: () => 1_700_000_000_000 })
+    expect(next.totalSessions).toBe(1)
+  })
+
+  it('rejects NaN / negative elapsedMs without poisoning stats', () => {
+    expect(recordStretchSession(Number.NaN, true).totalSessions).toBe(0)
+    expect(recordStretchSession(-100, true).totalSessions).toBe(0)
+  })
+})
+
+describe("resetPracticeStats('stretch') (Phase 34)", () => {
+  it("resetPracticeStats('stretch') zeroes only stretch.stats — resonant and naviKriya unchanged", () => {
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 3,
+      practices: {
+        resonant: { settings: DEFAULT_SETTINGS, stats: statsOf(3) },
+        stretch: { settings: DEFAULT_STRETCH_SETTINGS, stats: statsOf(7) },
+        naviKriya: { settings: DEFAULT_NK_SETTINGS, stats: statsOf(5) },
+      },
+      activePractice: 'resonant',
+    }))
+    resetPracticeStats('stretch')
+    const map = loadPractices()
+    expect(map.stretch.stats).toEqual(ZERO_STATS)
+    expect(map.resonant.stats).toEqual(statsOf(3))
+    expect(map.naviKriya.stats).toEqual(statsOf(5))
   })
 })
