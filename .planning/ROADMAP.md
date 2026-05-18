@@ -112,3 +112,13 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | 30. Multi-Practice Architecture & Switcher | 4/4 | Complete    | 2026-05-17 |
 | 31. Navi Kriya Engine & Session | 6/6 | Complete   | 2026-05-17 |
 | 32. Learn & Localization | 3/3 | Complete    | 2026-05-18 |
+
+### Phase 33: Close gap: PRACTICE-02 — resonant settings read/write split-brain
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 32
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 33 to break down)
