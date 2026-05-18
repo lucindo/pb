@@ -5,26 +5,104 @@ import { LOCALE_OPTIONS } from '../domain/settings'
 
 for (const locale of LOCALE_OPTIONS) {
   describe(`LEARN_CONTENT[${locale}] structural contract`, () => {
-    it(`[${locale}] explainer has exactly three keys in fixed order: hrv, timing, forrest (D-08)`, () => {
-      expect(Object.keys(LEARN_CONTENT[locale].explainer)).toEqual(['hrv', 'timing', 'forrest'])
-    })
-
-    it(`[${locale}] hrv section has non-empty title and body`, () => {
-      expect(LEARN_CONTENT[locale].explainer.hrv.title.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].explainer.hrv.body.length).toBeGreaterThan(0)
-    })
-
-    it(`[${locale}] timing section has non-empty title and body`, () => {
-      expect(LEARN_CONTENT[locale].explainer.timing.title.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].explainer.timing.body.length).toBeGreaterThan(0)
+    it(`[${locale}] explainer has exactly one key: forrest (Phase 32 restructure)`, () => {
+      expect(Object.keys(LEARN_CONTENT[locale].explainer)).toEqual(['forrest'])
     })
 
     it(`[${locale}] forrest section has non-empty title and body`, () => {
       expect(LEARN_CONTENT[locale].explainer.forrest.title.length).toBeGreaterThan(0)
       expect(LEARN_CONTENT[locale].explainer.forrest.body.length).toBeGreaterThan(0)
     })
+
+    it(`[${locale}] practices.resonant exists with non-empty description sections`, () => {
+      expect(LEARN_CONTENT[locale].practices.resonant.description.section1.title.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.resonant.description.section1.body.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.resonant.description.section2.title.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.resonant.description.section2.body.length).toBeGreaterThan(0)
+    })
+
+    it(`[${locale}] practices.naviKriya exists with non-empty description sections`, () => {
+      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.title.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.body.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section2.title.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section2.body.length).toBeGreaterThan(0)
+    })
   })
 }
+
+// Resonant practice content should be byte-identical to the old explainer.hrv / explainer.timing data
+describe('LEARN_CONTENT resonant data preservation (Phase 32 restructure)', () => {
+  it('practices.resonant.description.section1 has the old HRV explainer title', () => {
+    expect(LEARN_CONTENT.en.practices.resonant.description.section1.title).toBe('What is HRV / resonance breathing')
+  })
+
+  it('practices.resonant.description.section2 has the old timing explainer title', () => {
+    expect(LEARN_CONTENT.en.practices.resonant.description.section2.title).toBe('How this app times your breath')
+  })
+
+  it('practices.resonant.videos has 4 entries (heroVideo + 3 keyVideos from old shape)', () => {
+    expect(LEARN_CONTENT.en.practices.resonant.videos.length).toBe(4)
+  })
+
+  it('practices.resonant.videos[0] is the old heroVideo (The Holy Trinity of Breath...)', () => {
+    expect(LEARN_CONTENT.en.practices.resonant.videos[0]?.url).toBe('https://www.youtube.com/watch?v=89WorFpMyY0')
+    expect(LEARN_CONTENT.en.practices.resonant.videos[0]?.label).toBe('The Holy Trinity of Breath Induces HRV Resonance')
+  })
+
+  it('practices.resonant.videos URL identity across locales (D-12)', () => {
+    for (let i = 0; i < LEARN_CONTENT.en.practices.resonant.videos.length; i++) {
+      expect(LEARN_CONTENT['pt-BR'].practices.resonant.videos[i]?.url).toBe(
+        LEARN_CONTENT.en.practices.resonant.videos[i]?.url,
+      )
+    }
+  })
+
+  it('practices.resonant.videos label identity across locales — video titles stay English (D-12)', () => {
+    for (let i = 0; i < LEARN_CONTENT.en.practices.resonant.videos.length; i++) {
+      expect(LEARN_CONTENT['pt-BR'].practices.resonant.videos[i]?.label).toBe(
+        LEARN_CONTENT.en.practices.resonant.videos[i]?.label,
+      )
+    }
+  })
+
+  it('practices.resonant.videos length identical across locales', () => {
+    expect(LEARN_CONTENT['pt-BR'].practices.resonant.videos.length).toBe(
+      LEARN_CONTENT.en.practices.resonant.videos.length,
+    )
+  })
+})
+
+describe('LEARN_CONTENT naviKriya partition (D-06)', () => {
+  it('practices.naviKriya.videos has exactly 2 entries', () => {
+    expect(LEARN_CONTENT.en.practices.naviKriya.videos.length).toBe(2)
+  })
+
+  it('practices.naviKriya.videos[0] is "The Guardian In Meditation" with correct URL', () => {
+    expect(LEARN_CONTENT.en.practices.naviKriya.videos[0]?.label).toBe('The Guardian In Meditation')
+    expect(LEARN_CONTENT.en.practices.naviKriya.videos[0]?.url).toBe('https://www.youtube.com/watch?v=M3t7gY_yak8')
+  })
+
+  it('practices.naviKriya.videos[1] is "Navi Kriya Walkthrough" with correct URL', () => {
+    expect(LEARN_CONTENT.en.practices.naviKriya.videos[1]?.label).toBe('Navi Kriya Walkthrough')
+    expect(LEARN_CONTENT.en.practices.naviKriya.videos[1]?.url).toBe('https://www.youtube.com/watch?v=A4BGQCIp9fI')
+  })
+
+  it('practices.naviKriya.videos URL identity across locales (D-12)', () => {
+    for (let i = 0; i < LEARN_CONTENT.en.practices.naviKriya.videos.length; i++) {
+      expect(LEARN_CONTENT['pt-BR'].practices.naviKriya.videos[i]?.url).toBe(
+        LEARN_CONTENT.en.practices.naviKriya.videos[i]?.url,
+      )
+    }
+  })
+
+  it('practices.naviKriya.videos label identity across locales — video titles stay English (D-12)', () => {
+    for (let i = 0; i < LEARN_CONTENT.en.practices.naviKriya.videos.length; i++) {
+      expect(LEARN_CONTENT['pt-BR'].practices.naviKriya.videos[i]?.label).toBe(
+        LEARN_CONTENT.en.practices.naviKriya.videos[i]?.label,
+      )
+    }
+  })
+})
 
 for (const locale of LOCALE_OPTIONS) {
   describe(`LEARN_CONTENT[${locale}] clinical-verbs guard`, () => {
@@ -32,12 +110,20 @@ for (const locale of LOCALE_OPTIONS) {
     const ptBrClinicalVerbs = /\b(melhora|trata|cura|diagnostica|avalia)\b/i
     const clinicalVerbs = locale === 'en' ? enClinicalVerbs : ptBrClinicalVerbs
 
-    it(`[${locale}] hrv body has no forbidden clinical verbs (D-08 / LEARN-04)`, () => {
-      expect(LEARN_CONTENT[locale].explainer.hrv.body).not.toMatch(clinicalVerbs)
+    it(`[${locale}] resonant section1 body has no forbidden clinical verbs`, () => {
+      expect(LEARN_CONTENT[locale].practices.resonant.description.section1.body).not.toMatch(clinicalVerbs)
     })
 
-    it(`[${locale}] timing body has no forbidden clinical verbs (D-08 / LEARN-04)`, () => {
-      expect(LEARN_CONTENT[locale].explainer.timing.body).not.toMatch(clinicalVerbs)
+    it(`[${locale}] resonant section2 body has no forbidden clinical verbs`, () => {
+      expect(LEARN_CONTENT[locale].practices.resonant.description.section2.body).not.toMatch(clinicalVerbs)
+    })
+
+    it(`[${locale}] naviKriya section1 body has no forbidden clinical verbs`, () => {
+      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.body).not.toMatch(clinicalVerbs)
+    })
+
+    it(`[${locale}] naviKriya section2 body has no forbidden clinical verbs`, () => {
+      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section2.body).not.toMatch(clinicalVerbs)
     })
 
     it(`[${locale}] forrest body has no forbidden clinical verbs (D-08 / LEARN-04)`, () => {
@@ -87,21 +173,6 @@ describe('LEARN_CONTENT link contract', () => {
     expect(LEARN_CONTENT.en.links.patreon.url.startsWith('https://')).toBe(true)
   })
 
-  it('heroVideo URL starts with https:// (T-06-04)', () => {
-    expect(LEARN_CONTENT.en.links.heroVideo.url.startsWith('https://')).toBe(true)
-  })
-
-  it('keyVideos length is between 0 and 5 inclusive (D-12 item 5 — LEARN-02)', () => {
-    expect(LEARN_CONTENT.en.links.keyVideos.length).toBeGreaterThanOrEqual(0)
-    expect(LEARN_CONTENT.en.links.keyVideos.length).toBeLessThanOrEqual(5)
-  })
-
-  it('every keyVideo URL starts with https://', () => {
-    for (const video of LEARN_CONTENT.en.links.keyVideos) {
-      expect(video.url.startsWith('https://')).toBe(true)
-    }
-  })
-
   it('appStoreIos URL starts with https:// (T-24-02)', () => {
     expect(LEARN_CONTENT.en.links.appStoreIos.url.startsWith('https://')).toBe(true)
   })
@@ -124,8 +195,6 @@ describe('LEARN_CONTENT link contract', () => {
       LEARN_CONTENT.en.links.website.url,
       LEARN_CONTENT.en.links.youtubeChannel.url,
       LEARN_CONTENT.en.links.patreon.url,
-      LEARN_CONTENT.en.links.heroVideo.url,
-      ...LEARN_CONTENT.en.links.keyVideos.map((v) => v.url),
       LEARN_CONTENT.en.links.appStoreIos.url,
       LEARN_CONTENT.en.links.googlePlayAndroid.url,
     ]
@@ -150,20 +219,6 @@ describe('LEARN_CONTENT PT-BR URL identity (D-12)', () => {
 
   it('patreon URL identical across locales', () => {
     expect(LEARN_CONTENT['pt-BR'].links.patreon.url).toBe(LEARN_CONTENT.en.links.patreon.url)
-  })
-
-  it('heroVideo URL identical across locales', () => {
-    expect(LEARN_CONTENT['pt-BR'].links.heroVideo.url).toBe(LEARN_CONTENT.en.links.heroVideo.url)
-  })
-
-  it('keyVideos URLs identical across locales', () => {
-    for (let i = 0; i < LEARN_CONTENT.en.links.keyVideos.length; i++) {
-      expect(LEARN_CONTENT['pt-BR'].links.keyVideos[i]?.url).toBe(LEARN_CONTENT.en.links.keyVideos[i]?.url)
-    }
-  })
-
-  it('keyVideos length identical across locales', () => {
-    expect(LEARN_CONTENT['pt-BR'].links.keyVideos.length).toBe(LEARN_CONTENT.en.links.keyVideos.length)
   })
 
   it('appStoreIos URL identical across locales (D-07 locale-invariant)', () => {
