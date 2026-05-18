@@ -20,6 +20,7 @@ import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 import type { SessionSettings } from '../domain/settings'
 import {
   DEFAULT_STRETCH_SETTINGS,
+  STRETCH_INITIAL_BPM_OPTIONS,
   isValidRatio,
   isValidBpm,
   isValidWarmUp,
@@ -86,12 +87,35 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
 // Phase 34 T-34-02: coerceStretchSettings modeled exactly on coerceNaviKriyaSettings.
 // Uses asRecord guard for prototype-pollution safety; per-field non-throwing fallback
 // means one drifted field never discards the rest.
+//
+// CR-01 fix: enforces the cross-field invariant targetBpm < initialBpm (parity with
+// validateStretchSettings). A persisted slice that violates it falls back to
+// DEFAULT_STRETCH_SETTINGS for BOTH BPM fields so the ramp engine never receives an
+// inverted or zero-span ramp. initialBpm is restricted to STRETCH_INITIAL_BPM_OPTIONS
+// (>= 1.5) so a coerced initialBpm can never collapse the SettingsForm targetBpm picker
+// to an empty option list (WR-01).
 export function coerceStretchSettings(raw: unknown): StretchSettings {
   const r = asRecord(raw)
+  // Compute BPM fields into mutable locals first so the cross-field check can
+  // reset both atomically when the invariant is violated.
+  // initialBpm: valid only when isValidBpm AND in STRETCH_INITIAL_BPM_OPTIONS (>= 1.5).
+  let initialBpm: number =
+    isValidBpm(r.initialBpm) && STRETCH_INITIAL_BPM_OPTIONS.includes(r.initialBpm as number)
+      ? (r.initialBpm as number)
+      : DEFAULT_STRETCH_SETTINGS.initialBpm
+  let targetBpm: number = isValidBpm(r.targetBpm)
+    ? (r.targetBpm as number)
+    : DEFAULT_STRETCH_SETTINGS.targetBpm
+  // Cross-field invariant: the ramp must always go strictly downward (targetBpm < initialBpm).
+  // Reset BOTH fields together so the returned pair is always a valid down-ramp.
+  if (targetBpm >= initialBpm) {
+    initialBpm = DEFAULT_STRETCH_SETTINGS.initialBpm
+    targetBpm  = DEFAULT_STRETCH_SETTINGS.targetBpm
+  }
   return {
     ratio:               isValidRatio(r.ratio)                       ? r.ratio               : DEFAULT_STRETCH_SETTINGS.ratio,
-    initialBpm:          isValidBpm(r.initialBpm)                    ? r.initialBpm          : DEFAULT_STRETCH_SETTINGS.initialBpm,
-    targetBpm:           isValidBpm(r.targetBpm)                     ? r.targetBpm           : DEFAULT_STRETCH_SETTINGS.targetBpm,
+    initialBpm,
+    targetBpm,
     warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)              ? r.warmUpMinutes       : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
     rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes)  ? r.rampDurationMinutes : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
     coolDownMinutes:     isValidCoolDown(r.coolDownMinutes)          ? r.coolDownMinutes     : DEFAULT_STRETCH_SETTINGS.coolDownMinutes,

@@ -151,6 +151,28 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
     expect(segs.length).toBeGreaterThan(0)
     expect(segs[0]?.stage).toBe('hold-initial')
   })
+
+  // CR-01 defensive guard: buildStretchSegments must never silently produce an inverted ramp
+  it('CR-01: throws RangeError when targetBpm > initialBpm (inverted ramp)', () => {
+    expect(() => buildStretchSegments({ ...baseSettings, initialBpm: 4, targetBpm: 5 }))
+      .toThrow(RangeError)
+    expect(() => buildStretchSegments({ ...baseSettings, initialBpm: 4, targetBpm: 5 }))
+      .toThrow('targetBpm must be strictly below initialBpm')
+  })
+
+  it('CR-01: throws RangeError when targetBpm === initialBpm (zero-span ramp)', () => {
+    expect(() => buildStretchSegments({ ...baseSettings, initialBpm: 4, targetBpm: 4 }))
+      .toThrow(RangeError)
+    expect(() => buildStretchSegments({ ...baseSettings, initialBpm: 4, targetBpm: 4 }))
+      .toThrow('targetBpm must be strictly below initialBpm')
+  })
+
+  it('CR-01: a valid down-ramp (targetBpm < initialBpm) still builds a populated segment table', () => {
+    // Regression: valid settings must not be affected by the new guard
+    const segs = buildStretchSegments(baseSettings)
+    expect(segs.length).toBeGreaterThan(2)
+    expect(segs.some(s => s.stage === 'ramp')).toBe(true)
+  })
 })
 
 describe('getStretchFrame', () => {
