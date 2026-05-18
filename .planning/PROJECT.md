@@ -33,7 +33,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Blueprint:** validated across 3 spikes (`.planning/spikes/`), packaged in the `spike-findings-hrv` skill. Carry-forward tech debt stays deferred — this milestone is focused on the second practice.
 
-**Progress:** All 3 phases complete. Phase 30 (Multi-Practice Architecture & Switcher) — the `practice` concept, v1→v2 per-practice persistence, and the top switcher. Phase 31 (Navi Kriya Engine & Session) — the OM-counting engine and session flow. Phase 32 (Learn & Localization, complete 2026-05-18) — per-practice + shared Learn content and native-quality EN/PT-BR copy for all new surfaces. Milestone ready for audit/close.
+**Progress:** All 3 core phases plus 1 gap-closure phase complete. Phase 30 (Multi-Practice Architecture & Switcher) — the `practice` concept, v1→v2 per-practice persistence, and the top switcher. Phase 31 (Navi Kriya Engine & Session) — the OM-counting engine and session flow. Phase 32 (Learn & Localization, complete 2026-05-18) — per-practice + shared Learn content and native-quality EN/PT-BR copy for all new surfaces. Phase 33 (gap closure, complete 2026-05-18) — restored PRACTICE-02: retargeted the resonant-settings read path from the dead flat `env.settings` field to the `practices.resonant.settings` envelope, removed dead `loadSettings`/`saveSettings`, added remount regression tests. Milestone ready for audit/close.
 
 ## Requirements
 
@@ -224,4 +224,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-18 — Phase 32 (Learn & Localization) complete; v1.5 all phases done*
+*Last updated: 2026-05-18 — Phase 33 (PRACTICE-02 gap closure) complete; v1.5 all phases done*
