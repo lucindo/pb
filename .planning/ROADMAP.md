@@ -118,7 +118,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Goal:** Restore resonant-settings persistence across page reloads — retarget the resonant-settings read path to the per-practice envelope, remove the dead flat-field `loadSettings`/`saveSettings`, and add the regression tests that would have caught the read/write split-brain.
 **Requirements**: PRACTICE-02
 **Depends on:** Phase 32
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 33-01-PLAN.md — Retarget resonant-settings read to per-practice envelope, remove dead loadSettings/saveSettings, add D-05 remount regression tests
+- [x] 33-01-PLAN.md — Retarget resonant-settings read to per-practice envelope, remove dead loadSettings/saveSettings, add D-05 remount regression tests
