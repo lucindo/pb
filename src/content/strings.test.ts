@@ -225,3 +225,86 @@ describe('LOCALE_DISPLAY_NAMES (D-14 native endonyms)', () => {
     expect(LOCALE_DISPLAY_NAMES['pt-BR']).toBe('Português (Brasil)')
   })
 })
+
+describe('Phase 32 new learn.* heading keys', () => {
+  const newLearnKeys = [
+    'naviKriyaVideosHeading',
+    'naviKriyaDescriptionSection1Title',
+    'naviKriyaDescriptionSection2Title',
+  ] as const
+
+  it('every new learn.* key is non-empty in both EN and PT-BR', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      for (const key of newLearnKeys) {
+        const value = UI_STRINGS[locale].learn[key]
+        expect(typeof value, `learn.${key} in ${locale}`).toBe('string')
+        expect(value.length, `learn.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('EN naviKriyaVideosHeading equals "Selected Navi Kriya Videos"', () => {
+    expect(UI_STRINGS.en.learn.naviKriyaVideosHeading).toBe('Selected Navi Kriya Videos')
+  })
+
+  it('EN naviKriyaDescriptionSection1Title equals "What is Navi Kriya"', () => {
+    expect(UI_STRINGS.en.learn.naviKriyaDescriptionSection1Title).toBe('What is Navi Kriya')
+  })
+
+  it('EN naviKriyaDescriptionSection2Title equals "How this app paces it"', () => {
+    expect(UI_STRINGS.en.learn.naviKriyaDescriptionSection2Title).toBe('How this app paces it')
+  })
+
+  it('"Navi Kriya" stays untranslated in pt-BR (Sanskrit proper noun — Phase 30 D-05)', () => {
+    expect(UI_STRINGS['pt-BR'].learn.naviKriyaDescriptionSection1Title).toContain('Navi Kriya')
+  })
+})
+
+describe('Phase 32 nkReadout + nkControls explicit PT-BR non-empty checks', () => {
+  const nkReadoutKeys = [
+    'statusLabel',
+    'readoutAriaLabel',
+    'phaseLabel',
+    'front',
+    'back',
+    'roundLabel',
+    'countLabel',
+  ] as const
+
+  it('every nkReadout string key is non-empty in pt-BR', () => {
+    for (const key of nkReadoutKeys) {
+      const value = UI_STRINGS['pt-BR'].nkReadout[key]
+      expect(typeof value, `nkReadout.${key} in pt-BR`).toBe('string')
+      expect(value.length, `nkReadout.${key} in pt-BR must be non-empty`).toBeGreaterThan(0)
+    }
+  })
+
+  it('nkReadout.roundOf and countOf template fns return non-empty strings in pt-BR', () => {
+    expect(UI_STRINGS['pt-BR'].nkReadout.roundOf(1, 5).length).toBeGreaterThan(0)
+    expect(UI_STRINGS['pt-BR'].nkReadout.countOf(3, 10).length).toBeGreaterThan(0)
+  })
+
+  const nkControlsKeys = [
+    'roundsLabel',
+    'frontCountLabel',
+    'omLengthLabel',
+    'omLengthFast',
+    'omLengthMedium',
+    'omLengthSlow',
+    'perOmCueLabel',
+    'perOmCueOn',
+    'perOmCueOff',
+  ] as const
+
+  it('every nkControls string key is non-empty in pt-BR', () => {
+    for (const key of nkControlsKeys) {
+      const value = UI_STRINGS['pt-BR'].nkControls[key]
+      expect(typeof value, `nkControls.${key} in pt-BR`).toBe('string')
+      expect(value.length, `nkControls.${key} in pt-BR must be non-empty`).toBeGreaterThan(0)
+    }
+  })
+
+  it('nkControls.estimatedDuration template fn returns non-empty string in pt-BR', () => {
+    expect(UI_STRINGS['pt-BR'].nkControls.estimatedDuration(10).length).toBeGreaterThan(0)
+  })
+})
