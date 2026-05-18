@@ -3,7 +3,7 @@ spike: 006
 name: app-icon-alternatives
 type: comparison
 validates: "Given the installed PWA icon, when the user reviews meditation-themed candidates in real iOS/Android install contexts, then the icon worth shipping emerges"
-verdict: PENDING
+verdict: VALIDATED — winner: Breathing rings (pale on deep)
 related: []
 tags: [icon, pwa, branding, design, meditation, comparison]
 ---
@@ -92,10 +92,51 @@ Network needed on first open (React / htm / Tailwind from CDN).
 4. **Made install-realism first-class.** Live OS-mask switching, multi-size
    rendering, tone flip, safe-zone overlay, and a home-screen preview — so the
    choice is judged the way the icon is actually seen.
-5. _(Pending operator review — verdict to be set from the checkpoint.)_
+5. **Operator review.** The operator reviewed all seven and chose **Breathing
+   rings**, in the **pale-on-deep** tone. Notably the operator did *not* pick
+   either faithful recreation of their own reference glyph — seeing the totem in
+   real install masks alongside the alternatives surfaced that the
+   breath-motion motif fit better as an icon. That is exactly what the harness
+   was for.
 
 ## Results
 
-_Pending operator review. The harness is built and self-consistent; the verdict
-(which icon ships, in which tone) is an operator design call recorded at the
-checkpoint._
+**Verdict: VALIDATED — winner: Breathing rings (pale on deep).**
+
+The operator reviewed all seven candidates in real iOS/Android install contexts
+and chose **Breathing rings** — concentric rings echoing the app's breathing-orb
+expansion — in the **pale-on-deep** tone (cohesive with the current orb icon and
+the dark favicon).
+
+**Breathing rings spec (the icon to ship):**
+
+| Element | Value |
+|---------|-------|
+| Background | radial gradient `#3b4252` (center) → `#2b303b` (edge) |
+| Rings | 3 concentric circles, radii 200 / 152 / 104 (in a 512 viewBox), stroke `#e6eef3`, stroke-width 13, opacity 0.24 / 0.42 / 0.66 (faint outward) |
+| Center | filled disc, radius 46, accent `#9fc6d6` |
+
+**Notes for the build — this is asset generation, not a code constant:**
+
+- Unlike the countdown beep (004) and end sound (005), shipping this is **PNG
+  asset generation**, not a one-line constant change. The winning SVG must be
+  rasterised to: `pwa-192x192.png`, `pwa-512x512.png`,
+  `pwa-maskable-192x192.png`, `pwa-maskable-512x512.png`, `apple-touch-icon.png`
+  (180×180) — all in `public/`, already declared in `vite.config.ts`.
+- **Maskable safe-zone inset (the build note from step 1):** the non-maskable
+  PNGs use the glyph at full size; the **maskable** PNGs must scale the glyph
+  down so the outer ring sits inside the inner-80% safe circle (outer ring at
+  r200 + 6.5 half-stroke = r206.5 slightly exceeds the r≈205 safe radius — the
+  maskable export should shrink the ring set to ~0.9× so nothing is cropped).
+  This finally fixes the pre-existing bug where the maskable PNG was byte-
+  identical to the non-maskable one.
+- **Out of scope (open question):** the browser-tab **favicon** (`favicon.svg` +
+  the per-theme recolor in `faviconPalette.ts`) is a separate surface — still
+  the orb. The operator's request was the *installed* icon. Whether to bring the
+  favicon into visual sync with Breathing rings is a follow-up decision, not
+  part of this verdict.
+
+**Surprise:** the operator did not pick either Totem variant — their own
+reference glyph. Seeing it cropped into real OS masks next to the alternatives
+showed the breath-motion motif worked better as an icon. The harness earned its
+keep by making that visible.

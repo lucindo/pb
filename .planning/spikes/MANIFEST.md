@@ -47,6 +47,15 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   alternatives and chose one. The swap is the three `COUNTDOWN_TICK_*` constants plus a
   pitch ratio in `src/audio/nkCueSynth.ts` (`scheduleCountdownTick`), and applies to both
   the HRV and Navi Kriya countdowns. (Spike 004, operator decision.)
+- The **installed app icon** swaps to **Breathing rings** (pale on deep) — three faint
+  concentric rings (radii 200/152/104 in a 512 viewBox, stroke `#e6eef3`, opacity
+  0.24/0.42/0.66) around a `#9fc6d6` centre disc (r46), on a `#3b4252→#2b303b` radial
+  gradient. Echoes the breathing-orb motion. Ships as PNG exports — `pwa-192/512`,
+  `pwa-maskable-192/512`, `apple-touch-icon` (180) in `public/`. The maskable exports
+  must inset the glyph (~0.9×) into the inner-80% safe zone — also fixing the existing
+  bug where the maskable PNG was byte-identical to the non-maskable one. The browser-tab
+  favicon is a separate surface, left as the orb pending a follow-up decision. (Spike
+  006, operator decision.)
 - The **session-end sound** swaps to **Warm pad fade** — the same C-major triad, but a
   strike-free envelope: fade in (~0.9 s) → hold → linear fade out (~1.4 s), total ~5.0 s,
   peak 0.11. Replaces the current 1.8 s percussive-strike chord. Single sound, **no
@@ -65,4 +74,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 003 | navi-kriya-practice   | standard   | App-paced Navi Kriya counting practice — 100 front / 25 back OM per round, N rounds, marker + per-OM sounds — works as a usable in-app meditation | VALIDATED | practice, navi-kriya, audio, counting |
 | 004 | countdown-beep-alternatives | comparison | Auditioning the current 3-2-1 lead-in beep against alternatives surfaces the beep worth shipping | VALIDATED — winner: Crisp ping | audio, countdown, sound-design, cue, comparison |
 | 005 | session-end-sound-alternatives | comparison | Auditioning the current session-complete chord against alternatives surfaces the end sound worth shipping, and whether it ships longer | VALIDATED — winner: Warm pad fade | audio, session-end, sound-design, cue, comparison |
-| 006 | app-icon-alternatives | comparison | Reviewing meditation-themed installed-icon candidates in real iOS/Android masks surfaces the app icon worth shipping | PENDING | icon, pwa, branding, design, meditation, comparison |
+| 006 | app-icon-alternatives | comparison | Reviewing meditation-themed installed-icon candidates in real iOS/Android masks surfaces the app icon worth shipping | VALIDATED — winner: Breathing rings | icon, pwa, branding, design, meditation, comparison |
