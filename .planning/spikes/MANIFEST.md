@@ -54,8 +54,9 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   `pwa-maskable-192/512`, `apple-touch-icon` (180) in `public/`. The maskable exports
   must inset the glyph (~0.9×) into the inner-80% safe zone — also fixing the existing
   bug where the maskable PNG was byte-identical to the non-maskable one. The browser-tab
-  favicon is a separate surface, left as the orb pending a follow-up decision. (Spike
-  006, operator decision.)
+  favicon was synced to the same motif: a two-ring + dot mark that keeps the Phase 21
+  per-theme recolour (single `__FILL__` colour, retinted per theme). (Spike 006, operator
+  decision — icon + favicon shipped.)
 - The **session-end sound** swaps to **Warm pad fade** — the same C-major triad, but a
   strike-free envelope: fade in (~0.9 s) → hold → linear fade out (~1.4 s), total ~5.0 s,
   peak 0.11. Replaces the current 1.8 s percussive-strike chord. Single sound, **no
