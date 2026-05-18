@@ -96,6 +96,54 @@ describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', 
     expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
   })
 
+  // UAT GAP 1: Duration readout shows a rounded whole-minute value (not an unrounded float)
+  it('GAP 1: Duration readout shows a rounded whole-minute string, not a fractional float', () => {
+    renderForm({ activePractice: 'stretch' })
+    const totalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)!
+    const roundedMinutes = Math.round(totalMs / 60_000)
+    const duration = screen.getByRole('group', { name: 'Duration' })
+    // The text must use the rounded integer, not the raw quotient (which may be a float)
+    expect(within(duration).getByText(`${String(roundedMinutes)} min`)).toBeInTheDocument()
+    // The unrounded float must NOT appear if it differs from the rounded value
+    const rawFloat = totalMs / 60_000
+    if (rawFloat !== roundedMinutes) {
+      expect(within(duration).queryByText(`${String(rawFloat)} min`)).not.toBeInTheDocument()
+    }
+  })
+
+  // UAT GAP 1: open-ended branch is preserved (the open-ended label is unaffected by the rounding fix)
+  it('GAP 1: open-ended cool-down still shows open-ended label (rounding fix does not affect open-ended branch)', () => {
+    renderForm({
+      activePractice: 'stretch',
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, coolDownMinutes: 'open-ended' },
+    })
+    const duration = screen.getByRole('group', { name: 'Duration' })
+    expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
+    expect(within(duration).queryByText(/\d+\.\d+ min/)).not.toBeInTheDocument()
+  })
+
+  // UAT GAP 2: stretch steppers are hidden when isRunning is true (mirrors resonant behavior)
+  it('GAP 2: with isRunning=true, none of the stretch steppers render', () => {
+    renderForm({ activePractice: 'stretch', isRunning: true })
+    // All ramp groups must be absent during a running session
+    for (const group of STRETCH_GROUPS) {
+      expect(screen.queryByRole('group', { name: group })).not.toBeInTheDocument()
+    }
+    // The Ratio and Duration groups must also be absent
+    expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Duration' })).not.toBeInTheDocument()
+  })
+
+  // UAT GAP 2: stretch steppers are visible when isRunning is false (no regression)
+  it('GAP 2: with isRunning=false, all stretch steppers render (no regression)', () => {
+    renderForm({ activePractice: 'stretch', isRunning: false })
+    for (const group of STRETCH_GROUPS) {
+      expect(screen.getByRole('group', { name: group })).toBeInTheDocument()
+    }
+    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+  })
+
   it('changing ratio calls onStretchSettingsChange with updated ratio', async () => {
     const user = userEvent.setup()
     const { onStretchSettingsChange } = renderForm({
