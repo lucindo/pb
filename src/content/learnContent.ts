@@ -207,12 +207,12 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
       naviKriya: {
         description: {
           section1: {
-            title: 'O que é Navi Kriya', // TODO: native-speaker review
-            body: 'Navi Kriya é uma prática de meditação com contagem de OMs ensinada por Forrest Knutson. Cada repetição do OM é contada em um ritmo escolhido ao longo da parte frontal e dorsal do corpo, movendo a atenção pela coluna. Esta é uma prática silenciosa e sentada — não é um procedimento clínico nem um exercício físico.', // TODO: native-speaker review
+            title: 'O que é Navi Kriya',
+            body: 'Navi Kriya é uma prática de meditação com contagem de OMs ensinada por Forrest Knutson. Cada repetição do OM é contada em um ritmo escolhido ao longo da parte frontal e dorsal do corpo, movendo a atenção pela coluna. Esta é uma prática silenciosa e sentada — não é um procedimento clínico nem um exercício físico.',
           },
           section2: {
-            title: 'Como este app guia a prática', // TODO: native-speaker review
-            body: 'Este app conta cada OM no ritmo escolhido e avança automaticamente da fase frontal para a fase dorsal em uma proporção fixa de 4 para 1. Você configura o número de rodadas e a duração de cada OM; o app acompanha seu progresso e emite um sinal sonoro opcional a cada OM para manter sua atenção na prática.', // TODO: native-speaker review
+            title: 'Como este app guia a prática',
+            body: 'Este app conta cada OM no ritmo escolhido e avança automaticamente da fase frontal para a fase dorsal em uma proporção fixa de 4 para 1. Você configura o número de rodadas e a duração de cada OM; o app acompanha seu progresso e emite um sinal sonoro opcional a cada OM para manter sua atenção na prática.',
           },
         },
         videos: [
