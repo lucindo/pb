@@ -39,13 +39,25 @@ Requirements for milestone v1.5. Each maps to exactly one roadmap phase.
 
 - [x] **I18N-08**: User can read all new Navi Kriya and multi-practice UI copy in both English and native-quality PT-BR
 
+## Phase 34 — Stretch as a Distinct Practice
+
+Post-v1.5 phase appended to the roadmap (like Phase 33). Delivers the Future
+requirement PRACTICE-F1 — the third practice. Sourced from spikes 002 + 007.
+
+- [ ] **STRETCH-01**: User can switch between HRV, Stretch, and Navi using the top segmented control above the orb
+- [ ] **STRETCH-02**: The 3-practice switcher stays legible and tappable on mobile down to 320px, in English and PT-BR, and ships both label treatments (text / icon+label) selectable via a developer-only toggle
+- [ ] **STRETCH-03**: Stretch has its own per-practice session settings, persisted across reloads, separate from HRV's
+- [ ] **STRETCH-04**: Stretch records its own per-practice stats — separate from HRV's and Navi Kriya's
+- [ ] **STRETCH-05**: A returning user's existing HRV and Navi data survives the upgrade, and prior Stretch usage is preserved under the new Stretch practice slice (storage-envelope migration)
+- [ ] **STRETCH-06**: User can read all new Stretch UI copy in both English and native-quality PT-BR
+
 ## Future Requirements
 
 Deferred to a future release. Tracked but not in the v1.5 roadmap.
 
 ### Additional Practices
 
-- **PRACTICE-F1**: Support a third (and further) Forrest Knutson practice. The top segmented control comfortably holds ~3–4 practices; beyond that the switcher mechanism must be revisited (spike 002).
+- **PRACTICE-F1**: Support a third (and further) Forrest Knutson practice. The top segmented control comfortably holds ~3–4 practices; beyond that the switcher mechanism must be revisited (spike 002). — _Being delivered by Phase 34 (Stretch as a Distinct Practice); see STRETCH-01..06 above._
 
 ### Carry-Forward Tech Debt
 
@@ -88,17 +100,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEARN-02 | Phase 32 | Complete |
 | LEARN-03 | Phase 32 | Complete |
 | I18N-08 | Phase 32 | Complete |
+| STRETCH-01 | Phase 34 | Pending |
+| STRETCH-02 | Phase 34 | Pending |
+| STRETCH-03 | Phase 34 | Pending |
+| STRETCH-04 | Phase 34 | Pending |
+| STRETCH-05 | Phase 34 | Pending |
+| STRETCH-06 | Phase 34 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 18 total
 - Mapped to phases: 18 ✓
 - Unmapped: 0 ✓
+- Post-v1.5 appended: STRETCH-01..06 → Phase 34 (6)
 
 **Per-phase breakdown:**
 - Phase 30 — Multi-Practice Architecture & Switcher: PRACTICE-01..06 (6)
 - Phase 31 — Navi Kriya Engine & Session: NK-01..09 (9)
 - Phase 32 — Learn & Localization: LEARN-02, LEARN-03, I18N-08 (3)
+- Phase 34 — Stretch as a Distinct Practice: STRETCH-01..06 (6)
 
 ---
 *Requirements defined: 2026-05-17*
-*Last updated: 2026-05-17 — roadmap revised, NK-08 merged into Phase 31; 18/18 requirements mapped to Phases 30–32*
+*Last updated: 2026-05-18 — Phase 34 (Stretch as a Distinct Practice) appended; STRETCH-01..06 added, delivering Future requirement PRACTICE-F1*

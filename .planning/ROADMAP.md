@@ -122,3 +122,20 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 Plans:
 - [x] 33-01-PLAN.md — Retarget resonant-settings read to per-practice envelope, remove dead loadSettings/saveSettings, add D-05 remount regression tests
+
+### Phase 34: Stretch as a Distinct Practice
+
+**Goal:** Promote HRV's Stretch mode to a top-level practice — the switcher carries three (HRV · Stretch · Navi), each with its own settings and stats, returning users' data migrates cleanly, and the 3-practice switcher ships both label treatments behind a developer-only toggle.
+**Requirements**: STRETCH-01, STRETCH-02, STRETCH-03, STRETCH-04, STRETCH-05, STRETCH-06
+**Depends on:** Phase 32 (v1.5 multi-practice foundation — the `practice` concept, per-practice settings/stats slices, and the top segmented switcher)
+**Source:** Spikes 002 (switcher-ux) + 007 (three-practice-switcher); delivers the deferred Future requirement PRACTICE-F1.
+**Success Criteria** (what must be TRUE):
+  1. User can switch between HRV, Stretch, and Navi using the top segmented control above the orb
+  2. Stretch is its own practice — its own session settings and its own stats — not a mode toggle inside HRV
+  3. A returning user keeps all data: HRV and Navi settings/stats intact, and prior Stretch usage preserved under the new Stretch practice slice (storage-envelope migration)
+  4. The 3-practice switcher stays legible and tappable on mobile down to 320px, in English and PT-BR
+  5. A developer can switch the switcher between the two label treatments (text / icon+label) via a developer-only toggle that is NOT in the user Settings dialog
+  6. User can read all new Stretch UI copy in both English and native-quality PT-BR
+**Open question for research:** whether the HRV (resonant) practice retains an internal stretch mode or whether stretch moves out of it entirely — resolve in RESEARCH.md before planning.
+**Plans:** TBD
+**UI hint**: yes
