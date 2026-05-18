@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SessionSettings } from './settings'
-import { DEFAULT_SETTINGS } from './settings'
+import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS } from './settings'
+import type { StretchSettings } from './settings'
 import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
   startSession,
+  startStretchSession,
 } from './sessionController'
 
 const baseSettings: SessionSettings = {
@@ -102,10 +104,24 @@ describe('session lifecycle controller', () => {
   })
 })
 
-describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
-  const stretchSettings: SessionSettings = {
-    ...DEFAULT_SETTINGS,
-    mode: 'stretch',
+describe('startSession standard-only (D-01)', () => {
+  it('sets stretchSegments to null for standard sessions (regression guard)', () => {
+    const running = startSession(baseSettings, 1_000)
+    expect(running.stretchSegments).toBeNull()
+    expect(running.lastFrame.phaseLabel).toBe('In')
+    expect(running.lastFrame.currentBpm).toBeUndefined()
+  })
+
+  it('returns status running with a standard frame', () => {
+    const running = startSession(baseSettings, 0)
+    expect(running.status).toBe('running')
+    expect(running.stretchSegments).toBeNull()
+  })
+})
+
+describe('startStretchSession (D-01, D-02)', () => {
+  const stretchSettings: StretchSettings = {
+    ratio: '40:60',
     initialBpm: 6,
     targetBpm: 4,
     warmUpMinutes: 10,
@@ -113,28 +129,35 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
     rampDurationMinutes: 20,
   }
 
-  it('standard startSession sets stretchSegments to null (regression guard)', () => {
-    const running = startSession(baseSettings, 1_000)
-
-    expect(running.stretchSegments).toBeNull()
-    expect(running.lastFrame.phaseLabel).toBe('In')
-    expect(running.lastFrame.currentBpm).toBeUndefined()
-  })
-
-  it('stretch startSession builds a non-empty segment table and a stretch frame', () => {
-    const running = startSession(stretchSettings, 1_000)
-
+  it('returns status running with a non-null stretchSegments table', () => {
+    const running = startStretchSession(stretchSettings, 1_000)
+    expect(running.status).toBe('running')
     expect(running.stretchSegments).not.toBeNull()
     expect(running.stretchSegments?.length).toBeGreaterThan(0)
+  })
+
+  it('lastFrame is a stretch frame (has currentBpm and stage)', () => {
+    const running = startStretchSession(stretchSettings, 1_000)
     expect(running.lastFrame.currentBpm).toBe(6)
     expect(running.lastFrame.stage).toBe('hold-initial')
   })
 
+  it('startedAtMs matches the provided nowMs', () => {
+    const running = startStretchSession(stretchSettings, 5_000)
+    expect(running.startedAtMs).toBe(5_000)
+  })
+
+  it('DEFAULT_STRETCH_SETTINGS produces a valid stretch session', () => {
+    const running = startStretchSession(DEFAULT_STRETCH_SETTINGS, 0)
+    expect(running.status).toBe('running')
+    expect(running.stretchSegments).not.toBeNull()
+    expect(running.lastFrame.currentBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
+  })
+
   it('completeIfNeeded on a stretch session dispatches to the stretch frame', () => {
-    const running = startSession(stretchSettings, 0)
+    const running = startStretchSession(stretchSettings, 0)
     // 15 minutes in — mid-ramp (warm-up 10 min, ramp 10:00–30:00)
     const next = completeIfNeeded(running, 15 * 60_000)
-
     expect(next.status).toBe('running')
     if (next.status !== 'running') throw new Error('Expected running state')
     expect(next.lastFrame.stage).toBe('ramp')
@@ -142,29 +165,35 @@ describe('stretch-mode sessions (Plan 22-02 / STRETCH-04, STRETCH-05)', () => {
   })
 
   it('an open-ended stretch session never returns a complete state', () => {
-    const running = startSession({ ...stretchSettings, coolDownMinutes: 'open-ended' }, 0)
-
+    const running = startStretchSession({ ...stretchSettings, coolDownMinutes: 'open-ended' }, 0)
     const later = completeIfNeeded(running, 5 * 60 * 60_000)
-
     expect(later.status).toBe('running')
     if (later.status !== 'running') throw new Error('Expected running state')
     expect(later.lastFrame.remainingMs).toBeNull()
   })
 
   it('a finite stretch session completes once its computed total is reached', () => {
-    const running = startSession(stretchSettings, 0)
+    const running = startStretchSession(stretchSettings, 0)
     // total = (warm-up 10 + ramp 20 + cool-down 15) min = 45 min
     const totalMs = (10 + 20 + 15) * 60_000
-
     const atTotal = completeIfNeeded(running, totalMs + 60_000)
-
     expect(atTotal.status).toBe('complete')
     if (atTotal.status !== 'complete') throw new Error('Expected complete state')
     expect(atTotal.message).toBe('Session complete')
   })
+})
 
-  it('extendTimedSession throws RangeError for a stretch session (CONTEXT D-02)', () => {
-    const running = startSession(stretchSettings, 0)
+describe('extendTimedSession — no mode check (D-01)', () => {
+  it('throws RangeError for a stretch session (stretchSegments !== null gate)', () => {
+    const stretchSettings: StretchSettings = {
+      ratio: '40:60',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 10,
+      coolDownMinutes: 15,
+      rampDurationMinutes: 20,
+    }
+    const running = startStretchSession(stretchSettings, 0)
     expect(() => extendTimedSession(running, 30, 0)).toThrow(RangeError)
   })
 })

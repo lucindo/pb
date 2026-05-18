@@ -2,7 +2,7 @@ import type { BreathingPlan } from './breathingPlan'
 import { createBreathingPlan } from './breathingPlan'
 import type { SessionFrame } from './sessionMath'
 import { getSessionFrame } from './sessionMath'
-import type { DurationOption, SessionSettings } from './settings'
+import type { DurationOption, SessionSettings, StretchSettings } from './settings'
 import { DURATION_OPTIONS } from './settings'
 import type { StretchSegment } from './stretchRamp'
 import { buildStretchSegments, getStretchFrame } from './stretchRamp'
@@ -40,25 +40,45 @@ function cloneSettings(settings: SessionSettings): SessionSettings {
   return { ...settings }
 }
 
+// D-01: startSession is standard-only — no mode check, stretchSegments always null.
 export function startSession(selectedSettings: SessionSettings, nowMs: number): RunningSessionState {
   const lockedSettings = cloneSettings(selectedSettings)
-  const isStretch = lockedSettings.mode === 'stretch'
-  // For stretch sessions the lead-in plan runs at initialBpm so its cue duration
-  // matches the warm-up rate; the plan is otherwise only the standard fallback formula.
-  const plan = createBreathingPlan(
-    isStretch ? { ...lockedSettings, bpm: lockedSettings.initialBpm } : lockedSettings,
-  )
-  const stretchSegments = isStretch
-    ? buildStretchSegments(lockedSettings, lockedSettings.ratio)
-    : null
-  const lastFrame = stretchSegments !== null
-    ? getStretchFrame(stretchSegments, 0)
-    : getSessionFrame(plan, 0)
+  const plan = createBreathingPlan(lockedSettings)
+  const lastFrame = getSessionFrame(plan, 0)
 
   return {
     status: 'running',
     selectedSettings: cloneSettings(selectedSettings),
     lockedSettings,
+    plan,
+    stretchSegments: null,
+    startedAtMs: nowMs,
+    lastFrame,
+  }
+}
+
+// D-01/D-02: startStretchSession — new function for stretch sessions.
+// Lead-in plan runs at initialBpm so cue duration matches the warm-up rate.
+export function startStretchSession(
+  stretchSettings: StretchSettings,
+  nowMs: number,
+): RunningSessionState {
+  // Lead-in plan: standard SessionSettings using initialBpm and the same ratio
+  const leadInSettings: SessionSettings = {
+    bpm: stretchSettings.initialBpm,
+    ratio: stretchSettings.ratio,
+    durationMinutes: 'open-ended',
+  }
+  const plan = createBreathingPlan(leadInSettings)
+  // D-02: buildStretchSegments now takes a single StretchSettings arg
+  const stretchSegments = buildStretchSegments(stretchSettings)
+  const lastFrame = getStretchFrame(stretchSegments, 0)
+
+  // selectedSettings and lockedSettings are the standard-form lead-in settings
+  return {
+    status: 'running',
+    selectedSettings: leadInSettings,
+    lockedSettings: leadInSettings,
     plan,
     stretchSegments,
     startedAtMs: nowMs,
@@ -78,12 +98,10 @@ export function extendTimedSession(
   durationMinutes: number,
   nowMs: number,
 ): RunningSessionState {
+  // D-01: guard on stretchSegments !== null (no mode read — mode concept retired).
   // CONTEXT D-02: stretch duration is governed by the rampDurationMinutes picker
   // and the computed segment-table total, never by the durationMinutes stepper.
-  // DS-WR-07: assert on `mode` explicitly — `stretchSegments !== null` alone is an
-  // unasserted proxy; a malformed stretch state with `stretchSegments === null`
-  // would otherwise slip past this guard.
-  if (state.lockedSettings.mode === 'stretch' || state.stretchSegments !== null) {
+  if (state.stretchSegments !== null) {
     throw new RangeError('Stretch sessions cannot be extended via durationMinutes')
   }
 
