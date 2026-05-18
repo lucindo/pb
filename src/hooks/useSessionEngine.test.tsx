@@ -360,6 +360,59 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 })
 
+// WR-03 regression (Plan 34-06): a stretch session round-trip must not clobber
+// the engine's resonant selectedSettings. After start() + end() with stretch
+// settings wired, idle state.selectedSettings must equal the initialSettings
+// the engine was initialized with — not the stretch-derived synthetic lead-in.
+describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preservation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('idle selectedSettings equals the resonant initialSettings after a stretch session start→end round-trip', () => {
+    const resonantSettings: SessionSettings = {
+      ...defaultSettings,
+      bpm: 5.5,
+      ratio: '40:60',
+      durationMinutes: 20,
+    }
+
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(resonantSettings, DEFAULT_STRETCH_SETTINGS),
+    )
+
+    // Confirm idle state starts with resonant settings
+    expect(result.current.state.status).toBe('idle')
+    if (result.current.state.status !== 'idle') throw new Error('Expected idle')
+    expect(result.current.state.selectedSettings).toEqual(resonantSettings)
+
+    // Start stretch session
+    act(() => {
+      result.current.start()
+    })
+
+    expect(result.current.state.status).toBe('running')
+
+    // End stretch session
+    act(() => {
+      result.current.end()
+    })
+
+    // After end, idle selectedSettings must equal the resonant settings (WR-03).
+    // Before the fix, endSession returned the synthetic lead-in settings (bpm: initialBpm, durationMinutes: 'open-ended').
+    expect(result.current.state.status).toBe('idle')
+    if (result.current.state.status !== 'idle') throw new Error('Expected idle after end')
+    expect(result.current.state.selectedSettings).toEqual(resonantSettings)
+
+    unmount()
+  })
+})
+
 // Phase 34: stretch session engine path (Plan 34-05).
 // When useSessionEngine is called with stretchSettings, start() calls
 // startStretchSession and the resulting state has stretchSegments (not null).
