@@ -4,8 +4,8 @@ milestone: v1.5
 milestone_name: Navi Kriya Practice
 status: executing
 stopped_at: Phase 32 UI-SPEC approved
-last_updated: "2026-05-18T00:07:04.969Z"
-last_activity: 2026-05-18 -- Phase 32 planning complete
+last_updated: "2026-05-18T00:23:56.201Z"
+last_activity: 2026-05-18 -- Phase 32 execution started
 progress:
   total_phases: 3
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17 — milestone v1.5 Navi Kriya Practice started)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 31 — navi-kriya-engine-session
+**Current focus:** Phase 32 — learn-localization
 
 ## Current Position
 
-Phase: 31 (navi-kriya-engine-session) — EXECUTING
-Plan: 1 of 6
-Status: Ready to execute
-Last activity: 2026-05-18 -- Phase 32 planning complete
+Phase: 32 (learn-localization) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 32
+Last activity: 2026-05-18 -- Phase 32 execution started
 Progress: [░░░░░░░░░░] 0% — 0/3 phases complete
 
 ## Performance Metrics

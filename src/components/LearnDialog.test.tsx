@@ -152,11 +152,12 @@ describe('LearnDialog — external link security', () => {
     })
   })
 
-  it('renders all keyVideos links with correct security attributes', () => {
+  it('renders all resonant practice videos links with correct security attributes', () => {
     const { container } = renderDialog({ open: true })
-    const keyVideos = LEARN_CONTENT.en.links.keyVideos
-    // Every key video link must carry both security attributes.
-    keyVideos.forEach((video) => {
+    // Phase 32: videos moved from links.keyVideos to practices.resonant.videos
+    const resonantVideos = LEARN_CONTENT.en.practices.resonant.videos
+    // Every practice video link must carry both security attributes.
+    resonantVideos.forEach((video) => {
       const link = container.querySelector(`a[href="${video.url}"]`)
       expect(link).not.toBeNull()
       expect(link).toHaveAttribute('target', '_blank')
