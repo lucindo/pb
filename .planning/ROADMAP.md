@@ -91,7 +91,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 3 plans
 - [x] 32-01-PLAN.md — learnContent.ts per-practice partition + new strings.ts learn keys + content tests
 - [x] 32-02-PLAN.md — LearnDialog.tsx practice-aware rendering + App.tsx wiring
-- [ ] 32-03-PLAN.md — v1.5 pt-BR native-speaker review + marker removal + suite/build gate
+- [x] 32-03-PLAN.md — v1.5 pt-BR native-speaker review + marker removal + suite/build gate
 **UI hint**: yes
 
 ## Progress
@@ -111,4 +111,4 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 |-------|----------------|--------|-----------|
 | 30. Multi-Practice Architecture & Switcher | 4/4 | Complete    | 2026-05-17 |
 | 31. Navi Kriya Engine & Session | 6/6 | Complete   | 2026-05-17 |
-| 32. Learn & Localization | 2/3 | In Progress|  |
+| 32. Learn & Localization | 3/3 | Complete   | 2026-05-18 |
