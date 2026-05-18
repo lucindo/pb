@@ -3,7 +3,7 @@ status: complete
 phase: 32-learn-localization
 source: [32-01-SUMMARY.md, 32-02-SUMMARY.md, 32-03-SUMMARY.md]
 started: 2026-05-18T02:38:32Z
-updated: 2026-05-18T02:42:00Z
+updated: 2026-05-18T02:45:00Z
 ---
 
 ## Current Test
@@ -35,15 +35,14 @@ result: pass
 
 ### 6. PT-BR operator corrections
 expected: In Portuguese, the resonant practice heading reads "Respiração Ressonante", the resume control reads "Continuar", and the rounds-completed stat label reads "OMs na frente".
-result: issue
-reported: "this is something we changed on a previous phase, we set it to \"HRV\", so in pt-BR should be \"VFC\" — practice toggle button shows \"HRV\" while the rest of the pt-BR UI uses \"VFC\" (heading reads \"Respiração VFC\" / \"PRÁTICA VFC\")"
-severity: minor
+result: pass
+note: "Issue found and fixed during UAT — pt-BR practice toggle showed English 'HRV'; set practice.resonantName pt-BR to 'VFC' in commit cd96421. Full suite 1158/1158 green, tsc clean."
 
 ## Summary
 
 total: 6
-passed: 5
-issues: 1
+passed: 6
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -51,11 +50,15 @@ blocked: 0
 ## Gaps
 
 - truth: "In pt-BR the practice toggle button labels should use the localized abbreviation — 'VFC' instead of the English 'HRV' — to match the rest of the pt-BR UI (heading already reads 'Respiração VFC')"
-  status: failed
+  status: resolved
   reason: "User reported: this is something we changed on a previous phase, we set it to \"HRV\", so in pt-BR should be \"VFC\" — practice toggle button shows \"HRV\" while the rest of the pt-BR UI uses \"VFC\""
   severity: minor
   test: 6
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "src/content/strings.ts pt-BR practice.resonantName was 'HRV' (English) — the lone outlier; pt-BR header/title/videosHeading all already used 'VFC'"
+  artifacts:
+    - path: "src/content/strings.ts"
+      issue: "pt-BR practice.resonantName hardcoded to English 'HRV'"
+  missing:
+    - "Set pt-BR practice.resonantName to 'VFC'"
+  fix_commit: "cd96421"
   debug_session: ""
