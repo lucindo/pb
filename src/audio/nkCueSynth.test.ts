@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  scheduleCountdownTick,
   scheduleNKBackMarker,
   scheduleEndChord,
   scheduleNKFrontMarker,
@@ -101,6 +102,36 @@ describe('nkCueSynth', () => {
     const endDuration = endHandle.cleanupAt - endHandle.scheduledAt
 
     expect(tickDuration).toBeLessThan(endDuration)
+  })
+
+  // -- Spike 004: countdown beep retuned to "Crisp ping" --------------------
+
+  it('scheduleCountdownTick returns a valid CueHandle', () => {
+    const ac = createAc()
+    const handle = scheduleCountdownTick(ac, 1.0, ac.destination, 'bowl')
+    expect(handle.envelope).toBeDefined()
+    expect(handle.scheduledAt).toBe(1.0)
+    expect(handle.cleanupAt).toBeGreaterThan(handle.scheduledAt)
+  })
+
+  it('scheduleCountdownTick does not throw for any TimbreId', () => {
+    const ac = createAc()
+    for (const timbre of TIMBRE_OPTIONS) {
+      expect(() => scheduleCountdownTick(ac, 1.0, ac.destination, timbre)).not.toThrow()
+    }
+  })
+
+  it('countdown beep is shorter than the per-OM tick (Spike 004 — the two diverged)', () => {
+    const ac = createAc()
+    const when = 1.0
+
+    const countdownHandle = scheduleCountdownTick(ac, when, ac.destination, 'bowl')
+    const tickHandle = scheduleNKTick(ac, when, ac.destination, 'bowl')
+
+    const countdownDuration = countdownHandle.cleanupAt - countdownHandle.scheduledAt
+    const tickDuration = tickHandle.cleanupAt - tickHandle.scheduledAt
+
+    expect(countdownDuration).toBeLessThan(tickDuration)
   })
 
   // -- D-06: markers reuse the HRV breath cues for every timbre --------------

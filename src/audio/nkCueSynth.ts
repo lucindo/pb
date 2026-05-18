@@ -35,12 +35,18 @@ const NK_TICK_DURATION_SEC = 0.12
 const NK_TICK_PEAK_GAIN = 0.08 // quiet — peripheral hearing only
 const NK_TICK_DECAY_TAU = 0.05
 // Countdown beep: the 3-2-1 lead-in tick, shared by the HRV and Navi
-// countdowns. Identical in sound to the per-OM tick today, but kept on its
-// own constants + function so the countdown beep and the OM tick can be
-// explored independently — they are not semantically related.
-const COUNTDOWN_TICK_DURATION_SEC = 0.12
-const COUNTDOWN_TICK_PEAK_GAIN = 0.08
-const COUNTDOWN_TICK_DECAY_TAU = 0.05
+// countdowns. Spike 004 ("Crisp ping" — operator audition) retuned this from
+// the original soft 440 Hz / 0.12 s / 0.08 / 0.05 tick to a crisper, higher,
+// snappier beep that reads as more alerting without simply being louder. Kept
+// on its own constants + function so the countdown beep and the per-OM tick
+// stay independent — they are not semantically related.
+const COUNTDOWN_TICK_DURATION_SEC = 0.1
+const COUNTDOWN_TICK_PEAK_GAIN = 0.12
+const COUNTDOWN_TICK_DECAY_TAU = 0.04
+// Pitch sits a perfect fifth above the timbre fundamental (preset.fundamentalHzIn
+// is 440 Hz across all timbres → 660 Hz). Expressed as a ratio so it tracks any
+// future per-timbre fundamental rather than hard-coding 660.
+const COUNTDOWN_TICK_PITCH_RATIO = 1.5
 // D-08 end chord: three tones forming a resolved low chord, rings out. This is
 // the shared practice-ending sound — both the Navi Kriya completion and the
 // HRV session completion play scheduleEndChord, so a future change lands in
@@ -162,10 +168,11 @@ export function scheduleNKTick(
 
 /**
  * Countdown beep — the 3-2-1 lead-in tick shared by the HRV and Navi
- * countdowns. Currently byte-identical in sound to scheduleNKTick (the per-OM
- * tick), but a SEPARATE function on its own constants: the countdown beep and
- * the per-OM tick are semantically distinct, so either can be changed without
- * affecting the other.
+ * countdowns. Spike 004 retuned it to "Crisp ping": a perfect fifth above the
+ * timbre fundamental (~660 Hz), shorter and snappier than the per-OM tick.
+ * A SEPARATE function on its own constants — the countdown beep and the per-OM
+ * tick are semantically distinct, so either can change without affecting the
+ * other.
  */
 export function scheduleCountdownTick(
   audioCtx: AudioContext,
@@ -175,7 +182,7 @@ export function scheduleCountdownTick(
 ): CueHandle {
   const preset = TIMBRE_PRESETS[timbre]
   const t = buildNKToneNodes(
-    audioCtx, preset.fundamentalHzIn, COUNTDOWN_TICK_DURATION_SEC, when,
+    audioCtx, preset.fundamentalHzIn * COUNTDOWN_TICK_PITCH_RATIO, COUNTDOWN_TICK_DURATION_SEC, when,
     destination, preset, COUNTDOWN_TICK_PEAK_GAIN, COUNTDOWN_TICK_DECAY_TAU,
   )
   // Disconnect the tick nodes on 'ended' (mirrors scheduleNKTick / T-31-04).
