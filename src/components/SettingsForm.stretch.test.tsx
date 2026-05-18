@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { SettingsForm, type SettingsFormProps } from './SettingsForm'
 import { UI_STRINGS } from '../content/strings'
 import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type StretchSettings } from '../domain/settings'
+import { computeStretchTotalMs } from '../domain/stretchRamp'
 
 const EN = UI_STRINGS.en.settingsForm
 const PRACTICE = UI_STRINGS.en.practice
@@ -77,9 +78,13 @@ describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', 
 
   it('read-only Duration box shows the computed total for default stretch values', () => {
     renderForm({ activePractice: 'stretch' })
-    // warm-up 5 + ramp 5 + cool-down 5 = 15 min
+    // CR-01: duration is derived from the snapped segment table, not raw minute sum.
+    // DEFAULT_STRETCH_SETTINGS (5.5→4.5 BPM) produces cycle-aligned drift — the
+    // displayed value may differ from '15 min' depending on the snapped total.
+    const expectedTotalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)!
+    const expectedText = `${String(expectedTotalMs / 60_000)} min`
     const duration = screen.getByRole('group', { name: 'Duration' })
-    expect(within(duration).getByText('15 min')).toBeInTheDocument()
+    expect(within(duration).getByText(expectedText)).toBeInTheDocument()
   })
 
   it('Duration box shows the open-ended label when cool-down is open-ended', () => {

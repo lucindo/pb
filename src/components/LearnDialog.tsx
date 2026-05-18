@@ -89,8 +89,10 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
   // dialog can open without crashing (practices map only has resonant + naviKriya keys).
   const practiceContentKey = activePractice === 'stretch' ? 'resonant' : activePractice
   const practiceContent = practices[practiceContentKey as keyof typeof practices]
-  // D-01 (SECOND): video sub-heading switches per practice; resonant uses generic heading, NK uses NK-specific heading.
-  const videosHeading = activePractice === 'resonant' ? strings.videosHeading : strings.naviKriyaVideosHeading
+  // D-01 (SECOND): video sub-heading follows the resolved content key (practiceContentKey),
+  // not the raw activePractice. Stretch falls back to resonant content AND the resonant
+  // heading — so the heading always matches the content actually rendered.
+  const videosHeading = practiceContentKey === 'resonant' ? strings.videosHeading : strings.naviKriyaVideosHeading
 
   return (
     <dialog

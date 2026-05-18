@@ -208,6 +208,30 @@ describe('LearnDialog — native-app store links', () => {
   })
 })
 
+// WR-01 regression: videosHeading must track practiceContentKey (the resolved
+// content key), not the raw activePractice. When activePractice='stretch',
+// practiceContentKey resolves to 'resonant', so the heading must be the
+// resonant videosHeading — not naviKriyaVideosHeading.
+describe('LearnDialog — videos heading tracks practiceContentKey (WR-01)', () => {
+  it('shows resonant videosHeading when activePractice=stretch (practiceContentKey falls back to resonant)', () => {
+    renderDialog({ open: true, activePractice: 'stretch' })
+    expect(screen.getByText(UI_STRINGS.en.learn.videosHeading)).toBeInTheDocument()
+    expect(screen.queryByText(UI_STRINGS.en.learn.naviKriyaVideosHeading)).not.toBeInTheDocument()
+  })
+
+  it('shows resonant videosHeading when activePractice=resonant (no regression)', () => {
+    renderDialog({ open: true, activePractice: 'resonant' })
+    expect(screen.getByText(UI_STRINGS.en.learn.videosHeading)).toBeInTheDocument()
+    expect(screen.queryByText(UI_STRINGS.en.learn.naviKriyaVideosHeading)).not.toBeInTheDocument()
+  })
+
+  it('shows naviKriyaVideosHeading when activePractice=naviKriya (no regression)', () => {
+    renderDialog({ open: true, activePractice: 'naviKriya' })
+    expect(screen.getByText(UI_STRINGS.en.learn.naviKriyaVideosHeading)).toBeInTheDocument()
+    expect(screen.queryByText(UI_STRINGS.en.learn.videosHeading)).not.toBeInTheDocument()
+  })
+})
+
 describe('LearnDialog — Navi Kriya practice-aware rendering', () => {
   it('renders NK section1 title when activePractice=naviKriya', () => {
     renderDialog({ open: true, activePractice: 'naviKriya' })

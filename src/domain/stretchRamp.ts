@@ -220,13 +220,15 @@ export function getStretchFrame(
 // ─── computeStretchTotalMs ───────────────────────────────────────────────────
 
 /**
- * Computes the total session duration from stretch settings: the sum of
- * warm-up + ramp + cool-down minutes. Returns null when coolDownMinutes is
- * 'open-ended' (D-11).
+ * Computes the total session duration from the snapped segment table produced
+ * by buildStretchSegments. Returns the last segment's endMs — the same source
+ * of truth that getStretchFrame's isComplete check uses — so the displayed
+ * Duration agrees with the elapsed time at which the session reports complete.
+ * Returns null when coolDownMinutes is 'open-ended' (D-11).
  * D-02: accepts StretchSettings (not SessionSettings).
  */
 export function computeStretchTotalMs(settings: StretchSettings): number | null {
-  const { warmUpMinutes, rampDurationMinutes, coolDownMinutes } = settings
-  if (coolDownMinutes === 'open-ended') return null
-  return (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
+  if (settings.coolDownMinutes === 'open-ended') return null
+  const segments = buildStretchSegments(settings)
+  return segments[segments.length - 1]!.endMs
 }
