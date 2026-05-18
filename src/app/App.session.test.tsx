@@ -795,9 +795,13 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     // Run 35s so the session exceeds the 30s recording threshold.
     await act(async () => { vi.advanceTimersByTime(35_000) })
 
-    // End via open-ended — the default stretch session has computed duration, so
-    // we need to manually end. Use 'End session' button.
+    // GAP 3: ending a stretch session now opens the end-confirmation dialog first.
+    // Click 'End session' to open the dialog, then confirm via the 'End' button.
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await act(async () => { await Promise.resolve() })
+    // The dialog must be open before confirming
+    expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
 
     const env = readEnv()
@@ -807,5 +811,93 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     // Resonant and naviKriya untouched:
     expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
     expect((statsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+  })
+
+  // UAT GAP 3: clicking 'End session' on a running stretch session opens the dialog
+  it('GAP 3: ending a running stretch session opens the end-confirmation dialog (session does not end immediately)', async () => {
+    seedStretch()
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(LEAD_IN_MS)
+    })
+
+    // The session is running — 'End session' must open the dialog, not end immediately.
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await act(async () => { await Promise.resolve() })
+
+    expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+    // Session is still active — 'End session' button is NOT replaced by 'Start session'
+    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+  })
+
+  // UAT GAP 3: confirming the dialog ends the stretch session and records stats
+  it('GAP 3: confirming the end-dialog ends a stretch session and records stretch stats', async () => {
+    seedStretch()
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(LEAD_IN_MS)
+    })
+    await act(async () => { vi.advanceTimersByTime(35_000) })
+
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    await act(async () => { await Promise.resolve() })
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    await act(async () => { await Promise.resolve() })
+
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
+    const env = readEnv()
+    expect(statsOf(env, 'stretch')?.['totalSessions']).toBe(1)
+  })
+
+  // UAT GAP 3: open-ended resonant sessions still end directly (no dialog — regression guard)
+  it('GAP 3: open-ended resonant sessions still end directly without dialog (no over-trigger)', async () => {
+    // Open-ended resonant: set durationMinutes to 'open-ended' via localStorage
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 3,
+      activePractice: 'resonant',
+      practices: {
+        resonant: {
+          settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' },
+          stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+        },
+        stretch: {
+          settings: null,
+          stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+        },
+        naviKriya: {
+          settings: null,
+          stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
+        },
+      },
+    }))
+    render(<App />)
+
+    await startAndAdvancePastLeadIn()
+    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+
+    // Open-ended resonant session: dialog must NOT appear; session ends directly
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+  })
+
+  // UAT GAP 4: root layout section is top-anchored (justify-start)
+  it('GAP 4: the root layout section is top-anchored (justify-start, not justify-center)', () => {
+    render(<App />)
+    // The root section must use justify-start, not justify-center
+    const sections = document.querySelectorAll('section')
+    const rootSection = Array.from(sections).find(
+      (s) => s.classList.contains('flex') && s.classList.contains('flex-col'),
+    )
+    expect(rootSection).toBeDefined()
+    expect(rootSection!.classList.contains('justify-start')).toBe(true)
+    expect(rootSection!.classList.contains('justify-center')).toBe(false)
   })
 })

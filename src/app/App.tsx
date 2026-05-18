@@ -640,8 +640,14 @@ export default function App() {
   // This handler is only invoked by SessionControls when status === 'running' (the session has
   // started and the button label has flipped to 'End session'). Cancel-during-lead-in is handled
   // by onStartClick (above) because session.status is still 'idle' during the lead-in window.
+  // Phase 34 GAP 3: running stretch sessions also raise the end-confirmation dialog even though
+  // their lockedSettings is open-ended (the synthetic lead-in uses durationMinutes:'open-ended').
+  // state.stretchSegments is non-null exactly for a stretch session (sessionController.ts:81-89).
   const requestEnd = useCallback(() => {
-    if (state.status === 'running' && state.lockedSettings.durationMinutes !== 'open-ended') {
+    if (
+      state.status === 'running' &&
+      (state.lockedSettings.durationMinutes !== 'open-ended' || state.stretchSegments !== null)
+    ) {
       setEndDialogOpen(true)
       return
     }
@@ -1056,7 +1062,7 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--color-breathing-bg-soft),_var(--color-breathing-bg)_48%,_var(--color-breathing-bg-edge))] px-4 py-6 text-[var(--color-breathing-accent-strong)] sm:px-6 sm:py-8">
-      <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-center text-center sm:min-h-[calc(100vh-4rem)]">
+      <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col items-center justify-start text-center sm:min-h-[calc(100vh-4rem)]">
         {/* Phase 6 D-01/D-03: Learn anchor — persistent across all session states,
             positioned at the column top-right (moved from page-level fixed on
             2026-05-10 per user layout request). Wrapper provides position:relative
