@@ -47,6 +47,14 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   alternatives and chose one. The swap is the three `COUNTDOWN_TICK_*` constants plus a
   pitch ratio in `src/audio/nkCueSynth.ts` (`scheduleCountdownTick`), and applies to both
   the HRV and Navi Kriya countdowns. (Spike 004, operator decision.)
+- The **session-end sound** swaps to **Warm pad fade** — the same C-major triad, but a
+  strike-free envelope: fade in (~0.9 s) → hold → linear fade out (~1.4 s), total ~5.0 s,
+  peak 0.11. Replaces the current 1.8 s percussive-strike chord. Single sound, **no
+  picker**. Not a pure constant change: `buildNKToneNodes` is strike-only and shared with
+  the tick/countdown builders, so the build must add an optional pad envelope-mode to it
+  (absent → current strike, so ticks stay byte-identical) and have `scheduleEndChord`
+  pass it, alongside revised `END_CHORD_*` constants. Applies to both practices'
+  completion sounds. (Spike 005, operator decision.)
 
 ## Spikes
 
@@ -56,4 +64,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 002 | switcher-ux           | comparison | Which switcher (bottom tab bar / top segmented control / launch screen) fits a calm, mid-practice breathing app | VALIDATED — winner: B (top segmented control) | navigation, ux, comparison |
 | 003 | navi-kriya-practice   | standard   | App-paced Navi Kriya counting practice — 100 front / 25 back OM per round, N rounds, marker + per-OM sounds — works as a usable in-app meditation | VALIDATED | practice, navi-kriya, audio, counting |
 | 004 | countdown-beep-alternatives | comparison | Auditioning the current 3-2-1 lead-in beep against alternatives surfaces the beep worth shipping | VALIDATED — winner: Crisp ping | audio, countdown, sound-design, cue, comparison |
-| 005 | session-end-sound-alternatives | comparison | Auditioning the current session-complete chord against alternatives surfaces the end sound worth shipping, and whether it ships longer | PENDING | audio, session-end, sound-design, cue, comparison |
+| 005 | session-end-sound-alternatives | comparison | Auditioning the current session-complete chord against alternatives surfaces the end sound worth shipping, and whether it ships longer | VALIDATED — winner: Warm pad fade | audio, session-end, sound-design, cue, comparison |
