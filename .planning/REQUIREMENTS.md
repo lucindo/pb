@@ -32,12 +32,12 @@ Requirements for milestone v1.5. Each maps to exactly one roadmap phase.
 
 ### Learn
 
-- [ ] **LEARN-02**: User sees Learn content specific to the active practice — a practice description and relevant Forrest video links
-- [ ] **LEARN-03**: User sees shared Learn sections (Who is Forrest, Forrest Resources) regardless of which practice is active
+- [x] **LEARN-02**: User sees Learn content specific to the active practice — a practice description and relevant Forrest video links
+- [x] **LEARN-03**: User sees shared Learn sections (Who is Forrest, Forrest Resources) regardless of which practice is active
 
 ### Localization
 
-- [ ] **I18N-08**: User can read all new Navi Kriya and multi-practice UI copy in both English and native-quality PT-BR
+- [x] **I18N-08**: User can read all new Navi Kriya and multi-practice UI copy in both English and native-quality PT-BR
 
 ## Future Requirements
 
@@ -85,9 +85,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NK-07 | Phase 31 | Pending |
 | NK-08 | Phase 31 | Pending |
 | NK-09 | Phase 31 | Pending |
-| LEARN-02 | Phase 32 | Pending |
-| LEARN-03 | Phase 32 | Pending |
-| I18N-08 | Phase 32 | Pending |
+| LEARN-02 | Phase 32 | Complete |
+| LEARN-03 | Phase 32 | Complete |
+| I18N-08 | Phase 32 | Complete |
 
 **Coverage:**
 - v1.5 requirements: 18 total
