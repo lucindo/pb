@@ -37,9 +37,9 @@ describe('PracticeToggle (3 pills, treatment A)', () => {
     )
     const buttons = screen.getAllByRole('button')
     expect(buttons).toHaveLength(3)
-    expect(buttons[0].textContent).toBe('HRV')
-    expect(buttons[1].textContent).toBe('Stretch')
-    expect(buttons[2].textContent).toBe('Navi Kriya')
+    expect(buttons[0]!.textContent).toBe('HRV')
+    expect(buttons[1]!.textContent).toBe('Stretch')
+    expect(buttons[2]!.textContent).toBe('Navi Kriya')
   })
 
   it('container has role="group" and aria-label from strings.toggleLabel', () => {
@@ -207,7 +207,10 @@ describe('PracticeToggle treatment B (glyphs visible)', () => {
   beforeAll(async () => {
     vi.stubGlobal('__SWITCHER_TREATMENT__', 'B')
     // Dynamic import with cache-busted query to force re-evaluation under the stub
-    const mod = await import('./PracticeToggle?treatment=B')
+    // `as string` widens the specifier so tsc treats this as Promise<any>
+    // (it cannot resolve Vite's `?treatment=B` query); esbuild strips the cast,
+    // leaving the literal intact for Vite's dynamic-import analysis.
+    const mod = await import('./PracticeToggle?treatment=B' as string)
     PracticeToggleB = mod.PracticeToggle
   })
 

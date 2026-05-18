@@ -275,8 +275,8 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
   it('leaves practices.resonant byte-equal to its pre-migration value (untouched)', () => {
     const migrated = migrateEnvelope(V2_ENVELOPE, 2)
     const practices = migrated.practices as Record<string, { settings: unknown; stats: unknown }>
-    expect(practices['resonant'].settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
-    expect(practices['resonant'].stats).toEqual(RESONANT_STATS)
+    expect(practices['resonant']!.settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
+    expect(practices['resonant']!.stats).toEqual(RESONANT_STATS)
   })
 
   it('is idempotent — running migration twice on the same v2 envelope produces the same result', () => {
