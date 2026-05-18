@@ -176,6 +176,22 @@ describe('per-practice round-trips (PRACTICE-02)', () => {
     expect(loadPractices().resonant.settings.bpm).toBe(4)
   })
 
+  it('saveResonantSettings does not throw when underlying setItem throws (D-16)', () => {
+    // Coverage migrated from the deleted settings.test.ts saveSettings block:
+    // the resonant settings write path must swallow a quota failure silently.
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+    expect(() => { saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 }) }).not.toThrow()
+  })
+
+  it('loadPractices falls back to defaults when stored JSON is corrupt (D-17)', () => {
+    // Corrupt-JSON fallback for the settings read path — previously asserted
+    // via loadSettings in settings.test.ts, now exercised through loadPractices.
+    window.localStorage.setItem(STATE_KEY, '{not-json')
+    expect(loadPractices().resonant.settings).toEqual(DEFAULT_SETTINGS)
+  })
+
   it('saveNaviKriyaSettings leaves the resonant slice untouched', () => {
     saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 })
     saveNaviKriyaSettings({ frontCount: 80, omLength: 'slow', rounds: 2, perOmCue: true })
