@@ -327,7 +327,8 @@ describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
     }
     const segments = buildStretchSegments(driftSettings)
     const snappedEnd = segments.at(-1)!.endMs
-    const rawMinuteSum = (driftSettings.warmUpMinutes + driftSettings.rampDurationMinutes + driftSettings.coolDownMinutes) * 60_000
+    // Compute raw sum using literal values (coolDownMinutes is number | 'open-ended'; use literal 5).
+    const rawMinuteSum = (5 + 5 + 5) * 60_000
     // The snapped end equals what computeStretchTotalMs must return (CR-01).
     expect(computeStretchTotalMs(driftSettings)).toBe(snappedEnd)
     // The snapped end must differ from the raw sum (proving the test exercises the drift case).
