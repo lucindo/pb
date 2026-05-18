@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spike 005 — Session-End Sound Alternatives</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+  <div id="root"></div>
+
+  <script type="module">
+    import React, { useState, useRef, useEffect } from 'https://esm.sh/react@19.0.0'
+    import { createRoot } from 'https://esm.sh/react-dom@19.0.0/client'
+    import htm from 'https://esm.sh/htm@3.1.1'
+    const html = htm.bind(React.createElement)
+
+    // ───────────────────────────────────────────────────────────────
+    // Audio synthesis — mirrors src/audio/nkCueSynth.ts buildNKToneNodes /
+    // scheduleEndChord: each tone is osc(s) → lowpass filter → gain envelope.
+    // Variant 'current' is byte-faithful to the production end chord
+    // (C-major triad at 220 Hz × [1, 1.25, 1.5], 1.8 s, decay tau 0.8,
+    // peak 0.12, simultaneous strike).
+    //
+    // Envelope modes, all via one code path:
+    //   strike  — short attack, exponential decay (tau)        [default]
+    //   swell   — long attack ramps up to peak, then decay     [attack > 0]
+    //   pad     — ramp up, hold, linear fade-out over `release` [release set]
+    // ───────────────────────────────────────────────────────────────
+
+    const NEAR_SILENCE = 0.0001
+    const TONE_DEFAULTS = {
+      filterQ: 0.7, partials: [{ ratio: 1, gain: 1 }], at: 0,
+      attack: 0.005, type: 'sine',
+    }
+
+    function scheduleTone(ctx, dest, spec, when) {
+      const s = { ...TONE_DEFAULTS, ...spec }
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'lowpass'
+      filter.frequency.value = s.filterFreq
+      filter.Q.value = s.filterQ
+
+      const env = ctx.createGain()
+      env.gain.setValueAtTime(NEAR_SILENCE, when)
+      env.gain.linearRampToValueAtTime(s.peak, when + s.attack)
+      if (s.release != null) {
+        // pad: hold at peak, then a smooth linear fade-out over `release`
+        const fadeStart = when + s.dur - s.release
+        env.gain.setValueAtTime(s.peak, Math.max(when + s.attack, fadeStart))
+        env.gain.linearRampToValueAtTime(NEAR_SILENCE, when + s.dur)
+      } else {
+        // strike / swell: exponential decay starting once peak is reached
+        env.gain.setTargetAtTime(NEAR_SILENCE, when + s.attack, s.tau)
+      }
+      filter.connect(env)
+      env.connect(dest)
+
+      const stopAt = when + s.dur
+      for (const p of s.partials) {
+        const osc = ctx.createOscillator()
+        osc.type = s.type
+        osc.frequency.value = s.freq * p.ratio
+        const pg = ctx.createGain()
+        pg.gain.value = p.gain
+        osc.connect(pg)
+        pg.connect(filter)
+        osc.start(when)
+        osc.stop(stopAt + 0.05)
+      }
+      return stopAt
+    }
+
+    function scheduleVariant(ctx, dest, variant, when) {
+      let end = when
+      for (const tone of variant.tones) {
+        const e = scheduleTone(ctx, dest, tone, when + (tone.at || 0))
+        if (e > end) end = e
+      }
+      return end
+    }
+
+    // ── Chord helpers ──────────────────────────────────────────────
+    const C_MAJOR = [1.0, 1.25, 1.5]          // root · major third · fifth
+    const SUS4    = [1.0, 1.3333, 1.5]        // root · fourth · fifth (unresolved)
+    const BASE = 220                          // preset.fundamentalHzOut (A3) — all timbres
+
+    function chord(base, ratios, opts) {
+      return ratios.map((r, i) => ({
+        ...opts,
+        freq: base * r,
+        at: (opts.at || 0) + (opts.stagger ? i * opts.stagger : 0),
+      }))
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // The candidate end-of-session sounds. 'current' is byte-faithful.
+    // ───────────────────────────────────────────────────────────────
+    const VARIANTS = [
+      {
+        id: 'current', name: 'Current', tag: 'baseline',
+        desc: 'C-major triad (220 / 275 / 330 Hz), struck together, 1.8 s, decay τ 0.8. The sound shipping today (scheduleEndChord).',
+        tones: chord(BASE, C_MAJOR, { filterFreq: 3000, peak: 0.12, dur: 1.8, tau: 0.8 }),
+      },
+      {
+        id: 'longer', name: 'Current · longer', tag: 'tweak',
+        desc: 'The same triad — stretched to 3.2 s with a longer decay (τ 0.8 → 1.5). The "a little longer" ask, nothing else changed.',
+        tones: chord(BASE, C_MAJOR, { filterFreq: 3000, peak: 0.12, dur: 3.2, tau: 1.5 }),
+      },
+      {
+        id: 'arpeggio', name: 'Arpeggiated', tag: 'alternative',
+        desc: 'The same three notes struck in sequence (~160 ms apart) — a gentle unfolding "resolve" that rings out.',
+        tones: chord(BASE, C_MAJOR, { filterFreq: 3500, peak: 0.13, dur: 2.8, tau: 1.1, stagger: 0.16 }),
+      },
+      {
+        id: 'bowl', name: 'Singing bowl', tag: 'alternative',
+        desc: 'One low struck tone with rich inharmonic partials and a long ~4.5 s shimmer — meditative, single-pitch.',
+        tones: [{
+          freq: 196, filterFreq: 5000, peak: 0.14, dur: 4.8, tau: 1.7, attack: 0.01,
+          partials: [
+            { ratio: 1, gain: 1 }, { ratio: 2.4, gain: 0.5 },
+            { ratio: 4.6, gain: 0.24 }, { ratio: 6.8, gain: 0.12 },
+          ],
+        }],
+      },
+      {
+        id: 'rising', name: 'Rising resolution', tag: 'alternative',
+        desc: 'A two-chord move — an open suspended chord resolving into the major triad. A clear sense of arrival.',
+        tones: [
+          ...chord(BASE, SUS4,    { filterFreq: 2800, peak: 0.11, dur: 1.1, tau: 0.5, at: 0 }),
+          ...chord(BASE, C_MAJOR, { filterFreq: 3200, peak: 0.13, dur: 2.8, tau: 1.3, at: 0.75 }),
+        ],
+      },
+      {
+        id: 'gong', name: 'Soft gong', tag: 'alternative',
+        desc: 'The triad swells in — gain ramps up over ~0.45 s instead of an instant strike — then fades. A breath-like bloom.',
+        tones: chord(BASE, C_MAJOR, { filterFreq: 2600, peak: 0.16, dur: 3.6, tau: 1.1, attack: 0.45 }),
+      },
+      {
+        id: 'pad', name: 'Warm pad fade', tag: 'alternative',
+        desc: 'A sustained triad that fades in and out smoothly — no percussive strike at all. Ambient, soft, the longest tail.',
+        tones: chord(BASE, C_MAJOR, { filterFreq: 2400, peak: 0.11, dur: 5.0, attack: 0.9, release: 1.4 }),
+      },
+    ]
+
+    // Deterministic offline measurement — render each sound and read true
+    // peak amplitude + effective duration (time until the tail falls below
+    // −40 dB of that sound's own peak). Volume-independent; the "longer?"
+    // judgement becomes a number, not an impression.
+    async function measure(variant) {
+      const sr = 48000
+      const off = new OfflineAudioContext(1, sr * 8, sr)
+      scheduleVariant(off, off.destination, variant, 0)
+      const buf = await off.startRendering()
+      const d = buf.getChannelData(0)
+      let peak = 0
+      for (let i = 0; i < d.length; i++) {
+        const a = Math.abs(d[i])
+        if (a > peak) peak = a
+      }
+      const floor = peak * 0.01 // −40 dB of own peak
+      let lastLoud = 0
+      for (let i = d.length - 1; i >= 0; i--) {
+        if (Math.abs(d[i]) > floor) { lastLoud = i; break }
+      }
+      return { peak, durationSec: lastLoud / sr }
+    }
+
+    const dbRel = (p, ref) => 20 * Math.log10(p / ref)
+    const fmtDb = (v) => (v >= 0 ? '+' : '') + v.toFixed(1) + ' dB'
+
+    // ───────────────────────────────────────────────────────────────
+    function App() {
+      const ctxRef = useRef(null)
+      const timersRef = useRef([])
+      const [measures, setMeasures] = useState({})
+      const [playing, setPlaying] = useState(null)
+      const [selected, setSelected] = useState({ current: true })
+      const [log, setLog] = useState([])
+
+      useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+          const out = {}
+          for (const v of VARIANTS) out[v.id] = await measure(v)
+          if (!cancelled) setMeasures(out)
+        })()
+        return () => { cancelled = true }
+      }, [])
+
+      const getCtx = () => {
+        if (!ctxRef.current) {
+          const AC = window.AudioContext || window.webkitAudioContext
+          ctxRef.current = new AC()
+        }
+        if (ctxRef.current.state === 'suspended') ctxRef.current.resume()
+        return ctxRef.current
+      }
+
+      const addLog = (msg, meta) => setLog((l) =>
+        [{ t: new Date().toLocaleTimeString(), msg, meta }, ...l].slice(0, 40))
+
+      const clearTimers = () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }
+
+      const play = (v) => {
+        const ctx = getCtx()
+        scheduleVariant(ctx, ctx.destination, v, ctx.currentTime + 0.05)
+        clearTimers()
+        setPlaying(v.id)
+        const dur = measures[v.id] ? measures[v.id].durationSec : 2
+        timersRef.current.push(setTimeout(() => setPlaying(null), dur * 1000 + 300))
+        const m = measures[v.id]
+        addLog(`play · ${v.name}`, m ? m.durationSec.toFixed(2) + ' s' : '')
+      }
+
+      const playAB = (v) => {
+        const ctx = getCtx()
+        const t0 = ctx.currentTime + 0.05
+        scheduleVariant(ctx, ctx.destination, VARIANTS[0], t0)
+        const gap = (measures.current ? measures.current.durationSec : 2) + 0.45
+        scheduleVariant(ctx, ctx.destination, v, t0 + gap)
+        clearTimers()
+        setPlaying(v.id)
+        const total = gap + (measures[v.id] ? measures[v.id].durationSec : 2)
+        timersRef.current.push(setTimeout(() => setPlaying(null), total * 1000 + 300))
+        addLog(`A/B · Current → ${v.name}`)
+      }
+
+      const toggleSelect = (id) => setSelected((s) => ({ ...s, [id]: !s[id] }))
+
+      const curPeak = measures.current ? measures.current.peak : null
+      const maxDur = Object.values(measures).reduce((m, x) => Math.max(m, x.durationSec), 0.01)
+      const selectedList = VARIANTS.filter((v) => selected[v.id])
+
+      return html`
+        <div class="min-h-screen">
+          <div class="bg-black/80 border-b border-amber-500/30 px-4 py-1.5 text-[11px] tracking-wide text-amber-400/80 font-mono">
+            SPIKE HARNESS · 005-session-end-sound-alternatives · not shipped UI — a sound-design workbench
+          </div>
+
+          <div class="max-w-3xl mx-auto px-5 py-8">
+            <header class="mb-7">
+              <h1 class="text-2xl font-semibold text-slate-100">Session-end sound alternatives</h1>
+              <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+                The sound that plays when a session completes — shared by both the HRV and
+                Navi Kriya practices. Audition the current chord against alternatives, A/B them,
+                and check how long each one actually rings.
+                <span class="text-slate-300">Duration and loudness are measured offline</span>
+                (true peak + −40 dB tail length), so "kinda short" becomes a number. Set your
+                device volume to a normal listening level first.
+              </p>
+            </header>
+
+            <div class="h-8 mb-5 flex items-center">
+              ${playing ? html`
+                <div class="flex items-center gap-3">
+                  <span class="text-xs uppercase tracking-widest text-slate-500">now playing</span>
+                  <span class="text-sm text-cyan-300 font-medium">${VARIANTS.find((v) => v.id === playing).name}</span>
+                  <span class="flex gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span></span>
+                </div>
+              ` : html`<span class="text-xs text-slate-600">— silent —</span>`}
+            </div>
+
+            <div class="space-y-3">
+              ${VARIANTS.map((v) => {
+                const m = measures[v.id]
+                const isSel = !!selected[v.id]
+                const isPlaying = playing === v.id
+                const rel = m && curPeak ? dbRel(m.peak, curPeak) : null
+                return html`
+                  <div key=${v.id} class=${'rounded-xl border px-4 py-3.5 transition-colors '
+                    + (isPlaying ? 'border-cyan-400/70 bg-cyan-950/30 ' : 'border-slate-800 bg-slate-900/60 ')
+                    + (isSel ? 'ring-1 ring-emerald-500/40' : '')}>
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-slate-100">${v.name}</span>
+                          <span class=${'text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded '
+                            + (v.tag === 'baseline' ? 'bg-slate-700 text-slate-300'
+                              : v.tag === 'tweak' ? 'bg-indigo-500/30 text-indigo-300'
+                              : 'bg-slate-800 text-slate-400')}>${v.tag}</span>
+                        </div>
+                        <p class="mt-1 text-[13px] text-slate-400 leading-snug">${v.desc}</p>
+                      </div>
+                      <button onClick=${() => toggleSelect(v.id)}
+                        class=${'shrink-0 text-[11px] px-2.5 py-1 rounded-md border transition-colors '
+                          + (isSel ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-300'
+                            : 'border-slate-700 text-slate-500 hover:border-slate-500')}>
+                        ${isSel ? '✓ in picker' : '+ picker'}
+                      </button>
+                    </div>
+
+                    <!-- duration bar -->
+                    <div class="mt-3 flex items-center gap-3">
+                      <span class="text-[10px] uppercase tracking-wider text-slate-600 w-14">length</span>
+                      <div class="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div class=${'h-full rounded-full ' + (v.id === 'current' ? 'bg-slate-400' : 'bg-cyan-500')}
+                          style=${{ width: m ? (m.durationSec / maxDur * 100).toFixed(1) + '%' : '0%' }}></div>
+                      </div>
+                      <span class="text-[11px] font-mono text-slate-500 w-28 text-right">
+                        ${m ? m.durationSec.toFixed(2) + ' s' : 'measuring…'}
+                      </span>
+                    </div>
+                    <!-- loudness line -->
+                    <div class="mt-1.5 flex items-center gap-3">
+                      <span class="text-[10px] uppercase tracking-wider text-slate-600 w-14">peak</span>
+                      <span class="text-[11px] font-mono text-slate-500">
+                        ${m ? html`${m.peak.toFixed(3)} · ${v.id === 'current' ? 'reference loudness' : fmtDb(rel) + ' vs current'}` : '…'}
+                      </span>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <button onClick=${() => play(v)}
+                        class="px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-[13px] font-medium">
+                        ▶ Play
+                      </button>
+                      ${v.id !== 'current' ? html`
+                        <button onClick=${() => playAB(v)}
+                          class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[13px]">
+                          A/B vs Current
+                        </button>` : null}
+                    </div>
+                  </div>`
+              })}
+            </div>
+
+            <div class="mt-7 rounded-xl border border-emerald-700/40 bg-emerald-950/20 px-4 py-3.5">
+              <div class="text-xs uppercase tracking-widest text-emerald-400/80 mb-1.5">
+                Selected for the settings picker
+              </div>
+              ${selectedList.length === 0
+                ? html`<p class="text-sm text-slate-500">Nothing selected. Toggle "+ picker" on the sounds worth shipping.</p>`
+                : html`<p class="text-sm text-slate-200">
+                    ${selectedList.map((v) => v.name).join(' · ')}
+                    <span class="text-slate-500"> — ${selectedList.length} option${selectedList.length === 1 ? '' : 's'}</span>
+                  </p>`}
+            </div>
+
+            <div class="mt-6">
+              <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Event log</div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900/60 max-h-52 overflow-y-auto font-mono text-[12px]">
+                ${log.length === 0
+                  ? html`<div class="px-3 py-2 text-slate-600">No events yet — play a sound.</div>`
+                  : log.map((e, i) => html`
+                      <div key=${i} class="px-3 py-1.5 border-b border-slate-800/60 flex gap-3">
+                        <span class="text-slate-600">${e.t}</span>
+                        <span class="text-slate-300">${e.msg}</span>
+                        ${e.meta ? html`<span class="text-cyan-500/80 ml-auto">${e.meta}</span>` : null}
+                      </div>`)}
+              </div>
+            </div>
+
+            <footer class="mt-8 text-[12px] text-slate-600 leading-relaxed">
+              Production seam: <span class="text-slate-500 font-mono">scheduleEndChord</span> in
+              <span class="text-slate-500 font-mono">src/audio/nkCueSynth.ts</span> — already on its own
+              <span class="text-slate-500 font-mono">END_CHORD_*</span> constants and shared by both
+              practices' completion sounds, so a swap lands in one place.
+            </footer>
+          </div>
+        </div>`
+    }
+
+    createRoot(document.getElementById('root')).render(html`<${App} />`)
+  </script>
+</body>
+</html>
