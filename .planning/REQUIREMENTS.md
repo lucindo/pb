@@ -44,12 +44,12 @@ Requirements for milestone v1.5. Each maps to exactly one roadmap phase.
 Post-v1.5 phase appended to the roadmap (like Phase 33). Delivers the Future
 requirement PRACTICE-F1 — the third practice. Sourced from spikes 002 + 007.
 
-- [ ] **STRETCH-01**: User can switch between HRV, Stretch, and Navi using the top segmented control above the orb
-- [ ] **STRETCH-02**: The 3-practice switcher stays legible and tappable on mobile down to 320px, in English and PT-BR, and ships both label treatments (text / icon+label) selectable via a developer-only toggle
-- [ ] **STRETCH-03**: Stretch has its own per-practice session settings, persisted across reloads, separate from HRV's
-- [ ] **STRETCH-04**: Stretch records its own per-practice stats — separate from HRV's and Navi Kriya's
-- [ ] **STRETCH-05**: A returning user's existing HRV and Navi data survives the upgrade, and prior Stretch usage is preserved under the new Stretch practice slice (storage-envelope migration)
-- [ ] **STRETCH-06**: User can read all new Stretch UI copy in both English and native-quality PT-BR
+- [x] **STRETCH-01**: User can switch between HRV, Stretch, and Navi using the top segmented control above the orb
+- [x] **STRETCH-02**: The 3-practice switcher stays legible and tappable on mobile down to 320px, in English and PT-BR, and ships both label treatments (text / icon+label) selectable via a developer-only toggle
+- [x] **STRETCH-03**: Stretch has its own per-practice session settings, persisted across reloads, separate from HRV's
+- [x] **STRETCH-04**: Stretch records its own per-practice stats — separate from HRV's and Navi Kriya's
+- [x] **STRETCH-05**: A returning user's existing HRV and Navi data survives the upgrade, and prior Stretch usage is preserved under the new Stretch practice slice (storage-envelope migration)
+- [x] **STRETCH-06**: User can read all new Stretch UI copy in both English and native-quality PT-BR
 
 ## Future Requirements
 
@@ -100,12 +100,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEARN-02 | Phase 32 | Complete |
 | LEARN-03 | Phase 32 | Complete |
 | I18N-08 | Phase 32 | Complete |
-| STRETCH-01 | Phase 34 | Pending |
-| STRETCH-02 | Phase 34 | Pending |
-| STRETCH-03 | Phase 34 | Pending |
-| STRETCH-04 | Phase 34 | Pending |
-| STRETCH-05 | Phase 34 | Pending |
-| STRETCH-06 | Phase 34 | Pending |
+| STRETCH-01 | Phase 34 | Complete |
+| STRETCH-02 | Phase 34 | Complete |
+| STRETCH-03 | Phase 34 | Complete |
+| STRETCH-04 | Phase 34 | Complete |
+| STRETCH-05 | Phase 34 | Complete |
+| STRETCH-06 | Phase 34 | Complete |
 
 **Coverage:**
 - v1.5 requirements: 18 total
