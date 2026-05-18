@@ -3,6 +3,7 @@ import { useEffect, useRef, type MouseEventHandler } from 'react'
 import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
+import type { PracticeId } from '../storage/practices'
 
 // CONTEXT.md D-05: native <dialog> with imperative showModal/close.
 // D-07: every external link carries target="_blank" rel="noopener noreferrer".
@@ -11,9 +12,12 @@ import type { UiStrings } from '../content/strings'
 // D-05/D-07/D-14/D-15 attribution below.
 // D-14: two disclaimer micro-lines inline (not in learnContent.ts).
 // D-15: disclaimer copy lives ONLY inside this modal — not on the main screen.
-// Phase 32 Plan 01: updated to use practices.resonant for the explainer/videos sections.
-//   Full practice-aware rendering (D-01 order, naviKriya partition, D-02 native-apps gate)
-//   is added in Plan 02.
+// Phase 32 Plan 02: practice-aware rendering — activePractice prop drives practice content selection.
+//   D-01 section order: practice description → practice videos → Forrest explainer →
+//   Forrest Resources → (native apps, resonant only per D-02) → affiliation → Close.
+//   D-04: dialog title stays generic ("About this practice") — no practice name in title.
+//   D-07: every <a> carries target="_blank" rel="noopener noreferrer".
+//   D-08: practice-description heading is the sole signal of which practice is shown.
 
 export interface LearnDialogProps {
   open: boolean
@@ -21,9 +25,10 @@ export interface LearnDialogProps {
   learnContent: LearnContent
   lockedCopy: LockedCopy
   strings: UiStrings['learn']
+  activePractice: PracticeId
 }
 
-export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }: LearnDialogProps) {
+export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, activePractice }: LearnDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -78,10 +83,11 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
     }
   }
 
-  const { explainer, links } = learnContent
-  // Phase 32 Plan 01: resonant practice content (description + videos).
-  // Plan 02 will replace this with practice-aware selection using activePractice prop.
-  const resonantContent = learnContent.practices.resonant
+  const { explainer, links, practices } = learnContent
+  // D-07: auto-tracks active practice — no in-dialog toggle; renders whichever practice the switcher is on.
+  const practiceContent = practices[activePractice]
+  // D-01 (SECOND): video sub-heading switches per practice; resonant uses generic heading, NK uses NK-specific heading.
+  const videosHeading = activePractice === 'resonant' ? strings.videosHeading : strings.naviKriyaVideosHeading
 
   return (
     <dialog
@@ -93,26 +99,50 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
       <div className="grid gap-5 p-6 sm:p-7">
         <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.title}</h2>
 
-        {/* Practice description sections (resonant by default — Plan 02 will add practice-aware selection) */}
+        {/* D-01 (FIRST): Practice description — practice-specific per activePractice.
+            D-08: section headings are the sole signal of which practice is shown; no extra practice label. */}
         <div className="grid gap-4">
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{resonantContent.description.section1.title}</h3>
-            <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{resonantContent.description.section1.body}</p>
+            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section1.title}</h3>
+            <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section1.body}</p>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{resonantContent.description.section2.title}</h3>
-            <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{resonantContent.description.section2.body}</p>
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
-            {explainer.forrest.body.split('\n\n').map((paragraph) => (
-              <p key={paragraph} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
-            ))}
-            <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{lockedCopy.inspiredByForrest}</p>
+            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section2.title}</h3>
+            <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section2.body}</p>
           </div>
         </div>
 
-        {/* Forrest Resources — shared, always rendered */}
+        {/* D-01 (SECOND): Practice videos — practice-specific.
+            Heading: videosHeading for resonant, naviKriyaVideosHeading for NK.
+            Links: flat practiceContent.videos array — [heroVideo, ...keyVideos] for resonant; 2 links for NK.
+            D-07: every <a> carries target="_blank" rel="noopener noreferrer". */}
+        <div>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{videosHeading}</h3>
+          <div className="mt-1 grid gap-2">
+            {practiceContent.videos.map((video) => (
+              <a
+                key={video.url}
+                href={video.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              >
+                {video.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* D-01 (THIRD): Who is Forrest Knutson — shared, always rendered (LEARN-03). */}
+        <div>
+          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
+          {explainer.forrest.body.split('\n\n').map((paragraph) => (
+            <p key={paragraph} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
+          ))}
+          <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{lockedCopy.inspiredByForrest}</p>
+        </div>
+
+        {/* D-01 (FOURTH): Forrest Resources — shared, always rendered (LEARN-03). */}
         <div>
           <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
           <div className="mt-1 grid gap-2">
@@ -140,7 +170,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
             >
               {links.book.label}
             </a>
-            {/* D-12 amendment: patreon is the 4th key, between book and videos */}
+            {/* D-12 amendment: patreon is the 4th key */}
             <a
               href={links.patreon.url}
               target="_blank"
@@ -152,49 +182,33 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings }
           </div>
         </div>
 
-        {/* Practice videos — resonant by default (Plan 02 will add practice-aware selection) */}
-        <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.videosHeading}</h3>
-          <div className="mt-1 grid gap-2">
-            {resonantContent.videos.map((video) => (
+        {/* D-01 (FIFTH): native-apps sub-section — resonant only per D-02.
+            D-02: fully omitted for Navi Kriya — no heading, no links, no placeholder div.
+            D-04 / T-24-01: target="_blank" rel="noopener noreferrer" on both links.
+            D-08: heading and labels name the "Resonant Breathing" app only — no Forrest authorship claim. */}
+        {activePractice === 'resonant' && (
+          <div>
+            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
+            <div className="mt-1 grid gap-2">
               <a
-                key={video.url}
-                href={video.url}
+                href={links.appStoreIos.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
               >
-                {video.label}
+                {links.appStoreIos.label}
               </a>
-            ))}
+              <a
+                href={links.googlePlayAndroid.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              >
+                {links.googlePlayAndroid.label}
+              </a>
+            </div>
           </div>
-        </div>
-
-        {/* D-01 (Phase 24): native-apps sub-section.
-            D-02: resonant-only (Plan 02 will add the activePractice === 'resonant' gate).
-            D-04 / T-24-01: target="_blank" rel="noopener noreferrer" on both links.
-            D-08: heading and labels name the "Resonant Breathing" app only — no Forrest authorship claim. */}
-        <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
-          <div className="mt-1 grid gap-2">
-            <a
-              href={links.appStoreIos.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-            >
-              {links.appStoreIos.label}
-            </a>
-            <a
-              href={links.googlePlayAndroid.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-            >
-              {links.googlePlayAndroid.label}
-            </a>
-          </div>
-        </div>
+        )}
 
         {/* D-14 amendment (2026-05-10, user-approved): the medical-advice
             micro-line was moved from this modal to the main breathing card
