@@ -59,11 +59,18 @@ export function startSession(selectedSettings: SessionSettings, nowMs: number): 
 
 // D-01/D-02: startStretchSession — new function for stretch sessions.
 // Lead-in plan runs at initialBpm so cue duration matches the warm-up rate.
+// WR-03: the caller's resonant selectedSettings are passed through unchanged so
+// endSession returns the resonant config (not the synthetic lead-in). The
+// synthetic lead-in lives ONLY in lockedSettings (it drives the lead-in plan);
+// selectedSettings carries the resonant config through the entire session so
+// endSession's `cloneSettings(state.selectedSettings)` preserves it to idle.
 export function startStretchSession(
   stretchSettings: StretchSettings,
+  selectedSettings: SessionSettings,
   nowMs: number,
 ): RunningSessionState {
-  // Lead-in plan: standard SessionSettings using initialBpm and the same ratio
+  // Lead-in plan: standard SessionSettings using initialBpm and the same ratio.
+  // Assigned only to lockedSettings — selectedSettings is the caller's resonant config.
   const leadInSettings: SessionSettings = {
     bpm: stretchSettings.initialBpm,
     ratio: stretchSettings.ratio,
@@ -74,11 +81,10 @@ export function startStretchSession(
   const stretchSegments = buildStretchSegments(stretchSettings)
   const lastFrame = getStretchFrame(stretchSegments, 0)
 
-  // selectedSettings and lockedSettings are the standard-form lead-in settings
   return {
     status: 'running',
-    selectedSettings: leadInSettings,
-    lockedSettings: leadInSettings,
+    selectedSettings: cloneSettings(selectedSettings),  // resonant config passes through unchanged
+    lockedSettings: leadInSettings,                      // synthetic lead-in drives the audio plan
     plan,
     stretchSegments,
     startedAtMs: nowMs,

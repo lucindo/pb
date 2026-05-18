@@ -217,9 +217,12 @@ export function useSessionEngine(
 
       // Phase 34: when a stretch settings object is wired in, start a stretch
       // session via startStretchSession instead of the standard startSession.
+      // WR-03: pass currentState.selectedSettings as the resonant config so it is
+      // preserved through the session (startStretchSession stores it in selectedSettings,
+      // lockedSettings carries the synthetic lead-in).
       const sSettings = stretchSettingsRef.current
       if (sSettings !== null) {
-        return startStretchSession(sSettings, performance.now())
+        return startStretchSession(sSettings, currentState.selectedSettings, performance.now())
       }
 
       return startSession(currentState.selectedSettings, performance.now())
