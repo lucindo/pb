@@ -81,8 +81,9 @@ describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', 
     // CR-01: duration is derived from the snapped segment table, not raw minute sum.
     // DEFAULT_STRETCH_SETTINGS (5.5→4.5 BPM) produces cycle-aligned drift — the
     // displayed value may differ from '15 min' depending on the snapped total.
+    // GAP 1: the value is now rounded to the nearest whole minute (Math.round).
     const expectedTotalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)!
-    const expectedText = `${String(expectedTotalMs / 60_000)} min`
+    const expectedText = `${String(Math.round(expectedTotalMs / 60_000))} min`
     const duration = screen.getByRole('group', { name: 'Duration' })
     expect(within(duration).getByText(expectedText)).toBeInTheDocument()
   })
