@@ -26,7 +26,7 @@ decisions:
 metrics:
   duration: ~30min
   completed: 2026-05-17
-  tasks_completed: 2
+  tasks_completed: 3
   tasks_total: 3
   files_changed: 6
 ---
@@ -102,11 +102,11 @@ Data:
 - **Files modified:** `src/components/LearnDialog.tsx`, `src/components/LearnDialog.test.tsx`
 - **Commit:** d038afd
 
-## Status at Checkpoint
+## Task 3 — Checkpoint Resolved
 
-**Task 3 (checkpoint:human-verify):** Operator must review and lock the EN Navi Kriya description copy before Plan 02 renders it.
+**Task 3 (checkpoint:human-verify): Operator approved.** The operator reviewed and locked the EN Navi Kriya description copy with no wording changes. Plan 02 may now render this copy.
 
-EN copy to review (in `src/content/learnContent.ts`, `practices.naviKriya.description`):
+Locked EN copy (in `src/content/learnContent.ts`, `practices.naviKriya.description`):
 
 **Section 1 — "What is Navi Kriya":**
 > Navi Kriya is an OM-counting meditation practice taught by Forrest Knutson. Each repetition of OM is counted at a chosen pace across the front and back of the body, moving attention along the spine. This is a quiet seated practice — not a clinical procedure and not a physical exercise.
