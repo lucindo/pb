@@ -3,7 +3,7 @@ spike: 007
 name: three-practice-switcher
 type: comparison
 validates: "Given Stretch promoted to a top-level practice, when the 3-practice top segmented control renders at real mobile widths, then it stays legible, tappable, and balanced — or a compaction is needed"
-verdict: PENDING
+verdict: VALIDATED — 3-practice switcher confirmed; treatments A + B both ship behind a developer setting
 related: [002]
 tags: [ui, switcher, navigation, mobile, practice, comparison]
 ---
@@ -88,10 +88,41 @@ Network needed on first open (React / htm / Tailwind from CDN).
    themes, EN/PT-BR, idle vs in-session, and both label treatments side by side.
 4. **Added a computed fit readout** so the narrow-mobile question has a measured
    answer.
-5. _(Pending operator review — verdict to be set from the checkpoint.)_
+5. **Operator review.** The operator confirmed the 3-practice switcher looks
+   good, including on mobile. They liked **both** treatments — A (text) and B
+   (icon + label) — and did not want to pick one from the harness alone.
 
 ## Results
 
-_Pending operator review. The harness is built and self-consistent; the verdict
-(does the 3-practice switcher ship as-is, which treatment, any compaction) is an
-operator design call recorded at the checkpoint._
+**Verdict: VALIDATED — the 3-practice switcher holds up; the A/B treatment
+choice is deferred to real-app testing.**
+
+The operator reviewed the 3-practice top segmented control across widths,
+themes, and locales and confirmed it works — no compaction needed, mobile fit
+is fine. They liked **both** label treatments and chose **not** to decide
+between them from the harness.
+
+**Decision — ship both treatments behind a developer setting:**
+
+- Both treatments — **A: text-only equal pills** and **B: icon + label** —
+  are built into the production switcher.
+- A **developer-only** toggle selects between them (NOT a user-facing setting —
+  it must not appear in the Settings dialog). Mechanism is a build-time call
+  (e.g. a build flag, an env var, or a hidden/localStorage dev toggle) — decided
+  at build time.
+- Purpose: let the operator exercise both treatments in the real running app
+  and choose the final default from full testing, rather than from the spike.
+
+**Notes for the build:**
+
+- This spike validated the *look* only. **Promoting Stretch to a practice is a
+  real feature**, not a spike-apply: it needs a new `PracticeId` `'stretch'`, a
+  third per-practice slice (settings + stats), a storage-envelope migration, and
+  EN/PT-BR strings for the "Stretch" / "Alongar" label. That work belongs in a
+  planned phase/milestone — the switcher (with the dev toggle) is one piece of
+  it.
+- Treatment B's glyphs in the harness are placeholders (orb / ramp / counting
+  dots) — final glyphs are a build-time design pass.
+- Computed fit confirmed: at 320 px the per-pill text space is tight but
+  sufficient for "Stretch"; "Alongar" (PT-BR) is the snuggest label and still
+  fits. No compaction treatment was needed.

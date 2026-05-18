@@ -47,6 +47,15 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   alternatives and chose one. The swap is the three `COUNTDOWN_TICK_*` constants plus a
   pitch ratio in `src/audio/nkCueSynth.ts` (`scheduleCountdownTick`), and applies to both
   the HRV and Navi Kriya countdowns. (Spike 004, operator decision.)
+- **Stretch is promoted from an HRV `mode` to a top-level practice** — the switcher carries
+  three: HRV · Stretch · Navi. The validated top segmented control (spike 002) holds at 3
+  practices on mobile down to 320 px in both EN and PT-BR — no compaction needed. The
+  switcher ships with **both label treatments** — A (text-only equal pills) and B (icon +
+  label) — selectable via a **developer-only** toggle (NOT in the user Settings dialog), so
+  the operator picks the final default from real-app testing. Promoting Stretch is a real
+  feature (new `PracticeId` `'stretch'`, a third per-practice settings+stats slice, a
+  storage migration, EN/PT-BR "Stretch"/"Alongar" strings) — needs its own planned phase.
+  (Spike 007, operator decision.)
 - The **installed app icon** swaps to **Breathing rings** (pale on deep) — three faint
   concentric rings (radii 200/152/104 in a 512 viewBox, stroke `#e6eef3`, opacity
   0.24/0.42/0.66) around a `#9fc6d6` centre disc (r46), on a `#3b4252→#2b303b` radial
@@ -76,4 +85,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 004 | countdown-beep-alternatives | comparison | Auditioning the current 3-2-1 lead-in beep against alternatives surfaces the beep worth shipping | VALIDATED — winner: Crisp ping | audio, countdown, sound-design, cue, comparison |
 | 005 | session-end-sound-alternatives | comparison | Auditioning the current session-complete chord against alternatives surfaces the end sound worth shipping, and whether it ships longer | VALIDATED — winner: Warm pad fade | audio, session-end, sound-design, cue, comparison |
 | 006 | app-icon-alternatives | comparison | Reviewing meditation-themed installed-icon candidates in real iOS/Android masks surfaces the app icon worth shipping | VALIDATED — winner: Breathing rings | icon, pwa, branding, design, meditation, comparison |
-| 007 | three-practice-switcher | comparison | The top segmented control, extended to 3 practices (HRV/Stretch/Navi), stays legible and balanced at real mobile widths | PENDING | ui, switcher, navigation, mobile, practice, comparison |
+| 007 | three-practice-switcher | comparison | The top segmented control, extended to 3 practices (HRV/Stretch/Navi), stays legible and balanced at real mobile widths | VALIDATED — 3-practice switcher confirmed; both treatments ship behind a dev setting | ui, switcher, navigation, mobile, practice, comparison |
