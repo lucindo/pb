@@ -33,7 +33,7 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 **Blueprint:** validated across 3 spikes (`.planning/spikes/`), packaged in the `spike-findings-hrv` skill. Carry-forward tech debt stays deferred — this milestone is focused on the second practice.
 
-**Progress:** Phase 30 (Multi-Practice Architecture & Switcher) complete 2026-05-17 — the `practice` concept, v1→v2 per-practice persistence, and the top switcher all ship. Phases 31–32 remaining.
+**Progress:** All 3 phases complete. Phase 30 (Multi-Practice Architecture & Switcher) — the `practice` concept, v1→v2 per-practice persistence, and the top switcher. Phase 31 (Navi Kriya Engine & Session) — the OM-counting engine and session flow. Phase 32 (Learn & Localization, complete 2026-05-18) — per-practice + shared Learn content and native-quality EN/PT-BR copy for all new surfaces. Milestone ready for audit/close.
 
 ## Requirements
 
@@ -96,9 +96,11 @@ Users can start a hands-off HRV breathing session and comfortably follow accurat
 
 - [x] **PRACTICE-01..06 (Phase 30)** — Multi-practice architecture & switcher: a `practice` concept (`'resonant' | 'naviKriya'`) above the existing `mode`; per-practice settings + stats persisted via a `STATE_VERSION` v1→v2 `migrateEnvelope` ladder that losslessly and idempotently folds a returning user's flat envelope into `practices.resonant` (PRACTICE-04); new `src/storage/practices.ts` per-practice persistence module with prototype-pollution-safe coercers; top segmented `PracticeToggle` above the orb, disabled during a session (PRACTICE-01/03); practice-aware `SettingsForm` (resonant knobs vs. the Navi Kriya structural scaffold) with shared chrome unchanged in the single `SettingsDialog` (PRACTICE-05/06); active practice named in the app header/title (operator override of D-04's inline heading). 1057/1057 tests pass. Validated in Phase 30 (automated 5/5; operator UAT signed off — switcher end-to-end, in-session lock, returning-user persistence, dark-theme switcher visibility). Carry-forward: code-review CR-01 — resonant settings still persist via the legacy flat `env.settings` path; `practices.resonant.settings` is not yet the write target (resolve when Phase 31 wires Navi Kriya settings).
 
+- [x] **LEARN-02, LEARN-03, I18N-08 (Phase 32)** — Learn & Localization: `learnContent.ts` restructured from a flat resonant-only shape into a per-practice `practices` map (`resonant` + `naviKriya`) over a shared base, resonant data preserved byte-identically (LEARN-02); `LearnDialog` made practice-aware via an `activePractice` prop — selects `practices[activePractice]` at render, renders that practice's description sections + Forrest videos, shows the native-apps block for resonant only, while the shared sections (Who is Forrest, Forrest Resources) render unconditionally for either practice (LEARN-03); all 38 v1.5 PT-BR strings reviewed by the operator as native-speaker and finalized — 3 corrections applied, all 7 `// TODO: native-speaker review` drift-guard markers removed (I18N-08). 1158/1158 tests pass. Validated in Phase 32 (automated 3/3 must-haves). Code review: 0 Critical, 1 Warning (WR-01 — `practices[activePractice]` lacks a runtime guard against a future unmatched `PracticeId`), 5 Info.
+
 ### Active
 
-**v1.5 Navi Kriya Practice** — Phase 30 complete (2026-05-17); Phases 31 (Navi Kriya Engine & Session) and 32 (Learn & Localization) remaining. See `.planning/REQUIREMENTS.md` for full traceability.
+**v1.5 Navi Kriya Practice** — all phases complete: Phase 30 (Multi-Practice Architecture & Switcher), Phase 31 (Navi Kriya Engine & Session), Phase 32 (Learn & Localization, complete 2026-05-18). Ready for milestone audit/close. See `.planning/REQUIREMENTS.md` for full traceability.
 
 ### v1.x Carry-Forwards (Tech Debt)
 
@@ -222,4 +224,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 — Phase 30 (Multi-Practice Architecture & Switcher) complete*
+*Last updated: 2026-05-18 — Phase 32 (Learn & Localization) complete; v1.5 all phases done*
