@@ -115,10 +115,10 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 ### Phase 33: Close gap: PRACTICE-02 — resonant settings read/write split-brain
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Restore resonant-settings persistence across page reloads — retarget the resonant-settings read path to the per-practice envelope, remove the dead flat-field `loadSettings`/`saveSettings`, and add the regression tests that would have caught the read/write split-brain.
+**Requirements**: PRACTICE-02
 **Depends on:** Phase 32
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 33 to break down)
+- [ ] 33-01-PLAN.md — Retarget resonant-settings read to per-practice envelope, remove dead loadSettings/saveSettings, add D-05 remount regression tests
