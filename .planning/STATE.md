@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Navi Kriya Practice
-status: milestone_complete
-stopped_at: Phase 32 complete — milestone v1.5 ready to close
-last_updated: "2026-05-18T02:50:00.000Z"
-last_activity: 2026-05-18 -- Phase 32 verified complete (UAT 6/6, all gates green)
+status: completed
+stopped_at: Phase 33 context gathered
+last_updated: "2026-05-18T05:18:29.813Z"
+last_activity: 2026-05-18
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
   total_plans: 13
   completed_plans: 13
@@ -46,6 +46,10 @@ Progress: [██████████] 100% — 3/3 phases complete
 | 32. Learn & Localization | 3/3 | Complete (2026-05-18) |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 33 added: Close gap: PRACTICE-02 — resonant settings read/write split-brain (v1.5 milestone audit gap)
 
 ### Decisions
 
@@ -106,9 +110,9 @@ Items acknowledged and carried forward across milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-05-18T02:50:00.000Z
-Stopped at: Phase 32 complete and verified — milestone v1.5 (Navi Kriya Practice) 100% done
-Resume file: None
+Last session: 2026-05-18T05:18:29.807Z
+Stopped at: Phase 33 context gathered
+Resume file: .planning/phases/33-close-gap-practice-02-resonant-settings-read-write-split-bra/33-CONTEXT.md
 Next command: /gsd-complete-milestone v1.5
 
 ## Operator Next Steps
