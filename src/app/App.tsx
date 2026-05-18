@@ -29,6 +29,7 @@ import {
   scheduleNKTick,
   scheduleEndChord,
   scheduleCountdownTick,
+  END_CHORD_RINGOUT_SEC,
 } from '../audio/nkCueSynth'
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useFavicon } from '../hooks/useFavicon'
@@ -76,9 +77,12 @@ import { LOCKED_COPY } from '../content/lockedCopy'
 type AppPhase = 'idle' | 'lead-in' | 'running'
 
 // Wall-clock margin allowing the shared end chord to ring out before the Navi
-// AudioContext closes (chord 1.8s + 0.2s cleanup padding, plus headroom). The
-// HRV path defers teardown inside the audio engine instead (see close()).
-const END_CHORD_RINGOUT_MS = 2500
+// AudioContext closes. Derived from the synth's own ring-out span
+// (END_CHORD_RINGOUT_SEC) plus the SAFE_LEAD_SEC scheduling look-ahead and a
+// small headroom — so a retune of the end chord (e.g. Spike 005's 1.8s strike
+// → 5s Warm pad fade) is tracked automatically and never cuts the tail short.
+// The HRV path defers teardown inside the audio engine instead (see close()).
+const END_CHORD_RINGOUT_MS = Math.ceil((SAFE_LEAD_SEC + END_CHORD_RINGOUT_SEC) * 1000) + 250
 
 // Phase 22 Pitfall 2: a stretch session has a variable per-cycle cycleMs, so a
 // boundary's audio-clock offset cannot come from `cycleIndex * plan.cycleMs`.

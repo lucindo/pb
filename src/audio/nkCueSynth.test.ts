@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  END_CHORD_RINGOUT_SEC,
   scheduleCountdownTick,
   scheduleNKBackMarker,
   scheduleEndChord,
@@ -97,6 +98,18 @@ describe('nkCueSynth', () => {
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleEndChord(ac, 1.0, ac.destination, timbre)).not.toThrow()
     }
+  })
+
+  it('END_CHORD_RINGOUT_SEC equals the scheduleEndChord handle ring-out span', () => {
+    // The Navi Kriya teardown in App.tsx defers AudioContext.close() by this
+    // many seconds. It MUST track the real chord span — a stale value cut the
+    // 5s Warm pad fade short on NK while HRV (which reads cue.cleanupAt) was
+    // fine. This guard fails if the exported constant ever drifts from the
+    // chord scheduleEndChord actually produces.
+    const ac = createAc()
+    const when = 1.0
+    const handle = scheduleEndChord(ac, when, ac.destination, 'bowl')
+    expect(handle.cleanupAt - handle.scheduledAt).toBeCloseTo(END_CHORD_RINGOUT_SEC, 5)
   })
 
   // -- D-07: tick is soft and short (barely-there) ---------------------------

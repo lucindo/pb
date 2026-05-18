@@ -64,6 +64,15 @@ const END_CHORD_RELEASE_SEC = 1.4 // gain ramps peak → 0 over the last of the 
 //   root (×1.0), major third (×1.25), perfect fifth (×1.5) — C major chord shape
 const END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
 
+// Total ring-out span of the end chord, from strike to GC-able: the chord
+// duration plus the node-cleanup padding (it equals `cleanupAt - scheduledAt`
+// of the handle scheduleEndChord returns). Exported so a caller that owns its
+// own AudioContext — the Navi Kriya path in App.tsx — can defer teardown until
+// the chord finishes, instead of hard-coding a duration that silently drifts
+// when the chord is retuned. The HRV path reads cue.cleanupAt off the engine
+// and needs no constant.
+export const END_CHORD_RINGOUT_SEC = END_CHORD_DURATION_SEC + CLEANUP_PADDING_SEC
+
 // ---
 
 /**
