@@ -61,12 +61,14 @@ import {
   saveActivePractice,
   recordResonantSession,
   recordNaviKriyaSession,
+  recordStretchSession,
   saveResonantSettings,
   saveNaviKriyaSettings,
+  saveStretchSettings,
   resetPracticeStats,
   type PracticeId,
 } from '../storage'
-import type { SessionSettings, VisualVariantId, CueStyleId } from '../domain/settings'
+import type { SessionSettings, StretchSettings, VisualVariantId, CueStyleId } from '../domain/settings'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import { useLocale } from '../hooks/useLocale'
 import { LEARN_CONTENT } from '../content/learnContent'
@@ -131,9 +133,19 @@ export default function App() {
   const [activePractice, setActivePractice] = useState<PracticeId>(initialActivePractice)
   const [resonantStats, setResonantStats] = useState<PersistedStats>(() => initialPractices.resonant.stats)
   const [naviKriyaStats, setNaviKriyaStats] = useState<PersistedStats>(() => initialPractices.naviKriya.stats)
+  // Phase 34: stretch practice state — settings (editable ramp knobs) + stats.
+  const [stretchSettings, setStretchSettings] = useState<StretchSettings>(
+    () => initialPractices.stretch.settings,
+  )
+  const [stretchStats, setStretchStats] = useState<PersistedStats>(
+    () => initialPractices.stretch.stats,
+  )
   const [resetDialogOpen, setResetDialogOpen] = useState<boolean>(false)
 
-  const session = useSessionEngine(initialSettings)
+  // Phase 34: pass stretchSettings to the engine so start() calls
+  // startStretchSession when the stretch practice is active.
+  const activeStretchSettings = activePractice === 'stretch' ? stretchSettings : null
+  const session = useSessionEngine(initialSettings, activeStretchSettings)
   const { state } = session
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
   const [learnDialogOpen, setLearnDialogOpen] = useState<boolean>(false)
@@ -241,6 +253,7 @@ export default function App() {
       if (e.key === STATE_KEY) {
         const practices = loadPractices()
         setResonantStats(practices.resonant.stats)
+        setStretchStats(practices.stretch.stats)   // Phase 34: cross-tab stretch stats refresh
         setNaviKriyaStats(practices.naviKriya.stats)
       }
     }
@@ -283,24 +296,30 @@ export default function App() {
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
 
-  // Phase 30 D-07/D-08: render-time selection of the active practice's data.
+  // Phase 30 D-07/D-08 / Phase 34: render-time selection of the active practice's data.
   // StatsFooter shows only the active slice; the reset dialog names the
   // practice being reset.
-  const activeStats = activePractice === 'resonant' ? resonantStats : naviKriyaStats
+  const activeStats =
+    activePractice === 'resonant' ? resonantStats :
+    activePractice === 'stretch'  ? stretchStats  : naviKriyaStats
   // Reset dialog + app title use the full practice name (*Heading), not the
   // short switcher label (*Name) — the switcher is the only mobile-width-
   // constrained surface.
   const activePracticeName =
-    activePractice === 'resonant'
-      ? uiStrings.practice.resonantHeading
-      : uiStrings.practice.naviKriyaHeading
-  // Phase 30 (checkpoint feedback): the active practice is named in the app
+    activePractice === 'resonant' ? uiStrings.practice.resonantHeading :
+    activePractice === 'stretch'  ? uiStrings.practice.stretchHeading  :
+    uiStrings.practice.naviKriyaHeading
+  // Phase 30 (checkpoint feedback) / Phase 34: the active practice is named in the app
   // header + title, not in a separate inline heading. Resonant keeps the
-  // existing app copy; Navi Kriya swaps both lines.
+  // existing app copy; Navi Kriya swaps both lines; Stretch swaps to stretch copy.
   const appHeader =
-    activePractice === 'resonant' ? uiStrings.app.header : uiStrings.practice.naviKriyaHeader
+    activePractice === 'resonant' ? uiStrings.app.header :
+    activePractice === 'stretch'  ? uiStrings.practice.stretchHeader :
+    uiStrings.practice.naviKriyaHeader
   const appTitle =
-    activePractice === 'resonant' ? uiStrings.app.title : uiStrings.practice.naviKriyaHeading
+    activePractice === 'resonant' ? uiStrings.app.title :
+    activePractice === 'stretch'  ? uiStrings.practice.stretchHeading :
+    uiStrings.practice.naviKriyaHeading
 
   // Phase 28 showBanner — AND of all five gates (INSTALL-01/02/03/04/05, D-01/D-02/D-08/SC5):
   // isPhone guards desktop (SC5), !isStandalone blocks installed PWA (INSTALL-05),
@@ -313,15 +332,15 @@ export default function App() {
   // settings (Remaining = configured duration; Elapsed 0:00 for open-ended).
   const leadInPlaceholderFrame = useMemo(() => {
     if (appPhase !== 'lead-in') return null
-    const settings = state.selectedSettings
-    // A stretch session's readout is Stage/Remaining/BPM, not a plain timer —
-    // build the same segment table startSession will use so the lead-in
-    // preview matches the running session (mirrors sessionController.ts).
-    if (settings.mode === 'stretch') {
-      return getStretchFrame(buildStretchSegments(settings, settings.ratio), 0)
+    // Phase 34: the stretch practice uses a stretch segment table for its lead-in
+    // preview. activePractice replaces the retired settings.mode === 'stretch' check.
+    // buildStretchSegments takes StretchSettings directly (D-02 single-arg signature).
+    if (activePractice === 'stretch') {
+      return getStretchFrame(buildStretchSegments(stretchSettings), 0)
     }
+    const settings = state.selectedSettings
     return getSessionFrame(createBreathingPlan(settings), 0)
-  }, [appPhase, state.selectedSettings])
+  }, [appPhase, activePractice, stretchSettings, state.selectedSettings])
   // null when not in lead-in OR when the lead-in has reached t=0 (the In phase label takes over).
   const [leadInDigit, setLeadInDigit] = useState<3 | 2 | 1 | null>(null)
 
@@ -421,6 +440,13 @@ export default function App() {
     // saveResonantSettings — NOT the legacy flat env.settings path.
     saveResonantSettings(next)
   }, [sessionSetSelectedSettings])
+
+  // Phase 34: stretch settings change handler — persists to the stretch slice
+  // and updates React state. Modeled on onNKSettingsChange.
+  const onStretchSettingsChange = useCallback((next: StretchSettings) => {
+    setStretchSettings(next)
+    saveStretchSettings(next)
+  }, [])
 
   const persistedSetMuted = useCallback((next: boolean) => {
     audioSetMuted(next)
@@ -650,9 +676,10 @@ export default function App() {
     // Safari ITP / private mode), RAM-side state must still reflect the user's
     // intent — same posture as Phase 3 D-10.
     // Phase 30 D-08 / Pitfall 4 / T-30-11: reset wipes ONLY the active
-    // practice's stats; the other practice's history is untouched.
+    // practice's stats; the other practices' history is untouched.
     resetPracticeStats(activePractice)
     if (activePractice === 'resonant') setResonantStats({ ...ZERO_STATS })
+    else if (activePractice === 'stretch') setStretchStats({ ...ZERO_STATS })
     else setNaviKriyaStats({ ...ZERO_STATS })
     setResetDialogOpen(false)
   }, [activePractice])
@@ -767,10 +794,17 @@ export default function App() {
           isComplete && completedAtMs !== null
             ? completedAtMs - snap.startedAtMs
             : snap.lastElapsedMs
-        // Phase 30 Pitfall 3 / T-30-08: the resonant session engine records
-        // into the resonant practice subtree, not the flat env.stats.
-        const updated = recordResonantSession(elapsedMs, isComplete)
-        setResonantStats(updated)
+        // Phase 30 Pitfall 3 / T-30-08 / Phase 34: dispatch session recording to
+        // the active practice's subtree only — other practices' stats are untouched.
+        if (activePractice === 'stretch') {
+          const updated = recordStretchSession(elapsedMs, isComplete)
+          setStretchStats(updated)
+        } else {
+          // Resonant practice (stretch uses startStretchSession but records here;
+          // NK has its own onNKComplete path and never hits this branch).
+          const updated = recordResonantSession(elapsedMs, isComplete)
+          setResonantStats(updated)
+        }
         recordedSessionKeyRef.current = snap.key
       }
     }
@@ -781,7 +815,9 @@ export default function App() {
     // `completedAtMs` is a hoisted const narrowed via discriminated union;
     // `runningSnapshotRefStable` is a stable ref bound to a local so
     // exhaustive-deps can detect its ref-shape.
-  }, [state.status, completedAtMs, runningSnapshotRefStable, audioStop, audioPlayEndChord, wakeLockRelease, clearLeadInTimeouts])
+    // Phase 34: `activePractice` is added so the recording dispatch (resonant vs
+    // stretch) reads the value active at the time of the status transition.
+  }, [state.status, completedAtMs, runningSnapshotRefStable, activePractice, audioStop, audioPlayEndChord, wakeLockRelease, clearLeadInTimeouts])
 
   // Phase 3 D-12 + Pitfall 2 dual-anchor invariant: 1-cue lookahead.
   // On every cycleIndex/phase transition in SessionFrame, schedule the corresponding In/Out cue
@@ -1047,7 +1083,8 @@ export default function App() {
               strings={{
                 toggleLabel: uiStrings.practice.toggleLabel,
                 practiceNames: {
-                  resonant: uiStrings.practice.resonantName,
+                  resonant:  uiStrings.practice.resonantName,
+                  stretch:   uiStrings.practice.stretchName,   // Phase 34
                   naviKriya: uiStrings.practice.naviKriyaName,
                 },
               }}
@@ -1091,11 +1128,11 @@ export default function App() {
               strings={uiStrings.breathing}
             />
           )}
-          {/* Phase 30 (checkpoint feedback): the SessionReadout reflects the
-              Resonant session engine. It must not render under Navi Kriya —
-              otherwise a completed Resonant session leaks a stale "Session
-              complete" headline onto the Navi Kriya scaffold. */}
-          {activePractice === 'resonant' && (
+          {/* Phase 30 / Phase 34: the SessionReadout reflects the breathing engine
+              (resonant or stretch). It must not render under Navi Kriya —
+              otherwise a completed session leaks a stale "Session complete"
+              headline onto the Navi Kriya scaffold. */}
+          {(activePractice === 'resonant' || activePractice === 'stretch') && (
             <SessionReadout
               frame={leadInPlaceholderFrame ?? session.liveFrame}
               status={state.status}
@@ -1151,14 +1188,15 @@ export default function App() {
               nkSettings={nkSettings}
               onNKSettingsChange={onNKSettingsChange}
               nkControlsStrings={uiStrings.nkControls}
+              stretchSettings={stretchSettings}
+              onStretchSettingsChange={onStretchSettingsChange}
             />
           )}
-          {/* Phase 30 D-01: the live Resonant session controls render only for
-              the Resonant practice. The Navi Kriya scaffold supplies its own
-              disabled Start stub inside SettingsForm (no NK engine in Phase 30),
-              so the real CTA must not also render — that would give two Start
-              buttons and a clickable Start for an engine-less practice. */}
-          {activePractice === 'resonant' && (
+          {/* Phase 30 D-01 / Phase 34: the breathing engine session controls render
+              for Resonant and Stretch practices. Navi Kriya supplies its own CTA
+              row below (onNKStartClick etc.), so the SessionControls must not
+              also render there — that would give two Start buttons. */}
+          {(activePractice === 'resonant' || activePractice === 'stretch') && (
             <SessionControls
               status={state.status}
               onStart={() => { void onStartClick() }}

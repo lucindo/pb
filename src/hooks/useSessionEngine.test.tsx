@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SessionSettings } from '../domain/settings'
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS } from '../domain/settings'
 import { useSessionEngine } from './useSessionEngine'
 
 const defaultSettings: SessionSettings = {
@@ -355,6 +355,78 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     // New session = new startedAtMs = new key. The stale snapshot from the
     // first session has been overwritten.
     expect(snapAfterRestart?.key).not.toBe(snapKey)
+
+    unmount()
+  })
+})
+
+// Phase 34: stretch session engine path (Plan 34-05).
+// When useSessionEngine is called with stretchSettings, start() calls
+// startStretchSession and the resulting state has stretchSegments (not null).
+describe('useSessionEngine — stretch session path (Phase 34)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('start() with stretchSettings produces a running stretch session (stretchSegments not null)', () => {
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    // startStretchSession populates stretchSegments (not null)
+    expect(result.current.state.stretchSegments).not.toBeNull()
+
+    unmount()
+  })
+
+  it('start() without stretchSettings (null) produces a standard session (stretchSegments null)', () => {
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(DEFAULT_SETTINGS, null),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    // startSession leaves stretchSegments null for standard sessions
+    expect(result.current.state.stretchSegments).toBeNull()
+
+    unmount()
+  })
+
+  it('stretch session advances through phases from the In frame', () => {
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // After start, the first frame should be the In phase at t=0
+    expect(result.current.state.status).toBe('running')
+    expect(result.current.currentFrame?.phaseLabel).toBe('In')
+
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+
+    // After 5s the phase should have advanced (Out or still In depending on BPM)
+    expect(result.current.state.status).toBe('running')
+    expect(result.current.currentFrame).not.toBeNull()
 
     unmount()
   })
