@@ -162,6 +162,11 @@ export interface UiStrings {
     readonly naviKriyaControlsPlaceholder: string
     readonly naviKriyaStatsEmptyBody: string
     readonly resetStatsTitle: (practiceName: string) => string
+    // Phase 34 (STRETCH-06 / D-10): Stretch as a distinct practice copy.
+    // Mirrors the naviKriyaName/naviKriyaHeading/naviKriyaHeader triple.
+    readonly stretchName: string      // short switcher label
+    readonly stretchHeading: string   // practice heading (D-10: same value as stretchName)
+    readonly stretchHeader: string    // app header line
   }
   readonly nkReadout: {
     readonly statusLabel: string
@@ -343,6 +348,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaControlsPlaceholder: 'Controls coming soon',
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
+      // Phase 34 STRETCH-06 / D-10: EN values — label and heading are both 'Stretch'
+      stretchName: 'Stretch',
+      stretchHeading: 'Stretch',
+      stretchHeader: 'Stretch practice',
     },
     nkReadout: {
       statusLabel: 'Status',
@@ -523,6 +532,11 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaControlsPlaceholder: 'Controles em breve',
       naviKriyaStatsEmptyBody: 'As sessões de Navi Kriya aparecerão aqui depois que você concluir sua primeira sessão.',
       resetStatsTitle: (practiceName) => `Zerar estatísticas de ${practiceName}?`,
+      // Phase 34 STRETCH-06 / D-10: PT-BR values — label and heading are both 'Alongar'
+      // Spike 007 confirmed 'Alongar' fits the 320px 3-practice switcher.
+      stretchName: 'Alongar',
+      stretchHeading: 'Alongar',
+      stretchHeader: 'Prática de Alongar',
     },
     nkReadout: {
       statusLabel: 'Status',
