@@ -7,7 +7,7 @@
 // Each segment holds a fixed BPM for its duration. getStretchFrame looks up the
 // active segment by elapsedMs and computes the frame within that segment.
 
-import type { RatioLabel, SessionSettings } from './settings'
+import type { StretchSettings } from './settings'
 import type { BreathPhase, SessionFrame } from './sessionMath'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,6 +46,8 @@ export interface StretchSessionFrame extends SessionFrame {
 
 // ─── Ratio table (mirroring breathingPlan.ts) ──────────────────────────────
 
+import type { RatioLabel } from './settings'
+
 const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
   '50:50': { inhale: 50, exhale: 50 },
   '40:60': { inhale: 40, exhale: 60 },
@@ -57,6 +59,7 @@ const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
 
 /**
  * Builds the piecewise-constant segment table for a stretch session.
+ * D-02: accepts a single StretchSettings argument; ratio is read from settings.ratio.
  *
  * Step 1: warm-up hold at initialBpm for warmUpMinutes
  * Step 2: ramp — numSteps = ceil((initialBpm - targetBpm) / 0.4999) segments, linear BPM
@@ -70,7 +73,7 @@ const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
  * cycleBaseIndex on each segment = running sum of segment cycle counts for all prior
  * segments (Pitfall 1 — absolute cycleIndex never resets).
  */
-export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabel): StretchSegment[] {
+export function buildStretchSegments(settings: StretchSettings): StretchSegment[] {
   const { initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes } = settings
   // DS-WR-02: this is an exported pure function that does not call validateSettings.
   // A 0, negative, or NaN rampDurationMinutes yields a degenerate or NaN/Infinity
@@ -79,7 +82,8 @@ export function buildStretchSegments(settings: SessionSettings, ratio: RatioLabe
   if (!Number.isFinite(rampDurationMinutes) || rampDurationMinutes <= 0) {
     throw new RangeError('rampDurationMinutes must be a positive finite number')
   }
-  const ratioParts = RATIO_PARTS[ratio]
+  // D-02: ratio is read from settings.ratio internally
+  const ratioParts = RATIO_PARTS[settings.ratio]
   const segments: StretchSegment[] = []
   let cursorMs = 0
   let cumulativeCycles = 0
@@ -219,8 +223,9 @@ export function getStretchFrame(
  * Computes the total session duration from stretch settings: the sum of
  * warm-up + ramp + cool-down minutes. Returns null when coolDownMinutes is
  * 'open-ended' (D-11).
+ * D-02: accepts StretchSettings (not SessionSettings).
  */
-export function computeStretchTotalMs(settings: SessionSettings): number | null {
+export function computeStretchTotalMs(settings: StretchSettings): number | null {
   const { warmUpMinutes, rampDurationMinutes, coolDownMinutes } = settings
   if (coolDownMinutes === 'open-ended') return null
   return (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
