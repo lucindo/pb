@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Navi Kriya Practice
 status: milestone_complete
-stopped_at: Phase 32 UI-SPEC approved
-last_updated: "2026-05-18T00:23:56.201Z"
-last_activity: 2026-05-18 -- Phase 32 execution started
+stopped_at: Phase 32 complete — milestone v1.5 ready to close
+last_updated: "2026-05-18T02:50:00.000Z"
+last_activity: 2026-05-18 -- Phase 32 verified complete (UAT 6/6, all gates green)
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 13
   percent: 100
 ---
 
@@ -18,18 +18,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-17 — milestone v1.5 Navi Kriya Practice started)
+See: .planning/PROJECT.md (updated 2026-05-18 — Phase 32 complete; v1.5 all phases done)
 
 **Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 32 — learn-localization
+**Current focus:** Milestone v1.5 complete — ready to close
 
 ## Current Position
 
-Phase: 32
-Plan: Not started
+Phase: 32 (complete — last phase of v1.5)
+Plan: 3/3 complete
 Status: Milestone complete
 Last activity: 2026-05-18
-Progress: [░░░░░░░░░░] 0% — 0/3 phases complete
+Progress: [██████████] 100% — 3/3 phases complete
 
 ## Performance Metrics
 
@@ -41,9 +41,9 @@ Progress: [░░░░░░░░░░] 0% — 0/3 phases complete
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 30. Multi-Practice Architecture & Switcher | 0/? | Not started |
-| 31. Navi Kriya Engine & Session | 0/? | Not started |
-| 32. Learn & Localization | 0/? | Not started |
+| 30. Multi-Practice Architecture & Switcher | 4/4 | Complete (2026-05-18) |
+| 31. Navi Kriya Engine & Session | 6/6 | Complete (2026-05-18) |
+| 32. Learn & Localization | 3/3 | Complete (2026-05-18) |
 
 ## Accumulated Context
 
@@ -67,7 +67,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-- None blocking. v1.5 Navi Kriya Practice roadmap revised 2026-05-17 — 3 phases (30–32), NK-08 merged into Phase 31, all 18 requirements mapped, no orphans.
+- None blocking. v1.5 Navi Kriya Practice complete — all 3 phases (30–32) done, 13/13 plans.
+- ⚠️ [Phase 30] Code-review CR-01 — resonant settings still persist via the legacy flat `env.settings` path; `practices.resonant.settings` is not yet the write target. Carried forward for resolution.
+- ⚠️ [Phase 32] Code-review WR-01 — `practices[activePractice]` lacks a runtime guard against a future unmatched `PracticeId` (advisory; TypeScript-constrained today).
 
 ### Quick Tasks Completed
 
@@ -104,11 +106,12 @@ Items acknowledged and carried forward across milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-05-17T23:42:55.454Z
-Stopped at: Phase 32 UI-SPEC approved
-Resume file: .planning/phases/32-learn-localization/32-UI-SPEC.md
-Next command: /gsd-plan-phase 30
+Last session: 2026-05-18T02:50:00.000Z
+Stopped at: Phase 32 complete and verified — milestone v1.5 (Navi Kriya Practice) 100% done
+Resume file: None
+Next command: /gsd-complete-milestone v1.5
 
 ## Operator Next Steps
 
-- Plan the first v1.5 phase with /gsd-plan-phase 30
+- Close milestone v1.5 with /gsd-complete-milestone v1.5
+- Optional: /gsd-audit-milestone v1.5 before closing (no audit run for v1.2/v1.3)
