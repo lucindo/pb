@@ -1,10 +1,6 @@
 export type RatioLabel = '50:50' | '40:60' | '30:70' | '20:80'
 export type DurationOption = number | 'open-ended'
 
-export type SessionMode = 'standard' | 'stretch'
-
-export const MODE_OPTIONS = ['standard', 'stretch'] as const satisfies readonly SessionMode[]
-
 // Stretch stage durations are minute-based: Warm-up (initial-BPM hold), Ramp
 // (the BPM walk-down), and Cool-down (target-BPM hold). The structural minimum
 // total is 5 + 5 + 5 = 15 min, so no separate "session long enough" gate is needed.
@@ -18,16 +14,23 @@ export const COOLDOWN_OPTIONS = [5, 10, 15, 20, 'open-ended'] as const satisfies
 
 export const RAMP_DURATION_OPTIONS = [5, 10, 15, 20] as const satisfies readonly number[]
 
+// D-01/D-02: SessionSettings is standard-only — trim to 3 fields.
+// mode, initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes removed.
 export interface SessionSettings {
   bpm: number
   ratio: RatioLabel
   durationMinutes: DurationOption
-  mode: SessionMode
+}
+
+// D-02: StretchSettings is a standalone type — ratio + the five ramp fields.
+// durationMinutes is NOT stored here (it is computed from the ramp table).
+export interface StretchSettings {
+  ratio: RatioLabel
   initialBpm: number
   targetBpm: number
   warmUpMinutes: WarmUpMinutes
-  coolDownMinutes: CoolDownMinutes
   rampDurationMinutes: number
+  coolDownMinutes: CoolDownMinutes
 }
 
 export const BPM_OPTIONS = [
@@ -77,23 +80,19 @@ export const DEFAULT_SETTINGS: SessionSettings = {
   bpm: 5.5,
   ratio: '40:60',
   durationMinutes: 10,
-  mode: 'standard',
+}
+
+// DEFAULT_STRETCH_SETTINGS: the per-field stretch defaults referenced by the
+// storage coercer. Warm-up 5 + Ramp 5 + Cool-down 5 = 15-minute computed total.
+// ratio: '40:60' added per D-02 — ratio is consumed by buildStretchSegments internally.
+export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
+  ratio: '40:60',
   initialBpm: 5.5,
   targetBpm: 4.5,
   warmUpMinutes: 5,
   coolDownMinutes: 5,
   rampDurationMinutes: 5,
 }
-
-// DEFAULT_STRETCH_SETTINGS: the per-field stretch defaults referenced by the
-// storage coercer. Warm-up 5 + Ramp 5 + Cool-down 5 = 15-minute computed total.
-export const DEFAULT_STRETCH_SETTINGS = {
-  initialBpm: 5.5,
-  targetBpm: 4.5,
-  warmUpMinutes: 5 as WarmUpMinutes,
-  coolDownMinutes: 5 as CoolDownMinutes,
-  rampDurationMinutes: 5,
-} as const
 
 // Phase 14 D-01: v1.1 customization enum surfaces — predicates are FINAL;
 // downstream phases (16/17/18/19) only add UI/CSS/audio wiring and do NOT re-edit.
@@ -163,10 +162,6 @@ export function isValidDuration(v: unknown): v is DurationOption {
     && (DURATION_OPTIONS as readonly DurationOption[]).includes(v)
 }
 
-export function isValidMode(v: unknown): v is SessionMode {
-  return typeof v === 'string' && (MODE_OPTIONS as readonly string[]).includes(v)
-}
-
 export function isValidWarmUp(v: unknown): v is WarmUpMinutes {
   return typeof v === 'number'
     && Number.isFinite(v)
@@ -186,6 +181,7 @@ export function isValidRampDuration(v: unknown): v is number {
     && (RAMP_DURATION_OPTIONS as readonly number[]).includes(v)
 }
 
+// D-01/D-02: validateSettings is standard-only — 3 fields, no mode check.
 export function validateSettings(settings: SessionSettings): SessionSettings {
   if (!isValidBpm(settings.bpm)) {
     throw new RangeError(`Unsupported BPM: ${String(settings.bpm)}`)
@@ -204,32 +200,35 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
     throw new RangeError(`Unsupported duration: ${String(settings.durationMinutes)}`)
   }
 
-  if (!isValidMode(settings.mode)) {
-    throw new RangeError(`Unsupported mode: ${String(settings.mode)}`)
+  return { ...settings }
+}
+
+// D-01/D-02: validateStretchSettings carries the former stretch-branch checks
+// from validateSettings. Receives a StretchSettings (not SessionSettings).
+export function validateStretchSettings(settings: StretchSettings): StretchSettings {
+  if (!isValidRatio(settings.ratio)) {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
   }
 
-  // Stretch-mode only validation: standard sessions skip these checks entirely
-  // so existing Standard sessions are unaffected (Phase 22 D-01 down-only constraint).
-  if (settings.mode === 'stretch') {
-    if (!isValidBpm(settings.initialBpm)) {
-      throw new RangeError(`Unsupported initialBpm: ${String(settings.initialBpm)}`)
-    }
+  if (!isValidBpm(settings.initialBpm)) {
+    throw new RangeError(`Unsupported initialBpm: ${String(settings.initialBpm)}`)
+  }
 
-    if (!isValidBpm(settings.targetBpm) || settings.targetBpm >= settings.initialBpm) {
-      throw new RangeError(`Unsupported targetBpm: ${String(settings.targetBpm)}`)
-    }
+  if (!isValidBpm(settings.targetBpm) || settings.targetBpm >= settings.initialBpm) {
+    throw new RangeError(`Unsupported targetBpm: ${String(settings.targetBpm)}`)
+  }
 
-    if (!isValidWarmUp(settings.warmUpMinutes)) {
-      throw new RangeError(`Unsupported warmUpMinutes: ${String(settings.warmUpMinutes)}`)
-    }
+  if (!isValidWarmUp(settings.warmUpMinutes)) {
+    throw new RangeError(`Unsupported warmUpMinutes: ${String(settings.warmUpMinutes)}`)
+  }
 
-    if (!isValidCoolDown(settings.coolDownMinutes)) {
-      throw new RangeError(`Unsupported coolDownMinutes: ${String(settings.coolDownMinutes)}`)
-    }
+  if (!isValidCoolDown(settings.coolDownMinutes)) {
+    throw new RangeError(`Unsupported coolDownMinutes: ${String(settings.coolDownMinutes)}`)
+  }
 
-    if (!isValidRampDuration(settings.rampDurationMinutes)) {
-      throw new RangeError(`Unsupported rampDurationMinutes: ${String(settings.rampDurationMinutes)}`)
-    }
+  if (!isValidRampDuration(settings.rampDurationMinutes)) {
+    throw new RangeError(`Unsupported rampDurationMinutes: ${String(settings.rampDurationMinutes)}`)
   }
 
   return { ...settings }

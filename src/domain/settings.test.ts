@@ -9,17 +9,17 @@ import {
   isValidVariant,
   isValidCue,
   isValidLocale,
-  isValidMode,
   isValidWarmUp,
   isValidCoolDown,
   isValidRampDuration,
   validateSettings,
+  validateStretchSettings,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
   CUE_OPTIONS,
   DEFAULT_CUE,
 } from './settings'
-import type { SessionSettings } from './settings'
+import type { SessionSettings, StretchSettings } from './settings'
 
 describe('isValidBpm (HYGIENE-02 D-08)', () => {
   it('returns true for valid BPM_OPTIONS members (e.g. 5.5)', () => {
@@ -184,27 +184,7 @@ describe('isValidLocale (INFRA-02 D-01)', () => {
   })
 })
 
-// STRETCH-02/03 (D-07) predicate tests
-
-describe('isValidMode (STRETCH-02)', () => {
-  it('returns true for "standard" and "stretch"', () => {
-    expect(isValidMode('standard')).toBe(true)
-    expect(isValidMode('stretch')).toBe(true)
-  })
-
-  it('returns false for unknown strings ("foo", "STANDARD", "")', () => {
-    expect(isValidMode('foo')).toBe(false)
-    expect(isValidMode('STANDARD')).toBe(false)
-    expect(isValidMode('')).toBe(false)
-  })
-
-  it('returns false for non-strings (42, null, undefined, array)', () => {
-    expect(isValidMode(42)).toBe(false)
-    expect(isValidMode(null)).toBe(false)
-    expect(isValidMode(undefined)).toBe(false)
-    expect(isValidMode(['standard'])).toBe(false)
-  })
-})
+// STRETCH-03 (D-07) predicate tests (isValidMode is removed — these remain)
 
 describe('isValidWarmUp (STRETCH-03, D-07)', () => {
   it('returns true for WARMUP_MINUTES_OPTIONS members (5, 10, 15)', () => {
@@ -281,10 +261,53 @@ describe('isValidRampDuration (STRETCH-03, D-07)', () => {
   })
 })
 
-// D-07 default stretch settings yield 20-min computed total
-describe('DEFAULT_STRETCH_SETTINGS and DEFAULT_SETTINGS (STRETCH pitfall-5)', () => {
-  it('DEFAULT_SETTINGS has mode "standard"', () => {
-    expect(DEFAULT_SETTINGS.mode).toBe('standard')
+// D-01/D-02: SessionSettings is now standard-only (3 fields)
+describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => {
+  it('DEFAULT_SETTINGS has exactly bpm, ratio, durationMinutes — no mode field', () => {
+    expect(DEFAULT_SETTINGS).not.toHaveProperty('mode')
+    expect(DEFAULT_SETTINGS).toHaveProperty('bpm')
+    expect(DEFAULT_SETTINGS).toHaveProperty('ratio')
+    expect(DEFAULT_SETTINGS).toHaveProperty('durationMinutes')
+  })
+
+  it('validateSettings accepts valid standard settings (3 fields only)', () => {
+    const valid: SessionSettings = { bpm: 5.5, ratio: '40:60', durationMinutes: 10 }
+    expect(() => validateSettings(valid)).not.toThrow()
+    const result = validateSettings(valid)
+    expect(result.bpm).toBe(5.5)
+    expect(result.ratio).toBe('40:60')
+    expect(result.durationMinutes).toBe(10)
+  })
+
+  it('validateSettings throws RangeError for invalid bpm', () => {
+    const bad: SessionSettings = { bpm: 999, ratio: '40:60', durationMinutes: 10 }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('validateSettings throws RangeError for invalid ratio', () => {
+    const bad = { bpm: 5.5, ratio: '99:01' as never, durationMinutes: 10 }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+
+  it('validateSettings throws RangeError for invalid durationMinutes', () => {
+    const bad: SessionSettings = { bpm: 5.5, ratio: '40:60', durationMinutes: 7 }
+    expect(() => validateSettings(bad)).toThrow(RangeError)
+  })
+})
+
+// DEFAULT_STRETCH_SETTINGS: typed as StretchSettings, includes ratio, all six fields
+describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
+  it('has ratio field (required by D-02 — ratio consumed by buildStretchSegments)', () => {
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('ratio')
+    expect(DEFAULT_STRETCH_SETTINGS.ratio).toBe('40:60')
+  })
+
+  it('has all six ramp fields: ratio, initialBpm, targetBpm, warmUpMinutes, rampDurationMinutes, coolDownMinutes', () => {
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('initialBpm')
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('targetBpm')
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('warmUpMinutes')
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('rampDurationMinutes')
+    expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('coolDownMinutes')
   })
 
   it('DEFAULT_STRETCH_SETTINGS fields yield a 15-minute computed total', () => {
@@ -295,13 +318,10 @@ describe('DEFAULT_STRETCH_SETTINGS and DEFAULT_SETTINGS (STRETCH pitfall-5)', ()
   })
 })
 
-// validateSettings stretch-mode extensions
-describe('validateSettings stretch-mode (D-01, STRETCH-02/03)', () => {
-  const validStretchSettings: SessionSettings = {
-    bpm: 5.5,
+// validateStretchSettings: new function carrying the former stretch-branch checks
+describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
+  const validStretch: StretchSettings = {
     ratio: '40:60',
-    durationMinutes: 10,
-    mode: 'stretch',
     initialBpm: 6,
     targetBpm: 4,
     warmUpMinutes: 5,
@@ -309,54 +329,43 @@ describe('validateSettings stretch-mode (D-01, STRETCH-02/03)', () => {
     rampDurationMinutes: 20,
   }
 
-  it('accepts a valid stretch-mode settings object', () => {
-    expect(() => validateSettings(validStretchSettings)).not.toThrow()
+  it('accepts a valid StretchSettings object', () => {
+    expect(() => validateStretchSettings(validStretch)).not.toThrow()
+    const result = validateStretchSettings(validStretch)
+    expect(result.initialBpm).toBe(6)
+    expect(result.targetBpm).toBe(4)
+    expect(result.ratio).toBe('40:60')
   })
 
-  it('throws RangeError for invalid mode', () => {
-    const bad = { ...validStretchSettings, mode: 'foo' as never }
-    expect(() => validateSettings(bad)).toThrow(RangeError)
+  it('throws RangeError for invalid initialBpm (not in BPM_OPTIONS)', () => {
+    const bad: StretchSettings = { ...validStretch, initialBpm: 999 }
+    expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: initialBpm is invalid (not in BPM_OPTIONS)', () => {
-    const bad = { ...validStretchSettings, initialBpm: 999 }
-    expect(() => validateSettings(bad)).toThrow(RangeError)
+  it('throws RangeError when targetBpm >= initialBpm (down-only constraint, D-02)', () => {
+    const equalBpm: StretchSettings = { ...validStretch, targetBpm: 6 }  // equal
+    expect(() => validateStretchSettings(equalBpm)).toThrow(RangeError)
+    const higherBpm: StretchSettings = { ...validStretch, targetBpm: 7 }  // higher
+    expect(() => validateStretchSettings(higherBpm)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: targetBpm >= initialBpm (D-01 down-only)', () => {
-    const bad = { ...validStretchSettings, targetBpm: 6 }  // equal → invalid
-    expect(() => validateSettings(bad)).toThrow(RangeError)
-    const bad2 = { ...validStretchSettings, targetBpm: 7 }  // greater → invalid
-    expect(() => validateSettings(bad2)).toThrow(RangeError)
+  it('throws RangeError for invalid warmUpMinutes', () => {
+    const bad: StretchSettings = { ...validStretch, warmUpMinutes: 7 as never }
+    expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: warmUpMinutes is invalid', () => {
-    const bad = { ...validStretchSettings, warmUpMinutes: 7 as never }
-    expect(() => validateSettings(bad)).toThrow(RangeError)
+  it('throws RangeError for invalid coolDownMinutes', () => {
+    const bad: StretchSettings = { ...validStretch, coolDownMinutes: 'forever' as never }
+    expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: coolDownMinutes is invalid', () => {
-    const bad = { ...validStretchSettings, coolDownMinutes: 'forever' as never }
-    expect(() => validateSettings(bad)).toThrow(RangeError)
+  it('throws RangeError for invalid rampDurationMinutes', () => {
+    const bad: StretchSettings = { ...validStretch, rampDurationMinutes: 7 }
+    expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError when stretch: rampDurationMinutes is invalid', () => {
-    const bad = { ...validStretchSettings, rampDurationMinutes: 7 }
-    expect(() => validateSettings(bad)).toThrow(RangeError)
-  })
-
-  it('does NOT throw for standard-mode settings even if stretch fields would be invalid', () => {
-    const standardSettings: SessionSettings = {
-      bpm: 5.5,
-      ratio: '40:60',
-      durationMinutes: 10,
-      mode: 'standard',
-      initialBpm: 6,
-      targetBpm: 4,
-      warmUpMinutes: 5,
-      coolDownMinutes: 5,
-      rampDurationMinutes: 20,
-    }
-    expect(() => validateSettings(standardSettings)).not.toThrow()
+  it('throws RangeError for invalid ratio', () => {
+    const bad: StretchSettings = { ...validStretch, ratio: '99:01' as never }
+    expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 })
