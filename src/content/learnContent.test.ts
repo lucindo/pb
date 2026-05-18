@@ -30,7 +30,7 @@ for (const locale of LOCALE_OPTIONS) {
   })
 }
 
-// Resonant practice content should be byte-identical to the old explainer.hrv / explainer.timing data
+// Resonant practice content should be byte-identical to the data that used to be in the old explainer sections
 describe('LEARN_CONTENT resonant data preservation (Phase 32 restructure)', () => {
   it('practices.resonant.description.section1 has the old HRV explainer title', () => {
     expect(LEARN_CONTENT.en.practices.resonant.description.section1.title).toBe('What is HRV / resonance breathing')

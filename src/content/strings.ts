@@ -136,6 +136,10 @@ export interface UiStrings {
     readonly resourcesHeading: string
     readonly videosHeading: string
     readonly nativeAppsHeading: string
+    // Phase 32: Navi Kriya Learn headings
+    readonly naviKriyaVideosHeading: string
+    readonly naviKriyaDescriptionSection1Title: string
+    readonly naviKriyaDescriptionSection2Title: string
   }
   readonly install: {
     readonly regionLabel: string
@@ -312,6 +316,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resourcesHeading: 'Forrest Knutson Resources',
       videosHeading: 'Selected HRV Breathing Videos',
       nativeAppsHeading: 'Resonant Breathing app',
+      naviKriyaVideosHeading: 'Selected Navi Kriya Videos',
+      naviKriyaDescriptionSection1Title: 'What is Navi Kriya',
+      naviKriyaDescriptionSection2Title: 'How this app paces it',
     },
     install: {
       regionLabel: 'Install app',
@@ -489,6 +496,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resourcesHeading: 'Recursos do Forrest Knutson',
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
+      naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya', // TODO: native-speaker review
+      naviKriyaDescriptionSection1Title: 'O que é Navi Kriya', // TODO: native-speaker review
+      naviKriyaDescriptionSection2Title: 'Como este app guia a prática', // TODO: native-speaker review
     },
     install: {
       regionLabel: 'Instalar app',
