@@ -14,9 +14,9 @@
 
 ### v1.5 Navi Kriya Practice (Phases 30–32)
 
-- [ ] **Phase 30: Multi-Practice Architecture & Switcher** - A `practice` concept above `mode`, per-practice settings/stats, top segmented switcher, and a split chrome/practice settings screen
-- [ ] **Phase 31: Navi Kriya Engine & Session** - App-paced OM-counting practice end to end — front/back phase machine, 4:1 ratio, auto-advance, four cue sounds, pause/resume/end, live on-screen count, and per-practice Navi Kriya stats
-- [ ] **Phase 32: Learn & Localization** - Per-practice + shared Learn content and native-quality EN/PT-BR copy for all new surfaces
+- [x] **Phase 30: Multi-Practice Architecture & Switcher** (4/4 plans) - A `practice` concept above `mode`, per-practice settings/stats, top segmented switcher, and a split chrome/practice settings screen
+- [x] **Phase 31: Navi Kriya Engine & Session** (6/6 plans) - App-paced OM-counting practice end to end — front/back phase machine, 4:1 ratio, auto-advance, four cue sounds, pause/resume/end, live on-screen count, and per-practice Navi Kriya stats
+- [x] **Phase 32: Learn & Localization** (3/3 plans) - Per-practice + shared Learn content and native-quality EN/PT-BR copy for all new surfaces
 
 <details>
 <summary>✅ v1.4 Install Helper (Phases 28–29) — SHIPPED 2026-05-16</summary>
