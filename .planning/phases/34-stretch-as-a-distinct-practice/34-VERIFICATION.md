@@ -1,8 +1,8 @@
 ---
 phase: 34-stretch-as-a-distinct-practice
-verified: 2026-05-18T17:00:00Z
-status: gaps_found
-score: 5/6 must-haves verified
+verified: 2026-05-18T18:20:00Z
+status: human_needed
+score: 6/6 must-haves verified
 overrides_applied: 0
 re_verification:
   previous_status: gaps_found
@@ -11,24 +11,13 @@ re_verification:
     - "CR-01 (original): computeStretchTotalMs now derives from the snapped segment table (buildStretchSegments), not the raw minute sum — displayedDuration agrees with real session end."
     - "WR-01 (original): LearnDialog videos heading now tracks practiceContentKey (the resolved key), not raw activePractice — Stretch practice shows resonant content under the resonant heading."
     - "WR-03 (original): startStretchSession now accepts selectedSettings as a second parameter and stores it (not the synthetic lead-in) in selectedSettings — endSession returns the resonant config, not stretch-derived synthetic values."
-  gaps_remaining:
-    - "REVIEW CR-01 (new): coerceStretchSettings missing cross-field invariant targetBpm < initialBpm — a persisted or migrated slice with targetBpm >= initialBpm reaches buildStretchSegments and silently produces an inverted ramp (acceleration instead of deceleration)."
+    - "UAT GAP 1: Stretch Duration readout now shows a rounded whole-minute value via Math.round(stretchTotalMs / 60_000) — no more unrounded float."
+    - "UAT GAP 2: Stretch settings steppers are hidden during a running stretch session (wrapped in !isRunning gate, mirroring resonant and Navi Kriya behavior)."
+    - "UAT GAP 3: Ending a running stretch session now opens the end-confirmation dialog — requestEnd extended with state.stretchSegments !== null OR durationMinutes !== 'open-ended'."
+    - "UAT GAP 4: Root layout section uses justify-start (not justify-center) — content is top-anchored, no mid-viewport float or jump when switching practices."
+    - "REVIEW CR-01 (new): coerceStretchSettings now enforces targetBpm < initialBpm cross-field invariant (resets both BPM fields to DEFAULT_STRETCH_SETTINGS on violation) and restricts initialBpm to STRETCH_INITIAL_BPM_OPTIONS (>= 1.5); buildStretchSegments throws a RangeError when targetBpm >= initialBpm."
+  gaps_remaining: []
   regressions: []
-gaps:
-  - truth: "Stretch is its own practice — its own session settings and its own stats — not a mode toggle inside HRV (STRETCH-03/04)"
-    status: failed
-    reason: "REVIEW CR-01 (new): coerceStretchSettings validates initialBpm and targetBpm independently using isValidBpm (full BPM_OPTIONS set including 1) but never enforces the cross-field invariant targetBpm < initialBpm that validateStretchSettings mandates. A localStorage-tampered or migration-seeded slice with targetBpm >= initialBpm passes the coercer unchanged. It then flows directly to buildStretchSegments via App.tsx:147 → useSessionEngine → startStretchSession, where bpmSpan = initialBpm − targetBpm <= 0 collapses numSteps to 1. The engine produces a single-step 'ramp' running at initialBpm then a cool-down at the higher targetBpm — a silently inverted ramp the user never configured. validateStretchSettings exists (settings.ts:208) and rejects this state, but is dead code on the stretch start path (no call site in App.tsx, useSessionEngine.ts, or sessionController.ts). Additionally, a coerced initialBpm of 1 (valid per full BPM_OPTIONS) yields targetBpmOptions = [] in SettingsForm.tsx:82, causing updateInitialBpm to call onStretchSettingsChange with targetBpm: undefined."
-    artifacts:
-      - path: "src/storage/practices.ts"
-        issue: "coerceStretchSettings (lines 89-99) validates initialBpm and targetBpm independently against full BPM_OPTIONS but does not check targetBpm < initialBpm. A coerced slice with equal or inverted BPMs is returned structurally valid."
-      - path: "src/domain/stretchRamp.ts"
-        issue: "buildStretchSegments (lines 76-137) does not throw when targetBpm >= initialBpm. Math.max(1, ...) guard produces a 1-step 'ramp' with a silently inverted cool-down — structurally valid segment table, logically wrong session."
-      - path: "src/components/SettingsForm.tsx"
-        issue: "targetBpmOptions (line 82) filters BPM_OPTIONS for v < stretchSettings.initialBpm. If initialBpm is 1 (valid per coercer, which uses full BPM_OPTIONS not STRETCH_INITIAL_BPM_OPTIONS), the result is an empty array and updateInitialBpm sets targetBpm: undefined."
-    missing:
-      - "Add cross-field invariant to coerceStretchSettings: after computing initialBpm and targetBpm independently, if targetBpm >= initialBpm, reset both to DEFAULT_STRETCH_SETTINGS values. Additionally, coerce initialBpm against STRETCH_INITIAL_BPM_OPTIONS (not full BPM_OPTIONS) to eliminate the empty-targetBpmOptions path."
-      - "Add a defensive guard in buildStretchSegments: if !(targetBpm < initialBpm), throw new RangeError('targetBpm must be strictly below initialBpm') — matching the existing rampDurationMinutes guard at line 82."
-      - "Add regression tests for coerceStretchSettings: (a) persisted targetBpm >= initialBpm falls back to defaults; (b) persisted initialBpm = 1 falls back to default."
 human_verification:
   - test: "Open the app at 320px viewport width (EN) and observe the practice switcher"
     expected: "All three pills (HRV, Stretch, Navi) are fully legible with no text truncation, each pill is at least 44px tall, layout does not overflow the viewport"
@@ -44,9 +33,9 @@ human_verification:
 # Phase 34: Stretch as a Distinct Practice — Verification Report
 
 **Phase Goal:** Promote HRV's Stretch mode to a top-level practice — the switcher carries three (HRV · Stretch · Navi), each with its own settings and stats, returning users' data migrates cleanly, and the 3-practice switcher ships both label treatments behind a developer-only toggle.
-**Verified:** 2026-05-18T17:00:00Z
-**Status:** gaps_found
-**Re-verification:** Yes — after gap-closure plan 34-06 (CR-01/WR-01/WR-03 from original verification). New blocking gap: REVIEW CR-01 (coerceStretchSettings missing cross-field BPM invariant).
+**Verified:** 2026-05-18T18:20:00Z
+**Status:** human_needed
+**Re-verification:** Yes — after gap-closure plans 34-07 (UAT gaps 1-4) and 34-08 (REVIEW CR-01 cross-field BPM invariant). All previously reported gaps confirmed closed. No new gaps found. Three human verification items remain from prior verification — unchanged, as they require browser/visual testing.
 
 ## Re-verification Summary
 
@@ -54,13 +43,18 @@ human_verification:
 
 | Gap | Resolution | Evidence |
 |-----|-----------|----------|
-| CR-01 (original): computeStretchTotalMs raw minute sum | CLOSED | `stretchRamp.ts:230-234` derives from `segments[segments.length-1]!.endMs`; commit fce4f24; 2 regression tests |
-| WR-01 (original): LearnDialog videos heading used raw activePractice | CLOSED | `LearnDialog.tsx:95` uses `practiceContentKey === 'resonant'`; commit 2d537d6; 3 regression tests |
-| WR-03 (original): stretch session clobbered resonant selectedSettings | CLOSED | `sessionController.ts:67-92` accepts `selectedSettings` as 2nd param, passes through; commit 89140f5; 4 regression tests |
+| CR-01 (original): computeStretchTotalMs raw minute sum | CLOSED (prior run) | `stretchRamp.ts:243` derives from `segments[segments.length-1]!.endMs` |
+| WR-01 (original): LearnDialog heading used raw activePractice | CLOSED (prior run) | `LearnDialog.tsx:95` uses `practiceContentKey === 'resonant'` |
+| WR-03 (original): stretch session clobbered resonant selectedSettings | CLOSED (prior run) | `sessionController.ts:86` accepts `selectedSettings` as 2nd param, passes through |
+| UAT GAP 1: unrounded float in Duration readout | CLOSED (plan 34-07) | `SettingsForm.tsx:89` — `Math.round(stretchTotalMs / 60_000)`; verified by grep |
+| UAT GAP 2: stretch steppers visible during session | CLOSED (plan 34-07) | `SettingsForm.tsx:200` — `{!isRunning && (...)}` wraps all stretch steppers |
+| UAT GAP 3: stretch session bypassed end dialog | CLOSED (plan 34-07) | `App.tsx:649` — `state.stretchSegments !== null` OR condition in requestEnd |
+| UAT GAP 4: layout floating mid-viewport | CLOSED (plan 34-07) | `App.tsx:1065` — root section now `justify-start` (not `justify-center`) |
+| REVIEW CR-01 (new): coerceStretchSettings missing cross-field BPM invariant | CLOSED (plan 34-08) | `practices.ts:111` — `if (targetBpm >= initialBpm)` resets both fields; `stretchRamp.ts:90-92` — `RangeError` guard; 7 new regression tests; full suite 1226/1226 |
 
-### New Gap Introduced by Fresh Code Review
+### No New Gaps
 
-The code review (34-REVIEW.md) flagged a NEW CR-01 that was present in the Phase 34 codebase all along (pre-dating gap-closure plan 34-06): `coerceStretchSettings` missing the cross-field `targetBpm < initialBpm` invariant. This gap was present at the time of the initial verification but was not detected then. It is blocking.
+This re-verification found no new gaps. All plan 34-08 must-haves are satisfied and the code review (34-REVIEW.md for the gap-closure diff) rates the outcome at 0 critical findings.
 
 ---
 
@@ -70,31 +64,31 @@ The code review (34-REVIEW.md) flagged a NEW CR-01 that was present in the Phase
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | User can switch between HRV, Stretch, and Navi using the top segmented control above the orb (STRETCH-01) | VERIFIED | `PracticeToggle.tsx:24` — `PRACTICE_IDS = ['resonant', 'stretch', 'naviKriya']`; `App.tsx:1082` — `onSwitch={onSwitchPractice}`, `App.tsx:1087` — `stretch: uiStrings.practice.stretchName`. Tests: 3 pills in correct order confirmed by `PracticeToggle.test.tsx:28-41`. |
-| 2 | Stretch is its own practice — its own session settings and its own stats — not a mode toggle inside HRV (STRETCH-03/04) | FAILED (BLOCKER) | Settings type split and stats isolation are correct. Session start path (App→useSessionEngine→startStretchSession→buildStretchSegments) is correctly wired. HOWEVER: `coerceStretchSettings` (practices.ts:89-99) validates initialBpm and targetBpm independently but does NOT enforce `targetBpm < initialBpm`. A drifted persisted slice with `targetBpm >= initialBpm` passes coercion and reaches `buildStretchSegments`, which silently produces an inverted ramp (single step at initialBpm, then cool-down at the higher targetBpm). `validateStretchSettings` (settings.ts:208) rejects this state but is dead code on the start path. |
-| 3 | A returning user keeps all data: HRV and Navi settings/stats intact, and prior Stretch usage preserved under the new Stretch practice slice (STRETCH-05) | VERIFIED | `storage.ts:108-133` — v2→v3 migration seeds `practices.stretch.settings` from the resonant blob and zeros stretch stats; `practices.resonant` and `practices.naviKriya` are passed through untouched. Migration is lossless and idempotent (5 migration cases in storage.test.ts). Note: REVIEW WR-02 observes the migration comment "carries ramp fields" is now inaccurate for post-Phase-34 builds (the resonant blob no longer has ramp fields), but behavior is correct — coerceStretchSettings falls back to defaults. |
-| 4 | The 3-practice switcher stays legible and tappable on mobile down to 320px, in English and PT-BR (STRETCH-02) | VERIFIED (human needed for visual) | Structural: pill classes are `flex-1 rounded-full min-h-[44px]`; container is `flex`; EN label "Stretch" and PT-BR label "Alongar" pre-validated in spike 007. The developer toggle is build-time only via `vite.config.ts define` — NOT present in Settings dialog (confirmed by grep: no match for `TREATMENT` or `VITE_SWITCHER_TREATMENT` in SettingsForm.tsx or App.tsx). |
-| 5 | A developer can switch the switcher between the two label treatments via a developer-only toggle NOT in the user Settings dialog (STRETCH-02 second half) | VERIFIED | `vite.config.ts:55-61` — `define.__SWITCHER_TREATMENT__` reads `process.env.VITE_SWITCHER_TREATMENT === 'B' ? 'B' : 'A'`. `PracticeToggle.tsx:11` — `const TREATMENT = __SWITCHER_TREATMENT__`. Treatment B branch at `PracticeToggle.tsx:99` renders `PracticeGlyph`. `.env.example` documents the env var. Zero matches for `TREATMENT` in SettingsForm.tsx (confirmed). |
-| 6 | User can read all new Stretch UI copy in both English and native-quality PT-BR (STRETCH-06) | VERIFIED | `strings.ts:352-354` (EN): `stretchName: 'Stretch'`, `stretchHeading: 'Stretch'`, `stretchHeader: 'Stretch practice'`. `strings.ts:537-539` (PT-BR): `stretchName: 'Alongar'`, `stretchHeading: 'Alongar'`, `stretchHeader: 'Prática de Alongar'`. Interface `UiStrings.practice` declares all 3 as `readonly string`. 6 new tests in `strings.test.ts` confirm all values. |
+| 1 | User can switch between HRV, Stretch, and Navi using the top segmented control above the orb (STRETCH-01) | VERIFIED | `PracticeToggle.tsx:24` — `PRACTICE_IDS = ['resonant', 'stretch', 'naviKriya']`; `App.tsx:1082` — `onSwitch={onSwitchPractice}`, `App.tsx:1087` — `stretch: uiStrings.practice.stretchName`. Commit history: plans 34-03/05. |
+| 2 | Stretch is its own practice — its own session settings and its own stats — not a mode toggle inside HRV (STRETCH-03/04) | VERIFIED | Settings type split correct; stats isolation correct; `coerceStretchSettings` now enforces cross-field `targetBpm < initialBpm` invariant (`practices.ts:111`) AND restricts `initialBpm` to `STRETCH_INITIAL_BPM_OPTIONS` (`practices.ts:103`). `buildStretchSegments` throws `RangeError` for inverted BPMs (`stretchRamp.ts:90-92`). 4 regression tests in `practices.test.ts:392-420`; 3 in `stretchRamp.test.ts:156-172`. REVIEW CR-01 BLOCKER is now CLOSED. |
+| 3 | A returning user keeps all data: HRV and Navi settings/stats intact, and prior Stretch usage preserved under the new Stretch practice slice (STRETCH-05) | VERIFIED | `storage.ts:40` — `STATE_VERSION = 3`; `storage.ts:108-133` — v2→v3 migration seeds `practices.stretch.settings` from resonant blob, zeros stretch stats; resonant and naviKriya passed through untouched. 5 migration tests in `storage.test.ts`. |
+| 4 | The 3-practice switcher stays legible and tappable on mobile down to 320px, in English and PT-BR (STRETCH-02) | VERIFIED (human needed for visual) | Structural: pill classes are `flex-1 rounded-full min-h-[44px]`; container is `flex`; EN label "Stretch" and PT-BR label "Alongar" (`strings.ts:352,537`) pre-validated in spike 007. Developer toggle is build-time only via `vite.config.ts:58-59` — NOT present in Settings dialog. |
+| 5 | A developer can switch the switcher between the two label treatments via a developer-only toggle NOT in the user Settings dialog (STRETCH-02 second half) | VERIFIED | `vite.config.ts:58-59` — `define.__SWITCHER_TREATMENT__` reads `process.env.VITE_SWITCHER_TREATMENT === 'B' ? 'B' : 'A'`. `PracticeToggle.tsx:11` — `const TREATMENT = __SWITCHER_TREATMENT__`. Treatment B branch renders `PracticeGlyph`. `.env.example` documents the env var. Zero matches for `TREATMENT` in SettingsForm.tsx. |
+| 6 | User can read all new Stretch UI copy in both English and native-quality PT-BR (STRETCH-06) | VERIFIED | `strings.ts:352-354` (EN): `stretchName: 'Stretch'`, `stretchHeading: 'Stretch'`, `stretchHeader: 'Stretch practice'`. `strings.ts:537-539` (PT-BR): `stretchName: 'Alongar'`, `stretchHeading: 'Alongar'`, `stretchHeader: 'Prática de Alongar'`. Interface `UiStrings.practice` declares all 3 as `readonly string`. |
 
-**Score:** 5/6 truths verified (REVIEW CR-01 makes truth 2 a BLOCKER)
+**Score:** 6/6 truths verified
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
 | `src/domain/settings.ts` | StretchSettings standalone type, SessionSettings 3-field | VERIFIED | `StretchSettings` exported with `ratio + 5 ramp fields`. `SessionSettings` is `bpm + ratio + durationMinutes` only. |
-| `src/domain/stretchRamp.ts` | `buildStretchSegments(StretchSettings)`, `computeStretchTotalMs(StretchSettings)` | VERIFIED (partial) | Both functions correct after gap-closure CR-01 fix. `computeStretchTotalMs` now derives from `segments[segments.length-1]!.endMs`. `buildStretchSegments` does NOT guard `targetBpm < initialBpm` — this is the REVIEW CR-01 issue. |
-| `src/domain/sessionController.ts` | `startStretchSession(StretchSettings, SessionSettings, nowMs)` — 3-arg signature after WR-03 fix | VERIFIED | Confirmed: 3-arg signature, `selectedSettings` passes through unchanged, synthetic lead-in in `lockedSettings` only. Commit 89140f5. |
+| `src/domain/stretchRamp.ts` | `buildStretchSegments(StretchSettings)`, `computeStretchTotalMs(StretchSettings)`, `RangeError` guard | VERIFIED | `computeStretchTotalMs` derives from `segments[segments.length-1]!.endMs`. `buildStretchSegments` throws `RangeError` when `!(targetBpm < initialBpm)` at line 90-92. |
+| `src/domain/sessionController.ts` | `startStretchSession(StretchSettings, SessionSettings, nowMs)` — 3-arg signature | VERIFIED | Confirmed: 3-arg signature, `selectedSettings` passes through unchanged (line 86). |
 | `src/storage/storage.ts` | `STATE_VERSION=3`, v2→v3 migration | VERIFIED | Line 40: `STATE_VERSION = 3`. Line 108: v2→v3 migration seeds stretch slice losslessly. |
-| `src/storage/practices.ts` | `PracticeId` includes `'stretch'`, `coerceStretchSettings`, `saveStretchSettings`, `recordStretchSession` | VERIFIED (partial) | All three functions exported and implemented. However `coerceStretchSettings` is missing the cross-field invariant (REVIEW CR-01 blocker). |
+| `src/storage/practices.ts` | `PracticeId` includes `'stretch'`, `coerceStretchSettings` with cross-field invariant, `saveStretchSettings`, `recordStretchSession` | VERIFIED | All three functions exported and implemented. `coerceStretchSettings` enforces `targetBpm < initialBpm` (line 111) and restricts `initialBpm` to `STRETCH_INITIAL_BPM_OPTIONS` (line 103). 4 STRETCH_INITIAL_BPM_OPTIONS occurrences. |
 | `src/components/PracticeToggle.tsx` | 3-pill switcher, A/B treatment branch, `PracticeGlyph` | VERIFIED | `PRACTICE_IDS = ['resonant', 'stretch', 'naviKriya']`. `TREATMENT` constant at line 11. `PracticeGlyph` exported. |
-| `vite.config.ts` | `define.__SWITCHER_TREATMENT__` inject | VERIFIED | Lines 55-61. Only `VITE_SWITCHER_TREATMENT === 'B'` activates treatment B. |
+| `vite.config.ts` | `define.__SWITCHER_TREATMENT__` inject | VERIFIED | Lines 58-59. Only `VITE_SWITCHER_TREATMENT === 'B'` activates treatment B. |
 | `src/content/strings.ts` | `stretchName`, `stretchHeading`, `stretchHeader` in EN + PT-BR | VERIFIED | Lines 167-169 (interface), 352-354 (EN), 537-539 (PT-BR). |
 | `src/components/BooleanToggle.tsx` | Renamed from ModeToggle | VERIFIED | File exists; `src/components/ModeToggle.tsx` does not exist. |
-| `src/components/SettingsForm.tsx` | Stretch branch, resonant standard-only | VERIFIED (partial) | `activePractice === 'stretch'` branch renders ramp steppers. Duration display now correct (CR-01 closed). HOWEVER: if coerced `initialBpm = 1` reaches the component, `targetBpmOptions = []` and `updateInitialBpm` writes `targetBpm: undefined` (REVIEW WR-01). |
-| `src/hooks/useSessionEngine.ts` | `startStretchSession` invoked with 3 args when stretch | VERIFIED | Lines 220-225: `startStretchSession(sSettings, currentState.selectedSettings, performance.now())`. WR-03 fix confirmed. |
-| `src/app/App.tsx` | `stretchSettings`, `stretchStats` state, 3-way selectors, session recording | VERIFIED | State at lines 137-141. 3-way selectors at lines 304-321. `onStretchSettingsChange` at line 446. `recordStretchSession` at line 800. |
+| `src/components/SettingsForm.tsx` | Stretch branch with `!isRunning` gate, rounded Duration, resonant standard-only | VERIFIED | `{!isRunning && (...)}` wraps all stretch steppers (line 200). `Math.round(stretchTotalMs / 60_000)` at line 89. `activePractice === 'stretch'` branch renders ramp steppers. |
+| `src/hooks/useSessionEngine.ts` | `startStretchSession` invoked with 3 args when stretch | VERIFIED | Lines 220-225: `startStretchSession(sSettings, currentState.selectedSettings, performance.now())`. |
+| `src/app/App.tsx` | `stretchSettings`, `stretchStats` state, 3-way selectors, session recording, top-anchored layout, stretch end-dialog | VERIFIED | State at lines 137-141. 3-way selectors at lines 304-321. `onStretchSettingsChange` at line 446. `recordStretchSession` at line 800. Root section `justify-start` at line 1065. `requestEnd` at line 649 extends to stretch via `state.stretchSegments !== null`. |
 
 ### Key Link Verification
 
@@ -102,19 +96,21 @@ The code review (34-REVIEW.md) flagged a NEW CR-01 that was present in the Phase
 |------|----|-----|--------|---------|
 | `App.tsx` | `recordStretchSession` | session-end effect `activePractice === 'stretch'` | WIRED | `App.tsx:799-801` |
 | `App.tsx` | `saveStretchSettings` | `onStretchSettingsChange` handler | WIRED | `App.tsx:446-449` |
-| `useSessionEngine.ts` | `startStretchSession` (3-arg) | `start()` picks stretch path when `stretchSettingsRef.current !== null` | WIRED | `useSessionEngine.ts:220-225`. WR-03 fix verified. |
-| `vite.config.ts define` | `PracticeToggle.tsx` | `__SWITCHER_TREATMENT__` compile-time constant | WIRED | `vite.config.ts:55-61`; `PracticeToggle.tsx:10-11` |
-| `coerceStretchSettings` | `coercePractices` stretch slot | `practices.ts:120` | WIRED — but coercer missing cross-field guard | PARTIAL |
+| `App.tsx requestEnd` | `setEndDialogOpen(true)` | `state.stretchSegments !== null` OR condition | WIRED | `App.tsx:649` — GAP 3 closed |
+| `useSessionEngine.ts` | `startStretchSession` (3-arg) | `start()` picks stretch path when `stretchSettingsRef.current !== null` | WIRED | `useSessionEngine.ts:220-225` |
+| `vite.config.ts define` | `PracticeToggle.tsx` | `__SWITCHER_TREATMENT__` compile-time constant | WIRED | `vite.config.ts:58-59`; `PracticeToggle.tsx:10-11` |
+| `coerceStretchSettings` | `coercePractices` stretch slot | `practices.ts:120` + cross-field guard at line 111 | WIRED | Cross-field invariant enforced; `STRETCH_INITIAL_BPM_OPTIONS` restriction enforced |
 | `storage.ts migrateEnvelope` | `practices.stretch` | v2→v3 step seeds the slice | WIRED | `storage.ts:108-133` |
-| `computeStretchTotalMs` | `SettingsForm.tsx` Duration display | `stretchTotalMs` at line 84 | WIRED — now correct after CR-01 fix | VERIFIED |
-| `LearnDialog.tsx` | `videosHeading` | `practiceContentKey === 'resonant'` after WR-01 fix | WIRED | `LearnDialog.tsx:95` |
+| `computeStretchTotalMs` | `SettingsForm.tsx` Duration display | `stretchTotalMs` + `Math.round` at line 89 | WIRED | Rounded display; underlying value derived from snapped segment table |
+| `buildStretchSegments` | `RangeError` | `!(targetBpm < initialBpm)` guard at line 90 | WIRED | Defense-in-depth behind coercer |
+| `LearnDialog.tsx` | `videosHeading` | `practiceContentKey === 'resonant'` | WIRED | `LearnDialog.tsx:95` |
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 |----------|---------------|--------|-------------------|--------|
-| `SettingsForm.tsx` stretch branch | `stretchSettings` | `App.tsx` state seeded from `loadPractices().stretch.settings` (localStorage via coercer) | Yes — reads persisted data; HOWEVER coercer misses cross-field invariant | FLOWING (partially unsafe) |
-| `SettingsForm.tsx` Duration display | `stretchTotalMs` from `computeStretchTotalMs(stretchSettings)` | `stretchRamp.ts:230-234` — now derives from snapped segment table | Yes — CR-01 closed; displayed value matches actual session end | FLOWING |
+| `SettingsForm.tsx` stretch branch | `stretchSettings` | `App.tsx` state seeded from `loadPractices().stretch.settings` (localStorage via coercer with cross-field invariant now enforced) | Yes — reads persisted data; coercer now safe | FLOWING |
+| `SettingsForm.tsx` Duration display | `stretchTotalMs` from `computeStretchTotalMs(stretchSettings)`, then `Math.round(... / 60_000)` | `stretchRamp.ts:243` — derives from snapped segment table `segments[segments.length-1]!.endMs` | Yes — rounded integer minutes, agrees with actual session end | FLOWING |
 | `App.tsx` `stretchStats` | `stretchStats` state | `initialPractices.stretch.stats` + `recordStretchSession` at session end | Yes — real incrementing stats | FLOWING |
 | `PracticeToggle.tsx` | `strings.practiceNames[id]` | `App.tsx:1087` — i18n string map | Yes — real i18n strings | FLOWING |
 
@@ -122,13 +118,19 @@ The code review (34-REVIEW.md) flagged a NEW CR-01 that was present in the Phase
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| Gap-closure suites (4 files) | `npx vitest run src/domain/stretchRamp.test.ts src/components/LearnDialog.test.tsx src/domain/sessionController.test.ts src/hooks/useSessionEngine.test.tsx` | 101/101 tests pass | PASS |
-| Full test suite | `npx vitest run` | 1211/1211 tests pass (78 files) | PASS |
+| CR-01 fix: coerceStretchSettings cross-field guard | `grep -n "targetBpm >= initialBpm" src/storage/practices.ts` | Line 111 — match found | PASS |
+| CR-01 fix: buildStretchSegments RangeError guard | `grep -n "targetBpm must be strictly below initialBpm" src/domain/stretchRamp.ts` | Line 91 — match found | PASS |
+| CR-01 fix: STRETCH_INITIAL_BPM_OPTIONS in practices.ts | `grep -c "STRETCH_INITIAL_BPM_OPTIONS" src/storage/practices.ts` | 4 matches (import + check + 2 comments) | PASS |
+| GAP 1 fix: Math.round in stretchDurationText | `grep -n "Math.round(stretchTotalMs" src/components/SettingsForm.tsx` | Line 89 — match found | PASS |
+| GAP 3 fix: stretchSegments !== null in requestEnd | `grep -n "state.stretchSegments !== null" src/app/App.tsx` | Line 649 — match found | PASS |
+| GAP 4 fix: top-anchored layout | `grep -n "justify-start" src/app/App.tsx` — `grep -c "justify-center" src/app/App.tsx` | justify-start at line 1065; justify-center count = 0 | PASS |
+| GAP 2 fix: stretch steppers gated on !isRunning | `grep -n "!isRunning" src/components/SettingsForm.tsx` | Line 200 — `{!isRunning && (...)}` wraps stretch steppers fragment | PASS |
+| Prior fix: computeStretchTotalMs from segment table | `grep -n "segments\[segments.length - 1\]" src/domain/stretchRamp.ts` | Line 243 — match found | PASS |
+| Prior fix: LearnDialog uses practiceContentKey | `grep -n "practiceContentKey.*resonant" src/components/LearnDialog.tsx` | Line 90 — match found | PASS |
+| Full test suite | `npx vitest run` | 1226/1226 passed across 78 files | PASS |
 | TypeScript typecheck | `npx tsc -b` | exits 0, no errors | PASS |
-| CR-01 original: computeStretchTotalMs drift | `grep -n "warmUpMinutes + rampDurationMinutes + coolDownMinutes" stretchRamp.ts` | no matches | PASS |
-| WR-01 original: LearnDialog heading uses practiceContentKey | `grep -n "videosHeading = " LearnDialog.tsx` | `practiceContentKey === 'resonant' ? strings.videosHeading : ...` | PASS |
-| WR-03 original: startStretchSession 3-arg signature | `grep -n "selectedSettings: cloneSettings(selectedSettings)" sessionController.ts` | line 86 confirms | PASS |
-| REVIEW CR-01 new: coerceStretchSettings cross-field guard | `grep -n "targetBpm.*>=.*initialBpm\|targetBpm.*<.*initialBpm" practices.ts` | no cross-field check found | FAIL |
+| Targeted suites (plans 34-07/08) | `npx vitest run src/storage/practices.test.ts src/domain/stretchRamp.test.ts src/components/SettingsForm.stretch.test.tsx src/app/App.session.test.tsx` | 133/133 passed | PASS |
+| Debt markers in modified files | `grep -n "TBD\|FIXME\|XXX"` on all 8 modified files | No matches | PASS |
 
 ### Probe Execution
 
@@ -140,8 +142,8 @@ No conventional probe scripts found. Step 7c: SKIPPED (no probe-*.sh files in sc
 |-------------|-------------|-------------|--------|----------|
 | STRETCH-01 | Plans 03, 05 | 3-practice switcher HRV·Stretch·Navi | SATISFIED | `PracticeToggle.tsx:24` PRACTICE_IDS; `App.tsx:1082` wiring |
 | STRETCH-02 | Plan 03 | Switcher legible at 320px, both locales, A/B treatment dev-only toggle | SATISFIED (human needed for visual) | `PracticeToggle.tsx` flex-1 layout; `vite.config.ts define`; toggle absent from Settings |
-| STRETCH-03 | Plans 01, 02, 05 | Stretch own per-practice settings persisted separately | PARTIALLY BLOCKED | Settings type split correct; storage wiring correct; REVIEW CR-01 means a drifted persisted slice can bypass the intended type contract and produce a corrupt ramp |
-| STRETCH-04 | Plans 01, 02, 05 | Stretch own per-practice stats separate from HRV and NK | SATISFIED | `recordStretchSession` slice-isolated write; `stretchStats` state in App |
+| STRETCH-03 | Plans 01, 02, 05, 08 | Stretch own per-practice settings persisted separately | SATISFIED | Settings type split correct; coercer enforces cross-field invariant (plan 34-08 closed the CR-01 blocker); storage wiring correct |
+| STRETCH-04 | Plans 01, 02, 05 | Stretch own per-practice stats separate from HRV and NK | SATISFIED | `recordStretchSession` slice-isolated write; `stretchStats` state in App; end-dialog flow confirmed (GAP 3 closed by plan 34-07) |
 | STRETCH-05 | Plan 02 | Returning user HRV/Navi data intact; prior Stretch usage preserved | SATISFIED | v2→v3 migration lossless; resonant/naviKriya untouched |
 | STRETCH-06 | Plan 04 | All new Stretch copy in EN and PT-BR | SATISFIED | `strings.ts` stretchName/stretchHeading/stretchHeader in both locales; tested |
 
@@ -149,14 +151,13 @@ No conventional probe scripts found. Step 7c: SKIPPED (no probe-*.sh files in sc
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `src/storage/practices.ts` | 89-99 | `coerceStretchSettings` validates initialBpm and targetBpm independently but no cross-field `targetBpm < initialBpm` check | BLOCKER | REVIEW CR-01: drifted/tampered persisted slice with targetBpm >= initialBpm reaches engine and produces a silently inverted ramp |
-| `src/domain/stretchRamp.ts` | 123-126 | `buildStretchSegments` uses `Math.max(1, ...)` guard for `bpmSpan <= 0` instead of throwing — silent corruption | BLOCKER | Compounds REVIEW CR-01: engine never rejects the invalid input, produces structurally valid but logically wrong segment table |
-| `src/components/SettingsForm.tsx` | 82, 113-114 | `targetBpmOptions` can be empty if `initialBpm = 1` (valid per full BPM_OPTIONS); `updateInitialBpm` writes `targetBpm: undefined` | WARNING | REVIEW WR-01 (new): secondary consequence of coercer using full BPM_OPTIONS; UI renders stepper with no options |
-| `src/storage/storage.ts` | 122 | Migration comment "carries ramp fields" is inaccurate for post-Phase-34 resonant blobs (3-field only); misleads future maintainers | WARNING | REVIEW WR-02: comment-only issue; behavior is correct (coercer falls back to defaults) |
-| `src/domain/sessionController.ts` | 102-124 | `extendTimedSession` stretch-rejection guard ordering is load-bearing but undocumented | WARNING | REVIEW WR-05: wrong ordering would silently route stretch state into open-ended branch (swallowed by useSessionEngine) |
-| `src/domain/settings.ts` | 60-63 | TEMPORARY 1-minute duration option shipped with "Remove before release" comment | INFO | Pre-existing; unrelated to Phase 34 |
-| `src/storage/practices.ts` | 171-236 | `recordStretchSession` duplicates `recordResonantSession` verbatim | INFO | REVIEW IN-02: three copies of session-recording logic invite drift |
-| `src/content/strings.ts` | 272, 352-354 | `settingsForm.rampDurationLabel = 'Stretch'` collides with `practice.stretchName = 'Stretch'` | INFO | REVIEW IN-03: maintainability hazard for text-based assertions or screen-reader audit |
+| `src/app/App.tsx` | 646-656 | `requestEnd` gates the stretch end-dialog on `state.stretchSegments !== null` (controller-internal field) | WARNING (REVIEW WR-01 in 34-REVIEW.md) | Design coupling; WR-01 from the 34-REVIEW.md for the gap-closure diff. Not blocking. Future maintainers should extract named locals or a practice discriminator. |
+| `src/app/App.session.test.tsx` | GAP 4 test | Selects root section by structural class matching (`flex flex-col`) — brittle if another section uses the same classes | WARNING (REVIEW WR-02 in 34-REVIEW.md) | Not blocking; add `data-testid` to the root section for determinism. |
+| `src/domain/settings.ts` | 60-63 | TEMPORARY 1-minute duration option with "Remove before release" comment | INFO | Pre-existing; unrelated to Phase 34. |
+| `src/storage/practices.ts` | 171-236 | `recordStretchSession` duplicates `recordResonantSession` verbatim | INFO | REVIEW IN-02: three copies of session-recording logic invite drift. |
+| `src/content/strings.ts` | 272, 352-354 | `settingsForm.rampDurationLabel = 'Stretch'` collides with `practice.stretchName = 'Stretch'` | INFO | REVIEW IN-03: maintainability hazard for text assertions. |
+
+No TBD/FIXME/XXX markers found in any Phase 34 modified files.
 
 ### Human Verification Required
 
@@ -182,59 +183,27 @@ No conventional probe scripts found. Step 7c: SKIPPED (no probe-*.sh files in sc
 
 ## Gaps Summary
 
-### BLOCKER — REVIEW CR-01: coerceStretchSettings missing cross-field invariant
-
-`coerceStretchSettings` in `src/storage/practices.ts:89-99` validates `initialBpm` and `targetBpm` independently using `isValidBpm` (which accepts the full `BPM_OPTIONS` set including `1`) but never enforces the cross-field constraint `targetBpm < initialBpm` that `validateStretchSettings` (settings.ts:218) treats as mandatory. A persisted stretch slice with `targetBpm >= initialBpm` — produced by localStorage tampering, a v2→v3 migration seeding a pre-trim resonant blob with orphaned ramp fields in that relationship, or any future schema drift — passes the coercer unchanged and reaches `buildStretchSegments`. The engine's `Math.max(1, ...)` guard silently collapses the ramp to a single segment running at `initialBpm`, followed by a cool-down at the higher `targetBpm`. The session silently accelerates instead of decelerating. `validateStretchSettings` is dead code on the start path.
-
-**Secondary consequence (REVIEW WR-01 new):** A coerced `initialBpm = 1` (valid per full `BPM_OPTIONS`) causes `targetBpmOptions = []` in SettingsForm, and `updateInitialBpm` then writes `targetBpm: undefined`. This is eliminated by coercing `initialBpm` against `STRETCH_INITIAL_BPM_OPTIONS` (already used by the UI picker for exactly this reason).
-
-**Fix (two changes):**
-
-1. `src/storage/practices.ts` — add cross-field invariant to `coerceStretchSettings`, and coerce `initialBpm` against `STRETCH_INITIAL_BPM_OPTIONS`:
-```typescript
-export function coerceStretchSettings(raw: unknown): StretchSettings {
-  const r = asRecord(raw)
-  let initialBpm = isValidBpm(r.initialBpm) && STRETCH_INITIAL_BPM_OPTIONS.includes(r.initialBpm as number)
-    ? r.initialBpm as number
-    : DEFAULT_STRETCH_SETTINGS.initialBpm
-  let targetBpm = isValidBpm(r.targetBpm) ? r.targetBpm as number : DEFAULT_STRETCH_SETTINGS.targetBpm
-  if (targetBpm >= initialBpm) {
-    initialBpm = DEFAULT_STRETCH_SETTINGS.initialBpm
-    targetBpm  = DEFAULT_STRETCH_SETTINGS.targetBpm
-  }
-  return {
-    ratio:               isValidRatio(r.ratio)                       ? r.ratio as RatioLabel     : DEFAULT_STRETCH_SETTINGS.ratio,
-    initialBpm,
-    targetBpm,
-    warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)              ? r.warmUpMinutes as WarmUpMinutes : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,
-    rampDurationMinutes: isValidRampDuration(r.rampDurationMinutes)  ? r.rampDurationMinutes as number  : DEFAULT_STRETCH_SETTINGS.rampDurationMinutes,
-    coolDownMinutes:     isValidCoolDown(r.coolDownMinutes)          ? r.coolDownMinutes as CoolDownMinutes : DEFAULT_STRETCH_SETTINGS.coolDownMinutes,
-  }
-}
-```
-
-2. `src/domain/stretchRamp.ts` — add a defensive guard mirroring the `rampDurationMinutes` guard:
-```typescript
-if (!(targetBpm < initialBpm)) {
-  throw new RangeError('targetBpm must be strictly below initialBpm')
-}
-```
-
-3. `src/storage/practices.test.ts` — add regression tests: (a) persisted `targetBpm >= initialBpm` resets both to defaults; (b) persisted `initialBpm = 1` resets to default.
+No gaps. All previously identified blockers and UAT failures are now closed.
 
 **All original gap-closure deliverables are confirmed complete:**
-- CR-01 original (computeStretchTotalMs): CLOSED — derives from snapped segment table; commit fce4f24; 2 regression tests pass.
-- WR-01 original (LearnDialog heading): CLOSED — `practiceContentKey === 'resonant'`; commit 2d537d6; 3 regression tests pass.
-- WR-03 original (resonant selectedSettings clobbered): CLOSED — 3-arg `startStretchSession`; commit 89140f5; 4 regression tests pass.
-- Full suite: 1211/1211 tests pass; `tsc -b` exits 0.
+- CR-01 original (computeStretchTotalMs): CLOSED — derives from snapped segment table at `stretchRamp.ts:243`.
+- WR-01 original (LearnDialog heading): CLOSED — `practiceContentKey === 'resonant'` at `LearnDialog.tsx:95`.
+- WR-03 original (resonant selectedSettings clobbered): CLOSED — 3-arg `startStretchSession` at `sessionController.ts:86`.
+- UAT GAP 1 (unrounded Duration): CLOSED — `Math.round(stretchTotalMs / 60_000)` at `SettingsForm.tsx:89`.
+- UAT GAP 2 (stretch steppers visible during session): CLOSED — `{!isRunning && (...)}` at `SettingsForm.tsx:200`.
+- UAT GAP 3 (stretch end bypassed dialog): CLOSED — `state.stretchSegments !== null` OR condition at `App.tsx:649`.
+- UAT GAP 4 (floating layout): CLOSED — `justify-start` at `App.tsx:1065`.
+- REVIEW CR-01 new (coerceStretchSettings cross-field invariant): CLOSED — `practices.ts:111` cross-field guard + `STRETCH_INITIAL_BPM_OPTIONS` restriction at line 103; `stretchRamp.ts:90-92` defensive `RangeError`; 7 new regression tests.
+- Full suite: 1226/1226 tests pass; `tsc -b` exits 0.
 
-**Warnings (not blocking phase gate, should be addressed before shipping):**
-- REVIEW WR-02: v2→v3 migration comment "carries ramp fields" is inaccurate for post-Phase-34 resonant blobs — behavior correct, comment misleads.
-- REVIEW WR-04: `extendTimedSession` stretch-rejection guard ordering is load-bearing but undocumented; `useSessionEngine` swallows the RangeError so wrong ordering fails silently.
-- REVIEW WR-03 (new): Early-ended stretch sessions lack App-level integration test coverage.
+**Warnings (not blocking, should be addressed before shipping):**
+- REVIEW WR-01 (in 34-REVIEW.md for gap-closure diff): `requestEnd` gates stretch end-dialog on `state.stretchSegments !== null` — couples App to controller-internal field. Prefer explicit practice discriminator.
+- REVIEW WR-02 (in 34-REVIEW.md for gap-closure diff): GAP 4 layout test selects root section by structural class — brittle. Add `data-testid`.
+- Migration comment "carries ramp fields" inaccurate for post-Phase-34 resonant blobs (behavior correct, comment misleads).
+- `extendTimedSession` stretch-rejection guard ordering is load-bearing but undocumented.
 
 ---
 
-_Verified: 2026-05-18T17:00:00Z_
+_Verified: 2026-05-18T18:20:00Z_
 _Verifier: Claude (gsd-verifier)_
-_Re-verification after gap-closure plan 34-06_
+_Re-verification after gap-closure plans 34-07 (UAT gaps 1-4) and 34-08 (REVIEW CR-01)_
