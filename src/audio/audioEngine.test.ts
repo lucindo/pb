@@ -437,18 +437,18 @@ describe('audioEngine', () => {
   it('engine captures timbre once at construction — two engines with different timbres operate independently (no shared mutable state)', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const engineBell = await createAudioEngine({ timbre: 'bell' })
-    const engineChime = await createAudioEngine({ timbre: 'chime' })
+    const engineFlute = await createAudioEngine({ timbre: 'flute' })
 
-    // Bell engine schedules — must dispatch with 'bell', not 'chime' (independent capture).
+    // Bell engine schedules — must dispatch with 'bell', not 'flute' (independent capture).
     engineBell.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
-    // Chime engine schedules — must dispatch with 'chime', not 'bell'.
-    engineChime.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
+    // Flute engine schedules — must dispatch with 'flute', not 'bell'.
+    engineFlute.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
 
     expect(inSpy).toHaveBeenCalledTimes(2)
     expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
-    expect(inSpy.mock.calls[1]?.[3]).toBe('chime')
+    expect(inSpy.mock.calls[1]?.[3]).toBe('flute')
 
     await engineBell.close()
-    await engineChime.close()
+    await engineFlute.close()
   })
 })

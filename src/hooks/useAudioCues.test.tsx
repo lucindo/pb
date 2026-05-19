@@ -1216,13 +1216,13 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     expect(createSpy.mock.calls[0]?.[0]).toMatchObject({ timbre: 'bell' })
     const callsAfterStart = createSpy.mock.calls.length
 
-    // 2. Mutate localStorage's prefs.timbre to 'chime' mid-session. If the hook
+    // 2. Mutate localStorage's prefs.timbre to 'flute' mid-session. If the hook
     //    re-read user prefs during reconstruction (D-11 violation), the new engine
-    //    would be constructed with 'chime'. The hook MUST NOT do this — it reads
+    //    would be constructed with 'flute'. The hook MUST NOT do this — it reads
     //    timbreRef.current exclusively, which still holds 'bell'.
     window.localStorage.setItem(
       'hrv:state:v1',
-      JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'chime', variant: 'orb', locale: 'en' } }),
+      JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'flute', variant: 'orb', locale: 'en' } }),
     )
 
     // 3. Trigger reconstruction via public resume() — which internally calls
@@ -1233,7 +1233,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     })
 
     // 4. Reconstruction must have called createAudioEngine again — and with
-    //    timbre: 'bell' (the captured value), NOT 'chime' (the mid-session storage value).
+    //    timbre: 'bell' (the captured value), NOT 'flute' (the mid-session storage value).
     expect(createSpy.mock.calls.length).toBeGreaterThan(callsAfterStart)
     const reconstructCall = createSpy.mock.calls[createSpy.mock.calls.length - 1]
     expect(reconstructCall?.[0]).toMatchObject({ timbre: 'bell' })
