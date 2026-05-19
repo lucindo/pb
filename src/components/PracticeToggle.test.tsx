@@ -167,13 +167,19 @@ describe('PracticeGlyph (treatment B inline SVGs)', () => {
     expect(circle).not.toBeNull()
   })
 
-  it('stretch glyph renders an aria-hidden SVG with a polyline', () => {
+  it('stretch glyph renders an aria-hidden SVG with an S-curve path', () => {
     render(<PracticeGlyph id="stretch" />)
     const svg = document.querySelector('svg')
     expect(svg).not.toBeNull()
     expect(svg!.getAttribute('aria-hidden')).toBe('true')
+    // Must be a <path>, not a <polyline>
     const polyline = svg!.querySelector('polyline')
-    expect(polyline).not.toBeNull()
+    expect(polyline).toBeNull()
+    const path = svg!.querySelector('path')
+    expect(path).not.toBeNull()
+    expect(path!.getAttribute('d')).toBe('M2 13 Q5.5 2 9 9 T16 5.5')
+    expect(path!.getAttribute('stroke')).toBe('currentColor')
+    expect(svg!.getAttribute('viewBox')).toBe('0 0 18 18')
   })
 
   it('naviKriya glyph renders an aria-hidden SVG with three circles', () => {
@@ -195,6 +201,52 @@ describe('PracticeGlyph (treatment B inline SVGs)', () => {
       expect(innerHTML).not.toMatch(/#[0-9a-fA-F]{3,6}/)
       unmount()
     }
+  })
+})
+
+// ── Treatment B pill layout regression tests ──────────────────────────────────
+// The flex layout fix (items-center justify-center gap-*) is treatment-independent
+// (it applies to the pill button's className in all renders). The label <span>
+// wrap is also treatment-independent. These tests confirm the layout is present
+// without requiring a full treatment-B dynamic-import build.
+describe('PracticeToggle pill button layout', () => {
+  it('each pill button className includes flex, items-center, justify-center, and a gap- utility', () => {
+    const onSwitch = vi.fn()
+    render(
+      <PracticeToggle
+        active="resonant"
+        disabled={false}
+        onSwitch={onSwitch}
+        strings={stubStrings}
+      />,
+    )
+    const buttons = screen.getAllByRole('button')
+    expect(buttons).toHaveLength(3)
+    for (const btn of buttons) {
+      expect(btn.className).toContain('flex')
+      expect(btn.className).toContain('items-center')
+      expect(btn.className).toContain('justify-center')
+      expect(btn.className).toMatch(/gap-/)
+    }
+  })
+
+  it('each pill button wraps the practice name in a <span>', () => {
+    const onSwitch = vi.fn()
+    render(
+      <PracticeToggle
+        active="resonant"
+        disabled={false}
+        onSwitch={onSwitch}
+        strings={stubStrings}
+      />,
+    )
+    // 'HRV', 'Stretch', 'Navi Kriya' must each live inside a <span>
+    const hrv = screen.getByRole('button', { name: 'HRV' })
+    const stretch = screen.getByRole('button', { name: 'Stretch' })
+    const navi = screen.getByRole('button', { name: 'Navi Kriya' })
+    expect(hrv.querySelector('span')?.textContent).toBe('HRV')
+    expect(stretch.querySelector('span')?.textContent).toBe('Stretch')
+    expect(navi.querySelector('span')?.textContent).toBe('Navi Kriya')
   })
 })
 
