@@ -165,7 +165,7 @@ export interface UiStrings {
     // Phase 34 (STRETCH-06 / D-10): Stretch as a distinct practice copy.
     // Mirrors the naviKriyaName/naviKriyaHeading/naviKriyaHeader triple.
     readonly stretchName: string      // short switcher label
-    readonly stretchHeading: string   // practice heading (D-10: same value as stretchName)
+    readonly stretchHeading: string   // practice heading (260519-63b: 'HRV Stretch' / 'Alongar VFC', distinct from stretchName)
     readonly stretchHeader: string    // app header line
   }
   readonly nkReadout: {
@@ -348,9 +348,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaControlsPlaceholder: 'Controls coming soon',
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
-      // Phase 34 STRETCH-06 / D-10: EN values — label and heading are both 'Stretch'
+      // Phase 34 STRETCH-06 / D-10: EN — label is 'Stretch'; heading 'HRV Stretch' per 260519-63b
       stretchName: 'Stretch',
-      stretchHeading: 'Stretch',
+      stretchHeading: 'HRV Stretch',
       stretchHeader: 'Stretch practice',
     },
     nkReadout: {
@@ -532,10 +532,10 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaControlsPlaceholder: 'Controles em breve',
       naviKriyaStatsEmptyBody: 'As sessões de Navi Kriya aparecerão aqui depois que você concluir sua primeira sessão.',
       resetStatsTitle: (practiceName) => `Zerar estatísticas de ${practiceName}?`,
-      // Phase 34 STRETCH-06 / D-10: PT-BR values — label and heading are both 'Alongar'
+      // Phase 34 STRETCH-06 / D-10: PT-BR — label is 'Alongar'; heading 'Alongar VFC' per 260519-63b
       // Spike 007 confirmed 'Alongar' fits the 320px 3-practice switcher.
       stretchName: 'Alongar',
-      stretchHeading: 'Alongar',
+      stretchHeading: 'Alongar VFC',
       stretchHeader: 'Prática de Alongar',
     },
     nkReadout: {
