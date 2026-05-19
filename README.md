@@ -50,13 +50,22 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 
 ## Features
 
-- Configurable BPM (1 – 7), inhale/exhale ratio (50:50, 40:60, 30:70, 20:80), and duration (5 – 60 minutes or open-ended).
-- BPM-stretch session pattern — an optional guided arc that opens with a Warm-up at an easier pace, ramps gradually through a Stretch toward a slower target, and closes with a Settle, so the slowdown is gentle rather than abrupt.
+### Three breathing practices
+
+A pill switcher at the top of the page moves between three practices; each keeps its own settings and its own stats.
+
+- **HRV** — the core resonance-breathing timer. Configurable BPM (1 – 7), inhale/exhale ratio (50:50, 40:60, 30:70, 20:80), and duration (5 – 60 minutes or open-ended).
+- **Stretch** — a guided BPM ramp: it opens with a Warm-up at an easier pace, ramps gradually toward a slower target BPM, and closes with a Settle, so the slowdown is gentle rather than abrupt. The Warm-up, ramp, and Settle durations are each configurable.
+- **Navi Kriya** — an OM-counting practice run in rounds, with a configurable front-OM count, OM pace, and an optional per-OM tick. The guide tracks the live count through each round's Front and Back phases rather than a breath clock.
+
+### Everything else
+
 - A single calm visual guide with three interchangeable variants — Orb, Square, and Diamond — each with a synchronized In / Out label.
 - Five named color palettes (theme switching) so the visual guide matches your preferred calm tone.
 - EN / PT-BR language switching — the full interface, including the Learn explainer, is available in English and Brazilian Portuguese.
 - Optional generated audio cues — soft bowl-like tones at each phase boundary (mutable), with four selectable timbres.
 - 3-2-1 audible + visual lead-in before the timing clock starts.
+- Installable as a Progressive Web App — the production build registers a service worker that caches assets for offline use and auto-updates on revisit. On phones, an inline install banner offers add-to-home-screen, with step-by-step instructions on iOS.
 - Local-only practice stats (sessions completed, total time) — stored in browser localStorage; never sent anywhere.
 - Hands-off resilience — Wake Lock keeps the screen on while a session runs (where supported); the visual guide / tones / clock re-anchor cleanly after suspend / resume / mute / unmute on mobile.
 - Calm, claim-safe in-app explainer modal (`Learn` corner anchor → modal with explanation + Forrest links + disclaimers).
@@ -73,9 +82,10 @@ Forrest is the source of inspiration for the practice; this app is **not affilia
 
 - React 19 + TypeScript, built with Vite.
 - Tailwind CSS v4 via `@tailwindcss/vite`.
-- Vitest + Testing Library for unit + behavior tests (959 tests across the codebase).
+- Vitest + Testing Library for unit + behavior tests (1255 tests across the codebase).
 - ESLint (TypeScript + React Hooks + React Refresh rule packs).
 - Web APIs: `<dialog>` (top-layer modals), `AudioContext` (generated cues), Page Visibility / Wake Lock (resume / screen-on), `localStorage` (settings + stats).
+- Installable PWA via `vite-plugin-pwa` (Workbox `generateSW`, auto-update) — offline-capable once cached.
 - No backend, no telemetry, no analytics, no third-party scripts.
 
 ---
@@ -103,7 +113,9 @@ npm run build
 npm run preview
 ```
 
-Open the URL Vite prints (typically `http://localhost:5173`) and the app is ready. No environment variables, no accounts, no setup beyond `npm install`.
+Open the URL Vite prints (typically `http://localhost:5173`) and the app is ready — no accounts, no setup beyond `npm install`.
+
+The one environment variable is optional and build-time only: `VITE_SWITCHER_TREATMENT` controls the practice switcher's appearance. It defaults to `B` (each pill shows a small glyph beside its label); set `VITE_SWITCHER_TREATMENT=A` before `npm run build` for text-only pills.
 
 ---
 
@@ -111,21 +123,28 @@ Open the URL Vite prints (typically `http://localhost:5173`) and the app is read
 
 ```
 src/
-  app/            React entry — App.tsx wires the page
-  components/     Visual guide variants (Orb / Square / Diamond),
-                  SessionReadout, SessionControls, SettingsForm,
-                  SettingsDialog, StatsFooter, EndSessionDialog,
-                  ResetStatsDialog, LearnAnchor, LearnDialog, and the
-                  Theme / Variant / Timbre / Language pickers
+  app/            React entry — App.tsx wires the page and owns
+                  practice / session state
+  components/     PracticeToggle (the practice switcher); the breathing
+                  visual-guide variants (Orb / Square / Diamond) plus the
+                  Navi Kriya guide (NKShape); SessionReadout /
+                  NKSessionReadout, SessionControls, SettingsForm,
+                  SettingsDialog, StatsFooter, the End / Reset dialogs,
+                  LearnAnchor / LearnDialog, InstallBanner / IosInstallSteps,
+                  and the Theme / Variant / Cue / Timbre / Language pickers
   content/        learnContent + strings — typed copy, Forrest link
                   record, and EN / PT-BR interface strings
-  domain/         breathingPlan, sessionMath, sessionController,
-                  stretchRamp, settings — pure functions
-  hooks/          useSessionEngine, useAudioCues, useWakeLock,
-                  useTheme, useVisualVariant, useLocale, and the
-                  matching choice hooks
-  audio/          audioEngine + cueSynth + timbres — Web Audio API layer
-  storage/        localStorage wrappers (settings, prefs, stats)
+  domain/         breathingPlan, sessionMath, sessionController, settings,
+                  stretchRamp (Stretch ramp), naviKriyaSettings — pure
+                  functions
+  hooks/          useSessionEngine + useNKEngine (the two session engines),
+                  useAudioCues, useWakeLock, useTheme, useVisualVariant,
+                  useLocale, the PWA-install hooks, and the matching
+                  choice hooks
+  audio/          audioEngine + cueSynth + nkCueSynth + timbres — Web
+                  Audio API layer
+  storage/        localStorage wrappers — per-practice settings + stats,
+                  prefs, and install-banner dismissal
   styles/         theme palettes + favicon palette sync
 .planning/        Planning artifacts (specs, phases, ROADMAP) — see
                   PROJECT.md if you want to dive into the design history
