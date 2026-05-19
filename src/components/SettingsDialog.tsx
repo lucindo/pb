@@ -118,7 +118,7 @@ export function SettingsDialog({ open, onClose, inSessionView, strings, isIOS, i
                     aria-controls="settings-ios-steps"
                     disabled={inSessionView}
                     onClick={() => { setIosExpanded(prev => !prev) }}
-                    className="min-h-[44px] text-sm font-semibold text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+                    className="mx-auto block min-h-[44px] text-sm font-semibold text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     {strings.install.iosStepsButton}
                   </button>
