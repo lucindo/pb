@@ -295,6 +295,57 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v1.5 — Multi-Practice
+
+**Shipped:** 2026-05-19
+**Phases:** 6 (30–35) | **Plans:** 27 | **Timeline:** ~3 days (2026-05-17 → 2026-05-19)
+
+### What Was Built
+
+- **Phase 30 — Multi-Practice Architecture & Switcher:** A `practice` concept above the existing `mode`; per-practice settings + stats persisted via a `STATE_VERSION` v1→v2 `migrateEnvelope` ladder folding returning users into `practices.resonant`; prototype-pollution-safe `src/storage/practices.ts`; top segmented `PracticeToggle` disabled during sessions; practice-aware split `SettingsForm` (PRACTICE-01..06).
+- **Phase 31 — Navi Kriya Engine & Session:** The `useNKEngine` app-paced OM-counting machine (front/back phase machine, fixed 4:1 ratio, auto-advance), four synthesized cue sounds, a live OM count / phase / round readout, an end control, and per-practice Navi Kriya stats isolated from Resonant's (NK-01..09).
+- **Phase 32 — Learn & Localization:** `learnContent.ts` restructured into a per-practice map over a shared base; `LearnDialog` made practice-aware; all new v1.5 copy reviewed to native-quality EN + PT-BR (LEARN-02/03, I18N-08).
+- **Phase 33 — Close gap PRACTICE-02:** Inserted gap-closure phase — retargeted the resonant-settings read path from the dead flat `env.settings` field to the `practices.resonant.settings` envelope, removed dead `loadSettings`/`saveSettings`, added remount regression tests.
+- **Phase 34 — Stretch as a Distinct Practice:** Promoted Stretch from an intra-HRV `mode` to a top-level practice — 3-pill switcher, a `STATE_VERSION` v2→v3 migration with a first-class `practices.stretch` slice, both switcher label treatments behind a developer-only `VITE_SWITCHER_TREATMENT` toggle; six gap-closure plans (34-06..34-11) closed verification + 3 UAT gaps (STRETCH-01..06; delivers Future requirement PRACTICE-F1).
+- **Phase 35 — Flute Cue Timbre:** Replaced the windchime-clone Chime with the spike-008 Flute — harmonic 1·2·3 sine partials and a ~0.13 s soft breath attack via a new optional soft-attack envelope mode on `cueSynth` (strike stays default; Bowl/Bell/Sine byte-identical); `chime → flute` rename + storage coercion (AUDIO-01/02).
+
+### What Worked
+
+- **Spike-first blueprint paid off.** Three spikes preceded the milestone and were packaged into the `spike-findings-hrv` skill; the multi-practice architecture, the Navi Kriya engine tempo, and the switcher UX all landed close to their spiked designs with little replanning.
+- **The `STATE_VERSION` migration ladder absorbed two schema bumps cleanly.** v1→v2 (Phase 30) and v2→v3 (Phase 34) chained without a returning-user data loss; each new practice slice was a localized, testable migration step.
+- **Gap-closure-as-plan held under load.** Phase 34 alone absorbed six gap-closure plans (verification + 3 UAT gaps) inside the phase rather than spawning new phases — the loop stayed tight even when the gap count was high.
+- **A milestone audit re-run caught real scope drift.** The first audit (2026-05-18) covered only Phases 30–32; appending Phases 33/34/35 invalidated it. The re-audit re-verified all 6 phases and confirmed the prior blocker (PRACTICE-02) was genuinely closed.
+- **Zero net-new runtime dependencies held a sixth milestone.** The whole multi-practice build is React + Web Audio + `localStorage`.
+
+### What Was Inefficient
+
+- **The milestone grew past its own name.** Scoped as "Navi Kriya Practice" (2 practices), it shipped as "Multi-Practice" (3 practices) once Phases 34/35 were appended — STATE.md `milestone_name` stayed stale until close. Appended post-milestone phases are useful but the milestone identity should be renamed when they land, not at close.
+- **`milestone.complete` accomplishment extraction failed a fifth time** — SUMMARY one-liner keys produced `One-liner:` / `RED:` / `vite.config.ts` stubs; the curated MILESTONES.md rewrite was again required.
+- **Nyquist `VALIDATION.md` was not produced for the two appended phases.** Phases 33 and 35 shipped without `VALIDATION.md` — a documentation gap (the full suite is green), but the appended phases skipped the validation-doc step the core phases followed.
+- **Phase 31 `VERIFICATION.md` frontmatter was never re-flipped** from `human_needed` to `passed` despite all 9 items being operator-confirmed in `31-HUMAN-UAT.md` — same procedural slip seen in v1.0/v1.1.
+- **SUMMARY `requirements-completed` frontmatter was left empty** for every Phase 32/33/34/35 plan, weakening the 3-source audit cross-check.
+
+### Patterns Established
+
+- **Appended post-milestone phases** — Phases 33 (gap closure), 34 and 35 were appended to a roadmap whose original milestone was already scoped; a milestone can absorb new peer phases, but its name/frontmatter must be updated when it does.
+- **Requirement amendment at audit** — NK-07 ("pause, resume, and end") was amended to end-only at the milestone audit once pause/resume was deliberately dropped; the audit is a valid place to reconcile a requirement with a shipped product decision, recorded inline in REQUIREMENTS.md.
+- **Optional opt-in synth mode to protect byte-identical outputs** — the Flute's soft-attack envelope is an opt-in `cueSynth` mode so Bowl/Bell/Sine stay byte-identical; same shape as the v1.1 Bowl-default invariant.
+
+### Key Lessons
+
+1. **Rename the milestone when its scope changes.** A milestone that absorbs appended peer phases is no longer the thing it was scoped as — update `milestone_name` (and PROJECT.md / ROADMAP.md) when the phases land, so the close isn't the first time the name is corrected.
+2. **Appended phases must follow the same artifact checklist as core phases.** Phases 33 and 35 skipped `VALIDATION.md`; the lighter-weight feel of an appended phase is not a license to skip coverage docs.
+3. **Re-audit when phase scope changes after the audit.** The 2026-05-18 audit was invalidated by appended phases; re-auditing before close caught it. Treat any post-audit roadmap change as audit-invalidating.
+4. **`milestone.complete` accomplishment extraction is reliably unreliable** — fifth milestone running; the curated MILESTONES.md rewrite is a permanent close-time step until SUMMARY one-liner keys are standardized.
+
+### Cost Observations
+
+- Sessions: 6 phases discuss→plan→execute→verify, plus a heavy Phase 34 gap-closure tail (6 plans), 9 quick/fast tasks, a re-audit, and milestone close.
+- Notable: Phase 34 carried the most rework — 6 of its 11 plans were gap closure (1 verification + 3 UAT gaps spread across 34-06..34-11).
+- Test growth: 997 → 1255 (+258) across the 6 phases — the largest single-milestone test gain since v1.1.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -307,6 +358,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.2 | 3 | 8 | Cycle-aligned segment table for piecewise-constant ramps on the one-clock SessionFrame; sync-guard test for cross-file constant drift; pre-paint inline-script standardized as the FOUC slot; milestone audit skipped for a small fully-checked milestone |
 | v1.3 | 5 | 11 | Build-time-only dependency for tooling-driven capability (zero runtime deps held a 4th milestone); fs-scan drift-guard test locks cleanup done-states; full-codebase parallel review at milestone close; ROADMAP.md drift undercounted phases at close |
 | v1.4 | 2 | 6 | Gap-closure plan (`gap_closure: true`) for UAT-surfaced defects within the phase; shared presentational component as single source of truth (one fix covers both surfaces); VALIDATION/SECURITY docs left stale, reconciled by audit at close |
+| v1.5 | 6 | 27 | Spike-first blueprint packaged as a skill; chained `STATE_VERSION` migration ladder (v1→v2→v3); appended post-milestone peer phases (33/34/35); requirement amended at audit (NK-07 end-only); milestone re-audit after post-audit scope change; milestone outgrew its scoped name |
 
 ### Cumulative Quality
 
@@ -318,6 +370,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.2 | 839/839 pass | — | ~19,161 |
 | v1.3 | 959/959 pass | 65 | — |
 | v1.4 | 997/997 pass | 70 | — |
+| v1.5 | 1255/1255 pass | — | ~28,933 |
 
 ### Top Lessons (Verified Across Milestones)
 
