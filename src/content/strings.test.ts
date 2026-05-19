@@ -219,20 +219,20 @@ describe('Phase 30 practice string keys', () => {
 })
 
 describe('Phase 34 stretch practice string keys (STRETCH-06)', () => {
-  it('UI_STRINGS.en.practice.stretchName equals "Stretch" (D-10: label same as heading)', () => {
+  it('UI_STRINGS.en.practice.stretchName equals "Stretch" (D-10: switcher pill label)', () => {
     expect(UI_STRINGS.en.practice.stretchName).toBe('Stretch')
   })
 
-  it('UI_STRINGS.en.practice.stretchHeading equals "Stretch" (D-10: same as label)', () => {
-    expect(UI_STRINGS.en.practice.stretchHeading).toBe('Stretch')
+  it('UI_STRINGS.en.practice.stretchHeading equals "HRV Stretch"', () => {
+    expect(UI_STRINGS.en.practice.stretchHeading).toBe('HRV Stretch')
   })
 
   it('UI_STRINGS[\'pt-BR\'].practice.stretchName equals "Alongar"', () => {
     expect(UI_STRINGS['pt-BR'].practice.stretchName).toBe('Alongar')
   })
 
-  it('UI_STRINGS[\'pt-BR\'].practice.stretchHeading equals "Alongar"', () => {
-    expect(UI_STRINGS['pt-BR'].practice.stretchHeading).toBe('Alongar')
+  it('UI_STRINGS[\'pt-BR\'].practice.stretchHeading equals "Alongar VFC"', () => {
+    expect(UI_STRINGS['pt-BR'].practice.stretchHeading).toBe('Alongar VFC')
   })
 
   it('stretchHeader is a non-empty string in both locales', () => {
