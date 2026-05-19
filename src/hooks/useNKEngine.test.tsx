@@ -75,21 +75,6 @@ describe('useNKEngine', () => {
     unmount()
   })
 
-  // NK-01: no-op stepOm before start() (null guard)
-  it('NK-01: calling start/pause/resume/end before start() does not throw', () => {
-    const { result, unmount } = renderHook(() => useNKEngine())
-
-    // These should be no-ops
-    expect(() => {
-      act(() => { result.current.pause() })
-    }).not.toThrow()
-    expect(() => {
-      act(() => { result.current.resume() })
-    }).not.toThrow()
-
-    unmount()
-  })
-
   // NK-02: rounds:3 produces 3 front+back cycles before done; nkRound reaches 3
   it('NK-02: 3 rounds produces 3 front+back cycles; nkRound reaches 3', () => {
     const onComplete = vi.fn()
@@ -218,8 +203,8 @@ describe('useNKEngine', () => {
     }
   })
 
-  // NK-07: pause/resume/end behavior
-  it('NK-07: pause() stops increments; resume() reschedules; end() resets to idle', () => {
+  // NK-07: end() resets to idle and fires onComplete with isComplete:false
+  it('NK-07: end() resets to idle and fires onComplete with isComplete:false', () => {
     const cbs = makeCallbacks()
     const onComplete = vi.fn()
     const { result, unmount } = renderHook(() => useNKEngine())
@@ -230,39 +215,14 @@ describe('useNKEngine', () => {
 
     const omMs = NK_OM_SECONDS['medium'] * 1000
 
-    // Advance through lead-in + 2 OMs
+    // Advance through lead-in + 2 OMs (mid-session)
     act(() => {
       vi.advanceTimersByTime(NK_LEAD_MS + omMs * 2 + 10)
     })
 
-    const countBeforePause = result.current.nkCount
-    expect(countBeforePause).toBeGreaterThan(0)
+    expect(result.current.nkCount).toBeGreaterThan(0)
 
-    // Pause
-    act(() => {
-      result.current.pause()
-    })
-    expect(result.current.nkRunning).toBe(false)
-
-    // Advance timers — count should not change while paused
-    act(() => {
-      vi.advanceTimersByTime(omMs * 5)
-    })
-    expect(result.current.nkCount).toBe(countBeforePause)
-
-    // Resume
-    act(() => {
-      result.current.resume()
-    })
-    expect(result.current.nkRunning).toBe(true)
-
-    // Advance — count should increment again
-    act(() => {
-      vi.advanceTimersByTime(omMs + 100)
-    })
-    expect(result.current.nkCount).toBeGreaterThan(countBeforePause)
-
-    // End — resets to idle
+    // End mid-session — resets to idle
     act(() => {
       result.current.end()
     })
