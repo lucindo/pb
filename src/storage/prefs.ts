@@ -45,6 +45,12 @@ export function coerceTheme(raw: unknown): ThemeId {
 }
 
 export function coerceTimbre(raw: unknown): TimbreId {
+  // AUDIO-02 legacy-value migration: 'chime' was the fourth timbre slot before Phase 35
+  // renamed it to 'flute'. Explicit remap preserves the user's fourth-slot preference
+  // (same kind of value-level coercion as coerceVariant's pre-swap 'ring' remap).
+  // No STATE_VERSION bump needed — coercers are non-throwing per-field; 'chime' is a
+  // stale value, not a structural envelope change.
+  if (raw === 'chime') return 'flute'
   return isValidTimbre(raw) ? raw : DEFAULT_TIMBRE
 }
 
