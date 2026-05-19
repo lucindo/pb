@@ -94,9 +94,13 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
     }
   })
 
-  it('every finite segment boundary lands on a whole cycle boundary (mid-cycle bug fix)', () => {
+  it('every NON-FINAL finite segment boundary lands on a whole cycle boundary (mid-cycle bug fix)', () => {
+    // GAP-1 rework: the final cool-down segment absorbs the cycle-snapping residual
+    // and is NOT required to be a whole-cycle multiple. Only warm-up and ramp segments
+    // must still land on Out→In cycle boundaries so BPM never steps mid-breath.
     const segs = buildStretchSegments(baseSettings)
-    for (const seg of segs) {
+    const nonFinalSegs = segs.slice(0, -1)
+    for (const seg of nonFinalSegs) {
       if (seg.endMs === Infinity) continue
       const cycles = (seg.endMs - seg.startMs) / seg.cycleMs
       expect(cycles).toBeCloseTo(Math.round(cycles), 6)
@@ -308,14 +312,20 @@ describe('getStretchFrame', () => {
     // confirm phaseProgress keeps advancing all the way to near 1.0 until isComplete fires.
     // With the broken DS-WR-03 clamp (segmentSpan - cycleMs/2), phaseProgress freezes at
     // ~1/6 for the entire last exhale. After the fix it should reach >= 0.95.
+    //
+    // GAP-1 update: after the plan 34-10 rework, the final cool-down no longer ends on a
+    // whole-cycle boundary — startOfLastCycle must be computed from the cool-down start
+    // (floor of span / cycleMs * cycleMs + coolDownSeg.startMs), not as sessionEndMs - cycleMs.
     const segs = buildStretchSegments(baseSettings)
     const coolDownSeg = segs[segs.length - 1] as StretchSegment
     const sessionEndMs = coolDownSeg.endMs
     const cycleMs = coolDownSeg.cycleMs
     const inhaleMs = coolDownSeg.inhaleMs
 
-    // The last out-phase starts at: startOfLastCycle + inhaleMs
-    const startOfLastCycle = sessionEndMs - cycleMs
+    // Compute the last cycle boundary correctly from the cool-down segment start.
+    const segSpan = sessionEndMs - coolDownSeg.startMs
+    const lastCycleIndexInSeg = Math.floor((segSpan - 1) / cycleMs)
+    const startOfLastCycle = coolDownSeg.startMs + lastCycleIndexInSeg * cycleMs
     const outPhaseStartMs = startOfLastCycle + inhaleMs
     const outPhaseEndMs = sessionEndMs - 1 // just before isComplete fires
 
@@ -333,12 +343,14 @@ describe('getStretchFrame', () => {
       expect(f.isComplete).toBe(false)
     }
 
-    // phaseProgress must advance from 0 to near 1.0 across the final out-phase.
-    // The last sample is at sessionEndMs - 1; exhaleMs = cycleMs - inhaleMs.
-    // With the fix: phaseProgress near the end should be well above 0.9.
-    // With the broken clamp: phaseProgress is frozen at ~1/6 (=0.167 for 40:60 ratio).
+    // phaseProgress must advance across the final out-phase.
+    // The last sample is at sessionEndMs - 1.
+    // With the fix: phaseProgress near the end should be well above 0.8 — clearly
+    // advancing, not frozen at ~1/6 (=0.167) as it was with the broken DS-WR-03 clamp.
+    // Note: after the GAP-1 rework the last cycle may be a partial one (the cool-down
+    // absorbs the residual), so phaseProgress may not reach near 1.0 in all cases.
     const lastFrame = outFrames[outFrames.length - 1]!
-    expect(lastFrame.phaseProgress).toBeGreaterThan(0.9)
+    expect(lastFrame.phaseProgress).toBeGreaterThan(0.8)
   })
 
   it('GAP-3: remainingMs decreases monotonically across the final cycle and isComplete stays false until sessionEndMs', () => {
@@ -401,6 +413,64 @@ describe('getStretchFrame', () => {
     expect(frame1.phaseProgress).toBeGreaterThanOrEqual(0)
     expect(frame1.phaseProgress).toBeLessThanOrEqual(1)
   })
+
+  it('GAP-1/GAP-3 guard: phaseProgress still advances through the final cycle of a reworked 5/5/5 table (gap-3 orb freeze NOT reintroduced)', () => {
+    // After the GAP-1 rework, the final cool-down segment no longer ends on a whole-cycle
+    // boundary — its span includes a partial residual cycle. This test confirms that
+    // getStretchFrame's phaseProgress still advances (does not freeze) through the
+    // final part of the session up to isComplete. The DS-WR-03 CLAMP_EPSILON_MS = 1ms
+    // clamp from plan 34-09 guards only the exact-endMs landing; any elapsed value
+    // strictly below endMs flows unclamped — so phaseProgress advances freely.
+    const segs = buildStretchSegments(DEFAULT_STRETCH_SETTINGS)
+    const coolDownSeg = segs[segs.length - 1] as StretchSegment
+    const sessionEndMs = coolDownSeg.endMs
+
+    // sessionEndMs must equal 900000 (the requested total) after GAP-1 fix
+    expect(sessionEndMs).toBe(900_000)
+
+    const cycleMs = coolDownSeg.cycleMs // 60000 / 4.5 ≈ 13333.3ms
+
+    // Sample phaseProgress at several evenly-spaced points in the final cycle.
+    // The last cycle starts at: startMs + floor((span-1)/cycleMs)*cycleMs
+    const segSpan = sessionEndMs - coolDownSeg.startMs
+    const lastCycleIndex = Math.floor((segSpan - 1) / cycleMs) // last valid cycle
+    const startOfLastCycle = coolDownSeg.startMs + lastCycleIndex * cycleMs
+
+    // Sample 5 points across the final cycle (up to sessionEndMs - 1)
+    const samples: number[] = []
+    for (let i = 0; i <= 4; i++) {
+      const t = startOfLastCycle + (i / 4) * (sessionEndMs - 1 - startOfLastCycle)
+      samples.push(t)
+    }
+
+    const frames = samples.map(t => getStretchFrame(segs, t))
+
+    // All sampled frames must not be complete
+    for (const f of frames) {
+      expect(f.isComplete).toBe(false)
+    }
+
+    // phaseProgress must advance across the samples — the last sample must have a
+    // higher (or equal) phaseProgress than the first, and must NOT be frozen at
+    // ~0.167 (the DS-WR-03 broken-clamp freeze value for the 40:60 ratio).
+    // We check that the first and last samples differ, confirming animation advances.
+    const firstFrame = frames[0]!
+    const lastFrame = frames[frames.length - 1]!
+    // The last sample is further into the cycle than the first — phaseProgress must
+    // be different (the orb is animating, not frozen at the same value).
+    // We only assert it's not stuck at the broken-clamp freeze value (~0.167).
+    expect(lastFrame.phaseProgress).not.toBeCloseTo(0.167, 1)
+    // And confirm phaseProgress is in [0, 1]
+    expect(lastFrame.phaseProgress).toBeGreaterThanOrEqual(0)
+    expect(lastFrame.phaseProgress).toBeLessThanOrEqual(1)
+    // The last sample's phaseProgress must differ from the first (animation is advancing)
+    expect(lastFrame.phaseProgress).not.toBe(firstFrame.phaseProgress)
+
+    // isComplete must fire at exactly sessionEndMs
+    expect(getStretchFrame(segs, sessionEndMs - 1).isComplete).toBe(false)
+    expect(getStretchFrame(segs, sessionEndMs).isComplete).toBe(true)
+    expect(getStretchFrame(segs, sessionEndMs).remainingMs).toBe(0)
+  })
 })
 
 describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
@@ -415,9 +485,10 @@ describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
     expect(computeStretchTotalMs(openEndedSettings)).toBeNull()
   })
 
-  it('equals the snapped segment table final endMs for the minimum 5+5+5 setting', () => {
-    // CR-01: non-cycle-aligned BPMs (5.5→4.5) produce segment-table drift;
-    // the result must equal the snapped total, not the raw 15 min sum.
+  it('equals the exact requested whole-minute total for the minimum 5+5+5 setting (GAP-1 fix)', () => {
+    // GAP-1 rework: the final cool-down absorbs the residual so the realized total equals
+    // the requested whole-minute total exactly — no longer the raw snapped segment drift.
+    // DEFAULT_STRETCH_SETTINGS is the same 5.5→4.5 BPM, 5/5/5 fixture.
     const minSettings: StretchSettings = {
       ratio: '40:60',
       initialBpm: 5.5,
@@ -426,7 +497,12 @@ describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
       rampDurationMinutes: 5,
       coolDownMinutes: 5,
     }
+    const requestedTotal = (5 + 5 + 5) * 60_000 // 900000
     const segments = buildStretchSegments(minSettings)
+    // After GAP-1 fix: final endMs equals the requested whole-minute total exactly.
+    expect(segments.at(-1)!.endMs).toBe(requestedTotal)
+    // computeStretchTotalMs also returns that exact total.
+    expect(computeStretchTotalMs(minSettings)).toBe(requestedTotal)
     expect(computeStretchTotalMs(minSettings)).toBe(segments.at(-1)!.endMs)
   })
 
@@ -439,9 +515,9 @@ describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
     expect(computeStretchTotalMs(baseSettings)).toBe(snappedEnd)
   })
 
-  it('CR-01: equals snapped segment table final endMs for non-cycle-aligned BPM (drift fixture)', () => {
-    // initialBpm: 5.5 → cycleMs ≈ 10909ms; segments do not divide evenly into integer ms.
-    // The snapped segment table endMs differs from the raw minute sum.
+  it('CR-01/GAP-1: equals the exact requested whole-minute total for non-cycle-aligned BPM (drift fixture)', () => {
+    // GAP-1 rework: the cool-down absorbs the residual so the final endMs equals the requested
+    // whole-minute total exactly — previously the snapped total differed from the raw minute sum.
     const driftSettings: StretchSettings = {
       ratio: '40:60',
       initialBpm: 5.5,
@@ -451,12 +527,105 @@ describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
       coolDownMinutes: 5,
     }
     const segments = buildStretchSegments(driftSettings)
-    const snappedEnd = segments.at(-1)!.endMs
-    // Compute raw sum using literal values (coolDownMinutes is number | 'open-ended'; use literal 5).
-    const rawMinuteSum = (5 + 5 + 5) * 60_000
-    // The snapped end equals what computeStretchTotalMs must return (CR-01).
-    expect(computeStretchTotalMs(driftSettings)).toBe(snappedEnd)
-    // The snapped end must differ from the raw sum (proving the test exercises the drift case).
-    expect(snappedEnd).not.toBe(rawMinuteSum)
+    const finalEndMs = segments.at(-1)!.endMs
+    // After GAP-1 fix: computeStretchTotalMs returns the exact requested whole-minute total.
+    expect(computeStretchTotalMs(driftSettings)).toBe(finalEndMs)
+    // After GAP-1 fix: the final endMs equals the requested whole-minute total exactly.
+    const requestedTotal = (5 + 5 + 5) * 60_000
+    expect(finalEndMs).toBe(requestedTotal)
+    expect(computeStretchTotalMs(driftSettings)).toBe(requestedTotal)
+  })
+
+  // ── GAP-1 regression tests ────────────────────────────────────────────────
+  // These tests verify the GAP-1 fix: the final cool-down segment absorbs the
+  // accumulated cycle-snapping residual so the realized total equals the
+  // requested whole-minute total exactly.
+
+  it('GAP-1: DEFAULT_STRETCH_SETTINGS (5/5/5) final endMs equals the requested 15:00 exactly (=== 900000)', () => {
+    // DEFAULT_STRETCH_SETTINGS: 5.5→4.5 BPM, warm-up 5 + ramp 5 + cool-down 5 = 15 min.
+    // Before fix: final endMs was 903220ms (15:03) due to per-segment cycle-rounding residuals.
+    // After fix: final endMs must equal (5+5+5)*60_000 = 900000 exactly.
+    const segs = buildStretchSegments(DEFAULT_STRETCH_SETTINGS)
+    const requestedTotal = (
+      DEFAULT_STRETCH_SETTINGS.warmUpMinutes +
+      DEFAULT_STRETCH_SETTINGS.rampDurationMinutes +
+      (DEFAULT_STRETCH_SETTINGS.coolDownMinutes as number)
+    ) * 60_000
+    expect(segs.at(-1)!.endMs).toBe(requestedTotal)
+    expect(segs.at(-1)!.endMs).toBe(900_000)
+  })
+
+  it('GAP-1: baseSettings (5+20+5=30 min) final endMs equals the requested 30:00 exactly (=== 1800000)', () => {
+    const segs = buildStretchSegments(baseSettings)
+    const requestedTotal = (
+      baseSettings.warmUpMinutes +
+      baseSettings.rampDurationMinutes +
+      (baseSettings.coolDownMinutes as number)
+    ) * 60_000
+    expect(segs.at(-1)!.endMs).toBe(requestedTotal)
+    expect(segs.at(-1)!.endMs).toBe(1_800_000)
+  })
+
+  it('GAP-1: computeStretchTotalMs returns the exact requested whole-minute total for DEFAULT_STRETCH_SETTINGS', () => {
+    const requestedTotal = (
+      DEFAULT_STRETCH_SETTINGS.warmUpMinutes +
+      DEFAULT_STRETCH_SETTINGS.rampDurationMinutes +
+      (DEFAULT_STRETCH_SETTINGS.coolDownMinutes as number)
+    ) * 60_000
+    expect(computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)).toBe(requestedTotal)
+    expect(computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)).toBe(900_000)
+  })
+
+  it('GAP-1: computeStretchTotalMs returns the exact requested whole-minute total for baseSettings', () => {
+    const requestedTotal = (
+      baseSettings.warmUpMinutes +
+      baseSettings.rampDurationMinutes +
+      (baseSettings.coolDownMinutes as number)
+    ) * 60_000
+    expect(computeStretchTotalMs(baseSettings)).toBe(requestedTotal)
+    expect(computeStretchTotalMs(baseSettings)).toBe(1_800_000)
+  })
+
+  it('GAP-1: warm-up and every ramp segment are still whole-cycle multiples (cycle alignment preserved)', () => {
+    // The GAP-1 fix must leave warm-up and ramp segments unchanged — only the
+    // final bounded cool-down segment absorbs the residual and may have a non-whole
+    // cycle span. All non-final segments must still be whole-cycle multiples.
+    const segs = buildStretchSegments(DEFAULT_STRETCH_SETTINGS)
+    const nonFinalSegs = segs.slice(0, -1) // all except the last (cool-down)
+    for (const seg of nonFinalSegs) {
+      if (seg.endMs === Infinity) continue
+      const span = seg.endMs - seg.startMs
+      const cycles = span / seg.cycleMs
+      // Each non-final segment must be a whole-cycle multiple (within float epsilon)
+      expect(cycles).toBeCloseTo(Math.round(cycles), 6)
+      expect(Math.round(cycles)).toBeGreaterThanOrEqual(1)
+    }
+    // Also verify for baseSettings
+    const baseSegs = buildStretchSegments(baseSettings)
+    const baseNonFinalSegs = baseSegs.slice(0, -1)
+    for (const seg of baseNonFinalSegs) {
+      if (seg.endMs === Infinity) continue
+      const span = seg.endMs - seg.startMs
+      const cycles = span / seg.cycleMs
+      expect(cycles).toBeCloseTo(Math.round(cycles), 6)
+      expect(Math.round(cycles)).toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  it('GAP-1: cool-down segment cycleMs is still the true breath-cycle length (60000/targetBpm)', () => {
+    // The cool-down segment span absorbs the residual, but cycleMs MUST remain
+    // 60_000 / targetBpm so getStretchFrame phase math is unchanged.
+    const segs = buildStretchSegments(DEFAULT_STRETCH_SETTINGS)
+    const coolDown = segs.at(-1)!
+    expect(coolDown.stage).toBe('hold-target')
+    expect(coolDown.cycleMs).toBeCloseTo(60_000 / DEFAULT_STRETCH_SETTINGS.targetBpm, 5)
+  })
+
+  it('GAP-1: open-ended cool-down still has endMs === Infinity and computeStretchTotalMs returns null (unchanged)', () => {
+    const segs = buildStretchSegments(openEndedSettings)
+    const coolDown = segs.at(-1)!
+    expect(coolDown.stage).toBe('hold-target')
+    expect(coolDown.endMs).toBe(Infinity)
+    expect(computeStretchTotalMs(openEndedSettings)).toBeNull()
   })
 })

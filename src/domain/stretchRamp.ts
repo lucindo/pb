@@ -61,14 +61,25 @@ const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
  * Builds the piecewise-constant segment table for a stretch session.
  * D-02: accepts a single StretchSettings argument; ratio is read from settings.ratio.
  *
- * Step 1: warm-up hold at initialBpm for warmUpMinutes
- * Step 2: ramp — numSteps = ceil((initialBpm - targetBpm) / 0.4999) segments, linear BPM
- *          step i: bpm_i = initialBpm - i * (initialBpm - targetBpm) / numSteps
- * Step 3: cool-down hold at targetBpm for coolDownMinutes ('open-ended' → endMs = Infinity)
- *
- * Every segment's duration is snapped to a WHOLE number of that segment's cycles, so
- * each segment boundary lands exactly on a cycle boundary (an Out→In transition). This
- * guarantees the BPM only ever steps between cycles — never mid-inhale or mid-exhale.
+ * Step 1: warm-up hold at initialBpm for warmUpMinutes — snapped to whole cycles so
+ *         the boundary lands on an Out→In transition (BPM never steps mid-breath).
+ * Step 2: ramp — numSteps = ceil((initialBpm - targetBpm) / 0.4999) segments, linear
+ *         BPM step i: bpm_i = initialBpm - i * (initialBpm - targetBpm) / numSteps.
+ *         Every ramp step is snapped to whole cycles for the same reason.
+ * Step 3: cool-down hold at targetBpm for coolDownMinutes.
+ *   - 'open-ended': unbounded final segment (endMs = Infinity); residual-absorption
+ *     logic does NOT apply; computeStretchTotalMs returns null.
+ *   - bounded numeric coolDownMinutes: the final cool-down segment absorbs the
+ *     accumulated cycle-snapping residual from Steps 1–2. Rather than snapping to
+ *     whole cycles, its span is set to exactly
+ *       requestedTotalMs - cursorMs
+ *     where requestedTotalMs = (warmUpMinutes + rampDurationMinutes + coolDownMinutes)
+ *     * 60_000 and cursorMs is the end of the last ramp segment. This makes the
+ *     realized session total equal the requested whole-minute total exactly — honoring
+ *     the user-facing contract (operator decision, plan 34-10, UAT GAP 1).
+ *     The cool-down's cycleMs remains 60_000 / targetBpm (the true breath-cycle length),
+ *     so getStretchFrame's Math.floor(elapsedInSegment / cycleMs) phase math is entirely
+ *     unchanged — only the cool-down SPAN shifts, not the cycle length.
  *
  * cycleBaseIndex on each segment = running sum of segment cycle counts for all prior
  * segments (Pitfall 1 — absolute cycleIndex never resets).
@@ -124,10 +135,12 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     return seg
   }
 
-  // Step 1: warm-up hold at initialBpm (always present — minimum 5 min)
+  // Step 1: warm-up hold at initialBpm (always present — minimum 5 min).
+  // Snapped to whole cycles so the warm-up boundary lands on an Out→In transition.
   segments.push(makeSegment(initialBpm, warmUpMinutes * 60_000, 'hold-initial'))
 
   // Step 2: ramp — each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04).
+  // Every ramp step is also snapped to whole cycles for the same Out→In boundary reason.
   // Math.max(1, …) is a defense-in-depth floor for a legitimate near-zero-span ramp
   // (bpmSpan tiny but positive). The BPM relationship is now validated up front by the
   // CR-01 guard above, so this floor is no longer the primary protection against an
@@ -141,9 +154,43 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     segments.push(makeSegment(stepBpm, stepRequestedMs, 'ramp'))
   }
 
-  // Step 3: cool-down hold at targetBpm ('open-ended' → unbounded final segment)
-  const coolDownMs = coolDownMinutes === 'open-ended' ? Infinity : coolDownMinutes * 60_000
-  segments.push(makeSegment(targetBpm, coolDownMs, 'hold-target'))
+  // Step 3: cool-down hold at targetBpm.
+  if (coolDownMinutes === 'open-ended') {
+    // Open-ended: unbounded final segment — no residual absorption needed.
+    segments.push(makeSegment(targetBpm, Infinity, 'hold-target'))
+  } else {
+    // Bounded cool-down: the final segment absorbs the accumulated cycle-snapping
+    // residual from Steps 1–2 so the realized total equals the requested whole-minute
+    // total exactly (operator decision — honor the exact total, plan 34-10 UAT GAP 1).
+    //
+    // The cool-down span is set directly to requestedTotalMs - cursorMs rather than
+    // being snapped to a whole number of targetBpm cycles. The cycleMs field retains
+    // the true breath-cycle length (60_000 / targetBpm) so that getStretchFrame's
+    //   Math.floor(elapsedInSegment / cycleMs)
+    // phase math is completely unchanged — only the span shifts; the cycle length does not.
+    //
+    // Pitfall-1 invariant: cycleBaseIndex = cumulativeCycles (the running total from
+    // all prior segments) keeps the absolute monotonic cycleIndex intact.
+    const requestedTotalMs = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
+    const cycleMs = 60_000 / targetBpm
+    const inhaleMs = cycleMs * (ratioParts.inhale / 100)
+    const exhaleMs = cycleMs * (ratioParts.exhale / 100)
+    const startMs = cursorMs
+    const endMs = requestedTotalMs
+    segments.push({
+      startMs,
+      endMs,
+      bpm: targetBpm,
+      cycleMs,
+      inhaleMs,
+      exhaleMs,
+      stage: 'hold-target',
+      cycleBaseIndex: cumulativeCycles,
+    })
+    // Note: cursorMs and cumulativeCycles are not updated after the final segment
+    // (no further segments follow). The cycleBaseIndex is already set from the
+    // running cumulativeCycles total.
+  }
 
   return segments
 }
