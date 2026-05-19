@@ -108,11 +108,11 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             D-08: section headings are the sole signal of which practice is shown; no extra practice label. */}
         <div className="grid gap-4">
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section1.title}</h3>
+            <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section1.title}</h3>
             <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section1.body}</p>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section2.title}</h3>
+            <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section2.title}</h3>
             <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section2.body}</p>
           </div>
         </div>
@@ -122,7 +122,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             Links: flat practiceContent.videos array — [heroVideo, ...keyVideos] for resonant; 2 links for NK.
             D-07: every <a> carries target="_blank" rel="noopener noreferrer". */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{videosHeading}</h3>
+          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{videosHeading}</h3>
           <div className="mt-1 grid gap-2">
             {practiceContent.videos.map((video) => (
               <a
@@ -140,7 +140,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
 
         {/* D-01 (THIRD): Who is Forrest Knutson — shared, always rendered (LEARN-03). */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
+          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
           {explainer.forrest.body.split('\n\n').map((paragraph) => (
             <p key={paragraph} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
           ))}
@@ -149,7 +149,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
 
         {/* D-01 (FOURTH): Forrest Resources — shared, always rendered (LEARN-03). */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
+          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
           <div className="mt-1 grid gap-2">
             <a
               href={links.youtubeChannel.url}
@@ -193,7 +193,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             D-08: heading and labels name the "Resonant Breathing" app only — no Forrest authorship claim. */}
         {activePractice === 'resonant' && (
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
+            <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
             <div className="mt-1 grid gap-2">
               <a
                 href={links.appStoreIos.url}
