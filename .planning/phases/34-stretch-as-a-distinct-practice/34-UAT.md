@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 34-stretch-as-a-distinct-practice
 source: [34-01-SUMMARY.md, 34-02-SUMMARY.md, 34-03-SUMMARY.md, 34-04-SUMMARY.md, 34-05-SUMMARY.md, 34-06-SUMMARY.md, 34-07-SUMMARY.md, 34-08-SUMMARY.md]
 started: 2026-05-18T22:39:46Z
-updated: 2026-05-19T03:25:00Z
+updated: 2026-05-19T04:00:00Z
 ---
 
 ## Current Test
@@ -68,7 +68,7 @@ blocked: 0
 ## Gaps
 
 - truth: "A 5m/5m/5m stretch session runs for exactly 15:00 and the in-session REMAINING countdown agrees with the Settings panel Duration readout"
-  status: failed
+  status: resolved
   reason: "User reported: in-session REMAINING shows 15:03 for warm-up 5 / ramp 5 / cool-down 5; the Settings panel rounds the same total to '15 min', so the two displays disagree and the session overruns the requested 15:00"
   severity: minor
   test: 4
@@ -82,7 +82,7 @@ blocked: 0
   debug_session: ".planning/debug/stretch-session-overruns-target.md"
 
 - truth: "Switcher Treatment B renders the practice glyph inline with the label (icon + label on one baseline, centered in the pill), and the Stretch glyph matches the icon design from the spike"
-  status: failed
+  status: resolved
   reason: "User reported: in Treatment B the glyph renders detached at the top-left of each pill instead of inline with the label; the Stretch glyph (descending diagonal polyline) does not match the icon shown in the spike"
   severity: minor
   test: 10
@@ -96,7 +96,7 @@ blocked: 0
   debug_session: ".planning/debug/switcher-treatment-b-glyph-layout.md"
 
 - truth: "When a stretch session's countdown reaches zero the breathing orb completes the in-flight in/out cycle before stopping (matching HRV — no new cycle starts at zero, but the current one finishes)"
-  status: failed
+  status: resolved
   reason: "User reported: at the end of the practice the orb froze on the last exhale before the countdown reached zero — the session stops abruptly mid-cycle instead of finishing the current breath cycle"
   severity: major
   test: 4
