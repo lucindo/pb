@@ -177,20 +177,28 @@ export function getStretchFrame(
     }
   }
 
-  // DS-WR-03: when safeElapsedMs lands exactly on the last bounded segment's
-  // endMs, no segment satisfies `safeElapsedMs < seg.endMs` and `activeSeg`
-  // falls through to that final segment. An unclamped `elapsedInSegment` would
-  // then equal the full segment span, making `cycleInSegment` compute exactly
-  // `cycleCount` — one past the last valid index — and the completion frame
-  // would carry a phantom extra in-phase cycle. Clamp `elapsedInSegment` to
-  // just inside a bounded segment's span so the final frame stays on the last
-  // real cycle. The open-ended final segment (endMs === Infinity) is left
-  // unclamped.
+  // DS-WR-03 (narrowed): when safeElapsedMs lands exactly on the last bounded
+  // segment's endMs, no segment satisfies `safeElapsedMs < seg.endMs` and
+  // `activeSeg` falls through to that final segment. An unclamped
+  // `elapsedInSegment` would then equal the full segment span, making
+  // `cycleInSegment` compute exactly `cycleCount` — one past the last valid
+  // index — and the completion frame would carry a phantom extra in-phase
+  // cycle. The clamp guards ONLY that exact-endMs landing: the ceiling is
+  // 1 ms inside the segment span (CLAMP_EPSILON_MS). For any elapsed value
+  // strictly below endMs, rawElapsedInSegment < segmentSpan, so the clamp
+  // has no effect and the frame advances freely through the entire final cycle
+  // (including the last exhale). Only when elapsed lands exactly on endMs is
+  // rawElapsedInSegment nudged 1 ms below the boundary, keeping
+  // Math.floor(elapsedInSegment / cycleMs) on the last real cycle index.
+  // This matches HRV's getSessionFrame: no mid-cycle freeze; animation and
+  // countdown complete together. The open-ended segment (endMs === Infinity)
+  // is left unclamped — CLAMP_EPSILON_MS is never relevant there.
+  const CLAMP_EPSILON_MS = 1 // 1 ms pull-back guards only the exact endMs landing
   const rawElapsedInSegment = safeElapsedMs - activeSeg.startMs
   const elapsedInSegment =
     activeSeg.endMs === Infinity
       ? rawElapsedInSegment
-      : Math.min(rawElapsedInSegment, activeSeg.endMs - activeSeg.startMs - activeSeg.cycleMs / 2)
+      : Math.min(rawElapsedInSegment, activeSeg.endMs - activeSeg.startMs - CLAMP_EPSILON_MS)
   const cycleInSegment = Math.floor(elapsedInSegment / activeSeg.cycleMs)
   const absoluteCycleIndex = activeSeg.cycleBaseIndex + cycleInSegment
   const cycleStartMs = activeSeg.startMs + cycleInSegment * activeSeg.cycleMs
