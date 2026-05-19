@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.5
-milestone_name: Navi Kriya Practice
-status: milestone_complete
-stopped_at: Phase 34 context gathered
-last_updated: "2026-05-19T09:00:32.602Z"
-last_activity: 2026-05-19 -- Phase 35 execution started
+milestone_name: Multi-Practice
+status: Awaiting next milestone
+stopped_at: v1.5 milestone complete
+last_updated: "2026-05-19T11:37:54.782Z"
+last_activity: 2026-05-19 — Milestone v1.5 completed and archived
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 27
-  completed_plans: 25
+  completed_plans: 27
   percent: 100
 ---
 
@@ -18,51 +18,29 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-18 — Phase 32 complete; v1.5 all phases done)
+See: .planning/PROJECT.md (updated 2026-05-19 after v1.5 Multi-Practice milestone)
 
-**Core value:** Users can start a hands-off HRV breathing session and comfortably follow accurate, uninterrupted inhale/exhale guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 35 — flute-cue-timbre-replace-chime
+**Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
+**Current focus:** Planning the next milestone (`/gsd-new-milestone`)
 
 ## Current Position
 
-Phase: 35
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-19 - Completed quick task 260519-bee: Remove orphaned NK pause/resume code and strings
-Progress: [██████████] 100% — 3/3 phases complete
+Phase: Milestone v1.5 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-19 — Milestone v1.5 completed and archived
 
 ## Performance Metrics
 
 **Velocity (plans completed per milestone):**
 
-- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6
-
-**v1.5 phases (roadmap revised 2026-05-17):**
-
-| Phase | Plans | Status |
-|-------|-------|--------|
-| 30. Multi-Practice Architecture & Switcher | 4/4 | Complete (2026-05-18) |
-| 31. Navi Kriya Engine & Session | 6/6 | Complete (2026-05-18) |
-| 32. Learn & Localization | 3/3 | Complete (2026-05-18) |
+- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6 · v1.5: 27
 
 ## Accumulated Context
 
-### Roadmap Evolution
-
-- Phase 33 added: Close gap: PRACTICE-02 — resonant settings read/write split-brain (v1.5 milestone audit gap)
-
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-
-**v1.5 blueprint (validated across 3 spikes, packaged in `spike-findings-hrv` skill):**
-
-- A `practice` concept (`'resonant' | 'naviKriya'`) sits one level above the existing intra-practice `mode` (standard/stretch). Per-practice session settings + stats; theme/timbre/variant/cue/locale stay shared app-wide chrome.
-- Adding the `practices` map + `activePractice` to the prefs envelope is a `STATE_VERSION` migration — existing single-practice users coerce into `practices.resonant` (covers PRACTICE-04).
-- The practice switcher is a top segmented control above the orb, disabled during a session (spike 002 winner over bottom tab bar / launch screen).
-- `src/components/SettingsDialog.tsx` mixes shared chrome and per-practice controls — it must be split (PRACTICE-05/06).
-- Navi Kriya: app-paced metronome, fixed 4:1 front:back ratio (default 100/25), auto-advance, four cue sounds (front marker / back marker / per-OM tick / end chord) routed through the existing `src/audio/audioEngine.ts` + timbres. Self-rescheduling timer chain; ~700ms LEAD_MS after a marker; provisional tempo fast 1.75 / medium 2.5 / slow 4s (real ~2.16s/OM) — finalize in the build, keep adjustable. `frontCount` must stay a multiple of 4.
-- Navi Kriya per-practice stats (NK-08) ship with the engine phase — a completed Navi Kriya session is what records sessions/rounds/minutes, so stats belong with "the practice works end to end" rather than as a standalone phase.
+Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre.
 
 ### Pending Todos
 
@@ -70,9 +48,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-- None blocking. v1.5 Navi Kriya Practice complete — all 3 phases (30–32) done, 13/13 plans.
-- ⚠️ [Phase 30] Code-review CR-01 — resonant settings still persist via the legacy flat `env.settings` path; `practices.resonant.settings` is not yet the write target. Carried forward for resolution.
-- ⚠️ [Phase 32] Code-review WR-01 — `practices[activePractice]` lacks a runtime guard against a future unmatched `PracticeId` (advisory; TypeScript-constrained today).
+- None blocking. v1.5 Multi-Practice shipped 2026-05-19 — all 6 phases (30–35), 27 plans. Awaiting next milestone.
 
 ### Quick Tasks Completed
 
@@ -108,6 +84,11 @@ Items acknowledged and carried forward across milestone closes:
 | v1.x debt | 28 Info-severity findings from the 2026-05-16 full-codebase deep review | Low priority — 23 Warnings fixed same-day; re-run `/gsd-code-review 27 --fix --all` to sweep | 2026-05-16 v1.3 close |
 | v1.x debt | Code review WR-01 — `IosInstallSteps` `<ol>` `::marker` numbering themed implicitly via per-`<li>` color inheritance | Advisory; correct today, fragile under future refactor — centralize color on the `<ol>` | 2026-05-16 v1.4 close |
 | procedural | 28-01 / 28-03 SUMMARY doc drift (field count, superseded `SafariNavigator`) | Code correct; SUMMARYs are earlier snapshots | 2026-05-16 v1.4 close |
+| procedural | Nyquist `VALIDATION.md` missing for Phases 33 and 35 | Documentation gap only — full suite 1255/1255 green; `/gsd-validate-phase 33`/`35` to reconcile | 2026-05-19 v1.5 close |
+| procedural | Phase 31 `VERIFICATION.md` frontmatter still `human_needed` | All 9 items operator-confirmed in `31-HUMAN-UAT.md` (`status: complete`); status not re-flipped | 2026-05-19 v1.5 close |
+| procedural | SUMMARY `requirements-completed` frontmatter empty for all Phase 32/33/34/35 plans | Requirements satisfied per VERIFICATION.md evidence; cross-check frontmatter not populated | 2026-05-19 v1.5 close |
+| v1.x debt | v1.5 audit code-review carry-forwards — `LearnDialog.tsx:91` misleading Stretch-fallback comment, LearnDialog paragraph-text React key (IN-01), `PracticeToggle` local `PracticeId` alias (IN-02), NK look-ahead (IN-03), NKShape phase a11y (WR-01) | Advisory; all non-blocking — see `.planning/milestones/v1.5-MILESTONE-AUDIT.md` `tech_debt` block | 2026-05-19 v1.5 close |
+| v1.x debt | No explicit v1→v3 chained-migration regression test (`storage.test.ts` covers v1→v2 and v2→v3 separately) | Production path works — `readEnvelope` always passes the real on-disk version; dedicated regression test missing | 2026-05-19 v1.5 close |
 
 **Audit references:**
 
@@ -115,15 +96,15 @@ Items acknowledged and carried forward across milestone closes:
 - `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md` — PASSED 27/27
 - v1.2, v1.3 — no milestone audit run (operator proceeded without `/gsd-audit-milestone`; requirements fully checked, all phases complete). v1.3 open-artifact gaps were resolved (not deferred) at close.
 - `.planning/milestones/v1.4-MILESTONE-AUDIT.md` — PASSED (7/7 requirements, 12/12 integration, 7/7 E2E flows). Two coverage-doc gaps (29-VALIDATION.md stale, 29-SECURITY.md missing) closed at audit time via `/gsd-validate-phase 29` + `/gsd-secure-phase 29`.
+- `.planning/milestones/v1.5-MILESTONE-AUDIT.md` — PASSED (re-audit 2026-05-19; 26/26 requirements, 6/6 phases, 0 integration blockers, 6/6 E2E flows). LEARN-02 and NK-07 reviewed with the operator and resolved as non-gaps; NK-07 amended to end-only. Tech debt non-blocking — see the audit `tech_debt` block.
 
 ## Session Continuity
 
-Last session: 2026-05-18T15:26:46.630Z
-Stopped at: Phase 34 context gathered
-Resume file: .planning/phases/34-stretch-as-a-distinct-practice/34-CONTEXT.md
-Next command: /gsd-complete-milestone v1.5
+Last session: 2026-05-19 — v1.5 Multi-Practice milestone completed and archived
+Stopped at: v1.5 milestone complete
+Resume file: —
+Next command: /gsd-new-milestone
 
 ## Operator Next Steps
 
-- Close milestone v1.5 with /gsd-complete-milestone v1.5
-- Optional: /gsd-audit-milestone v1.5 before closing (no audit run for v1.2/v1.3)
+- Start the next milestone with /gsd-new-milestone

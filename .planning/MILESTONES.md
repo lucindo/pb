@@ -1,5 +1,28 @@
 # Milestones
 
+## v1.5 Multi-Practice (Shipped: 2026-05-19)
+
+**Phases completed:** 6 phases (30–35), 27 plans, 24 tasks
+
+**Delivered:** Turned the single-practice HRV app into a multi-practice app — a top segmented switcher carrying three practices (HRV · Stretch · Navi Kriya), each with its own settings and stats — plus the app-paced Navi Kriya OM-counting engine, per-practice Learn content, and a new Flute cue timbre. Returning users migrate losslessly across a v1→v2→v3 storage-envelope chain. Zero net-new runtime dependencies; 1255/1255 tests pass.
+
+**Key accomplishments:**
+
+1. **Phase 30 — Multi-Practice Architecture & Switcher:** A `practice` concept above the existing `mode`; per-practice settings + stats persisted via a `STATE_VERSION` v1→v2 migration ladder that losslessly folds a returning user's flat envelope into `practices.resonant` (PRACTICE-04); prototype-pollution-safe `src/storage/practices.ts` persistence module; top segmented `PracticeToggle` above the orb, disabled during a session; practice-aware split `SettingsForm` separating shared chrome from per-practice controls (PRACTICE-01..06).
+2. **Phase 31 — Navi Kriya Engine & Session:** App-paced OM-counting practice end to end — `useNKEngine` front/back phase machine with a fixed 4:1 ratio and auto-advance, four synthesized cue sounds (front/back markers, per-OM tick, end chord), a live on-screen OM count / phase / round readout, an end control, and per-practice Navi Kriya stats (sessions / rounds / minutes) isolated from Resonant's (NK-01..09).
+3. **Phase 32 — Learn & Localization:** `learnContent.ts` restructured into a per-practice map over a shared base — practice-specific descriptions + Forrest video links, with the shared sections (Who is Forrest, Forrest Resources) rendered for every practice; all new v1.5 copy reviewed to native-quality EN + PT-BR (LEARN-02/03, I18N-08).
+4. **Phase 33 — Close gap PRACTICE-02:** Restored resonant-settings persistence across reloads — retargeted the read path from the dead flat `env.settings` field to the `practices.resonant.settings` envelope, removed dead `loadSettings`/`saveSettings`, and added the remount regression tests that would have caught the read/write split-brain.
+5. **Phase 34 — Stretch as a Distinct Practice:** Promoted Stretch from an intra-resonant `mode` to a top-level practice — 3-pill switcher (HRV · Stretch · Navi), a `STATE_VERSION` v2→v3 migration with a first-class `practices.stretch` slice, both switcher label treatments (text / icon+label) behind a developer-only `VITE_SWITCHER_TREATMENT` toggle; three UAT gap-closure plans landed exact-duration sessions and a fully-completing orb cycle (STRETCH-01..06 — delivers the deferred Future requirement PRACTICE-F1).
+6. **Phase 35 — Flute Cue Timbre:** Replaced the windchime-clone Chime with the spike-008 Flute — harmonic 1·2·3 sine partials and a ~0.13 s soft breath attack via a new optional soft-attack envelope mode on `cueSynth` (strike stays default; Bowl/Bell/Sine byte-identical); `chime → flute` renamed across `TimbreId`, EN/PT-BR copy, and `TimbrePicker`, with a storage coercion migrating persisted `timbre: 'chime'` → `'flute'` (AUDIO-01/02).
+
+**Verification:** Milestone audit `passed` (re-audit 2026-05-19) — 26/26 requirements satisfied, 6/6 phases verified, 0 integration blockers, 6/6 E2E flows complete; 1255/1255 Vitest tests green. NK-07 was amended at the audit to end-only (pause/resume dropped to mirror HRV's no-pause flow, commit `c19c0e1`).
+
+**Known deferred items at close:** Non-blocking tech debt only — see STATE.md `## Deferred Items` and the v1.5 milestone audit `tech_debt` block (orphaned NK pause/resume code already swept by quick task 260519-bee; Nyquist `VALIDATION.md` docs missing for Phases 33/35; Phase 31 `VERIFICATION.md` frontmatter not re-flipped despite operator-confirmed UAT; misc carry-forwards).
+
+**Test count progression:** v1.4 close 997 → v1.5 close 1255 (+258).
+
+---
+
 ## v1.4 Install Helper (Shipped: 2026-05-16)
 
 **Phases completed:** 2 phases (28–29), 6 plans, 11 tasks
