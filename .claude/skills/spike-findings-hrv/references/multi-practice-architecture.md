@@ -30,8 +30,13 @@ The app already has an intra-practice `mode` (`standard` / `stretch` in
 discriminated union / id:
 
 ```ts
-type PracticeId = 'resonant' | 'naviKriya'
+type PracticeId = 'resonant' | 'naviKriya' | 'stretch'
 ```
+
+`'stretch'` is the third practice — spike 007 confirmed the switcher holds three. Stretch
+was previously an intra-resonant `mode`; promoting it to a top-level practice is a real
+feature (its own per-practice settings + stats slice, a storage migration, EN/PT-BR
+labels) — see the switcher section below and `## Constraints`.
 
 Each practice owns its own session settings object and its own stats. Shape the app
 state as:
@@ -75,6 +80,20 @@ runs. Working pattern from spike 002 (`sources/002-switcher-ux/index.html`):
 Lock rule: when `session !== null`, every switcher control is `disabled`. The same rule
 applies to any "back to home"-style affordance if the layout ever changes.
 
+**Three-practice instance (spike 007).** The switcher was confirmed at three practices
+(HRV · Stretch · Navi) — equal-width `flex-1` pills, no compaction needed, legible and
+tappable down to 320 px in both EN and PT-BR ("Alongar" is the snuggest label and still
+fits). Two notes from the production component `src/components/PracticeToggle.tsx`:
+
+- **The active pill needs an accent border.** On the dark/dusk themes `bg-soft === surface`,
+  so without a border the active pill dissolves into the container. The active state must
+  carry an accent border, not only a background swap.
+- **Two label treatments ship, selected by a developer-only toggle.** Treatment A =
+  text-only equal pills; Treatment B = icon + label. Both are built into the production
+  switcher; a build-time / dev-only mechanism (build flag, env var, or hidden localStorage
+  toggle) picks between them — it must NOT appear in the user Settings dialog. Purpose:
+  the operator picks the final default from real-app testing, not from the spike.
+
 ### 3. Split `SettingsDialog`
 
 The current `src/components/SettingsDialog.tsx` mixes app-wide chrome (theme, language,
@@ -106,12 +125,17 @@ with a per-practice partition over the shared base. Not a feasibility risk.
 
 ## Constraints
 
-- The top segmented control holds comfortably for **~3–4 practices**. If the practice
-  catalog grows past that, the switcher must be revisited.
+- The top segmented control holds comfortably for **~3–4 practices**. Confirmed at 3
+  (spike 007); if the catalog grows past ~4, the switcher must be revisited.
 - Adding the `practices` map to the prefs envelope requires a `STATE_VERSION` bump and a
   migration coercer for existing single-practice users.
+- **Promoting Stretch to a practice is a planned-phase feature, not a spike-apply.** It
+  needs the new `PracticeId 'stretch'`, a third per-practice settings+stats slice, a
+  storage-envelope migration, and EN/PT-BR "Stretch"/"Alongar" labels. Spike 007
+  validated only the switcher *look*; the Treatment B glyphs in the harness were
+  placeholders — final glyphs are a build-time design pass.
 
 ## Origin
 
-Synthesized from spikes: 001 (multi-practice-shell), 002 (switcher-ux).
-Source files available in: sources/001-multi-practice-shell/, sources/002-switcher-ux/.
+Synthesized from spikes: 001 (multi-practice-shell), 002 (switcher-ux), 007 (three-practice-switcher).
+Source files available in: sources/001-multi-practice-shell/, sources/002-switcher-ux/, sources/007-three-practice-switcher/.

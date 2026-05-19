@@ -35,7 +35,22 @@ unless the question requires otherwise.
   it with a self-rescheduling `setTimeout` chain.
 - **Web Audio for cue sounds.** Synthesized oscillator tones (no audio files) are enough
   to validate sound design. Create the `AudioContext` lazily inside a user gesture (the
-  first Start tap) — browser autoplay policy blocks earlier creation.
+  first Start tap) — browser autoplay policy blocks earlier creation. Mirror the app's
+  real synthesis path (`buildNKToneNodes` / `cueSynth`) so the spike audition matches what
+  the production code can actually produce.
+- **Measure the claim, don't trust the senses.** When a comparison spike's question is
+  quantitative — "louder?", "longer?", "does it fit?" — compute a deterministic number,
+  not an impression. Audio spikes (004/005) render each variant in an
+  `OfflineAudioContext` and report true peak amplitude and −40 dB tail length; the
+  switcher spike (007) computes per-pill width from real container padding. The verdict
+  then rests on numbers + audition together.
+- **Render candidates in their real context.** Comparison spikes show each candidate the
+  way it will actually be seen — icons inside true iOS/Android mask shapes at home-screen
+  sizes (006), the switcher inside true-size 320/360/390 px device frames in every theme
+  and locale (007). Legibility-when-cropped / when-small is seen, not assumed.
+- **Per-card shortlist toggle.** Comparison spikes give each candidate a `+ shortlist` /
+  `+ picker` toggle plus a running summary of what is selected, so the operator's
+  narrowing is captured in the harness.
 
 ## Tools & Libraries
 
