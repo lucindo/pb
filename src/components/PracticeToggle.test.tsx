@@ -24,7 +24,28 @@ const stubStrings = {
 }
 
 // ── Core 3-pill tests (treatment A — no glyphs) ───────────────────────────────
+// Treatment A is now opt-out (the build default is B). Re-import the module
+// under a stubbed __SWITCHER_TREATMENT__='A' so these tests genuinely exercise
+// the text-only treatment-A pills — mirrors the treatment-B describe block below.
 describe('PracticeToggle (3 pills, treatment A)', () => {
+  let PracticeToggle: typeof import('./PracticeToggle').PracticeToggle
+
+  beforeAll(async () => {
+    vi.stubGlobal('__SWITCHER_TREATMENT__', 'A')
+    // `as string` widens the specifier so tsc treats this as Promise<any> (it
+    // cannot resolve Vite's `?treatment=A` query); the awaited result is then
+    // cast back to the real module shape so the assignment stays type-safe.
+    const mod = (await import(
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      './PracticeToggle?treatment=A' as string,
+    )) as typeof import('./PracticeToggle')
+    PracticeToggle = mod.PracticeToggle
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('renders exactly three pill buttons in order: resonant, stretch, naviKriya', () => {
     const onSwitch = vi.fn()
     render(
@@ -90,7 +111,7 @@ describe('PracticeToggle (3 pills, treatment A)', () => {
     expect(onSwitch).toHaveBeenCalledWith('stretch')
   })
 
-  it('in treatment A (default), no SVG is rendered inside the pills', () => {
+  it('in treatment A, no SVG is rendered inside the pills', () => {
     const onSwitch = vi.fn()
     render(
       <PracticeToggle

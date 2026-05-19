@@ -280,7 +280,7 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await act(async () => { await Promise.resolve() })
     // Phase 30 D-08: the dialog title names the active practice being reset.
-    expect(screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Reset HRV Breathing stats?' })).toBeInTheDocument()
   })
 
   it('confirming Reset wipes stats subtree and re-hides footer (D-11)', async () => {
@@ -298,7 +298,7 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await act(async () => { await Promise.resolve() })
     // The dialog has a Reset button inside — use within(dialog) to target it
-    const dialog = screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })
+    const dialog = screen.getByRole('dialog', { name: 'Reset HRV Breathing stats?' })
     const dialogResetBtn = within(dialog).getByRole('button', { name: 'Reset' })
     fireEvent.click(dialogResetBtn)
     await act(async () => { await Promise.resolve() })
@@ -330,7 +330,7 @@ describe('LOCL-03 — reset clears stats only (D-11 / D-12)', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await act(async () => { await Promise.resolve() })
-    const dialog = screen.getByRole('dialog', { name: 'Reset Resonant Breathing stats?' })
+    const dialog = screen.getByRole('dialog', { name: 'Reset HRV Breathing stats?' })
     const keepBtn = within(dialog).getByRole('button', { name: 'Keep' })
     fireEvent.click(keepBtn)
     await act(async () => { await Promise.resolve() })
