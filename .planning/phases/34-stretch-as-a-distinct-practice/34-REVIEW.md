@@ -1,165 +1,142 @@
 ---
 phase: 34-stretch-as-a-distinct-practice
-reviewed: 2026-05-18T00:00:00Z
+reviewed: 2026-05-19T00:00:00Z
 depth: standard
-files_reviewed: 8
+files_reviewed: 4
 files_reviewed_list:
-  - src/app/App.tsx
-  - src/app/App.session.test.tsx
-  - src/components/SettingsForm.tsx
-  - src/components/SettingsForm.stretch.test.tsx
+  - src/components/PracticeToggle.tsx
+  - src/components/PracticeToggle.test.tsx
   - src/domain/stretchRamp.ts
   - src/domain/stretchRamp.test.ts
-  - src/storage/practices.ts
-  - src/storage/practices.test.ts
 findings:
   critical: 0
-  warning: 2
+  warning: 3
   info: 3
-  total: 5
+  total: 6
 status: issues_found
 ---
 
 # Phase 34: Code Review Report
 
-**Reviewed:** 2026-05-18T00:00:00Z
+**Reviewed:** 2026-05-19T00:00:00Z
 **Depth:** standard
-**Files Reviewed:** 8
+**Files Reviewed:** 4
 **Status:** issues_found
 
 ## Summary
 
-This review covers the Phase 34 gap-closure diff (base `b02dc82^`) spanning plans 34-07
-(UAT gap fixes) and 34-08 (verification blocker CR-01). The diff is small and tightly
-scoped: four UAT gaps (rounded Duration readout, in-session stepper gating, stretch
-end-confirmation dialog, top-anchored layout) plus the CR-01 cross-field BPM invariant
-enforced in `coerceStretchSettings` and `buildStretchSegments`.
+Reviewed the phase 34 gap-closure changes against diff_base `dd1693b`:
 
-The two highest-severity findings from the prior full-phase review are now resolved:
+- **34-09** — `getStretchFrame` DS-WR-03 clamp narrowed from `cycleMs/2` to a 1 ms `CLAMP_EPSILON_MS`.
+- **34-10** — `buildStretchSegments` bounded cool-down now absorbs cycle-snapping residual so the realized total equals the requested whole-minute total exactly.
+- **34-11** — `PracticeToggle` Treatment B inline flex layout + S-curve glyph swap (`polyline` → `path`).
 
-- **CR-01 (resolved):** `coerceStretchSettings` now enforces `targetBpm < initialBpm`,
-  resetting both BPM fields to defaults atomically when violated; `buildStretchSegments`
-  adds a defensive `RangeError` guard. The `!(targetBpm < initialBpm)` form correctly
-  traps NaN. Both paths are now test-covered.
-- **WR-01 (resolved):** `coerceStretchSettings` now restricts `initialBpm` to
-  `STRETCH_INITIAL_BPM_OPTIONS` (>= 1.5), so a coerced `initialBpm` of `1` can no longer
-  collapse the `targetBpm` picker to an empty option list.
-
-The four UAT fixes are minimal and correct. No blockers found. Two warnings concern the
-coupling of the stretch end-confirmation gate to an internal controller field and a
-brittle layout assertion in the new test. Three info items cover guard-strictness
-divergence and test fragility.
+The changes are well-documented and well-tested. No security vulnerabilities and no Critical correctness defects were found. However, the 34-10 residual-absorption rework introduces an **unguarded invariant**: the cool-down segment span (`requestedTotalMs - cursorMs`) is no longer guaranteed to be positive or even one full cycle long, and the surrounding code (clamp epsilon, contiguity, the `Math.max(1, ...)` floor used elsewhere) silently assumes it is. The three Warnings below cover that gap and two robustness concerns. No Critical issues — the degenerate inputs are blocked by `coerceStretchSettings` for persisted data, but `buildStretchSegments` is an exported pure function whose own docstring (DS-WR-02 / CR-01 guards) commits to defending against poisoned tables, and this new path does not.
 
 ## Warnings
 
-### WR-01: Stretch end-confirmation dialog is gated on `state.stretchSegments`, coupling App to a controller-internal field
+### WR-01: Cool-down span can become zero or negative — no defensive guard on the residual-absorption result
 
-**File:** `src/app/App.tsx:646-656`
+**File:** `src/domain/stretchRamp.ts:174-189`
 
-**Issue:** `requestEnd` now reads `state.stretchSegments` to decide whether to open the
-end-confirmation dialog (`state.lockedSettings.durationMinutes !== 'open-ended' ||
-state.stretchSegments !== null`). The `useCallback` dependency array is `[state, session,
-audioStop]`, so the closure is fresh — no stale-closure bug. The concern is design
-coupling: the App-layer dialog decision now depends on an internal field of the session
-controller whose "non-null exactly for a stretch session" contract is asserted only by an
-inline comment referencing `sessionController.ts:81-89`. If a future controller change
-populates `stretchSegments` for a non-stretch session, or nulls it mid-running, the
-dialog gating breaks silently with no test catching it. The condition also conflates two
-distinct concepts — "is timed" and "is a stretch session" — into one boolean expression.
+**Issue:** The bounded cool-down segment span is set directly to `requestedTotalMs - cursorMs` with no lower-bound check:
 
-**Fix:** Prefer an explicit, intent-revealing signal. If the controller exposes a
-practice/kind discriminator, gate on that. Otherwise extract named locals so intent is
-self-documenting, and add a regression test asserting the dialog does NOT appear for a
-stretch session if `stretchSegments` is null (or document why that combination is
-unreachable):
 ```ts
-const isStretchSession = state.stretchSegments !== null
-const isTimedSession = state.lockedSettings.durationMinutes !== 'open-ended'
-const requestEnd = useCallback(() => {
-  if (state.status === 'running' && (isTimedSession || isStretchSession)) {
-    setEndDialogOpen(true)
-    return
-  }
-  session.end()
-  void audioStop()
-}, [state, session, audioStop])
+const requestedTotalMs = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
+const startMs = cursorMs
+const endMs = requestedTotalMs
 ```
 
-### WR-02: GAP 4 layout test selects the root section by structural class matching — brittle and non-deterministic
+`cursorMs` is the sum of *snapped* warm-up + ramp segment durations. Each snap is `Math.round(requestedMs / cycleMs) * cycleMs`, which can round **up**. The accumulated upward rounding residual across warm-up + N ramp steps is bounded by roughly `(N+1) * cycleMs/2`. For large slow-BPM ramps (`cycleMs` up to ~40 s near 1.5 BPM, and `numSteps = ceil(bpmSpan/0.4999)` up to ~25+ for a wide span), the residual can plausibly exceed the minimum 5-minute cool-down request (300 000 ms). When that happens:
 
-**File:** `src/app/App.session.test.tsx` (GAP 4 test — `root layout section is top-anchored`)
+- `endMs < cursorMs` → the cool-down segment has a **negative span**.
+- `getStretchFrame` then computes `activeSeg.endMs - activeSeg.startMs - CLAMP_EPSILON_MS` as a negative ceiling, `Math.min` pins `elapsedInSegment` negative, `cycleInSegment` goes negative, and `absoluteCycleIndex` can move **backwards** — violating the Pitfall-1 monotonic-cycleIndex invariant the file explicitly protects.
+- `computeStretchTotalMs` returns an `endMs` smaller than the preceding ramp segment's `endMs`, breaking the segment-table contiguity invariant asserted by the `segments are contiguous` test.
 
-**Issue:** The test locates the root section via `document.querySelectorAll('section')`
-then `.find(s => s.classList.contains('flex') && s.classList.contains('flex-col'))`. It
-picks the *first* `<section>` carrying both `flex` and `flex-col`. If any other section
-in the tree (now or in a future change) also uses a `flex flex-col` layout, the test
-silently asserts against the wrong element while still passing. The test also pins raw
-Tailwind class names (`justify-start`/`justify-center`), so it breaks on any layout
-refactor even when the visual intent (top-anchored) is preserved. This is a low-value,
-high-fragility test pinning an implementation detail.
+The file's own docstrings (DS-WR-02, CR-01) commit `buildStretchSegments` to defending against degenerate tables ("the engine never silently produces a poisoned table"). This new path drops that guarantee. Persisted data is clamped by `coerceStretchSettings`, but `buildStretchSegments` is exported and called directly in `App.tsx` and `sessionController.ts`, and the existing tests only exercise narrow BPM ranges (5.5/4.5, 6/4).
 
-**Fix:** Give the root section a stable selector hook (`data-testid="app-root-section"`
-or an accessible landmark role/label) and select on that so the assertion is
-deterministic:
+**Fix:** Guard the absorbed span; clamp to at least one cool-down cycle (or fail loud, consistent with the existing `RangeError` guards):
+
 ```ts
-const rootSection = screen.getByTestId('app-root-section')
-expect(rootSection).toHaveClass('justify-start')
-expect(rootSection).not.toHaveClass('justify-center')
+const requestedTotalMs = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
+const cycleMs = 60_000 / targetBpm
+// Residual absorption must never produce a zero/negative cool-down span.
+const minEndMs = cursorMs + cycleMs
+const endMs = Math.max(requestedTotalMs, minEndMs)
 ```
+
+Add a regression test with a wide, slow ramp (e.g. `initialBpm: 14, targetBpm: 1.5`, `warmUpMinutes: 15`, `rampDurationMinutes: 5`, `coolDownMinutes: 5`) asserting `endMs > cursorMs` and `cycleIndex` stays monotonic across the full sweep.
+
+### WR-02: Comment claims phaseProgress "reaches near 1.0" but the partial final cycle can make the last out-phase span far longer than `exhaleMs`
+
+**File:** `src/domain/stretchRamp.ts:244-258` (and the GAP-3 test at `stretchRamp.test.ts:310-354`)
+
+**Issue:** After the 34-10 rework the cool-down span is no longer a whole-cycle multiple, so the final cycle in the segment is a *partial* cycle. `getStretchFrame` still computes `cycleElapsedMs = elapsedInSegment - cycleInSegment * cycleMs` and `phaseDurationMs = exhaleMs` for the out-phase. If the partial final cycle ends mid-out-phase, `cycleElapsedMs - inhaleMs` can exceed `exhaleMs`, so `phaseProgress = phaseElapsedMs / phaseDurationMs` can exceed `1.0` for elapsed values just below `endMs`.
+
+The `phaseProgress is in [0, 1] range` test (`stretchRamp.test.ts:290-297`) only samples `t ∈ {0, 5000, 100000}` — none near the final partial cycle — so this is not caught. The GAP-3 test deliberately weakened its assertion to `> 0.8` and notes "may not reach near 1.0", which acknowledges the partial cycle but does not assert the *upper* bound. A `phaseProgress > 1` leaks into the orb-animation interpolation in `App.tsx`.
+
+**Fix:** Clamp `phaseProgress` to `[0, 1]` in `getStretchFrame`:
+
+```ts
+const rawProgress = phaseDurationMs === 0 ? 0 : phaseElapsedMs / phaseDurationMs
+const phaseProgress = Math.min(1, Math.max(0, rawProgress))
+```
+
+Then strengthen the `[0,1]` test to sample the final partial cycle (e.g. `sessionEndMs - 1`, `sessionEndMs - cycleMs/4`) and assert `<= 1`.
+
+### WR-03: Cool-down segment construction duplicates `makeSegment` logic instead of reusing it
+
+**File:** `src/domain/stretchRamp.ts:174-192`
+
+**Issue:** The bounded cool-down branch re-derives `cycleMs`, `inhaleMs`, `exhaleMs`, `startMs`, `endMs`, and the full `StretchSegment` literal by hand, duplicating the formulas already centralized in `makeSegment` (`stretchRamp.ts:110-136`). This is the exact code the closure was written to own. The duplication is a maintenance hazard: a future change to the ratio math or the segment shape (e.g. adding a field) must be made in two places, and `makeSegment`'s own `inhaleMs`/`exhaleMs` formulas could silently diverge from the inlined copy. The inline copy also does not advance `cumulativeCycles`/`cursorMs`, which is correct only because it is the last segment — a fragile assumption if a Step 4 is ever added.
+
+**Fix:** Extend `makeSegment` to accept an explicit (un-snapped) span, e.g. add an optional `snap` flag or an `exactDurationMs` parameter, so the cool-down segment is produced through the same path:
+
+```ts
+function makeSegment(bpm, requestedMs, stage, opts?: { snap?: boolean }) {
+  // ...
+  const snap = opts?.snap ?? true
+  const durationMs = isOpenEnded
+    ? Infinity
+    : snap
+      ? Math.max(1, Math.round(requestedMs / cycleMs)) * cycleMs
+      : requestedMs
+  // ...
+}
+// cool-down:
+segments.push(makeSegment(targetBpm, requestedTotalMs - cursorMs, 'hold-target', { snap: false }))
+```
+
+This keeps `cumulativeCycles`/`cursorMs` bookkeeping and the segment shape in one place.
 
 ## Info
 
-### IN-01: `buildStretchSegments` and `coerceStretchSettings` CR-01 guards diverge in strictness — document the asymmetry
+### IN-01: `CLAMP_EPSILON_MS` declared inside `getStretchFrame` on every call
 
-**File:** `src/domain/stretchRamp.ts:90-92` and `src/storage/practices.ts:97-114`
+**File:** `src/domain/stretchRamp.ts:243`
 
-**Issue:** `buildStretchSegments` rejects `!(targetBpm < initialBpm)` by throwing.
-`coerceStretchSettings` enforces the same cross-field invariant but restricts only
-`initialBpm` to `STRETCH_INITIAL_BPM_OPTIONS`; `targetBpm` is gated only by `isValidBpm`
-(full `BPM_OPTIONS`, which includes `1`). This is not a defect — any BPM strictly below a
-valid `initialBpm` is a legitimate ramp endpoint, so the engine accepts it — but the
-asymmetry (initialBpm option-restricted, targetBpm not) is undocumented beyond the
-WR-01-rationale comment and could surprise a future maintainer reading either function in
-isolation.
+**Issue:** `const CLAMP_EPSILON_MS = 1` is a fixed constant declared in the function body, so it is re-created on every frame computation (this runs per animation frame). It is also conceptually a module-level tuning constant, alongside `RATIO_PARTS`.
 
-**Fix:** Add a one-line comment in `coerceStretchSettings` stating that `targetBpm` is
-intentionally only `isValidBpm`-gated (not option-restricted) because the cross-field
-check below guarantees it lands strictly below a valid `initialBpm`.
+**Fix:** Hoist to module scope: `const CLAMP_EPSILON_MS = 1` near the top of the file, with the rationale comment attached there.
 
-### IN-02: GAP 1 rounding fix has no tolerance assertion against the true completion time
+### IN-02: GAP-3 test recomputes the last-cycle boundary with logic that mirrors production — risk of co-drift
 
-**File:** `src/components/SettingsForm.tsx:86-89`
+**File:** `src/domain/stretchRamp.test.ts:326-329, 435-437`
 
-**Issue:** `stretchDurationText` now applies `Math.round(stretchTotalMs / 60_000)`.
-`computeStretchTotalMs` returns the snapped segment table's final `endMs`, which is not
-whole-minute-aligned, so the rounded display can differ from the actual session length by
-up to ~30s. `getStretchFrame`'s `isComplete` still fires at the true unrounded `endMs`.
-This is acceptable and acknowledged in the code comment, but the GAP 1 tests only assert
-integer-ness of the displayed value — none assert it stays within tolerance of the real
-completion time, so a future change to the snapping logic that produces a wildly-off
-display would not be caught.
+**Issue:** Two tests recompute `startOfLastCycle` from `Math.floor((segSpan - 1) / cycleMs)` — re-deriving the same boundary math `getStretchFrame` performs internally. If a future change alters the clamp/floor logic, the test will recompute in lockstep and still pass, masking a real regression. The `- 1` magic number silently encodes `CLAMP_EPSILON_MS`.
 
-**Fix:** Optional — add an assertion that `Math.abs(stretchTotalMs / 60_000 -
-roundedMinutes) < 1` so the display cannot silently drift far from the true duration.
+**Fix:** Where possible, assert against observable frame outputs (`phase`, `cycleIndex`, `isComplete` transitions) rather than re-deriving internal boundaries, or import a shared constant so the `- 1` is not a duplicated magic number.
 
-### IN-03: GAP 2 `STRETCH_GROUPS` test constant is indirected through label strings — silent drift risk
+### IN-03: S-curve glyph path data is a magic string duplicated between component and test
 
-**File:** `src/components/SettingsForm.stretch.test.tsx:37`
+**File:** `src/components/PracticeToggle.tsx:42` and `src/components/PracticeToggle.test.tsx:180`
 
-**Issue:** `STRETCH_GROUPS = ['Start BPM', 'Target BPM', 'Warm-up', 'Stretch',
-'Settle']`. The stretch branch renders six steppers plus Ratio and Duration; the GAP 2
-hidden/visible tests iterate `STRETCH_GROUPS` and separately assert `Ratio` and
-`Duration`. The group names are hard-coded label strings rather than derived from the
-`strings` source the component consumes. If a label string changes, `STRETCH_GROUPS`
-drifts silently and the GAP 2 visibility test passes while checking fewer (or wrong)
-groups than intended.
+**Issue:** The path string `M2 13 Q5.5 2 9 9 T16 5.5` and `viewBox 0 0 18 18` appear verbatim in both the component and the test. The test asserting exact equality on the `d` attribute makes the test a pure change-detector rather than a behavior check, and any intentional glyph tweak requires editing the literal in two files.
 
-**Fix:** Derive the expected group list from the same `strings` source the component
-uses, or add a count assertion (`expect(screen.queryAllByRole('group')).toHaveLength(N)`)
-so the test fails loudly when a stepper is added or removed.
+**Fix:** Acceptable for an inline decorative SVG, but if the glyph is expected to evolve, consider exporting the path constant from the component and importing it in the test, or relax the test to assert the element is a `<path>` with `stroke="currentColor"` (which it already does) and drop the exact-`d` match.
 
 ---
 
-_Reviewed: 2026-05-18T00:00:00Z_
+_Reviewed: 2026-05-19T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
