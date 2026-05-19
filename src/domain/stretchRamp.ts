@@ -107,15 +107,29 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
   let cursorMs = 0
   let cumulativeCycles = 0
 
-  function makeSegment(bpm: number, requestedMs: number, stage: StretchStage): StretchSegment {
+  function makeSegment(
+    bpm: number,
+    requestedMs: number,
+    stage: StretchStage,
+    opts?: { snap?: boolean },
+  ): StretchSegment {
+    const snap = opts?.snap ?? true
     const cycleMs = 60_000 / bpm
     const inhaleMs = cycleMs * (ratioParts.inhale / 100)
     const exhaleMs = cycleMs * (ratioParts.exhale / 100)
     const isOpenEnded = requestedMs === Infinity
     // Snap the requested duration to a whole number of cycles so the segment
     // boundary lands on an Out→In transition (mid-cycle BPM-step bug fix).
+    // When snap is false (bounded cool-down residual absorption), the requested
+    // span is used verbatim — but still floored at one whole cycle so the span
+    // can never be zero or negative (WR-01: the snapping residual from prior
+    // segments can otherwise exceed the requested cool-down span).
     const cycleCount = isOpenEnded ? 0 : Math.max(1, Math.round(requestedMs / cycleMs))
-    const durationMs = isOpenEnded ? Infinity : cycleCount * cycleMs
+    const durationMs = isOpenEnded
+      ? Infinity
+      : snap
+        ? cycleCount * cycleMs
+        : Math.max(cycleMs, requestedMs)
     const startMs = cursorMs
     const endMs = isOpenEnded ? Infinity : cursorMs + durationMs
     const seg: StretchSegment = {
@@ -163,33 +177,24 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     // residual from Steps 1–2 so the realized total equals the requested whole-minute
     // total exactly (operator decision — honor the exact total, plan 34-10 UAT GAP 1).
     //
-    // The cool-down span is set directly to requestedTotalMs - cursorMs rather than
-    // being snapped to a whole number of targetBpm cycles. The cycleMs field retains
-    // the true breath-cycle length (60_000 / targetBpm) so that getStretchFrame's
+    // The cool-down span is set to requestedTotalMs - cursorMs rather than being
+    // snapped to a whole number of targetBpm cycles. This is produced through
+    // makeSegment with { snap: false } so the segment shape, cycleMs/inhaleMs/
+    // exhaleMs ratio math, and cursorMs/cumulativeCycles bookkeeping all stay
+    // owned by a single code path (WR-03 — no hand-rolled duplicate of makeSegment).
+    //
+    // makeSegment's snap:false branch floors the span at one whole cycle
+    // (Math.max(cycleMs, requestedMs)) so the cool-down span can never be zero or
+    // negative even when the upward snapping residual from prior segments exceeds
+    // the requested cool-down span (WR-01). The cycleMs field retains the true
+    // breath-cycle length (60_000 / targetBpm) so getStretchFrame's
     //   Math.floor(elapsedInSegment / cycleMs)
     // phase math is completely unchanged — only the span shifts; the cycle length does not.
     //
     // Pitfall-1 invariant: cycleBaseIndex = cumulativeCycles (the running total from
     // all prior segments) keeps the absolute monotonic cycleIndex intact.
     const requestedTotalMs = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60_000
-    const cycleMs = 60_000 / targetBpm
-    const inhaleMs = cycleMs * (ratioParts.inhale / 100)
-    const exhaleMs = cycleMs * (ratioParts.exhale / 100)
-    const startMs = cursorMs
-    const endMs = requestedTotalMs
-    segments.push({
-      startMs,
-      endMs,
-      bpm: targetBpm,
-      cycleMs,
-      inhaleMs,
-      exhaleMs,
-      stage: 'hold-target',
-      cycleBaseIndex: cumulativeCycles,
-    })
-    // Note: cursorMs and cumulativeCycles are not updated after the final segment
-    // (no further segments follow). The cycleBaseIndex is already set from the
-    // running cumulativeCycles total.
+    segments.push(makeSegment(targetBpm, requestedTotalMs - cursorMs, 'hold-target', { snap: false }))
   }
 
   return segments

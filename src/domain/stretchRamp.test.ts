@@ -177,6 +177,45 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
     expect(segs.length).toBeGreaterThan(2)
     expect(segs.some(s => s.stage === 'ramp')).toBe(true)
   })
+
+  // WR-01 regression: the bounded cool-down absorbs the upward cycle-snapping
+  // residual from warm-up + ramp. For a wide, slow ramp the residual can exceed
+  // the requested cool-down span — the cool-down segment span must still be
+  // floored at one whole cycle (never zero or negative), and cycleIndex must
+  // stay monotonic across the full session sweep.
+  it('WR-01: wide slow ramp — cool-down span stays positive and cycleIndex is monotonic', () => {
+    const wideSlowSettings: StretchSettings = {
+      ratio: '40:60',
+      initialBpm: 14,
+      targetBpm: 1.5,
+      warmUpMinutes: 15,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    }
+    const segs = buildStretchSegments(wideSlowSettings)
+    const coolDown = segs[segs.length - 1] as StretchSegment
+
+    // The cool-down segment span must be strictly positive (endMs > startMs) and
+    // at least one whole cool-down cycle long — never zero or negative.
+    expect(coolDown.stage).toBe('hold-target')
+    expect(coolDown.endMs).toBeGreaterThan(coolDown.startMs)
+    expect(coolDown.endMs - coolDown.startMs).toBeGreaterThanOrEqual(coolDown.cycleMs)
+
+    // Segment-table contiguity invariant must hold: each segment startMs equals
+    // the previous endMs (a negative-span cool-down would violate this).
+    for (let i = 1; i < segs.length; i++) {
+      expect(segs[i]?.startMs).toBe(segs[i - 1]?.endMs)
+      expect(segs[i]!.endMs).toBeGreaterThan(segs[i]!.startMs)
+    }
+
+    // cycleIndex must stay monotonic across the full session sweep.
+    let lastIndex = -1
+    for (let t = 0; t <= coolDown.endMs; t += 1000) {
+      const frame = getStretchFrame(segs, t)
+      expect(frame.cycleIndex).toBeGreaterThanOrEqual(lastIndex)
+      lastIndex = frame.cycleIndex
+    }
+  })
 })
 
 describe('getStretchFrame', () => {
