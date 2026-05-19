@@ -345,6 +345,40 @@ describe('cueSynth', () => {
     }
   })
 
+  // AUDIO-01 — soft-attack envelope mode for the flute timbre.
+  // When preset.attackSec > 0, scheduleBowlCue uses a linear ramp 0→peakGain over attackSec
+  // then the existing exp decay (with ramp end as the decay start). Bowl retains strike.
+
+  it('scheduleInCueForTimbre(flute) applies a soft-attack envelope — setValueAtTime near-zero, then linearRampToValueAtTime(peakGain, when+0.13)', () => {
+    const ac = createAc()
+    const handle = scheduleInCueForTimbre(ac, 1.0, ac.destination, 'flute')
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
+
+    // Soft attack: gain starts near-zero at `when`, then ramps up to peakGain
+    expect(setValue).toHaveBeenCalledWith(expect.closeTo(0.0001, 5), 1.0)
+    // linearRamp to peakGain 0.18 at when + attackSec 0.13
+    expect(linearRamp).toHaveBeenCalledWith(expect.closeTo(0.18, 5), expect.closeTo(1.13, 5))
+  })
+
+  it('scheduleInCueForTimbre(bowl) still uses the strike path — setValueAtTime(peakGain, when), no linearRampToValueAtTime', () => {
+    const ac = createAc()
+    const handle = scheduleInCueForTimbre(ac, 1.0, ac.destination, 'bowl')
+    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
+
+    // Strike path: gain is immediately set to peakGain 0.18
+    expect(setValue).toHaveBeenCalledWith(0.18, 1.0)
+    // No linear ramp — strike has no attack
+    expect(linearRamp).not.toHaveBeenCalled()
+  })
+
   it('scheduleOutCue with phaseDurationSec=30 (BPM=1) sustains at floor for the full phase — no MAX_TAU silence cliff', () => {
     // The previous τ-stretch implementation went silent before flip at BPM=1
     // because exponential decay to 0 has no audible floor. This regression
