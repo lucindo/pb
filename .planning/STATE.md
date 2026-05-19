@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-18 — Phase 32 complete; v1.5 all ph
 Phase: 34
 Plan: Not started
 Status: Milestone complete
-Last activity: 2026-05-19 - Completed quick task 260519-68l: Learn screen tweaks (bigger section titles, relocated Forrest tagline)
+Last activity: 2026-05-19 - Completed quick task 260519-6j6: Navi Kriya description trim + center iOS install button
 Progress: [██████████] 100% — 3/3 phases complete
 
 ## Performance Metrics
@@ -83,6 +83,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 260519-63b | Change the Stretch practice heading to "HRV Stretch" (pt-BR "Alongar VFC") | 2026-05-19 | 6eb4d23 | [260519-63b-change-the-stretch-practice-heading-to-h](./quick/260519-63b-change-the-stretch-practice-heading-to-h/) |
 | 260519-68l | Learn screen tweaks: bigger section titles (text-xl), relocate Forrest teachings tagline above affiliation line | 2026-05-19 | a481f87 | [260519-68l-learn-screen-tweaks-bigger-section-title](./quick/260519-68l-learn-screen-tweaks-bigger-section-title/) |
 | fast | Center the "About this practice" title in the Learn dialog | 2026-05-19 | 4ddbe27 | — |
+| 260519-6j6 | Trim "moving attention along the spine" from Navi Kriya Learn description (EN + pt-BR); center the iOS "How to install" button in Settings | 2026-05-19 | 6199b42 | [260519-6j6-learn-navi-description-trim-center-how-t](./quick/260519-6j6-learn-navi-description-trim-center-how-t/) |
 
 ## Deferred Items
 
