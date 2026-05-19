@@ -105,7 +105,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
       className="modal-fade m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
-        <h2 id="learn-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.title}</h2>
+        <h2 id="learn-dialog-title" className="text-center text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.title}</h2>
 
         {/* D-01 (FIRST): Practice description — practice-specific per activePractice.
             D-08: section headings are the sole signal of which practice is shown; no extra practice label. */}
