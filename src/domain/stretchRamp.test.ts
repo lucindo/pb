@@ -298,6 +298,109 @@ describe('getStretchFrame', () => {
     const frame2 = getStretchFrame(segs, 5000)
     expect(frame2.remainingMs).toBeLessThan(frame1.remainingMs ?? Infinity)
   })
+
+  // DS-WR-03 regression tests — GAP 3 fix (plan 34-09)
+  // Verifies the clamp guards only the exact endMs landing (phantom-cycle protection),
+  // NOT the whole final half-cycle (freeze removed).
+
+  it('GAP-3: phaseProgress is NOT frozen during the final cycle — the orb animates the last exhale', () => {
+    // Reproduce the 5-min cool-down freeze: sample the final out-phase (last exhale) and
+    // confirm phaseProgress keeps advancing all the way to near 1.0 until isComplete fires.
+    // With the broken DS-WR-03 clamp (segmentSpan - cycleMs/2), phaseProgress freezes at
+    // ~1/6 for the entire last exhale. After the fix it should reach >= 0.95.
+    const segs = buildStretchSegments(baseSettings)
+    const coolDownSeg = segs[segs.length - 1] as StretchSegment
+    const sessionEndMs = coolDownSeg.endMs
+    const cycleMs = coolDownSeg.cycleMs
+    const inhaleMs = coolDownSeg.inhaleMs
+
+    // The last out-phase starts at: startOfLastCycle + inhaleMs
+    const startOfLastCycle = sessionEndMs - cycleMs
+    const outPhaseStartMs = startOfLastCycle + inhaleMs
+    const outPhaseEndMs = sessionEndMs - 1 // just before isComplete fires
+
+    // Sample 10 points across the final out-phase
+    const outPhaseSamples: number[] = []
+    for (let i = 0; i <= 10; i++) {
+      outPhaseSamples.push(outPhaseStartMs + (i / 10) * (outPhaseEndMs - outPhaseStartMs))
+    }
+
+    const outFrames = outPhaseSamples.map(t => getStretchFrame(segs, t))
+
+    // All frames in the final out-phase must stay in 'out' phase
+    for (const f of outFrames) {
+      expect(f.phase).toBe('out')
+      expect(f.isComplete).toBe(false)
+    }
+
+    // phaseProgress must advance from 0 to near 1.0 across the final out-phase.
+    // The last sample is at sessionEndMs - 1; exhaleMs = cycleMs - inhaleMs.
+    // With the fix: phaseProgress near the end should be well above 0.9.
+    // With the broken clamp: phaseProgress is frozen at ~1/6 (=0.167 for 40:60 ratio).
+    const lastFrame = outFrames[outFrames.length - 1]!
+    expect(lastFrame.phaseProgress).toBeGreaterThan(0.9)
+  })
+
+  it('GAP-3: remainingMs decreases monotonically across the final cycle and isComplete stays false until sessionEndMs', () => {
+    const segs = buildStretchSegments(baseSettings)
+    const coolDownSeg = segs[segs.length - 1] as StretchSegment
+    const sessionEndMs = coolDownSeg.endMs
+    const cycleMs = coolDownSeg.cycleMs
+    const lastCycleStartMs = sessionEndMs - cycleMs
+
+    const samples: number[] = []
+    for (let t = lastCycleStartMs; t <= sessionEndMs; t += Math.max(1, Math.floor(cycleMs / 10))) {
+      samples.push(t)
+    }
+    // Ensure sessionEndMs is included
+    if (!samples.includes(sessionEndMs)) samples.push(sessionEndMs)
+    samples.sort((a, b) => a - b)
+
+    let lastRemaining = Infinity
+    for (const t of samples) {
+      const f = getStretchFrame(segs, t)
+      if (t < sessionEndMs) {
+        expect(f.isComplete).toBe(false)
+        const rem = f.remainingMs ?? Infinity
+        expect(rem).toBeLessThanOrEqual(lastRemaining)
+        lastRemaining = rem
+      } else {
+        // At exactly sessionEndMs
+        expect(f.isComplete).toBe(true)
+        expect(f.remainingMs).toBe(0)
+      }
+    }
+  })
+
+  it('GAP-3 (phantom-cycle protection preserved): frame at exactly sessionEndMs carries the last real cycle index, not one past it', () => {
+    const segs = buildStretchSegments(baseSettings)
+    const coolDownSeg = segs[segs.length - 1] as StretchSegment
+    const sessionEndMs = coolDownSeg.endMs
+
+    // The frame just before endMs and the frame at endMs must be on the same cycle index.
+    const frameBefore = getStretchFrame(segs, sessionEndMs - 1)
+    const frameAt = getStretchFrame(segs, sessionEndMs)
+
+    expect(frameAt.isComplete).toBe(true)
+    expect(frameAt.cycleIndex).toBe(frameBefore.cycleIndex)
+  })
+
+  it('GAP-3 (open-ended unaffected): getStretchFrame advances normally at a large elapsed for an open-ended session', () => {
+    const segs = buildStretchSegments(openEndedSettings)
+    const largeElapsed = 3_600_000 // 1 hour
+
+    const frame1 = getStretchFrame(segs, largeElapsed)
+    const frame2 = getStretchFrame(segs, largeElapsed + 1000)
+
+    // The open-ended path is never clamped — cycleIndex must advance
+    expect(frame2.cycleIndex).toBeGreaterThanOrEqual(frame1.cycleIndex)
+    // isComplete stays false
+    expect(frame1.isComplete).toBe(false)
+    expect(frame2.isComplete).toBe(false)
+    // phaseProgress stays in [0,1]
+    expect(frame1.phaseProgress).toBeGreaterThanOrEqual(0)
+    expect(frame1.phaseProgress).toBeLessThanOrEqual(1)
+  })
 })
 
 describe('computeStretchTotalMs (StretchSettings — D-02)', () => {
