@@ -199,8 +199,8 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('DEFAULT_PREFS.cue === "labels" (Phase 25 CUE-01)', () => {
-    expect(DEFAULT_PREFS.cue).toBe('labels')
+  it('DEFAULT_PREFS.cue === "arrow" (quick task 260519-9mi)', () => {
+    expect(DEFAULT_PREFS.cue).toBe('arrow')
   })
 
   it('preserves settings, mute, and stats fields when saving prefs (envelope merge)', () => {

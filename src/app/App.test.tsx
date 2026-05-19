@@ -113,19 +113,16 @@ describe('CUE-01 capture-at-session-start (T-25-09)', () => {
     window.localStorage.clear()
   })
 
-  it('default cue=labels renders the visible In/Out text — zero regression', async () => {
-    // No seedCue — localStorage cleared; loadPrefs().cue coerces to DEFAULT_CUE='labels'.
+  it('default cue=arrow renders the SVG glyph — zero regression', async () => {
+    // No seedCue — localStorage cleared; loadPrefs().cue coerces to DEFAULT_CUE='arrow'.
     render(<App />)
 
     await startAndAdvancePastLeadIn()
 
     const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    // In labels mode: phaseLabel is rendered as visible text directly in the shape.
-    // No aria-hidden SVG should be present (arrow/nose modes render that).
+    // Arrow mode: CueGlyph renders an aria-hidden SVG (chevron) + sr-only phaseLabel.
     const svg = shape.querySelector('svg[aria-hidden="true"]')
-    expect(svg).toBeNull()
-    // The visible text "In" must be present.
-    expect(shape).toHaveTextContent('In')
+    expect(svg).not.toBeNull()
   })
 
   it('arrow cue seeded before Start renders an aria-hidden SVG (not raw text) in the shape', async () => {
