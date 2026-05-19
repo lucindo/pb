@@ -640,14 +640,16 @@ describe('Navi Kriya session integration (Phase 31)', () => {
   })
 
   it('runs a session end to end: counts OMs, completes, shows the inline completion headline, records NK stats (NK-01/08/09)', async () => {
-    seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
+    // frontCount must be in NK_FRONT_COUNT_OPTIONS (min 100); coerceNaviKriyaSettings
+    // snaps any stale persisted value — use 100 so the seeded value passes through unchanged.
+    seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    // Countdown, then the full self-rescheduling OM chain (4 front + 1 back).
+    // Countdown, then the full self-rescheduling OM chain (100 front + 25 back).
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(4, 'fast', 1) + 2_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + 2_000)
       await Promise.resolve()
     })
 
@@ -664,13 +666,13 @@ describe('Navi Kriya session integration (Phase 31)', () => {
   })
 
   it('does not touch Resonant stats when a Navi Kriya session completes (NK-08 isolation)', async () => {
-    seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
+    seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(4, 'fast', 1) + 2_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + 2_000)
       await Promise.resolve()
     })
 
@@ -682,7 +684,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
   })
 
   it('cancels during the countdown before the engine starts (HRV parity)', async () => {
-    seedNK({ frontCount: 4, omLength: 'fast', rounds: 1 })
+    seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
@@ -696,7 +698,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     // Advance well past when the engine would have started and completed.
     await act(async () => {
       await Promise.resolve()
-      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(4, 'fast', 1) + 2_000)
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + 2_000)
       await Promise.resolve()
     })
 
@@ -707,9 +709,10 @@ describe('Navi Kriya session integration (Phase 31)', () => {
   })
 
   it('ending early records the completed rounds and elapsed time (NK-07, D-13)', async () => {
-    // A 2-round slow session: round 1 (12 front + 3 back OMs) runs well past the
-    // 30s recording threshold, so an early end after round 1 is recorded.
-    seedNK({ frontCount: 12, omLength: 'slow', rounds: 2 })
+    // A 2-round fast session: round 1 (100 front + 25 back OMs) runs well past
+    // the 30s recording threshold, so an early end after round 1 is recorded.
+    // frontCount 100 is in NK_FRONT_COUNT_OPTIONS — passes through coercion unchanged.
+    seedNK({ frontCount: 100, omLength: 'fast', rounds: 2 })
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
@@ -718,7 +721,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     await act(async () => {
       await Promise.resolve()
       vi.advanceTimersByTime(
-        NK_COUNTDOWN + nkSessionMs(12, 'slow', 1) + NK_LEAD_MS + 2 * NK_OM_SECONDS.slow * 1000,
+        NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + NK_LEAD_MS + 2 * NK_OM_SECONDS.fast * 1000,
       )
     })
 

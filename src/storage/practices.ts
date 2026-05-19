@@ -30,6 +30,7 @@ import {
 } from '../domain/settings'
 import {
   DEFAULT_NK_SETTINGS,
+  NK_FRONT_COUNT_OPTIONS,
   isValidOmLength,
   isValidRounds,
   type NaviKriyaSettings,
@@ -63,6 +64,24 @@ export function coerceActivePractice(raw: unknown): PracticeId {
   return raw === 'resonant' || raw === 'stretch' || raw === 'naviKriya' ? raw : 'resonant'
 }
 
+// snapToNearestOption: returns the NK_FRONT_COUNT_OPTIONS entry nearest to
+// `value`. Ties (equidistant between two adjacent options) round UP to the
+// higher option. Values below the minimum option snap up to the minimum.
+function snapToNearestOption(value: number): number {
+  let best = NK_FRONT_COUNT_OPTIONS[0]!
+  let bestDist = Math.abs(value - best)
+  for (const option of NK_FRONT_COUNT_OPTIONS) {
+    const dist = option - value  // signed: negative means option < value
+    const absDist = Math.abs(dist)
+    // Prefer the higher option on a tie (dist >= 0 means option >= value).
+    if (absDist < bestDist || (absDist === bestDist && dist >= 0)) {
+      best = option
+      bestDist = absDist
+    }
+  }
+  return best
+}
+
 export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
   const r = asRecord(raw)
   // frontCount (Pitfall 5 / T-30-06): a tampered non-multiple-of-4 value is
@@ -70,11 +89,16 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
   // backCount = frontCount / 4 is never fractional in Phase 31 arithmetic.
   // A non-finite / non-positive value (or one that rounds to 0) falls back to
   // the default.
+  // Then snap to the nearest NK_FRONT_COUNT_OPTIONS entry so the SettingsStepper
+  // always has a valid selectedIndex. Ties round UP. Values below the minimum
+  // snap up to the minimum (100). Without this snap, a returning user with a
+  // stale persisted frontCount not in the new options would see index -1 in the
+  // stepper, disabling both +/- buttons (AH-WR-02 / 260519-91w operator decision).
   let frontCount = DEFAULT_NK_SETTINGS.frontCount
   const fc = r.frontCount
   if (typeof fc === 'number' && Number.isFinite(fc) && fc > 0) {
     const rounded = Math.floor(fc / 4) * 4
-    if (rounded > 0) frontCount = rounded
+    if (rounded > 0) frontCount = snapToNearestOption(rounded)
   }
   return {
     frontCount,
