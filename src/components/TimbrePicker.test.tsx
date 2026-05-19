@@ -40,7 +40,7 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(4)
     const labels = Array.from(radios).map((b) => b.textContent)
-    expect(labels).toEqual(['Bowl', 'Bell', 'Sine', 'Chime'])
+    expect(labels).toEqual(['Bowl', 'Bell', 'Sine', 'Flute'])
   })
 
   it('aria-checked reflects the stored timbre — seeded timbre has aria-checked=true, others false', () => {
@@ -97,8 +97,8 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     seedTimbre('bowl')
     const user = userEvent.setup()
     render(<TimbrePicker disabled={true} strings={EN_STRINGS_FIXTURE.timbres} sectionLabel={EN_STRINGS_FIXTURE.settings.timbreLabel} />)
-    const chimeButton = screen.getByRole('radio', { name: 'Chime' })
-    await user.click(chimeButton)
+    const fluteButton = screen.getByRole('radio', { name: 'Flute' })
+    await user.click(fluteButton)
     const stored = window.localStorage.getItem(STATE_KEY)
     expect(stored).not.toBeNull()
     // Reason: stored is asserted non-null on the line above; non-null assertion is invariant-safe.
@@ -108,10 +108,10 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
   })
 
   it('selected option retains its aria-checked highlight even when disabled=true', () => {
-    seedTimbre('chime')
+    seedTimbre('flute')
     render(<TimbrePicker disabled={true} strings={EN_STRINGS_FIXTURE.timbres} sectionLabel={EN_STRINGS_FIXTURE.settings.timbreLabel} />)
-    const chimeButton = screen.getByRole('radio', { name: 'Chime' })
-    expect(chimeButton).toHaveAttribute('aria-checked', 'true')
-    expect(chimeButton).toBeDisabled()
+    const fluteButton = screen.getByRole('radio', { name: 'Flute' })
+    expect(fluteButton).toHaveAttribute('aria-checked', 'true')
+    expect(fluteButton).toBeDisabled()
   })
 })
