@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-18 — Phase 32 complete; v1.5 all ph
 Phase: 35
 Plan: Not started
 Status: Milestone complete
-Last activity: 2026-05-19
+Last activity: 2026-05-19 - Completed quick task 260519-91w: Review all app config values and defaults
 Progress: [██████████] 100% — 3/3 phases complete
 
 ## Performance Metrics
@@ -67,7 +67,6 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ### Pending Todos
 
 - v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
-- Review all app config values and defaults (HRV + Navi — every default/min/max/step) before milestone close — `.planning/todos/pending/2026-05-17-review-all-app-config-values-and-defaults.md`.
 
 ### Blockers/Concerns
 
@@ -85,6 +84,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | fast | Center the "About this practice" title in the Learn dialog | 2026-05-19 | 4ddbe27 | — |
 | 260519-6j6 | Trim "moving attention along the spine" from Navi Kriya Learn description (EN + pt-BR); center the iOS "How to install" button in Settings | 2026-05-19 | 6199b42 | [260519-6j6-learn-navi-description-trim-center-how-t](./quick/260519-6j6-learn-navi-description-trim-center-how-t/) |
 | fast | Rename resonant practice to "HRV Breathing" in the reset-stats dialog (EN) — "Reset HRV Breathing stats?" | 2026-05-19 | 7003fb3 | — |
+| 260519-91w | Review all app config values and defaults — drop temporary 1-min HRV duration, NK frontCount options→100–500 (min 100), NK rounds→1–12, NK last-OM hold 2→1.5, remove dead NK_SETTLE_MS; all practice defaults confirmed unchanged | 2026-05-19 | fb7db31 | [260519-91w-review-all-app-config-values-and-default](./quick/260519-91w-review-all-app-config-values-and-default/) |
 
 ## Deferred Items
 
