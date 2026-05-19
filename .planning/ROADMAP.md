@@ -150,3 +150,17 @@ Plans:
 - [x] 34-10-PLAN.md — Gap closure (UAT GAP 1): rework buildStretchSegments so the final cool-down absorbs the cycle-snapping residual — a 5/5/5 session runs exactly 15:00
 - [x] 34-11-PLAN.md — Gap closure (UAT GAP 2): inline flex layout for the Treatment B pill + spike 007 S-curve Stretch glyph
 **UI hint**: yes
+
+### Phase 35: Flute Cue Timbre (replace Chime)
+
+**Goal:** Replace the Chime cue timbre — structurally a near-clone of Bowl (Bowl's `1.0 / 2.76 / 5.4` partial stack plus a `7.6×` shimmer) — with a Flute timbre clearly distinct from Bowl, Bell, and Sine. The flute uses harmonic sine partials and a ~0.13 s soft breath attack, which requires a soft-attack envelope mode on the breathing cue synth, a `chime → flute` rename across the timbre id and EN/PT-BR copy, and a storage coercion for persisted `timbre: 'chime'`.
+**Requirements**: AUDIO-01, AUDIO-02
+**Depends on:** Phase 34
+**Source:** Spike 008 (chime-replacement-timbre); blueprint in `.claude/skills/spike-findings-hrv/references/audio-cues.md`.
+**Success Criteria** (what must be TRUE):
+  1. The fourth cue timbre is a Flute — spike-008 preset (harmonic partials `1.0→1.0 / 2.0→0.22 / 3.0→0.08`, `decayTauIn/Out` 1.1/1.4, filter 4000 Hz / Q 0.4, `peakGain` 0.18, `attackSec` 0.13) — audibly distinct from Bowl, Bell, and Sine on the In (A4) and Out (A3) cues
+  2. The breathing cue synth (`cueSynth`) gains an optional soft-attack envelope mode; Bowl, Bell, and Sine cues plus the countdown/end cues stay byte-identical (the strike envelope remains the default)
+  3. The timbre is renamed `chime → flute` across the `TimbreId` union, the EN/PT-BR display strings, and `TimbrePicker`
+  4. A returning user with a persisted `timbre: 'chime'` preference is coerced to `'flute'` — no crash, preference preserved
+  5. The `timbres.ts` D-21 guard (every preset `fundamentalHzIn === 440 && fundamentalHzOut === 220`) still passes
+**Plans:** TBD

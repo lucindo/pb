@@ -51,6 +51,14 @@ requirement PRACTICE-F1 — the third practice. Sourced from spikes 002 + 007.
 - [x] **STRETCH-05**: A returning user's existing HRV and Navi data survives the upgrade, and prior Stretch usage is preserved under the new Stretch practice slice (storage-envelope migration)
 - [x] **STRETCH-06**: User can read all new Stretch UI copy in both English and native-quality PT-BR
 
+## Phase 35 — Flute Cue Timbre
+
+Post-v1.5 phase appended to the roadmap (like Phases 33 and 34). Sourced from spike 008
+(chime-replacement-timbre) — the operator found the Chime cue timbre too close to Bowl.
+
+- [ ] **AUDIO-01**: The Chime cue timbre is replaced by a Flute timbre — harmonic sine partials with a soft breath attack — audibly distinct from Bowl, Bell, and Sine on both the In and Out cues
+- [ ] **AUDIO-02**: A returning user with a persisted `timbre: 'chime'` preference is migrated to `'flute'` with no crash and no lost preference
+
 ## Future Requirements
 
 Deferred to a future release. Tracked but not in the v1.5 roadmap.
@@ -106,6 +114,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STRETCH-04 | Phase 34 | Complete |
 | STRETCH-05 | Phase 34 | Complete |
 | STRETCH-06 | Phase 34 | Complete |
+| AUDIO-01 | Phase 35 | Pending |
+| AUDIO-02 | Phase 35 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 18 total
