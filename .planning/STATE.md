@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-18 — Phase 32 complete; v1.5 all ph
 Phase: 35
 Plan: Not started
 Status: Milestone complete
-Last activity: 2026-05-19 - Completed quick task 260519-9mi: Set default values for app Settings items
+Last activity: 2026-05-19 - Completed quick task 260519-bee: Remove orphaned NK pause/resume code and strings
 Progress: [██████████] 100% — 3/3 phases complete
 
 ## Performance Metrics
@@ -87,6 +87,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 260519-91w | Review all app config values and defaults — drop temporary 1-min HRV duration, NK frontCount options→100–500 (min 100), NK rounds→1–12, NK last-OM hold 2→1.5, remove dead NK_SETTLE_MS; all practice defaults confirmed unchanged | 2026-05-19 | fb7db31 | [260519-91w-review-all-app-config-values-and-default](./quick/260519-91w-review-all-app-config-values-and-default/) |
 | 260519-9mi | Set default values for app Settings items — DEFAULT_CUE labels→arrow, DEFAULT_TIMBRE bowl→sine (supersedes the earlier CUE "fixed to labels" decision); Theme/Variant/Language defaults confirmed unchanged | 2026-05-19 | 296904b | [260519-9mi-set-default-values-for-app-settings-item](./quick/260519-9mi-set-default-values-for-app-settings-item/) |
 | fast | Make VITE_SWITCHER_TREATMENT=B the default in vite.config.ts (explicit 'A' opts out) | 2026-05-19 | f0f941f | — |
+| 260519-bee | Remove orphaned NK pause/resume code and strings — dead after the v1.5-audit NK-07 end-only amendment (useNKEngine pause()/resume() + interface members, controls.pause/controls.resume EN+PT-BR, stale tests) | 2026-05-19 | f285e58 | [260519-bee-remove-orphaned-nk-pause-resume-code-and](./quick/260519-bee-remove-orphaned-nk-pause-resume-code-and/) |
 
 ## Deferred Items
 
