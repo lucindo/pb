@@ -74,6 +74,21 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   (absent → current strike, so ticks stay byte-identical) and have `scheduleEndChord`
   pass it, alongside revised `END_CHORD_*` constants. Applies to both practices'
   completion sounds. (Spike 005, operator decision.)
+- The **Chime cue timbre is replaced by a Flute** — Chime is structurally a near-clone of
+  Bowl (Bowl's `1.0 / 2.76 / 5.4` stack + a `7.6×` shimmer), which is why the two sound
+  too close. Bowl is kept; the fourth timbre slot becomes a flute with a **soft breath
+  attack**. Preset: harmonic partials `1.0→1.0 / 2.0→0.22 / 3.0→0.08`, `decayTauIn 1.1`,
+  `decayTauOut 1.4`, `filterFreqHz 4000`, `filterQ 0.4`, `peakGain 0.18`, fundamentals
+  unchanged at `440/220`, `oscillatorType 'sine'`. The defining feature is a **~0.13 s
+  linear attack ramp** — the strike-envelope flute was rejected for sounding too close to
+  Sine. Build implications: (a) `cueSynth` must gain an optional soft-attack envelope mode
+  (ramp `0→peakGain` over `attackSec`, then the existing exp decay; absent/`0` ⇒ current
+  strike, so Bowl/Bell/Sine + countdown/end cues stay byte-identical — same shape as the
+  spike-005 pad mode); (b) `TimbrePreset` gains an `attackSec` field (`0` for the other
+  three); (c) the timbre is renamed `chime → flute` across the `TimbreId` union, EN/PT-BR
+  display strings, and `TimbrePicker`; (d) persisted `timbre: 'chime'` prefs need a
+  coercion/migration to `'flute'`. Needs its own planned phase. (Spike 008, operator
+  decision.)
 
 ## Spikes
 
@@ -86,4 +101,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 005 | session-end-sound-alternatives | comparison | Auditioning the current session-complete chord against alternatives surfaces the end sound worth shipping, and whether it ships longer | VALIDATED — winner: Warm pad fade | audio, session-end, sound-design, cue, comparison |
 | 006 | app-icon-alternatives | comparison | Reviewing meditation-themed installed-icon candidates in real iOS/Android masks surfaces the app icon worth shipping | VALIDATED — winner: Breathing rings | icon, pwa, branding, design, meditation, comparison |
 | 007 | three-practice-switcher | comparison | The top segmented control, extended to 3 practices (HRV/Stretch/Navi), stays legible and balanced at real mobile widths | VALIDATED — 3-practice switcher confirmed; both treatments ship behind a dev setting | ui, switcher, navigation, mobile, practice, comparison |
-| 008 | chime-replacement-timbre | comparison | Keep Bowl; replace Chime (a near-clone of Bowl) with a flute-family timbre clearly distinct from Bowl/Bell/Sine on In and Out cues, still calm | PENDING | audio, timbre, cue, sound-design, flute, comparison |
+| 008 | chime-replacement-timbre | comparison | Keep Bowl; replace Chime (a near-clone of Bowl) with a flute-family timbre clearly distinct from Bowl/Bell/Sine on In and Out cues, still calm | VALIDATED — winner: Flute — soft attack | audio, timbre, cue, sound-design, flute, comparison |

@@ -3,7 +3,7 @@ spike: 008
 name: chime-replacement-timbre
 type: comparison
 validates: "Given the kept bowl/bell/sine cues, when chime is replaced by a flute-family candidate, then the new timbre is clearly distinguishable from all three on In and Out cues and still reads as calm"
-verdict: PENDING
+verdict: VALIDATED — winner: Flute — soft attack
 related: [004, 005]
 tags: [audio, timbre, cue, sound-design, flute, comparison]
 ---
@@ -97,11 +97,55 @@ so what was auditioned is recorded, not just asserted.
 - **Envelope question:** a real flute has a breath attack, but `cueSynth` is strike-only.
   Rather than assume, the harness includes both a strike-envelope flute and a
   soft-attack flute so the operator can judge whether the engine extension earns its keep.
-- *(further entries added as the audition surfaces findings)*
+- **Audition outcome:** the operator chose **Flute — soft attack**. The ~0.13 s breath
+  onset is what makes it read as a flute rather than "another soft tone" — the
+  strike-envelope `Flute — pure` was distinct from Bowl/Bell but sat too close to Sine on
+  the In cue. The soft attack is therefore load-bearing, not cosmetic: it is the chosen
+  timbre's defining feature. This means the real build is **not** a pure `timbres.ts`
+  data change — `cueSynth` must gain an envelope mode (mirroring how spike 005's Warm pad
+  fade required an optional pad envelope-mode on `buildNKToneNodes`).
 
 ## Results
 
-**Verdict: PENDING** — awaiting operator audition. The harness is built and the four
-candidates are synthesized within the app's real constraints. The operator picks the
-replacement (or rejects all and redirects); the choice and rationale land here, and the
-winning preset's exact partial/decay/filter values become a MANIFEST requirement.
+**Verdict: VALIDATED — winner: Flute — soft attack.**
+
+The operator auditioned all four candidates against the kept Bowl/Bell/Sine and chose
+**Flute — soft attack**. Sine-additive synthesis (the app's D-14 constraint) *can*
+produce a timbre that reads as a flute and is clearly distinct from the other three —
+but only with the soft breath attack; the harmonic partial stack alone was not enough to
+separate it from Sine.
+
+**Winning preset** (the values the `chime` slot in `src/audio/timbres.ts` is replaced
+with — auditioned verbatim in the harness):
+
+| Field | Value |
+|-------|-------|
+| partials | `[1.0 → 1.0], [2.0 → 0.22], [3.0 → 0.08]` (harmonic) |
+| fundamentalHzIn / Out | `440` / `220` (unchanged — satisfies the D-21 guard) |
+| decayTauIn / Out | `1.1` / `1.4` |
+| filterFreqHz / filterQ | `4000` / `0.4` |
+| peakGain | `0.18` |
+| **attackSec** | **`0.13`** — soft breath onset (new) |
+| oscillatorType | `sine` (satisfies D-14) |
+
+**Surprise / key finding:** the strike-vs-attack distinction mattered more than the
+partial stack. `Flute — pure` (same partials, strike envelope) was rejected because on
+the In cue it was hard to tell apart from Sine — both are dominated by a clean
+fundamental with an instant onset. The 0.13 s attack ramp is what gives the flute its
+identity. The harmonic partials still do real work (they separate it cleanly from the
+inharmonic Bowl/Bell), but the envelope is the deciding factor.
+
+**Build signal:**
+1. **`cueSynth` needs an envelope mode.** Today it is strike-only (instant `peakGain` →
+   exp decay). The winning timbre needs an optional soft-attack mode: linear ramp
+   `0 → peakGain` over `attackSec`, *then* the existing exp decay. Absent/`0` ⇒ current
+   strike behaviour, so Bowl/Bell/Sine and the countdown/end cues stay byte-identical.
+   This is the same shape of change spike 005 made for the Warm pad fade.
+2. **`TimbrePreset` gains an `attackSec` field** (`0` for Bowl/Bell/Sine).
+3. **The fourth timbre is renamed `chime` → `flute`** — the `TimbreId` union, the
+   EN/PT-BR timbre display strings ("Chime"→"Flute"; PT-BR equivalent), and any
+   `TimbrePicker` ordering. This is a user-facing rename, not just an internal swap.
+4. Bowl is kept exactly as-is; Bell and Sine are untouched.
+5. Scope is a planned phase, not a quick task — it spans `timbres.ts`, `cueSynth.ts`,
+   the `TimbreId` type, i18n strings, and a storage consideration (existing users with
+   `timbre: 'chime'` persisted need a coercion/migration to `'flute'`).
