@@ -335,6 +335,34 @@ describe('getStretchFrame', () => {
     }
   })
 
+  // WR-02 regression: after the 34-10 residual-absorption rework the bounded
+  // cool-down span is no longer a whole-cycle multiple, so the final cycle is a
+  // partial cycle. If it ends mid-out-phase the raw phaseElapsedMs / exhaleMs
+  // ratio can exceed 1.0 for elapsed values just below endMs. phaseProgress must
+  // be clamped to [0, 1] so the orb-animation interpolation never overshoots.
+  it('WR-02: phaseProgress stays <= 1 across the final partial cycle', () => {
+    const segs = buildStretchSegments(baseSettings)
+    const coolDownSeg = segs[segs.length - 1] as StretchSegment
+    const sessionEndMs = coolDownSeg.endMs
+    const cycleMs = coolDownSeg.cycleMs
+
+    // Sample densely across the final cycle, including points right before endMs
+    // where a partial out-phase would push the raw ratio above 1.0.
+    const samples: number[] = [
+      sessionEndMs - 1,
+      sessionEndMs - cycleMs / 4,
+      sessionEndMs - cycleMs / 2,
+    ]
+    for (let t = Math.max(0, sessionEndMs - cycleMs); t < sessionEndMs; t += Math.max(1, Math.floor(cycleMs / 20))) {
+      samples.push(t)
+    }
+    for (const t of samples) {
+      const frame = getStretchFrame(segs, t)
+      expect(frame.phaseProgress).toBeGreaterThanOrEqual(0)
+      expect(frame.phaseProgress).toBeLessThanOrEqual(1)
+    }
+  })
+
   it('remainingMs decreases as session progresses for a finite session', () => {
     const segs = buildStretchSegments(baseSettings)
     const frame1 = getStretchFrame(segs, 0)

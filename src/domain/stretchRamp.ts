@@ -260,7 +260,14 @@ export function getStretchFrame(
   const isInPhase = cycleElapsedMs < activeSeg.inhaleMs
   const phaseElapsedMs = isInPhase ? cycleElapsedMs : cycleElapsedMs - activeSeg.inhaleMs
   const phaseDurationMs = isInPhase ? activeSeg.inhaleMs : activeSeg.exhaleMs
-  const phaseProgress = phaseDurationMs === 0 ? 0 : phaseElapsedMs / phaseDurationMs
+  // WR-02: after the 34-10 residual-absorption rework the bounded cool-down span
+  // is no longer a whole-cycle multiple, so the final cycle in that segment is a
+  // partial cycle. If it ends mid-out-phase, phaseElapsedMs can exceed exhaleMs,
+  // pushing the raw ratio above 1.0 for elapsed values just below endMs. Clamp to
+  // [0, 1] so the orb-animation interpolation in App.tsx never receives an
+  // out-of-range progress value.
+  const rawProgress = phaseDurationMs === 0 ? 0 : phaseElapsedMs / phaseDurationMs
+  const phaseProgress = Math.min(1, Math.max(0, rawProgress))
   const phase: BreathPhase = isInPhase ? 'in' : 'out'
 
   // Remaining and completion derive from the segment table's true end —
