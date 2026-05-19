@@ -23,6 +23,8 @@ export interface TimbrePreset {
   filterFreqHz: number
   filterQ: number
   peakGain: number
+  /** Soft-attack ramp duration in seconds; `0` = instant strike (default for Bowl/Bell/Sine). */
+  attackSec: number
   oscillatorType: OscillatorType
 }
 
@@ -44,6 +46,7 @@ export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
     filterFreqHz: 3000, // verbatim FILTER_FREQ_HZ
     filterQ: 0.5, // verbatim FILTER_Q
     peakGain: 0.18, // verbatim PEAK_GAIN
+    attackSec: 0, // instant strike — byte-identical to pre-AUDIO-01 behaviour
     oscillatorType: 'sine',
   },
   // D-03 — Bell preset: soft hand-bell variant, mildly inharmonic. 2.5 ratio is
@@ -62,6 +65,7 @@ export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
     filterFreqHz: 5000,
     filterQ: 0.8,
     peakGain: 0.18,
+    attackSec: 0, // instant strike — byte-identical to pre-AUDIO-01 behaviour
     oscillatorType: 'sine',
   },
   // D-04 — Sine preset: pure single sine, soft + long. Single 1.0-ratio partial;
@@ -77,25 +81,28 @@ export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
     filterFreqHz: 8000,
     filterQ: 0.3,
     peakGain: 0.18,
+    attackSec: 0, // instant strike — byte-identical to pre-AUDIO-01 behaviour
     oscillatorType: 'sine',
   },
-  // D-05 — Chime preset: windchime — Bowl partial stack (1.0 / 2.76 / 5.4) plus
-  // one extra high partial at 7.6× for shimmer. peakGain lowered to 0.16 to
-  // compensate equal-loudness perception of the extra high partial.
-  chime: {
+  // AUDIO-01 / spike-008 — Flute preset: harmonic sine-additive recipe with a soft breath
+  // attack. Replaces the old D-05 wind-bell slot (which was a near-clone of Bowl). Harmonic
+  // integer partials (1·2·3) separate it clearly from Bowl/Bell (inharmonic), and the
+  // 0.13 s attack ramp is the load-bearing feature that distinguishes it from Sine.
+  // fundamentalHzIn/Out stay at 440/220 (D-21 guard). oscillatorType stays 'sine' (D-14).
+  flute: {
     fundamentalHzIn: 440,
     fundamentalHzOut: 220,
     partials: [
       { ratio: 1.0, gain: 1.0 },
-      { ratio: 2.76, gain: 0.4 },
-      { ratio: 5.4, gain: 0.15 },
-      { ratio: 7.6, gain: 0.08 },
+      { ratio: 2.0, gain: 0.22 },
+      { ratio: 3.0, gain: 0.08 },
     ],
-    decayTauIn: 1.0,
+    decayTauIn: 1.1,
     decayTauOut: 1.4,
-    filterFreqHz: 7000,
-    filterQ: 1.0,
-    peakGain: 0.16,
+    filterFreqHz: 4000,
+    filterQ: 0.4,
+    peakGain: 0.18,
+    attackSec: 0.13, // soft breath onset — the deciding feature (spike-008)
     oscillatorType: 'sine',
   },
 } as const
