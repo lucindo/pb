@@ -436,13 +436,22 @@ describe('scheduleInCueForTimbre (all timbres)', () => {
     expect(oscillators[0]!.frequency.value).toBeCloseTo(preset.fundamentalHzIn, 5)
   })
 
-  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain', (timbre) => {
+  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain (strike → setValueAtTime; soft-attack → linearRampToValueAtTime)', (timbre) => {
     const ac = createAcForTimbre()
     const handle: CueHandle = scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
-    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
-    expect(setValue).toHaveBeenCalledWith(TIMBRE_PRESETS[timbre].peakGain, 1.0)
+    const preset = TIMBRE_PRESETS[timbre]
+    if (preset.attackSec > 0) {
+      // Soft-attack path: peakGain is the ramp target
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
+      expect(linearRamp).toHaveBeenCalledWith(preset.peakGain, expect.any(Number))
+    } else {
+      // Strike path: peakGain is set immediately
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+      expect(setValue).toHaveBeenCalledWith(preset.peakGain, 1.0)
+    }
   })
 
   it.each(TIMBRE_OPTIONS)('%s: decay time constant matches preset.decayTauIn', (timbre) => {
@@ -483,13 +492,22 @@ describe('scheduleOutCueForTimbre (all timbres)', () => {
     expect(oscillators[0]!.frequency.value).toBeCloseTo(preset.fundamentalHzOut, 5)
   })
 
-  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain', (timbre) => {
+  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain (strike → setValueAtTime; soft-attack → linearRampToValueAtTime)', (timbre) => {
     const ac = createAcForTimbre()
     const handle: CueHandle = scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
-    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
-    expect(setValue).toHaveBeenCalledWith(TIMBRE_PRESETS[timbre].peakGain, 1.0)
+    const preset = TIMBRE_PRESETS[timbre]
+    if (preset.attackSec > 0) {
+      // Soft-attack path: peakGain is the ramp target
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
+      expect(linearRamp).toHaveBeenCalledWith(preset.peakGain, expect.any(Number))
+    } else {
+      // Strike path: peakGain is set immediately
+      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+      expect(setValue).toHaveBeenCalledWith(preset.peakGain, 1.0)
+    }
   })
 
   it.each(TIMBRE_OPTIONS)('%s: decay time constant matches preset.decayTauOut', (timbre) => {
