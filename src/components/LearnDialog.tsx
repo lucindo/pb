@@ -14,10 +14,13 @@ import type { PracticeId } from '../storage/practices'
 // D-15: disclaimer copy lives ONLY inside this modal — not on the main screen.
 // Phase 32 Plan 02: practice-aware rendering — activePractice prop drives practice content selection.
 //   D-01 section order: practice description → practice videos → Forrest explainer →
-//   Forrest Resources → (native apps, resonant only per D-02) → affiliation → Close.
+//   Forrest Resources → (native apps, resonant only per D-02) → tagline → affiliation → Close.
 //   D-04: dialog title stays generic ("About this practice") — no practice name in title.
 //   D-07: every <a> carries target="_blank" rel="noopener noreferrer".
 //   D-08: practice-description heading is the sole signal of which practice is shown.
+// Quick task 260519-68l: inspiredByForrest tagline moved from Forrest explainer section
+//   to immediately above the affiliation micro-line (centered, italic, bold, text-xs,
+//   first-letter:uppercase CSS display-capitalisation — locked string unchanged).
 
 export interface LearnDialogProps {
   open: boolean
@@ -108,11 +111,11 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             D-08: section headings are the sole signal of which practice is shown; no extra practice label. */}
         <div className="grid gap-4">
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section1.title}</h3>
+            <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section1.title}</h3>
             <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section1.body}</p>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section2.title}</h3>
+            <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section2.title}</h3>
             <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section2.body}</p>
           </div>
         </div>
@@ -122,7 +125,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             Links: flat practiceContent.videos array — [heroVideo, ...keyVideos] for resonant; 2 links for NK.
             D-07: every <a> carries target="_blank" rel="noopener noreferrer". */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{videosHeading}</h3>
+          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{videosHeading}</h3>
           <div className="mt-1 grid gap-2">
             {practiceContent.videos.map((video) => (
               <a
@@ -140,16 +143,15 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
 
         {/* D-01 (THIRD): Who is Forrest Knutson — shared, always rendered (LEARN-03). */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
+          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
           {explainer.forrest.body.split('\n\n').map((paragraph) => (
             <p key={paragraph} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
           ))}
-          <p className="text-base leading-6 italic text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{lockedCopy.inspiredByForrest}</p>
         </div>
 
         {/* D-01 (FOURTH): Forrest Resources — shared, always rendered (LEARN-03). */}
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
+          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
           <div className="mt-1 grid gap-2">
             <a
               href={links.youtubeChannel.url}
@@ -193,7 +195,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             D-08: heading and labels name the "Resonant Breathing" app only — no Forrest authorship claim. */}
         {activePractice === 'resonant' && (
           <div>
-            <h3 className="text-base font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
+            <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
             <div className="mt-1 grid gap-2">
               <a
                 href={links.appStoreIos.url}
@@ -217,7 +219,9 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
 
         {/* D-14 amendment (2026-05-10, user-approved): the medical-advice
             micro-line was moved from this modal to the main breathing card
-            (D-15 amendment). Only the affiliation micro-line remains here. */}
+            (D-15 amendment). Only the affiliation micro-line remains here.
+            Tagline (inspiredByForrest) relocated above the affiliation line from the Forrest explainer section. */}
+        <p className="text-center text-xs font-bold italic first-letter:uppercase text-[var(--color-breathing-muted)]">{lockedCopy.inspiredByForrest}</p>
         <p className="text-center text-xs text-[var(--color-breathing-muted)]">
           {lockedCopy.affiliationLine}
         </p>
