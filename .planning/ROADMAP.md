@@ -137,7 +137,7 @@ Plans:
   5. A developer can switch the switcher between the two label treatments (text / icon+label) via a developer-only toggle that is NOT in the user Settings dialog
   6. User can read all new Stretch UI copy in both English and native-quality PT-BR
 **Open question:** RESOLVED — D-01: stretch moves out of HRV entirely; the resonant practice becomes standard-only.
-**Plans:** 10/11 plans executed
+**Plans:** 11/11 plans complete
 - [x] 34-01-PLAN.md — Split SessionSettings / new StretchSettings type + domain layer retype (settings, stretchRamp, sessionController)
 - [x] 34-02-PLAN.md — STATE_VERSION v2→v3 migration + practices.stretch storage slice (coercer, save/record)
 - [x] 34-03-PLAN.md — 3-pill PracticeToggle + A/B treatment glyphs behind VITE_SWITCHER_TREATMENT build-time env var
@@ -147,6 +147,6 @@ Plans:
 - [x] 34-07-PLAN.md — Gap closure (UAT 1/2/4): round stretch Duration, hide stretch steppers in-session, route stretch end through the confirmation dialog, top-anchor the layout
 - [x] 34-08-PLAN.md — Gap closure (verification CR-01): coerceStretchSettings cross-field targetBpm < initialBpm invariant + STRETCH_INITIAL_BPM_OPTIONS, buildStretchSegments RangeError guard
 - [x] 34-09-PLAN.md — Gap closure (UAT GAP 3, major): narrow the getStretchFrame DS-WR-03 clamp so the stretch orb completes its last in/out cycle instead of freezing mid-cycle
-- [ ] 34-10-PLAN.md — Gap closure (UAT GAP 1): rework buildStretchSegments so the final cool-down absorbs the cycle-snapping residual — a 5/5/5 session runs exactly 15:00
+- [x] 34-10-PLAN.md — Gap closure (UAT GAP 1): rework buildStretchSegments so the final cool-down absorbs the cycle-snapping residual — a 5/5/5 session runs exactly 15:00
 - [x] 34-11-PLAN.md — Gap closure (UAT GAP 2): inline flex layout for the Treatment B pill + spike 007 S-curve Stretch glyph
 **UI hint**: yes
