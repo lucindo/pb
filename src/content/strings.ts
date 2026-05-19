@@ -342,7 +342,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       // names live in *Heading (used for the app title + reset dialog).
       resonantName: 'HRV',
       naviKriyaName: 'Navi',
-      resonantHeading: 'Resonant Breathing',
+      resonantHeading: 'HRV Breathing',
       naviKriyaHeading: 'Navi Kriya',
       naviKriyaHeader: 'Navi practice',
       naviKriyaControlsPlaceholder: 'Controls coming soon',

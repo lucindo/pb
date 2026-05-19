@@ -214,7 +214,7 @@ describe('Phase 30 practice string keys', () => {
   it('practice headings keep the full names (D-05: untranslated Sanskrit proper noun)', () => {
     expect(UI_STRINGS.en.practice.naviKriyaHeading).toBe('Navi Kriya')
     expect(UI_STRINGS['pt-BR'].practice.naviKriyaHeading).toBe('Navi Kriya')
-    expect(UI_STRINGS.en.practice.resonantHeading).toBe('Resonant Breathing')
+    expect(UI_STRINGS.en.practice.resonantHeading).toBe('HRV Breathing')
   })
 })
 
