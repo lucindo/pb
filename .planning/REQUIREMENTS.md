@@ -20,15 +20,15 @@ Requirements for milestone v1.5. Each maps to exactly one roadmap phase.
 
 ### Navi Kriya
 
-- [ ] **NK-01**: User can start an app-paced Navi Kriya session in which the app counts each OM and auto-advances front → back → next round
-- [ ] **NK-02**: User can choose the number of rounds for a Navi Kriya session (default 3)
-- [ ] **NK-03**: User can choose the OM length — fast, medium, or slow
-- [ ] **NK-04**: User can choose the base front OM count (default 100); the back count is fixed at one quarter of the front
-- [ ] **NK-05**: User hears distinct cue sounds marking the start of the front phase, the start of the back phase, and the end of practice
-- [ ] **NK-06**: User can turn an audible per-OM cue on or off
-- [ ] **NK-07**: User can pause, resume, and end a Navi Kriya session in progress
-- [ ] **NK-08**: User can see Navi Kriya practice stats — sessions, rounds completed, and total minutes — tracked separately from Resonant Breathing stats
-- [ ] **NK-09**: User sees the current OM count, the active phase (front/back), and the current round on screen throughout a Navi Kriya session
+- [x] **NK-01**: User can start an app-paced Navi Kriya session in which the app counts each OM and auto-advances front → back → next round
+- [x] **NK-02**: User can choose the number of rounds for a Navi Kriya session (default 3)
+- [x] **NK-03**: User can choose the OM length — fast, medium, or slow
+- [x] **NK-04**: User can choose the base front OM count (default 100); the back count is fixed at one quarter of the front
+- [x] **NK-05**: User hears distinct cue sounds marking the start of the front phase, the start of the back phase, and the end of practice
+- [x] **NK-06**: User can turn an audible per-OM cue on or off
+- [x] **NK-07**: User can end a Navi Kriya session in progress _(amended at the v1.5 milestone audit, 2026-05-19: pause/resume dropped — Navi Kriya intentionally mirrors HRV's no-pause flow, per commit `c19c0e1`. Original text: "pause, resume, and end".)_
+- [x] **NK-08**: User can see Navi Kriya practice stats — sessions, rounds completed, and total minutes — tracked separately from Resonant Breathing stats
+- [x] **NK-09**: User sees the current OM count, the active phase (front/back), and the current round on screen throughout a Navi Kriya session
 
 ### Learn
 
@@ -91,20 +91,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PRACTICE-01 | Phase 30 | Complete |
-| PRACTICE-02 | Phase 30 | Complete |
+| PRACTICE-02 | Phase 30 (closed by Phase 33) | Complete |
 | PRACTICE-03 | Phase 30 | Complete |
 | PRACTICE-04 | Phase 30 | Complete |
 | PRACTICE-05 | Phase 30 | Complete |
 | PRACTICE-06 | Phase 30 | Complete |
-| NK-01 | Phase 31 | Pending |
-| NK-02 | Phase 31 | Pending |
-| NK-03 | Phase 31 | Pending |
-| NK-04 | Phase 31 | Pending |
-| NK-05 | Phase 31 | Pending |
-| NK-06 | Phase 31 | Pending |
-| NK-07 | Phase 31 | Pending |
-| NK-08 | Phase 31 | Pending |
-| NK-09 | Phase 31 | Pending |
+| NK-01 | Phase 31 | Complete |
+| NK-02 | Phase 31 | Complete |
+| NK-03 | Phase 31 | Complete |
+| NK-04 | Phase 31 | Complete |
+| NK-05 | Phase 31 | Complete |
+| NK-06 | Phase 31 | Complete |
+| NK-07 | Phase 31 | Complete (amended — end-only) |
+| NK-08 | Phase 31 | Complete |
+| NK-09 | Phase 31 | Complete |
 | LEARN-02 | Phase 32 | Complete |
 | LEARN-03 | Phase 32 | Complete |
 | I18N-08 | Phase 32 | Complete |
@@ -131,4 +131,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-17*
-*Last updated: 2026-05-18 — Phase 34 (Stretch as a Distinct Practice) appended; STRETCH-01..06 added, delivering Future requirement PRACTICE-F1*
+*Last updated: 2026-05-19 — v1.5 milestone re-audit: NK-01..09 marked Complete; NK-07 amended to end-only (pause/resume dropped to mirror HRV); PRACTICE-02 annotated as closed by Phase 33*
