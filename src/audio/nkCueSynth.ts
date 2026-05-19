@@ -1,7 +1,7 @@
 // Pure Web Audio synthesis builders for Navi Kriya cues. Zero React imports.
 //
 // NK-05 + D-05: All four cue functions read TIMBRE_PRESETS[timbre] and route
-// through the user's chosen timbre (Bowl / Bell / Sine / Chime).
+// through the user's chosen timbre (Bowl / Bell / Sine / Flute).
 //
 // D-06 (revised Phase 31 UAT): the Front/Back markers REUSE the HRV breath
 //       cues — Front plays the inhale ('in') cue, Back the exhale ('out') cue,

@@ -100,11 +100,25 @@ function scheduleBowlCue(
   filter.frequency.value = preset.filterFreqHz
   filter.Q.value = preset.filterQ
 
-  // Master envelope GainNode — strike-and-decay (D-01).
+  // Master envelope GainNode — AUDIO-01 optional soft-attack mode.
+  // When preset.attackSec > 0 (Flute): linear ramp 0 → peakGain over attackSec,
+  // then the existing exp decay starting from the ramp end (when + attackSec).
+  // When preset.attackSec is 0 (Bowl/Bell/Sine): instant strike-and-decay (byte-identical
+  // to the pre-AUDIO-01 implementation). Mirrors the spike-005 buildNKToneNodes
+  // number|PadEnvelope pattern — optional mode, strike is the default.
   const envelope = audioCtx.createGain()
-  envelope.gain.setValueAtTime(preset.peakGain, when)
   const decayTarget = needsSustain ? preset.peakGain * SUSTAIN_FLOOR_RATIO : NEAR_SILENCE
-  envelope.gain.setTargetAtTime(decayTarget, when + STRIKE_RAMP_OFFSET, defaultDecayTau)
+  if (preset.attackSec > 0) {
+    // Soft-attack path: breath onset ramp, then exponential decay from ramp end.
+    const attackEnd = when + preset.attackSec
+    envelope.gain.setValueAtTime(NEAR_SILENCE, when)
+    envelope.gain.linearRampToValueAtTime(preset.peakGain, attackEnd)
+    envelope.gain.setTargetAtTime(decayTarget, attackEnd, defaultDecayTau)
+  } else {
+    // Strike path (default): instant jump to peakGain, then exp decay.
+    envelope.gain.setValueAtTime(preset.peakGain, when)
+    envelope.gain.setTargetAtTime(decayTarget, when + STRIKE_RAMP_OFFSET, defaultDecayTau)
+  }
 
   let stopAt: number
   let cleanupAt: number

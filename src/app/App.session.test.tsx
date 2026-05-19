@@ -508,18 +508,18 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(firstCallArgs![3]).toBe('bell')
 
-    // (e) Mid-session pref change: write prefs.timbre='chime' to localStorage and fire
+    // (e) Mid-session pref change: write prefs.timbre='flute' to localStorage and fire
     //     the 'storage' event. This simulates a cross-tab pref change — if onStartClick
     //     re-read loadPrefs() OR the engine re-read prefs during reconstruction (D-11
-    //     violation), subsequent cue scheduling would observe 'chime'. The captured
+    //     violation), subsequent cue scheduling would observe 'flute'. The captured
     //     timbreRef.current inside useAudioCues must continue to dispatch 'bell'.
-    const chimeEnvelope = JSON.stringify({
+    const fluteEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'chime', variant: 'orb', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'flute', variant: 'orb', locale: 'en' },
     })
     act(() => {
-      window.localStorage.setItem(STATE_KEY, chimeEnvelope)
-      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: chimeEnvelope }))
+      window.localStorage.setItem(STATE_KEY, fluteEnvelope)
+      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: fluteEnvelope }))
     })
 
     // (f) Advance time past the first Out boundary (≈ 4.36 s into the running phase at
