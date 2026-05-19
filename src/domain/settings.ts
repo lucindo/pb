@@ -107,9 +107,9 @@ export function isValidTheme(v: unknown): v is ThemeId {
 
 export const DEFAULT_THEME: ThemeId = 'system'
 
-export type TimbreId = 'bowl' | 'bell' | 'sine' | 'chime'
+export type TimbreId = 'bowl' | 'bell' | 'sine' | 'flute'
 
-export const TIMBRE_OPTIONS = ['bowl', 'bell', 'sine', 'chime'] as const satisfies readonly TimbreId[]
+export const TIMBRE_OPTIONS = ['bowl', 'bell', 'sine', 'flute'] as const satisfies readonly TimbreId[]
 
 export function isValidTimbre(v: unknown): v is TimbreId {
   return typeof v === 'string' && (TIMBRE_OPTIONS as readonly string[]).includes(v)

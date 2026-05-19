@@ -63,7 +63,7 @@ export interface UiStrings {
     readonly bowl: string
     readonly bell: string
     readonly sine: string
-    readonly chime: string
+    readonly flute: string
   }
   readonly settingsForm: {
     readonly ariaLabel: string
@@ -247,7 +247,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       bowl: 'Bowl',
       bell: 'Bell',
       sine: 'Sine',
-      chime: 'Chime',
+      flute: 'Flute',
     },
     settingsForm: {
       ariaLabel: 'Session settings',
@@ -430,7 +430,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       bowl: 'Tigela',
       bell: 'Sino',
       sine: 'Senoidal',
-      chime: 'Carrilhão',
+      flute: 'Flauta',
     },
     settingsForm: {
       ariaLabel: 'Configurações da sessão',

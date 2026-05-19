@@ -114,6 +114,43 @@ describe('coerceTheme / coerceTimbre / coerceVariant / coerceCue / coerceLocale 
     expect(coerceTimbre(0)).toBe(DEFAULT_TIMBRE)
   })
 
+  // AUDIO-02: legacy-value migration — 'chime' was the fourth timbre slot before Phase 35
+  // renamed it to 'flute'. A returning user's persisted 'chime' must land on 'flute', not
+  // the bowl default. coerceVariant's 'ring'→default pattern is NOT equivalent here because
+  // 'ring' was removed from the valid list (no user preference to preserve); 'chime' users
+  // DID choose the fourth slot and should seamlessly continue with 'flute'.
+  it("coerceTimbre('chime') → 'flute' — AUDIO-02 legacy-value migration for returning users", () => {
+    expect(coerceTimbre('chime')).toBe('flute')
+  })
+
+  it("coerceTimbre passes through all current TIMBRE_OPTIONS unchanged after chime→flute rename", () => {
+    expect(coerceTimbre('flute')).toBe('flute')
+    expect(coerceTimbre('bowl')).toBe('bowl')
+    expect(coerceTimbre('bell')).toBe('bell')
+    expect(coerceTimbre('sine')).toBe('sine')
+  })
+
+  it("coerceTimbre falls safe to DEFAULT_TIMBRE for unknown strings and non-string garbage", () => {
+    expect(coerceTimbre('trumpet')).toBe(DEFAULT_TIMBRE)
+    expect(coerceTimbre(null)).toBe(DEFAULT_TIMBRE)
+    expect(coerceTimbre(0)).toBe(DEFAULT_TIMBRE)
+  })
+
+  it("coercePrefs preserves other fields when timbre is legacy 'chime' — AUDIO-02 integration", () => {
+    const result = coercePrefs({
+      theme: 'dark',
+      timbre: 'chime',
+      variant: 'square',
+      cue: 'arrow',
+      locale: 'pt-BR',
+    })
+    expect(result.timbre).toBe('flute')
+    expect(result.theme).toBe('dark')
+    expect(result.variant).toBe('square')
+    expect(result.cue).toBe('arrow')
+    expect(result.locale).toBe('pt-BR')
+  })
+
   it('coerceVariant accepts all VARIANT_OPTIONS members and rejects invalid values', () => {
     for (const opt of VARIANT_OPTIONS) {
       expect(coerceVariant(opt)).toBe(opt)
