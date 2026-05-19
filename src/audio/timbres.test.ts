@@ -52,4 +52,46 @@ describe('timbres', () => {
       expect(preset.oscillatorType).toBe('sine')
     }
   })
+
+  // AUDIO-01 / spike-008 — flute preset matches spike-008 winning values.
+  it('flute preset matches spike-008 values (AUDIO-01)', () => {
+    const flute = TIMBRE_PRESETS.flute
+    expect(flute.fundamentalHzIn).toBe(440)
+    expect(flute.fundamentalHzOut).toBe(220)
+    expect(flute.partials).toEqual([
+      { ratio: 1.0, gain: 1.0 },
+      { ratio: 2.0, gain: 0.22 },
+      { ratio: 3.0, gain: 0.08 },
+    ])
+    expect(flute.decayTauIn).toBe(1.1)
+    expect(flute.decayTauOut).toBe(1.4)
+    expect(flute.filterFreqHz).toBe(4000)
+    expect(flute.filterQ).toBe(0.4)
+    expect(flute.peakGain).toBe(0.18)
+    expect(flute.attackSec).toBe(0.13)
+    expect(flute.oscillatorType).toBe('sine')
+  })
+
+  // AUDIO-01 — attackSec field: bowl/bell/sine carry 0 (strike path); flute carries 0.13.
+  it('bowl attackSec is 0 (strike path unchanged)', () => {
+    expect(TIMBRE_PRESETS.bowl.attackSec).toBe(0)
+  })
+
+  it('bell attackSec is 0 (strike path unchanged)', () => {
+    expect(TIMBRE_PRESETS.bell.attackSec).toBe(0)
+  })
+
+  it('sine attackSec is 0 (strike path unchanged)', () => {
+    expect(TIMBRE_PRESETS.sine.attackSec).toBe(0)
+  })
+
+  it('flute attackSec is 0.13 (soft breath onset — the load-bearing feature)', () => {
+    expect(TIMBRE_PRESETS.flute.attackSec).toBe(0.13)
+  })
+
+  // Key name guard: TIMBRE_PRESETS must contain 'flute', not 'chime'.
+  it("TIMBRE_PRESETS contains 'flute' and not 'chime'", () => {
+    expect(Object.keys(TIMBRE_PRESETS)).toContain('flute')
+    expect(Object.keys(TIMBRE_PRESETS)).not.toContain('chime')
+  })
 })
