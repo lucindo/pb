@@ -160,8 +160,8 @@ describe('CUE_OPTIONS and DEFAULT_CUE (Phase 25 CUE-01)', () => {
     expect([...CUE_OPTIONS]).toEqual(['labels', 'arrow', 'nose'])
   })
 
-  it('DEFAULT_CUE is "labels" (FIXED per CONTEXT D-01)', () => {
-    expect(DEFAULT_CUE).toBe('labels')
+  it('DEFAULT_CUE is "arrow" (set via quick task 260519-9mi, superseding CONTEXT D-01)', () => {
+    expect(DEFAULT_CUE).toBe('arrow')
   })
 })
 

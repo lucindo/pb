@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
-import type { TimbreId, VisualVariantId } from '../domain/settings'
+import type { CueStyleId, TimbreId, VisualVariantId } from '../domain/settings'
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
 function settingGroup(name: string) {
@@ -122,6 +122,9 @@ describe('running session display', () => {
   })
 
   it('renders the in-orb phase label at large display size (text-5xl semibold) per D-03', async () => {
+    // Seed labels cue explicitly: this test targets labels-mode rendering (D-03 visible text span).
+    // DEFAULT_CUE is 'arrow' (quick task 260519-9mi); explicit seed makes the intent clear.
+    seedCue('labels')
     render(<App />)
     await startAndAdvancePastLeadIn()
 
@@ -463,6 +466,14 @@ describe('VARIANT-03 capture-at-session-start', () => {
 // 4th argument to cueSynth.scheduleInCueForTimbre — that's the timbre parameter the
 // engine receives at construction time (audioEngine.ts: sessionTimbre captured-once).
 
+function seedCue(cue: CueStyleId): void {
+  const envelope = {
+    version: 1,
+    prefs: { theme: 'system', timbre: 'sine', variant: 'orb', cue, locale: 'en' },
+  }
+  window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
+}
+
 function seedTimbre(timbre: TimbreId): void {
   const envelope = {
     version: 1,
@@ -544,21 +555,21 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
     }
   })
 
-  it('TIMBRE-02 zero-regression at App layer — Bowl is the dispatched timbre when prefs.timbre is the DEFAULT_TIMBRE "bowl" (or absent from localStorage entirely)', async () => {
-    // No seedTimbre call — localStorage cleared in beforeEach; loadPrefs() coerces to DEFAULT_TIMBRE='bowl'.
+  it('TIMBRE-02 zero-regression at App layer — Sine is the dispatched timbre when prefs.timbre is the DEFAULT_TIMBRE "sine" (or absent from localStorage entirely)', async () => {
+    // No seedTimbre call — localStorage cleared in beforeEach; loadPrefs() coerces to DEFAULT_TIMBRE='sine'.
     const scheduleInSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
 
     render(<App />)
 
     await startAndAdvancePastLeadIn()
 
-    // Bowl byte-identical proof at the App layer: a user who never opens SettingsDialog
-    // has prefs.timbre='bowl', so audioStart(plan, 'bowl') routes through the engine's
-    // bowl path verbatim — zero behavior change from v1.0.1.
+    // Sine proof at the App layer: a new user who never opens SettingsDialog
+    // has prefs.timbre='sine', so audioStart(plan, 'sine') routes through the engine's
+    // sine path — default updated via quick task 260519-9mi (2026-05-19).
     expect(scheduleInSpy).toHaveBeenCalled()
     const firstCallArgs = scheduleInSpy.mock.calls[0]
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(firstCallArgs![3]).toBe('bowl')
+    expect(firstCallArgs![3]).toBe('sine')
   })
 })
 

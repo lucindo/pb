@@ -112,7 +112,7 @@ export function isValidTimbre(v: unknown): v is TimbreId {
   return typeof v === 'string' && (TIMBRE_OPTIONS as readonly string[]).includes(v)
 }
 
-export const DEFAULT_TIMBRE: TimbreId = 'bowl'
+export const DEFAULT_TIMBRE: TimbreId = 'sine'
 
 export type VisualVariantId = 'orb' | 'square' | 'diamond'
 
@@ -132,7 +132,7 @@ export function isValidCue(v: unknown): v is CueStyleId {
   return typeof v === 'string' && (CUE_OPTIONS as readonly string[]).includes(v)
 }
 
-export const DEFAULT_CUE: CueStyleId = 'labels'  // FIXED per CONTEXT D-01 / success criterion 5
+export const DEFAULT_CUE: CueStyleId = 'arrow'  // 'arrow' set via quick task 260519-9mi (2026-05-19), superseding earlier CONTEXT D-01 "labels (fixed)" decision
 
 export type LocaleId = 'en' | 'pt-BR'
 
