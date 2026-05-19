@@ -25,13 +25,11 @@ export const NK_OM_SECONDS: Record<OmLength, number> = {
 // decayed before the first OM, so the cue does not bleed into the count.
 export const NK_LEAD_MS = 5000
 
-// D-11: settle delay before the first frontMarker fires at session start (~3–5 s)
-export const NK_SETTLE_MS = 3500
-
-// D-11 (Phase 31 UAT): the LAST OM of each phase holds for this multiple of a
-// normal OM before the phase transition — a longer, smoother settle into the
-// next phase. Applies to the last front OM and the last back OM of every round.
-export const NK_LAST_OM_HOLD_MULTIPLIER = 2
+// D-11 (Phase 31 UAT, operator override): the LAST OM of each phase holds for
+// this multiple of a normal OM before the phase transition — a longer, smoother
+// settle into the next phase. Applies to the last front OM and the last back OM
+// of every round. 1.5× (down from the Phase 31 UAT value of 2×).
+export const NK_LAST_OM_HOLD_MULTIPLIER = 1.5
 
 // ---------------------------------------------------------------------------
 // Types

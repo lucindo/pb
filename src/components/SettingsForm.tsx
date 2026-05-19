@@ -23,7 +23,7 @@ import {
   type NaviKriyaSettings,
   type OmLength,
 } from '../domain/naviKriyaSettings'
-import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS, NK_SETTLE_MS } from '../hooks/useNKEngine'
+import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 import { UI_STRINGS, type UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage/practices'
 import { BooleanToggle } from './BooleanToggle'
@@ -140,8 +140,7 @@ export function SettingsForm({
     (nkSettings.rounds
       * (nkSettings.frontCount + nkBackCount + 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1))
       * nkOmMs
-      + nkSettings.rounds * 2 * NK_LEAD_MS
-      + NK_SETTLE_MS) / 60_000,
+      + nkSettings.rounds * 2 * NK_LEAD_MS) / 60_000,
   )
 
   const updateNkSettings = (next: Partial<NaviKriyaSettings>) => {
