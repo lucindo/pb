@@ -64,9 +64,9 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
     expect(coerceNaviKriyaSettings([1, 2, 3])).toEqual(DEFAULT_NK_SETTINGS)
   })
 
-  it('preserves a fully valid NaviKriyaSettings object', () => {
+  it('preserves a fully valid NK_FRONT_COUNT_OPTIONS member (e.g. 200)', () => {
     const valid: NaviKriyaSettings = {
-      frontCount: 120,
+      frontCount: 200,
       omLength: 'slow',
       rounds: 5,
       perOmCue: false,
@@ -74,12 +74,13 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
     expect(coerceNaviKriyaSettings(valid)).toEqual(valid)
   })
 
-  it('rounds a non-multiple-of-4 frontCount DOWN to the nearest multiple of 4', () => {
+  it('rounds a non-multiple-of-4 frontCount DOWN to the nearest multiple of 4, then snaps to nearest option', () => {
     // Pitfall 5: a fractional backCount would break Phase 31 arithmetic. The
-    // coercer rounds down rather than discarding to the default.
-    expect(coerceNaviKriyaSettings({ frontCount: 102 }).frontCount).toBe(100)
-    expect(coerceNaviKriyaSettings({ frontCount: 90 }).frontCount).toBe(88)
-    expect(coerceNaviKriyaSettings({ frontCount: 88 }).frontCount).toBe(88)
+    // coercer rounds down to a multiple of 4, then snaps to the nearest
+    // NK_FRONT_COUNT_OPTIONS entry so the SettingsStepper always has a valid index.
+    expect(coerceNaviKriyaSettings({ frontCount: 102 }).frontCount).toBe(100)   // 102→100 (multiple-of-4 floor), 100 is in options
+    expect(coerceNaviKriyaSettings({ frontCount: 90 }).frontCount).toBe(100)    // 90→88 (floor), snap(88)=100
+    expect(coerceNaviKriyaSettings({ frontCount: 88 }).frontCount).toBe(100)    // 88 already multiple of 4, snap(88)=100
   })
 
   it('falls back to the default frontCount for non-positive / non-finite values', () => {
@@ -92,15 +93,38 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
 
   it('falls back per-field for a drifted omLength / rounds / perOmCue', () => {
     const drifted = coerceNaviKriyaSettings({
-      frontCount: 80,
+      frontCount: 80,   // 80 is a multiple of 4 but not in new options; snaps to 100
       omLength: 'turbo',
       rounds: 0,
       perOmCue: 'yes',
     })
-    expect(drifted.frontCount).toBe(80)
+    expect(drifted.frontCount).toBe(100)   // 80→snap→100 (nearest option)
     expect(drifted.omLength).toBe(DEFAULT_NK_SETTINGS.omLength)
     expect(drifted.rounds).toBe(DEFAULT_NK_SETTINGS.rounds)
     expect(drifted.perOmCue).toBe(DEFAULT_NK_SETTINGS.perOmCue)
+  })
+
+  it('snaps stale persisted frontCounts to the nearest NK_FRONT_COUNT_OPTIONS entry (260519-91w)', () => {
+    // Returning user values from the old [4..160] options list must snap so
+    // SettingsStepper always receives a valid selectedIndex (not -1).
+    // 40 → floor(40/4)*4=40 → nearest to [100,200,300,400,500]: 100 (dist=60)
+    expect(coerceNaviKriyaSettings({ frontCount: 40 }).frontCount).toBe(100)
+    // 60 → 60 → nearest: 100 (dist=40)
+    expect(coerceNaviKriyaSettings({ frontCount: 60 }).frontCount).toBe(100)
+    // 80 → 80 → nearest: 100 (dist=20)
+    expect(coerceNaviKriyaSettings({ frontCount: 80 }).frontCount).toBe(100)
+    // 120 → 120 → nearest: 100 (dist=20, not 200 dist=80)
+    expect(coerceNaviKriyaSettings({ frontCount: 120 }).frontCount).toBe(100)
+    // 160 → 160 → nearest: 100 (dist=60, not 200 dist=40) — 160 is closer to 200
+    expect(coerceNaviKriyaSettings({ frontCount: 160 }).frontCount).toBe(200)
+    // 4 → 4 → sub-100 → nearest: 100 (minimum)
+    expect(coerceNaviKriyaSettings({ frontCount: 4 }).frontCount).toBe(100)
+    // 200 is a valid option → passes through unchanged
+    expect(coerceNaviKriyaSettings({ frontCount: 200 }).frontCount).toBe(200)
+    // 150 → floor(150/4)*4=148 → nearest: 100 (dist=48) vs 200 (dist=52) → 100
+    expect(coerceNaviKriyaSettings({ frontCount: 150 }).frontCount).toBe(100)
+    // 152 → floor(152/4)*4=152 → nearest: 100 (dist=52) vs 200 (dist=48) → 200
+    expect(coerceNaviKriyaSettings({ frontCount: 152 }).frontCount).toBe(200)
   })
 })
 
@@ -123,13 +147,14 @@ describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
     const map = coercePractices({
       resonant: { settings: { ...DEFAULT_SETTINGS, bpm: 4 }, stats: statsOf(3) },
       stretch: { settings: stretchSettings, stats: statsOf(2) },
-      naviKriya: { settings: { frontCount: 120, omLength: 'slow', rounds: 5, perOmCue: false }, stats: statsOf(7) },
+      // frontCount 200 is in NK_FRONT_COUNT_OPTIONS — passes through unchanged
+      naviKriya: { settings: { frontCount: 200, omLength: 'slow', rounds: 5, perOmCue: false }, stats: statsOf(7) },
     })
     expect(map.resonant.settings.bpm).toBe(4)
     expect(map.resonant.stats).toEqual(statsOf(3))
     expect(map.stretch.settings.initialBpm).toBe(6)
     expect(map.stretch.stats).toEqual(statsOf(2))
-    expect(map.naviKriya.settings).toEqual({ frontCount: 120, omLength: 'slow', rounds: 5, perOmCue: false })
+    expect(map.naviKriya.settings).toEqual({ frontCount: 200, omLength: 'slow', rounds: 5, perOmCue: false })
     expect(map.naviKriya.stats).toEqual(statsOf(7))
   })
 
@@ -139,9 +164,10 @@ describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
       naviKriya: { settings: { frontCount: 90, omLength: 'turbo' }, stats: 'corrupt' },
     })
     expect(map.resonant.stats).toEqual(statsOf(2))
-    // naviKriya slice drifted: frontCount rounds 90→88, omLength falls back,
-    // corrupt stats coerce to ZERO_STATS — resonant is untouched.
-    expect(map.naviKriya.settings.frontCount).toBe(88)
+    // naviKriya slice drifted: frontCount 90→88 (multiple-of-4 floor)→100 (snap
+    // to nearest NK_FRONT_COUNT_OPTIONS entry), omLength falls back, corrupt stats
+    // coerce to ZERO_STATS — resonant is untouched.
+    expect(map.naviKriya.settings.frontCount).toBe(100)
     expect(map.naviKriya.settings.omLength).toBe(DEFAULT_NK_SETTINGS.omLength)
     expect(map.naviKriya.stats).toEqual(ZERO_STATS)
   })
@@ -169,9 +195,11 @@ describe('per-practice round-trips (PRACTICE-02)', () => {
     expect(loadActivePractice()).toBe('resonant')
   })
 
-  it('saveNaviKriyaSettings → loadPractices().naviKriya.settings round-trips', () => {
+  it('saveNaviKriyaSettings → loadPractices().naviKriya.settings round-trips (valid option member)', () => {
+    // Use a frontCount that is in NK_FRONT_COUNT_OPTIONS so the coercer on load
+    // passes it through unchanged (300 is a valid option: multiple of 100 and 4).
     const settings: NaviKriyaSettings = {
-      frontCount: 120,
+      frontCount: 300,
       omLength: 'fast',
       rounds: 4,
       perOmCue: false,
@@ -445,11 +473,13 @@ describe('saveStretchSettings / loadPractices round-trip (Phase 34 T-34-02)', ()
 
   it('saveStretchSettings leaves resonant and naviKriya slices untouched', () => {
     saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 })
-    saveNaviKriyaSettings({ frontCount: 80, omLength: 'slow', rounds: 2, perOmCue: true })
+    // Use 200 (a valid NK_FRONT_COUNT_OPTIONS member) so the coercer on load
+    // passes it through unchanged and the assertion is unambiguous.
+    saveNaviKriyaSettings({ frontCount: 200, omLength: 'slow', rounds: 2, perOmCue: true })
     saveStretchSettings({ ...DEFAULT_STRETCH_SETTINGS, initialBpm: 6 })
     const map = loadPractices()
     expect(map.resonant.settings.bpm).toBe(4)
-    expect(map.naviKriya.settings.frontCount).toBe(80)
+    expect(map.naviKriya.settings.frontCount).toBe(200)
     expect(map.stretch.settings.initialBpm).toBe(6)
   })
 })
