@@ -163,6 +163,6 @@ Plans:
   3. The timbre is renamed `chime â flute` across the `TimbreId` union, the EN/PT-BR display strings, and `TimbrePicker`
   4. A returning user with a persisted `timbre: 'chime'` preference is coerced to `'flute'` â no crash, preference preserved
   5. The `timbres.ts` D-21 guard (every preset `fundamentalHzIn === 440 && fundamentalHzOut === 220`) still passes
-**Plans:** 2 plans
-- [ ] 35-01-PLAN.md — Rename chime→flute (TimbreId, EN/PT-BR strings, TimbrePicker) + legacy storage coercion
-- [ ] 35-02-PLAN.md — Spike-008 Flute preset + attackSec field + cueSynth optional soft-attack envelope mode
+**Plans:** 2/2 plans complete
+- [x] 35-01-PLAN.md — Rename chime→flute (TimbreId, EN/PT-BR strings, TimbrePicker) + legacy storage coercion
+- [x] 35-02-PLAN.md — Spike-008 Flute preset + attackSec field + cueSynth optional soft-attack envelope mode
