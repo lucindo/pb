@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
 status: verifying
-stopped_at: Plan 36-06 complete (HOUSE-09 — v1→v3 chained migrateEnvelope regression test)
-last_updated: "2026-05-20T21:57:56.546Z"
+stopped_at: Phase 37 context gathered
+last_updated: "2026-05-20T23:07:03.729Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 9
@@ -109,9 +109,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-20T21:57:51.419Z
-Stopped at: Plan 36-06 complete (HOUSE-09 — v1→v3 chained migrateEnvelope regression test)
-Resume file: None
+Last session: 2026-05-20T23:07:03.719Z
+Stopped at: Phase 37 context gathered
+Resume file: .planning/phases/37-stats-ui-removal/37-CONTEXT.md
 Next command: /gsd-plan-phase 36
 
 ## Operator Next Steps
