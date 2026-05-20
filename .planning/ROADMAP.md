@@ -15,7 +15,7 @@
 
 ### v2.0 New Design (Phases 36–44)
 
-- [ ] **Phase 36: Housekeeping bookkeeping reset** (TBD plans) - Retroactively close the v1.x procedural backlog (Phase 12 VALIDATION + SECURITY, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill, legacy human_needed flips, 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test), remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/`, gitignore `.claude/`, push to origin/main
+- [ ] **Phase 36: Housekeeping bookkeeping reset** (9 plans) - Retroactively close the v1.x procedural backlog (Phase 12 VALIDATION + SECURITY, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill, legacy human_needed flips, 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test), remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/`, gitignore `.claude/`, push to origin/main
 - [ ] **Phase 37: Stats UI removal** (TBD plans) - Remove `StatsFooter`, `ResetStatsDialog`, and the Practice Settings "Reset stats" affordance; keep `recordSession` computation + localStorage persistence intact
 - [ ] **Phase 38: Variant removal** (TBD plans) - Drop the Square + Diamond shape variants from code/tokens/picker/Start-capture refs; coerce persisted `variant: 'square'|'diamond'` to `'orb'`
 - [ ] **Phase 39: Theme simplification** (TBD plans) - Remove Moss/Slate/Dusk palettes; reduce ThemePicker to Light/Dark/System; coerce persisted theme outside `{light, dark, system}` to `'system'`; regenerate WCAG guard
@@ -73,7 +73,16 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. A new `storage` test exercises the v1 → v3 chained `migrateEnvelope` ladder in a single read (returning user with a v1 flat envelope lands in a `v3` `practices.{resonant,stretch,navi}` envelope losslessly); the v1.5 phase directories are re-archived to `.planning/milestones/v1.5-phases/` with a clean working tree (HOUSE-09, HOUSE-10).
   4. The root `CLAUDE.md` and the entire `.claude/skills/spike-findings-hrv/` directory (22 tracked files) are removed from the repo; `.claude/` is in `.gitignore` so per-project Claude Code files no longer get re-committed (HOUSE-11..13).
   5. All Phase 36 commits are pushed to `origin/main` at phase close (no source changes — bookkeeping only), so the GSD baseline reset is publicly visible before any v2.0 build work starts (HOUSE-14).
-**Plans**: TBD
+**Plans**: 9 plans
+- [ ] 36-01-PLAN.md — Restore v1.5 phase directories from HEAD (HOUSE-10 prep)
+- [ ] 36-02-PLAN.md — Backfill Phase 12 VALIDATION + SECURITY and Phase 33/35 VALIDATION (HOUSE-01..04)
+- [ ] 36-03-PLAN.md — Re-flip VERIFICATION status human_needed → passed for phases 02/03/05/15/18/31 (HOUSE-05, HOUSE-07)
+- [ ] 36-04-PLAN.md — Populate SUMMARY requirements-completed frontmatter for phases 32/33/34/35 (HOUSE-06)
+- [ ] 36-05-PLAN.md — Recover and correct 28-01/28-03 SUMMARY drift (HOUSE-08)
+- [ ] 36-06-PLAN.md — Add v1→v3 chained migrateEnvelope regression test (HOUSE-09)
+- [ ] 36-07-PLAN.md — Re-archive v1.5 phase dirs to .planning/milestones/v1.5-phases/ (HOUSE-10)
+- [ ] 36-08-PLAN.md — Drop root CLAUDE.md + .claude/skills/spike-findings-hrv/ and gitignore .claude/ (HOUSE-11..13)
+- [ ] 36-09-PLAN.md — Green-gate and push to origin/main (HOUSE-14)
 
 ### Phase 37: Stats UI removal
 **Goal**: Implement the spike-010 anti-gamification stance — remove every visible stats surface from the app while preserving the computation and localStorage persistence so a future deliberate decision can re-introduce a calm stats display.
@@ -183,7 +192,7 @@ Phases execute in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 42 �
 | v1.3 Release Polish | 23–27 | All | Complete | 2026-05-16 |
 | v1.4 Install Helper | 28–29 | All | Complete | 2026-05-16 |
 | v1.5 Multi-Practice | 30–35 | All | Complete | 2026-05-19 |
-| v2.0 New Design | 36. Housekeeping bookkeeping reset | 0/TBD | Not started | - |
+| v2.0 New Design | 36. Housekeeping bookkeeping reset | 0/9 | Not started | - |
 | v2.0 New Design | 37. Stats UI removal | 0/TBD | Not started | - |
 | v2.0 New Design | 38. Variant removal | 0/TBD | Not started | - |
 | v2.0 New Design | 39. Theme simplification | 0/TBD | Not started | - |
