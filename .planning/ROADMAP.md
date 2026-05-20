@@ -15,7 +15,7 @@
 
 ### v2.0 New Design (Phases 36–44)
 
-- [ ] **Phase 36: Housekeeping bookkeeping reset** (9 plans) - Retroactively close the v1.x procedural backlog (Phase 12 VALIDATION + SECURITY, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill, legacy human_needed flips, 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test), remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/`, gitignore `.claude/`, push to origin/main
+- [x] **Phase 36: Housekeeping bookkeeping reset** (9 plans) - Retroactively close the v1.x procedural backlog (Phase 12 VALIDATION + SECURITY, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill, legacy human_needed flips, 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test), remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/`, gitignore `.claude/`, push to origin/main
 - [ ] **Phase 37: Stats UI removal** (TBD plans) - Remove `StatsFooter`, `ResetStatsDialog`, and the Practice Settings "Reset stats" affordance; keep `recordSession` computation + localStorage persistence intact
 - [ ] **Phase 38: Variant removal** (TBD plans) - Drop the Square + Diamond shape variants from code/tokens/picker/Start-capture refs; coerce persisted `variant: 'square'|'diamond'` to `'orb'`
 - [ ] **Phase 39: Theme simplification** (TBD plans) - Remove Moss/Slate/Dusk palettes; reduce ThemePicker to Light/Dark/System; coerce persisted theme outside `{light, dark, system}` to `'system'`; regenerate WCAG guard
@@ -82,7 +82,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 36-06-PLAN.md — Add v1→v3 chained migrateEnvelope regression test (HOUSE-09)
 - [x] 36-07-PLAN.md — Re-archive v1.5 phase dirs to .planning/milestones/v1.5-phases/ (HOUSE-10)
 - [x] 36-08-PLAN.md — Drop root CLAUDE.md + .claude/skills/spike-findings-hrv/ and gitignore .claude/ (HOUSE-11..13)
-- [ ] 36-09-PLAN.md — Green-gate and push to origin/main (HOUSE-14)
+- [x] 36-09-PLAN.md — Green-gate and push to origin/main (HOUSE-14)
 
 ### Phase 37: Stats UI removal
 **Goal**: Implement the spike-010 anti-gamification stance — remove every visible stats surface from the app while preserving the computation and localStorage persistence so a future deliberate decision can re-introduce a calm stats display.
@@ -192,7 +192,7 @@ Phases execute in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 42 �
 | v1.3 Release Polish | 23–27 | All | Complete | 2026-05-16 |
 | v1.4 Install Helper | 28–29 | All | Complete | 2026-05-16 |
 | v1.5 Multi-Practice | 30–35 | All | Complete | 2026-05-19 |
-| v2.0 New Design | 36. Housekeeping bookkeeping reset | 1/9 | In Progress | - |
+| v2.0 New Design | 36. Housekeeping bookkeeping reset | 9/9 | Complete | 2026-05-20 |
 | v2.0 New Design | 37. Stats UI removal | 0/TBD | Not started | - |
 | v2.0 New Design | 38. Variant removal | 0/TBD | Not started | - |
 | v2.0 New Design | 39. Theme simplification | 0/TBD | Not started | - |

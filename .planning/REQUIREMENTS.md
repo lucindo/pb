@@ -26,7 +26,7 @@ Procedural debt closeout — restores v1.5 phase directories from git, backfills
 - [x] **HOUSE-11**: The root `CLAUDE.md` is removed from the repository (`git rm CLAUDE.md`). It pointed to the `spike-findings-hrv` skill which is being removed alongside it (HOUSE-12).
 - [x] **HOUSE-12**: The `.claude/skills/spike-findings-hrv/` directory and all its contents (SKILL.md, references/, sources/ — 22 tracked files total) are removed from the repository. The skill won't be used during v2.0 build — spike implementation patterns either landed in v1.5 or are now codified in `.planning/spikes/MANIFEST.md` Requirements.
 - [x] **HOUSE-13**: `.claude/` is added to `.gitignore` (single-line entry — covers `scheduled_tasks.lock`, `settings.local.json`, `worktrees/`, and any future Claude Code per-project files). This prevents the directory from being re-committed by accident.
-- [ ] **HOUSE-14**: All Phase 36 commits are pushed to `origin/main` after phase close. Phase 36 changes are docs + bookkeeping only (no source code), so the push happens inside the phase rather than waiting for milestone close — `CLAUDE.md` + `.claude/skills/spike-findings-hrv/` are removed from `origin/main`, and the v1.5 backfill commits land publicly so the GSD baseline is reset for v2.0.
+- [x] **HOUSE-14**: All Phase 36 commits are pushed to `origin/main` after phase close. Phase 36 changes are docs + bookkeeping only (no source code), so the push happens inside the phase rather than waiting for milestone close — `CLAUDE.md` + `.claude/skills/spike-findings-hrv/` are removed from `origin/main`, and the v1.5 backfill commits land publicly so the GSD baseline is reset for v2.0.
 
 ### STATS — Stats UI removal (Phase 37)
 
