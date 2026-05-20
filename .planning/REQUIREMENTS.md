@@ -184,19 +184,98 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Updated by the roadmapper during ROADMAP.md creation. Each v2.0 requirement maps to exactly one phase.
+Each v2.0 requirement maps to exactly one phase. Mapping locked by the roadmapper on 2026-05-20.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOUSE-01..14 | Phase 36 | Pending |
-| STATS-01..05 | Phase 37 | Pending |
-| VAR-01..06 | Phase 38 | Pending |
-| THM-01..08 | Phase 39 | Pending |
-| PREV-01..05 | Phase 40 | Pending |
-| TOK-01..08 | Phase 41 | Pending |
-| ORB-01..11 | Phase 42 | Pending |
-| UX-01..22 | Phase 43 | Pending |
-| POLISH-01..09 | Phase 44 | Pending |
+| HOUSE-01 | Phase 36 | Planned |
+| HOUSE-02 | Phase 36 | Planned |
+| HOUSE-03 | Phase 36 | Planned |
+| HOUSE-04 | Phase 36 | Planned |
+| HOUSE-05 | Phase 36 | Planned |
+| HOUSE-06 | Phase 36 | Planned |
+| HOUSE-07 | Phase 36 | Planned |
+| HOUSE-08 | Phase 36 | Planned |
+| HOUSE-09 | Phase 36 | Planned |
+| HOUSE-10 | Phase 36 | Planned |
+| HOUSE-11 | Phase 36 | Planned |
+| HOUSE-12 | Phase 36 | Planned |
+| HOUSE-13 | Phase 36 | Planned |
+| HOUSE-14 | Phase 36 | Planned |
+| STATS-01 | Phase 37 | Planned |
+| STATS-02 | Phase 37 | Planned |
+| STATS-03 | Phase 37 | Planned |
+| STATS-04 | Phase 37 | Planned |
+| STATS-05 | Phase 37 | Planned |
+| VAR-01 | Phase 38 | Planned |
+| VAR-02 | Phase 38 | Planned |
+| VAR-03 | Phase 38 | Planned |
+| VAR-04 | Phase 38 | Planned |
+| VAR-05 | Phase 38 | Planned |
+| VAR-06 | Phase 38 | Planned |
+| THM-01 | Phase 39 | Planned |
+| THM-02 | Phase 39 | Planned |
+| THM-03 | Phase 39 | Planned |
+| THM-04 | Phase 39 | Planned |
+| THM-05 | Phase 39 | Planned |
+| THM-06 | Phase 39 | Planned |
+| THM-07 | Phase 39 | Planned |
+| THM-08 | Phase 39 | Planned |
+| PREV-01 | Phase 40 | Planned |
+| PREV-02 | Phase 40 | Planned |
+| PREV-03 | Phase 40 | Planned |
+| PREV-04 | Phase 40 | Planned |
+| PREV-05 | Phase 40 | Planned |
+| TOK-01 | Phase 41 | Planned |
+| TOK-02 | Phase 41 | Planned |
+| TOK-03 | Phase 41 | Planned |
+| TOK-04 | Phase 41 | Planned |
+| TOK-05 | Phase 41 | Planned |
+| TOK-06 | Phase 41 | Planned |
+| TOK-07 | Phase 41 | Planned |
+| TOK-08 | Phase 41 | Planned |
+| ORB-01 | Phase 42 | Planned |
+| ORB-02 | Phase 42 | Planned |
+| ORB-03 | Phase 42 | Planned |
+| ORB-04 | Phase 42 | Planned |
+| ORB-05 | Phase 42 | Planned |
+| ORB-06 | Phase 42 | Planned |
+| ORB-07 | Phase 42 | Planned |
+| ORB-08 | Phase 42 | Planned |
+| ORB-09 | Phase 42 | Planned |
+| ORB-10 | Phase 42 | Planned |
+| ORB-11 | Phase 42 | Planned |
+| UX-01 | Phase 43 | Planned |
+| UX-02 | Phase 43 | Planned |
+| UX-03 | Phase 43 | Planned |
+| UX-04 | Phase 43 | Planned |
+| UX-05 | Phase 43 | Planned |
+| UX-06 | Phase 43 | Planned |
+| UX-07 | Phase 43 | Planned |
+| UX-08 | Phase 43 | Planned |
+| UX-09 | Phase 43 | Planned |
+| UX-10 | Phase 43 | Planned |
+| UX-11 | Phase 43 | Planned |
+| UX-12 | Phase 43 | Planned |
+| UX-13 | Phase 43 | Planned |
+| UX-14 | Phase 43 | Planned |
+| UX-15 | Phase 43 | Planned |
+| UX-16 | Phase 43 | Planned |
+| UX-17 | Phase 43 | Planned |
+| UX-18 | Phase 43 | Planned |
+| UX-19 | Phase 43 | Planned |
+| UX-20 | Phase 43 | Planned |
+| UX-21 | Phase 43 | Planned |
+| UX-22 | Phase 43 | Planned |
+| POLISH-01 | Phase 44 | Planned |
+| POLISH-02 | Phase 44 | Planned |
+| POLISH-03 | Phase 44 | Planned |
+| POLISH-04 | Phase 44 | Planned |
+| POLISH-05 | Phase 44 | Planned |
+| POLISH-06 | Phase 44 | Planned |
+| POLISH-07 | Phase 44 | Planned |
+| POLISH-08 | Phase 44 | Planned |
+| POLISH-09 | Phase 44 | Planned |
 
 **Coverage:**
 - v2.0 requirements: 87 total (HOUSE 14 + STATS 5 + VAR 6 + THM 8 + PREV 5 + TOK 8 + ORB 11 + UX 22 + POLISH 9)
@@ -205,4 +284,4 @@ Updated by the roadmapper during ROADMAP.md creation. Each v2.0 requirement maps
 
 ---
 *Requirements defined: 2026-05-20*
-*Last updated: 2026-05-20 after initial definition*
+*Last updated: 2026-05-20 after roadmap creation (phase mapping locked)*

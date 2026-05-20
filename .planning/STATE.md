@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-05-20T16:08:19.562Z"
 last_activity: 2026-05-20
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-19 after v1.5 Multi-Practice milestone)
+See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** Planning the next milestone (`/gsd-new-milestone`)
+**Current focus:** v2.0 New Design — land the spike-010 Monochrome Zen visual system end-to-end (9 phases, 36–44, 87 requirements).
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 36 — Housekeeping bookkeeping reset
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-20 — Milestone v2.0 started
+Status: Not started (roadmap defined; awaiting plan-phase for Phase 36)
+Last activity: 2026-05-20 — Roadmap created for v2.0 (Phases 36–44, 87/87 requirements mapped)
 
 ## Performance Metrics
 
@@ -39,15 +39,15 @@ Last activity: 2026-05-20 — Milestone v2.0 started
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre.
+Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and will be back-promoted into PROJECT.md Key Decisions during the v2.0 milestone close.
 
 ### Pending Todos
 
-- v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants.
+- v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants. (Many of these are obviated by Phase 42's orb rewrite — re-audit at v2.0 close.)
 
 ### Blockers/Concerns
 
-- None blocking. v1.5 Multi-Practice shipped 2026-05-19 — all 6 phases (30–35), 27 plans. Awaiting next milestone.
+- None blocking. v2.0 roadmap defined 2026-05-20 — 9 phases (36–44), 87 requirements mapped 1:1 against REQUIREMENTS.md. Phase 36 is the procedural reset (no source changes; pushes to `origin/main` at phase close).
 
 ### Quick Tasks Completed
 
@@ -66,28 +66,18 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 
 ## Deferred Items
 
-Items acknowledged and carried forward across milestone closes:
+Items acknowledged and carried forward across milestone closes. The v1.x procedural register that previously lived here has been folded into Phase 36 (Housekeeping) — see the HOUSE-01..14 success criteria. The remaining entries are functional carry-forwards, product decisions, and not-yet-actionable items.
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| v1.x carry-forward | iOS Safari mid-page audio recovery after lock/unlock (Override SC1, user-signed 2026-05-10 — OS-level audio session loss) | Reconstruction infrastructure ships; works on non-iOS engines | 2026-05-11 v1.0 close |
-| v1.x carry-forward | Firefox Desktop orb scale-animation flicker (Override FF-01, user-signed 2026-05-10 — root remedy needs CSS keyframes) | Multiple mitigations attempted; ship as-is | 2026-05-11 v1.0 close |
-| v1.x carry-forward | S2 Android Chrome wake lock real-device UAT (Phase 5, 05-04-UAT-LOG.md Gap 1) | Physical device unavailable | 2026-05-11 v1.0 close |
-| v1.x carry-forward | iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3, Open Question 5 / Assumption A6) | No mitigation planned for v1 | 2026-05-11 v1.0 close |
-| v1.x debt | Cross-tab `recordSession` increment race (WR-07 root) — STORAGE-03 covers UI consistency only | Documented in REQUIREMENTS.md v1.0.1 Out of Scope | 2026-05-11 v1.0.1 planning |
-| procedural | Phase 5 lacks VERIFICATION.md | Artifact gap only; coverage intact via 5.1 UAT Task 4 | 2026-05-11 v1.0 close |
-| procedural | Phase 02/03 VERIFICATION.md status "human_needed" (all items closed via 5.1 Task 4 sweep) | Statuses not re-flipped | 2026-05-11 v1.0 close |
-| procedural | Phase 15 / Phase 18 HUMAN-UAT.md (partial — operator-accepted at phase close) | Remaining scenarios deferred | 2026-05-15 v1.1 close |
-| procedural | Phase 15 / Phase 18 VERIFICATION.md status "human_needed" | Resolved via operator UAT sign-off; status not re-flipped | 2026-05-15 v1.1 close |
-| v1.x carry-forward | iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) | Documented in README at Phase 27; product decision whether to detect + warn | 2026-05-15 v1.3 scoping |
-| v1.x debt | 28 Info-severity findings from the 2026-05-16 full-codebase deep review | Low priority — 23 Warnings fixed same-day; re-run `/gsd-code-review 27 --fix --all` to sweep | 2026-05-16 v1.3 close |
-| v1.x debt | Code review WR-01 — `IosInstallSteps` `<ol>` `::marker` numbering themed implicitly via per-`<li>` color inheritance | Advisory; correct today, fragile under future refactor — centralize color on the `<ol>` | 2026-05-16 v1.4 close |
-| procedural | 28-01 / 28-03 SUMMARY doc drift (field count, superseded `SafariNavigator`) | Code correct; SUMMARYs are earlier snapshots | 2026-05-16 v1.4 close |
-| procedural | Nyquist `VALIDATION.md` missing for Phases 33 and 35 | Documentation gap only — full suite 1255/1255 green; `/gsd-validate-phase 33`/`35` to reconcile | 2026-05-19 v1.5 close |
-| procedural | Phase 31 `VERIFICATION.md` frontmatter still `human_needed` | All 9 items operator-confirmed in `31-HUMAN-UAT.md` (`status: complete`); status not re-flipped | 2026-05-19 v1.5 close |
-| procedural | SUMMARY `requirements-completed` frontmatter empty for all Phase 32/33/34/35 plans | Requirements satisfied per VERIFICATION.md evidence; cross-check frontmatter not populated | 2026-05-19 v1.5 close |
-| v1.x debt | v1.5 audit code-review carry-forwards — `LearnDialog.tsx:91` misleading Stretch-fallback comment, LearnDialog paragraph-text React key (IN-01), `PracticeToggle` local `PracticeId` alias (IN-02), NK look-ahead (IN-03), NKShape phase a11y (WR-01) | Advisory; all non-blocking — see `.planning/milestones/v1.5-MILESTONE-AUDIT.md` `tech_debt` block | 2026-05-19 v1.5 close |
-| v1.x debt | No explicit v1→v3 chained-migration regression test (`storage.test.ts` covers v1→v2 and v2→v3 separately) | Production path works — `readEnvelope` always passes the real on-disk version; dedicated regression test missing | 2026-05-19 v1.5 close |
+| v2.0 carry-forward (known bug) | iOS Safari mid-page audio recovery after lock/unlock (Override SC1, OS-level audio session loss) | Needs more investigation; remains a known bug to address in a future milestone — does NOT block v2.0 | 2026-05-20 v2.0 scoping |
+| Deferred (product) | iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) — detect + warn | Documented in README at Phase 27; product decision still pending | 2026-05-15 v1.3 scoping |
+| Deferred (product) | iOS Safari Pitfall 6 — phone-call interrupted state | Domain overlap with the iOS audio recovery known bug | 2026-05-20 v2.0 scoping |
+| Deferred (resource) | S2 Android Chrome wake-lock real-device UAT | Physical device unavailable | 2026-05-11 v1.0 close |
+| Deferred (product) | Stats display surface — re-introduce after a deliberate anti-gamification-compatible design decision (calm, non-comparative, no streaks/leaderboards) | Computation continues in v2.0; visible surface removed by Phase 37 | 2026-05-20 v2.0 scoping |
+| Folded into v2.0 | Phase 12 VALIDATION + SECURITY; Phase 33/35 Nyquist VALIDATION; Phase 31 VERIFICATION re-flip; Phase 32/33/34/35 SUMMARY `requirements-completed` frontmatter backfill; Phase 02/03/05/15/18 VERIFICATION `human_needed` flips; 28-01/28-03 SUMMARY drift; explicit v1→v2→v3 chained-migration regression test | Absorbed into Phase 36 (HOUSE-01..09) | 2026-05-20 v2.0 scoping |
+| Folded into v2.0 | 28 Info-severity findings from the 2026-05-16 deep review | Absorbed into Phase 44 POLISH-02 (disposition each: fix / defer-with-reason / obsolete-by-redesign) | 2026-05-20 v2.0 scoping |
+| Naturally superseded | Inner-ring UX symmetry (replaced by Phase 42 orb rewrite); Code review WR-01 `IosInstallSteps` `::marker` (replaced by Phase 43 V3 inline install banner); Firefox Desktop orb scale-animation flicker (dropped permanently — old `.orb` keyframes don't survive Phase 42) | Closed at v2.0 scoping | 2026-05-20 v2.0 scoping |
 
 **Audit references:**
 
@@ -99,11 +89,11 @@ Items acknowledged and carried forward across milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-05-19 — v1.5 Multi-Practice milestone completed and archived
-Stopped at: v1.5 milestone complete
-Resume file: —
-Next command: /gsd-new-milestone
+Last session: 2026-05-20 — v2.0 New Design roadmap created (Phases 36–44, 87/87 requirements mapped)
+Stopped at: Roadmap complete; awaiting plan-phase for Phase 36
+Resume file: .planning/ROADMAP.md
+Next command: /gsd-plan-phase 36
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 36 planning with /gsd-plan-phase 36
