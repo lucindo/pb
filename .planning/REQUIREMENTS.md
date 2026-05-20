@@ -20,7 +20,7 @@ Procedural debt closeout — restores v1.5 phase directories from git, backfills
 - [x] **HOUSE-05**: Phase 31 `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` (all 9 items operator-confirmed in `31-HUMAN-UAT.md`).
 - [x] **HOUSE-06**: Phase 32 / 33 / 34 / 35 SUMMARY `requirements-completed` frontmatter is populated from VERIFICATION.md evidence (cross-check the audit table).
 - [x] **HOUSE-07**: Legacy `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` for Phases 02, 03, 05, 15, 18 (operator-confirmed at the time per milestone records).
-- [ ] **HOUSE-08**: Phase 28-01 / 28-03 SUMMARY drift is corrected (field count + superseded `SafariNavigator` reference removed; code is canonical).
+- [x] **HOUSE-08**: Phase 28-01 / 28-03 SUMMARY drift is corrected (field count + superseded `SafariNavigator` reference removed; code is canonical).
 - [ ] **HOUSE-09**: A regression test exists exercising the full v1 → v2 → v3 chained `migrateEnvelope` ladder (returning user with a v1 flat envelope migrates losslessly across both bumps in a single read).
 - [ ] **HOUSE-10**: Restored v1.5 phase directories are re-archived to `.planning/milestones/v1.5-phases/` after backfill (clean working tree, no stray `D` files).
 - [ ] **HOUSE-11**: The root `CLAUDE.md` is removed from the repository (`git rm CLAUDE.md`). It pointed to the `spike-findings-hrv` skill which is being removed alongside it (HOUSE-12).

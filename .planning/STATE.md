@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
 status: executing
-stopped_at: Plan 36-03 complete (HOUSE-05 + HOUSE-07 VERIFICATION re-flips)
-last_updated: "2026-05-20T21:20:01.009Z"
+stopped_at: Plan 36-05 complete (HOUSE-08 — 28-01/28-03 SUMMARY recovery + drift fix)
+last_updated: "2026-05-20T21:26:12.875Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 4
-  percent: 44
+  completed_plans: 5
+  percent: 56
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 ## Current Position
 
 Phase: 36 (housekeeping-bookkeeping-reset) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 Status: Ready to execute
 Last activity: 2026-05-20
 
@@ -46,6 +46,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 - [Phase ?]: Plan 36-02: Closed HOUSE-01..04 by backfilling Phase 12 VALIDATION + SECURITY (v1.0.1 archive) and Phase 33/35 VALIDATION (restored v1.5 phase dirs) — all four ship status: verified, no gap-filling, single docs commit 919b2e6.
 - [Phase 36]: Plan 36-03: Closed HOUSE-05 + HOUSE-07 by re-flipping VERIFICATION status human_needed -> passed for 5 v1.x phases (02/03/15/18/31) — Plan listed Phase 05 as a 6th target but no 05-VERIFICATION.md exists in git history; 05.1-VERIFICATION.md already reads passed (3/3 ROADMAP success criteria) so Phase 36 success criterion #2 is satisfied for the Phase 05 family. Documented as Rule 1 deviation in commit a02f82c body. Phase 19 also carries human_needed but is out of plan scope - flagged for operator triage.
 - [Phase ?]: [Phase 36]: Plan 36-04: Closed HOUSE-06 by inserting requirements-completed frontmatter into the 4 last-plan SUMMARYs for Phases 32/33/34/35 — IDs derived from each phase's VERIFICATION.md Requirements Coverage table matched the planner's starter set exactly; single docs commit 8d81f43, 16 additions, zero body changes.
+- [Phase 36]: Plan 36-05: Closed HOUSE-08 by recovering 28-01 + 28-03 SUMMARYs from f81f08f^ (deleted in `docs(phase-30): add security threat verification`, absent from HEAD ever since) and applying drift fixes against canonical code. 28-01 body's UiStrings.install field-count line updated (9 fields canonical, Phase 28-01 contributed 7; `regionLabel` from Phase 28 WR-06 and `settingsLabel` from Phase 29-01 added the other two). 28-03 `decisions:` row rewritten — `SafariNavigator` symbol survived in src/ (still used inside `useIsStandaloneOrPhone.ts` for the `isStandalone` branch), but iOS-detect semantics changed: detection now uses `detectIsIOS()` UA probe inside the hook (CR-01/d7561ce supersession). Single docs commit 0d61f5c atop 8d81f43; 205 line additions across 2 files, zero deletions, zero src/ touches.
 
 ### Pending Todos
 
@@ -73,6 +74,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 | Phase 36 P36-02 | 18m | 6 tasks | 4 files |
 | Phase 36 P03 | 2m | 3 tasks | 5 files |
 | Phase 36 P04 | 3m | 3 tasks | 4 files |
+| Phase 36 P05 | 2m | 4 tasks | 2 files |
 
 ## Deferred Items
 
@@ -99,7 +101,7 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-20T21:19:50.840Z
+Last session: 2026-05-20T21:25:57.238Z
 Stopped at: Plan 36-03 complete (HOUSE-05 + HOUSE-07 VERIFICATION re-flips)
 Resume file: None
 Next command: /gsd-plan-phase 36
