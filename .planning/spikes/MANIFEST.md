@@ -74,6 +74,17 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   (absent → current strike, so ticks stay byte-identical) and have `scheduleEndChord`
   pass it, alongside revised `END_CHORD_*` constants. Applies to both practices'
   completion sounds. (Spike 005, operator decision.)
+- The **visual look-and-feel direction is Monochrome Zen** — paper + ink + ultralight
+  Inter, no decoration, vast negative space. The current six themes
+  (`light / dark / system / moss / slate / dusk`) collapse to just two: a tightened
+  **light** (warm rice-paper, not bleached `#ffffff`) and a paired **dark** (warm near-
+  black, not pure black), plus the existing `system` follow. The five custom themes
+  (`moss / slate / dusk`) are removed; the `ThemePicker` becomes a binary light/dark
+  switch. **Orb-always-on-display** is preserved across all screens — settings open as a
+  compact bottom sheet that does not eclipse the orb. A new `borderSoft` token joins the
+  theme vocabulary to head off the spike-008 dark-theme token-collapse pattern (where
+  `bg-soft === surface` made controls disappear). (Spike 009 + spike 010, operator
+  decision.)
 - The **Chime cue timbre is replaced by a Flute** — Chime is structurally a near-clone of
   Bowl (Bowl's `1.0 / 2.76 / 5.4` stack + a `7.6×` shimmer), which is why the two sound
   too close. Bowl is kept; the fourth timbre slot becomes a flute with a **soft breath
@@ -102,3 +113,5 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 006 | app-icon-alternatives | comparison | Reviewing meditation-themed installed-icon candidates in real iOS/Android masks surfaces the app icon worth shipping | VALIDATED — winner: Breathing rings | icon, pwa, branding, design, meditation, comparison |
 | 007 | three-practice-switcher | comparison | The top segmented control, extended to 3 practices (HRV/Stretch/Navi), stays legible and balanced at real mobile widths | VALIDATED — 3-practice switcher confirmed; both treatments ship behind a dev setting | ui, switcher, navigation, mobile, practice, comparison |
 | 008 | chime-replacement-timbre | comparison | Keep Bowl; replace Chime (a near-clone of Bowl) with a flute-family timbre clearly distinct from Bowl/Bell/Sine on In and Out cues, still calm | VALIDATED — winner: Flute — soft attack | audio, timbre, cue, sound-design, flute, comparison |
+| 009 | look-feel-alternatives | comparison | Six fully-composed aesthetic directions (palette + typography + orb gradient + ambient surface + chrome) for the practice screen — calm/clean meditation-appropriate look to replace the current 5-theme system | VALIDATED — winner: F. Monochrome Zen (refined in 010); collapses 5-theme system to light+dark | ui, look-and-feel, palette, typography, theme, aesthetic, comparison |
+| 010 | mono-zen-light-dark | comparison | Tightened Monochrome Zen in paired light (warm rice-paper, not bleach) + dark variants, with a fully realised practice-settings panel exposing all control types — stepper, segmented, visual picker, toggle, secondary button — staying calm + legible in both | PENDING — awaiting operator audition | ui, look-and-feel, palette, theme, mono-zen, controls, comparison |
