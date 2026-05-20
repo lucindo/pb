@@ -81,7 +81,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 36-05-PLAN.md — Recover and correct 28-01/28-03 SUMMARY drift (HOUSE-08)
 - [x] 36-06-PLAN.md — Add v1→v3 chained migrateEnvelope regression test (HOUSE-09)
 - [x] 36-07-PLAN.md — Re-archive v1.5 phase dirs to .planning/milestones/v1.5-phases/ (HOUSE-10)
-- [ ] 36-08-PLAN.md — Drop root CLAUDE.md + .claude/skills/spike-findings-hrv/ and gitignore .claude/ (HOUSE-11..13)
+- [x] 36-08-PLAN.md — Drop root CLAUDE.md + .claude/skills/spike-findings-hrv/ and gitignore .claude/ (HOUSE-11..13)
 - [ ] 36-09-PLAN.md — Green-gate and push to origin/main (HOUSE-14)
 
 ### Phase 37: Stats UI removal

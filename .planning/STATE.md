@@ -4,14 +4,14 @@ milestone: v2.0
 milestone_name: New Design
 status: executing
 stopped_at: Plan 36-06 complete (HOUSE-09 — v1→v3 chained migrateEnvelope regression test)
-last_updated: "2026-05-20T21:38:49.260Z"
+last_updated: "2026-05-20T21:43:19.164Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 7
-  percent: 78
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 ## Current Position
 
 Phase: 36 (housekeeping-bookkeeping-reset) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 Status: Ready to execute
 Last activity: 2026-05-20
 
@@ -49,6 +49,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 - [Phase 36]: Plan 36-05: Closed HOUSE-08 by recovering 28-01 + 28-03 SUMMARYs from f81f08f^ (deleted in `docs(phase-30): add security threat verification`, absent from HEAD ever since) and applying drift fixes against canonical code. 28-01 body's UiStrings.install field-count line updated (9 fields canonical, Phase 28-01 contributed 7; `regionLabel` from Phase 28 WR-06 and `settingsLabel` from Phase 29-01 added the other two). 28-03 `decisions:` row rewritten — `SafariNavigator` symbol survived in src/ (still used inside `useIsStandaloneOrPhone.ts` for the `isStandalone` branch), but iOS-detect semantics changed: detection now uses `detectIsIOS()` UA probe inside the hook (CR-01/d7561ce supersession). Single docs commit 0d61f5c atop 8d81f43; 205 line additions across 2 files, zero deletions, zero src/ touches.
 - [Phase ?]: Plan 36-06: Closed HOUSE-09 by appending describe('migrateEnvelope v1→v3 chained (HOUSE-09)') to src/storage/storage.test.ts — 3 it() cases (v1→v3 chained / idempotency / STATE_VERSION). Resolved CONTEXT D-06 wording mismatch per 36-PATTERNS §1 strategy (a): naviKriya NOT asserted because migrateEnvelope doesn't seed it (coercePractices does, downstream); matches v1→v2 analog. Single test(36): commit d55a92a; 1257 tests pass (+3); tsc/build green. Pre-existing lint debt (53 errors on main, unrelated) logged to deferred-items.md, folded into Phase 44 POLISH-02; push-gate disposition flagged for plan 36-09.
 - [Phase ?]: [Phase 36]: Plan 36-07: Closed HOUSE-10 by a single git mv of all 6 v1.5 phase dirs (Phases 30-35) to .planning/milestones/v1.5-phases/ — 106 file renames, rename history preserved, zero deletions, full artifact carry-through per CONTEXT D-02. Backfilled artifacts from 36-02/03/04 traveled byte-for-byte; single docs(36): commit 55d057a. CONTEXT D-01 single-batch restore→backfill→archive flow closes here; working tree clean for all affected paths. Phase 28 SUMMARYs stay at .planning/phases/28-phone-install-banner/ (v1.4 archive deferred). Phase 36 success criterion #3 satisfied.
+- [Phase ?]: [Phase 36]: Plan 36-08: Closed HOUSE-11..13 in a single combined commit 4a8263c — removed root CLAUDE.md (orphan pointer to the deleted skill), git rm -r'd .claude/skills/spike-findings-hrv/ (21 tracked files, content absorbed into v1.5 phases / .planning/spikes/MANIFEST.md), and appended .claude/ to .gitignore under a new # Claude Code per-project files section. CONTEXT D-05 commit #8 of ~7-8 logical-group commits; D-05 Claude's Discretion picked combined-over-split because the three changes are tightly coupled. 23 files changed (1 modify + 22 deletes), 3 insertions, 3974 deletions, zero src/ touches. git check-ignore -q .claude/ exits 0; working tree clean. Phase 36 success criterion #4 closed. Remaining: HOUSE-14 (green-gate + push) in plan 36-09.
 
 ### Pending Todos
 
@@ -79,6 +80,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 | Phase 36 P05 | 2m | 4 tasks | 2 files |
 | Phase 36 P06 | 2m | 3 tasks | 1 files |
 | Phase 36 P07 | 1m | 2 tasks | 0 files |
+| Phase 36 P08 | 1m | 3 tasks | 23 files |
 
 ## Deferred Items
 
@@ -105,7 +107,7 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-20T21:38:35.004Z
+Last session: 2026-05-20T21:43:03.251Z
 Stopped at: Plan 36-06 complete (HOUSE-09 — v1→v3 chained migrateEnvelope regression test)
 Resume file: None
 Next command: /gsd-plan-phase 36
