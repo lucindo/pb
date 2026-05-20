@@ -19,6 +19,13 @@ decisions:
   - "Flex layout added to pill button base class (applies to all treatments, not just B) — simpler and treatment-independent"
   - "Label wrapped in <span> makes it a first-class flex child, safe under both Treatment A and B"
   - "Stretch glyph uses the exact spike 007 S-curve path M2 13 Q5.5 2 9 9 T16 5.5 on 18x18 viewBox as locked by operator decision"
+requirements-completed:
+  - STRETCH-01
+  - STRETCH-02
+  - STRETCH-03
+  - STRETCH-04
+  - STRETCH-05
+  - STRETCH-06
 metrics:
   duration: 8m
   completed: 2026-05-19

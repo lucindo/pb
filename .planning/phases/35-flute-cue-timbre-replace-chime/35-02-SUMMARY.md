@@ -26,6 +26,9 @@ decisions:
   - "Decay for soft-attack starts at when+attackSec (ramp end), not when+STRIKE_RAMP_OFFSET — preserves the exp-decay character after the breath onset"
   - "Existing per-timbre it.each envelope-peak tests updated to branch on attackSec: assert via linearRampToValueAtTime for flute, setValueAtTime for bowl/bell/sine"
   - "App.persistence.test.tsx 3 pre-existing failures (Reset dialog) are out of scope and pre-date this plan"
+requirements-completed:
+  - AUDIO-01
+  - AUDIO-02
 metrics:
   duration: "~5 minutes"
   completed: "2026-05-19"

@@ -19,6 +19,10 @@ decisions:
   - "Operator approved all 38 pt-BR strings as-is except 3 corrections: resonantHeading, roundsCompletedLabel, controls.resume"
   - "stats.roundsCompletedLabel pt-BR set to 'OMs na frente' — operator-confirmed deliberate divergence from EN 'Rounds'"
   - "All 7 review markers removed after operator sign-off per D-11 protocol"
+requirements-completed:
+  - LEARN-02
+  - LEARN-03
+  - I18N-08
 metrics:
   duration: ~10min
   completed: 2026-05-17

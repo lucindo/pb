@@ -17,6 +17,8 @@ decisions:
   - "Used loadPractices().resonant.settings directly in useMemo([]) to avoid ordering issue with initialPractices (declared after line 110)"
   - "Kept stale flat env.settings in localStorage as harmless orphan (D-04 — no pruning)"
   - "seedV2Envelope helper uses version: 2 so migrateEnvelope skips v1→v2 ladder, testing post-fix path directly"
+requirements-completed:
+  - PRACTICE-02
 metrics:
   duration: "~5 minutes"
   completed: "2026-05-18"
