@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
 status: executing
-stopped_at: Phase 36 context gathered
-last_updated: "2026-05-20T20:36:34.097Z"
-last_activity: 2026-05-20 -- Phase 36 planning complete
+stopped_at: Plan 36-01 complete (v1.5 phase dirs restored from HEAD)
+last_updated: "2026-05-20T20:56:46.354Z"
+last_activity: 2026-05-20
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 11
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** v2.0 New Design — land the spike-010 Monochrome Zen visual system end-to-end (9 phases, 36–44, 87 requirements).
+**Current focus:** Phase 36 — housekeeping-bookkeeping-reset
 
 ## Current Position
 
-Phase: 36 — Housekeeping bookkeeping reset
-Plan: —
+Phase: 36 (housekeeping-bookkeeping-reset) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-05-20 -- Phase 36 planning complete
+Last activity: 2026-05-20
 
 ## Performance Metrics
 
@@ -41,6 +41,8 @@ Last activity: 2026-05-20 -- Phase 36 planning complete
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and will be back-promoted into PROJECT.md Key Decisions during the v2.0 milestone close.
+
+- [Phase 36]: Plan 36-01: Conceptual commit #1 (CONTEXT D-05) collapsed to no-op — git restore from HEAD produced no diff; real HOUSE-10 commit lands in 36-07 as the git mv to .planning/milestones/v1.5-phases/. — git restore against HEAD only mutates the working tree when the index already matches HEAD; the 6 v1.5 phase dirs were in ' D' state, so restoring them brought files back from HEAD with zero index-vs-HEAD diff. Nothing to commit at this step.
 
 ### Pending Todos
 
@@ -64,6 +66,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 | 260519-9mi | Set default values for app Settings items — DEFAULT_CUE labels→arrow, DEFAULT_TIMBRE bowl→sine (supersedes the earlier CUE "fixed to labels" decision); Theme/Variant/Language defaults confirmed unchanged | 2026-05-19 | 296904b | [260519-9mi-set-default-values-for-app-settings-item](./quick/260519-9mi-set-default-values-for-app-settings-item/) |
 | fast | Make VITE_SWITCHER_TREATMENT=B the default in vite.config.ts (explicit 'A' opts out) | 2026-05-19 | f0f941f | — |
 | 260519-bee | Remove orphaned NK pause/resume code and strings — dead after the v1.5-audit NK-07 end-only amendment (useNKEngine pause()/resume() + interface members, controls.pause/controls.resume EN+PT-BR, stale tests) | 2026-05-19 | f285e58 | [260519-bee-remove-orphaned-nk-pause-resume-code-and](./quick/260519-bee-remove-orphaned-nk-pause-resume-code-and/) |
+| Phase 36 P36-01 | 1m | 2 tasks | 0 files |
 
 ## Deferred Items
 
@@ -90,9 +93,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-20T18:43:10.651Z
-Stopped at: Phase 36 context gathered
-Resume file: .planning/phases/36-housekeeping-bookkeeping-reset/36-CONTEXT.md
+Last session: 2026-05-20T20:56:46.349Z
+Stopped at: Plan 36-01 complete (v1.5 phase dirs restored from HEAD)
+Resume file: .planning/phases/36-housekeeping-bookkeeping-reset/36-02-PLAN.md
 Next command: /gsd-plan-phase 36
 
 ## Operator Next Steps
