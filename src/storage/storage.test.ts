@@ -345,16 +345,19 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
     expect(practices.stretch.stats).toEqual(ZERO_STATS_LITERAL)
   })
 
-  it('is idempotent on re-migration (running v1→v3 twice yields the same envelope)', () => {
+  it('is idempotent — re-migrating the v3 output is a no-op', () => {
     const once = migrateEnvelope(
       { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
       1,
     )
-    const twice = migrateEnvelope(
-      { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
-      1,
-    )
-    expect(once).toEqual(twice)
+    // Feed the output back through with its terminal version. STATE_VERSION (3)
+    // means both fromVersion < 2 and fromVersion < 3 guards are false — the
+    // returned envelope must equal `once` (modulo the `version` field, which
+    // writeEnvelope stamps, not migrateEnvelope). Catches a regression where,
+    // e.g., the v2→v3 step started overwriting an already-present `stretch`
+    // slice on a v3 input.
+    const twice = migrateEnvelope(once, STATE_VERSION)
+    expect(twice).toEqual(once)
   })
 
   it('STATE_VERSION is 3 (ladder terminal)', () => {
