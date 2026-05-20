@@ -13,10 +13,10 @@ Requirements for the v2.0 New Design milestone. Each maps to exactly one phase.
 
 Procedural debt closeout — restores v1.5 phase directories from git, backfills the missing artifacts, then re-archives. No user-visible behavior change.
 
-- [ ] **HOUSE-01**: Phase 12 `VALIDATION.md` is written (Nyquist coverage gap fill from `12-01-PLAN.md`); status `passed`.
-- [ ] **HOUSE-02**: Phase 12 `SECURITY.md` is written (threat model extracted from `12-01-PLAN.md` inline notes); status `passed`.
-- [ ] **HOUSE-03**: Phase 33 `VALIDATION.md` is written; status `passed`.
-- [ ] **HOUSE-04**: Phase 35 `VALIDATION.md` is written; status `passed`.
+- [x] **HOUSE-01**: Phase 12 `VALIDATION.md` is written (Nyquist coverage gap fill from `12-01-PLAN.md`); status `passed`.
+- [x] **HOUSE-02**: Phase 12 `SECURITY.md` is written (threat model extracted from `12-01-PLAN.md` inline notes); status `passed`.
+- [x] **HOUSE-03**: Phase 33 `VALIDATION.md` is written; status `passed`.
+- [x] **HOUSE-04**: Phase 35 `VALIDATION.md` is written; status `passed`.
 - [ ] **HOUSE-05**: Phase 31 `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` (all 9 items operator-confirmed in `31-HUMAN-UAT.md`).
 - [ ] **HOUSE-06**: Phase 32 / 33 / 34 / 35 SUMMARY `requirements-completed` frontmatter is populated from VERIFICATION.md evidence (cross-check the audit table).
 - [ ] **HOUSE-07**: Legacy `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` for Phases 02, 03, 05, 15, 18 (operator-confirmed at the time per milestone records).

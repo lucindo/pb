@@ -4,14 +4,14 @@ milestone: v2.0
 milestone_name: New Design
 status: executing
 stopped_at: Plan 36-01 complete (v1.5 phase dirs restored from HEAD)
-last_updated: "2026-05-20T20:56:46.354Z"
+last_updated: "2026-05-20T21:06:35.883Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 9
-  completed_plans: 1
-  percent: 11
+  completed_plans: 2
+  percent: 22
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 ## Current Position
 
 Phase: 36 (housekeeping-bookkeeping-reset) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Status: Ready to execute
 Last activity: 2026-05-20
 
@@ -43,6 +43,7 @@ Last activity: 2026-05-20
 Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and will be back-promoted into PROJECT.md Key Decisions during the v2.0 milestone close.
 
 - [Phase 36]: Plan 36-01: Conceptual commit #1 (CONTEXT D-05) collapsed to no-op — git restore from HEAD produced no diff; real HOUSE-10 commit lands in 36-07 as the git mv to .planning/milestones/v1.5-phases/. — git restore against HEAD only mutates the working tree when the index already matches HEAD; the 6 v1.5 phase dirs were in ' D' state, so restoring them brought files back from HEAD with zero index-vs-HEAD diff. Nothing to commit at this step.
+- [Phase ?]: Plan 36-02: Closed HOUSE-01..04 by backfilling Phase 12 VALIDATION + SECURITY (v1.0.1 archive) and Phase 33/35 VALIDATION (restored v1.5 phase dirs) — all four ship status: verified, no gap-filling, single docs commit 919b2e6.
 
 ### Pending Todos
 
@@ -67,6 +68,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 | fast | Make VITE_SWITCHER_TREATMENT=B the default in vite.config.ts (explicit 'A' opts out) | 2026-05-19 | f0f941f | — |
 | 260519-bee | Remove orphaned NK pause/resume code and strings — dead after the v1.5-audit NK-07 end-only amendment (useNKEngine pause()/resume() + interface members, controls.pause/controls.resume EN+PT-BR, stale tests) | 2026-05-19 | f285e58 | [260519-bee-remove-orphaned-nk-pause-resume-code-and](./quick/260519-bee-remove-orphaned-nk-pause-resume-code-and/) |
 | Phase 36 P36-01 | 1m | 2 tasks | 0 files |
+| Phase 36 P36-02 | 18m | 6 tasks | 4 files |
 
 ## Deferred Items
 
@@ -93,9 +95,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-20T20:56:46.349Z
+Last session: 2026-05-20T21:06:29.597Z
 Stopped at: Plan 36-01 complete (v1.5 phase dirs restored from HEAD)
-Resume file: .planning/phases/36-housekeeping-bookkeeping-reset/36-02-PLAN.md
+Resume file: None
 Next command: /gsd-plan-phase 36
 
 ## Operator Next Steps
