@@ -24,7 +24,7 @@ Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch,
 
 **Target features:**
 
-- **Housekeeping bookkeeping reset (Phase 36)** — Phase 12 `VALIDATION.md` + `SECURITY.md` retroactive close, Phase 33/35 Nyquist `VALIDATION.md` backfill, Phase 31 `VERIFICATION.md` frontmatter re-flip to `passed`, Phase 32/33/34/35 SUMMARY `requirements-completed` backfill, legacy `human_needed` flips (02/03/05/15/18), 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test.
+- **Housekeeping bookkeeping reset (Phase 36)** — Phase 12 `VALIDATION.md` + `SECURITY.md` retroactive close, Phase 33/35 Nyquist `VALIDATION.md` backfill, Phase 31 `VERIFICATION.md` frontmatter re-flip to `passed`, Phase 32/33/34/35 SUMMARY `requirements-completed` backfill, legacy `human_needed` flips (02/03/05/15/18), 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test. **Also:** remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/` (no longer used), gitignore `.claude/`, and push Phase 36 commits to `origin/main` since no code changes.
 - **Stats UI removal (Phase 37)** — remove `StatsFooter`, `ResetStatsDialog`, Practice Settings "Reset stats" affordance. `recordSession` computation + localStorage persistence stay; regression test confirms continued tracking.
 - **Variant config drop (Phase 38)** — remove Square + Diamond shape variants (code, tokens, picker, Start-capture refs). Persisted `variant: 'square'`/`'diamond'` coerced to `'orb'`.
 - **Theme config drop (Phase 39)** — remove Moss / Slate / Dusk palettes (CSS + ThemePicker). Persisted theme outside `{light, dark, system}` coerced to `'system'`. ThemePicker becomes Light/Dark/System.
