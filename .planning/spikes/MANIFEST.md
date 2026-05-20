@@ -74,17 +74,117 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   (absent → current strike, so ticks stay byte-identical) and have `scheduleEndChord`
   pass it, alongside revised `END_CHORD_*` constants. Applies to both practices'
   completion sounds. (Spike 005, operator decision.)
-- The **visual look-and-feel direction is Monochrome Zen** — paper + ink + ultralight
-  Inter, no decoration, vast negative space. The current six themes
-  (`light / dark / system / moss / slate / dusk`) collapse to just two: a tightened
-  **light** (warm rice-paper, not bleached `#ffffff`) and a paired **dark** (warm near-
-  black, not pure black), plus the existing `system` follow. The five custom themes
-  (`moss / slate / dusk`) are removed; the `ThemePicker` becomes a binary light/dark
-  switch. **Orb-always-on-display** is preserved across all screens — settings open as a
-  compact bottom sheet that does not eclipse the orb. A new `borderSoft` token joins the
-  theme vocabulary to head off the spike-008 dark-theme token-collapse pattern (where
-  `bg-soft === surface` made controls disappear). (Spike 009 + spike 010, operator
+- The **visual look-and-feel direction is Monochrome Zen** in a **cool slate** family
+  with semibold Inter typography. The current six themes (`light / dark / system / moss /
+  slate / dusk`) collapse to just two: **light** (cool pale near-white, `bg #f3f5f7`,
+  surface `#ffffff`, accent slate `#5d6877`) and **dark** (cool near-black `#1a1d24`,
+  surface `#252932`, accent dimmed mid-slate `#b4bac4` — explicitly *not* bleached
+  white), plus the existing `system` follow. The five custom themes are removed; the
+  user-visible theme picker becomes a binary light/dark switch and lives on the **App
+  Settings page**, not in the Practice Settings sheet. A new `borderSoft` token joins
+  the theme vocabulary to head off the spike-008 dark-theme token-collapse pattern.
+  The **orb is a three-layer translucent-halo + solid centre disc** (asymmetric border-
+  radii for an organic-puddle feel) with the breath label rendered *inside* the disc in
+  `onAccent`; tokens `orbHalo1 / orbHalo2 / orbHalo3` (rgba) replace the previous
+  gradient + ring tokens. **Orb-always-on-display** is preserved across all screens —
+  the Practice Settings sheet opens as a compact bottom sheet that does not eclipse the
+  orb. (Spike 009 + spike 010, operator decision.)
+- **Five app surfaces — Learn / App Settings / Idle / Running / Complete — are
+  visually locked** at spike-010 iteration 6: Learn (info icon destination — about
+  Forrest, per-practice intros, resources), App Settings (gear icon — Appearance /
+  Language / Audio / About; theme moved here from Practice Settings), Idle (current-
+  setup summary in a tappable card → Practice Settings sheet, Start + Mute), Running
+  (orb breathing with In/Out inside disc, practice-specific feedback under orb,
+  switcher disabled, End + Mute), Complete (orb still with subtle check marker,
+  "Session complete" line, Done + Mute — *operator may drop this screen at
+  implementation* since A and C diverge only in the marker + line; decision deferred).
+  Practice Settings sheet shape: HRV/Stretch get BPM + Ratio + Duration steppers + Cue
+  timbre + Cue sound; Navi gets Front OM count + Rounds + Cue timbre + Cue sound +
+  Per-OM tick. **A/Idle layout is V1 (Grid) — a 2 × 3 grid card** rendering the active
+  practice's settings (1 row for 3-setting practices HRV/Navi, 2 rows for Stretch's 6
+  settings; whole card is the tap target → opens the Practice Settings sheet, with a
+  right-chevron affordance vertically centred to the card). Other variants explored
+  (V2 List / V3 Primary-metric + Adjust button / V4 Pills / V5 Narrative) were rejected
+  in favour of V1's predictability, scannability, and continuity across the 3 → 6
+  setting range. (Spike 010, operator decision.)
+- **Per-practice feedback shape (Running screen)** — HRV uses a time-based primitive
+  (large remaining time + small pace caption); Stretch and Navi share a *single*
+  count-based primitive (`FeedbackCount`: big primary number, small ` of N` mid, small
+  uppercase tracked context line) with different data shapes filled in. One primitive
+  per practice-class, not per practice. (Spike 010, operator decision.)
+- **Anti-gamification stance** — stats computation continues in the app, but the
+  visible "stats footer" (`12 MIN TODAY · STREAK 5d`) and the Practice Settings
+  "Reset stats" affordance are both removed pending a deliberate decision on whether
+  a stats display belongs in the product. Until then, no streak / duration / badge /
+  affirmation surface anywhere — including the Complete screen, which shows only
+  "Session complete · Take a moment". (Spike 010, operator decision.)
+- **Orb idle behaviour** — both **still** (no animation, empty centre disc) and
+  **ambient breath** (gentle scale animation, no In/Out label) read well on the Idle
+  and Complete screens. Ship **both** behaviours behind a **developer-only environment
+  toggle** (e.g. `VITE_ORB_IDLE_BEHAVIOR=still|ambient`), in the same shape as the
+  `VITE_SWITCHER_TREATMENT` dev toggle from spike 007 — not in user-facing App
+  Settings. The operator picks the final default from real-app testing. (Spike 010,
+  operator decision.)
+- **The breathing visual ships two shape variants behind a developer toggle** — V1
+  "Orb (halo)" (mono-zen layered halos + accent disc) and V2 "Minimal" (single accent
+  disc + faint halo), selectable via env var `VITE_BREATHING_SHAPE=orb-halo|minimal-rings`,
+  same shape as the `VITE_SWITCHER_TREATMENT` and `VITE_ORB_IDLE_BEHAVIOR` flags. The
+  existing `Square` and `Diamond` shape variants are removed; `Orb` is retained and
+  refined. The other shapes explored in spike 010 (Lungs / Column / Ripple) were
+  rejected — kept in the spike file for future reference only, not shipped. (Spike 010,
+  operator decision.)
+- **End-of-phase ring cue is preserved** — an always-visible outer boundary marking
+  end-of-inhale, plus an inner boundary that appears only during the exhale phase
+  marking end-of-exhale. This is the production Orb's distinguishing feature versus
+  most meditation apps (the user paces by sight, gauging distance + velocity to the
+  next boundary — not just feeling the rhythm). Both variants V1 and V2 carry the same
+  cue. (Spike 010, operator decision.)
+- **The practice surface has no vertical scroll and no vertical jiggle** — every
+  screen state (Idle / Running / Complete) must fit inside the viewport at all
+  supported sizes (mobile + desktop) without scrolling, and switching between
+  practices (HRV ↔ Stretch ↔ Navi) or phases (A ↔ B ↔ C) must not cause vertical
+  layout shifts of the orb, switcher, or controls. Designs that work at the smallest
+  device width (320 px) must be checked against the largest practice (Stretch's
+  6-setting Idle SetupCard) and the wordiest locale (PT-BR). (Spike 010, operator
   decision.)
+- **Variant app-configuration is removed** — the user-visible "shape variant" picker
+  (currently Orb / Square / Diamond) goes away with the v1.6 build. Orb is the only
+  family; the dev-toggle between V1 halo and V2 minimal is *not* user-exposed.
+  (Spike 010, operator decision.)
+- **Design holds at desktop viewport** — the locked mobile design renders inside a
+  centered column on desktop (520 px wide for the practice screens A/B/C, 600 px for
+  Learn + App Settings) with the orb scaled up to 320 px diameter. Practice Settings
+  becomes a center modal instead of a bottom sheet at desktop sizes. No multi-column
+  re-layout; the design intentionally stays consistent with mobile. The build phase
+  may use any width-detection strategy (CSS `@media` or container queries) as long as
+  the outcome matches: same components, larger orb, modal-vs-sheet for the settings
+  surface, generous whitespace on either side of the centered column. (Spike 010,
+  operator decision.)
+- **Ring cues are hidden on Idle (A) and Complete (C)** — even when the orb is
+  ambient-breathing on those screens, neither the outer nor inner boundary renders.
+  Rings appear only during a Running (B) session. The breath shape itself (orb halos /
+  minimal disc) still scales when ambient-breath is on; only the targeting boundaries
+  go. (Spike 010, operator decision.)
+- **Install banner is V3 Inline card** — the production
+  `src/components/InstallBanner.tsx` is replaced by an inline-card treatment that
+  reuses the locked V1 SetupCard shape: rounded `surface` card with `borderSoft`
+  border, app-icon glyph on the left, two-line content (`Install on this iPhone` /
+  `Install the app` title + the locked `bannerText` sub-line `Add to your home
+  screen for offline use`), tap-to-install affordance with a right chevron, plus a
+  small dismiss X. **Mobile-only, idle-only** (never on desktop, never during
+  Running / Complete). Renders below the top app bar — not between switcher and
+  orb — to preserve the locked orb position on appear and dismiss. Action label
+  branches on `isIOS`: **Install** (Android / Chrome triggers the deferred prompt)
+  vs **How to install** (iOS expands the `IosInstallSteps` panel below the card).
+  The locked strings (`LOCKED_COPY.{en,pt}.install.*`) carry verbatim; the visual
+  shape changes only. (Spike 010, operator decision.)
+- **MuteToggle chrome alignment** — the production `MuteToggle.tsx:52` uses
+  `border-[var(--color-breathing-accent)]` + `text-[var(--color-breathing-accent-strong)]`,
+  which reads as a glaring outlier against the new mono-zen chrome where every other
+  icon (top-bar info + gear) uses `borderSoft` + `textSoft`. The build phase must
+  update `MuteToggle.tsx` to the lighter treatment so all top/bottom icons sit at the
+  same visual weight. Hit area stays 44 px (size-11) for the a11y floor — only colour
+  classes change. (Spike 010, operator decision.)
 - The **Chime cue timbre is replaced by a Flute** — Chime is structurally a near-clone of
   Bowl (Bowl's `1.0 / 2.76 / 5.4` stack + a `7.6×` shimmer), which is why the two sound
   too close. Bowl is kept; the fourth timbre slot becomes a flute with a **soft breath
@@ -114,4 +214,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 007 | three-practice-switcher | comparison | The top segmented control, extended to 3 practices (HRV/Stretch/Navi), stays legible and balanced at real mobile widths | VALIDATED — 3-practice switcher confirmed; both treatments ship behind a dev setting | ui, switcher, navigation, mobile, practice, comparison |
 | 008 | chime-replacement-timbre | comparison | Keep Bowl; replace Chime (a near-clone of Bowl) with a flute-family timbre clearly distinct from Bowl/Bell/Sine on In and Out cues, still calm | VALIDATED — winner: Flute — soft attack | audio, timbre, cue, sound-design, flute, comparison |
 | 009 | look-feel-alternatives | comparison | Six fully-composed aesthetic directions (palette + typography + orb gradient + ambient surface + chrome) for the practice screen — calm/clean meditation-appropriate look to replace the current 5-theme system | VALIDATED — winner: F. Monochrome Zen (refined in 010); collapses 5-theme system to light+dark | ui, look-and-feel, palette, typography, theme, aesthetic, comparison |
-| 010 | mono-zen-light-dark | comparison | Tightened Monochrome Zen in paired light (warm rice-paper, not bleach) + dark variants, with a fully realised practice-settings panel exposing all control types — stepper, segmented, visual picker, toggle, secondary button — staying calm + legible in both | PENDING — awaiting operator audition | ui, look-and-feel, palette, theme, mono-zen, controls, comparison |
+| 010 | mono-zen-light-dark | comparison | Tightened Monochrome Zen as the full v1.6 visual system — paired light + dark cool-slate palette, 5 screens (Learn / App Settings / Idle / Running / Complete), 3 practices with per-practice feedback shapes, V1 grid SetupCard, V1 orb-halo + V2 minimal shape variants behind a dev toggle, no-jiggle layout, desktop validation, V3 inline-card install banner | VALIDATED — full visual system locked; see Requirements above for the carry-forward list | ui, look-and-feel, theme, mono-zen, controls, layout, install, desktop, comparison |
