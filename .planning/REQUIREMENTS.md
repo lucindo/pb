@@ -22,7 +22,7 @@ Procedural debt closeout — restores v1.5 phase directories from git, backfills
 - [x] **HOUSE-07**: Legacy `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` for Phases 02, 03, 05, 15, 18 (operator-confirmed at the time per milestone records).
 - [x] **HOUSE-08**: Phase 28-01 / 28-03 SUMMARY drift is corrected (field count + superseded `SafariNavigator` reference removed; code is canonical).
 - [x] **HOUSE-09**: A regression test exists exercising the full v1 → v2 → v3 chained `migrateEnvelope` ladder (returning user with a v1 flat envelope migrates losslessly across both bumps in a single read).
-- [ ] **HOUSE-10**: Restored v1.5 phase directories are re-archived to `.planning/milestones/v1.5-phases/` after backfill (clean working tree, no stray `D` files).
+- [x] **HOUSE-10**: Restored v1.5 phase directories are re-archived to `.planning/milestones/v1.5-phases/` after backfill (clean working tree, no stray `D` files).
 - [ ] **HOUSE-11**: The root `CLAUDE.md` is removed from the repository (`git rm CLAUDE.md`). It pointed to the `spike-findings-hrv` skill which is being removed alongside it (HOUSE-12).
 - [ ] **HOUSE-12**: The `.claude/skills/spike-findings-hrv/` directory and all its contents (SKILL.md, references/, sources/ — 22 tracked files total) are removed from the repository. The skill won't be used during v2.0 build — spike implementation patterns either landed in v1.5 or are now codified in `.planning/spikes/MANIFEST.md` Requirements.
 - [ ] **HOUSE-13**: `.claude/` is added to `.gitignore` (single-line entry — covers `scheduled_tasks.lock`, `settings.local.json`, `worktrees/`, and any future Claude Code per-project files). This prevents the directory from being re-committed by accident.
