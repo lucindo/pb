@@ -17,9 +17,9 @@ Procedural debt closeout — restores v1.5 phase directories from git, backfills
 - [x] **HOUSE-02**: Phase 12 `SECURITY.md` is written (threat model extracted from `12-01-PLAN.md` inline notes); status `passed`.
 - [x] **HOUSE-03**: Phase 33 `VALIDATION.md` is written; status `passed`.
 - [x] **HOUSE-04**: Phase 35 `VALIDATION.md` is written; status `passed`.
-- [ ] **HOUSE-05**: Phase 31 `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` (all 9 items operator-confirmed in `31-HUMAN-UAT.md`).
+- [x] **HOUSE-05**: Phase 31 `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` (all 9 items operator-confirmed in `31-HUMAN-UAT.md`).
 - [ ] **HOUSE-06**: Phase 32 / 33 / 34 / 35 SUMMARY `requirements-completed` frontmatter is populated from VERIFICATION.md evidence (cross-check the audit table).
-- [ ] **HOUSE-07**: Legacy `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` for Phases 02, 03, 05, 15, 18 (operator-confirmed at the time per milestone records).
+- [x] **HOUSE-07**: Legacy `VERIFICATION.md` frontmatter is re-flipped from `human_needed` to `passed` for Phases 02, 03, 05, 15, 18 (operator-confirmed at the time per milestone records).
 - [ ] **HOUSE-08**: Phase 28-01 / 28-03 SUMMARY drift is corrected (field count + superseded `SafariNavigator` reference removed; code is canonical).
 - [ ] **HOUSE-09**: A regression test exists exercising the full v1 → v2 → v3 chained `migrateEnvelope` ladder (returning user with a v1 flat envelope migrates losslessly across both bumps in a single read).
 - [ ] **HOUSE-10**: Restored v1.5 phase directories are re-archived to `.planning/milestones/v1.5-phases/` after backfill (clean working tree, no stray `D` files).

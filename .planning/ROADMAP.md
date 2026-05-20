@@ -76,7 +76,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 9 plans
 - [x] 36-01-PLAN.md — Restore v1.5 phase directories from HEAD (HOUSE-10 prep)
 - [x] 36-02-PLAN.md — Backfill Phase 12 VALIDATION + SECURITY and Phase 33/35 VALIDATION (HOUSE-01..04)
-- [ ] 36-03-PLAN.md — Re-flip VERIFICATION status human_needed → passed for phases 02/03/05/15/18/31 (HOUSE-05, HOUSE-07)
+- [x] 36-03-PLAN.md — Re-flip VERIFICATION status human_needed → passed for phases 02/03/05/15/18/31 (HOUSE-05, HOUSE-07)
 - [ ] 36-04-PLAN.md — Populate SUMMARY requirements-completed frontmatter for phases 32/33/34/35 (HOUSE-06)
 - [ ] 36-05-PLAN.md — Recover and correct 28-01/28-03 SUMMARY drift (HOUSE-08)
 - [ ] 36-06-PLAN.md — Add v1→v3 chained migrateEnvelope regression test (HOUSE-09)
