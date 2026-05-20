@@ -18,9 +18,21 @@ Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch,
 
 **v1.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss). Firefox Desktop orb scale-animation flicker. S2 Android Chrome wake-lock real-device UAT. iOS Pitfall 6 phone-call interrupted state. Inner-ring UX symmetry. Phase 12 VALIDATION/SECURITY retroactive close. iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision. 28 Info-severity findings from the 2026-05-16 full-codebase review (low priority — 23 Warnings already fixed). Code review WR-01 — `IosInstallSteps` `::marker` color coupling. v1.5 audit tech debt: Nyquist `VALIDATION.md` missing for Phases 33/35; Phase 31 `VERIFICATION.md` frontmatter not re-flipped despite operator-confirmed UAT. See STATE.md `## Deferred Items` for the full register.
 
-## Next Milestone
+## Current Milestone: v2.0 New Design
 
-v1.5 Multi-Practice shipped 2026-05-19. The next milestone is not yet defined — run `/gsd-new-milestone` to scope it (questioning → research → requirements → roadmap). Candidate inputs: the v1.x carry-forward tech-debt register (see Current State above and STATE.md `## Deferred Items`) and any new practice or feature ideas.
+**Goal:** Land the spike-010 Monochrome Zen visual system end-to-end — collapse themes (5 → 3 options: `light`/`dark`/`system`), drop legacy shape variants (Square/Diamond), strip the visible stats UI (keep computation + persistence), rebuild the orb as a three-layer halo + centre disc, redesign all five app surfaces (Learn / App Settings / Idle / Running / Complete), and close the procedural GSD backlog in a single bookkeeping sweep up front.
+
+**Target features:**
+
+- **Housekeeping bookkeeping reset (Phase 36)** — Phase 12 `VALIDATION.md` + `SECURITY.md` retroactive close, Phase 33/35 Nyquist `VALIDATION.md` backfill, Phase 31 `VERIFICATION.md` frontmatter re-flip to `passed`, Phase 32/33/34/35 SUMMARY `requirements-completed` backfill, legacy `human_needed` flips (02/03/05/15/18), 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test.
+- **Stats UI removal (Phase 37)** — remove `StatsFooter`, `ResetStatsDialog`, Practice Settings "Reset stats" affordance. `recordSession` computation + localStorage persistence stay; regression test confirms continued tracking.
+- **Variant config drop (Phase 38)** — remove Square + Diamond shape variants (code, tokens, picker, Start-capture refs). Persisted `variant: 'square'`/`'diamond'` coerced to `'orb'`.
+- **Theme config drop (Phase 39)** — remove Moss / Slate / Dusk palettes (CSS + ThemePicker). Persisted theme outside `{light, dark, system}` coerced to `'system'`. ThemePicker becomes Light/Dark/System.
+- **Timbre preview cue (Phase 40)** — switching Timbre in App Settings plays the inhale-only cue at current pitch via the existing scheduler.
+- **Mono Zen palette + tokens (Phase 41)** — apply spike-010 light (`bg #f3f5f7`, surface `#ffffff`, accent slate `#5d6877`) + dark (`#1a1d24` / surface `#252932` / accent dimmed mid-slate `#b4bac4`) palettes; add `borderSoft` token; introduce `orbHalo1/2/3` rgba tokens; semibold Inter typography; WCAG contrast guard regenerated.
+- **New orb (Phase 42)** — three-layer translucent-halo + solid centre disc, asymmetric border-radii; breath label inside disc in `onAccent`; V1 (orb-halo) + V2 (minimal) behind `VITE_BREATHING_SHAPE`; `VITE_ORB_IDLE_BEHAVIOR=still|ambient` dev toggle; end-of-phase ring cues preserved (outer always, inner during exhale); rings hidden on Idle (A) + Complete (C); `MuteToggle` chrome aligned to `borderSoft` / `textSoft`.
+- **Five-surface redesign (Phase 43)** — App Settings page (Appearance / Language / Audio / About), Idle V1 Grid SetupCard, Practice Settings sheet (mobile) / center modal (desktop), Running with per-practice feedback (HRV time-based; Stretch + Navi share `FeedbackCount` primitive), Complete (orb + check marker + "Session complete · Take a moment" — may drop), Learn reorganized, V3 inline-card install banner, desktop centered column (520/600 px), no-jiggle invariant.
+- **Final POLISH (Phase 44)** — full `/gsd-code-review --all --fix` sweep, test cleanup (less wordy / fewer redundancies), Tiger Style comment audit (WHY-only), refactoring where warranted, security re-review, readability pass, sweep the 28 Info-severity findings from 2026-05-16.
 
 ## Requirements
 
@@ -89,20 +101,20 @@ v1.5 Multi-Practice shipped 2026-05-19. The next milestone is not yet defined �
 
 ### Active
 
-No active milestone. v1.5 Multi-Practice shipped 2026-05-19 — run `/gsd-new-milestone` to scope the next one. A fresh `.planning/REQUIREMENTS.md` is created at that point.
+v2.0 New Design (started 2026-05-20) — see `.planning/REQUIREMENTS.md` for the full REQ-ID list and `.planning/ROADMAP.md` for the phase mapping. Spike-010 visual system is the design contract; spike `.planning/spikes/MANIFEST.md` Requirements are the non-negotiables.
 
-### v1.x Carry-Forwards (Tech Debt)
+### v2.0 Carry-Forwards (Known Bugs)
 
-- [ ] iOS Safari mid-page audio recovery after lock/unlock (Override SC1, OS-level audio session loss).
-- [ ] Firefox Desktop orb scale-animation flicker (Override FF-01, needs CSS keyframes root remedy).
-- [ ] S2 Android Chrome wake lock real-device UAT (Phase 5 Plan 04 — physical device unavailable).
-- [ ] iOS Safari Pitfall 6 — phone-call interrupted state (Phase 3 Open Question 5).
-- [ ] Inner-ring UX symmetry (Issue B, Phase 5.1) — separate planning candidate.
-- [ ] Phase 12 `VALIDATION.md` + `SECURITY.md` retroactive close (advisory; threat model inlined in `12-01-PLAN.md`).
-- [ ] iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) — product decision whether to detect and warn (surfaced by PWA-01, documented in README).
-- [ ] 28 Info-severity findings from the 2026-05-16 full-codebase deep review (low priority — the 23 Warning-severity findings were fixed the same day; re-run `/gsd-code-review 27 --fix --all` to sweep).
-- [ ] Nyquist `VALIDATION.md` docs missing for Phases 33 and 35 (v1.5 audit — documentation gap only, the full test suite is green; `/gsd-validate-phase 33` / `35` to reconcile).
-- [ ] Phase 31 `VERIFICATION.md` frontmatter still `human_needed` — all 9 items operator-confirmed in `31-HUMAN-UAT.md` (v1.5 audit tech debt; re-flip to `passed`).
+- [ ] **iOS Safari mid-page audio recovery after lock/unlock** (Override SC1, OS-level audio session loss). Needs more investigation; remains a known bug to address in a future milestone — does NOT block v2.0.
+
+### Closed at v2.0 Start
+
+The v1.x carry-forward register was disposed at v2.0 scoping (2026-05-20):
+
+- **Dropped permanently** — Firefox Desktop orb scale-animation flicker (the orb is being rebuilt in Phase 42; old `.orb` keyframes won't survive the rewrite).
+- **Absorbed into Phase 36 (Housekeeping)** — Phase 12 `VALIDATION.md`+`SECURITY.md`, Phase 33/35 Nyquist `VALIDATION.md`, Phase 31 `VERIFICATION.md` frontmatter re-flip, 28-01/28-03 SUMMARY drift, legacy `human_needed` flips (02/03/05/15/18), v1→v2→v3 chained-migration regression test.
+- **Naturally superseded by redesign** — Inner-ring UX symmetry (replaced by Phase 42 new orb), Code review WR-01 `IosInstallSteps` `::marker` (replaced by Phase 43 V3 inline install banner), 28 Info-severity findings from 2026-05-16 (swept by Phase 44 POLISH).
+- **Deferred without bundling (product decisions, not bugs)** — S2 Android Chrome wake-lock real-device UAT (physical device unavailable), iOS Safari Pitfall 6 phone-call interrupted (domain overlap with iOS audio recovery), iOS standalone-PWA Wake Lock < 18.4 detect-and-warn (product decision still pending).
 
 ### Out of Scope
 
@@ -222,4 +234,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 after v1.5 Multi-Practice milestone*
+*Last updated: 2026-05-20 after starting milestone v2.0 New Design*
