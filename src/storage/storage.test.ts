@@ -296,3 +296,71 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
     expect(STATE_VERSION).toBe(3)
   })
 })
+
+describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
+  // A v1 flat envelope from a returning user who has never opened the app since
+  // the v2 or v3 ladder shipped. migrateEnvelope(env, 1) must cascade BOTH
+  // ladder steps (v1→v2 then v2→v3) in a single call.
+  //
+  // Per CONTEXT D-06 wording resolution (36-PATTERNS §1 strategy (a)):
+  // this block asserts only what `migrateEnvelope` actually produces —
+  // resonant + stretch + activePractice. naviKriya seeding is NOT asserted
+  // because `migrateEnvelope` does not seed naviKriya; defaults are supplied
+  // downstream by `coercePractices` (see src/storage/storage.ts:88).
+  // The v1→v2 analog block above also omits naviKriya assertions.
+  //
+  // The inline ZERO_STATS_LITERAL guards the circular-dep boundary called
+  // out at src/storage/storage.ts:112-113 — stats.ts imports from storage.ts,
+  // so importing ZERO_STATS from stats.ts here would create a cycle.
+  const V1_SETTINGS = { bpm: 4, ratio: '40:60', durationMinutes: 10 }
+  const V1_STATS = {
+    totalSessions: 7,
+    totalElapsedSeconds: 4200,
+    lastSessionAtMs: 1_700_000_000_000,
+    lastSessionDurationSeconds: 600,
+  }
+  const ZERO_STATS_LITERAL = {
+    totalSessions: 0,
+    totalElapsedSeconds: 0,
+    lastSessionAtMs: null,
+    lastSessionDurationSeconds: null,
+  }
+
+  it('folds a v1 flat envelope all the way to v3 in one call', () => {
+    const migrated = migrateEnvelope(
+      { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
+      1,
+    )
+    const practices = migrated.practices as {
+      resonant: { settings: unknown; stats: unknown }
+      stretch: { settings: unknown; stats: unknown }
+    }
+    // v1→v2 step: resonant slice populated losslessly from flat fields.
+    expect(practices.resonant.settings).toEqual(V1_SETTINGS)
+    expect(practices.resonant.stats).toEqual(V1_STATS)
+    expect(migrated.activePractice).toBe('resonant')
+    // v2→v3 step: stretch slice seeded — settings carries the resonant blob
+    // (downstream coerceStretchSettings validates ramp fields), stats is ZERO.
+    expect(practices.stretch.settings).toEqual(V1_SETTINGS)
+    expect(practices.stretch.stats).toEqual(ZERO_STATS_LITERAL)
+  })
+
+  it('is idempotent on re-migration (running v1→v3 twice yields the same envelope)', () => {
+    const once = migrateEnvelope(
+      { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
+      1,
+    )
+    const twice = migrateEnvelope(
+      { version: 1, settings: V1_SETTINGS, stats: V1_STATS },
+      1,
+    )
+    expect(once).toEqual(twice)
+  })
+
+  it('STATE_VERSION is 3 (ladder terminal)', () => {
+    // Locks the test against silent ladder extension — if a future v3→v4 step
+    // ships, this assertion fails and forces the HOUSE-09 regression to be
+    // re-evaluated against the new terminal.
+    expect(STATE_VERSION).toBe(3)
+  })
+})
