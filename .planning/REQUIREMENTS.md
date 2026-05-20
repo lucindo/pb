@@ -188,20 +188,20 @@ Each v2.0 requirement maps to exactly one phase. Mapping locked by the roadmappe
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOUSE-01 | Phase 36 | Planned |
-| HOUSE-02 | Phase 36 | Planned |
-| HOUSE-03 | Phase 36 | Planned |
-| HOUSE-04 | Phase 36 | Planned |
-| HOUSE-05 | Phase 36 | Planned |
-| HOUSE-06 | Phase 36 | Planned |
-| HOUSE-07 | Phase 36 | Planned |
-| HOUSE-08 | Phase 36 | Planned |
-| HOUSE-09 | Phase 36 | Planned |
-| HOUSE-10 | Phase 36 | Planned |
-| HOUSE-11 | Phase 36 | Planned |
-| HOUSE-12 | Phase 36 | Planned |
-| HOUSE-13 | Phase 36 | Planned |
-| HOUSE-14 | Phase 36 | Planned |
+| HOUSE-01 | Phase 36 | Complete |
+| HOUSE-02 | Phase 36 | Complete |
+| HOUSE-03 | Phase 36 | Complete |
+| HOUSE-04 | Phase 36 | Complete |
+| HOUSE-05 | Phase 36 | Complete |
+| HOUSE-06 | Phase 36 | Complete |
+| HOUSE-07 | Phase 36 | Complete |
+| HOUSE-08 | Phase 36 | Complete |
+| HOUSE-09 | Phase 36 | Complete |
+| HOUSE-10 | Phase 36 | Complete |
+| HOUSE-11 | Phase 36 | Complete |
+| HOUSE-12 | Phase 36 | Complete |
+| HOUSE-13 | Phase 36 | Complete |
+| HOUSE-14 | Phase 36 | Complete |
 | STATS-01 | Phase 37 | Planned |
 | STATS-02 | Phase 37 | Planned |
 | STATS-03 | Phase 37 | Planned |
