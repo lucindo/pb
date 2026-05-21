@@ -15,7 +15,7 @@
 // keys are read from a guarded Record (ASVS V5).
 
 import { coerceSettings } from './settings'
-import { coerceStats, ZERO_STATS, COUNT_THRESHOLD_MS, type PersistedStats } from './stats'
+import { coerceStats, COUNT_THRESHOLD_MS, type PersistedStats } from './stats'
 import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 import type { SessionSettings } from '../domain/settings'
 import {
@@ -330,20 +330,3 @@ export function recordNaviKriyaSession(
   return next
 }
 
-// Pitfall 4: practice-scoped reset. Writes ZERO_STATS into the named practice's
-// stats slice ONLY — the other practice's slice (settings and stats) is left
-// untouched.
-export function resetPracticeStats(practice: PracticeId, deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...practices,
-        [practice]: { ...practices[practice], stats: { ...ZERO_STATS } },
-      },
-    },
-    deps,
-  )
-}
