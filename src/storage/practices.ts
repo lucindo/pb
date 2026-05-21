@@ -330,20 +330,3 @@ export function recordNaviKriyaSession(
   return next
 }
 
-// Pitfall 4: practice-scoped reset. Writes ZERO_STATS into the named practice's
-// stats slice ONLY — the other practice's slice (settings and stats) is left
-// untouched.
-export function resetPracticeStats(practice: PracticeId, deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...practices,
-        [practice]: { ...practices[practice], stats: { ...ZERO_STATS } },
-      },
-    },
-    deps,
-  )
-}
