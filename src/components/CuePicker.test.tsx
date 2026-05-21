@@ -14,7 +14,7 @@ const EN_STRINGS_FIXTURE = UI_STRINGS.en
 function seedCue(cue: CueStyleId): void {
   const envelope = {
     version: 1,
-    prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue, locale: 'en' },
+    prefs: { theme: 'system', timbre: 'bowl', cue, locale: 'en' },
   }
   window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
 }

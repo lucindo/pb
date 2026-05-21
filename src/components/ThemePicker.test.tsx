@@ -14,7 +14,7 @@ const EN_STRINGS_FIXTURE = UI_STRINGS.en
 function seedTheme(theme: ThemeId): void {
   const envelope = {
     version: 1,
-    prefs: { theme, timbre: 'bowl', variant: 'orb', locale: 'en' },
+    prefs: { theme, timbre: 'bowl', locale: 'en' },
   }
   window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
 }

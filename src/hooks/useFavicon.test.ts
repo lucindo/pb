@@ -19,7 +19,7 @@ function seedPrefs(theme: string): void {
     STATE_KEY,
     JSON.stringify({
       version: 1,
-      prefs: { theme, timbre: 'bowl', variant: 'orb', locale: 'en' },
+      prefs: { theme, timbre: 'bowl', locale: 'en' },
     }),
   )
 }
@@ -131,7 +131,7 @@ describe('useFavicon', () => {
     // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'moss', timbre: 'bowl', variant: 'orb', locale: 'en' },
+      prefs: { theme: 'moss', timbre: 'bowl', locale: 'en' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 

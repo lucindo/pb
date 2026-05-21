@@ -15,7 +15,7 @@ const EN_STRINGS_FIXTURE = UI_STRINGS.en
 function seedTimbre(timbre: TimbreId): void {
   const envelope = {
     version: 1,
-    prefs: { theme: 'system', timbre, variant: 'orb', locale: 'en' },
+    prefs: { theme: 'system', timbre, locale: 'en' },
   }
   window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
 }

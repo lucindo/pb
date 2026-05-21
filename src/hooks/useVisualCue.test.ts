@@ -12,7 +12,7 @@ function seedPrefs(cue: CueStyleId): void {
     STATE_KEY,
     JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue, locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', cue, locale: 'en' },
     }),
   )
 }
@@ -41,7 +41,7 @@ describe('useVisualCue', () => {
     // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue: 'nose', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', cue: 'nose', locale: 'en' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -142,7 +142,7 @@ describe('useVisualCue', () => {
     // Trigger state updates via storage event
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue: 'arrow', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', cue: 'arrow', locale: 'en' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 

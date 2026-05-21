@@ -350,7 +350,7 @@ describe('manual session ending', () => {
 function seedCue(cue: CueStyleId): void {
   const envelope = {
     version: 1,
-    prefs: { theme: 'system', timbre: 'sine', variant: 'orb', cue, locale: 'en' },
+    prefs: { theme: 'system', timbre: 'sine', cue, locale: 'en' },
   }
   window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
 }
@@ -358,7 +358,7 @@ function seedCue(cue: CueStyleId): void {
 function seedTimbre(timbre: TimbreId): void {
   const envelope = {
     version: 1,
-    prefs: { theme: 'system', timbre, variant: 'orb', locale: 'en' },
+    prefs: { theme: 'system', timbre, locale: 'en' },
   }
   window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
 }
@@ -407,7 +407,7 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
     //     timbreRef.current inside useAudioCues must continue to dispatch 'bell'.
     const fluteEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'flute', variant: 'orb', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'flute', locale: 'en' },
     })
     act(() => {
       window.localStorage.setItem(STATE_KEY, fluteEnvelope)

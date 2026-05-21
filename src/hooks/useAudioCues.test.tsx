@@ -1222,7 +1222,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     //    timbreRef.current exclusively, which still holds 'bell'.
     window.localStorage.setItem(
       'hrv:state:v1',
-      JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'flute', variant: 'orb', locale: 'en' } }),
+      JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'flute', locale: 'en' } }),
     )
 
     // 3. Trigger reconstruction via public resume() — which internally calls
