@@ -146,3 +146,11 @@ No new network endpoints, auth paths, file access patterns, or schema changes in
 ---
 *Phase: 40-timbre-preview-cue*
 *Completed: 2026-05-21*
+
+## Self-Check: PASSED
+
+- `src/audio/previewContext.ts`: FOUND
+- `src/audio/previewContext.test.ts`: FOUND
+- `.planning/phases/40-timbre-preview-cue/40-01-SUMMARY.md`: FOUND
+- Commit `9c93da6` (feat task): FOUND
+- Commit `4207e7e` (docs summary): FOUND
