@@ -13,8 +13,8 @@ const CONCRETE_THEMES = THEME_OPTIONS.filter(
 )
 
 describe('FAVICON_COLORS', () => {
-  it('has exactly 5 keys (no system key)', () => {
-    expect(Object.keys(FAVICON_COLORS)).toHaveLength(5)
+  it('has exactly 2 keys (light + dark, no system key)', () => {
+    expect(Object.keys(FAVICON_COLORS)).toHaveLength(2)
     expect('system' in FAVICON_COLORS).toBe(false)
   })
 
@@ -26,19 +26,7 @@ describe('FAVICON_COLORS', () => {
     expect(FAVICON_COLORS.dark).toBe('#81a1c1')
   })
 
-  it('moss === #35a77c', () => {
-    expect(FAVICON_COLORS.moss).toBe('#35a77c')
-  })
-
-  it('slate === #3760bf', () => {
-    expect(FAVICON_COLORS.slate).toBe('#3760bf')
-  })
-
-  it('dusk === #f6c177', () => {
-    expect(FAVICON_COLORS.dusk).toBe('#f6c177')
-  })
-
-  it('all 5 concrete themes are present as keys', () => {
+  it('all concrete themes are present as keys', () => {
     for (const theme of CONCRETE_THEMES) {
       expect(FAVICON_COLORS).toHaveProperty(theme)
     }
@@ -83,20 +71,5 @@ describe('buildFaviconDataUri', () => {
   it('output contains the per-theme hex (dark)', () => {
     const result = buildFaviconDataUri('dark')
     expect(result.toLowerCase()).toMatch(/81a1c1/)
-  })
-
-  it('output contains the per-theme hex (moss)', () => {
-    const result = buildFaviconDataUri('moss')
-    expect(result.toLowerCase()).toMatch(/35a77c/)
-  })
-
-  it('output contains the per-theme hex (slate)', () => {
-    const result = buildFaviconDataUri('slate')
-    expect(result.toLowerCase()).toMatch(/3760bf/)
-  })
-
-  it('output contains the per-theme hex (dusk)', () => {
-    const result = buildFaviconDataUri('dusk')
-    expect(result.toLowerCase()).toMatch(/f6c177/)
   })
 })
