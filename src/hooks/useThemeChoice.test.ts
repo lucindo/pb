@@ -14,7 +14,6 @@ function seedPrefs(prefs: UserPrefs): void {
 const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
-  variant: 'orb',
   cue: 'labels',
   locale: 'en',
 }
@@ -62,7 +61,7 @@ describe('useThemeChoice', () => {
   })
 
   it('setTheme("slate") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'moss', timbre: 'bell', variant: 'square', cue: 'labels', locale: 'pt-BR' })
+    seedPrefs({ theme: 'moss', timbre: 'bell', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useThemeChoice())
 
     act(() => {
@@ -75,7 +74,6 @@ describe('useThemeChoice', () => {
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as { version: number; prefs: UserPrefs }
     expect(raw.prefs.theme).toBe('slate')
     expect(raw.prefs.timbre).toBe('bell')
-    expect(raw.prefs.variant).toBe('square')
     expect(raw.prefs.locale).toBe('pt-BR')
   })
 

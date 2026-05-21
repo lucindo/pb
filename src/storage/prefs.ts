@@ -7,17 +7,14 @@
 import {
   DEFAULT_THEME,
   DEFAULT_TIMBRE,
-  DEFAULT_VARIANT,
   DEFAULT_CUE,
   DEFAULT_LOCALE,
   isValidTheme,
   isValidTimbre,
-  isValidVariant,
   isValidCue,
   isValidLocale,
   type ThemeId,
   type TimbreId,
-  type VisualVariantId,
   type CueStyleId,
   type LocaleId,
 } from '../domain/settings'
@@ -27,7 +24,6 @@ import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 export interface UserPrefs {
   theme: ThemeId
   timbre: TimbreId
-  variant: VisualVariantId
   cue: CueStyleId
   locale: LocaleId
 }
@@ -35,7 +31,6 @@ export interface UserPrefs {
 export const DEFAULT_PREFS: UserPrefs = {
   theme: DEFAULT_THEME,
   timbre: DEFAULT_TIMBRE,
-  variant: DEFAULT_VARIANT,
   cue: DEFAULT_CUE,
   locale: DEFAULT_LOCALE,
 }
@@ -46,16 +41,11 @@ export function coerceTheme(raw: unknown): ThemeId {
 
 export function coerceTimbre(raw: unknown): TimbreId {
   // AUDIO-02 legacy-value migration: 'chime' was the fourth timbre slot before Phase 35
-  // renamed it to 'flute'. Explicit remap preserves the user's fourth-slot preference
-  // (same kind of value-level coercion as coerceVariant's pre-swap 'ring' remap).
+  // renamed it to 'flute'. Explicit remap preserves the user's fourth-slot preference.
   // No STATE_VERSION bump needed — coercers are non-throwing per-field; 'chime' is a
   // stale value, not a structural envelope change.
   if (raw === 'chime') return 'flute'
   return isValidTimbre(raw) ? raw : DEFAULT_TIMBRE
-}
-
-export function coerceVariant(raw: unknown): VisualVariantId {
-  return isValidVariant(raw) ? raw : DEFAULT_VARIANT
 }
 
 export function coerceCue(raw: unknown): CueStyleId {
@@ -67,7 +57,7 @@ export function coerceLocale(raw: unknown): LocaleId {
 }
 
 export function coercePrefs(raw: unknown): UserPrefs {
-  // Prototype-pollution mitigation (T-14-01 / T-25-01 / D-12): we only read five known keys
+  // Prototype-pollution mitigation (T-14-01 / T-25-01 / D-12): we only read four known keys
   // from `r`; `raw` is never spread into a prototype-accessible object.
   const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
     ? raw as Record<string, unknown>
@@ -75,7 +65,6 @@ export function coercePrefs(raw: unknown): UserPrefs {
   return {
     theme:   coerceTheme(r.theme),
     timbre:  coerceTimbre(r.timbre),
-    variant: coerceVariant(r.variant),
     cue:     coerceCue(r.cue),
     locale:  coerceLocale(r.locale),
   }

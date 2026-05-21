@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   LOCALE_OPTIONS,
   THEME_OPTIONS,
-  VARIANT_OPTIONS,
   CUE_OPTIONS,
   TIMBRE_OPTIONS,
 } from '../domain/settings'
@@ -23,12 +22,11 @@ describe('UI_STRINGS exhaustiveness', () => {
     }
   })
 
-  it('every locale has non-empty settings.title, settings.close, settings.themeLabel, settings.variantLabel, settings.cueLabel, settings.timbreLabel, settings.languageLabel', () => {
+  it('every locale has non-empty settings.title, settings.close, settings.themeLabel, settings.cueLabel, settings.timbreLabel, settings.languageLabel', () => {
     for (const locale of LOCALE_OPTIONS) {
       expect(UI_STRINGS[locale].settings.title.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.close.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.themeLabel.length).toBeGreaterThan(0)
-      expect(UI_STRINGS[locale].settings.variantLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.cueLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.timbreLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].settings.languageLabel.length).toBeGreaterThan(0)
@@ -39,14 +37,6 @@ describe('UI_STRINGS exhaustiveness', () => {
     for (const locale of LOCALE_OPTIONS) {
       for (const id of THEME_OPTIONS) {
         expect(UI_STRINGS[locale].themes[id].length).toBeGreaterThan(0)
-      }
-    }
-  })
-
-  it('every locale has variants entries for every VARIANT_OPTIONS id', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      for (const id of VARIANT_OPTIONS) {
-        expect(UI_STRINGS[locale].variants[id].length).toBeGreaterThan(0)
       }
     }
   })

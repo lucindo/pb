@@ -14,7 +14,6 @@ function seedPrefs(prefs: UserPrefs): void {
 const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
-  variant: 'orb',
   cue: 'labels',
   locale: 'en',
 }
@@ -62,7 +61,7 @@ describe('useCueChoice', () => {
   })
 
   it('setCue("arrow") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'dark', timbre: 'bell', variant: 'square', cue: 'labels', locale: 'pt-BR' })
+    seedPrefs({ theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useCueChoice())
 
     act(() => {
@@ -76,7 +75,6 @@ describe('useCueChoice', () => {
     expect(raw.prefs.cue).toBe('arrow')
     expect(raw.prefs.theme).toBe('dark')
     expect(raw.prefs.timbre).toBe('bell')
-    expect(raw.prefs.variant).toBe('square')
     expect(raw.prefs.locale).toBe('pt-BR')
   })
 

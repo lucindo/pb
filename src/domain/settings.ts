@@ -114,16 +114,6 @@ export function isValidTimbre(v: unknown): v is TimbreId {
 
 export const DEFAULT_TIMBRE: TimbreId = 'sine'
 
-export type VisualVariantId = 'orb' | 'square' | 'diamond'
-
-export const VARIANT_OPTIONS = ['orb', 'square', 'diamond'] as const satisfies readonly VisualVariantId[]
-
-export function isValidVariant(v: unknown): v is VisualVariantId {
-  return typeof v === 'string' && (VARIANT_OPTIONS as readonly string[]).includes(v)
-}
-
-export const DEFAULT_VARIANT: VisualVariantId = 'orb'
-
 export type CueStyleId = 'labels' | 'arrow' | 'nose'
 
 export const CUE_OPTIONS = ['labels', 'arrow', 'nose'] as const satisfies readonly CueStyleId[]
