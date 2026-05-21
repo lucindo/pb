@@ -25,7 +25,7 @@ export interface SettingsDialogProps {
   open: boolean
   onClose(this: void): void
   inSessionView: boolean
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'variants' | 'cue' | 'timbres' | 'install'>
+  strings: Pick<UiStrings, 'settings' | 'themes' | 'cue' | 'timbres' | 'install'>
   // Phase 29 additions (D-01 through D-10):
   isIOS: boolean
   isStandalone: boolean

@@ -28,7 +28,6 @@ export interface UiStrings {
     readonly title: string
     readonly close: string
     readonly themeLabel: string
-    readonly variantLabel: string
     readonly cueLabel: string
     readonly timbreLabel: string
     readonly languageLabel: string
@@ -40,11 +39,6 @@ export interface UiStrings {
     readonly moss: string
     readonly slate: string
     readonly dusk: string
-  }
-  readonly variants: {
-    readonly orb: string
-    readonly square: string
-    readonly diamond: string
   }
   readonly cue: {
     readonly labels: string
@@ -192,7 +186,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       title: 'Settings',
       close: 'Close',
       themeLabel: 'Theme',
-      variantLabel: 'Variant',
       cueLabel: 'Cue style',
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
@@ -204,11 +197,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       moss: 'Moss',
       slate: 'Slate',
       dusk: 'Dusk',
-    },
-    variants: {
-      orb: 'Orb',
-      square: 'Square',
-      diamond: 'Diamond',
     },
     cue: {
       labels: 'Text',
@@ -354,7 +342,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       title: 'Configurações',
       close: 'Fechar',
       themeLabel: 'Tema',
-      variantLabel: 'Variante',
       cueLabel: 'Estilo de guia',
       timbreLabel: 'Timbre',
       languageLabel: 'Idioma',
@@ -366,11 +353,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       moss: 'Musgo',
       slate: 'Ardósia',
       dusk: 'Crepúsculo',
-    },
-    variants: {
-      orb: 'Esfera',
-      square: 'Quadrado',
-      diamond: 'Losango',
     },
     cue: {
       labels: 'Texto',
