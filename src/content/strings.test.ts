@@ -159,8 +159,6 @@ describe('Phase 30 practice string keys', () => {
     'naviKriyaName',
     'resonantHeading',
     'naviKriyaHeading',
-    'naviKriyaControlsPlaceholder',
-    'naviKriyaStatsEmptyBody',
   ] as const
 
   it('every practice.* string key exists and is non-empty in both en and pt-BR', () => {

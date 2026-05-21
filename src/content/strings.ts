@@ -141,8 +141,6 @@ export interface UiStrings {
     readonly resonantHeading: string
     readonly naviKriyaHeading: string
     readonly naviKriyaHeader: string
-    readonly naviKriyaControlsPlaceholder: string
-    readonly naviKriyaStatsEmptyBody: string
     // Phase 34 (STRETCH-06 / D-10): Stretch as a distinct practice copy.
     // Mirrors the naviKriyaName/naviKriyaHeading/naviKriyaHeader triple.
     readonly stretchName: string      // short switcher label
@@ -308,8 +306,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resonantHeading: 'HRV Breathing',
       naviKriyaHeading: 'Navi Kriya',
       naviKriyaHeader: 'Navi practice',
-      naviKriyaControlsPlaceholder: 'Controls coming soon',
-      naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
       // Phase 34 STRETCH-06 / D-10: EN — label is 'Stretch'; heading 'HRV Stretch' per 260519-63b
       stretchName: 'Stretch',
       stretchHeading: 'HRV Stretch',
@@ -472,8 +468,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resonantHeading: 'Respiração VFC',
       naviKriyaHeading: 'Navi Kriya',
       naviKriyaHeader: 'Prática Navi',
-      naviKriyaControlsPlaceholder: 'Controles em breve',
-      naviKriyaStatsEmptyBody: 'As sessões de Navi Kriya aparecerão aqui depois que você concluir sua primeira sessão.',
       // Phase 34 STRETCH-06 / D-10: PT-BR — label is 'Alongar'; heading 'Alongar VFC' per 260519-63b
       // Spike 007 confirmed 'Alongar' fits the 320px 3-practice switcher.
       stretchName: 'Alongar',

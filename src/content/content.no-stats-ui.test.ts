@@ -2,8 +2,12 @@
 //
 // Phase 37 STATS-05 anti-gamification drift-guard.
 //
-// Scanned roots: src/components/ and src/app/ (all five render paths:
-//   Idle, Running, Complete, Learn, App Settings).
+// Scanned roots: src/components/, src/app/, and src/content/
+//   - components/ + app/ cover all five render paths (Idle, Running, Complete,
+//     Learn, App Settings).
+//   - content/ catches stats-shaped i18n copy re-entering via strings.ts before
+//     a consumer wires it back into a render path (the WR-01 vector the
+//     original two-root scan missed).
 //
 // Forbidden token classes (CONTEXT D-09 / D-10):
 //   1. Plain substring (case-sensitive): 'StatsFooter', 'ResetStatsDialog'
@@ -52,11 +56,13 @@ function collectFiles(dir: string, acc: string[] = []): string[] {
 
 const COMPONENTS_DIR = resolve(__dirname, '..', 'components')
 const APP_DIR = resolve(__dirname, '..', 'app')
+const CONTENT_DIR = resolve(__dirname)
 
-// Flat list of all non-test production .ts / .tsx files across both scanned roots.
+// Flat list of all non-test production .ts / .tsx files across the scanned roots.
 const SCAN_FILES: string[] = [
   ...collectFiles(COMPONENTS_DIR),
   ...collectFiles(APP_DIR),
+  ...collectFiles(CONTENT_DIR),
 ]
 
 // Forbidden token list (CONTEXT D-10).
@@ -93,7 +99,18 @@ const FORBIDDEN_TOKENS: Array<{ label: string; match: (text: string) => boolean 
 ]
 
 describe('STATS-05 drift-guard (CONTEXT D-09 / D-10 / D-11)', () => {
-  it('no forbidden stats-UI token appears in src/components/ or src/app/', () => {
+  // Sanity assertion: a broken __dirname resolve or a renamed scan root would
+  // silently produce an empty SCAN_FILES list and pass vacuously. Lock a floor
+  // that's well below realistic file counts but above zero so any regression in
+  // collectFiles itself surfaces immediately.
+  it('scans a non-empty set of production files', () => {
+    expect(
+      SCAN_FILES.length,
+      'STATS-05 drift-guard scanned zero files — collectFiles or scan-root resolve is broken',
+    ).toBeGreaterThan(10)
+  })
+
+  it('no forbidden stats-UI token appears in src/components/, src/app/, or src/content/', () => {
     const hits: string[] = []
 
     for (const file of SCAN_FILES) {
