@@ -17,7 +17,7 @@
 
 - [x] **Phase 36: Housekeeping bookkeeping reset** (9 plans) - Retroactively close the v1.x procedural backlog (Phase 12 VALIDATION + SECURITY, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill, legacy human_needed flips, 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test), remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/`, gitignore `.claude/`, push to origin/main
 - [ ] **Phase 37: Stats UI removal** (3 plans) - Remove `StatsFooter`, `ResetStatsDialog`, and the Practice Settings "Reset stats" affordance; keep `recordSession` computation + localStorage persistence intact
-- [ ] **Phase 38: Variant removal** (TBD plans) - Drop the Square + Diamond shape variants from code/tokens/picker/Start-capture refs; coerce persisted `variant: 'square'|'diamond'` to `'orb'`
+- [x] **Phase 38: Variant removal** (4 plans) - Drop the Square + Diamond shape variants from code/tokens/picker/Start-capture refs; coerce persisted `variant: 'square'|'diamond'` to `'orb'`
 - [ ] **Phase 39: Theme simplification** (TBD plans) - Remove Moss/Slate/Dusk palettes; reduce ThemePicker to Light/Dark/System; coerce persisted theme outside `{light, dark, system}` to `'system'`; regenerate WCAG guard
 - [ ] **Phase 40: Timbre preview cue** (TBD plans) - Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch via the existing `cueSynth` scheduler (preview plays even when muted)
 - [ ] **Phase 41: Mono Zen palette + tokens** (TBD plans) - Apply the spike-010 light + dark cool-slate palettes, add `borderSoft` / `textSoft` / `orbHalo1/2/3` / `onAccent` tokens, switch to semibold Inter typography, regenerate the WCAG contrast guard
@@ -201,7 +201,7 @@ Phases execute in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 42 �
 | v1.5 Multi-Practice | 30–35 | All | Complete | 2026-05-19 |
 | v2.0 New Design | 36. Housekeeping bookkeeping reset | 9/9 | Complete | 2026-05-20 |
 | v2.0 New Design | 37. Stats UI removal | 0/3 | Not started | - |
-| v2.0 New Design | 38. Variant removal | 0/TBD | Not started | - |
+| v2.0 New Design | 38. Variant removal | 4/4 | Complete | 2026-05-21 |
 | v2.0 New Design | 39. Theme simplification | 0/TBD | Not started | - |
 | v2.0 New Design | 40. Timbre preview cue | 0/TBD | Not started | - |
 | v2.0 New Design | 41. Mono Zen palette + tokens | 0/TBD | Not started | - |
