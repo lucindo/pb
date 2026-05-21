@@ -1,24 +1,24 @@
 ---
 phase: 37-stats-ui-removal
-verified: 2026-05-20T22:14:00Z
-status: human_needed
+verified: 2026-05-20T22:25:00Z
+status: passed
 score: 5/5 must-haves verified
 overrides_applied: 0
-human_verification:
-  - test: "Confirm the orphan keys `naviKriyaStatsEmptyBody` and `naviKriyaControlsPlaceholder` in `src/content/strings.ts` have no live render path (no component reads them at runtime), and decide whether they should be deleted as a post-phase cleanup."
-    expected: "Zero runtime rendering of stats-empty copy; if accepted as dead-code debt, a follow-up task is created; if considered a blocker to the anti-gamification stance, they are removed now."
-    why_human: "These keys are TypeScript-enforced (they appear in UiStrings interface), have no consumers in src/ outside strings.ts and strings.test.ts (grep-confirmed), and are not rendered. However, the strings ship in the production bundle and one of them ('Navi Kriya sessions will appear here after completing your first session.') reads like literal stats-surface copy. The goal says 'remove every visible stats surface' — the key has no render path so it is NOT visible, but the REVIEW flagged it as WR-01. The verifier cannot determine whether the operator considers shipped-but-unrendered stats copy a violation of the anti-gamification stance. Human judgment required."
-  - test: "Confirm the drift-guard test in `src/content/content.no-stats-ui.test.ts` is considered adequate despite having no SCAN_FILES.length > 0 assertion (WR-02) and not scanning `src/content/` (WR-03)."
-    expected: "Operator either accepts the current guard as sufficient for the phase goal, or adds the sanity-length assertion and/or extends scope to src/content/ before marking the phase complete."
-    why_human: "The drift-guard passes currently and the forbidden tokens are genuinely absent from all scanned files. The WR-02/WR-03 weaknesses are defensive-programming gaps, not current regressions. Whether they require closure before the phase is marked passed is a product/engineering call. The verifier cannot make that call programmatically."
+human_verification_resolved:
+  - item: "WR-01 orphan i18n keys (naviKriyaStatsEmptyBody, naviKriyaControlsPlaceholder)"
+    operator_decision: "Delete now (in this phase)"
+    resolution: "Removed from UiStrings interface, EN + PT-BR locale catalogs, and strings.test.ts key-completeness assertion. Commit a63dae3. Phase goal 'remove every visible stats surface' now holds at the bundle level too."
+  - item: "WR-02 / WR-03 drift-guard defensive gaps"
+    operator_decision: "Harden now (length sanity + extend to src/content/)"
+    resolution: "Added SCAN_FILES.length > 10 sanity assertion (catches broken collectFiles/__dirname resolves) and extended scan roots to include src/content/ (closes the WR-01 re-entry vector structurally). Commit a63dae3. Test count 1203 → 1204."
 ---
 
 # Phase 37: Stats UI Removal — Verification Report
 
 **Phase Goal:** Implement the spike-010 anti-gamification stance — remove every visible stats surface from the app while preserving the computation and localStorage persistence so a future deliberate decision can re-introduce a calm stats display.
-**Verified:** 2026-05-20T22:14:00Z
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Verified:** 2026-05-20T22:25:00Z (initial: 2026-05-20T22:14:00Z)
+**Status:** passed
+**Re-verification:** Yes — initial verification returned `human_needed` for WR-01 and WR-02/WR-03; operator chose to fix both. Re-run of build + full suite (1204/1204) green after fixes; both items resolved in commit a63dae3.
 
 ## Goal Achievement
 
