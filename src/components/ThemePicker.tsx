@@ -5,7 +5,7 @@
 // D-20: ThemePickerProps accepts ONLY { disabled: boolean }; the setTheme setter
 // comes from internal useThemeChoice() — NOT from props.
 // UI-SPEC §1: radiogroup over native <button role="radio"> with aria-checked semantics.
-// D-22: English-locked labels (Light/Dark/System/Moss/Slate/Dusk verbatim); Phase 19 owns translation.
+// D-22: English-locked labels (Light/Dark/System verbatim); Phase 19 owns translation.
 
 import { THEME_OPTIONS, type ThemeId } from '../domain/settings'
 import { useThemeChoice } from '../hooks/useThemeChoice'

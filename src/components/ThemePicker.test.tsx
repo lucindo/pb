@@ -34,22 +34,22 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
     expect(screen.getByText('Theme')).toBeInTheDocument()
   })
 
-  it('renders all 6 options as radio buttons with correct labels in order', () => {
+  it('renders all 3 options as radio buttons with correct labels in order', () => {
     render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
     const radios = screen.getAllByRole('radio')
-    expect(radios).toHaveLength(6)
+    expect(radios).toHaveLength(3)
     const labels = Array.from(radios).map((b) => b.textContent)
-    expect(labels).toEqual(['Light', 'Dark', 'System', 'Moss', 'Slate', 'Dusk'])
+    expect(labels).toEqual(['Light', 'Dark', 'System'])
   })
 
   it('aria-checked reflects the stored theme — seeded theme has aria-checked=true, others false', () => {
-    seedTheme('moss')
+    seedTheme('dark')
     render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
     const radios = screen.getAllByRole('radio')
-    // Find the Moss button (index 3 in order: light, dark, system, moss, slate, dusk)
-    const mossButton = radios.find((b) => b.textContent === 'Moss')
-    const otherButtons = radios.filter((b) => b.textContent !== 'Moss')
-    expect(mossButton).toHaveAttribute('aria-checked', 'true')
+    // Find the Dark button (index 1 in order: light, dark, system)
+    const darkButton = radios.find((b) => b.textContent === 'Dark')
+    const otherButtons = radios.filter((b) => b.textContent !== 'Dark')
+    expect(darkButton).toHaveAttribute('aria-checked', 'true')
     for (const button of otherButtons) {
       expect(button).toHaveAttribute('aria-checked', 'false')
     }
@@ -59,14 +59,14 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
     seedTheme('light')
     const user = userEvent.setup()
     render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
-    const slateButton = screen.getByRole('radio', { name: 'Slate' })
-    await user.click(slateButton)
+    const systemButton = screen.getByRole('radio', { name: 'System' })
+    await user.click(systemButton)
     const stored = window.localStorage.getItem(STATE_KEY)
     expect(stored).not.toBeNull()
     // Reason: stored is asserted non-null on the line above; non-null assertion is invariant-safe.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unsafe-member-access
     const parsed = JSON.parse(stored!).prefs.theme as string
-    expect(parsed).toBe('slate')
+    expect(parsed).toBe('system')
   })
 
   it('clicking an option dispatches hrv:prefs-changed with { key: "theme", value: id }', async () => {
@@ -84,7 +84,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
     expect(event.detail.value).toBe('dark')
   })
 
-  it('when disabled=true, all 6 buttons have the disabled attribute and radiogroup has aria-disabled=true', () => {
+  it('when disabled=true, all 3 buttons have the disabled attribute and radiogroup has aria-disabled=true', () => {
     render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
@@ -97,8 +97,8 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
     seedTheme('light')
     const user = userEvent.setup()
     render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
-    const duskButton = screen.getByRole('radio', { name: 'Dusk' })
-    await user.click(duskButton)
+    const darkButton = screen.getByRole('radio', { name: 'Dark' })
+    await user.click(darkButton)
     const stored = window.localStorage.getItem(STATE_KEY)
     // Envelope was seeded as light; a no-op click should not change it
     expect(stored).not.toBeNull()
@@ -109,10 +109,10 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
   })
 
   it('selected option retains its aria-checked highlight even when disabled=true', () => {
-    seedTheme('dusk')
+    seedTheme('system')
     render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
-    const duskButton = screen.getByRole('radio', { name: 'Dusk' })
-    expect(duskButton).toHaveAttribute('aria-checked', 'true')
-    expect(duskButton).toBeDisabled()
+    const systemButton = screen.getByRole('radio', { name: 'System' })
+    expect(systemButton).toHaveAttribute('aria-checked', 'true')
+    expect(systemButton).toBeDisabled()
   })
 })

@@ -123,7 +123,7 @@ describe('useTheme', () => {
     // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'moss', timbre: 'bowl', locale: 'en' },
+      prefs: { theme: 'light', timbre: 'bowl', locale: 'en' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -139,8 +139,8 @@ describe('useTheme', () => {
       )
     })
 
-    expect(result.current.theme).toBe('moss')
-    expect(document.documentElement.dataset.theme).toBe('moss')
+    expect(result.current.theme).toBe('light')
+    expect(document.documentElement.dataset.theme).toBe('light')
   })
 
   it('ignores cross-tab storage event with unrelated key', async () => {
@@ -169,18 +169,18 @@ describe('useTheme', () => {
     expect(result.current.theme).toBe('dark')
 
     // Seed the new theme on disk before dispatching (same pattern as storage event)
-    seedPrefs('dusk')
+    seedPrefs('light')
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'dusk' } }),
+        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'light' } }),
       )
     })
 
-    expect(result.current.theme).toBe('dusk')
-    expect(document.documentElement.dataset.theme).toBe('dusk')
+    expect(result.current.theme).toBe('light')
+    expect(document.documentElement.dataset.theme).toBe('light')
   })
 
   it('ignores same-tab hrv:prefs-changed CustomEvent with key="variant"', async () => {
