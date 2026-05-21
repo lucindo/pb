@@ -14,7 +14,6 @@ function seedPrefs(prefs: UserPrefs): void {
 const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
-  variant: 'orb',
   cue: 'labels',
   locale: 'en',
 }
@@ -62,7 +61,7 @@ describe('useLocaleChoice', () => {
   })
 
   it('setLocale("pt-BR") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'dark', timbre: 'bell', variant: 'square', cue: 'labels', locale: 'en' })
+    seedPrefs({ theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'en' })
     const { result } = renderHook(() => useLocaleChoice())
 
     act(() => {
@@ -76,7 +75,6 @@ describe('useLocaleChoice', () => {
     expect(raw.prefs.locale).toBe('pt-BR')
     expect(raw.prefs.theme).toBe('dark')
     expect(raw.prefs.timbre).toBe('bell')
-    expect(raw.prefs.variant).toBe('square')
   })
 
   it('setLocale("pt-BR") dispatches hrv:prefs-changed CustomEvent with correct detail shape', () => {

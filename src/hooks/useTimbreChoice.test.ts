@@ -14,7 +14,6 @@ function seedPrefs(prefs: UserPrefs): void {
 const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
-  variant: 'orb',
   cue: 'labels',
   locale: 'en',
 }
@@ -62,7 +61,7 @@ describe('useTimbreChoice', () => {
   })
 
   it('setTimbre("bell") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'dark', timbre: 'bowl', variant: 'square', cue: 'labels', locale: 'pt-BR' })
+    seedPrefs({ theme: 'dark', timbre: 'bowl', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useTimbreChoice())
 
     act(() => {
@@ -75,7 +74,6 @@ describe('useTimbreChoice', () => {
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as { version: number; prefs: UserPrefs }
     expect(raw.prefs.timbre).toBe('bell')
     expect(raw.prefs.theme).toBe('dark')
-    expect(raw.prefs.variant).toBe('square')
     expect(raw.prefs.locale).toBe('pt-BR')
   })
 
