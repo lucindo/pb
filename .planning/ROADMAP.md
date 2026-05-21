@@ -139,10 +139,10 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. The preview plays even when the `MuteToggle` is muted (it is a preview, not a session cue — operator can audition without unmuting), and the preview is suppressed during an active session (PREV-03, PREV-04).
   4. Preview latency from picker tap to first audio sample is ≤ 100 ms on commodity hardware (PREV-05).
 **Plans**: 4 plans
-- [ ] 40-01-PLAN.md — Create previewContext.ts singleton module + unit tests (PREV-02 PREV-05 / D-01 D-02 D-03 D-06 D-10a-d D-12)
+- [x] 40-01-PLAN.md — Create previewContext.ts singleton module + unit tests (PREV-02 PREV-05 / D-01 D-02 D-03 D-06 D-10a-d D-12)
 - [ ] 40-02-PLAN.md — Lock PREV-03 via structural import-graph drift-guard (PREV-03 / D-11 D-15)
 - [ ] 40-03-PLAN.md — Wire TimbrePicker onClick to playInhalePreview + wiring tests (PREV-01 PREV-04 / D-04 D-05 D-09 D-10e-g)
-- [ ] 40-04-PLAN.md — Add 40-HUMAN-UAT.md with 4 empirical items (PREV-01 PREV-03 PREV-05 / D-08 D-13)
+- [x] 40-04-PLAN.md — Add 40-HUMAN-UAT.md with 4 empirical items (PREV-01 PREV-03 PREV-05 / D-08 D-13)
 
 ### Phase 41: Mono Zen palette + tokens
 **Goal**: Apply the spike-010 Monochrome Zen visual vocabulary — cool-slate light + dark palettes, the new `borderSoft` / `textSoft` / `orbHalo*` / `onAccent` tokens, and semibold Inter typography app-wide — so Phase 42 and 43 can build the new orb and surfaces against the locked token set.
