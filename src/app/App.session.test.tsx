@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
-import type { CueStyleId, TimbreId, VisualVariantId } from '../domain/settings'
+import type { CueStyleId, TimbreId } from '../domain/settings'
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
 function settingGroup(name: string) {
@@ -339,128 +339,9 @@ describe('manual session ending', () => {
   })
 })
 
-// VARIANT-03 capture-at-session-start integration tests.
-// Seeds localStorage[STATE_KEY] with a chosen variant BEFORE App renders to exercise
-// the sessionVariantRef snapshot mechanism (D-09/D-10) end-to-end.
-
-function seedVariant(variant: VisualVariantId): void {
-  const envelope = {
-    version: 1,
-    prefs: { theme: 'system', timbre: 'bowl', variant, locale: 'en' },
-  }
-  window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
-}
-
-describe('VARIANT-03 capture-at-session-start', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
-    window.localStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-    vi.restoreAllMocks()
-    window.localStorage.clear()
-  })
-
-  it('captures variant at session start — Square selected before Start, shape renders with data-variant="square" during the running session', async () => {
-    seedVariant('square')
-    render(<App />)
-
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-variant', 'square')
-  })
-
-  it('mid-session localStorage change does NOT swap the rendered variant', async () => {
-    seedVariant('orb')
-    render(<App />)
-
-    await startAndAdvancePastLeadIn()
-
-    // Simulate a cross-tab write: change variant to 'diamond' in localStorage
-    // and fire the 'storage' event — useVisualVariant will update liveVariant,
-    // but sessionVariantRef.current (non-null during the session) wins per D-09/D-10.
-    const diamondEnvelope = JSON.stringify({
-      version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'diamond', locale: 'en' },
-    })
-    act(() => {
-      window.localStorage.setItem(STATE_KEY, diamondEnvelope)
-      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: diamondEnvelope }))
-    })
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-variant', 'orb')
-  })
-
-  it('next session picks up post-Start prefs variant', async () => {
-    seedVariant('orb')
-    render(<App />)
-
-    await startAndAdvancePastLeadIn()
-
-    // Simulate cross-tab write to 'diamond' mid-session (same as test 2)
-    const diamondEnvelope = JSON.stringify({
-      version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'diamond', locale: 'en' },
-    })
-    act(() => {
-      window.localStorage.setItem(STATE_KEY, diamondEnvelope)
-      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: diamondEnvelope }))
-    })
-
-    // End the open-ended-style session via End button (open-ended direct end path)
-    // First, switch to open-ended to avoid the modal
-    // Since default is 10 min timed, we end via the modal confirm path
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
-    fireEvent.click(screen.getByRole('button', { name: 'End' }))
-
-    // Verify back to idle
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
-
-    // Start a new session — sessionVariantRef was cleared on session end;
-    // liveVariant is now 'diamond' (post-cross-tab update), so the new session captures 'diamond'.
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-variant', 'diamond')
-  })
-
-  it('VARIANT-02 zero-regression — Orb is the rendered variant when prefs.variant is the DEFAULT_VARIANT "orb" (or absent from localStorage entirely)', async () => {
-    // No seedVariant call — localStorage is cleared in beforeEach; loadPrefs() coerces to DEFAULT_VARIANT='orb'.
-    render(<App />)
-
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-variant', 'orb')
-  })
-
-  it('lead-in countdown is rendered by the captured variant — selecting Square before Start makes the 3-2-1 digit render inside SquareLeadIn', async () => {
-    seedVariant('square')
-    render(<App />)
-
-    // Click Start to begin lead-in — DO NOT advance past it yet
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    // Flush microtasks for the await audio.start() in onStartClick
-    await act(async () => {
-      await Promise.resolve()
-      await Promise.resolve()
-      // Advance only 1 tick so we're in lead-in (digit=3 visible)
-      vi.advanceTimersByTime(100)
-    })
-
-    const leadInShape = screen.getByRole('img', { name: 'Lead-in 3' })
-    expect(leadInShape).toHaveAttribute('data-variant', 'square')
-  })
-})
-
 // TIMBRE-03 capture-at-Start integration tests (Phase 18 Plan 06).
-// Mirror of the VARIANT-03 capture-at-Start block above — seeds localStorage with a
-// chosen timbre BEFORE App renders, clicks Start, and asserts that the timbre threaded
+// Seeds localStorage with a chosen timbre BEFORE App renders, clicks Start, and asserts
+// that the timbre threaded
 // through useAudioCues.start (→ createAudioEngine → scheduleInCueForTimbre) is the one
 // captured at Start, not any later mid-session mutation. The assertion target is the
 // 4th argument to cueSynth.scheduleInCueForTimbre — that's the timbre parameter the

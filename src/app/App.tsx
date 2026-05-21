@@ -61,7 +61,7 @@ import {
   saveStretchSettings,
   type PracticeId,
 } from '../storage'
-import type { SessionSettings, StretchSettings, VisualVariantId, CueStyleId } from '../domain/settings'
+import type { SessionSettings, StretchSettings, CueStyleId } from '../domain/settings'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import { useLocale } from '../hooks/useLocale'
 import { LEARN_CONTENT } from '../content/learnContent'
@@ -220,7 +220,7 @@ export default function App() {
   useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
   const { isPhone, isStandalone, isIOS } = useIsStandaloneOrPhone() // Phase 28: phone + standalone + iOS detection
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt() // Phase 28: Android install prompt capture
-  const liveVariant: VisualVariantId | null = null // Phase 38 Plan 01 shim: hook deleted; Plan 03 will delete this line + sessionVariantRef + setSessionVariant + the L487/491-492/670-671/819/869-870/938 capture/clear sites in one coherent sweep.
+  const liveVariant: null = null // Phase 38 Plan 02 retype (BLOCKER fix): variant type deleted from domain/settings in this plan; shim survives as typed null until Plan 03 deletes the sessionVariantRef + sessionVariant state + capture/clear sites. null satisfies all capture sites.
   const { cue: liveCue } = useVisualCue() // Phase 25 CUE-01..03: live cue state + cross-tab/same-tab sync
   const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
   const learnContent = LEARN_CONTENT[locale] // per-render catalog resolution (D-06 hook return shape)
@@ -288,8 +288,8 @@ export default function App() {
   // D-11: audio reconstruction (Phase 5.1 / Phase 9) does NOT re-snapshot — orthogonal subsystems.
   // Note: kept as both a ref (for synchronous write in onStartClick before any await) AND as state
   // (for the JSX render path — react-hooks/refs disallows reading .current in render).
-  const sessionVariantRef = useRef<VisualVariantId | null>(null)
-  const [sessionVariant, setSessionVariant] = useState<VisualVariantId | null>(null)
+  const sessionVariantRef = useRef<null>(null) // Phase 38 Plan 02 retype (BLOCKER fix): variant type deleted in this plan; narrowed to null. Plan 03 deletes the ref entirely.
+  const [sessionVariant, setSessionVariant] = useState<null>(null) // Phase 38 Plan 02 retype (BLOCKER fix): variant type deleted in this plan; narrowed to null. Plan 03 deletes the state entirely.
 
   // Phase 25 D-09: captured-at-Start snapshot for cue (mirrors sessionVariantRef / sessionVariant).
   // T-25-09: freezes the cue at onStartClick — a cross-tab 'storage' event cannot alter the
