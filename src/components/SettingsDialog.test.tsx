@@ -110,22 +110,22 @@ describe('SettingsDialog — open→close transition', () => {
   })
 })
 
-describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 5 pickers)', () => {
-  it('renders all five pickers when open=true with inSessionView=true (Landmine 7)', () => {
+describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 4 pickers, Phase 38: Variant removed)', () => {
+  it('renders all four pickers when open=true with inSessionView=true (Landmine 7)', () => {
     renderDialog({ open: true, inSessionView: true })
     // Phase 16: ThemePicker is now a real radiogroup; assert section label.
     expect(screen.getByText('Theme')).toBeInTheDocument()
-    // Phase 17: VariantPicker is now a real radiogroup.
-    expect(screen.getByText('Variant')).toBeInTheDocument()
+    // Phase 38: VariantPicker removed (VAR-01/VAR-02 — Orb-only surface).
+    expect(screen.queryByText('Variant')).not.toBeInTheDocument()
     // Phase 25 (Plan 04): CuePicker is wired — assert "Cue style" section label.
     expect(screen.getByText('Cue style')).toBeInTheDocument()
     // Phase 18: TimbrePicker section label.
     expect(screen.getByText('Timbre')).toBeInTheDocument()
     // Phase 19: LanguagePicker section label.
     expect(screen.getByText('Language')).toBeInTheDocument()
-    // D-11 (updated): Theme → Variant → Cue → Timbre → Language — all 5 radiogroups disabled.
+    // D-11 (updated Phase 38): Theme → Cue → Timbre → Language — all 4 radiogroups disabled.
     const radiogroups = screen.getAllByRole('radiogroup')
-    expect(radiogroups).toHaveLength(5)
+    expect(radiogroups).toHaveLength(4)
     for (const rg of radiogroups) {
       expect(rg).toHaveAttribute('aria-disabled', 'true')
     }
@@ -135,8 +135,8 @@ describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 5
     renderDialog({ open: true, inSessionView: true })
     // The CuePicker radiogroup is aria-disabled; all its buttons are disabled
     const radiogroups = screen.getAllByRole('radiogroup')
-    // CuePicker is the 3rd radiogroup (Theme=0, Variant=1, Cue=2, Timbre=3, Language=4)
-    const cueRadiogroup = radiogroups[2]
+    // CuePicker is the 2nd radiogroup (Theme=0, Cue=1, Timbre=2, Language=3) — Phase 38: Variant removed
+    const cueRadiogroup = radiogroups[1]
     expect(cueRadiogroup).toHaveAttribute('aria-disabled', 'true')
     // All radio buttons within should be disabled
     const cueRadios = Array.from(cueRadiogroup?.querySelectorAll('[role="radio"]') ?? [])
@@ -149,8 +149,8 @@ describe('SettingsDialog — inSessionView picker disable threading (Phase 25: 5
   it('CuePicker is enabled (not disabled) when inSessionView=false', () => {
     renderDialog({ open: true, inSessionView: false })
     const radiogroups = screen.getAllByRole('radiogroup')
-    // CuePicker is the 3rd radiogroup (index 2)
-    const cueRadiogroup = radiogroups[2]
+    // CuePicker is the 2nd radiogroup (index 1) — Phase 38: Variant removed
+    const cueRadiogroup = radiogroups[1]
     // NOTE (WR-04): CuePicker sets aria-disabled={disabled} with a raw boolean.
     // React special-cases aria-* attributes and serializes `false` to the string
     // "false" (the attribute is NOT dropped). This literal-"false" serialization

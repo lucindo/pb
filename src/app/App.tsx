@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { BreathingShape } from '../components/BreathingShape'
 import { EndSessionDialog } from '../components/EndSessionDialog'
 import { SettingsForm } from '../components/SettingsForm'
 import { NKShape } from '../components/NKShape'
+import { OrbShape } from '../components/OrbShape'
 import { NKSessionReadout } from '../components/NKSessionReadout'
 import { MuteToggle } from '../components/MuteToggle'
 import { StatusPanel } from '../components/StatusPanel'
@@ -32,7 +32,6 @@ import {
 import { useAudioCues } from '../hooks/useAudioCues'
 import { useFavicon } from '../hooks/useFavicon'
 import { useTheme } from '../hooks/useTheme'
-import { useVisualVariant } from '../hooks/useVisualVariant'
 import { useVisualCue } from '../hooks/useVisualCue'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
@@ -221,7 +220,7 @@ export default function App() {
   useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
   const { isPhone, isStandalone, isIOS } = useIsStandaloneOrPhone() // Phase 28: phone + standalone + iOS detection
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt() // Phase 28: Android install prompt capture
-  const { variant: liveVariant } = useVisualVariant() // Phase 17 VARIANT-01..07: live state + cross-tab/same-tab sync (no global attribute write — D-16)
+  const liveVariant: VisualVariantId | null = null // Phase 38 Plan 01 shim: hook deleted; Plan 03 will delete this line + sessionVariantRef + setSessionVariant + the L487/491-492/670-671/819/869-870/938 capture/clear sites in one coherent sweep.
   const { cue: liveCue } = useVisualCue() // Phase 25 CUE-01..03: live cue state + cross-tab/same-tab sync
   const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
   const learnContent = LEARN_CONTENT[locale] // per-render catalog resolution (D-06 hook return shape)
@@ -998,7 +997,6 @@ export default function App() {
             />
           </div>
           {/* Phase 3 D-14: lead-in numeral takes over the orb area when appPhase==='lead-in' */}
-          {/* Phase 17 D-09: sessionVariant is the captured-at-Start frozen value (non-null during lead-in + running); liveVariant is the fallback at idle. */}
           {/* Phase 25 D-09: sessionCue is the captured-at-Start frozen value (T-25-09); liveCue is the fallback at idle. */}
           {/* Phase 31: an active Navi Kriya session replaces the resonant
               breathing shape with the OM-counting NKShape. The key restarts
@@ -1008,8 +1006,7 @@ export default function App() {
               // HRV parity: the Navi 3-2-1 countdown reuses the resonant
               // lead-in numeral — the engine has not started, so NKShape
               // (which renders the live OM count) is not yet appropriate.
-              <BreathingShape
-                variant={sessionVariant ?? liveVariant}
+              <OrbShape
                 cue={sessionCue ?? liveCue}
                 frame={null}
                 leadInDigit={nkLeadInDigit}
@@ -1018,7 +1015,6 @@ export default function App() {
             ) : (
               <NKShape
                 key={`nk-${String(nkCount)}`}
-                variant={sessionVariant ?? liveVariant}
                 count={nkCount}
                 phase={nkPhase === 'back' ? 'back' : 'front'}
                 isPaused={!nkRunning}
@@ -1027,8 +1023,7 @@ export default function App() {
               />
             )
           ) : (
-            <BreathingShape
-              variant={sessionVariant ?? liveVariant}
+            <OrbShape
               cue={sessionCue ?? liveCue}
               frame={appPhase === 'running' ? session.liveFrame : null}
               leadInDigit={appPhase === 'lead-in' ? leadInDigit : null}

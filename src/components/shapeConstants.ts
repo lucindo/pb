@@ -1,7 +1,8 @@
 /**
- * Shared scale constants for Phase 17 visual variants (OrbShape / SquareShape / DiamondShape).
+ * Shared scale constants for OrbShape breathing math.
  * MIN/MAX/MID values are kept in sync with --orb-scale-{min,max,mid} in src/styles/theme.css.
  * If you edit one side, edit the other (IN-01).
+ * Phase 38: SquareShape / DiamondShape removed (VAR-01 / VAR-02 — Orb-only surface).
  */
 
 // IN-01: keep these in sync with the matching tokens in `src/styles/theme.css`
