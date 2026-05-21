@@ -49,9 +49,6 @@ import {
   loadMute,
   saveMute,
   loadPrefs,
-  ZERO_STATS,
-  STATE_KEY,
-  type PersistedStats,
   loadInstallDismissed,
   saveInstallDismissed,
   loadPractices,
@@ -238,12 +235,6 @@ export default function App() {
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
 
-  // App title uses the full practice name (*Heading), not the short switcher
-  // label (*Name) — the switcher is the only mobile-width-constrained surface.
-  const activePracticeName =
-    activePractice === 'resonant' ? uiStrings.practice.resonantHeading :
-    activePractice === 'stretch'  ? uiStrings.practice.stretchHeading  :
-    uiStrings.practice.naviKriyaHeading
   // Phase 30 (checkpoint feedback) / Phase 34: the active practice is named in the app
   // header + title, not in a separate inline heading. Resonant keeps the
   // existing app copy; Navi Kriya swaps both lines; Stretch swaps to stretch copy.
