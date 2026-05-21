@@ -18,14 +18,9 @@ import type { UiStrings } from '../content/strings'
 // D-12: auto-close on inSessionView is handled in App.tsx (WR-09 useEffect); this component
 //        receives the resulting open=false prop and closes imperatively via dialogRef.
 // D-13: NO explicit focus call on open — SettingsDialog has no destructive default;
-//        native focus-return contract; differs from ResetStatsDialog which focuses Keep.
+//        native focus-return contract.
 // D-15: zero new npm dependencies — pure React + native <dialog>.
 // D-18: locked strings — title "Settings", Close button "Close".
-//
-// Three structural deltas from ResetStatsDialog:
-//   (a) single onClose prop (not onConfirm/onCancel)
-//   (b) inSessionView prop threaded as disabled={inSessionView} to all four pickers
-//   (c) NO explicit focus on open (D-13 — no destructive default; native focus-return only)
 
 export interface SettingsDialogProps {
   open: boolean

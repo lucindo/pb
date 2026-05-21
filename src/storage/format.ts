@@ -1,6 +1,6 @@
 // src/storage/format.ts
 //
-// Phase 4 D-05/D-06/D-07: pure display formatters for the StatsFooter.
+// Phase 4 D-05/D-06/D-07: pure display formatters for session stats.
 // Intl.DateTimeFormat instances cached at module scope (one allocation per app load).
 
 import type { PersistedStats } from './stats'
