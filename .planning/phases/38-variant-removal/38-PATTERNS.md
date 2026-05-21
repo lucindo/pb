@@ -417,7 +417,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 ```
 
-**`collectFiles` function (copy verbatim from `content.no-stats-ui.test.ts` lines 40-55 — handles both `.ts` and `.tsx`):**
+**`collectFiles` function (copy verbatim from `content.no-stats-ui.test.ts` lines 40-55 — handles both `.ts` and `.tsx`; Phase 38 extends the accept clause to also include `.css` — see plan 38-04 `<interfaces>` adaptation (b)):**
 ```typescript
 // Collect all non-test .ts and .tsx files under dir (recursive).
 // Excluding .test.ts and .test.tsx files is load-bearing — this guard file itself contains
@@ -526,6 +526,7 @@ describe('VAR-06 drift-guard (CONTEXT D-04 / D-05 / D-06)', () => {
 
 **Key differences from `content.no-stats-ui.test.ts`:**
 - Four scanned roots (adds `src/styles/`) vs. three.
+- `.css` filter extension (adaptation b — the `src/styles/` root is `.css`, not `.ts`/`.tsx`; `collectFiles` accepts `.ts` / `.tsx` / `.css` for Phase 38 vs. the analog's `.ts` / `.tsx`-only filter).
 - 14 forbidden tokens (10 symbol-name plain-substring + 2 persisted-value regex + 2 CSS selector regex) vs. 6 in STATS-05.
 - `describe` label references `VAR-06` not `STATS-05`.
 - The drift-guard self-exclusion comment notes this file contains the literal token strings (e.g. `'SquareShape'` inside `t.includes('SquareShape')`) — the `.test.ts` filter in `collectFiles` prevents self-flagging.
