@@ -482,3 +482,38 @@ describe('recordStretchSession (Phase 34 T-34-02)', () => {
   })
 })
 
+describe('STATS-04 record-and-persist regression (CONTEXT D-05 / D-08)', () => {
+  it('recordResonantSession increments resonant slice losslessly across loadPractices', () => {
+    recordResonantSession(40_000, false, { now: () => 1_700_000_000_000 })
+    const map = loadPractices()
+    expect(map.resonant.stats.totalSessions).toBe(1)
+    expect(map.resonant.stats.totalElapsedSeconds).toBe(40)
+    expect(map.resonant.stats.lastSessionAtMs).toBe(1_700_000_000_000)
+    expect(map.resonant.stats.lastSessionDurationSeconds).toBe(40)
+    expect(map.stretch.stats).toEqual(ZERO_STATS)
+    expect(map.naviKriya.stats).toEqual(ZERO_STATS)
+  })
+
+  it('recordStretchSession increments stretch slice losslessly across loadPractices', () => {
+    recordStretchSession(40_000, false, { now: () => 1_700_000_000_000 })
+    const map = loadPractices()
+    expect(map.stretch.stats.totalSessions).toBe(1)
+    expect(map.stretch.stats.totalElapsedSeconds).toBe(40)
+    expect(map.stretch.stats.lastSessionAtMs).toBe(1_700_000_000_000)
+    expect(map.stretch.stats.lastSessionDurationSeconds).toBe(40)
+    expect(map.resonant.stats).toEqual(ZERO_STATS)
+    expect(map.naviKriya.stats).toEqual(ZERO_STATS)
+  })
+
+  it('recordNaviKriyaSession increments naviKriya slice losslessly across loadPractices', () => {
+    recordNaviKriyaSession(60_000, 3, true, { now: () => 1_700_000_000_000 })
+    const map = loadPractices()
+    expect(map.naviKriya.stats.totalSessions).toBe(1)
+    expect(map.naviKriya.stats.totalElapsedSeconds).toBe(60)
+    expect(map.naviKriya.stats.lastSessionAtMs).toBe(1_700_000_000_000)
+    expect(map.naviKriya.stats.lastSessionDurationSeconds).toBe(60)
+    expect(map.naviKriya.stats.roundsCompleted).toBe(3)
+    expect(map.resonant.stats).toEqual(ZERO_STATS)
+    expect(map.stretch.stats).toEqual(ZERO_STATS)
+  })
+})
