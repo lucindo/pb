@@ -36,9 +36,6 @@ export interface UiStrings {
     readonly light: string
     readonly dark: string
     readonly system: string
-    readonly moss: string
-    readonly slate: string
-    readonly dusk: string
   }
   readonly cue: {
     readonly labels: string
@@ -194,9 +191,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       light: 'Light',
       dark: 'Dark',
       system: 'System',
-      moss: 'Moss',
-      slate: 'Slate',
-      dusk: 'Dusk',
     },
     cue: {
       labels: 'Text',
@@ -350,9 +344,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       light: 'Claro',
       dark: 'Escuro',
       system: 'Sistema',
-      moss: 'Musgo',
-      slate: 'Ardósia',
-      dusk: 'Crepúsculo',
     },
     cue: {
       labels: 'Texto',
