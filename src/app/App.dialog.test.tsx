@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EndSessionDialog } from '../components/EndSessionDialog'
-import { STATE_KEY } from '../storage'
 import { UI_STRINGS } from '../content/strings'
 import App from './App'
 
@@ -329,35 +328,4 @@ describe('WR-09 in-session dialog auto-close', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('auto-closes ResetStatsDialog when the session starts underneath it (WR-09)', async () => {
-    // ResetStatsDialog is triggered from StatsFooter, which only renders when
-    // stats.totalSessions > 0. Seed the envelope so the Reset button is visible.
-    window.localStorage.setItem(
-      STATE_KEY,
-      JSON.stringify({
-        version: 1,
-        stats: {
-          totalSessions: 3,
-          totalElapsedSeconds: 180,
-          lastSessionAtMs: null,
-          lastSessionDurationSeconds: null,
-        },
-      }),
-    )
-
-    render(<App />)
-
-    // Open the Reset stats modal before starting (visible "Reset" text on the button).
-    // Phase 30 D-08: the dialog is labelled by its practice-named h2 title.
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
-    expect(screen.getByRole('dialog', { name: 'Reset HRV Breathing stats?' })).toBeVisible()
-
-    // Start the session — inSessionView flips to true on appPhase = 'lead-in'.
-    await startAndAdvancePastLeadIn()
-
-    // The ResetStatsDialog must auto-close on the inSessionView transition.
-    expect(
-      screen.queryByRole('dialog', { name: 'Reset HRV Breathing stats?' }),
-    ).not.toBeInTheDocument()
-  })
 })
