@@ -89,13 +89,6 @@ describe('UI_STRINGS exhaustiveness', () => {
     }
   })
 
-  it('every locale has non-empty resetStatsDialog entries', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      expect(UI_STRINGS[locale].resetStatsDialog.title.length).toBeGreaterThan(0)
-      expect(UI_STRINGS[locale].resetStatsDialog.confirm.length).toBeGreaterThan(0)
-      expect(UI_STRINGS[locale].resetStatsDialog.cancel.length).toBeGreaterThan(0)
-    }
-  })
 })
 
 describe('UI_STRINGS template-fn entries (D-15)', () => {
@@ -115,15 +108,6 @@ describe('UI_STRINGS template-fn entries (D-15)', () => {
     }
   })
 
-  it('stats.sessionsCount(1) and stats.sessionsCount(2) both return non-empty with distinct outputs', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      const singular = UI_STRINGS[locale].stats.sessionsCount(1)
-      const plural = UI_STRINGS[locale].stats.sessionsCount(2)
-      expect(singular.length).toBeGreaterThan(0)
-      expect(plural.length).toBeGreaterThan(0)
-      expect(singular).not.toBe(plural)
-    }
-  })
 })
 
 describe('Phase 22 stretch string keys EN/PT-BR parity', () => {
@@ -187,19 +171,6 @@ describe('Phase 30 practice string keys', () => {
         expect(value.length, `practice.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
       }
     }
-  })
-
-  it('practice.resetStatsTitle is a function returning non-empty string containing the practice name in both locales', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      const result = UI_STRINGS[locale].practice.resetStatsTitle('Resonant Breathing')
-      expect(typeof result).toBe('string')
-      expect(result.length).toBeGreaterThan(0)
-      expect(result).toContain('Resonant Breathing')
-    }
-  })
-
-  it('EN practice.resetStatsTitle("Resonant Breathing") returns "Reset Resonant Breathing stats?"', () => {
-    expect(UI_STRINGS.en.practice.resetStatsTitle('Resonant Breathing')).toBe('Reset Resonant Breathing stats?')
   })
 
   it('practice switcher labels are the short mobile-friendly names', () => {

@@ -24,11 +24,6 @@ export interface UiStrings {
     readonly confirm: string
     readonly cancel: string
   }
-  readonly resetStatsDialog: {
-    readonly title: string
-    readonly confirm: string
-    readonly cancel: string
-  }
   readonly settings: {
     readonly title: string
     readonly close: string
@@ -111,16 +106,6 @@ export interface UiStrings {
     readonly learn: string
     readonly learnDisabled: string
   }
-  readonly stats: {
-    readonly sessionsCount: (n: number) => string
-    readonly totalMinutes: (seconds: number) => string
-    readonly lastSessionPrefix: (date: string, duration: string) => string
-    readonly totalSuffix: string
-    readonly reset: string
-    // NK-08: label for the rounds-completed figure in StatsFooter (Navi Kriya only).
-    // PT-BR stub; real translation in Phase 32.
-    readonly roundsCompletedLabel: string
-  }
   readonly breathing: {
     readonly inhale: string
     readonly exhale: string
@@ -158,7 +143,6 @@ export interface UiStrings {
     readonly naviKriyaHeader: string
     readonly naviKriyaControlsPlaceholder: string
     readonly naviKriyaStatsEmptyBody: string
-    readonly resetStatsTitle: (practiceName: string) => string
     // Phase 34 (STRETCH-06 / D-10): Stretch as a distinct practice copy.
     // Mirrors the naviKriyaName/naviKriyaHeading/naviKriyaHeader triple.
     readonly stretchName: string      // short switcher label
@@ -205,11 +189,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       title: 'End this session?',
       confirm: 'End',
       cancel: 'Keep going',
-    },
-    resetStatsDialog: {
-      title: 'Reset practice stats?',
-      confirm: 'Reset',
-      cancel: 'Keep',
     },
     settings: {
       title: 'Settings',
@@ -293,17 +272,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       learn: 'Learn',
       learnDisabled: 'Learn (unavailable during session)',
     },
-    stats: {
-      sessionsCount: (n) => (n === 1 ? '1 session' : `${String(n)} sessions`),
-      totalMinutes: (seconds) => {
-        const minutes = Math.round(seconds / 60)
-        return `${String(minutes)} min`
-      },
-      lastSessionPrefix: (date, duration) => `Last: ${date} · ${duration}`,
-      totalSuffix: 'total',
-      reset: 'Reset',
-      roundsCompletedLabel: 'Rounds',
-    },
     breathing: {
       inhale: 'In',
       exhale: 'Out',
@@ -342,7 +310,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaHeader: 'Navi practice',
       naviKriyaControlsPlaceholder: 'Controls coming soon',
       naviKriyaStatsEmptyBody: 'Navi Kriya sessions will appear here after completing your first session.',
-      resetStatsTitle: (practiceName) => `Reset ${practiceName} stats?`,
       // Phase 34 STRETCH-06 / D-10: EN — label is 'Stretch'; heading 'HRV Stretch' per 260519-63b
       stretchName: 'Stretch',
       stretchHeading: 'HRV Stretch',
@@ -386,11 +353,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       title: 'Encerrar esta sessão?',
       confirm: 'Encerrar',
       cancel: 'Continuar',
-    },
-    resetStatsDialog: {
-      title: 'Zerar estatísticas de prática?',
-      confirm: 'Zerar',
-      cancel: 'Manter',
     },
     settings: {
       title: 'Configurações',
@@ -474,18 +436,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       learn: 'Saiba mais',
       learnDisabled: 'Saiba mais (indisponível durante a sessão)',
     },
-    stats: {
-      sessionsCount: (n) =>
-        n === 1 ? '1 sessão' : `${String(n)} sessões`,
-      totalMinutes: (seconds) => {
-        const minutes = Math.round(seconds / 60)
-        return `${String(minutes)} min`
-      },
-      lastSessionPrefix: (date, duration) => `Última sessão: ${date} · ${duration}`,
-      totalSuffix: 'total',
-      reset: 'Zerar',
-      roundsCompletedLabel: 'OMs na frente',
-    },
     breathing: {
       inhale: 'Puxa',
       exhale: 'Solta',
@@ -524,7 +474,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaHeader: 'Prática Navi',
       naviKriyaControlsPlaceholder: 'Controles em breve',
       naviKriyaStatsEmptyBody: 'As sessões de Navi Kriya aparecerão aqui depois que você concluir sua primeira sessão.',
-      resetStatsTitle: (practiceName) => `Zerar estatísticas de ${practiceName}?`,
       // Phase 34 STRETCH-06 / D-10: PT-BR — label is 'Alongar'; heading 'Alongar VFC' per 260519-63b
       // Spike 007 confirmed 'Alongar' fits the 320px 3-practice switcher.
       stretchName: 'Alongar',

@@ -10,8 +10,6 @@ import { StatusPanel } from '../components/StatusPanel'
 import { PracticeToggle } from '../components/PracticeToggle'
 import { SessionReadout } from '../components/SessionReadout'
 import { SessionControls } from '../components/SessionControls'
-import { StatsFooter } from '../components/StatsFooter'
-import { ResetStatsDialog } from '../components/ResetStatsDialog'
 import { LearnAnchor } from '../components/LearnAnchor'
 import { LearnDialog } from '../components/LearnDialog'
 import { SettingsAnchor } from '../components/SettingsAnchor'
@@ -65,7 +63,6 @@ import {
   saveResonantSettings,
   saveNaviKriyaSettings,
   saveStretchSettings,
-  resetPracticeStats,
   type PracticeId,
 } from '../storage'
 import type { SessionSettings, StretchSettings, VisualVariantId, CueStyleId } from '../domain/settings'
@@ -126,21 +123,11 @@ export default function App() {
   // on dismiss triggers immediate re-gate via showBanner.
   const [installDismissed, setInstallDismissed] = useState<boolean>(() => loadInstallDismissed())
 
-  // Phase 30 D-07: per-practice stats. Each practice keeps its own snapshot;
-  // the render path selects the active practice's slice. They are mutated at
-  // three sites — recordResonantSession at end-transition, resetPracticeStats
-  // from the dialog, and the cross-tab storage listener.
   const [activePractice, setActivePractice] = useState<PracticeId>(initialActivePractice)
-  const [resonantStats, setResonantStats] = useState<PersistedStats>(() => initialPractices.resonant.stats)
-  const [naviKriyaStats, setNaviKriyaStats] = useState<PersistedStats>(() => initialPractices.naviKriya.stats)
-  // Phase 34: stretch practice state — settings (editable ramp knobs) + stats.
+  // Phase 34: stretch practice state — settings (editable ramp knobs).
   const [stretchSettings, setStretchSettings] = useState<StretchSettings>(
     () => initialPractices.stretch.settings,
   )
-  const [stretchStats, setStretchStats] = useState<PersistedStats>(
-    () => initialPractices.stretch.stats,
-  )
-  const [resetDialogOpen, setResetDialogOpen] = useState<boolean>(false)
 
   // Phase 34: pass stretchSettings to the engine so start() calls
   // startStretchSession when the stretch practice is active.
@@ -217,51 +204,6 @@ export default function App() {
     sessionFrameRef.current = session.liveFrame
   }, [session.liveFrame])
 
-  // STORAGE-03: cross-tab stats refresh via the `window` 'storage' event.
-  // - D-05: stats-only refresh — settings and mute are NOT re-read cross-tab.
-  // - D-06: the 'storage' event is the SOLE refresh trigger — no `focus`,
-  //   no `visibilitychange`, no `BroadcastChannel`, no poll.
-  // - D-06a: filter on the STATE_KEY identity so events for unrelated
-  //   localStorage keys never trigger a re-read; register once at mount,
-  //   clean up on unmount.
-  // - WR-08 posture: `setStats` is React-state-only — no domain side
-  //   effects, so mid-session firings are tolerated (footer is hidden via
-  //   the existing `inSessionView` gating; D-10).
-  // - UI-SPEC §"Interaction Contract — STORAGE-03 Cross-Tab Stats Refresh"
-  //   locks the decorative-update behavior: no aria-live, no animation,
-  //   no flash. The removeItem(STATE_KEY) case from another tab arrives as
-  //   `e.key === STATE_KEY` with `e.newValue === null` and falls through
-  //   naturally: `loadStats() -> coerceStats(undefined) -> ZERO_STATS` ->
-  //   footer hides via the existing `totalSessions > 0` gating. A cross-tab
-  //   `localStorage.clear()` is NOT covered by this listener: per the
-  //   WHATWG Storage spec it dispatches with `e.key === null`, which the
-  //   `e.key === STATE_KEY` filter rejects. This is an accepted gap —
-  //   `clear()` from other tabs is rare in practice (typically only
-  //   DevTools) and explicitly out of Phase 8 scope (UI-SPEC §"Edge
-  //   cases — locked behavior" only locks the `e.newValue === null` row,
-  //   i.e. the `removeItem(STATE_KEY)` case; the cross-tab `clear()` row
-  //   is intentionally absent). The footer will catch up on the next
-  //   mount of this tab.
-  // Empty deps `[]` are correct — `setStats` is stable from useState,
-  // and `loadStats` + `STATE_KEY` are module-level imports.
-  // Phase 30 Pitfall 6: read the per-practice subtree, not the flat env.stats.
-  // After the v1→v2 migration env.stats is an orphaned field; the old
-  // loadStats() would coerce undefined → ZERO_STATS and wrongly blank the
-  // footer. loadPractices() refreshes both practices' stats slices.
-  useEffect(() => {
-    const onStorage = (e: StorageEvent): void => {
-      if (e.key === STATE_KEY) {
-        const practices = loadPractices()
-        setResonantStats(practices.resonant.stats)
-        setStretchStats(practices.stretch.stats)   // Phase 34: cross-tab stretch stats refresh
-        setNaviKriyaStats(practices.naviKriya.stats)
-      }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => {
-      window.removeEventListener('storage', onStorage)
-    }
-  }, [])
 
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number) => {
     const elapsedMs = sessionFrameRef.current?.elapsedMs ?? 0
@@ -296,15 +238,8 @@ export default function App() {
   // the layout snaps to the running view at t=0 — a jarring jump.
   const inSessionView = appPhase !== 'idle'
 
-  // Phase 30 D-07/D-08 / Phase 34: render-time selection of the active practice's data.
-  // StatsFooter shows only the active slice; the reset dialog names the
-  // practice being reset.
-  const activeStats =
-    activePractice === 'resonant' ? resonantStats :
-    activePractice === 'stretch'  ? stretchStats  : naviKriyaStats
-  // Reset dialog + app title use the full practice name (*Heading), not the
-  // short switcher label (*Name) — the switcher is the only mobile-width-
-  // constrained surface.
+  // App title uses the full practice name (*Heading), not the short switcher
+  // label (*Name) — the switcher is the only mobile-width-constrained surface.
   const activePracticeName =
     activePractice === 'resonant' ? uiStrings.practice.resonantHeading :
     activePractice === 'stretch'  ? uiStrings.practice.stretchHeading  :
@@ -502,22 +437,18 @@ export default function App() {
     }
   }, [state.status, endDialogOpen])
 
-  // WR-09: Auto-close LearnDialog and ResetStatsDialog when the session view
+  // WR-09: Auto-close LearnDialog and SettingsDialog when the session view
   // becomes active. Without this, a dialog that was open during an appPhase
   // transition to 'lead-in' could float over the session view for an arbitrary
-  // window. The onLearnClick open-guard (App.tsx:396-399) is the first line of
-  // defense; this effect is the second for any race where the dialog is already
-  // open when inSessionView flips. onResetClick has no symmetric open-guard
-  // because the Reset button lives in StatsFooter which is hidden when
-  // inSessionView is true — this reactive close catches the impossible-by-UI
-  // race anyway.
+  // window. The onLearnClick open-guard is the first line of defense; this
+  // effect is the second for any race where the dialog is already open when
+  // inSessionView flips.
   useEffect(() => {
     if (inSessionView) {
       // Reason: subscribe-and-reflect — dialog visibility mirrors external inSessionView; setting local state from this trigger effect is the documented React pattern, identical posture to the EndSessionDialog auto-close at App.tsx:247-253 (WR-01).
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLearnDialogOpen(false)
-      setResetDialogOpen(false)
-      // Reason: subscribe-and-reflect — settingsDialogOpen mirrors external inSessionView; same WR-09 pattern as setLearnDialogOpen/setResetDialogOpen.
+      // Reason: subscribe-and-reflect — settingsDialogOpen mirrors external inSessionView; same WR-09 pattern as setLearnDialogOpen.
       setSettingsDialogOpen(false)
     }
   }, [inSessionView])
@@ -672,28 +603,6 @@ export default function App() {
     // session continues — clock keeps running (D-13). No additional work.
   }, [])
 
-  const onResetClick = useCallback(() => {
-    setResetDialogOpen(true)
-  }, [])
-
-  const confirmReset = useCallback(() => {
-    // WR-08: optimistic UI — set RAM state from a known zero-state, not from
-    // a re-read of disk. If resetPracticeStats() fails silently (D-16 quota /
-    // Safari ITP / private mode), RAM-side state must still reflect the user's
-    // intent — same posture as Phase 3 D-10.
-    // Phase 30 D-08 / Pitfall 4 / T-30-11: reset wipes ONLY the active
-    // practice's stats; the other practices' history is untouched.
-    resetPracticeStats(activePractice)
-    if (activePractice === 'resonant') setResonantStats({ ...ZERO_STATS })
-    else if (activePractice === 'stretch') setStretchStats({ ...ZERO_STATS })
-    else setNaviKriyaStats({ ...ZERO_STATS })
-    setResetDialogOpen(false)
-  }, [activePractice])
-
-  const cancelReset = useCallback(() => {
-    setResetDialogOpen(false)
-  }, [])
-
   // Phase 6 LEARN-01/LEARN-04: open the Learn modal from the corner anchor.
   // D-03 defense in depth: even though the anchor is aria-disabled during session view,
   // gate state mutation here too (the anchor's JSX-layer no-op is the first gate).
@@ -802,14 +711,14 @@ export default function App() {
             : snap.lastElapsedMs
         // Phase 30 Pitfall 3 / T-30-08 / Phase 34: dispatch session recording to
         // the active practice's subtree only — other practices' stats are untouched.
+        // D-04: recordXSession persists via the WR-07 single-read pattern in
+        // src/storage/stats.ts; no React state mirror needed (activeStats removed).
         if (activePractice === 'stretch') {
-          const updated = recordStretchSession(elapsedMs, isComplete)
-          setStretchStats(updated)
+          recordStretchSession(elapsedMs, isComplete)
         } else {
           // Resonant practice (stretch uses startStretchSession but records here;
           // NK has its own onNKComplete path and never hits this branch).
-          const updated = recordResonantSession(elapsedMs, isComplete)
-          setResonantStats(updated)
+          recordResonantSession(elapsedMs, isComplete)
         }
         recordedSessionKeyRef.current = snap.key
       }
@@ -912,8 +821,9 @@ export default function App() {
     nkRecordedRef.current = true
     // NK-08 / D-13: records the fully-completed rounds + elapsed minutes for
     // both natural completion and early end; writes only the naviKriya slice.
-    const updated = recordNaviKriyaSession(result.elapsedMs, result.completedRounds, result.isComplete)
-    setNaviKriyaStats(updated)
+    // D-04: recordNaviKriyaSession persists via the WR-07 single-read pattern;
+    // no React state mirror needed (activeStats removed).
+    recordNaviKriyaSession(result.elapsedMs, result.completedRounds, result.isComplete)
     void wakeLockRelease()
     sessionVariantRef.current = null
     setSessionVariant(null)
@@ -1267,15 +1177,6 @@ export default function App() {
             {lockedCopy.medicalAdviceLine}
           </p>
         </div>
-        {!inSessionView && !nkSessionActive && activeStats.totalSessions > 0 && (
-          <StatsFooter
-            stats={activeStats}
-            onResetClick={onResetClick}
-            strings={uiStrings.stats}
-            locale={locale}
-            showRounds={activePractice === 'naviKriya'}
-          />
-        )}
       </section>
       {/* Phase 28 D-02: banner in normal document flow, below section content.
           showBanner gates all five conditions: phone + not standalone + not
@@ -1300,13 +1201,6 @@ export default function App() {
         onConfirm={confirmNKEnd}
         onCancel={cancelNKEnd}
         strings={uiStrings.endSessionDialog}
-      />
-      <ResetStatsDialog
-        open={resetDialogOpen}
-        onConfirm={confirmReset}
-        onCancel={cancelReset}
-        strings={uiStrings.resetStatsDialog}
-        title={uiStrings.practice.resetStatsTitle(activePracticeName)}
       />
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}

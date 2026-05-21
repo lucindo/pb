@@ -4,8 +4,8 @@ milestone: v2.0
 milestone_name: New Design
 status: executing
 stopped_at: Phase 37 context gathered
-last_updated: "2026-05-21T00:26:11.804Z"
-last_activity: 2026-05-21 -- Phase 37 planning complete
+last_updated: "2026-05-21T00:31:26.677Z"
+last_activity: 2026-05-21 -- Phase 37 execution started
 progress:
   total_phases: 9
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 36 — housekeeping-bookkeeping-reset
+**Current focus:** Phase 37 — stats-ui-removal
 
 ## Current Position
 
-Phase: 36 (housekeeping-bookkeeping-reset) — EXECUTING
-Plan: 9 of 9
-Status: Ready to execute
-Last activity: 2026-05-21 -- Phase 37 planning complete
+Phase: 37 (stats-ui-removal) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 37
+Last activity: 2026-05-21 -- Phase 37 execution started
 
 ## Performance Metrics
 
