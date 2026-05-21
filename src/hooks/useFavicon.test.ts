@@ -77,11 +77,11 @@ describe('useFavicon', () => {
     expect(href).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
   })
 
-  it('seeds favicon from loadPrefs().theme at mount (named theme: moss)', () => {
-    seedPrefs('moss')
+  it('seeds favicon from loadPrefs().theme at mount (named theme: light)', () => {
+    seedPrefs('light')
     renderHook(() => { useFavicon() })
     const href = getFaviconHref()
-    expect(href).toContain(FAVICON_COLORS.moss.replace('#', '%23').slice(1))
+    expect(href).toContain(FAVICON_COLORS.light.replace('#', '%23').slice(1))
   })
 
   it('resolves system theme via matchMedia.matches=true → dark favicon', () => {
@@ -131,7 +131,7 @@ describe('useFavicon', () => {
     // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'moss', timbre: 'bowl', locale: 'en' },
+      prefs: { theme: 'light', timbre: 'bowl', locale: 'en' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -147,7 +147,7 @@ describe('useFavicon', () => {
       )
     })
 
-    expect(getFaviconHref()).toContain(FAVICON_COLORS.moss.replace('#', '%23').slice(1))
+    expect(getFaviconHref()).toContain(FAVICON_COLORS.light.replace('#', '%23').slice(1))
   })
 
   it('ignores cross-tab storage event with unrelated key', async () => {
@@ -178,17 +178,17 @@ describe('useFavicon', () => {
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
 
     // Seed the new theme on disk before dispatching
-    seedPrefs('dusk')
+    seedPrefs('light')
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'dusk' } }),
+        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'light' } }),
       )
     })
 
-    expect(getFaviconHref()).toContain(FAVICON_COLORS.dusk.replace('#', '%23').slice(1))
+    expect(getFaviconHref()).toContain(FAVICON_COLORS.light.replace('#', '%23').slice(1))
   })
 
   it('ignores same-tab hrv:prefs-changed CustomEvent with key="variant"', async () => {

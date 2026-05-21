@@ -29,56 +29,56 @@ afterEach(() => {
 
 describe('useThemeChoice', () => {
   it('initial state matches loadPrefs().theme when localStorage is pre-seeded', () => {
-    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'moss' })
+    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'dark' })
     const { result } = renderHook(() => useThemeChoice())
-    expect(result.current.theme).toBe('moss')
+    expect(result.current.theme).toBe('dark')
   })
 
-  it('setTheme("dusk") updates local state optimistically', () => {
-    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'moss' })
+  it('setTheme("system") updates local state optimistically', () => {
+    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'dark' })
     const { result } = renderHook(() => useThemeChoice())
 
     act(() => {
-      result.current.setTheme('dusk')
+      result.current.setTheme('system')
     })
 
-    expect(result.current.theme).toBe('dusk')
+    expect(result.current.theme).toBe('system')
   })
 
-  it('setTheme("dusk") writes the new theme to disk via savePrefs', () => {
-    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'moss' })
+  it('setTheme("system") writes the new theme to disk via savePrefs', () => {
+    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'dark' })
     const { result } = renderHook(() => useThemeChoice())
 
     act(() => {
-      result.current.setTheme('dusk')
+      result.current.setTheme('system')
     })
 
     // Verify via direct disk read (matches prefs.test.ts seeding pattern)
     // Reason: STATE_KEY is always present after setTheme; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as { version: number; prefs: UserPrefs }
-    expect(raw.prefs.theme).toBe('dusk')
+    expect(raw.prefs.theme).toBe('system')
   })
 
-  it('setTheme("slate") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'moss', timbre: 'bell', cue: 'labels', locale: 'pt-BR' })
+  it('setTheme("system") preserves other prefs fields — envelope merge contract', () => {
+    seedPrefs({ theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useThemeChoice())
 
     act(() => {
-      result.current.setTheme('slate')
+      result.current.setTheme('system')
     })
 
     // Verify all other fields are preserved (the {...loadPrefs(), theme: next} merge)
     // Reason: STATE_KEY is always present after setTheme; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as { version: number; prefs: UserPrefs }
-    expect(raw.prefs.theme).toBe('slate')
+    expect(raw.prefs.theme).toBe('system')
     expect(raw.prefs.timbre).toBe('bell')
     expect(raw.prefs.locale).toBe('pt-BR')
   })
 
   it('setTheme("dark") dispatches hrv:prefs-changed CustomEvent with correct detail shape', () => {
-    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'moss' })
+    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'dark' })
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
 
@@ -100,7 +100,7 @@ describe('useThemeChoice', () => {
   })
 
   it('setTheme identity is stable across re-renders (useCallback empty deps contract)', () => {
-    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'moss' })
+    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'dark' })
     const { result, rerender } = renderHook(() => useThemeChoice())
 
     const initialSetter = result.current.setTheme
