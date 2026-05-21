@@ -95,7 +95,7 @@ async function startAndAdvancePastLeadIn(): Promise<void> {
 function seedCue(cue: CueStyleId): void {
   const envelope = {
     version: 1,
-    prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue, locale: 'en' },
+    prefs: { theme: 'system', timbre: 'bowl', cue, locale: 'en' },
   }
   window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
 }
@@ -152,7 +152,7 @@ describe('CUE-01 capture-at-session-start (T-25-09)', () => {
     // (non-null during session) wins per the capture-at-Start pattern.
     const labelsEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue: 'labels', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' },
     })
     act(() => {
       window.localStorage.setItem(STATE_KEY, labelsEnvelope)
@@ -173,7 +173,7 @@ describe('CUE-01 capture-at-session-start (T-25-09)', () => {
     // Change cue to 'labels' mid-session via cross-tab write
     const labelsEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', variant: 'orb', cue: 'labels', locale: 'en' },
+      prefs: { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' },
     })
     act(() => {
       window.localStorage.setItem(STATE_KEY, labelsEnvelope)
