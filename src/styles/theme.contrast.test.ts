@@ -2,7 +2,7 @@
 //
 // Phase 16 THEME-05: every shipped theme preserves reduced-motion crossfade contrast.
 // D-13 / D-14 / D-15 / D-16: WCAG luminance contrast ratio >= 1.5 on the orb-in vs orb-out
-// midpoint colors, iterated over the 5 concrete themes (light, dark, moss, slate, dusk).
+// midpoint colors, iterated over the 2 concrete themes (light, dark).
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -128,13 +128,10 @@ const CONCRETE_THEMES = THEME_OPTIONS.filter(
 // Phase 16.3-02 operator override (iterated): Light THEME-05 floor relaxed
 // 1.5 → 1.2 to admit Nord-derived "pale Frost teal" Out (50/50 blend of n7 teal
 // + n4 snow, lum 0.58 — easier-on-eyes at large surface scale per UAT). Polarity
-// invariant (inLum > outLum) remains hard. Other 4 palettes keep 1.5 floor.
+// invariant (inLum > outLum) remains hard. Dark keeps 1.5 floor.
 const THEME_05_FLOORS: Record<Exclude<ThemeId, 'system'>, number> = {
   light: 1.15,
   dark: 1.5,
-  moss: 1.1,
-  slate: 1.5,
-  dusk: 1.5,
 }
 
 describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
