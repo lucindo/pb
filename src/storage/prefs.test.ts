@@ -220,3 +220,37 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(DEFAULT_PREFS)
   })
 })
+
+describe('THM-05 forward-compat (CONTEXT D-02)', () => {
+  // THM-05 / CONTEXT D-02: a returning user with a pre-Phase-39 persisted envelope carrying
+  // `theme: 'moss' | 'slate' | 'dusk'` must read through coercePrefs as `theme: 'system'`
+  // (read-coerce half), and the next savePrefs must overwrite the on-disk value with 'system'
+  // (round-trip half). No STATE_VERSION bump — Phase 8 D-01 envelope tolerance + per-field
+  // coercer carries the on-disk value until the next savePrefs call overwrites it.
+  // Mirrors the Phase 38 VAR-05 forward-compat pattern (commit `4bd5e78`); captured up-front
+  // per CONTEXT §specifics to avoid a retroactive validation cycle.
+
+  it('coerces deprecated persisted theme values to "system" on read — THM-05 (CONTEXT D-02)', () => {
+    for (const deprecated of ['moss', 'slate', 'dusk']) {
+      window.localStorage.setItem(STATE_KEY, JSON.stringify({
+        version: 1,
+        prefs: { theme: deprecated, timbre: 'bowl', cue: 'arrow', locale: 'en' },
+      }))
+      expect(loadPrefs().theme).toBe('system')
+    }
+  })
+
+  it('re-persists deprecated theme as "system" on the next savePrefs call — THM-05 round-trip (CONTEXT D-02)', () => {
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({
+      version: 1,
+      prefs: { theme: 'moss', timbre: 'bowl', cue: 'arrow', locale: 'en' },
+    }))
+    const loaded = loadPrefs()
+    expect(loaded.theme).toBe('system')
+    savePrefs(loaded)
+    // Reason: STATE_KEY is always present after savePrefs; non-null asserted by storage contract.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as { prefs: { theme: string } }
+    expect(raw.prefs.theme).toBe('system')
+  })
+})
