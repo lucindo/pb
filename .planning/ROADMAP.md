@@ -127,7 +127,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 39-02-PLAN.md — Delete moss/slate/dusk CSS blocks + collapse FAVICON_COLORS + align contrast and favicon.sync tests (THM-01..03 THM-06..08 / D-09 D-10)
 - [x] 39-03-PLAN.md — Delete themes.moss/slate/dusk from UiStrings + EN/PT-BR catalogs + rotate ThemePicker/hook/App test fixtures (THM-04 / D-07 D-12)
 - [x] 39-04-PLAN.md — Surgical excise moss/slate/dusk from index.html FOUC script (THM-07 / D-08)
-- [ ] 39-05-PLAN.md — Add Phase 39 drift-guard test + closing green gate (THM-01..03 / D-03 D-04 D-05 D-06)
+- [x] 39-05-PLAN.md — Add Phase 39 drift-guard test + closing green gate (THM-01..03 / D-03 D-04 D-05 D-06) (completed 2026-05-21)
 
 ### Phase 40: Timbre preview cue
 **Goal**: Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch — operator-added requirement, lands the audio surface change before the visual rebuild starts.
