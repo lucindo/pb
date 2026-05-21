@@ -6,8 +6,7 @@ import { OrbShape } from './OrbShape'
 // D-01 (RESEARCH OQ-2): NKShape renders OrbShape in NK mode — count number
 // centered, shape locked at MID_SCALE (no scale crossfade), Front/Back drives
 // the In/Out gradient via OrbShape's nkPhase prop.
-// Phase 38 VAR-01/VAR-02: single-shape collapse — SquareShape / DiamondShape
-// removed; NKShape always renders OrbShape.
+// Phase 38 (VAR-01/VAR-02): shape variants removed; NKShape always renders OrbShape.
 //
 // CALLER RESPONSIBILITY: supply key={`nk-${String(count)}`} on the NKShape
 // element to restart the CSS pulse animation on each OM (D-01 pulse once per OM).

@@ -1,12 +1,12 @@
 // src/components/CuePicker.tsx
 //
 // Phase 25 Plan 04: Radiogroup picker for cue style selection.
-// Mirrors VariantPicker.tsx posture verbatim with CueGlyph previews stacked
+// Follows the same picker posture as other option pickers — CueGlyph previews stacked
 // above option labels. Consumes useCueChoice (Plan 02) for state + write path.
 // Honors Phase 15 D-02 picker prop contract ({ disabled, strings, sectionLabel } — NO value prop).
 // D-23: zero hardcoded color classes — all color references via var(--color-*) tokens
 // or token-bound Tailwind shorthand utilities (text-breathing-accent, ring-breathing-accent).
-// Distinct DOM id "cue-picker-label" to avoid collision with VariantPicker's label id.
+// Distinct DOM id "cue-picker-label" to avoid id collision with other picker label ids.
 
 import { CUE_OPTIONS, type CueStyleId } from '../domain/settings'
 import { useCueChoice } from '../hooks/useCueChoice'
@@ -49,7 +49,7 @@ export function CuePicker({ disabled, strings, sectionLabel }: CuePickerProps) {
               className={`${baseClasses} ${selected ? selectedClasses : unselectedClasses}`}
             >
               {/* Preview glyph: CueGlyph in preview mode — picker-swatch color token
-                  (matches VariantPicker swatches) and a "T" for the text option.
+                  (--color-orb-in-from) and a "T" for the text option.
                   Scaled wrapper renders it at swatch size, not in-orb display size. */}
               <span className="block w-8 h-8 overflow-hidden flex items-center justify-center" aria-hidden="true">
                 <span className="scale-50 origin-center block">
