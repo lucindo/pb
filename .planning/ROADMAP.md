@@ -140,8 +140,8 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   4. Preview latency from picker tap to first audio sample is ≤ 100 ms on commodity hardware (PREV-05).
 **Plans**: 4 plans
 - [x] 40-01-PLAN.md — Create previewContext.ts singleton module + unit tests (PREV-02 PREV-05 / D-01 D-02 D-03 D-06 D-10a-d D-12)
-- [ ] 40-02-PLAN.md — Lock PREV-03 via structural import-graph drift-guard (PREV-03 / D-11 D-15)
-- [ ] 40-03-PLAN.md — Wire TimbrePicker onClick to playInhalePreview + wiring tests (PREV-01 PREV-04 / D-04 D-05 D-09 D-10e-g)
+- [x] 40-02-PLAN.md — Lock PREV-03 via structural import-graph drift-guard (PREV-03 / D-11 D-15)
+- [x] 40-03-PLAN.md — Wire TimbrePicker onClick to playInhalePreview + wiring tests (PREV-01 PREV-04 / D-04 D-05 D-09 D-10e-g)
 - [x] 40-04-PLAN.md — Add 40-HUMAN-UAT.md with 4 empirical items (PREV-01 PREV-03 PREV-05 / D-08 D-13)
 
 ### Phase 41: Mono Zen palette + tokens
