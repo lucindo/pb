@@ -53,14 +53,14 @@ Drop the Square + Diamond shape variants. Orb only. User-visible variant picker 
 
 Collapse 5-palette + system → 2-palette + system. ThemePicker becomes Light / Dark / System.
 
-- [ ] **THM-01**: `Moss` palette is removed from `theme.css` + the `ThemeId` union.
-- [ ] **THM-02**: `Slate` palette is removed.
-- [ ] **THM-03**: `Dusk` palette is removed.
-- [ ] **THM-04**: `ThemePicker` is reduced to `Light` / `Dark` / `System` (3 options total; `System` follows OS).
-- [ ] **THM-05**: Persisted `theme: 'moss' | 'slate' | 'dusk'` is coerced to `'system'` on read; the user pref re-persists as `'system'` going forward (forward-compat — no `STATE_VERSION` bump).
-- [ ] **THM-06**: The `faviconPalette` set is reduced to `light` + `dark` only (system resolves to OS-active palette at runtime).
-- [ ] **THM-07**: `favicon.sync.test.ts` is updated to guard the 2-palette mapping (drift-guard intact).
-- [ ] **THM-08**: WCAG luminance contrast guard regenerated for the new 2-palette + system surface.
+- [x] **THM-01**: `Moss` palette is removed from `theme.css` + the `ThemeId` union.
+- [x] **THM-02**: `Slate` palette is removed.
+- [x] **THM-03**: `Dusk` palette is removed.
+- [x] **THM-04**: `ThemePicker` is reduced to `Light` / `Dark` / `System` (3 options total; `System` follows OS).
+- [x] **THM-05**: Persisted `theme: 'moss' | 'slate' | 'dusk'` is coerced to `'system'` on read; the user pref re-persists as `'system'` going forward (forward-compat — no `STATE_VERSION` bump).
+- [x] **THM-06**: The `faviconPalette` set is reduced to `light` + `dark` only (system resolves to OS-active palette at runtime).
+- [x] **THM-07**: `favicon.sync.test.ts` is updated to guard the 2-palette mapping (drift-guard intact).
+- [x] **THM-08**: WCAG luminance contrast guard regenerated for the new 2-palette + system surface.
 
 ### PREV — Timbre preview cue (Phase 40) — NEW (not in spike)
 
