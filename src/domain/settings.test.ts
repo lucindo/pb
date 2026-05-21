@@ -6,7 +6,6 @@ import {
   isValidDuration,
   isValidTheme,
   isValidTimbre,
-  isValidVariant,
   isValidCue,
   isValidLocale,
   isValidWarmUp,
@@ -105,28 +104,6 @@ describe('isValidTimbre (INFRA-02 D-01)', () => {
     expect(isValidTimbre(undefined)).toBe(false)
     expect(isValidTimbre(0)).toBe(false)
     expect(isValidTimbre(['bowl'])).toBe(false)
-  })
-})
-
-describe('isValidVariant (INFRA-02 D-01)', () => {
-  it('returns true for VARIANT_OPTIONS members (e.g. "orb")', () => {
-    expect(isValidVariant('orb')).toBe(true)
-  })
-
-  it('returns false for malformed strings ("Orb", "circle", "", "ring")', () => {
-    expect(isValidVariant('Orb')).toBe(false)
-    expect(isValidVariant('circle')).toBe(false)
-    expect(isValidVariant('')).toBe(false)
-    // Forward-compat: 'ring' was replaced by 'diamond' in Phase 17 deviation;
-    // old localStorage values must be rejected and coerced to DEFAULT_VARIANT.
-    expect(isValidVariant('ring')).toBe(false)
-  })
-
-  it('returns false for wrong type (null, undefined, 0, array)', () => {
-    expect(isValidVariant(null)).toBe(false)
-    expect(isValidVariant(undefined)).toBe(false)
-    expect(isValidVariant(0)).toBe(false)
-    expect(isValidVariant(['orb'])).toBe(false)
   })
 })
 
