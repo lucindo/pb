@@ -31,8 +31,8 @@ const themeCssContent = readFileSync(themeCssPath, 'utf-8')
 
 /**
  * Parse --color-breathing-accent-strong from theme.css for the given theme.
- * Light's value is in the base @theme block; dark/moss/slate/dusk in their
- * [data-theme='X']:root override blocks.
+ * Light's value is in the base @theme block; dark in its
+ * [data-theme='dark']:root override block.
  */
 function parseAccentStrongFromCss(themeId: Exclude<ThemeId, 'system'>): string {
   if (themeId === 'light') {
@@ -79,7 +79,7 @@ describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
     const indexHtml = readFileSync(indexHtmlPath, 'utf-8')
 
     // Regex to extract the inline favicon hex map literal from the pre-paint script.
-    // Expected pattern: {light:'#5e81ac',dark:'#81a1c1',moss:'#35a77c',slate:'#3760bf',dusk:'#f6c177'}
+    // Expected pattern: {light:'#5e81ac',dark:'#81a1c1'}
     // or with double quotes and/or spaces — match the value for themeId.
     const mapPattern = new RegExp(
       `['"]${themeId}['"]\\s*:\\s*['"]?(#[0-9a-fA-F]{6})['"]?`,
