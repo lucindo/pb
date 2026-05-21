@@ -107,8 +107,8 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. A returning user with persisted `variant: 'square'` or `variant: 'diamond'` lands on `'orb'` via `coerceSettings` — no `STATE_VERSION` bump, no FOUC, no broken UI (VAR-05).
   4. A repo-wide search for variant-specific tokens / CSS classes / EN+PT-BR strings / test fixtures returns zero leftover references (VAR-06).
 **Plans**: 4 plans
-- [ ] 38-01-PLAN.md — Delete SquareShape / DiamondShape / VariantPicker / BreathingShape + their hooks; collapse 3 App.tsx call sites to <OrbShape />; collapse NKShape dispatcher to OrbShape-only (VAR-01 VAR-02 VAR-04 partial / D-02 D-03 D-09)
-- [ ] 38-02-PLAN.md — Delete VisualVariantId / VARIANT_OPTIONS / coerceVariant + prefs.variant field; strip variant i18n surface (UiStrings.variants + variantLabel; EN+PT-BR catalogs); SettingsDialog Pick union token; prefs.test + strings.test + App.session.test variant cases (VAR-03 VAR-05 / D-01 D-08 D-10)
+- [x] 38-01-PLAN.md — Delete SquareShape / DiamondShape / VariantPicker / BreathingShape + their hooks; collapse 3 App.tsx call sites to <OrbShape />; collapse NKShape dispatcher to OrbShape-only (VAR-01 VAR-02 VAR-04 partial / D-02 D-03 D-09)
+- [x] 38-02-PLAN.md — Delete VisualVariantId / VARIANT_OPTIONS / coerceVariant + prefs.variant field; strip variant i18n surface (UiStrings.variants + variantLabel; EN+PT-BR catalogs); SettingsDialog Pick union token; prefs.test + strings.test + App.session.test variant cases (VAR-03 VAR-05 / D-01 D-08 D-10)
 - [ ] 38-03-PLAN.md — Strip sessionVariantRef + sessionVariant + liveVariant + VisualVariantId import from App.tsx; delete [data-variant='square'|'diamond'] CSS blocks from theme.css; align App.test + App.locale.test fixtures to 4-field UserPrefs (VAR-04 / D-03 D-10)
 - [ ] 38-04-PLAN.md — Add VAR-06 drift-guard test src/content/content.no-variants.test.ts (4-root scan, .css filter, 14-token forbidden list); run closing green gate (VAR-06 / D-04 D-05 D-06 D-07)
 
