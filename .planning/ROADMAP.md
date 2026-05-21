@@ -95,7 +95,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 3 plans
 - [x] 37-01-PLAN.md — Delete StatsFooter + ResetStatsDialog components, App.tsx consumers, stats i18n, and reset-stats test branches (STATS-01..03 / D-01 D-04 D-06 D-07 D-12)
 - [x] 37-02-PLAN.md — Delete dead-code data layer (resetPracticeStats, formatLastSession), verify orphan formatters, add STATS-04 record-and-persist regression (STATS-03 STATS-04 / D-02 D-03 D-05 D-08)
-- [ ] 37-03-PLAN.md — Add STATS-05 drift-guard test in src/content/content.no-stats-ui.test.ts and run the closing green gate (STATS-05 / D-09 D-10 D-11)
+- [x] 37-03-PLAN.md — Add STATS-05 drift-guard test in src/content/content.no-stats-ui.test.ts and run the closing green gate (STATS-05 / D-09 D-10 D-11)
 
 ### Phase 38: Variant removal
 **Goal**: Reduce the shape vocabulary to Orb-only — drop Square and Diamond from code, tokens, picker, and Start-capture, so the Phase 42 orb rewrite has exactly one shape to dispatch to.
