@@ -59,9 +59,9 @@ export function PracticeToggle({
   onSwitch,
   strings,
 }: PracticeToggleProps) {
-  // The muted border bounds the control on every theme — on dark/dusk the
-  // bg-soft container fill is identical to surface, so without a border the
-  // switcher dissolves into the card (matches the SESSION MODE fieldset).
+  // The muted border bounds the control on every theme — on the dark theme
+  // the bg-soft container fill is identical to surface, so without a border
+  // the switcher dissolves into the card (matches the SESSION MODE fieldset).
   const containerClass = [
     'flex rounded-full border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)] p-1',
     disabled ? 'opacity-50 cursor-not-allowed' : '',
@@ -76,9 +76,9 @@ export function PracticeToggle({
         // The active pill carries an accent border (the codebase's raised-
         // interactive convention — stepper buttons, the mode-toggle track);
         // inactive pills keep a transparent border so there is no layout
-        // shift between states. On dark/dusk this accent outline is what
-        // distinguishes the selected pill, since its surface fill matches
-        // the bg-soft container.
+        // shift between states. On the dark theme this accent outline is
+        // what distinguishes the selected pill, since its surface fill
+        // matches the bg-soft container.
         // flex + items-center + justify-center + gap-1 make the button itself a
         // flex container so the Treatment B glyph and the label <span> sit inline
         // on one baseline. flex-1 controls the pill's WIDTH in the row (grid
