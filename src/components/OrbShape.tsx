@@ -19,9 +19,8 @@ export interface OrbShapeProps {
   nkPhase?: 'front' | 'back'
 }
 
-// D-04: OrbShape does NOT own the idle null-return — the BreathingShape
-// dispatcher (Plan 05) guards that and never invokes OrbShape with both
-// frame=null AND leadInDigit=null.
+// Phase 38 D-03: OrbShape is the sole shape — it now owns the idle null-return
+// guard that BreathingShape's dispatcher used to own (pre-Phase-38 D-04).
 export function OrbShape({ frame, leadInDigit, strings, cue = 'labels', nkPhase }: OrbShapeProps) {
   if (nkPhase != null) {
     // Phase 31: locked shell, no numeral — NKShape overlays the OM count.
@@ -31,11 +30,10 @@ export function OrbShape({ frame, leadInDigit, strings, cue = 'labels', nkPhase 
     // OrbLeadIn does NOT receive cue — D-07: lead-in countdown digit is unchanged
     return <OrbLeadIn digit={leadInDigit} strings={strings} />
   }
-  // OrbShape's caller (BreathingShape dispatcher) guarantees frame !== null
-  // when leadInDigit is null (D-04 — dispatcher owns the idle null-return guard).
-  // Reason: BreathingShape dispatcher asserts frame !== null before delegating to OrbShape when leadInDigit is null.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return <OrbBody frame={frame!} strings={strings} cue={cue} />
+  if (frame === null) {
+    return null
+  }
+  return <OrbBody frame={frame} strings={strings} cue={cue} />
 }
 
 function OrbBody({ frame, strings, cue }: { frame: SessionFrame; strings: UiStrings['breathing']; cue: CueStyleId }) {
