@@ -16,11 +16,11 @@ export interface CueGlyphProps {
   cue: CueStyleId
   phase: 'in' | 'out'
   phaseLabel: string
-  // preview: picker-swatch rendering. Uses the variant-picker swatch color token
-  // (--color-orb-in-from) so the glyph stays visible on dark themes, and renders the
-  // first character of phaseLabel for labels mode instead of the full phase word
-  // (which overflows the swatch). Preview glyphs are purely decorative — the arrow/nose
-  // branches skip the sr-only span entirely so the picker swatch emits no a11y node.
+  // preview: picker-swatch rendering. Uses --color-orb-in-from so the glyph stays
+  // visible on dark themes, and renders the first character of phaseLabel for labels
+  // mode instead of the full phase word (which overflows the swatch). Preview glyphs
+  // are purely decorative — the arrow/nose branches skip the sr-only span entirely
+  // so the picker swatch emits no a11y node.
   preview?: boolean
 }
 
@@ -61,8 +61,8 @@ const NOSE_OUT_ARROWS = {
 
 export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphProps): React.ReactElement {
   // Token-only color (D-23) — applied both to the labels span and the SVG wrapper.
-  // Preview swatches follow the VariantPicker swatch coloring (--color-orb-in-from)
-  // so the glyph reads on every theme; in-orb glyphs keep the phase in/out text tokens.
+  // Preview swatches use --color-orb-in-from so the glyph reads on every theme;
+  // in-orb glyphs keep the phase in/out text tokens.
   const colorToken = preview
     ? 'var(--color-orb-in-from)'
     : phase === 'in'
