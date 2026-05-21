@@ -122,7 +122,12 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. A returning user with persisted `theme: 'moss'`, `'slate'`, or `'dusk'` lands on `'system'` on read and re-persists as `'system'` going forward (THM-05).
   4. The `faviconPalette` set is reduced to `light` + `dark`; `favicon.sync.test.ts` guards the new 2-palette mapping; the persisted-theme favicon applies pre-paint with no FOUC (THM-06, THM-07).
   5. The WCAG luminance contrast guard regenerates against the new 2-palette + system surface and passes (THM-08).
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 39-01-PLAN.md — Domain type collapse + prefs.test.ts THM-05 lock (THM-01..05 / D-01 D-02)
+- [ ] 39-02-PLAN.md — Delete moss/slate/dusk CSS blocks + collapse FAVICON_COLORS + align contrast and favicon.sync tests (THM-01..03 THM-06..08 / D-09 D-10)
+- [ ] 39-03-PLAN.md — Delete themes.moss/slate/dusk from UiStrings + EN/PT-BR catalogs + rotate ThemePicker/hook/App test fixtures (THM-04 / D-07 D-12)
+- [ ] 39-04-PLAN.md — Surgical excise moss/slate/dusk from index.html FOUC script (THM-07 / D-08)
+- [ ] 39-05-PLAN.md — Add Phase 39 drift-guard test + closing green gate (THM-01..03 / D-03 D-04 D-05 D-06)
 
 ### Phase 40: Timbre preview cue
 **Goal**: Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch — operator-added requirement, lands the audio surface change before the visual rebuild starts.
