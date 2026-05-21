@@ -5,7 +5,6 @@ import { IosInstallSteps } from './IosInstallSteps'
 import { LanguagePicker } from './LanguagePicker'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
-import { VariantPicker } from './VariantPicker'
 import type { UiStrings } from '../content/strings'
 
 // src/components/SettingsDialog.tsx
@@ -13,7 +12,7 @@ import type { UiStrings } from '../content/strings'
 // Phase 15 INFRA-04: SettingsDialog — native <dialog> shell for four customization pickers.
 //
 // D-05: single onClose prop (no onConfirm/onCancel split — not a destructive action).
-// D-10: inner layout single column, Theme → Variant → Timbre → Language order.
+// D-10: inner layout single column, Theme → Cue → Timbre → Language order. (Phase 38: Variant slot removed.)
 // D-11: Close affordance = explicit Close button + native Esc + backdrop-click cancel.
 // D-12: auto-close on inSessionView is handled in App.tsx (WR-09 useEffect); this component
 //        receives the resulting open=false prop and closes imperatively via dialogRef.
@@ -90,9 +89,8 @@ export function SettingsDialog({ open, onClose, inSessionView, strings, isIOS, i
     >
       <div className="grid gap-5 p-6 sm:p-7">
         <h2 id="settings-dialog-title" className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">{strings.settings.title}</h2>
-        {/* D-10 (updated Phase 25 Plan 04): Theme → Variant → Cue → Timbre → Language order (Landmine 7: each receives disabled={inSessionView}) */}
+        {/* D-10 (updated Phase 25 Plan 04 / Phase 38): Theme → Cue → Timbre → Language order (Landmine 7: each receives disabled={inSessionView}) */}
         <ThemePicker disabled={inSessionView} strings={strings.themes} sectionLabel={strings.settings.themeLabel} />
-        <VariantPicker disabled={inSessionView} strings={strings.variants} sectionLabel={strings.settings.variantLabel} />
         <CuePicker disabled={inSessionView} strings={strings.cue} sectionLabel={strings.settings.cueLabel} />
         <TimbrePicker disabled={inSessionView} strings={strings.timbres} sectionLabel={strings.settings.timbreLabel} />
         <LanguagePicker disabled={inSessionView} sectionLabel={strings.settings.languageLabel} />

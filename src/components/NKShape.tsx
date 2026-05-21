@@ -1,27 +1,19 @@
-import type { VisualVariantId } from '../domain/settings'
 import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MID_SCALE } from './shapeConstants'
 import { OrbShape } from './OrbShape'
-import { SquareShape } from './SquareShape'
-import { DiamondShape } from './DiamondShape'
 
-// D-01 (RESEARCH OQ-2): NKShape is a thin wrapper that renders the user's
-// chosen variant shape (OrbShape / SquareShape / DiamondShape) in NK mode.
-// The wrapper handles the NK-specific rendering contract:
-//   - Count number centered inside (replaces CueGlyph slot, D-02)
-//   - Shape locked at MID_SCALE (no scale crossfade — the OM pulse is the motion)
-//   - Front/Back drives the In/Out gradient via the shape's nkPhase prop,
-//     mirroring HRV Inhale/Exhale (Phase 31 — operator parity request)
-//   - Gentle scale pulse via .nk-om-pulse CSS class (D-04, no expanding ring)
-//   - Static fallback under reduced-motion (D-04)
+// D-01 (RESEARCH OQ-2): NKShape renders OrbShape in NK mode — count number
+// centered, shape locked at MID_SCALE (no scale crossfade), Front/Back drives
+// the In/Out gradient via OrbShape's nkPhase prop.
+// Phase 38 VAR-01/VAR-02: single-shape collapse — SquareShape / DiamondShape
+// removed; NKShape always renders OrbShape.
 //
 // CALLER RESPONSIBILITY: supply key={`nk-${String(count)}`} on the NKShape
 // element to restart the CSS pulse animation on each OM (D-01 pulse once per OM).
 // Do NOT set key inside this component (it would only remount the inner element).
 
 export interface NKShapeProps {
-  variant: VisualVariantId      // 'orb' | 'square' | 'diamond'
   count: number                 // live OM count (0 during settle)
   phase: 'front' | 'back'       // WR-01: real NK phase, drives the aria-label
   isPaused?: boolean            // dims count to opacity-50 when true
@@ -31,7 +23,6 @@ export interface NKShapeProps {
 }
 
 export function NKShape({
-  variant,
   count,
   phase,
   isPaused = false,
@@ -70,18 +61,17 @@ export function NKShape({
   const phaseLabel = phase === 'back' ? nkReadoutStrings.back : nkReadoutStrings.front
   const ariaLabel = `Navi Kriya session: OM ${String(count)}, phase ${phaseLabel}`
 
-  // The NKShape renders the underlying shape component locked at MID_SCALE.
+  // The NKShape renders OrbShape locked at MID_SCALE.
   //
-  // ARCHITECTURE: Since the shape components (OrbShape/SquareShape/DiamondShape)
-  // don't have a full NK mode, each exposes an `nkPhase` prop that renders its
-  // LeadIn structure (MID_SCALE host + both gradient layers + the outer
-  // reference ring) WITHOUT a countdown numeral. The inner ring is dropped — it
-  // is HRV's exhale-end cue and has no meaning here. The nkPhase value sets
-  // data-phase so theme.css crossfades to the Out gradient on Back — the same
-  // In/Out treatment as the live breathing body. We then overlay our own live
-  // OM count via a wrapper div.
+  // ARCHITECTURE: OrbShape exposes an `nkPhase` prop that renders its LeadIn
+  // structure (MID_SCALE host + both gradient layers + the outer reference ring)
+  // WITHOUT a countdown numeral. The inner ring is dropped — it is HRV's
+  // exhale-end cue and has no meaning here. The nkPhase value sets data-phase
+  // so theme.css crossfades to the Out gradient on Back — the same In/Out
+  // treatment as the live breathing body. We then overlay our own live OM count
+  // via a wrapper div.
   //
-  // This reuses the exact CSS/DOM structure from each shape's LeadIn (already
+  // This reuses the exact CSS/DOM structure from OrbShape's LeadIn (already
   // tested and known good) while supplying our own count content.
   //
   // Phase 31 fix: the earlier approach passed leadInDigit={1} and relied on
@@ -91,7 +81,7 @@ export function NKShape({
 
   return (
     <div
-      data-variant={variant}
+      data-variant="orb"
       // my-12 mirrors the vertical margin OrbShape/OrbLeadIn carry — without it
       // the shape box collapses and the StatusPanel rides up over the shape
       // (visible as a jump when the countdown hands off to the running session).
@@ -103,30 +93,16 @@ export function NKShape({
       aria-label={ariaLabel}
       role="img"
     >
-      {/* Render the variant shape locked at MID_SCALE via nkPhase — no numeral,
+      {/* Render OrbShape locked at MID_SCALE via nkPhase — no numeral,
           In/Out gradient driven by the Front/Back phase. The shape renders a
           decorative subtree (no role/aria-label) and the wrapper is aria-hidden,
           since the parent div carries the NK-specific aria-label. */}
       <div aria-hidden="true" className="absolute inset-0">
-        {variant === 'orb' ? (
-          <OrbShape
-            frame={null}
-            nkPhase={phase}
-            strings={strings}
-          />
-        ) : variant === 'square' ? (
-          <SquareShape
-            frame={null}
-            nkPhase={phase}
-            strings={strings}
-          />
-        ) : (
-          <DiamondShape
-            frame={null}
-            nkPhase={phase}
-            strings={strings}
-          />
-        )}
+        <OrbShape
+          frame={null}
+          nkPhase={phase}
+          strings={strings}
+        />
       </div>
       {/* D-02: count number overlaid on top of the shape */}
       {countContent}

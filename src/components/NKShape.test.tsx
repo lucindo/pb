@@ -14,7 +14,6 @@ const EN_STRINGS = UI_STRINGS.en.breathing
 
 function renderShape(overrides: Partial<NKShapeProps> = {}) {
   const defaults: NKShapeProps = {
-    variant: 'orb',
     count: 1,
     phase: 'front',
     strings: EN_STRINGS,
@@ -24,21 +23,9 @@ function renderShape(overrides: Partial<NKShapeProps> = {}) {
 }
 
 describe('NKShape', () => {
-  it('D-01: variant="orb" produces data-variant="orb"', () => {
-    const { container } = renderShape({ variant: 'orb' })
+  it('NK wrapper carries data-variant="orb" (single-shape collapse — Phase 38 VAR-01/02)', () => {
+    const { container } = renderShape()
     const root = container.querySelector('[data-variant="orb"]')
-    expect(root).not.toBeNull()
-  })
-
-  it('D-01: variant="square" produces data-variant="square"', () => {
-    const { container } = renderShape({ variant: 'square' })
-    const root = container.querySelector('[data-variant="square"]')
-    expect(root).not.toBeNull()
-  })
-
-  it('D-01: variant="diamond" produces data-variant="diamond"', () => {
-    const { container } = renderShape({ variant: 'diamond' })
-    const root = container.querySelector('[data-variant="diamond"]')
     expect(root).not.toBeNull()
   })
 
