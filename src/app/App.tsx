@@ -220,7 +220,6 @@ export default function App() {
   useFavicon() // Phase 21 FAVI-01..03: per-palette favicon swap, same-tab + cross-tab + pre-paint (D-04/D-05/D-06)
   const { isPhone, isStandalone, isIOS } = useIsStandaloneOrPhone() // Phase 28: phone + standalone + iOS detection
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt() // Phase 28: Android install prompt capture
-  const liveVariant: null = null // Phase 38 Plan 02 retype (BLOCKER fix): variant type deleted from domain/settings in this plan; shim survives as typed null until Plan 03 deletes the sessionVariantRef + sessionVariant state + capture/clear sites. null satisfies all capture sites.
   const { cue: liveCue } = useVisualCue() // Phase 25 CUE-01..03: live cue state + cross-tab/same-tab sync
   const { locale, uiStrings } = useLocale() // Phase 19 I18N-01..07: locale + typed UI strings; drives language switching
   const learnContent = LEARN_CONTENT[locale] // per-render catalog resolution (D-06 hook return shape)
@@ -282,18 +281,9 @@ export default function App() {
   // checker B1: boundary start times come from the PLAN, not from frame.elapsedMs at render time).
   const planRef = useRef<ReturnType<typeof createBreathingPlan> | null>(null)
 
-  // Phase 17 D-09: captured-at-Start snapshot. While non-null (during an active session
-  // including lead-in), BreathingShape receives this frozen value and ignores liveVariant.
-  // Belt-and-suspenders against a cross-tab storage event that the picker-disable cannot block (D-10).
-  // D-11: audio reconstruction (Phase 5.1 / Phase 9) does NOT re-snapshot — orthogonal subsystems.
-  // Note: kept as both a ref (for synchronous write in onStartClick before any await) AND as state
-  // (for the JSX render path — react-hooks/refs disallows reading .current in render).
-  const sessionVariantRef = useRef<null>(null) // Phase 38 Plan 02 retype (BLOCKER fix): variant type deleted in this plan; narrowed to null. Plan 03 deletes the ref entirely.
-  const [sessionVariant, setSessionVariant] = useState<null>(null) // Phase 38 Plan 02 retype (BLOCKER fix): variant type deleted in this plan; narrowed to null. Plan 03 deletes the state entirely.
-
-  // Phase 25 D-09: captured-at-Start snapshot for cue (mirrors sessionVariantRef / sessionVariant).
+  // Phase 25 D-09: captured-at-Start snapshot for cue.
   // T-25-09: freezes the cue at onStartClick — a cross-tab 'storage' event cannot alter the
-  // running session's cue because BreathingShape reads sessionCue (frozen) not liveCue.
+  // running session's cue because OrbShape reads sessionCue (frozen) not liveCue.
   const sessionCueRef = useRef<CueStyleId | null>(null)
   const [sessionCue, setSessionCue] = useState<CueStyleId | null>(null)
 
@@ -468,9 +458,7 @@ export default function App() {
       setAppPhase('idle')
       audioAnchorRef.current = null
       planRef.current = null
-      sessionVariantRef.current = null  // Phase 17 D-10 tidy clear (redundant with leave-running effect but avoids 1 frame of stale ref)
-      setSessionVariant(null)
-      sessionCueRef.current = null  // Phase 25 D-09 tidy clear (mirrors sessionVariantRef clear)
+      sessionCueRef.current = null  // Phase 25 D-09 tidy clear
       setSessionCue(null)
       void audioStop()
       void wakeLockRelease() // Phase 5 D-07/D-08: idempotent if no lock held
@@ -483,13 +471,7 @@ export default function App() {
     // by comparing local generation against the ref's current value.
     const generation = ++startGenerationRef.current
 
-    // Phase 17 D-10: capture-at-session-start — set BEFORE lead-in begins so the visual variant
-    // is frozen for the entire session (lead-in + breath loop). Reset in the leave-running cleanup
-    // effect below. D-11: audio reconstruction does NOT re-snapshot.
-    // Ref for synchronous write (pre-await guard); state for the JSX render path.
-    sessionVariantRef.current = liveVariant
-    setSessionVariant(liveVariant)
-    // Phase 25 D-09: capture cue at session start (mirrors variant capture above).
+    // Phase 25 D-09: capture cue at session start.
     // T-25-09: sessionCueRef freezes the cue; mid-session cross-tab changes feed liveCue only,
     // which is not read while sessionCue is non-null. Applies on next Start.
     sessionCueRef.current = liveCue
@@ -504,8 +486,7 @@ export default function App() {
     // D-09: AudioContext is constructed inside this user-gesture-derived chain.
     const plan = createBreathingPlan(state.selectedSettings)
     planRef.current = plan // stored for Task 1b boundary computation
-    // Phase 18 D-09/D-10: read timbre from storage once at session start (mirror
-    // of the sessionVariantRef.current = liveVariant site above at line ~338).
+    // Phase 18 D-09/D-10: read timbre from storage once at session start.
     // useAudioCues' timbreRef IS the session-scoped capture (D-08 — no App-side
     // sessionTimbreRef). loadPrefs is a static import (not a useCallback dep);
     // capturedTimbre is a local const (not a closure dep). Reconstruction inside
@@ -553,7 +534,7 @@ export default function App() {
       session.start()
     }, LEAD_IN_DURATION_MS)
     leadInTimeoutsRef.current = [t1, t2, t3]
-  }, [appPhase, liveVariant, liveCue, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
+  }, [appPhase, liveCue, state.selectedSettings, audioStart, audioStop, wakeLockRequest, wakeLockRelease, session, clearLeadInTimeouts])
 
   // D-14: open-ended sessions still end directly; only timed sessions raise the modal.
   // D-13: when the modal opens, the session timing clock keeps running (no session.pause; no setTimeout).
@@ -666,8 +647,6 @@ export default function App() {
       clearLeadInTimeouts()
       audioAnchorRef.current = null
       planRef.current = null
-      sessionVariantRef.current = null  // Phase 17 D-10 release the captured variant so next Start re-reads liveVariant
-      setSessionVariant(null)  // Phase 17 D-10 release the captured variant for the JSX render path
       sessionCueRef.current = null  // Phase 25 D-09 release captured cue so next Start re-reads liveCue
       setSessionCue(null)  // Phase 25 D-09 release captured cue for the JSX render path
       lastBoundaryKeyRef.current = null
@@ -815,8 +794,6 @@ export default function App() {
     // no React state mirror needed (activeStats removed).
     recordNaviKriyaSession(result.elapsedMs, result.completedRounds, result.isComplete)
     void wakeLockRelease()
-    sessionVariantRef.current = null
-    setSessionVariant(null)
     if (result.isComplete) {
       // HRV parity: natural completion shows no popup. Surface the inline
       // completion headline, let the end chord ring out, then close the
@@ -865,8 +842,6 @@ export default function App() {
     }
     nkAudioCtxRef.current = audioCtx
     const timbre = loadPrefs().timbre
-    sessionVariantRef.current = liveVariant
-    setSessionVariant(liveVariant)
     void wakeLockRequest()
     nkRecordedRef.current = false
     setNkStarting(true)
@@ -923,7 +898,7 @@ export default function App() {
       nkStart(nkSettings, callbacks, onNKComplete)
     }, LEAD_IN_DURATION_MS)
     nkLeadInTimeoutsRef.current = [t1, t2, t3]
-  }, [nkSessionActive, liveVariant, wakeLockRequest, nkSettings, nkStart, onNKComplete])
+  }, [nkSessionActive, wakeLockRequest, nkSettings, nkStart, onNKComplete])
 
   // HRV parity: Cancel during the countdown — abort before the engine starts.
   const onNKCancelClick = useCallback(() => {
@@ -934,8 +909,6 @@ export default function App() {
     void nkAudioCtxRef.current?.close()
     nkAudioCtxRef.current = null
     void wakeLockRelease()
-    sessionVariantRef.current = null
-    setSessionVariant(null)
   }, [wakeLockRelease])
 
   // NK-07: end early — open the confirmation dialog (HRV-consistent).
@@ -1191,7 +1164,7 @@ export default function App() {
       {/* Phase 6 LEARN-01..LEARN-04: Learn modal — controlled by learnDialogOpen state,
           opened from the corner anchor in idle state only (D-03/D-05). */}
       <LearnDialog open={learnDialogOpen} onClose={onLearnClose} learnContent={learnContent} lockedCopy={lockedCopy} strings={uiStrings.learn} activePractice={activePractice} />
-      {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/VariantPicker/TimbrePicker/LanguagePicker stubs. */}
+      {/* Phase 15 INFRA-04: SettingsDialog shell — hosts ThemePicker/TimbrePicker/LanguagePicker. */}
       {/* Phase 29 INSTALL-06: prop-drill install state (isIOS/isStandalone from useIsStandaloneOrPhone,
           installable computed per D-08, triggerInstall from useBeforeInstallPrompt — single listener). */}
       <SettingsDialog

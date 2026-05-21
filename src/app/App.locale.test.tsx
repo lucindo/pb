@@ -20,7 +20,6 @@ function seedPrefs(prefs: UserPrefs): void {
 const DEFAULT_FULL_PREFS: UserPrefs = {
   theme: 'system',
   timbre: 'bowl',
-  variant: 'orb',
   cue: 'labels',
   locale: 'en',
 }

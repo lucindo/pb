@@ -15,7 +15,7 @@ function seedPrefs(prefs: UserPrefs): void {
   )
 }
 
-const DEFAULT_FULL_PREFS: UserPrefs = { theme: 'system', timbre: 'bowl', variant: 'orb', cue: 'labels', locale: 'en' }
+const DEFAULT_FULL_PREFS: UserPrefs = { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' }
 
 beforeEach(() => {
   window.localStorage.clear()
