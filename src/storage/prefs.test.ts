@@ -76,6 +76,25 @@ describe('coercePrefs (D-10 / D-17)', () => {
       .toEqual({ theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'pt-BR' })
   })
 
+  it('tolerates legacy variant key on persisted envelope — VAR-05 forward-compat (Phase 38 D-01)', () => {
+    // VAR-05 / CONTEXT D-01: a returning user with a pre-Phase-38 persisted envelope carrying
+    // `variant: 'square' | 'diamond' | 'orb'` must read through coercePrefs as a clean 4-field
+    // UserPrefs with NO `variant` property surviving — the unknown key is silently dropped on
+    // read (Phase 8 D-01 envelope tolerance). No STATE_VERSION bump needed; the render path is
+    // always OrbShape (Plan 01), so the dropped key is harmless. This is the literal-envelope
+    // adversarial test the structural per-field + proto-pollution coverage does not assert.
+    const legacySquareEnvelope: unknown = { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en', variant: 'square' }
+    const coercedSquare = coercePrefs(legacySquareEnvelope)
+    expect(coercedSquare).toEqual({ theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' })
+    expect(Object.prototype.hasOwnProperty.call(coercedSquare, 'variant')).toBe(false)
+    expect((coercedSquare as unknown as Record<string, unknown>).variant).toBeUndefined()
+
+    const legacyDiamondEnvelope: unknown = { theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR', variant: 'diamond' }
+    const coercedDiamond = coercePrefs(legacyDiamondEnvelope)
+    expect(coercedDiamond).toEqual({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
+    expect(Object.prototype.hasOwnProperty.call(coercedDiamond, 'variant')).toBe(false)
+  })
+
   it('does not throw when raw has prototype-polluting keys (T-25-01 mitigation)', () => {
     // Prototype-pollution mitigation: we only read four known keys, never spread `raw`
     // into an object we use as a prototype. Test that a __proto__ key in the raw doesn't
