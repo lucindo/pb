@@ -3,10 +3,19 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Phase 40 D-10(e/f/g) wiring: stub the preview module so the radio-click tests
+// observe playInhalePreview invocations without producing real audio. vi.mock is
+// hoisted above the TimbrePicker import so the component module evaluates against
+// the mocked previewContext.
+vi.mock('../audio/previewContext', () => ({
+  playInhalePreview: vi.fn(),
+}))
+
 import { TimbrePicker } from './TimbrePicker'
 import { STATE_KEY } from '../storage'
 import type { TimbreId } from '../domain/settings'
 import { UI_STRINGS } from '../content/strings'
+import { playInhalePreview } from '../audio/previewContext'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
@@ -22,6 +31,10 @@ function seedTimbre(timbre: TimbreId): void {
 
 beforeEach(() => {
   window.localStorage.clear()
+  // vi.restoreAllMocks() in afterEach resets vi.spyOn spies but does NOT
+  // clear the vi.fn() created inside the vi.mock factory above — clear call
+  // history explicitly between tests so D-10(e/f/g) assertions stay isolated.
+  vi.mocked(playInhalePreview).mockClear()
 })
 
 afterEach(() => {
@@ -113,5 +126,39 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     const fluteButton = screen.getByRole('radio', { name: 'Flute' })
     expect(fluteButton).toHaveAttribute('aria-checked', 'true')
     expect(fluteButton).toBeDisabled()
+  })
+
+  // Phase 40 D-10(e): tap fires playInhalePreview with the new TimbreId.
+  it('clicking an option fires playInhalePreview with the new TimbreId (D-04 onClick wiring)', async () => {
+    seedTimbre('bowl')
+    const user = userEvent.setup()
+    render(<TimbrePicker disabled={false} strings={EN_STRINGS_FIXTURE.timbres} sectionLabel={EN_STRINGS_FIXTURE.settings.timbreLabel} />)
+    const sineButton = screen.getByRole('radio', { name: 'Sine' })
+    await user.click(sineButton)
+    expect(playInhalePreview).toHaveBeenCalledTimes(1)
+    expect(playInhalePreview).toHaveBeenCalledWith('sine')
+  })
+
+  // Phase 40 D-10(f): PREV-04 wiring lock — disabled button never reaches preview.
+  it('when disabled=true, clicking a button does NOT invoke playInhalePreview (PREV-04 wiring)', async () => {
+    seedTimbre('bowl')
+    const user = userEvent.setup()
+    render(<TimbrePicker disabled={true} strings={EN_STRINGS_FIXTURE.timbres} sectionLabel={EN_STRINGS_FIXTURE.settings.timbreLabel} />)
+    const fluteButton = screen.getByRole('radio', { name: 'Flute' })
+    await user.click(fluteButton)
+    expect(playInhalePreview).not.toHaveBeenCalled()
+  })
+
+  // Phase 40 D-10(g): re-audition semantics — same-id re-tap fires the preview again.
+  it('tapping the currently-selected timbre fires playInhalePreview again (re-audition — D-09)', async () => {
+    seedTimbre('bell')
+    const user = userEvent.setup()
+    render(<TimbrePicker disabled={false} strings={EN_STRINGS_FIXTURE.timbres} sectionLabel={EN_STRINGS_FIXTURE.settings.timbreLabel} />)
+    const bellButton = screen.getByRole('radio', { name: 'Bell' })
+    await user.click(bellButton)
+    await user.click(bellButton)
+    expect(playInhalePreview).toHaveBeenCalledTimes(2)
+    expect(playInhalePreview).toHaveBeenNthCalledWith(1, 'bell')
+    expect(playInhalePreview).toHaveBeenNthCalledWith(2, 'bell')
   })
 })
