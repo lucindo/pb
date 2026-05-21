@@ -15,7 +15,7 @@
 // keys are read from a guarded Record (ASVS V5).
 
 import { coerceSettings } from './settings'
-import { coerceStats, ZERO_STATS, COUNT_THRESHOLD_MS, type PersistedStats } from './stats'
+import { coerceStats, COUNT_THRESHOLD_MS, type PersistedStats } from './stats'
 import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 import type { SessionSettings } from '../domain/settings'
 import {
