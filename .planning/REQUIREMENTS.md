@@ -42,12 +42,12 @@ Anti-gamification stance from spike-010. Computation + persistence stay; the vis
 
 Drop the Square + Diamond shape variants. Orb only. User-visible variant picker goes away.
 
-- [ ] **VAR-01**: `Square` shape variant is removed from `BreathingShape.tsx` and the `Variant` union.
-- [ ] **VAR-02**: `Diamond` shape variant is removed from `BreathingShape.tsx` and the `Variant` union.
-- [ ] **VAR-03**: The variant picker is removed from the user `SettingsDialog`.
-- [ ] **VAR-04**: `sessionVariantRef` Start-capture invariant is removed (single-orb shape — no longer needed).
-- [ ] **VAR-05**: Persisted `variant: 'square' | 'diamond'` is coerced to `'orb'` on read via `coerceSettings` (forward-compat — no `STATE_VERSION` bump).
-- [ ] **VAR-06**: All variant-specific tokens / CSS / strings are deleted (zero leftover references in `theme.css`, EN/PT-BR catalogs, or test fixtures).
+- [x] **VAR-01**: `Square` shape variant is removed from `BreathingShape.tsx` and the `Variant` union.
+- [x] **VAR-02**: `Diamond` shape variant is removed from `BreathingShape.tsx` and the `Variant` union.
+- [x] **VAR-03**: The variant picker is removed from the user `SettingsDialog`.
+- [x] **VAR-04**: `sessionVariantRef` Start-capture invariant is removed (single-orb shape — no longer needed).
+- [x] **VAR-05**: Persisted `variant: 'square' | 'diamond'` is coerced to `'orb'` on read via `coerceSettings` (forward-compat — no `STATE_VERSION` bump).
+- [x] **VAR-06**: All variant-specific tokens / CSS / strings are deleted (zero leftover references in `theme.css`, EN/PT-BR catalogs, or test fixtures).
 
 ### THM — Theme simplification (Phase 39)
 
