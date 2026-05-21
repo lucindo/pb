@@ -4,7 +4,6 @@
 export * from './storage'
 export * from './settings'
 export * from './stats'
-export * from './format'
 export * from './prefs'
 export * from './installDismissed'
 export * from './practices'
