@@ -66,11 +66,11 @@ Collapse 5-palette + system → 2-palette + system. ThemePicker becomes Light / 
 
 Operator-added: switching the Timbre selection in App Settings plays the inhale cue once at the current pitch as an audible preview.
 
-- [ ] **PREV-01**: Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch.
-- [ ] **PREV-02**: Preview routes through the existing `cueSynth` scheduler (same code path as in-session cues).
-- [ ] **PREV-03**: Preview plays even when the current `MuteToggle` is muted (this is a preview, not a session cue — operator can audition without unmuting).
-- [ ] **PREV-04**: Preview is only triggered outside an active session (App Settings is inaccessible during a session in the redesign anyway).
-- [ ] **PREV-05**: Preview latency is acceptable (≤ 100 ms from picker tap to first audio sample on commodity hardware).
+- [x] **PREV-01**: Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch.
+- [x] **PREV-02**: Preview routes through the existing `cueSynth` scheduler (same code path as in-session cues).
+- [x] **PREV-03**: Preview plays even when the current `MuteToggle` is muted (this is a preview, not a session cue — operator can audition without unmuting).
+- [x] **PREV-04**: Preview is only triggered outside an active session (App Settings is inaccessible during a session in the redesign anyway).
+- [x] **PREV-05**: Preview latency is acceptable (≤ 100 ms from picker tap to first audio sample on commodity hardware).
 
 ### TOK — Mono Zen palette + tokens (Phase 41)
 
