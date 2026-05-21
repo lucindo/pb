@@ -32,11 +32,11 @@ Procedural debt closeout — restores v1.5 phase directories from git, backfills
 
 Anti-gamification stance from spike-010. Computation + persistence stay; the visible surface goes.
 
-- [ ] **STATS-01**: `StatsFooter.tsx` is removed from the app shell.
-- [ ] **STATS-02**: `ResetStatsDialog.tsx` is removed from the app shell.
-- [ ] **STATS-03**: The "Reset stats" affordance is removed from Practice Settings (per-practice `resetPracticeStats` UI control).
-- [ ] **STATS-04**: `recordSession()` continues to compute + persist stats to `localStorage` (regression test confirms — open app, complete a session, reload, confirm stats incremented in the envelope).
-- [ ] **STATS-05**: No user-visible "12 MIN TODAY · STREAK 5d" or equivalent stat surface appears anywhere in the UI (audit Idle, Running, Complete, Learn, App Settings).
+- [x] **STATS-01**: `StatsFooter.tsx` is removed from the app shell.
+- [x] **STATS-02**: `ResetStatsDialog.tsx` is removed from the app shell.
+- [x] **STATS-03**: The "Reset stats" affordance is removed from Practice Settings (per-practice `resetPracticeStats` UI control).
+- [x] **STATS-04**: `recordSession()` continues to compute + persist stats to `localStorage` (regression test confirms — open app, complete a session, reload, confirm stats incremented in the envelope).
+- [x] **STATS-05**: No user-visible "12 MIN TODAY · STREAK 5d" or equivalent stat surface appears anywhere in the UI (audit Idle, Running, Complete, Learn, App Settings).
 
 ### VAR — Variant removal (Phase 38)
 

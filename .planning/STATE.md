@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
-status: executing
+status: ready_to_plan
 stopped_at: Phase 37 context gathered
 last_updated: "2026-05-21T00:31:26.677Z"
 last_activity: 2026-05-21 -- Phase 37 execution started
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 12
   completed_plans: 9
-  percent: 75
+  percent: 22
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 ## Current Position
 
-Phase: 37 (stats-ui-removal) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 37
-Last activity: 2026-05-21 -- Phase 37 execution started
+Phase: 38
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-21
 
 ## Performance Metrics
 
