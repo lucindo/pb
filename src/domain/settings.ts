@@ -94,9 +94,9 @@ export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
 // Phase 14 D-01: v1.1 customization enum surfaces — predicates are FINAL;
 // downstream phases (16/17/18/19) only add UI/CSS/audio wiring and do NOT re-edit.
 
-export type ThemeId = 'light' | 'dark' | 'system' | 'moss' | 'slate' | 'dusk'
+export type ThemeId = 'light' | 'dark' | 'system'
 
-export const THEME_OPTIONS = ['light', 'dark', 'system', 'moss', 'slate', 'dusk'] as const satisfies readonly ThemeId[]
+export const THEME_OPTIONS = ['light', 'dark', 'system'] as const satisfies readonly ThemeId[]
 
 export function isValidTheme(v: unknown): v is ThemeId {
   return typeof v === 'string' && (THEME_OPTIONS as readonly string[]).includes(v)
