@@ -18,6 +18,7 @@
 
 import { TIMBRE_OPTIONS, type TimbreId } from '../domain/settings'
 import { useTimbreChoice } from '../hooks/useTimbreChoice'
+import { playInhalePreview } from '../audio/previewContext'
 import type { UiStrings } from '../content/strings'
 
 export interface TimbrePickerProps {
@@ -52,7 +53,7 @@ export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerPr
               role="radio"
               aria-checked={selected}
               disabled={disabled}
-              onClick={() => { setTimbre(id) }}
+              onClick={() => { setTimbre(id); playInhalePreview(id) }}
               className={`${baseClasses} ${selected ? selectedClasses : unselectedClasses}`}
             >
               {label}
