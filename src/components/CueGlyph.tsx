@@ -60,22 +60,19 @@ const NOSE_OUT_ARROWS = {
 }
 
 export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphProps): React.ReactElement {
-  // Token-only color (D-23) — applied both to the labels span and the SVG wrapper.
-  // Preview swatches use --color-orb-in-from so the glyph reads on every theme;
-  // in-orb glyphs keep the phase in/out text tokens.
-  const colorToken = preview
-    ? 'var(--color-orb-in-from)'
+  // Token-only color (D-23) via Tailwind arbitrary-value text-[var(...)] classes —
+  // matches the codebase convention. Preview swatches use --color-orb-in-from so
+  // the glyph reads on every theme; in-orb glyphs use the phase in/out text tokens.
+  const colorClass = preview
+    ? 'text-[var(--color-orb-in-from)]'
     : phase === 'in'
-      ? 'var(--color-orb-in-text)'
-      : 'var(--color-orb-out-text)'
+      ? 'text-[var(--color-orb-in-text)]'
+      : 'text-[var(--color-orb-out-text)]'
 
-  // ── labels mode: byte-identical to the existing phase-label span (zero regression) ──
+  // ── labels mode ─────────────────────────────────────────────────────────────
   if (cue === 'labels') {
     return (
-      <span
-        className="relative z-10 text-5xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-6xl"
-        style={{ color: colorToken }}
-      >
+      <span className={`relative z-10 text-5xl font-semibold tracking-tight sm:text-6xl ${colorClass}`}>
         {preview ? phaseLabel.charAt(0) : phaseLabel}
       </span>
     )
@@ -85,7 +82,7 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
   if (cue === 'arrow') {
     const pathD = phase === 'in' ? ARROW_IN_PATH : ARROW_OUT_PATH
     return (
-      <span className="relative z-10" style={{ color: colorToken }}>
+      <span className={`relative z-10 ${colorClass}`}>
         {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint */}
         <svg
           aria-hidden="true"
@@ -107,7 +104,7 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
   // ── nose mode: candidate-D2 nose outline + straight up/down arrows ──────────
   const arrowData = phase === 'in' ? NOSE_IN_ARROWS : NOSE_OUT_ARROWS
   return (
-    <span className="relative z-10" style={{ color: colorToken }}>
+    <span className={`relative z-10 ${colorClass}`}>
       {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint */}
       <svg
         aria-hidden="true"

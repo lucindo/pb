@@ -30,7 +30,7 @@ State below is updated after every step transition.
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | ✓ done — commit `88305ea` |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | ✓ done — commit `039caeb` |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | ✓ done — commit `bd22ca5` |
-| F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | pending |
+| F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | **implemented — awaiting operator approval** |
 | F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | pending |
 | F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | pending |
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | pending |
@@ -42,10 +42,24 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** E — Unified `PickerCardGrid<T>` primitive
+**Item:** F1 — `CueGlyph` inline-style → className
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item E)
+### Implementation summary (Item F1)
+
+- `src/components/CueGlyph.tsx` only — replaced 3 `style={{ color: colorToken }}` usages with a single `colorClass` ternary applied via className (Tailwind arbitrary-value `text-[var(--...)]`).
+- Dropped a dead `text-[var(--color-breathing-accent-strong)]` from the labels-mode span — it was always overridden by the inline style.
+- No CSS file changes; no test changes; visual byte-equivalent.
+
+**Verification:**
+- `tsc --noEmit` + `lint` clean
+- `npm test --run src/components/CueGlyph.test.tsx`: 22/22 pass
+- Full suite: 101/101 files, 1179/1179 tests pass
+- `npm run build` clean
+
+**Commit message:** `refactor(CueGlyph): inline style → className for token colors`
+
+### Archived — Implementation summary (Item E)
 
 All defaults honored: explicit `labelId` prop (not `useId`), generic `<T extends string>`, class strings moved into primitive verbatim, CuePicker glyph stays in `renderOption`, `optionLayout` defaults `'inline'`, all 4 existing picker tests kept unchanged.
 
@@ -257,7 +271,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | B | `c0bfe60` | Primitive + icon library landed. No consumers yet. |
 | C | `88305ea` | PageShell + TopAppBar; AppScreen routed through them. Visual byte-equivalent (DOM tests pass); browser confirmation pending. |
 | D | `039caeb` | Surface routing: appScreen state + ScreenRouter; LearnPage / AppSettingsPage replace dialogs as route destinations. LearnDialog / SettingsDialog / SettingsPanel become orphan code (deletion deferred to G). |
-| E | (this commit) | PickerCardGrid primitive extracted; 4 pickers each shrink from ~60 LOC to ~15-40 LOC adapters. Visual + a11y byte-equivalent (all picker tests pass unchanged). JS bundle -2.4 KB from the dedup. |
+| E | `bd22ca5` | PickerCardGrid primitive extracted; 4 pickers each shrink from ~60 LOC to ~15-40 LOC adapters. Visual + a11y byte-equivalent. JS bundle -2.4 KB. |
+| F1 | (this commit) | CueGlyph inline style → className for token colors. Surfaced + removed a dead static class. |
 
 ---
 
