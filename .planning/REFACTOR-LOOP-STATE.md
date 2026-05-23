@@ -26,8 +26,8 @@ State below is updated after every step transition.
 | Tag | Item | Status |
 |-----|------|--------|
 | A | Theme tokens: elevation + scrim + destructive. Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | ✓ done — commit `0c1d372` |
-| B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | **implemented — awaiting operator approval** |
-| C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | pending |
+| B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | ✓ done — commit `c0bfe60` |
+| C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | **proposed — awaiting go** |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | pending |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | pending |
 | F | Cleanup pass: `shapeConstants.ts` single-source-of-truth (TS↔CSS), `PracticeContext` provider replacing prop drilling, `UiStrings` surface-vocabulary rename plan, App.*.test.tsx vs. unit-test overlap audit, `CueGlyph` inline-style → className, presentation-safe type re-exports. | pending |
@@ -37,49 +37,62 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** B — Design-primitive component library + icon/glyph library
-**Step:** 4 (implemented + committed, awaiting operator approval)
+**Item:** C — `PageShell` + `TopAppBar` primitives; extract `AppHeader`
+**Step:** 1 (proposed, awaiting "go")
 
-### Implementation summary
+### Proposal for Item C
 
-**Files added (29):**
+**Goal**
+Add two layout primitives — `PageShell` (page-level wrapper: bg, padding, centered max-width column) and `TopAppBar` (eyebrow + title + leading/trailing slots, `position: relative` so existing anchors still position correctly). Rewire `AppScreen` to use both, replacing its current inline `<main>` + `<section>` + `AppHeader` code. **Visual output must be byte-equivalent** — this is plumbing, not redesign.
 
-`src/components/primitives/`
-- `Card.tsx` + `Card.test.tsx` — rounded surface, `padding={none|sm|md|lg}`, `elevation={none|card|modal}`. Defaults: `md` / `card`.
-- `Eyebrow.tsx` + `Eyebrow.test.tsx` — uppercase tracked muted section label.
-- `IconButton.tsx` + `IconButton.test.tsx` — round white icon button. `size={sm|md}` (32/40 px).
-- `Pill.tsx` + `Pill.test.tsx` — `variant={filled|outlined}`, `active` forces filled appearance.
-- `SegmentedControl.tsx` + `SegmentedControl.test.tsx` — unified outer pill, internal segments, `role="radiogroup"` with `aria-checked` on the active option.
-- `Stepper.tsx` + `Stepper.test.tsx` — minimal `[−] value [+]` row, no surrounding container; `formatValue?` for unit suffixes.
-- `Toggle.tsx` + `Toggle.test.tsx` — iOS-style switch (`role="switch"`).
-- `ArrowLink.tsx` + `ArrowLink.test.tsx` — bold accent text + trailing → glyph; renders as `<a>` if `href`, else `<button>`.
-- `index.ts` — barrel.
+**Why now**
+Item D (`LearnPage` / `AppSettingsPage`) needs both primitives — every page needs the same shell + bar shape. Building them while extracting the practice surface's header proves the API against a known-good baseline before two more pages depend on it.
 
-`src/components/icons/`
-- `InfoIcon`, `GearIcon`, `ChevronBackIcon`, `ChevronRightIcon`, `CloseIcon`, `SpeakerIcon`, `SpeakerMutedIcon`, `RefreshIcon`, `ShareIcon` — standardized 24×24, 1.5 stroke, `currentColor`.
-- `index.ts` — barrel.
+**Scope — new primitives (`src/components/primitives/`)**
 
-**Verification:**
-- `npx tsc --noEmit`: clean
-- `npm run lint`: clean
-- `npm test -- --run src/components/primitives/`: 8 files / 39 tests, all pass
-- `npm test -- --run` full suite: 93 files / 1125 tests pass (was 85/1086 → +8 primitive test files, +39 new tests)
+| File | Purpose | API |
+|------|---------|-----|
+| `PageShell.tsx` | Page wrapper: radial-gradient `<main>` + centered `<section>`. Children render inside the section. | `<PageShell minHeightCompensation="3rem"\|"4rem" align="start"\|"center">…</PageShell>` |
+| `TopAppBar.tsx` | Header bar: optional eyebrow above title, optional `leading` + `trailing` slots. `position: relative` so absolutely-positioned slot children (existing anchors) still work. | `<TopAppBar eyebrow="..." title="..." leading={...} trailing={...} />` |
 
-**No existing files modified.** No consumer is rewired yet. Primitives become the toolkit for items C/D/E.
+Each gets a co-located `.test.tsx`.
 
-**Sensible defaults locked (flag if you want different):**
-- Card radius: `rounded-3xl` (24 px)
-- Card padding scale: 16 / 24 / 32 px
-- Pill / Segmented active: `--color-breathing-accent-strong` bg, `--color-breathing-on-accent` text
-- Segmented outer container bg: `--color-breathing-bg-soft`
-- Eyebrow tracking: `0.16em`
-- IconButton size scale: 32 / 40 px (touch-friendly md = 40 px)
-- Stepper button size: 32 px, gap 12 px
-- Toggle: 44×24 track, 20 px knob
+**Scope — `AppScreen.tsx` rewire**
 
-**Commit:** `refactor(primitives): add design-primitive library + centralized icon set (no consumers yet)`
+Replace the inline `<main>` + `<section>` with `<PageShell>`. Replace the inline `AppHeader` (lines 16-45) with `<TopAppBar leading={<SettingsAnchor … />} trailing={<LearnAnchor … />} eyebrow={vm.appHeader} title={vm.appTitle} />`. `SettingsAnchor` / `LearnAnchor` stay as-is — they're deleted in Item G after Item D migrates Learn/Settings to the new IconButton pattern. The local `AppHeader` function disappears. `PracticeWorkspace` is unchanged (workspace-specific, not page-shell).
 
-### Proposal for Item B
+`InstallBanner` and `AppDialogsView` stay as direct children of `PageShell` (overlays).
+
+**Out of scope (deferred to later items)**
+- Visual redesign of the header (still eyebrow + h1, same tokens, same anchors)
+- Replacing `SettingsAnchor` / `LearnAnchor` with `IconButton` (Item D — happens when the chrome around them changes)
+- The `compact` mt-6 vs mt-10 toggle on `PracticeWorkspace` (workspace concern, not shell)
+
+**Risk**
+Low-medium. Existing visual output must not change. The `position: relative` contract on `TopAppBar` must be airtight — existing anchor tests (`SettingsAnchor.test.tsx`, `LearnAnchor.test.tsx`) verify behavior but not positioning. I will manually verify by running the dev server and visually checking the header pre/post change.
+
+**Files touched**
+- New: `src/components/primitives/PageShell.tsx` + test
+- New: `src/components/primitives/TopAppBar.tsx` + test
+- Modified: `src/components/primitives/index.ts` (add two exports)
+- Modified: `src/app/AppScreen.tsx` (drop inline `AppHeader`, swap `<main>`/`<section>` for `PageShell`, swap header for `TopAppBar`)
+
+**Commit message:** `refactor(primitives): add PageShell + TopAppBar; route AppScreen header through them`
+
+**Question for you before I start**
+Two API choices worth confirming:
+1. `TopAppBar` accepts `leading`/`trailing` as `ReactNode` slots (so today's `SettingsAnchor`/`LearnAnchor` plug in unchanged; tomorrow Item D plugs in `<IconButton icon={ChevronBackIcon} … />`). Alternative would be a stricter `{ icon, label, onClick, disabled }` shape — but that forces an early commitment to IconButton and breaks the byte-equivalence guarantee for this commit. My default is slots.
+2. `PageShell` exposes `align="start"` (current practice surface uses `items-center justify-start`) as default. Learn/Settings pages will likely want the same. Reasonable?
+
+### Archived — Item B implementation summary
+
+**Files added (29):** `src/components/primitives/` (8 primitives + 8 tests + barrel) and `src/components/icons/` (9 icons + barrel).
+
+**Verification:** `tsc --noEmit` clean, `lint` clean, full suite 93 files / 1125 tests pass.
+
+**Sensible defaults locked:** Card radius 24 px; Card padding 16/24/32; Pill/Segmented active = `--color-breathing-accent-strong` bg + `--color-breathing-on-accent` text; Segmented outer container = `--color-breathing-bg-soft`; Eyebrow tracking 0.16em; IconButton 32/40 px; Stepper button 32 px gap 12 px; Toggle 44×24 track / 20 px knob.
+
+### Archived — Proposal for Item B
 
 **Goal**
 Add a `src/components/primitives/` tree (one file per primitive) and a `src/components/icons/` tree (one file per glyph). Both are purely additive — no existing code modified. The primitives consume the tokens added in Item A. None are consumed by any surface yet; they become the toolkit for items C/D/E.
