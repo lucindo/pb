@@ -497,7 +497,7 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | F4 | `3926b77` | Added shapeConstants.test.ts drift guard between TS exports and `--orb-scale-*` CSS tokens. Value-agnostic equality assertions; explicit "delete-together if orb redesigned" contract in header comment per operator constraint. |
 | F5 | `498545a` | UiStrings top-level keys reorganized by surface: `practice.*` / `appSettings.*` / `learn.*` / `install.*`. ~69 files touched. Mechanically applied via carrier-anchored perl (\K resets match start); 4 Pick<UiStrings> types + practiceCopy + 3 computed-key tests handled manually. |
 | F6 | `fe14c47` | `UiStringsContext` + `useUiStrings()` hook (throws on missing provider). `App.tsx` wraps everything in `UiStringsProvider`. 4 PracticeScreen child views + 2 pages stop receiving `uiStrings` / `strings` props and read from context. Leaf components (anchors, banners, forms, pickers, dialogs) keep narrow slice props to stay testable in isolation. Bundle +0.36 KB. |
-| G | (this commit) | Audit-corrected dead-code purge: deleted `LearnDialog`, `SettingsDialog`, `SettingsPanel` + the 2 dialog tests (49 tests removed). Original 8-file Item-G list was an outdated snapshot — module-path-precise grep found 5 of the listed files (Readout/StatusPanel pair, anchors) STILL LIVE. Bundle unchanged (Vite was already tree-shaking these). |
+| G | `0844ab9` | Audit-corrected dead-code purge: deleted `LearnDialog`, `SettingsDialog`, `SettingsPanel` + the 2 dialog tests (49 tests removed). Original 8-file Item-G list was an outdated snapshot — module-path-precise grep found 5 of the listed files (Readout/StatusPanel pair, anchors) STILL LIVE. Bundle unchanged (Vite was already tree-shaking these). |
 
 ---
 
