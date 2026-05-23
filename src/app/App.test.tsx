@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { APP_TEST_NOW, startAndAdvancePastLeadIn } from './appTestHarness'
 import { STATE_KEY } from '../storage'
-import type { CueStyleId } from '../domain/settings'
+import type { CueStyleId } from '../domain'
 
 // CUE-01 / T-25-09 capture-at-session-start integration tests (Phase 25 Plan 05).
 // Seeds localStorage[STATE_KEY] with a chosen cue BEFORE App renders to exercise

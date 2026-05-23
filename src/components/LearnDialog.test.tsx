@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
 import { UI_STRINGS } from '../content/strings'
-import type { LocaleId } from '../domain/settings'
-import type { PracticeId } from '../storage/practices'
+import type { LocaleId } from '../domain'
+import type { PracticeId } from '../storage'
 import { LearnDialog } from './LearnDialog'
 
 function renderDialog(

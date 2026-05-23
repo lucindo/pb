@@ -1,7 +1,9 @@
-import type { SessionFrame } from '../domain/sessionMath'
-import { formatDuration } from '../domain/sessionMath'
-import type { SessionStatus } from '../domain/sessionController'
-import type { StretchStage } from '../domain/stretchRamp'
+import {
+  formatDuration,
+  type SessionFrame,
+  type SessionStatus,
+  type StretchStage,
+} from '../domain'
 import type { UiStrings } from '../content/strings'
 import { StatusPanel } from './StatusPanel'
 

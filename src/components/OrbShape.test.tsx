@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { OrbShape } from './OrbShape'
-import type { SessionFrame } from '../domain/sessionMath'
+import type { SessionFrame } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
 // Phase 25 Plan 03 — cue prop threading tests are at the bottom of this file.

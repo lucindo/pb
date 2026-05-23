@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { PracticeGlyph, PracticeToggle } from './PracticeToggle'
-import type { PracticeId } from '../storage/practices'
+import type { PracticeId } from '../storage'
 
 const stubStrings = {
   toggleLabel: 'Switch practice',

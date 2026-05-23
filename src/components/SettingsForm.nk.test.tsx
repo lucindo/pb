@@ -9,9 +9,9 @@ import { UI_STRINGS } from '../content/strings'
 import {
   DEFAULT_NK_SETTINGS,
   NK_FRONT_COUNT_OPTIONS,
+  estimateNaviKriyaDurationMinutes,
   type NaviKriyaSettings,
-} from '../domain/naviKriyaSettings'
-import { estimateNaviKriyaDurationMinutes } from '../domain/naviKriyaSession'
+} from '../domain'
 
 const EN = UI_STRINGS.en.settingsForm
 const NK = UI_STRINGS.en.nkControls

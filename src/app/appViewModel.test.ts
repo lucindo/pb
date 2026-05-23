@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { UI_STRINGS } from '../content/strings'
-import { DEFAULT_NK_SETTINGS } from '../domain/naviKriyaSettings'
-import type { SessionFrame } from '../domain/sessionMath'
 import {
+  DEFAULT_NK_SETTINGS,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
-} from '../domain/settings'
+  type SessionFrame,
+} from '../domain'
 import {
   AUDIO_RESUME_HINT_ID,
   createAudioViewModel,

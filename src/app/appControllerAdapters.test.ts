@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { UI_STRINGS } from '../content/strings'
-import { DEFAULT_NK_SETTINGS } from '../domain/naviKriyaSettings'
-import type { IdleSessionState } from '../domain/sessionController'
-import type { SessionFrame } from '../domain/sessionMath'
 import {
+  DEFAULT_NK_SETTINGS,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
-} from '../domain/settings'
+  type IdleSessionState,
+  type SessionFrame,
+} from '../domain'
 import type { BreathingSessionController } from '../hooks/useBreathingSessionController'
 import type { NaviKriyaSessionController } from '../hooks/useNaviKriyaSessionController'
 import type { SessionEngine } from '../hooks/useSessionEngine'

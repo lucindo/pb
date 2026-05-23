@@ -32,7 +32,7 @@ State below is updated after every step transition.
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | ✓ done — commit `bd22ca5` |
 | F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | ✓ done — commit `1e98038` |
 | F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | **implemented — awaiting operator approval** |
-| F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | pending |
+| F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | **implemented — awaiting operator approval** |
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | pending |
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | pending |
 | F6 | `PracticeContext` provider replacing prop drilling of `vm` / `uiStrings` | pending |
@@ -42,10 +42,47 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** F2 — `App.*.test.tsx` vs. unit-test overlap audit
+**Item:** F3 — Presentation-safe type re-exports (bigger play: domain barrel + storage barrel)
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item F2)
+### Implementation summary (Item F3)
+
+**Operator chose the bigger play** ("do domain barrel too"). Scope went beyond the minimal "route through existing storage barrel" to include a fresh `src/domain/index.ts` barrel + migration of all presentation deep imports.
+
+**Files added (1):**
+- `src/domain/index.ts` — re-exports all 9 domain modules via `export *`. Mirrors `src/storage/index.ts`. No name collisions across modules.
+
+**Files modified — pass 1 (sed migration, 37 files):**
+- All presentation files in `src/components/` and `src/app/` (incl. tests) — swapped `from '../domain/<module>'` → `from '../domain'` and `from '../storage/(practices|prefs)'` → `from '../storage'` via a single sed pass.
+- Pattern: `s|from '\.\./domain/[a-zA-Z]+'|from '../domain'|g` and `s|from '\.\./storage/(practices\|prefs)'|from '../storage'|g`.
+- No production-code consumers (hooks, audio, storage internals, domain internals) touched — they keep using their existing intra-layer paths.
+
+**Files modified — pass 2 (consolidation, 12 files):**
+After pass 1, 12 files had 2-6 duplicate `from '../domain'` import lines. Consolidated each into a single grouped import for readability:
+- `src/app/sessionPresentation.ts` (6 → 1)
+- `src/app/appViewModel.ts` (5 → 1)
+- `src/app/appControllerAdapters.test.ts` (4 → 1)
+- `src/app/appViewModel.test.ts` (3 → 1)
+- `src/components/SessionReadout.tsx` (4 → 1)
+- `src/components/StretchSettingsForm.tsx` (2 → 1)
+- `src/components/NaviKriyaSettingsForm.tsx` (2 → 1)
+- `src/components/OrbShape.tsx` (2 → 1)
+- `src/components/SettingsForm.nk.test.tsx` (2 → 1)
+- `src/components/SettingsForm.stretch.test.tsx` (3 → 1)
+- `src/app/sessionPresentation.test.ts` (2 → 1)
+- `src/app/App.audio.test.tsx` (2 → 1)
+
+**Out of scope (explicitly):**
+- A truly "presentation-safe" filtered barrel that excludes storage loaders/savers from the import surface — that's a separate architectural decision (active `src/types.ts`). The current `src/storage` and `src/domain` barrels are full-surface re-exports.
+
+**Verification:**
+- `tsc --noEmit` + `lint` clean
+- Full suite: **101/101 files, 1170/1170 tests pass** (no test churn — paths-only refactor)
+- `npm run build` clean. JS bundle unchanged at ~298 KB (Vite already tree-shook the deep paths, so barrel routing doesn't add weight).
+
+**Commit message:** `refactor(imports): add domain barrel; route presentation through storage + domain barrels (drop deep imports)`
+
+### Archived — Implementation summary (Item F2)
 
 **Audit scope:** All 8 `App.*.test.tsx` files (2636 LOC, ~94 tests). Cross-referenced against the matching unit test files.
 
@@ -291,7 +328,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | D | `039caeb` | Surface routing: appScreen state + ScreenRouter; LearnPage / AppSettingsPage replace dialogs as route destinations. LearnDialog / SettingsDialog / SettingsPanel become orphan code (deletion deferred to G). |
 | E | `bd22ca5` | PickerCardGrid primitive extracted; 4 pickers each shrink from ~60 LOC to ~15-40 LOC adapters. Visual + a11y byte-equivalent. JS bundle -2.4 KB. |
 | F1 | `1e98038` | CueGlyph inline style → className for token colors. Surfaced + removed a dead static class. |
-| F2 | (this commit) | Deleted 9 component-level EndSessionDialog tests from App.dialog.test.tsx (covered by EndSessionDialog.test.tsx). Test count 1179 → 1170. |
+| F2 | `94958e8` | Deleted 9 component-level EndSessionDialog tests from App.dialog.test.tsx (covered by EndSessionDialog.test.tsx). Test count 1179 → 1170. |
+| F3 | (this commit) | Created `src/domain/index.ts` barrel; routed 37 presentation files through `../domain` and `../storage` barrels (sed pass) then consolidated 12 files with duplicate import lines (manual pass). Operator chose "bigger play" over minimal storage-only migration. |
 
 ---
 

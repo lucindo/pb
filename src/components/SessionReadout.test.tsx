@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import type { SessionFrame } from '../domain/sessionMath'
+import type { SessionFrame } from '../domain'
 import { SessionReadout } from './SessionReadout'
 import { UI_STRINGS } from '../content/strings'
 import type { UiStrings } from '../content/strings'

@@ -15,7 +15,7 @@ import {
 } from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
-import type { TimbreId } from '../domain/settings'
+import type { TimbreId } from '../domain'
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
 describe('running session display', () => {

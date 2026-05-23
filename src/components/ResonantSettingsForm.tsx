@@ -9,7 +9,7 @@ import {
   type DurationOption,
   type RatioLabel,
   type SessionSettings,
-} from '../domain/settings'
+} from '../domain'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsStepper } from './SettingsStepper'
 

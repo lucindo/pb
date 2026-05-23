@@ -5,7 +5,7 @@
 
 import type { ReactElement } from 'react'
 
-import type { PracticeId } from '../storage/practices'
+import type { PracticeId } from '../storage'
 
 export interface PracticeToggleProps {
   active: PracticeId

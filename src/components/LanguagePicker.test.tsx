@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { LanguagePicker } from './LanguagePicker'
 import { STATE_KEY } from '../storage'
-import type { LocaleId } from '../domain/settings'
+import type { LocaleId } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en

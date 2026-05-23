@@ -1,5 +1,5 @@
 import type { UiStrings } from '../content/strings'
-import type { StretchSettings } from '../domain/settings'
+import type { StretchSettings } from '../domain'
 import type { BreathingSessionController } from '../hooks/useBreathingSessionController'
 import type { NaviKriyaSessionController } from '../hooks/useNaviKriyaSessionController'
 import type { PracticeId } from '../storage'

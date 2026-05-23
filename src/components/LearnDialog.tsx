@@ -3,7 +3,7 @@ import { useCallback, useRef } from 'react'
 import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
-import type { PracticeId } from '../storage/practices'
+import type { PracticeId } from '../storage'
 import { LearnPanel } from './LearnPanel'
 import { useModalDialog } from './useModalDialog'
 

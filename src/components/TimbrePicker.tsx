@@ -1,4 +1,4 @@
-import { TIMBRE_OPTIONS, type TimbreId } from '../domain/settings'
+import { TIMBRE_OPTIONS, type TimbreId } from '../domain'
 import { useTimbreChoice } from '../hooks/useTimbreChoice'
 import { playInhalePreview } from '../audio/previewContext'
 import type { UiStrings } from '../content/strings'

@@ -13,8 +13,7 @@ import {
 } from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
 import { SAFE_LEAD_SEC } from '../audio/audioEngine'
-import { createBreathingPlan } from '../domain/breathingPlan'
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import { DEFAULT_SETTINGS, createBreathingPlan } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
 // The MuteToggle has three possible accessible names per state — match any.

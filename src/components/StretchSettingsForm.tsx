@@ -7,14 +7,14 @@ import {
   RATIO_OPTIONS,
   STRETCH_INITIAL_BPM_OPTIONS,
   WARMUP_MINUTES_OPTIONS,
+  computeStretchTotalMs,
   getStretchSettingsWithInitialBpm,
   getStretchTargetBpmOptions,
   type CoolDownMinutes,
   type RatioLabel,
   type StretchSettings,
   type WarmUpMinutes,
-} from '../domain/settings'
-import { computeStretchTotalMs } from '../domain/stretchRamp'
+} from '../domain'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsStepper } from './SettingsStepper'
 

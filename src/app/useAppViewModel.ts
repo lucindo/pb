@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
-import type { StretchSettings } from '../domain/settings'
+import type { StretchSettings } from '../domain'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { useBreathingSessionController } from '../hooks/useBreathingSessionController'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'

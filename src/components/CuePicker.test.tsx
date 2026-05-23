@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CuePicker } from './CuePicker'
 import { STATE_KEY } from '../storage'
-import type { CueStyleId } from '../domain/settings'
+import type { CueStyleId } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en

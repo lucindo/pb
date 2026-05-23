@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_NK_SETTINGS } from '../domain/naviKriyaSettings'
-import type { SessionFrame } from '../domain/sessionMath'
+import { DEFAULT_NK_SETTINGS, type SessionFrame } from '../domain'
 import {
   getBreathingPrimaryAction,
   getBreathingPresentation,

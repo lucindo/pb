@@ -10,7 +10,7 @@
 //                span so screen readers still announce the localized In/Out word.
 // D-23: token-only colors — var(--color-orb-in-text) / var(--color-orb-out-text), never hex.
 
-import type { CueStyleId } from '../domain/settings'
+import type { CueStyleId } from '../domain'
 
 export interface CueGlyphProps {
   cue: CueStyleId

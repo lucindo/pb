@@ -1,5 +1,5 @@
 import type { UiStrings } from '../content/strings'
-import type { PracticeId } from '../storage/practices'
+import type { PracticeId } from '../storage'
 
 export function getPracticeHeader(activePractice: PracticeId, strings: UiStrings): string {
   switch (activePractice) {

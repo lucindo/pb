@@ -1,12 +1,14 @@
-import type { SessionStatus } from '../domain/sessionController'
-import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import {
   getNaviKriyaPhaseTarget,
+  type BreathingSessionPhase,
+  type CueStyleId,
+  type LeadInDigit,
   type NaviKriyaPhase,
-} from '../domain/naviKriyaSession'
-import type { BreathingSessionPhase, LeadInDigit, NaviLeadInDigit } from '../domain/sessionLifecycle'
-import type { SessionFrame } from '../domain/sessionMath'
-import type { CueStyleId } from '../domain/settings'
+  type NaviKriyaSettings,
+  type NaviLeadInDigit,
+  type SessionFrame,
+  type SessionStatus,
+} from '../domain'
 import type { UiStrings } from '../content/strings'
 
 export interface BreathingPresentationInput {

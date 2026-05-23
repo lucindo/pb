@@ -1,4 +1,4 @@
-import { THEME_OPTIONS, type ThemeId } from '../domain/settings'
+import { THEME_OPTIONS, type ThemeId } from '../domain'
 import { useThemeChoice } from '../hooks/useThemeChoice'
 import type { UiStrings } from '../content/strings'
 import { PickerCardGrid } from './primitives/PickerCardGrid'

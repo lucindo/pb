@@ -8,14 +8,15 @@ import { ResonantSettingsForm } from './ResonantSettingsForm'
 import { StretchSettingsForm } from './StretchSettingsForm'
 import { UI_STRINGS } from '../content/strings'
 import {
+  DEFAULT_NK_SETTINGS,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
+  computeStretchTotalMs,
+  type NaviKriyaSettings,
   type SessionSettings,
   type StretchSettings,
-} from '../domain/settings'
-import { DEFAULT_NK_SETTINGS, type NaviKriyaSettings } from '../domain/naviKriyaSettings'
-import { computeStretchTotalMs } from '../domain/stretchRamp'
-import type { PracticeId } from '../storage/practices'
+} from '../domain'
+import type { PracticeId } from '../storage'
 
 const EN = UI_STRINGS.en.settingsForm
 

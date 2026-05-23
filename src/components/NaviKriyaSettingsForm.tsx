@@ -5,10 +5,10 @@ import {
   NK_FRONT_COUNT_OPTIONS,
   NK_ROUNDS_OPTIONS,
   OM_LENGTH_OPTIONS,
+  estimateNaviKriyaDurationMinutes,
   type NaviKriyaSettings,
   type OmLength,
-} from '../domain/naviKriyaSettings'
-import { estimateNaviKriyaDurationMinutes } from '../domain/naviKriyaSession'
+} from '../domain'
 import { BooleanToggle } from './BooleanToggle'
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsStepper } from './SettingsStepper'

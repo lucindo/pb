@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { STATE_KEY } from '../storage'
 import { UI_STRINGS } from '../content/strings'
-import type { UserPrefs } from '../storage/prefs'
+import type { UserPrefs } from '../storage'
 
 // ---------------------------------------------------------------------------
 // Helper: seed localStorage with a full prefs envelope before App renders.

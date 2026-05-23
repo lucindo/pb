@@ -1,4 +1,4 @@
-import { LOCALE_OPTIONS, type LocaleId } from '../domain/settings'
+import { LOCALE_OPTIONS, type LocaleId } from '../domain'
 import { useLocaleChoice } from '../hooks/useLocaleChoice'
 import { LOCALE_DISPLAY_NAMES } from '../content/strings'
 import { PickerCardGrid } from './primitives/PickerCardGrid'

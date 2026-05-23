@@ -13,7 +13,7 @@ vi.mock('../audio/previewContext', () => ({
 
 import { TimbrePicker } from './TimbrePicker'
 import { STATE_KEY } from '../storage'
-import type { TimbreId } from '../domain/settings'
+import type { TimbreId } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 import { playInhalePreview } from '../audio/previewContext'
 

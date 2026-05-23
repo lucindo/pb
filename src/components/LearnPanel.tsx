@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
-import type { PracticeId } from '../storage/practices'
+import type { PracticeId } from '../storage'
 import { getLearnDialogModel } from './learnDialogModel'
 
 // Body of the "About this practice" surface. Shared by:

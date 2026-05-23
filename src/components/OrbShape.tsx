@@ -1,5 +1,4 @@
-import type { SessionFrame } from '../domain/sessionMath'
-import type { CueStyleId } from '../domain/settings'
+import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'

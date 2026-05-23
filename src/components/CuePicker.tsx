@@ -1,4 +1,4 @@
-import { CUE_OPTIONS, type CueStyleId } from '../domain/settings'
+import { CUE_OPTIONS, type CueStyleId } from '../domain'
 import { useCueChoice } from '../hooks/useCueChoice'
 import { CueGlyph } from './CueGlyph'
 import type { UiStrings } from '../content/strings'

@@ -1,6 +1,6 @@
 import type { LearnContent, PracticeLearnContent } from '../content/learnContent'
 import type { UiStrings } from '../content/strings'
-import type { PracticeId } from '../storage/practices'
+import type { PracticeId } from '../storage'
 
 export type LearnPracticeContentKey = keyof LearnContent['practices']
 

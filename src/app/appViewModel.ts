@@ -3,11 +3,17 @@ import type { LOCKED_COPY } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
 import type { AppScreen } from './useAppNavigation'
 import type { AudioStatusFlag } from '../audio/audioStatus'
-import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
-import type { SessionStatus } from '../domain/sessionController'
-import type { BreathingSessionPhase, LeadInDigit, NaviLeadInDigit } from '../domain/sessionLifecycle'
-import type { SessionFrame } from '../domain/sessionMath'
-import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
+import type {
+  BreathingSessionPhase,
+  CueStyleId,
+  LeadInDigit,
+  NaviKriyaSettings,
+  NaviLeadInDigit,
+  SessionFrame,
+  SessionSettings,
+  SessionStatus,
+  StretchSettings,
+} from '../domain'
 import type { FeatureFlags } from '../featureFlags'
 import type { PracticeId } from '../storage'
 import type { getPracticeToggleStrings } from './practiceCopy'
