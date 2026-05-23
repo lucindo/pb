@@ -26,7 +26,7 @@ State below is updated after every step transition.
 | Tag | Item | Status |
 |-----|------|--------|
 | A | Theme tokens: elevation + scrim + destructive. Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | ✓ done — commit `0c1d372` |
-| B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | **proposed — awaiting go-ahead** |
+| B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | **implemented — awaiting operator approval** |
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | pending |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | pending |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | pending |
@@ -38,7 +38,46 @@ State below is updated after every step transition.
 ## Current focus
 
 **Item:** B — Design-primitive component library + icon/glyph library
-**Step:** 1 (proposal posted, awaiting operator go-ahead)
+**Step:** 4 (implemented + committed, awaiting operator approval)
+
+### Implementation summary
+
+**Files added (29):**
+
+`src/components/primitives/`
+- `Card.tsx` + `Card.test.tsx` — rounded surface, `padding={none|sm|md|lg}`, `elevation={none|card|modal}`. Defaults: `md` / `card`.
+- `Eyebrow.tsx` + `Eyebrow.test.tsx` — uppercase tracked muted section label.
+- `IconButton.tsx` + `IconButton.test.tsx` — round white icon button. `size={sm|md}` (32/40 px).
+- `Pill.tsx` + `Pill.test.tsx` — `variant={filled|outlined}`, `active` forces filled appearance.
+- `SegmentedControl.tsx` + `SegmentedControl.test.tsx` — unified outer pill, internal segments, `role="radiogroup"` with `aria-checked` on the active option.
+- `Stepper.tsx` + `Stepper.test.tsx` — minimal `[−] value [+]` row, no surrounding container; `formatValue?` for unit suffixes.
+- `Toggle.tsx` + `Toggle.test.tsx` — iOS-style switch (`role="switch"`).
+- `ArrowLink.tsx` + `ArrowLink.test.tsx` — bold accent text + trailing → glyph; renders as `<a>` if `href`, else `<button>`.
+- `index.ts` — barrel.
+
+`src/components/icons/`
+- `InfoIcon`, `GearIcon`, `ChevronBackIcon`, `ChevronRightIcon`, `CloseIcon`, `SpeakerIcon`, `SpeakerMutedIcon`, `RefreshIcon`, `ShareIcon` — standardized 24×24, 1.5 stroke, `currentColor`.
+- `index.ts` — barrel.
+
+**Verification:**
+- `npx tsc --noEmit`: clean
+- `npm run lint`: clean
+- `npm test -- --run src/components/primitives/`: 8 files / 39 tests, all pass
+- `npm test -- --run` full suite: 93 files / 1125 tests pass (was 85/1086 → +8 primitive test files, +39 new tests)
+
+**No existing files modified.** No consumer is rewired yet. Primitives become the toolkit for items C/D/E.
+
+**Sensible defaults locked (flag if you want different):**
+- Card radius: `rounded-3xl` (24 px)
+- Card padding scale: 16 / 24 / 32 px
+- Pill / Segmented active: `--color-breathing-accent-strong` bg, `--color-breathing-on-accent` text
+- Segmented outer container bg: `--color-breathing-bg-soft`
+- Eyebrow tracking: `0.16em`
+- IconButton size scale: 32 / 40 px (touch-friendly md = 40 px)
+- Stepper button size: 32 px, gap 12 px
+- Toggle: 44×24 track, 20 px knob
+
+**Commit:** `refactor(primitives): add design-primitive library + centralized icon set (no consumers yet)`
 
 ### Proposal for Item B
 
@@ -97,6 +136,7 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | Item | Commit | Notes |
 |------|--------|-------|
 | A | `0c1d372` | Tokens + EndSessionDialog routed through destructive. Light byte-equivalent; dark visual TBD on real device. |
+| B | (this commit) | Primitive + icon library landed. No consumers yet. |
 
 ---
 
