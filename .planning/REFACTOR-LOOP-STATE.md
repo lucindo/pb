@@ -25,7 +25,7 @@ State below is updated after every step transition.
 
 | Tag | Item | Status |
 |-----|------|--------|
-| A | Theme tokens: elevation + scrim + destructive (formerly B). Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | **proposed — awaiting go-ahead** |
+| A | Theme tokens: elevation + scrim + destructive (formerly B). Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | **implemented — awaiting operator approval** |
 | B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | pending |
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | pending |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | pending |
@@ -38,37 +38,32 @@ State below is updated after every step transition.
 ## Current focus
 
 **Item:** A — Theme tokens + EndSessionDialog destructive color
-**Step:** 1 (proposal posted, awaiting operator go-ahead)
+**Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Proposal for Item A
+### Implementation summary
 
-**Goal**
-Add the elevation / scrim / destructive-action tokens that the v2.0 design needs across surfaces. Route `EndSessionDialog` off its single hardcoded hex (`#bf616a`) through the new destructive tokens.
+**Files changed (3):**
+- `src/styles/theme.css` — added `--shadow-card`, `--shadow-modal`, `--scrim-modal`, `--color-destructive`, `--color-destructive-hover`, `--color-destructive-active`, `--color-destructive-on` to both `@theme` (light) and `[data-theme='dark']:root` (dark). Updated the "deferred destructive token" comment block to mark it as closed.
+- `src/components/EndSessionDialog.tsx` — swapped the three hardcoded hex values (`#bf616a` / `#a85459` / `#92444c`) for `var(--color-destructive)` / `var(--color-destructive-hover)` / `var(--color-destructive-active)`. Text color now uses `var(--color-destructive-on)`.
+- `src/styles/theme.contrast.test.ts` — added a per-theme WCAG AA-large contrast test (`destructive` vs `destructive-on` ≥ 3.0).
 
-**Why first**
-Purely additive — no functional code changes. Unblocks Item B (primitive library) because every card, modal, button needs these tokens. Zero risk to current behavior — current views keep working until the new primitives consume the tokens.
+**Verification:**
+- `npx tsc --noEmit`: clean
+- `npm test -- --run src/styles/theme.contrast.test.ts`: 6/6 (was 4/4 — added 2 new tests, one per theme)
+- `npm test -- --run src/components/EndSessionDialog.test.tsx`: 11/11
+- `npm test -- --run` full suite: 85 files, 1086 tests, all pass
 
-**Scope**
-- `src/styles/theme.css` — add per-theme (light + dark) tokens: `--shadow-card`, `--shadow-modal`, `--scrim-modal`, `--color-destructive`, `--color-destructive-hover`, `--color-destructive-active`. Plus `--color-destructive-on` for text on destructive backgrounds.
-- `src/components/EndSessionDialog.tsx` — replace `#bf616a` / `#a85459` / `#92444c` hardcoded hex with the new tokens.
-- `src/components/EndSessionDialog.test.tsx` — no logic change needed; verify still passes.
-- `src/styles/theme.contrast.test.ts` — extend the WCAG contrast guard to cover the destructive-on-destructive contrast pair.
+**Visual impact**
+- Light theme: byte-equivalent (destructive token hex = previous hardcoded hex)
+- Dark theme: same hex carries over — Nord Aurora red reads on both Polar Night and Snow Storm backdrops; can be re-tuned if real-device testing flags low contrast.
 
-**Risk**
-Low. Color values for the destructive token can mirror the current hex (`#bf616a`) so the visual outcome is byte-equivalent in light theme. Dark-theme value is new — needs to look right; will pick a slightly desaturated value and let operator visual-check after.
-
-**Files touched**
-- M `src/styles/theme.css`
-- M `src/components/EndSessionDialog.tsx`
-- M `src/styles/theme.contrast.test.ts`
-
-Commit message: `refactor(tokens): add elevation/scrim/destructive theme tokens; route EndSessionDialog through destructive token`
+**Commit:** `refactor(tokens): add elevation/scrim/destructive theme tokens; route EndSessionDialog through destructive token`
 
 ---
 
 ## History
 
-(no items completed yet)
+(no items completed yet — Item A in awaiting-approval)
 
 ---
 

@@ -95,7 +95,7 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
           <button
             type="button"
             onClick={onConfirm}
-            className="min-h-12 rounded-full bg-[#bf616a] px-5 py-2 text-base font-semibold text-[var(--color-breathing-on-accent)] shadow-lg shadow-red-900/20 transition hover:bg-[#a85459] active:bg-[#92444c] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="min-h-12 rounded-full bg-[var(--color-destructive)] px-5 py-2 text-base font-semibold text-[var(--color-destructive-on)] shadow-lg shadow-red-900/20 transition hover:bg-[var(--color-destructive-hover)] active:bg-[var(--color-destructive-active)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.confirm}
           </button>

@@ -79,6 +79,22 @@
   --orb-scale-max: 1.0; /* keep in sync with MAX_SCALE in BreathingShape.tsx */
   --orb-scale-mid: 0.79; /* keep in sync with MID_SCALE in BreathingShape.tsx */
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
+
+  /* v2.0 surface elevation + scrim tokens (light).
+     Channels: Nord Polar Night n0 (#2e3440 = 46 52 64) for a tonal-aware shadow
+     instead of generic pure-black, so cards on the Snow Storm bg keep the cool
+     undertone of the palette. */
+  --shadow-card: 0 1px 2px rgb(46 52 64 / 0.04), 0 4px 12px rgb(46 52 64 / 0.06);
+  --shadow-modal: 0 10px 30px rgb(46 52 64 / 0.12), 0 4px 12px rgb(46 52 64 / 0.08);
+  --scrim-modal: rgb(46 52 64 / 0.40);
+
+  /* v2.0 destructive-action color set (light). Mirrors the hex previously
+     hardcoded in EndSessionDialog (Nord Aurora n11 red); routing through the
+     token unlocks dark-theme handling + future tuning without touching views. */
+  --color-destructive: #bf616a;
+  --color-destructive-hover: #a85459;
+  --color-destructive-active: #92444c;
+  --color-destructive-on: #eceff4;
 }
 
 /* Phase 16.3-03: Dark palette redesigned from Nord (Sven Greb, MIT) — Polar Night flavor.
@@ -116,10 +132,10 @@
          too bright. Softened to #85b1c9 (50/50 blend of n9+n8, lift halved to
          0.066). ring-outer follows new orb-in channels.
 
-   Out of palette scope (deferred):
-     End-button red (Tailwind `bg-red-700` hardcoded in EndSessionDialog.tsx +
-     ResetStatsDialog.tsx) is not theme-tokenized — would require new
-     --color-destructive token (token names locked for Phase 16.3).
+   Out of palette scope (deferred → closed by v2.0 refactor item A):
+     End-button red is now tokenized as --color-destructive[-hover|-active|-on]
+     and lives in both @theme (light) and [data-theme='dark']:root (dark).
+     EndSessionDialog consumes the tokens via bg-[var(--color-destructive)] etc.
 
    Ratios (post-iter-1; theme.contrast.test.ts re-verifies in jsdom):
      THEME-05 (In solid vs Out solid)        = 2.53 (≥ 1.5 floor; was 4.85 pre-phase)
@@ -147,6 +163,21 @@
   --color-ring-outer: rgb(110 137 147 / 0.5);
   --color-ring-inner: rgb(216 222 233 / 0.4);
   --color-modal-backdrop: rgb(0 0 0 / 0.5);
+
+  /* v2.0 surface elevation + scrim tokens (dark). Pure-black channels for
+     dark-theme shadows (consistent with --color-modal-backdrop convention). */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.20), 0 4px 12px rgb(0 0 0 / 0.30);
+  --shadow-modal: 0 10px 30px rgb(0 0 0 / 0.40), 0 4px 12px rgb(0 0 0 / 0.30);
+  --scrim-modal: rgb(0 0 0 / 0.60);
+
+  /* v2.0 destructive-action color set (dark). Same Nord Aurora red — the hue
+     reads correctly on both Polar Night and Snow Storm backgrounds, so no
+     per-theme value swap is needed yet. Operator can re-tune dark-theme
+     hover/active values if real-device testing flags low contrast. */
+  --color-destructive: #bf616a;
+  --color-destructive-hover: #a85459;
+  --color-destructive-active: #92444c;
+  --color-destructive-on: #eceff4;
 }
 
 /* Phase 2 orb structure (D-01..D-04, D-07).

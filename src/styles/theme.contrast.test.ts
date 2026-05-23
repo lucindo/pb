@@ -172,4 +172,20 @@ describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
     const ratio = contrastRatio(accentStrong, onAccent)
     expect(ratio).toBeGreaterThanOrEqual(1.5)
   })
+
+  it('destructive vs destructive-on contrast ratio meets WCAG AA large (>= 3.0)', () => {
+    // v2.0 refactor item A: --color-destructive carries the End-session button
+    // background; --color-destructive-on is the label color sitting on top.
+    // The button uses 16px bold text which qualifies as "large text" under
+    // WCAG (≥14px bold) — AA large floor is 3.0.
+    if (themeId === 'light') {
+      delete document.documentElement.dataset.theme
+    } else {
+      document.documentElement.dataset.theme = themeId
+    }
+    const destructive = readToken('--color-destructive')
+    const destructiveOn = readToken('--color-destructive-on')
+    const ratio = contrastRatio(destructive, destructiveOn)
+    expect(ratio).toBeGreaterThanOrEqual(3.0)
+  })
 })
