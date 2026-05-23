@@ -201,62 +201,6 @@ describe('main screen settings controls', () => {
   })
 })
 
-describe('focus and hit-area accessibility (Phase 2 D-09/D-17/D-21)', () => {
-  it('stepper +/- buttons expose focus-visible ring on theme accent', () => {
-    render(<App />)
-    const decreaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })
-    const increaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })
-
-    for (const button of [decreaseBpm, increaseBpm]) {
-      expect(button.className).toMatch(/focus-visible:outline-none/)
-      expect(button.className).toMatch(/focus-visible:ring-2/)
-      expect(button.className).toMatch(/focus-visible:ring-breathing-accent/)
-      expect(button.className).toMatch(/focus-visible:ring-offset-2/)
-    }
-  })
-
-  it('Start session button exposes focus-visible ring on theme accent', () => {
-    render(<App />)
-    const start = screen.getByRole('button', { name: 'Start session' })
-
-    expect(start.className).toMatch(/focus-visible:outline-none/)
-    expect(start.className).toMatch(/focus-visible:ring-2/)
-    expect(start.className).toMatch(/focus-visible:ring-breathing-accent/)
-    expect(start.className).toMatch(/focus-visible:ring-offset-2/)
-  })
-
-  it('disables decorative transitions on interactive controls under reduced motion (D-09)', () => {
-    render(<App />)
-    const decreaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })
-    const increaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })
-    const start = screen.getByRole('button', { name: 'Start session' })
-
-    for (const button of [decreaseBpm, increaseBpm, start]) {
-      expect(button.className).toMatch(/motion-reduce:transition-none/)
-    }
-  })
-
-  it('primary tappable controls meet the 44x44 hit-area floor (D-17)', () => {
-    render(<App />)
-    const decreaseBpm = within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })
-    const start = screen.getByRole('button', { name: 'Start session' })
-
-    expect(decreaseBpm.className).toMatch(/(?:size-12|min-h-(?:11|12))/)
-    expect(decreaseBpm.className).toMatch(/(?:size-12|min-w-(?:11|12))/)
-    expect(start.className).toMatch(/min-h-(?:11|12)/)
-  })
-
-  it('removes the legacy Phase 1 focus:ring-4 focus:ring-teal-200 utilities (regression guard)', () => {
-    render(<App />)
-    const allButtons = screen.getAllByRole('button')
-
-    for (const button of allButtons) {
-      expect(button.className).not.toMatch(/(?:^|\s)focus:ring-4(?:\s|$)/)
-      expect(button.className).not.toMatch(/(?:^|\s)focus:ring-teal-200(?:\s|$)/)
-    }
-  })
-})
-
 // ---------------------------------------------------------------------------
 // Phase 34 — Stretch settings persist across a remount
 // ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 //       identical in BOTH UI locales (English / Português (Brasil)).
 // D-20: LanguagePickerProps accepts ONLY { disabled: boolean }; no new props.
 // D-22: Zero hardcoded Tailwind palette utilities (theme.no-hardcoded-classes guard);
-//       all color references are var(--color-breathing-*) tokens verbatim from TimbrePicker.
+//       all color references use the same breathing-theme CSS custom properties as TimbrePicker.
 // D-23: a11y posture — role=radiogroup + aria-labelledby + aria-disabled on
 //       container; role=radio + checked state attribute + DOM disabled on each option button;
 //       44×44 min hit area + focus-visible ring chain.

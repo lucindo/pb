@@ -1,37 +1,21 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-17T19:52:51.056Z",
-  "phase": "31",
-  "phase_name": "navi-kriya-engine-session",
-  "phase_dir": ".planning/phases/31-navi-kriya-engine-session",
+  "timestamp": "2026-05-23T14:54:12.954Z",
+  "source": "auto-postool",
+  "partial": true,
+  "phase": null,
+  "phase_name": null,
+  "phase_dir": null,
   "plan": null,
   "task": null,
   "total_tasks": null,
-  "status": "paused",
-  "completed_tasks": [
-    {"id": 1, "name": "Align Navi Kriya practice flow with HRV (switcher labels HRV/Navi, 3-2-1 countdown + Cancel, no pause button, inline completion headline, mute toggle on the config screen, shared countdown beep, shared end chord, dead-string cleanup)", "status": "done", "commit": "c19c0e1"},
-    {"id": 2, "name": "Temporary 1-minute HRV duration option for testing", "status": "done", "commit": "9a26bf0"},
-    {"id": 3, "name": "Clear resonant completion headline on practice switch", "status": "done", "commit": "b09dec2"},
-    {"id": 4, "name": "Add 'Status' legend to the session status panel (new StatusPanel component)", "status": "done", "commit": "e22d40f"},
-    {"id": 5, "name": "Show the stretch readout during the HRV stretch lead-in", "status": "done", "commit": "d2bdcaf"}
-  ],
-  "remaining_tasks": [
-    {"id": 6, "name": "Rework the Navi RUNNING session — the window between the 3-2-1 countdown ending and end-session. Bug fixes and behavior changes, scoped strictly to that window. Specific feedback to be provided by the operator after /clear.", "status": "not_started"}
-  ],
+  "status": "auto-checkpoint",
+  "completed_tasks": [],
+  "remaining_tasks": [],
   "blockers": [],
-  "human_actions_pending": [
-    {"action": "Operator provides the Navi running-session feedback (the specific fixes/changes wanted)", "context": "Will be described conversationally after /clear", "blocking": true},
-    {"action": "Remove the temporary 1-minute HRV duration before release", "context": "Added in commit 9a26bf0 as a testing aid; marked TEMPORARY in src/domain/settings.ts and src/domain/breathingPlan.test.ts. Revert with `git revert 9a26bf0` (or delete the marked lines).", "blocking": false},
-    {"action": "Resume the 4-item Navi human UAT (31-HUMAN-UAT.md, status: partial)", "context": "Audio cue quality, per-OM shape pulse, completion UX, reduced-motion fallback — still pending; deferred while the Navi session itself is reworked", "blocking": false}
-  ],
-  "decisions": [
-    {"decision": "HRV (resonant) is the source of truth; the Navi flow mirrors it", "rationale": "Operator directive for the consistency pass", "phase": "31"},
-    {"decision": "Countdown beep (scheduleCountdownTick) and the Navi per-OM tick (scheduleNKTick) are SEPARATE functions with separate constants", "rationale": "Semantically distinct — a change to one must not affect the other", "phase": "31"},
-    {"decision": "The end chord (scheduleEndChord) is a SINGLE shared function used by both HRV and Navi completion", "rationale": "It is the same practice-ending sound; a change should apply to both", "phase": "31"},
-    {"decision": "Countdown duration stays 3s (LEAD_IN_DURATION_SEC / LEAD_IN_TICK_INTERVAL_SEC in audioEngine.ts)", "rationale": "Operator explicitly said 'do not change' after asking about the timing", "phase": "31"},
-    {"decision": "Navi natural completion shows an inline 'Session complete' headline (no popup), cleared on practice switch", "rationale": "HRV parity — HRV uses an inline SessionReadout headline", "phase": "31"}
-  ],
+  "human_actions_pending": [],
+  "decisions": [],
   "uncommitted_files": [],
-  "next_action": "Wait for the operator's Navi running-session feedback, then fix/change behavior in the window between the countdown ending and end-session. Read src/hooks/useNKEngine.ts and the Navi handlers + running render in src/app/App.tsx first.",
-  "context_notes": "This session was a UAT-driven consistency pass on the already-implemented Phase 31 — not plan execution. All 5 changes are committed to main (c19c0e1..d2bdcaf); working tree clean; 1124 tests pass; tsc + eslint clean (1 pre-existing react-refresh warning in App.tsx). Next work is scoped strictly to the Navi RUNNING session (countdown-end through end-session) — the useNKEngine engine behavior and the running-state render. The countdown flow, the Cancel path, the end-session confirmation dialog, the completion handling, and all of HRV are considered settled this session — do not rework them unless the operator's feedback explicitly calls for it. Verify after every change: `npx tsc -b --force`, `npx eslint <files>`, `npx vitest run` (must stay at 1124 passing). Commits go directly to main, conventional-commit style, scope (31)."
+  "next_action": null,
+  "context_notes": ""
 }

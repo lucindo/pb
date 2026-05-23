@@ -1,6 +1,6 @@
 // Phase 3 D-05/D-06/D-07/D-10/D-17: inline icon-button toggle for the audio cues.
-// Pure presentational layer — receives props from App.tsx (Plan 04) and emits a
-// click callback. No hook calls, no AudioContext access.
+// Pure presentational layer — receives props from the app view model and emits
+// a click callback. No hook calls, no AudioContext access.
 //
 // Class string mirrors src/components/SettingsStepper.tsx:42-50 (the Phase 2
 // icon-button baseline) verbatim, EXCEPT:

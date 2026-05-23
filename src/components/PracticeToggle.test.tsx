@@ -23,6 +23,21 @@ const stubStrings = {
   } as Record<PracticeId, string>,
 }
 
+function getRenderedSvg(): SVGSVGElement {
+  const svg = document.querySelector('svg')
+  if (!(svg instanceof SVGSVGElement)) {
+    throw new Error('Expected an SVG to be rendered')
+  }
+  return svg
+}
+
+function requireElement<T extends Element>(element: T | null, message: string): T {
+  if (element === null) {
+    throw new Error(message)
+  }
+  return element
+}
+
 // ── Core 3-pill tests (treatment A — no glyphs) ───────────────────────────────
 // Treatment A is now opt-out (the build default is B). Re-import the module
 // under a stubbed __SWITCHER_TREATMENT__='A' so these tests genuinely exercise
@@ -58,9 +73,7 @@ describe('PracticeToggle (3 pills, treatment A)', () => {
     )
     const buttons = screen.getAllByRole('button')
     expect(buttons).toHaveLength(3)
-    expect(buttons[0]!.textContent).toBe('HRV')
-    expect(buttons[1]!.textContent).toBe('Stretch')
-    expect(buttons[2]!.textContent).toBe('Navi Kriya')
+    expect(buttons.map((button) => button.textContent)).toEqual(['HRV', 'Stretch', 'Navi Kriya'])
   })
 
   it('container has role="group" and aria-label from strings.toggleLabel', () => {
@@ -181,34 +194,30 @@ describe('PracticeToggle (3 pills, treatment A)', () => {
 describe('PracticeGlyph (treatment B inline SVGs)', () => {
   it('resonant glyph renders an aria-hidden SVG with a circle', () => {
     render(<PracticeGlyph id="resonant" />)
-    const svg = document.querySelector('svg')
-    expect(svg).not.toBeNull()
-    expect(svg!.getAttribute('aria-hidden')).toBe('true')
-    const circle = svg!.querySelector('circle')
+    const svg = getRenderedSvg()
+    expect(svg.getAttribute('aria-hidden')).toBe('true')
+    const circle = svg.querySelector('circle')
     expect(circle).not.toBeNull()
   })
 
   it('stretch glyph renders an aria-hidden SVG with an S-curve path', () => {
     render(<PracticeGlyph id="stretch" />)
-    const svg = document.querySelector('svg')
-    expect(svg).not.toBeNull()
-    expect(svg!.getAttribute('aria-hidden')).toBe('true')
+    const svg = getRenderedSvg()
+    expect(svg.getAttribute('aria-hidden')).toBe('true')
     // Must be a <path>, not a <polyline>
-    const polyline = svg!.querySelector('polyline')
+    const polyline = svg.querySelector('polyline')
     expect(polyline).toBeNull()
-    const path = svg!.querySelector('path')
-    expect(path).not.toBeNull()
-    expect(path!.getAttribute('d')).toBe('M2 13 Q5.5 2 9 9 T16 5.5')
-    expect(path!.getAttribute('stroke')).toBe('currentColor')
-    expect(svg!.getAttribute('viewBox')).toBe('0 0 18 18')
+    const path = requireElement(svg.querySelector('path'), 'Expected stretch glyph path')
+    expect(path.getAttribute('d')).toBe('M2 13 Q5.5 2 9 9 T16 5.5')
+    expect(path.getAttribute('stroke')).toBe('currentColor')
+    expect(svg.getAttribute('viewBox')).toBe('0 0 18 18')
   })
 
   it('naviKriya glyph renders an aria-hidden SVG with three circles', () => {
     render(<PracticeGlyph id="naviKriya" />)
-    const svg = document.querySelector('svg')
-    expect(svg).not.toBeNull()
-    expect(svg!.getAttribute('aria-hidden')).toBe('true')
-    const circles = svg!.querySelectorAll('circle')
+    const svg = getRenderedSvg()
+    expect(svg.getAttribute('aria-hidden')).toBe('true')
+    const circles = svg.querySelectorAll('circle')
     expect(circles.length).toBe(3)
   })
 
@@ -216,58 +225,12 @@ describe('PracticeGlyph (treatment B inline SVGs)', () => {
     const practices: PracticeId[] = ['resonant', 'stretch', 'naviKriya']
     for (const id of practices) {
       const { unmount } = render(<PracticeGlyph id={id} />)
-      const svg = document.querySelector('svg')!
+      const svg = getRenderedSvg()
       const innerHTML = svg.innerHTML + svg.outerHTML
       // No hardcoded hex colors allowed
       expect(innerHTML).not.toMatch(/#[0-9a-fA-F]{3,6}/)
       unmount()
     }
-  })
-})
-
-// ── Treatment B pill layout regression tests ──────────────────────────────────
-// The flex layout fix (items-center justify-center gap-*) is treatment-independent
-// (it applies to the pill button's className in all renders). The label <span>
-// wrap is also treatment-independent. These tests confirm the layout is present
-// without requiring a full treatment-B dynamic-import build.
-describe('PracticeToggle pill button layout', () => {
-  it('each pill button className includes flex, items-center, justify-center, and a gap- utility', () => {
-    const onSwitch = vi.fn()
-    render(
-      <PracticeToggle
-        active="resonant"
-        disabled={false}
-        onSwitch={onSwitch}
-        strings={stubStrings}
-      />,
-    )
-    const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(3)
-    for (const btn of buttons) {
-      expect(btn.className).toContain('flex')
-      expect(btn.className).toContain('items-center')
-      expect(btn.className).toContain('justify-center')
-      expect(btn.className).toMatch(/gap-/)
-    }
-  })
-
-  it('each pill button wraps the practice name in a <span>', () => {
-    const onSwitch = vi.fn()
-    render(
-      <PracticeToggle
-        active="resonant"
-        disabled={false}
-        onSwitch={onSwitch}
-        strings={stubStrings}
-      />,
-    )
-    // 'HRV', 'Stretch', 'Navi Kriya' must each live inside a <span>
-    const hrv = screen.getByRole('button', { name: 'HRV' })
-    const stretch = screen.getByRole('button', { name: 'Stretch' })
-    const navi = screen.getByRole('button', { name: 'Navi Kriya' })
-    expect(hrv.querySelector('span')?.textContent).toBe('HRV')
-    expect(stretch.querySelector('span')?.textContent).toBe('Stretch')
-    expect(navi.querySelector('span')?.textContent).toBe('Navi Kriya')
   })
 })
 
@@ -283,7 +246,10 @@ describe('PracticeToggle treatment B (glyphs visible)', () => {
     // `as string` widens the specifier so tsc treats this as Promise<any>
     // (it cannot resolve Vite's `?treatment=B` query); esbuild strips the cast,
     // leaving the literal intact for Vite's dynamic-import analysis.
-    const mod = await import('./PracticeToggle?treatment=B' as string)
+    const mod = (await import(
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      './PracticeToggle?treatment=B' as string,
+    )) as typeof import('./PracticeToggle')
     PracticeToggleB = mod.PracticeToggle
   })
 

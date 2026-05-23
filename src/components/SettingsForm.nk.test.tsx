@@ -6,31 +6,15 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { SettingsForm, type SettingsFormProps } from './SettingsForm'
 import { UI_STRINGS } from '../content/strings'
-import { DEFAULT_SETTINGS } from '../domain/settings'
 import {
   DEFAULT_NK_SETTINGS,
   NK_FRONT_COUNT_OPTIONS,
   type NaviKriyaSettings,
 } from '../domain/naviKriyaSettings'
-import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
+import { estimateNaviKriyaDurationMinutes } from '../domain/naviKriyaSession'
 
 const EN = UI_STRINGS.en.settingsForm
-const PRACTICE = UI_STRINGS.en.practice
 const NK = UI_STRINGS.en.nkControls
-
-// Mirrors SettingsForm's D-14 estimate (front+back OMs per round, the last OM
-// of each phase held NK_LAST_OM_HOLD_MULTIPLIER × omMs, two NK_LEAD_MS lead-ins
-// per round). Derived from the engine constants so the assertion tracks them
-// instead of hardcoding a minute count that drifts.
-function estimatedMinutes(settings: NaviKriyaSettings): number {
-  const back = settings.frontCount / 4
-  return Math.round(
-    (settings.rounds
-      * (settings.frontCount + back + 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1))
-      * NK_OM_SECONDS[settings.omLength] * 1000
-      + settings.rounds * 2 * NK_LEAD_MS) / 60_000,
-  )
-}
 
 // Stateful harness — the duration estimate and stepper values are derived from
 // the nkSettings prop, so changes must flow through a real state holder for the
@@ -45,12 +29,7 @@ function NKHarness({
   const [nk, setNk] = useState<NaviKriyaSettings>(initial)
   const props: SettingsFormProps = {
     activePractice: 'naviKriya',
-    settings: DEFAULT_SETTINGS,
-    isRunning: false,
-    onChange: () => undefined,
-    onExtendDuration: () => undefined,
     strings: EN,
-    practiceStrings: PRACTICE,
     nkSettings: nk,
     onNKSettingsChange: (next) => {
       onChangeSpy?.(next)
@@ -119,11 +98,11 @@ describe('SettingsForm — Navi Kriya controls (Plan 31-05, NK-02/03/04/06, D-14
     const user = userEvent.setup()
     const settings3 = { ...DEFAULT_NK_SETTINGS, rounds: 3 }
     render(<NKHarness initial={settings3} />)
-    const line = screen.getByText(NK.estimatedDuration(estimatedMinutes(settings3)))
+    const line = screen.getByText(NK.estimatedDuration(estimateNaviKriyaDurationMinutes(settings3)))
     expect(line).toHaveAttribute('aria-live', 'polite')
     await user.click(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.roundsLabel) }))
     expect(
-      screen.getByText(NK.estimatedDuration(estimatedMinutes({ ...settings3, rounds: 4 }))),
+      screen.getByText(NK.estimatedDuration(estimateNaviKriyaDurationMinutes({ ...settings3, rounds: 4 }))),
     ).toBeInTheDocument()
   })
 

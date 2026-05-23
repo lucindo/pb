@@ -13,6 +13,10 @@ import {
   isValidRampDuration,
   validateSettings,
   validateStretchSettings,
+  getClosestLowerStretchTargetBpm,
+  getNextDurationOption,
+  getStretchSettingsWithInitialBpm,
+  getStretchTargetBpmOptions,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
   CUE_OPTIONS,
@@ -66,6 +70,41 @@ describe('isValidDuration (HYGIENE-02 D-08)', () => {
     expect(isValidDuration(7)).toBe(false)
     expect(isValidDuration('forever')).toBe(false)
     expect(isValidDuration(null)).toBe(false)
+  })
+})
+
+describe('duration and stretch option helpers', () => {
+  it('returns the next duration option without crossing past open-ended', () => {
+    expect(getNextDurationOption(10)).toBe(15)
+    expect(getNextDurationOption(60)).toBe('open-ended')
+    expect(getNextDurationOption('open-ended')).toBeUndefined()
+  })
+
+  it('returns only target BPM options below the stretch initial BPM', () => {
+    expect(getStretchTargetBpmOptions(3)).toEqual([1, 1.5, 2, 2.5])
+  })
+
+  it('chooses the nearest lower stretch target BPM for an initial BPM', () => {
+    expect(getClosestLowerStretchTargetBpm(5)).toBe(4.5)
+  })
+
+  it('keeps the current target BPM when changing initial BPM still leaves it valid', () => {
+    const settings = { ...DEFAULT_STRETCH_SETTINGS, initialBpm: 6, targetBpm: 4 }
+
+    expect(getStretchSettingsWithInitialBpm(settings, 5)).toEqual({
+      ...settings,
+      initialBpm: 5,
+    })
+  })
+
+  it('snaps target BPM below initial BPM when changing initial BPM invalidates it', () => {
+    const settings = { ...DEFAULT_STRETCH_SETTINGS, initialBpm: 2, targetBpm: 1.5 }
+
+    expect(getStretchSettingsWithInitialBpm(settings, 1.5)).toEqual({
+      ...settings,
+      initialBpm: 1.5,
+      targetBpm: 1,
+    })
   })
 })
 

@@ -117,6 +117,7 @@ export function useWakeLock(): UseWakeLock {
       document.removeEventListener('visibilitychange', onVisibility)
       // AH-WR-01: unmount-during-await orphans the in-flight sentinel; bump the
       // generation counter so request() discards it post-await.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       ++requestGenerationRef.current
       // Pitfall 6: unmount-cleanup race against in-flight request(). Synchronously
       // null the sentinel ref BEFORE the await on release() so a fast new request()

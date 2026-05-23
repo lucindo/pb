@@ -46,9 +46,19 @@ describe('previewContext', () => {
   // global with a wrapper that stores the constructed instance. This avoids the
   // vi.spyOn mock.instances prototype issue with the FakeAudioContext class.
   it('calls ctx.resume() when the singleton AudioContext is suspended on tap', async () => {
+    type PreviewAudioContext = AudioContext & {
+      _simulateSuspend: () => void
+      resume: ReturnType<typeof vi.fn>
+    }
+    const requirePreviewContext = (value: unknown): PreviewAudioContext => {
+      if (value === null || typeof value !== 'object') {
+        throw new Error('Expected AudioContext to be captured')
+      }
+      return value as PreviewAudioContext
+    }
     // Capture the instance at construction time by wrapping the FakeAudioContext
     // constructor before the module is imported.
-    let capturedCtx: (AudioContext & { _simulateSuspend: () => void }) | null = null
+    let capturedCtx: unknown = null
     const OriginalAC = window.AudioContext
     vi.stubGlobal(
       'AudioContext',
@@ -56,7 +66,7 @@ describe('previewContext', () => {
         constructor(opts?: AudioContextOptions) {
           super(opts)
           // eslint-disable-next-line @typescript-eslint/no-this-alias
-          capturedCtx = this as unknown as AudioContext & { _simulateSuspend: () => void }
+          capturedCtx = this
         }
       },
     )
@@ -65,13 +75,12 @@ describe('previewContext', () => {
 
     // First tap — constructs the singleton; capturedCtx is now the FakeAudioContext.
     playInhalePreview('bowl')
-    expect(capturedCtx).not.toBeNull()
-    const ctx = capturedCtx!
+    const ctx = requirePreviewContext(capturedCtx)
 
     // Simulate iOS Safari / Chrome auto-suspend between taps.
     ctx._simulateSuspend()
     // Clear any prior resume calls to isolate the assertion.
-    ;(ctx.resume as ReturnType<typeof vi.fn>).mockClear()
+    ctx.resume.mockClear()
 
     // Second tap — context is now suspended; resume must be called.
     playInhalePreview('bowl')

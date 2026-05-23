@@ -1,4 +1,8 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
+@source './app/**/*.tsx';
+@source './components/**/*.tsx';
+@source not './**/*.test.tsx';
+@source not './**/*.test.ts';
 @import './styles/theme.css';
 
 /* D-04: NK per-OM pulse animation — gentle scale up to MAX then back to MID.

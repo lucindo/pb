@@ -406,7 +406,6 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
     // After end, idle selectedSettings must equal the resonant settings (WR-03).
     // Before the fix, endSession returned the synthetic lead-in settings (bpm: initialBpm, durationMinutes: 'open-ended').
     expect(result.current.state.status).toBe('idle')
-    if (result.current.state.status !== 'idle') throw new Error('Expected idle after end')
     expect(result.current.state.selectedSettings).toEqual(resonantSettings)
 
     unmount()
@@ -484,4 +483,3 @@ describe('useSessionEngine — stretch session path (Phase 34)', () => {
     unmount()
   })
 })
-

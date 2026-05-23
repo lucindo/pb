@@ -33,7 +33,7 @@
      (2) Start-session hover state bg too bright. Two changes:
      - Out solid lifted to #b4cdd2 = 50/50 blend of n4 snow + n7 teal (lum 0.58).
        Easier on eyes at large surface scale.
-     - accent (hover bg of Start button via SessionControls.tsx hover:bg-…-accent)
+     - accent (hover bg of Start button via SessionActionRow.tsx hover:bg-…-accent)
        shifted from n8 cyan #88c0d0 (lum 0.48) to n9 Frost mid-blue #81a1c1 (lum
        0.34) — subtler lift between default (n10 #5e81ac) and hover, less "bright
        flash" on cursor approach. accent-strong (default Start bg) unchanged at

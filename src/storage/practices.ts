@@ -68,7 +68,11 @@ export function coerceActivePractice(raw: unknown): PracticeId {
 // `value`. Ties (equidistant between two adjacent options) round UP to the
 // higher option. Values below the minimum option snap up to the minimum.
 function snapToNearestOption(value: number): number {
-  let best = NK_FRONT_COUNT_OPTIONS[0]!
+  const firstOption = NK_FRONT_COUNT_OPTIONS[0]
+  if (firstOption === undefined) {
+    return DEFAULT_NK_SETTINGS.frontCount
+  }
+  let best = firstOption
   let bestDist = Math.abs(value - best)
   for (const option of NK_FRONT_COUNT_OPTIONS) {
     const dist = option - value  // signed: negative means option < value
@@ -123,12 +127,14 @@ export function coerceStretchSettings(raw: unknown): StretchSettings {
   // Compute BPM fields into mutable locals first so the cross-field check can
   // reset both atomically when the invariant is violated.
   // initialBpm: valid only when isValidBpm AND in STRETCH_INITIAL_BPM_OPTIONS (>= 1.5).
+  const rawInitialBpm = r.initialBpm
+  const rawTargetBpm = r.targetBpm
   let initialBpm: number =
-    isValidBpm(r.initialBpm) && STRETCH_INITIAL_BPM_OPTIONS.includes(r.initialBpm as number)
-      ? (r.initialBpm as number)
+    isValidBpm(rawInitialBpm) && STRETCH_INITIAL_BPM_OPTIONS.includes(rawInitialBpm)
+      ? rawInitialBpm
       : DEFAULT_STRETCH_SETTINGS.initialBpm
-  let targetBpm: number = isValidBpm(r.targetBpm)
-    ? (r.targetBpm as number)
+  let targetBpm: number = isValidBpm(rawTargetBpm)
+    ? rawTargetBpm
     : DEFAULT_STRETCH_SETTINGS.targetBpm
   // Cross-field invariant: the ramp must always go strictly downward (targetBpm < initialBpm).
   // Reset BOTH fields together so the returned pair is always a valid down-ramp.
@@ -329,4 +335,3 @@ export function recordNaviKriyaSession(
   )
   return next
 }
-

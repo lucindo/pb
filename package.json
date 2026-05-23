@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "dev": "node --disable-warning=DEP0205 ./node_modules/vite/bin/vite.js",
+    "build": "tsc -b && node --disable-warning=DEP0205 ./node_modules/vite/bin/vite.js build",
+    "test": "env \"NODE_OPTIONS=--disable-warning=DEP0205 --no-experimental-webstorage\" node ./node_modules/vitest/vitest.mjs",
+    "test:run": "env \"NODE_OPTIONS=--disable-warning=DEP0205 --no-experimental-webstorage\" node ./node_modules/vitest/vitest.mjs run",
     "lint": "eslint .",
     "preview": "vite preview"
   },

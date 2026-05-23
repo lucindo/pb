@@ -3,31 +3,73 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import { SettingsForm, type SettingsFormProps } from './SettingsForm'
+import { SettingsForm } from './SettingsForm'
 import { UI_STRINGS } from '../content/strings'
-import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, type StretchSettings } from '../domain/settings'
+import {
+  DEFAULT_SETTINGS,
+  DEFAULT_STRETCH_SETTINGS,
+  type SessionSettings,
+  type StretchSettings,
+} from '../domain/settings'
+import { DEFAULT_NK_SETTINGS, type NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import { computeStretchTotalMs } from '../domain/stretchRamp'
+import type { PracticeId } from '../storage/practices'
 
 const EN = UI_STRINGS.en.settingsForm
-const PRACTICE = UI_STRINGS.en.practice
 
-function renderForm(overrides: Partial<SettingsFormProps> = {}) {
+interface RenderFormOverrides {
+  activePractice?: PracticeId
+  settings?: SessionSettings
+  isRunning?: boolean
+  onChange?: (settings: SessionSettings) => void
+  onExtendDuration?: (durationMinutes: number) => void
+  strings?: typeof EN
+  stretchSettings?: StretchSettings
+  onStretchSettingsChange?: (settings: StretchSettings) => void
+  nkSettings?: NaviKriyaSettings
+  onNKSettingsChange?: (settings: NaviKriyaSettings) => void
+}
+
+function renderForm(overrides: RenderFormOverrides = {}) {
+  const activePractice = overrides.activePractice ?? 'resonant'
   const onChange = vi.fn()
   const onExtendDuration = vi.fn()
   const onStretchSettingsChange = vi.fn()
-  render(
-    <SettingsForm
-      activePractice={overrides.activePractice ?? 'resonant'}
-      settings={overrides.settings ?? DEFAULT_SETTINGS}
-      isRunning={overrides.isRunning ?? false}
-      onChange={overrides.onChange ?? onChange}
-      onExtendDuration={overrides.onExtendDuration ?? onExtendDuration}
-      strings={overrides.strings ?? EN}
-      practiceStrings={overrides.practiceStrings ?? PRACTICE}
-      stretchSettings={overrides.stretchSettings ?? DEFAULT_STRETCH_SETTINGS}
-      onStretchSettingsChange={overrides.onStretchSettingsChange ?? onStretchSettingsChange}
-    />,
-  )
+  const onNKSettingsChange = vi.fn()
+
+  if (activePractice === 'resonant') {
+    render(
+      <SettingsForm
+        activePractice="resonant"
+        settings={overrides.settings ?? DEFAULT_SETTINGS}
+        isRunning={overrides.isRunning ?? false}
+        onChange={overrides.onChange ?? onChange}
+        onExtendDuration={overrides.onExtendDuration ?? onExtendDuration}
+        strings={overrides.strings ?? EN}
+      />,
+    )
+  } else if (activePractice === 'stretch') {
+    render(
+      <SettingsForm
+        activePractice="stretch"
+        isRunning={overrides.isRunning ?? false}
+        strings={overrides.strings ?? EN}
+        stretchSettings={overrides.stretchSettings ?? DEFAULT_STRETCH_SETTINGS}
+        onStretchSettingsChange={overrides.onStretchSettingsChange ?? onStretchSettingsChange}
+      />,
+    )
+  } else {
+    render(
+      <SettingsForm
+        activePractice="naviKriya"
+        strings={overrides.strings ?? EN}
+        nkSettings={overrides.nkSettings ?? DEFAULT_NK_SETTINGS}
+        onNKSettingsChange={overrides.onNKSettingsChange ?? onNKSettingsChange}
+        nkControlsStrings={UI_STRINGS.en.nkControls}
+      />,
+    )
+  }
+
   return { onChange, onExtendDuration, onStretchSettingsChange }
 }
 
@@ -82,7 +124,8 @@ describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', 
     // DEFAULT_STRETCH_SETTINGS (5.5→4.5 BPM) produces cycle-aligned drift — the
     // displayed value may differ from '15 min' depending on the snapped total.
     // GAP 1: the value is now rounded to the nearest whole minute (Math.round).
-    const expectedTotalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)!
+    const expectedTotalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)
+    if (expectedTotalMs === null) throw new Error('Expected finite default stretch duration')
     const expectedText = `${String(Math.round(expectedTotalMs / 60_000))} min`
     const duration = screen.getByRole('group', { name: 'Duration' })
     expect(within(duration).getByText(expectedText)).toBeInTheDocument()
@@ -100,7 +143,8 @@ describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', 
   // UAT GAP 1: Duration readout shows a rounded whole-minute value (not an unrounded float)
   it('GAP 1: Duration readout shows a rounded whole-minute string, not a fractional float', () => {
     renderForm({ activePractice: 'stretch' })
-    const totalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)!
+    const totalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)
+    if (totalMs === null) throw new Error('Expected finite default stretch duration')
     const roundedMinutes = Math.round(totalMs / 60_000)
     const duration = screen.getByRole('group', { name: 'Duration' })
     // The text must use the rounded integer, not the raw quotient (which may be a float)

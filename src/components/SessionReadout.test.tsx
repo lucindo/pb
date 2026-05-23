@@ -3,8 +3,9 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import type { SessionFrame } from '../domain/sessionMath'
-import { SessionReadout, type SessionReadoutProps } from './SessionReadout'
+import { SessionReadout } from './SessionReadout'
 import { UI_STRINGS } from '../content/strings'
+import type { UiStrings } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
@@ -37,40 +38,55 @@ const stretchFrame: SessionFrame = {
   currentExhaleMs: 6_545,
 }
 
-function renderReadout(props: Partial<SessionReadoutProps> = {}) {
+interface RenderReadoutProps {
+  mode?: 'lead-in' | 'session'
+  frame?: SessionFrame | null
+  status?: 'idle' | 'running' | 'complete'
+  showCompletionHeadline?: boolean
+  strings?: UiStrings['readout']
+}
+
+function renderReadout(props: RenderReadoutProps = {}) {
+  const strings = props.strings ?? EN_STRINGS_FIXTURE.readout
+  const frame = props.frame ?? null
+
+  if (props.mode === 'lead-in') {
+    return render(
+      <SessionReadout
+        mode="lead-in"
+        frame={frame}
+        strings={strings}
+      />,
+    )
+  }
+
   return render(
     <SessionReadout
-      frame={props.frame ?? null}
+      mode="session"
+      frame={frame}
       status={props.status ?? 'idle'}
-      showCompletionHeadline={props.showCompletionHeadline}
-      strings={props.strings ?? EN_STRINGS_FIXTURE.readout}
-      isLeadInPlaceholder={props.isLeadInPlaceholder}
+      showCompletionHeadline={props.showCompletionHeadline ?? false}
+      strings={strings}
     />,
   )
 }
 
 describe('SessionReadout', () => {
-  it('isLeadInPlaceholder=true + non-null frame → renders timer chip (label + formatted duration)', () => {
-    renderReadout({ isLeadInPlaceholder: true, frame: sampleFrame, status: 'idle' })
+  it('lead-in mode with a non-null frame renders timer chip label and formatted duration', () => {
+    renderReadout({ mode: 'lead-in', frame: sampleFrame })
     expect(screen.getByText('Remaining')).toBeInTheDocument()
     expect(screen.getByText('10:00')).toBeInTheDocument()
   })
 
-  it('isLeadInPlaceholder=true + status "complete" + non-null frame → timer chip still rendered (placeholder wins)', () => {
-    renderReadout({
-      isLeadInPlaceholder: true,
-      frame: sampleFrame,
-      status: 'complete',
-      showCompletionHeadline: true,
-    })
+  it('lead-in mode ignores completion headline state owned by session mode', () => {
+    renderReadout({ mode: 'lead-in', frame: sampleFrame })
     expect(screen.getByText('Remaining')).toBeInTheDocument()
     expect(screen.getByText('10:00')).toBeInTheDocument()
     expect(screen.queryByText(EN_STRINGS_FIXTURE.readout.sessionComplete)).not.toBeInTheDocument()
   })
 
-  it('isLeadInPlaceholder=false + status "complete" + non-null frame → translated headline rendered, chip hidden', () => {
+  it('session mode with status "complete" and a non-null frame renders translated headline and hides chip', () => {
     renderReadout({
-      isLeadInPlaceholder: false,
       frame: sampleFrame,
       status: 'complete',
       showCompletionHeadline: true,
@@ -79,7 +95,7 @@ describe('SessionReadout', () => {
     expect(screen.queryByText('Remaining')).not.toBeInTheDocument()
   })
 
-  it('isLeadInPlaceholder absent + status "idle" + null frame + no completion headline → component returns null', () => {
+  it('session mode with status "idle", null frame, and no completion headline returns null', () => {
     const { container } = renderReadout({ status: 'idle', frame: null })
     expect(container.firstChild).toBeNull()
   })
@@ -119,7 +135,7 @@ describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
   it('the lead-in placeholder branch previews the stretch readout for a stretch frame', () => {
     // The countdown must preview the same Stage/Remaining/BPM readout the
     // running stretch session shows — not a plain timer chip.
-    renderReadout({ isLeadInPlaceholder: true, frame: stretchFrame, status: 'idle' })
+    renderReadout({ mode: 'lead-in', frame: stretchFrame })
     expect(screen.getByText('5.5')).toBeInTheDocument()
     expect(screen.getByText('BPM')).toBeInTheDocument()
     expect(screen.getByText('Stretch')).toBeInTheDocument()

@@ -6,7 +6,7 @@
 // (3) hand-coded inline gear SVG (circle + outer path) replacing the book SVG paths (D-15 zero new deps).
 // D-08: disabled in place during session — aria-disabled="true", no-op click handler, no unmount.
 // D-09: component name = SettingsAnchor (mirrors *Anchor vocabulary from LearnAnchor).
-// Parent MUST provide `position: relative` (same contract as LearnAnchor; App.tsx:579 already does).
+// Parent MUST provide `position: relative` (same contract as LearnAnchor; AppHeader does).
 
 import type { UiStrings } from '../content/strings'
 

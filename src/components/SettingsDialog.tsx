@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEventHandler } from 'react'
+import { useState } from 'react'
 
 import { CuePicker } from './CuePicker'
 import { IosInstallSteps } from './IosInstallSteps'
@@ -6,6 +6,7 @@ import { LanguagePicker } from './LanguagePicker'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
 import type { UiStrings } from '../content/strings'
+import { useModalDialog } from './useModalDialog'
 
 // src/components/SettingsDialog.tsx
 //
@@ -34,57 +35,14 @@ export interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose, inSessionView, strings, isIOS, isStandalone, installable, onInstall }: SettingsDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const [iosExpanded, setIosExpanded] = useState<boolean>(false)
-
-  // Imperative open/close so the browser sets up <dialog>'s top-layer + inert behavior.
-  // D-13: no explicit focus call — SettingsDialog has no destructive default; native focus-return only.
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (open && !dialog.open) {
-      // AC-WR-05: a force-closed dialog can leave dialog.open === false while
-      // React still believes open === true; showModal() then throws
-      // InvalidStateError if the dialog is actually already open non-modally.
-      try {
-        dialog.showModal()
-      } catch {
-        /* already modal — safe to ignore */
-      }
-      // D-13: no explicit focus on open — native focus-return contract; no destructive default
-    } else if (!open && dialog.open) {
-      dialog.close()
-    }
-  }, [open])
-
-  // Esc fires `cancel` (preventable) then `close`. We handle `cancel` and call onClose.
-  // Pitfall 5 mitigation: preventDefault to avoid double-fire of close sequence (Landmine 1).
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    const handleCancel = (event: Event) => {
-      event.preventDefault()
-      onClose()
-    }
-    dialog.addEventListener('cancel', handleCancel)
-    return () => {
-      dialog.removeEventListener('cancel', handleCancel)
-    }
-  }, [onClose])
-
-  // Click on the dialog itself (backdrop area) -> close.
-  // Click on a child (inner panel) -> ignored (Landmine 2).
-  const handleBackdropClick: MouseEventHandler<HTMLDialogElement> = (event) => {
-    if (event.target === dialogRef.current) {
-      onClose()
-    }
-  }
+  const { dialogRef, onBackdropClick } = useModalDialog({ open, onClose })
 
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby="settings-dialog-title"
-      onClick={handleBackdropClick}
+      onClick={onBackdropClick}
       className="modal-fade m-auto max-w-md rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">

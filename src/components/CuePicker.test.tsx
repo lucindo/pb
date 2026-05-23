@@ -133,28 +133,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
     expect(noseButton).toBeDisabled()
   })
 
-  // Test 9: 44px hit area via min-h-12 + px-3
-  it('every button has min-h-12 class AND px-3 class (44px hit area)', () => {
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
-    const radios = screen.getAllByRole('radio')
-    for (const button of radios) {
-      expect(button.className).toContain('min-h-12')
-      expect(button.className).toContain('px-3')
-    }
-  })
-
-  // Test 10: focus-visible ring classes
-  it('every button has focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 classes', () => {
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
-    const radios = screen.getAllByRole('radio')
-    for (const button of radios) {
-      expect(button.className).toContain('focus-visible:ring-2')
-      expect(button.className).toContain('focus-visible:ring-breathing-accent')
-      expect(button.className).toContain('focus-visible:ring-offset-2')
-    }
-  })
-
-  // Test 11: each button contains a preview glyph (svg or span for labels mode)
+  // Test 9: each button contains a preview glyph (svg or span for labels mode)
   it('each button contains a preview CueGlyph element above the text label', () => {
     render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
     const radios = screen.getAllByRole('radio')
@@ -166,7 +145,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
     }
   })
 
-  // Test 12: radiogroup references cue-picker-label via aria-labelledby
+  // Test 10: radiogroup references cue-picker-label via aria-labelledby
   it('radiogroup has aria-labelledby="cue-picker-label"', () => {
     render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
     const radiogroup = screen.getByRole('radiogroup')

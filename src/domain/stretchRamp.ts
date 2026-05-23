@@ -307,5 +307,9 @@ export function getStretchFrame(
 export function computeStretchTotalMs(settings: StretchSettings): number | null {
   if (settings.coolDownMinutes === 'open-ended') return null
   const segments = buildStretchSegments(settings)
-  return segments[segments.length - 1]!.endMs
+  const finalSegment = segments.at(-1)
+  if (finalSegment === undefined) {
+    throw new Error('buildStretchSegments returned no segments')
+  }
+  return finalSegment.endMs
 }

@@ -7,29 +7,14 @@
 // (count, phase, omMs, cueOn, ...) come from the mutable NKEngineRecord ref.
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { NaviKriyaSettings, OmLength } from '../domain/naviKriyaSettings'
+import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
+import {
+  NK_LAST_OM_HOLD_MULTIPLIER,
+  NK_LEAD_MS,
+  NK_OM_SECONDS,
+} from '../domain/naviKriyaSession'
 
-// D-09: medium = Forrest's measured follow-along pace ~2.16 s/OM
-// D-10: fast/medium/slow spread lives in ONE adjustable constant
-export const NK_OM_SECONDS: Record<OmLength, number> = {
-  fast: 1.75,
-  medium: 2.16,
-  slow: 3.0,
-}
-
-// D-11: lead-in delay between a phase marker and the first OM of that phase.
-// Applies to every phase start — round 1 Front, and the Front + Back of every
-// round (the window where the user performs the neck-lock head movement).
-// 5000ms finalized via Phase 31 UAT (operator-confirmed 2026-05-17): long
-// enough that the marker — the HRV breath cue, ~4-5s natural tail — has
-// decayed before the first OM, so the cue does not bleed into the count.
-export const NK_LEAD_MS = 5000
-
-// D-11 (Phase 31 UAT, operator override): the LAST OM of each phase holds for
-// this multiple of a normal OM before the phase transition — a longer, smoother
-// settle into the next phase. Applies to the last front OM and the last back OM
-// of every round. 1.5× (down from the Phase 31 UAT value of 2×).
-export const NK_LAST_OM_HOLD_MULTIPLIER = 1.5
+export { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../domain/naviKriyaSession'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -93,6 +78,7 @@ export function useNKEngine(): NKEngineApi {
   // Mutable engine record — NOT React state (no re-render on mutation)
   const eng   = useRef<NKEngineRecord | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stepOmRef = useRef<() => void>(() => undefined)
 
   // Callback refs — captured at start(), read inside stepOm to avoid stale closures
   const cbsRef        = useRef<NKAudioCallbacks | null>(null)
@@ -103,16 +89,11 @@ export function useNKEngine(): NKEngineApi {
   const schedule = useCallback((delayMs: number) => {
     if (timer.current !== null) clearTimeout(timer.current)
     if (eng.current) eng.current.pendingDelayMs = delayMs
-    // Reason: stepOm is declared below; the ref indirection breaks the circular dep.
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    timer.current = setTimeout(stepOm, delayMs)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    timer.current = setTimeout(() => { stepOmRef.current() }, delayMs)
   }, [])
 
   // stepOm: the per-OM callback. Reads ONLY eng.current and callback refs —
   // never closed-over React state (stale-closure trap prevention, AH-WR-05).
-  // Declared as a stable function via useCallback with empty deps.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const stepOm = useCallback(function stepOm() {
     const e = eng.current
     if (!e) return
@@ -179,6 +160,10 @@ export function useNKEngine(): NKEngineApi {
       schedule(e.omMs)
     }
   }, [schedule])
+
+  useEffect(() => {
+    stepOmRef.current = stepOm
+  }, [stepOm])
 
   const start = useCallback((
     settings: NaviKriyaSettings,

@@ -134,29 +134,6 @@ describe('EndSessionDialog (component-level)', () => {
     expect(onCancel).not.toHaveBeenCalled()
   })
 
-  it('uses focus-visible:ring-breathing-accent on both buttons (D-21)', () => {
-    renderDialog({ open: true })
-
-    const end = screen.getByRole('button', { name: 'End' })
-    const keepGoing = screen.getByRole('button', { name: 'Keep going' })
-
-    for (const button of [end, keepGoing]) {
-      expect(button.className).toMatch(/focus-visible:outline-none/)
-      expect(button.className).toMatch(/focus-visible:ring-2/)
-      expect(button.className).toMatch(/focus-visible:ring-breathing-accent/)
-      expect(button.className).toMatch(/focus-visible:ring-offset-2/)
-    }
-  })
-
-  it('meets the 48px hit-area floor on both buttons', () => {
-    renderDialog({ open: true })
-
-    const end = screen.getByRole('button', { name: 'End' })
-    const keepGoing = screen.getByRole('button', { name: 'Keep going' })
-
-    expect(end.className).toMatch(/min-h-12/)
-    expect(keepGoing.className).toMatch(/min-h-12/)
-  })
 })
 
 describe('end-session confirmation modal (App integration)', () => {

@@ -9,7 +9,7 @@
 // Phase 14 D-09 file-split preserved — domain/settings.ts + storage/prefs.ts NOT edited.
 // D-17: TimbrePickerProps accepts ONLY { disabled: boolean }; no new props at the
 // SettingsDialog call site.
-// D-19: every color reference is var(--color-breathing-*) — theme.no-hardcoded-classes
+// D-19: every color reference uses a breathing-theme CSS custom property — theme.no-hardcoded-classes
 // guard stays green (zero banned palette utilities; see src/styles/theme.no-hardcoded-classes.test.ts
 // for the authoritative pattern list).
 // D-20: a11y posture (role=radiogroup + aria-labelledby + aria-disabled on container;

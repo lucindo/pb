@@ -5,8 +5,8 @@
 
 import type { PracticeId } from '../storage/practices'
 
-// D-06: build-time only — compile-time constant injected by vite.config.ts `define`
-// D-07: invalid or missing value falls back to 'A' (smallest-surprise default)
+// D-06: build-time only — compile-time constant injected by vite.config.ts `define`.
+// The component-level fallback is A if the define is absent; Vite defaults to B.
 declare const __SWITCHER_TREATMENT__: string
 const TREATMENT: 'A' | 'B' = __SWITCHER_TREATMENT__ === 'B' ? 'B' : 'A'
 

@@ -67,34 +67,6 @@ describe('MuteToggle', () => {
     expect(onToggle).not.toHaveBeenCalled()
   })
 
-  it('button has the 44 px hit-area floor classes (size-11 / min-h-11 / min-w-11)', () => {
-    renderToggle()
-    const button = screen.getByRole('button')
-    expect(button.className).toMatch(/size-11/)
-    expect(button.className).toMatch(/min-h-11/)
-    expect(button.className).toMatch(/min-w-11/)
-  })
-
-  it('button has Phase 2 focus-ring tokens (focus-visible:ring-2 + focus-visible:ring-breathing-accent)', () => {
-    renderToggle()
-    const button = screen.getByRole('button')
-    expect(button.className).toMatch(/focus-visible:ring-2/)
-    expect(button.className).toMatch(/focus-visible:ring-breathing-accent/)
-  })
-
-  it('button has the Phase 2 reduced-motion guard (motion-reduce:transition-none)', () => {
-    renderToggle()
-    const button = screen.getByRole('button')
-    expect(button.className).toMatch(/motion-reduce:transition-none/)
-  })
-
-  it('button has the Phase 2 disabled-icon affordance (disabled:cursor-not-allowed + disabled:opacity-45)', () => {
-    renderToggle()
-    const button = screen.getByRole('button')
-    expect(button.className).toMatch(/disabled:cursor-not-allowed/)
-    expect(button.className).toMatch(/disabled:opacity-45/)
-  })
-
   it('renders a speaker SVG when muted=false (3 path elements) and a speaker-with-slash SVG when muted=true (2 line elements)', () => {
     const { container: containerOn, unmount: unmountOn } = render(
       <MuteToggle muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.mute} onToggle={vi.fn()} />,

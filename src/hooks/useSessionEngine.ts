@@ -207,7 +207,9 @@ export function useSessionEngine(
   // The start callback has an intentionally-empty dep array (same pattern as
   // end/extendDuration); the ref indirection is the stale-closure-safe approach.
   const stretchSettingsRef = useRef<StretchSettings | null>(stretchSettings)
-  stretchSettingsRef.current = stretchSettings
+  useEffect(() => {
+    stretchSettingsRef.current = stretchSettings
+  }, [stretchSettings])
 
   const start = useCallback(() => {
     setState((currentState) => {

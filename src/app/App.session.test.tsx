@@ -679,7 +679,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     render(<App />)
 
     // Start the session — the stretch practice uses the breathing engine
-    // (SessionControls renders for activePractice === 'stretch').
+    // (the shared session action row renders for activePractice === 'stretch').
     fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
     await act(async () => {
       await Promise.resolve()
@@ -688,7 +688,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     })
 
     // Run 35s so the session exceeds the 30s recording threshold.
-    await act(async () => { vi.advanceTimersByTime(35_000) })
+    act(() => { vi.advanceTimersByTime(35_000) })
 
     // GAP 3: ending a stretch session now opens the end-confirmation dialog first.
     // Click 'End session' to open the dialog, then confirm via the 'End' button.
@@ -740,7 +740,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
       await Promise.resolve()
       vi.advanceTimersByTime(LEAD_IN_MS)
     })
-    await act(async () => { vi.advanceTimersByTime(35_000) })
+    act(() => { vi.advanceTimersByTime(35_000) })
 
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     await act(async () => { await Promise.resolve() })
@@ -792,7 +792,8 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
       (s) => s.classList.contains('flex') && s.classList.contains('flex-col'),
     )
     expect(rootSection).toBeDefined()
-    expect(rootSection!.classList.contains('justify-start')).toBe(true)
-    expect(rootSection!.classList.contains('justify-center')).toBe(false)
+    if (rootSection === undefined) throw new Error('Expected root layout section')
+    expect(rootSection.classList.contains('justify-start')).toBe(true)
+    expect(rootSection.classList.contains('justify-center')).toBe(false)
   })
 })

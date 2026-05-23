@@ -91,6 +91,37 @@ export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
   rampDurationMinutes: 5,
 }
 
+export function getNextDurationOption(duration: DurationOption): DurationOption | undefined {
+  const currentIndex = (DURATION_OPTIONS as readonly DurationOption[]).indexOf(duration)
+  return currentIndex === -1
+    ? undefined
+    : (DURATION_OPTIONS as readonly DurationOption[])[currentIndex + 1]
+}
+
+export function getStretchTargetBpmOptions(initialBpm: number): readonly number[] {
+  return (BPM_OPTIONS as readonly number[]).filter((value) => value < initialBpm)
+}
+
+export function getClosestLowerStretchTargetBpm(initialBpm: number): number {
+  const options = getStretchTargetBpmOptions(initialBpm)
+  return options[options.length - 1] ?? DEFAULT_STRETCH_SETTINGS.targetBpm
+}
+
+export function getStretchSettingsWithInitialBpm(
+  settings: StretchSettings,
+  initialBpm: number,
+): StretchSettings {
+  if (settings.targetBpm >= initialBpm) {
+    return {
+      ...settings,
+      initialBpm,
+      targetBpm: getClosestLowerStretchTargetBpm(initialBpm),
+    }
+  }
+
+  return { ...settings, initialBpm }
+}
+
 // Phase 14 D-01: v1.1 customization enum surfaces — predicates are FINAL;
 // downstream phases (16/17/18/19) only add UI/CSS/audio wiring and do NOT re-edit.
 

@@ -43,11 +43,7 @@ function replaceFaviconLink(dataUri: string): void {
   if (oldLink) {
     oldLink.remove()
   }
-  // CS-WR-02: Document.head is typed HTMLHeadElement | null — guard before appending,
-  // matching the null-guard the JSDoc above promises.
-  if (document.head) {
-    document.head.appendChild(newLink)
-  }
+  document.head.appendChild(newLink)
 }
 
 /**

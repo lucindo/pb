@@ -81,24 +81,27 @@ function StretchRow({
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null
-  status: SessionStatus
-  /** When true, render the translated completion headline. App.tsx sets this when
-   *  status === 'complete' && !inSessionView (Phase 19 CR-01 fix — replaces the
-   *  hardcoded `state.message: 'Session complete'` literal that bypassed i18n). */
-  showCompletionHeadline?: boolean
   strings: UiStrings['readout']
-  /** UI-01 / WR-08: when true, the component is rendering the pre-session
-   *  lead-in placeholder. The caller commits to providing a non-null `frame`.
-   *  Renders the same readout the running session will show (plain timer chip,
-   *  or the Stage/Remaining/BPM row for a stretch session) and ignores `status`. */
-  isLeadInPlaceholder?: boolean
 }
 
-export function SessionReadout({ frame, status, showCompletionHeadline, strings, isLeadInPlaceholder }: SessionReadoutProps) {
-  // UI-01 / WR-08: lead-in placeholder branch fires FIRST so the readout
-  // renders unconditionally, ignoring status and message. Caller commits to a
-  // non-null frame when this is true (typed-only contract — no runtime assert).
-  if (isLeadInPlaceholder) {
+export interface LeadInSessionReadoutProps extends SessionReadoutProps {
+  mode: 'lead-in'
+}
+
+export interface ActiveSessionReadoutProps extends SessionReadoutProps {
+  mode: 'session'
+  status: SessionStatus
+  showCompletionHeadline: boolean
+}
+
+export type SessionReadoutModeProps =
+  | LeadInSessionReadoutProps
+  | ActiveSessionReadoutProps
+
+export function SessionReadout(props: SessionReadoutModeProps) {
+  const { frame, strings } = props
+
+  if (props.mode === 'lead-in') {
     const placeholderLabel = frame?.remainingMs === null ? strings.elapsed : strings.remaining
     const placeholderValue = frame
       ? formatDuration(frame.remainingMs ?? frame.elapsedMs)
@@ -123,7 +126,7 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
     )
   }
 
-  if (status === 'idle' && frame === null && !showCompletionHeadline) {
+  if (props.status === 'idle' && frame === null && !props.showCompletionHeadline) {
     return null
   }
 
@@ -132,7 +135,7 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
   // Phase 3 polish: when the session has completed, the "Session complete"
   // headline is the only useful information — the timer chip would just read
   // "Remaining 0:00" forever, which is noise. Hide it on the complete state.
-  const showTimeChip = status !== 'complete' && frame !== null
+  const showTimeChip = props.status !== 'complete' && frame !== null
   // A running stretch session shows Stage · Remaining · BPM on one line.
   const isStretchRunning = showTimeChip && frame.currentBpm !== undefined
 
@@ -144,7 +147,7 @@ export function SessionReadout({ frame, status, showCompletionHeadline, strings,
         aria-live="polite"
         aria-atomic="true"
       >
-        {showCompletionHeadline ? (
+        {props.showCompletionHeadline ? (
           <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.sessionComplete}</p>
         ) : null}
       </div>

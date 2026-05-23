@@ -4,7 +4,7 @@
 // Follows the same picker posture as other option pickers — CueGlyph previews stacked
 // above option labels. Consumes useCueChoice (Plan 02) for state + write path.
 // Honors Phase 15 D-02 picker prop contract ({ disabled, strings, sectionLabel } — NO value prop).
-// D-23: zero hardcoded color classes — all color references via var(--color-*) tokens
+// D-23: zero hardcoded color classes — all color references use CSS custom-property tokens.
 // or token-bound Tailwind shorthand utilities (text-breathing-accent, ring-breathing-accent).
 // Distinct DOM id "cue-picker-label" to avoid id collision with other picker label ids.
 

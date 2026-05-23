@@ -1,14 +1,16 @@
-import { useEffect, useRef, type MouseEventHandler } from 'react'
+import { useCallback, useRef } from 'react'
 
 import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage/practices'
+import { getLearnDialogModel } from './learnDialogModel'
+import { useModalDialog } from './useModalDialog'
 
 // CONTEXT.md D-05: native <dialog> with imperative showModal/close.
 // D-07: every external link carries target="_blank" rel="noopener noreferrer".
 // Phase 19 D-03/D-04: locked Forrest phrase + affiliation flow through props
-//   (learnContent / lockedCopy resolved by useLocale() in App.tsx). Plan 08 stop-gap removed.
+//   (learnContent / lockedCopy resolved by the app view model). Plan 08 stop-gap removed.
 // D-05/D-07/D-14/D-15 attribution below.
 // D-14: two disclaimer micro-lines inline (not in learnContent.ts).
 // D-15: disclaimer copy lives ONLY inside this modal — not on the main screen.
@@ -32,76 +34,34 @@ export interface LearnDialogProps {
 }
 
 export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, activePractice }: LearnDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const focusCloseButton = useCallback((dialog: HTMLDialogElement): void => {
+    dialog.scrollTop = 0
+    closeButtonRef.current?.focus({ preventScroll: true })
+    // iOS Safari does not always honor preventScroll: true and can scroll the
+    // bottom Close button into view; reset on the next paint so the dialog opens at top.
+    requestAnimationFrame(() => {
+      if (dialog.scrollTop !== 0) dialog.scrollTop = 0
+    })
+  }, [])
+  const { dialogRef, onBackdropClick } = useModalDialog({
+    open,
+    onClose,
+    onAfterOpen: focusCloseButton,
+  })
 
-  // Imperative open/close so the browser sets up <dialog>'s top-layer + inert behavior.
-  // D-05: default focus on Close button — never on a Forrest link.
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (open && !dialog.open) {
-      // AC-WR-05: a force-closed dialog can leave dialog.open === false while
-      // React still believes open === true; showModal() then throws
-      // InvalidStateError if the dialog is actually already open non-modally.
-      try {
-        dialog.showModal()
-      } catch {
-        /* already modal — safe to ignore */
-      }
-      dialog.scrollTop = 0
-      closeButtonRef.current?.focus({ preventScroll: true })
-      // iOS Safari does not always honor preventScroll: true and ends up
-      // auto-scrolling the bottom Close button into view, leaving the
-      // dialog opened mid-content. Reset scrollTop again on the next paint
-      // so the re-scroll loses to our reset.
-      requestAnimationFrame(() => {
-        if (dialog.scrollTop !== 0) dialog.scrollTop = 0
-      })
-    } else if (!open && dialog.open) {
-      dialog.close()
-    }
-  }, [open])
-
-  // Esc fires `cancel` (preventable) then `close`. We handle `cancel` and call onClose.
-  // Pitfall 5 mitigation: preventDefault to avoid double-fire of close.
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    const handleCancel = (event: Event) => {
-      event.preventDefault()
-      onClose()
-    }
-    dialog.addEventListener('cancel', handleCancel)
-    return () => {
-      dialog.removeEventListener('cancel', handleCancel)
-    }
-  }, [onClose])
-
-  // Click on the dialog itself (backdrop area) -> close.
-  // Click on a child (the inner panel) -> ignored.
-  const handleBackdropClick: MouseEventHandler<HTMLDialogElement> = (event) => {
-    if (event.target === dialogRef.current) {
-      onClose()
-    }
-  }
-
-  const { explainer, links, practices } = learnContent
-  // D-07: auto-tracks active practice — no in-dialog toggle; renders whichever practice the switcher is on.
-  // Phase 34: stretch does not yet have its own learn content; fall back to resonant content so the
-  // dialog can open without crashing (practices map only has resonant + naviKriya keys).
-  const practiceContentKey = activePractice === 'stretch' ? 'resonant' : activePractice
-  const practiceContent = practices[practiceContentKey as keyof typeof practices]
-  // D-01 (SECOND): video sub-heading follows the resolved content key (practiceContentKey),
-  // not the raw activePractice. Stretch falls back to resonant content AND the resonant
-  // heading — so the heading always matches the content actually rendered.
-  const videosHeading = practiceContentKey === 'resonant' ? strings.videosHeading : strings.naviKriyaVideosHeading
+  const { explainer, links } = learnContent
+  const { practiceContent, videosHeading, showNativeApps } = getLearnDialogModel({
+    activePractice,
+    learnContent,
+    strings,
+  })
 
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby="learn-dialog-title"
-      onClick={handleBackdropClick}
+      onClick={onBackdropClick}
       className="modal-fade m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
@@ -193,7 +153,7 @@ export function LearnDialog({ open, onClose, learnContent, lockedCopy, strings, 
             D-02: fully omitted for Navi Kriya — no heading, no links, no placeholder div.
             D-04 / T-24-01: target="_blank" rel="noopener noreferrer" on both links.
             D-08: heading and labels name the "Resonant Breathing" app only — no Forrest authorship claim. */}
-        {activePractice === 'resonant' && (
+        {showNativeApps && (
           <div>
             <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
             <div className="mt-1 grid gap-2">

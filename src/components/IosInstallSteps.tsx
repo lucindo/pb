@@ -17,7 +17,7 @@ export function IosInstallSteps({ id, strings }: IosInstallStepsProps) {
     <div id={id} aria-live="polite" className="pt-4 text-sm leading-6">
       {/* WR-04: ordered list conveys the sequential step relationship both
           visually (numbering) and to assistive tech. */}
-      {/* All three steps carry explicit theme-aware var(--color-breathing-*) tokens:
+      {/* All three steps carry explicit theme-aware breathing color tokens:
           step 1 = accent-strong (first-step highlight per 29-UI-SPEC §Color);
           steps 2 & 3 = muted (clears WCAG AA 4.5 on all 5 themes, dark muted-vs-bg = 5.36). */}
       <ol className="list-decimal pl-5">
