@@ -30,8 +30,8 @@ State below is updated after every step transition.
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | ✓ done — commit `88305ea` |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | ✓ done — commit `039caeb` |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | ✓ done — commit `bd22ca5` |
-| F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | **implemented — awaiting operator approval** |
-| F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | pending |
+| F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | ✓ done — commit `1e98038` |
+| F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | **implemented — awaiting operator approval** |
 | F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | pending |
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | pending |
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | pending |
@@ -42,10 +42,28 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** F1 — `CueGlyph` inline-style → className
+**Item:** F2 — `App.*.test.tsx` vs. unit-test overlap audit
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item F1)
+### Implementation summary (Item F2)
+
+**Audit scope:** All 8 `App.*.test.tsx` files (2636 LOC, ~94 tests). Cross-referenced against the matching unit test files.
+
+**Finding:** The clear-cut duplication is in **one place only** — `App.dialog.test.tsx` lines 30-123, `describe('EndSessionDialog (component-level)', ...)`. 9 tests that render `<EndSessionDialog>` in isolation (no `<App/>`), with the same helper and assertions as `src/components/EndSessionDialog.test.tsx`. Likely pre-date the dedicated unit file and were never cleaned up.
+
+**Other App.*.test.tsx files are genuinely integration:** session lifecycle with fake timers, localStorage migration, audio gating, cross-surface locale propagation. None duplicate unit-level concerns.
+
+**Action:**
+- Deleted lines 1-123 of `App.dialog.test.tsx` and rebuilt the file from line 125+ with trimmed imports (no `userEvent`, no `EndSessionDialog`, no `UI_STRINGS`; no `EN_STRINGS_FIXTURE` const; no `renderDialog` helper).
+- One assertion in the deleted block — "exposes role=dialog with accessible name via aria-labelledby" — has no direct port in the unit file, but every other unit test uses `getByRole('dialog', { name: 'End this session?' })` to find the dialog, which implicitly verifies the same role+name behavior. No coverage lost.
+
+**Verification:**
+- `tsc --noEmit` + `lint` clean
+- Full suite: 101/101 files, **1170/1170 tests pass** (was 1179 → -9 deleted tests, as predicted)
+
+**Commit message:** `test(App.dialog): drop EndSessionDialog component-level block (duplicates EndSessionDialog.test.tsx)`
+
+### Archived — Implementation summary (Item F1)
 
 - `src/components/CueGlyph.tsx` only — replaced 3 `style={{ color: colorToken }}` usages with a single `colorClass` ternary applied via className (Tailwind arbitrary-value `text-[var(--...)]`).
 - Dropped a dead `text-[var(--color-breathing-accent-strong)]` from the labels-mode span — it was always overridden by the inline style.
@@ -272,7 +290,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | C | `88305ea` | PageShell + TopAppBar; AppScreen routed through them. Visual byte-equivalent (DOM tests pass); browser confirmation pending. |
 | D | `039caeb` | Surface routing: appScreen state + ScreenRouter; LearnPage / AppSettingsPage replace dialogs as route destinations. LearnDialog / SettingsDialog / SettingsPanel become orphan code (deletion deferred to G). |
 | E | `bd22ca5` | PickerCardGrid primitive extracted; 4 pickers each shrink from ~60 LOC to ~15-40 LOC adapters. Visual + a11y byte-equivalent. JS bundle -2.4 KB. |
-| F1 | (this commit) | CueGlyph inline style → className for token colors. Surfaced + removed a dead static class. |
+| F1 | `1e98038` | CueGlyph inline style → className for token colors. Surfaced + removed a dead static class. |
+| F2 | (this commit) | Deleted 9 component-level EndSessionDialog tests from App.dialog.test.tsx (covered by EndSessionDialog.test.tsx). Test count 1179 → 1170. |
 
 ---
 
