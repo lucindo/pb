@@ -115,7 +115,7 @@ npm run preview
 
 Open the URL Vite prints (typically `http://localhost:5173`) and the app is ready — no accounts, no setup beyond `npm install`.
 
-The one environment variable is optional and build-time only: `VITE_SWITCHER_TREATMENT` controls the practice switcher's appearance. It defaults to `B` (each pill shows a small glyph beside its label); set `VITE_SWITCHER_TREATMENT=A` before `npm run build` for text-only pills.
+Runtime feature flags can be set with query parameters. `switcherIcon` controls practice-switcher icons and defaults on. Use values like `?switcherIcon=1`, `?switcherIcon=on`, or `?switcherIcon=true` to show icons; use `?switcherIcon=0`, `?switcherIcon=off`, or `?switcherIcon=false` to hide them.
 
 ---
 

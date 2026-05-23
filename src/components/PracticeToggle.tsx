@@ -1,18 +1,16 @@
 // Phase 30 PRACTICE-01 + PRACTICE-03
 // Presentational segmented-control practice switcher.
-// Phase 34 34-03: Extended to 3 pills (resonant, stretch, naviKriya) with
-// A/B treatment branch driven by build-time __SWITCHER_TREATMENT__ (D-06/D-07/D-11).
+// Extended to 3 pills (resonant, stretch, naviKriya). The app view model owns
+// feature-flag lookup and passes showIcons as a plain presentation prop.
+
+import type { ReactElement } from 'react'
 
 import type { PracticeId } from '../storage/practices'
-
-// D-06: build-time only — compile-time constant injected by vite.config.ts `define`.
-// The component-level fallback is A if the define is absent; Vite defaults to B.
-declare const __SWITCHER_TREATMENT__: string
-const TREATMENT: 'A' | 'B' = __SWITCHER_TREATMENT__ === 'B' ? 'B' : 'A'
 
 export interface PracticeToggleProps {
   active: PracticeId
   disabled: boolean
+  showIcons: boolean
   onSwitch(this: void, id: PracticeId): void
   strings: {
     toggleLabel: string
@@ -26,7 +24,7 @@ const PRACTICE_IDS: PracticeId[] = ['resonant', 'stretch', 'naviKriya']
 // D-08: inline SVGs styled with theme tokens; currentColor follows theme tokens.
 // Exported for direct unit testing (treatment B glyph coverage without requiring
 // a separate build — see PracticeToggle.test.tsx PracticeGlyph describe block).
-export function PracticeGlyph({ id }: { id: PracticeId }) {
+export function PracticeGlyph({ id }: { id: PracticeId }): ReactElement {
   if (id === 'resonant') {
     // Orb = circle (breathing)
     return (
@@ -56,9 +54,10 @@ export function PracticeGlyph({ id }: { id: PracticeId }) {
 export function PracticeToggle({
   active,
   disabled,
+  showIcons,
   onSwitch,
   strings,
-}: PracticeToggleProps) {
+}: PracticeToggleProps): ReactElement {
   // The muted border bounds the control on every theme — on the dark theme
   // the bg-soft container fill is identical to surface, so without a border
   // the switcher dissolves into the card (matches the SESSION MODE fieldset).
@@ -100,7 +99,7 @@ export function PracticeToggle({
             onClick={() => { onSwitch(id) }}
             className={pillClass}
           >
-            {TREATMENT === 'B' && <PracticeGlyph id={id} />}
+            {showIcons && <PracticeGlyph id={id} />}
             {/* Label wrapped in <span> so it is a single flex child alongside the glyph */}
             <span>{strings.practiceNames[id]}</span>
           </button>

@@ -15,7 +15,7 @@ import { useModalDialog } from './useModalDialog'
 // D-05: single onClose prop (no onConfirm/onCancel split — not a destructive action).
 // D-10: inner layout single column, Theme → Cue → Timbre → Language order. (Phase 38: Variant slot removed.)
 // D-11: Close affordance = explicit Close button + native Esc + backdrop-click cancel.
-// D-12: auto-close on inSessionView is handled in App.tsx (WR-09 useEffect); this component
+// D-12: auto-close on inSessionView is handled by dialog state; this component
 //        receives the resulting open=false prop and closes imperatively via dialogRef.
 // D-13: NO explicit focus call on open — SettingsDialog has no destructive default;
 //        native focus-return contract.
@@ -30,7 +30,7 @@ export interface SettingsDialogProps {
   // Phase 29 additions (D-01 through D-10):
   isIOS: boolean
   isStandalone: boolean
-  installable: boolean          // = isIOS || deferredPrompt !== null, pre-computed in App.tsx
+  installable: boolean
   onInstall(this: void): Promise<void>
 }
 

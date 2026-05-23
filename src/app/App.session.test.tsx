@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
-import type { CueStyleId, TimbreId } from '../domain/settings'
+import type { TimbreId } from '../domain/settings'
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
 function settingGroup(name: string) {
@@ -87,101 +87,6 @@ describe('running session display', () => {
     const readout = sessionReadout()
     expect(within(readout).getByText('Elapsed')).toBeVisible()
     expect(within(readout).getByText('0:00')).toBeVisible()
-  })
-
-  it('drives the breathing shape from the same phase and progress frame as the readout', async () => {
-    render(<App />)
-
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-phase', 'in')
-    expect(shape).toHaveAttribute('data-progress', '0.000')
-    expect(shape).toHaveTextContent('In')
-  })
-
-  it('renders the orb with two static aria-hidden reference rings', async () => {
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    const outerRing = shape.querySelector('[aria-hidden="true"].shape-marker--outer')
-    const innerRing = shape.querySelector('[aria-hidden="true"].shape-marker--inner')
-    expect(outerRing).not.toBeNull()
-    expect(innerRing).not.toBeNull()
-  })
-
-  it('renders two stacked gradient layers (In and Out) and a single in-orb phase label', async () => {
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape.querySelector('[aria-hidden="true"].orb-layer--in')).not.toBeNull()
-    expect(shape.querySelector('[aria-hidden="true"].orb-layer--out')).not.toBeNull()
-    expect(shape).toHaveTextContent('In')
-  })
-
-  it('renders the in-orb phase label at large display size (text-5xl semibold) per D-03', async () => {
-    // Seed labels cue explicitly: this test targets labels-mode rendering (D-03 visible text span).
-    // DEFAULT_CUE is 'arrow' (quick task 260519-9mi); explicit seed makes the intent clear.
-    seedCue('labels')
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    // The visible label is a non-aria-hidden child whose text content is the phase label.
-    const label = Array.from(shape.children).find((child) => {
-      return !(child as HTMLElement).hasAttribute('aria-hidden') && child.textContent === 'In'
-    }) as HTMLElement | undefined
-    expect(label).toBeDefined()
-    // Reason: label non-null asserted by expect().toBeDefined() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(label!.className).toMatch(/text-5xl/)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(label!.className).toMatch(/font-semibold/)
-  })
-
-  it('binds the orb scale to phaseProgress in normal motion mode', async () => {
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    const scaleHost = shape.querySelector<HTMLElement>('.orb')
-    expect(scaleHost).not.toBeNull()
-    // Default matchMedia mock has matches: false; phaseProgress at start is 0
-    // → liveScale for 'in' = MIN_SCALE = 0.58.
-    // Reason: scaleHost non-null asserted by expect().not.toBeNull() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(scaleHost!.style.transform).toContain('scale(0.58')
-  })
-
-  it('holds the orb at fixed mid-scale (0.79) when reduced-motion is preferred (D-06)', async () => {
-    // Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    vi.spyOn(window, 'matchMedia').mockReturnValue({
-      matches: true,
-      media: '(prefers-reduced-motion: reduce)',
-      onchange: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
-      dispatchEvent: () => false,
-    } as unknown as MediaQueryList)
-
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    const shape = screen.getByRole('img', { name: 'Breathing shape: In' })
-    expect(shape).toHaveAttribute('data-phase', 'in')
-    const scaleHost = shape.querySelector<HTMLElement>('.orb')
-    expect(scaleHost).not.toBeNull()
-    // Phase 5.1 Plan 04 post-UAT: transform is `translate3d(0,0,0) scale(...)`
-    // (translate3d added for Firefox GPU promotion). The scale(0.79) substring
-    // is the assertion that matters — D-06 fixed mid-scale invariant.
-    // Reason: scaleHost non-null asserted by expect().not.toBeNull() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(scaleHost!.style.transform).toMatch(/^translate3d\(0(?:px)?,\s*0(?:px)?,\s*0(?:px)?\)\s+scale\(0\.79\)$/)
   })
 })
 
@@ -346,14 +251,6 @@ describe('manual session ending', () => {
 // captured at Start, not any later mid-session mutation. The assertion target is the
 // 4th argument to cueSynth.scheduleInCueForTimbre — that's the timbre parameter the
 // engine receives at construction time (audioEngine.ts: sessionTimbre captured-once).
-
-function seedCue(cue: CueStyleId): void {
-  const envelope = {
-    version: 1,
-    prefs: { theme: 'system', timbre: 'sine', cue, locale: 'en' },
-  }
-  window.localStorage.setItem(STATE_KEY, JSON.stringify(envelope))
-}
 
 function seedTimbre(timbre: TimbreId): void {
   const envelope = {

@@ -22,7 +22,7 @@ export interface PersistedStats {
   roundsCompleted?: number
 }
 
-// WR-08: exported so App.tsx confirmReset can update React state optimistically
+// WR-08: exported so reset flows can update React state optimistically
 // (without re-reading from disk) when the user confirms reset. If the disk
 // write silently fails (D-16 quota / Safari ITP / private mode), the RAM state
 // must STILL reflect the user's intent — otherwise the footer keeps showing

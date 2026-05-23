@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react'
 
-import { SettingsForm } from '../components/SettingsForm'
+import { NaviKriyaSettingsForm } from '../components/NaviKriyaSettingsForm'
+import { ResonantSettingsForm } from '../components/ResonantSettingsForm'
+import { StretchSettingsForm } from '../components/StretchSettingsForm'
 import type { AppViewModel } from './appViewModel'
 
 type UiStrings = AppViewModel['uiStrings']
@@ -19,8 +21,7 @@ export function PracticeSettingsView({
 
   if (settings.kind === 'resonant') {
     return (
-      <SettingsForm
-        activePractice="resonant"
+      <ResonantSettingsForm
         settings={settings.settings}
         isRunning={settings.isRunning}
         onChange={settings.onChange}
@@ -32,22 +33,20 @@ export function PracticeSettingsView({
 
   if (settings.kind === 'stretch') {
     return (
-      <SettingsForm
-        activePractice="stretch"
+      <StretchSettingsForm
         isRunning={settings.isRunning}
         strings={uiStrings.settingsForm}
-        stretchSettings={settings.settings}
-        onStretchSettingsChange={settings.onChange}
+        settings={settings.settings}
+        onChange={settings.onChange}
       />
     )
   }
 
   return (
-    <SettingsForm
-      activePractice="naviKriya"
+    <NaviKriyaSettingsForm
       strings={uiStrings.settingsForm}
-      nkSettings={settings.settings}
-      onNKSettingsChange={settings.onChange}
+      settings={settings.settings}
+      onChange={settings.onChange}
       nkControlsStrings={uiStrings.nkControls}
     />
   )

@@ -120,8 +120,8 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
 // validateStretchSettings). A persisted slice that violates it falls back to
 // DEFAULT_STRETCH_SETTINGS for BOTH BPM fields so the ramp engine never receives an
 // inverted or zero-span ramp. initialBpm is restricted to STRETCH_INITIAL_BPM_OPTIONS
-// (>= 1.5) so a coerced initialBpm can never collapse the SettingsForm targetBpm picker
-// to an empty option list (WR-01).
+// (>= 1.5) so a coerced initialBpm can never collapse the targetBpm picker
+// to an empty target-BPM option list (WR-01).
 export function coerceStretchSettings(raw: unknown): StretchSettings {
   const r = asRecord(raw)
   // Compute BPM fields into mutable locals first so the cross-field check can

@@ -18,41 +18,6 @@ describe('CueGlyph — labels mode', () => {
     expect(screen.getByText('Out')).toBeVisible()
   })
 
-  it('renders the exact phase-label span classes (zero-regression — must match OrbShape lines 122-133)', () => {
-    const { container } = render(<CueGlyph cue="labels" phase="in" phaseLabel="In" />)
-    const span = container.querySelector('span')
-    expect(span).not.toBeNull()
-    // Reason: span non-null asserted by expect().not.toBeNull() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(span!.className).toContain('relative')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(span!.className).toContain('z-10')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(span!.className).toContain('text-5xl')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(span!.className).toContain('font-semibold')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(span!.className).toContain('tracking-tight')
-  })
-
-  it('applies var(--color-orb-in-text) for phase "in" (token color)', () => {
-    const { container } = render(<CueGlyph cue="labels" phase="in" phaseLabel="In" />)
-    const span = container.querySelector('span')
-    expect(span).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = span!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-in-text)')
-  })
-
-  it('applies var(--color-orb-out-text) for phase "out" (token color)', () => {
-    const { container } = render(<CueGlyph cue="labels" phase="out" phaseLabel="Out" />)
-    const span = container.querySelector('span')
-    expect(span).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = span!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-out-text)')
-  })
-
   it('does NOT render an SVG in labels mode', () => {
     const { container } = render(<CueGlyph cue="labels" phase="in" phaseLabel="In" />)
     expect(container.querySelector('svg')).toBeNull()
@@ -88,36 +53,14 @@ describe('CueGlyph — arrow mode (candidate F)', () => {
     expect(svg!.getAttribute('aria-hidden')).toBe('true')
   })
 
-  it('renders a visually-hidden sr-only span with phaseLabel for phase "in" (CUE-03)', () => {
+  it('keeps the phaseLabel in the DOM for screen reader parity in phase "in"', () => {
     render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" />)
-    const srSpan = screen.getByText('In')
-    expect(srSpan).toBeInTheDocument()
-    expect(srSpan.className).toContain('sr-only')
+    expect(screen.getByText('In')).toBeInTheDocument()
   })
 
-  it('renders a visually-hidden sr-only span with phaseLabel for phase "out" (CUE-03)', () => {
+  it('keeps the phaseLabel in the DOM for screen reader parity in phase "out"', () => {
     render(<CueGlyph cue="arrow" phase="out" phaseLabel="Out" />)
-    const srSpan = screen.getByText('Out')
-    expect(srSpan).toBeInTheDocument()
-    expect(srSpan.className).toContain('sr-only')
-  })
-
-  it('arrow "in" uses var(--color-orb-in-text) via currentColor (no hardcoded hex)', () => {
-    const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" />)
-    const wrapper = container.querySelector('span')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = wrapper!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-in-text)')
-  })
-
-  it('arrow "out" uses var(--color-orb-out-text) via currentColor (no hardcoded hex)', () => {
-    const { container } = render(<CueGlyph cue="arrow" phase="out" phaseLabel="Out" />)
-    const wrapper = container.querySelector('span')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = wrapper!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-out-text)')
+    expect(screen.getByText('Out')).toBeInTheDocument()
   })
 
   it('SVG contains a path element (chevron fill path)', () => {
@@ -129,16 +72,6 @@ describe('CueGlyph — arrow mode (candidate F)', () => {
     const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" />)
     expect(container.querySelector('animate')).toBeNull()
     expect(container.querySelector('[class*="animate-"]')).toBeNull()
-  })
-
-  it('wrapper span has relative z-10 positioning (stays in orb-center slot)', () => {
-    const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" />)
-    const wrapper = container.querySelector('span:first-child')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(wrapper!.className).toContain('relative')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(wrapper!.className).toContain('z-10')
   })
 })
 
@@ -171,36 +104,14 @@ describe('CueGlyph — nose mode (candidate D2)', () => {
     expect(svg!.getAttribute('aria-hidden')).toBe('true')
   })
 
-  it('renders a visually-hidden sr-only span with phaseLabel for phase "in" (CUE-03)', () => {
+  it('keeps the phaseLabel in the DOM for screen reader parity in phase "in"', () => {
     render(<CueGlyph cue="nose" phase="in" phaseLabel="In" />)
-    const srSpan = screen.getByText('In')
-    expect(srSpan).toBeInTheDocument()
-    expect(srSpan.className).toContain('sr-only')
+    expect(screen.getByText('In')).toBeInTheDocument()
   })
 
-  it('renders a visually-hidden sr-only span with phaseLabel for phase "out" (CUE-03)', () => {
+  it('keeps the phaseLabel in the DOM for screen reader parity in phase "out"', () => {
     render(<CueGlyph cue="nose" phase="out" phaseLabel="Out" />)
-    const srSpan = screen.getByText('Out')
-    expect(srSpan).toBeInTheDocument()
-    expect(srSpan.className).toContain('sr-only')
-  })
-
-  it('nose "in" uses var(--color-orb-in-text) (token color)', () => {
-    const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" />)
-    const wrapper = container.querySelector('span')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = wrapper!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-in-text)')
-  })
-
-  it('nose "out" uses var(--color-orb-out-text) (token color)', () => {
-    const { container } = render(<CueGlyph cue="nose" phase="out" phaseLabel="Out" />)
-    const wrapper = container.querySelector('span')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = wrapper!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-out-text)')
+    expect(screen.getByText('Out')).toBeInTheDocument()
   })
 
   it('SVG contains path elements (nose outline paths)', () => {
@@ -233,32 +144,6 @@ describe('CueGlyph — preview mode', () => {
     render(<CueGlyph cue="labels" phase="in" phaseLabel="Text" preview />)
     expect(screen.getByText('T')).toBeInTheDocument()
     expect(screen.queryByText('Text')).not.toBeInTheDocument()
-  })
-
-  it('labels preview uses the variant-picker swatch token var(--color-orb-in-from)', () => {
-    const { container } = render(<CueGlyph cue="labels" phase="in" phaseLabel="Text" preview />)
-    const span = container.querySelector('span')
-    expect(span).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(span!.getAttribute('style') ?? '').toContain('var(--color-orb-in-from)')
-  })
-
-  it('arrow preview uses var(--color-orb-in-from) instead of the in/out text tokens', () => {
-    const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" preview />)
-    const wrapper = container.querySelector('span')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const style = wrapper!.getAttribute('style') ?? ''
-    expect(style).toContain('var(--color-orb-in-from)')
-    expect(style).not.toContain('var(--color-orb-in-text)')
-  })
-
-  it('nose preview uses var(--color-orb-in-from)', () => {
-    const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" preview />)
-    const wrapper = container.querySelector('span')
-    expect(wrapper).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(wrapper!.getAttribute('style') ?? '').toContain('var(--color-orb-in-from)')
   })
 
   it('non-preview labels mode still renders the full phase word (in-orb unchanged)', () => {

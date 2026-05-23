@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { SettingsForm, type SettingsFormProps } from './SettingsForm'
+import { NaviKriyaSettingsForm } from './NaviKriyaSettingsForm'
 import { UI_STRINGS } from '../content/strings'
 import {
   DEFAULT_NK_SETTINGS,
@@ -27,20 +27,20 @@ function NKHarness({
   onChangeSpy?: (settings: NaviKriyaSettings) => void
 }) {
   const [nk, setNk] = useState<NaviKriyaSettings>(initial)
-  const props: SettingsFormProps = {
-    activePractice: 'naviKriya',
-    strings: EN,
-    nkSettings: nk,
-    onNKSettingsChange: (next) => {
-      onChangeSpy?.(next)
-      setNk(next)
-    },
-    nkControlsStrings: NK,
-  }
-  return <SettingsForm {...props} />
+  return (
+    <NaviKriyaSettingsForm
+      strings={EN}
+      settings={nk}
+      onChange={(next) => {
+        onChangeSpy?.(next)
+        setNk(next)
+      }}
+      nkControlsStrings={NK}
+    />
+  )
 }
 
-describe('SettingsForm — Navi Kriya controls (Plan 31-05, NK-02/03/04/06, D-14)', () => {
+describe('NaviKriyaSettingsForm', () => {
   it('renders the four NK controls with labels from strings.nkControls', () => {
     render(<NKHarness />)
     expect(screen.getByRole('group', { name: NK.roundsLabel })).toBeInTheDocument()

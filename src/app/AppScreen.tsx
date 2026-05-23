@@ -48,6 +48,7 @@ interface PracticeWorkspaceProps {
   compact: boolean
   activePractice: PracticeId
   controlsDisabled: boolean
+  showSwitcherIcons: boolean
   onSwitchPractice(this: void, next: PracticeId): void
   practiceToggleStrings: AppViewModel['practiceToggleStrings']
   medicalAdviceLine: string
@@ -58,6 +59,7 @@ function PracticeWorkspace({
   compact,
   activePractice,
   controlsDisabled,
+  showSwitcherIcons,
   onSwitchPractice,
   practiceToggleStrings,
   medicalAdviceLine,
@@ -69,6 +71,7 @@ function PracticeWorkspace({
         <PracticeToggle
           active={activePractice}
           disabled={controlsDisabled}
+          showIcons={showSwitcherIcons}
           onSwitch={onSwitchPractice}
           strings={practiceToggleStrings}
         />
@@ -103,6 +106,7 @@ export function AppScreen({ vm }: AppScreenProps): ReactElement {
           compact={vm.workspaceCompact}
           activePractice={vm.activePractice}
           controlsDisabled={vm.controlsDisabled}
+          showSwitcherIcons={vm.featureFlags.switcherIcon}
           onSwitchPractice={vm.onSwitchPractice}
           practiceToggleStrings={vm.practiceToggleStrings}
           medicalAdviceLine={vm.lockedCopy.medicalAdviceLine}

@@ -5,6 +5,7 @@ import {
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { computeBoundaryAudioOffsets } from '../domain/sessionAudio'
+import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
 import { buildStretchSegments, getStretchFrame } from '../domain/stretchRamp'
@@ -22,8 +23,7 @@ import { clearScheduledTimeouts, scheduleLeadInTimeouts } from './leadInCountdow
 import { useSessionEngine, type SessionEngine } from './useSessionEngine'
 import type { UseWakeLock } from './useWakeLock'
 
-export type BreathingSessionPhase = 'idle' | 'lead-in' | 'running'
-export type LeadInDigit = 3 | 2 | 1
+export type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 
 export interface BreathingAudioControls {
   muted: boolean

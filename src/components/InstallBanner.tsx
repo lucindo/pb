@@ -1,5 +1,5 @@
 // Phase 28 Plan 03: Slim install banner UI component.
-// Desktop exclusion is handled upstream by the App.tsx phone gate
+// Desktop exclusion is handled upstream by the app install view model
 // (isPhone check in showBanner), not by this component.
 // This is a pure presentational component — the only local state is
 // `iosExpanded` for the inline iOS step-expand toggle.

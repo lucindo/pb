@@ -2,7 +2,7 @@ export type OmLength = 'fast' | 'medium' | 'slow'
 
 export const OM_LENGTH_OPTIONS = ['fast', 'medium', 'slow'] as const satisfies readonly OmLength[]
 
-// NK-02: selectable round counts for the SettingsForm rounds stepper.
+// Selectable round counts for the Navi Kriya settings stepper.
 export const NK_ROUNDS_OPTIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 // NK-04: selectable front OM counts. Entries are multiples of 100, minimum 100.

@@ -1,13 +1,13 @@
 import type { LEARN_CONTENT } from '../content/learnContent'
 import type { LOCKED_COPY } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
+import type { AudioStatusFlag } from '../audio/audioStatus'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import type { SessionStatus } from '../domain/sessionController'
+import type { BreathingSessionPhase, LeadInDigit, NaviLeadInDigit } from '../domain/sessionLifecycle'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
-import type { AudioStatusFlag } from '../hooks/useAudioCues'
-import type { BreathingSessionPhase, LeadInDigit } from '../hooks/useBreathingSessionController'
-import type { NaviLeadInDigit } from '../hooks/useNaviKriyaSessionController'
+import type { FeatureFlags } from '../featureFlags'
 import type { PracticeId } from '../storage'
 import type { getPracticeToggleStrings } from './practiceCopy'
 import {
@@ -116,9 +116,43 @@ export interface AppViewModel {
   learnContent: LearnContent
   lockedCopy: LockedCopy
   practiceToggleStrings: ReturnType<typeof getPracticeToggleStrings>
+  featureFlags: FeatureFlags
   install: AppInstallViewModel
   dialogs: AppDialogsViewModel
   onSwitchPractice(this: void, next: PracticeId): void
+}
+
+export interface CreateInstallViewModelArgs {
+  isPhone: boolean
+  isStandalone: boolean
+  isIOS: boolean
+  installDismissed: boolean
+  inSessionView: boolean
+  canPromptInstall: boolean
+  onInstall(this: void): Promise<void>
+  onDismiss(this: void): void
+}
+
+export function createInstallViewModel({
+  isPhone,
+  isStandalone,
+  isIOS,
+  installDismissed,
+  inSessionView,
+  canPromptInstall,
+  onInstall,
+  onDismiss,
+}: CreateInstallViewModelArgs): AppInstallViewModel {
+  const installable = isIOS || canPromptInstall
+
+  return {
+    showBanner: isPhone && !isStandalone && !installDismissed && !inSessionView && installable,
+    isIOS,
+    isStandalone,
+    installable,
+    onInstall,
+    onDismiss,
+  }
 }
 
 export interface BreathingSessionViewState {

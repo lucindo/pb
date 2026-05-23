@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
+import type { NaviLeadInDigit } from '../domain/sessionLifecycle'
 import {
   loadPrefs,
   recordNaviKriyaSession,
@@ -15,7 +16,7 @@ import { clearScheduledTimeouts, scheduleLeadInTimeouts } from './leadInCountdow
 import { useNaviKriyaAudio } from './useNaviKriyaAudio'
 import type { UseWakeLock } from './useWakeLock'
 
-export type NaviLeadInDigit = 3 | 2 | 1
+export type { NaviLeadInDigit } from '../domain/sessionLifecycle'
 
 export interface NaviKriyaSessionController {
   settings: NaviKriyaSettings

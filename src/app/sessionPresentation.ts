@@ -4,11 +4,10 @@ import {
   getNaviKriyaPhaseTarget,
   type NaviKriyaPhase,
 } from '../domain/naviKriyaSession'
+import type { BreathingSessionPhase, LeadInDigit, NaviLeadInDigit } from '../domain/sessionLifecycle'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId } from '../domain/settings'
 import type { UiStrings } from '../content/strings'
-import type { BreathingSessionPhase, LeadInDigit } from '../hooks/useBreathingSessionController'
-import type { NaviLeadInDigit } from '../hooks/useNaviKriyaSessionController'
 
 export interface BreathingPresentationInput {
   phase: BreathingSessionPhase

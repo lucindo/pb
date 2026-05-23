@@ -5,6 +5,7 @@ import { LOCKED_COPY } from '../content/lockedCopy'
 import type { StretchSettings } from '../domain/settings'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { useBreathingSessionController } from '../hooks/useBreathingSessionController'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { useFavicon } from '../hooks/useFavicon'
 import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
 import { useLocale } from '../hooks/useLocale'
@@ -24,6 +25,7 @@ import {
 } from '../storage'
 import {
   createAudioViewModel,
+  createInstallViewModel,
   createNaviAudioToggleViewModel,
   createPracticeControlsViewModel,
   createPracticeSessionViewModel,
@@ -58,6 +60,7 @@ export function useAppViewModel(): AppViewModel {
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt()
   const { cue: liveCue } = useVisualCue()
   const { locale, uiStrings } = useLocale()
+  const featureFlags = useFeatureFlags()
 
   const breathing = useBreathingSessionController({
     initialSettings: initialPractices.resonant.settings,
@@ -92,14 +95,6 @@ export function useAppViewModel(): AppViewModel {
     audioStatus,
     onMuteOrResumeClick,
   } = breathing.audio
-  const installable = isIOS || deferredPrompt !== null
-  const showBanner =
-    isPhone &&
-    !isStandalone &&
-    !installDismissed &&
-    !breathing.inSessionView &&
-    installable
-
   const onStretchSettingsChange = useCallback((next: StretchSettings): void => {
     setStretchSettings(next)
     saveStretchSettings(next)
@@ -229,6 +224,16 @@ export function useAppViewModel(): AppViewModel {
     saveInstallDismissed()
     setInstallDismissed(true)
   }, [])
+  const install = createInstallViewModel({
+    isPhone,
+    isStandalone,
+    isIOS,
+    installDismissed,
+    inSessionView: breathing.inSessionView,
+    canPromptInstall: deferredPrompt !== null,
+    onInstall: triggerInstall,
+    onDismiss: onInstallDismiss,
+  })
 
   return {
     activePractice,
@@ -244,14 +249,8 @@ export function useAppViewModel(): AppViewModel {
     learnContent: LEARN_CONTENT[locale],
     lockedCopy: LOCKED_COPY[locale],
     practiceToggleStrings: getPracticeToggleStrings(uiStrings),
-    install: {
-      showBanner,
-      isIOS,
-      isStandalone,
-      installable,
-      onInstall: triggerInstall,
-      onDismiss: onInstallDismiss,
-    },
+    featureFlags,
+    install,
     dialogs: {
       learnOpen: appDialogs.learnOpen,
       settingsOpen: appDialogs.settingsOpen,

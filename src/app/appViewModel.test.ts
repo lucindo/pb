@@ -10,6 +10,7 @@ import {
 import {
   AUDIO_RESUME_HINT_ID,
   createAudioViewModel,
+  createInstallViewModel,
   createNaviAudioToggleViewModel,
   createPracticeControlsViewModel,
   createPracticeSessionViewModel,
@@ -52,6 +53,7 @@ const naviState: NaviKriyaSessionViewState = {
 }
 
 const noop = (): void => undefined
+const noopInstall = (): Promise<void> => Promise.resolve()
 
 function makeSettingsSources(
   activePractice: PracticeSettingsSources['activePractice'],
@@ -112,6 +114,57 @@ describe('app practice session view model', () => {
       cue: 'nose',
       leadInDigit: 2,
     })
+  })
+})
+
+describe('app install view model', () => {
+  it('shows the install banner on phone when installable, not dismissed, standalone, or in session', () => {
+    const install = createInstallViewModel({
+      isPhone: true,
+      isStandalone: false,
+      isIOS: false,
+      installDismissed: false,
+      inSessionView: false,
+      canPromptInstall: true,
+      onInstall: noopInstall,
+      onDismiss: noop,
+    })
+
+    expect(install.showBanner).toBe(true)
+    expect(install.installable).toBe(true)
+  })
+
+  it('keeps iOS installable without a deferred install prompt', () => {
+    const install = createInstallViewModel({
+      isPhone: true,
+      isStandalone: false,
+      isIOS: true,
+      installDismissed: false,
+      inSessionView: false,
+      canPromptInstall: false,
+      onInstall: noopInstall,
+      onDismiss: noop,
+    })
+
+    expect(install.installable).toBe(true)
+    expect(install.showBanner).toBe(true)
+  })
+
+  it('hides the install banner after dismissal, in standalone, or during a session', () => {
+    const base = {
+      isPhone: true,
+      isStandalone: false,
+      isIOS: false,
+      installDismissed: false,
+      inSessionView: false,
+      canPromptInstall: true,
+      onInstall: noopInstall,
+      onDismiss: noop,
+    }
+
+    expect(createInstallViewModel({ ...base, installDismissed: true }).showBanner).toBe(false)
+    expect(createInstallViewModel({ ...base, isStandalone: true }).showBanner).toBe(false)
+    expect(createInstallViewModel({ ...base, inSessionView: true }).showBanner).toBe(false)
   })
 })
 

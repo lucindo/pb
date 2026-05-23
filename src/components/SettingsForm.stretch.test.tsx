@@ -3,7 +3,9 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import { SettingsForm } from './SettingsForm'
+import { NaviKriyaSettingsForm } from './NaviKriyaSettingsForm'
+import { ResonantSettingsForm } from './ResonantSettingsForm'
+import { StretchSettingsForm } from './StretchSettingsForm'
 import { UI_STRINGS } from '../content/strings'
 import {
   DEFAULT_SETTINGS,
@@ -39,8 +41,7 @@ function renderForm(overrides: RenderFormOverrides = {}) {
 
   if (activePractice === 'resonant') {
     render(
-      <SettingsForm
-        activePractice="resonant"
+      <ResonantSettingsForm
         settings={overrides.settings ?? DEFAULT_SETTINGS}
         isRunning={overrides.isRunning ?? false}
         onChange={overrides.onChange ?? onChange}
@@ -50,21 +51,19 @@ function renderForm(overrides: RenderFormOverrides = {}) {
     )
   } else if (activePractice === 'stretch') {
     render(
-      <SettingsForm
-        activePractice="stretch"
+      <StretchSettingsForm
         isRunning={overrides.isRunning ?? false}
         strings={overrides.strings ?? EN}
-        stretchSettings={overrides.stretchSettings ?? DEFAULT_STRETCH_SETTINGS}
-        onStretchSettingsChange={overrides.onStretchSettingsChange ?? onStretchSettingsChange}
+        settings={overrides.stretchSettings ?? DEFAULT_STRETCH_SETTINGS}
+        onChange={overrides.onStretchSettingsChange ?? onStretchSettingsChange}
       />,
     )
   } else {
     render(
-      <SettingsForm
-        activePractice="naviKriya"
+      <NaviKriyaSettingsForm
         strings={overrides.strings ?? EN}
-        nkSettings={overrides.nkSettings ?? DEFAULT_NK_SETTINGS}
-        onNKSettingsChange={overrides.onNKSettingsChange ?? onNKSettingsChange}
+        settings={overrides.nkSettings ?? DEFAULT_NK_SETTINGS}
+        onChange={overrides.onNKSettingsChange ?? onNKSettingsChange}
         nkControlsStrings={UI_STRINGS.en.nkControls}
       />,
     )
@@ -78,25 +77,25 @@ function renderForm(overrides: RenderFormOverrides = {}) {
 // ramp-stage field label).
 const STRETCH_GROUPS = ['Start BPM', 'Target BPM', 'Warm-up', 'Stretch', 'Settle']
 
-describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', () => {
-  it('activePractice="stretch": renders the stretch steppers (5 ramp groups)', () => {
+describe('StretchSettingsForm', () => {
+  it('renders the stretch steppers (5 ramp groups)', () => {
     renderForm({ activePractice: 'stretch' })
     for (const group of STRETCH_GROUPS) {
       expect(screen.getByRole('group', { name: group })).toBeInTheDocument()
     }
   })
 
-  it('activePractice="stretch": single BPM stepper is absent', () => {
+  it('does not render the resonant BPM stepper', () => {
     renderForm({ activePractice: 'stretch' })
     expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
   })
 
-  it('activePractice="stretch": no Standard/Stretch mode switch rendered', () => {
+  it('does not render a session mode switch', () => {
     renderForm({ activePractice: 'stretch' })
     expect(screen.queryByRole('switch', { name: 'Session mode' })).not.toBeInTheDocument()
   })
 
-  it('activePractice="resonant": standard knobs, no stretch steppers', () => {
+  it('ResonantSettingsForm renders standard knobs with no stretch steppers', () => {
     renderForm({ activePractice: 'resonant' })
     expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
     for (const group of STRETCH_GROUPS) {
@@ -202,13 +201,13 @@ describe('SettingsForm — stretch surface (Phase 34 activePractice dispatch)', 
   })
 })
 
-describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/D-03/D-04)', () => {
-  it('activePractice="resonant": renders the resonant knobs', () => {
+describe('Practice settings forms stay isolated by practice', () => {
+  it('ResonantSettingsForm renders the resonant knobs', () => {
     renderForm({ activePractice: 'resonant' })
     expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
   })
 
-  it('activePractice="naviKriya": renders the NK scaffold with NO resonant knobs', () => {
+  it('NaviKriyaSettingsForm renders no resonant or stretch knobs', () => {
     renderForm({ activePractice: 'naviKriya' })
     // No resonant knobs in the Navi Kriya branch (D-01 structural scaffold only).
     expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
@@ -218,17 +217,12 @@ describe('SettingsForm — practice-aware dispatch (Phase 30 PRACTICE-06 / D-01/
     expect(screen.queryByRole('switch', { name: 'Session mode' })).not.toBeInTheDocument()
   })
 
-  it('activePractice="naviKriya": renders the real NK controls and no inline practice heading', () => {
+  it('NaviKriyaSettingsForm renders the real NK controls and no inline practice heading', () => {
     renderForm({ activePractice: 'naviKriya' })
-    // Phase 31 (Plan 31-05): the Phase 30 placeholder stub is replaced by the
-    // real NK controls — full coverage lives in SettingsForm.nk.test.tsx.
     expect(
       screen.getByRole('group', { name: UI_STRINGS.en.nkControls.roundsLabel }),
     ).toBeInTheDocument()
     // The practice is named in the app header/title, not by an inline heading.
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   })
-  // Phase 31 (mute-parity refactor): the Navi Start button moved out of
-  // SettingsForm into App.tsx (next to the MuteToggle), so the former
-  // "Start button is live" assertion now lives in the App integration tests.
 })

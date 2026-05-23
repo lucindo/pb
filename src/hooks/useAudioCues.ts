@@ -20,6 +20,7 @@ import {
   type AudioEngine,
   type AudioStatus,
 } from '../audio/audioEngine'
+import type { AudioStatusFlag } from '../audio/audioStatus'
 // Phase 18 Plan 04: TimbreId is captured per-session via `start(plan, timbre)` and
 // stored synchronously into `timbreRef` BEFORE any await (D-08). DEFAULT_TIMBRE is
 // the ref's initial value — overwritten at the user's first Start click. The hook
@@ -27,16 +28,7 @@ import {
 import { DEFAULT_TIMBRE, type TimbreId } from '../domain/settings'
 
 export type { AudioStatus }
-
-/** Plan 06 D-34: high-level audio-path health for the UI's resume affordance.
- *  - 'ok': audio is running OR not started yet — no affordance shown.
- *  - 'needs-resume': iOS Safari left the AC in 'interrupted'/'suspended' after a
- *    visibility-resume attempt rejected with InvalidStateError. User-tappable
- *    affordance is required (D-29). Reset to 'ok' once a gesture-attached
- *    resume or engine reconstruction succeeds (D-30).
- *  - 'unavailable': terminal — engine closed without recovery. Visuals-only path
- *    (Phase 3 D-10 fallback). */
-export type AudioStatusFlag = 'ok' | 'needs-resume' | 'unavailable'
+export type { AudioStatusFlag } from '../audio/audioStatus'
 
 export interface UseAudioCues {
   status: AudioStatus
@@ -71,10 +63,10 @@ export interface UseAudioCues {
    *  HRV completion (parity with the Navi Kriya end cue). No-op if the AC is
    *  unavailable or muted; the engine keeps the AC alive until it rings out. */
   playEndChord(this: void): void
-  /** Plan 06 D-34: see AudioStatusFlag JSDoc. App.tsx reads this to drive
+  /** Plan 06 D-34: see AudioStatusFlag JSDoc. App view-model reads this to drive
    *  MuteToggle's needsResume prop. */
   audioStatus: AudioStatusFlag
-  /** Plan 06 D-34: gesture-attached recovery seam. App.tsx awaits this from
+  /** Plan 06 D-34: gesture-attached recovery seam. The app controller awaits this from
    *  inside the mute-button click handler when audioStatus === 'needs-resume'.
    *  Internally calls engine.resume() first; falls back to engine reconstruction
    *  (close + new createAudioEngine + setMuted replay + re-anchor signal) if
