@@ -36,16 +36,50 @@ State below is updated after every step transition.
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | ✓ done — commit `3926b77` |
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | ✓ done — commit `498545a` |
 | F6 | `UiStringsContext` provider replacing drilling of `uiStrings` through the view layer (vm stays as explicit prop — see proposal) | **implemented — awaiting operator approval** |
-| G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
+| G | Dead-code purge — delete `LearnDialog` + `SettingsDialog` + `SettingsPanel` (and their tests) after audit narrowed the original 8-file list to 3 confirmed orphans; other 5 are LIVE. | **implemented — awaiting operator approval** |
 
 ---
 
 ## Current focus
 
-**Item:** F6 — `UiStringsContext` provider (narrowed scope: `uiStrings` only, not `vm`)
+**Item:** G — Dead-code purge (audit-corrected scope)
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item F6)
+### Implementation summary (Item G)
+
+Ground-truth audit (precise module-path grep `from ['\"].*/${name}['\"]`, excluding self + own test) corrected the original 8-file Item-G table down to **3 confirmed orphans**. The other 5 names in the table were a stale snapshot from before items C/D landed.
+
+**Audit results:**
+| File | Live importers | Verdict |
+|------|---------|---------|
+| `LearnDialog.tsx` | 0 | DELETED |
+| `SettingsDialog.tsx` | 0 | DELETED |
+| `SettingsPanel.tsx` | only `SettingsDialog.tsx` | DELETED (cascade) |
+| `SessionReadout.tsx` | `BreathingSessionSurface.tsx` | LIVE — kept |
+| `NKSessionReadout.tsx` | `NaviKriyaSessionSurface.tsx` | LIVE — kept |
+| `StatusPanel.tsx` | `NaviKriyaSessionSurface.tsx`, `NKSessionReadout.tsx`, `SessionReadout.tsx` | LIVE — kept |
+| `SettingsAnchor.tsx` | `PracticeScreen.tsx` | LIVE — kept |
+| `LearnAnchor.tsx` | `PracticeScreen.tsx` | LIVE — kept |
+| `learnDialogModel.ts` | `LearnPanel.tsx` (LearnPage uses LearnPanel) | LIVE — kept (`*Dialog*` in name is historical; rename for clarity deferred) |
+
+**Files deleted (5):**
+- `src/components/LearnDialog.tsx`
+- `src/components/LearnDialog.test.tsx` (32 tests)
+- `src/components/SettingsDialog.tsx`
+- `src/components/SettingsDialog.test.tsx` (17 tests)
+- `src/components/SettingsPanel.tsx` (no own test file — was always covered transitively via SettingsDialog.test)
+
+**Files modified:** none. The 3 deletes had zero production-code consumers — `SettingsPanel` was reachable only through `SettingsDialog`, both dialogs had been routed nowhere since Item D landed `LearnPage` / `AppSettingsPage`. tsc + lint passing confirms there were no orphan internal references either.
+
+**Verification:**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean (0 errors, 0 warnings)
+- Full suite: **101 files / 1127 tests pass** (was 103/1176 → -2 files, -49 tests, exactly the LearnDialog+SettingsDialog test count drop, no other tests broke).
+- `npm run build`: production build clean. JS bundle **299.05 KB unchanged** — Vite was already tree-shaking these orphans out of the prod bundle since they had no live importers. Source-code shrinkage only, not runtime gain. The win is in maintenance surface, not bytes.
+
+**Commit message:** `refactor(dead-code): delete orphan LearnDialog + SettingsDialog + SettingsPanel after pages migration`
+
+### Archived — Implementation summary (Item F6)
 
 Operator approved the narrowed proposal: contextify only `uiStrings` (the full type), leave `vm` as an explicit prop (it's only one hop deep — `ScreenRouter → PracticeScreen`), and keep leaf components on narrow `Pick<UiStrings, ...>` slices so they stay context-free + testable in isolation.
 
@@ -463,6 +497,7 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | F4 | `3926b77` | Added shapeConstants.test.ts drift guard between TS exports and `--orb-scale-*` CSS tokens. Value-agnostic equality assertions; explicit "delete-together if orb redesigned" contract in header comment per operator constraint. |
 | F5 | `498545a` | UiStrings top-level keys reorganized by surface: `practice.*` / `appSettings.*` / `learn.*` / `install.*`. ~69 files touched. Mechanically applied via carrier-anchored perl (\K resets match start); 4 Pick<UiStrings> types + practiceCopy + 3 computed-key tests handled manually. |
 | F6 | `fe14c47` | `UiStringsContext` + `useUiStrings()` hook (throws on missing provider). `App.tsx` wraps everything in `UiStringsProvider`. 4 PracticeScreen child views + 2 pages stop receiving `uiStrings` / `strings` props and read from context. Leaf components (anchors, banners, forms, pickers, dialogs) keep narrow slice props to stay testable in isolation. Bundle +0.36 KB. |
+| G | (this commit) | Audit-corrected dead-code purge: deleted `LearnDialog`, `SettingsDialog`, `SettingsPanel` + the 2 dialog tests (49 tests removed). Original 8-file Item-G list was an outdated snapshot — module-path-precise grep found 5 of the listed files (Readout/StatusPanel pair, anchors) STILL LIVE. Bundle unchanged (Vite was already tree-shaking these). |
 
 ---
 
