@@ -70,7 +70,9 @@ describe('App locale switching (Phase 19)', () => {
     // Confirm EN on mount
     expect(document.documentElement.lang).toBe('en')
 
-    // Open SettingsDialog via the gear anchor (aria-label = EN 'Settings')
+    // Navigate to the Settings page via the gear anchor (aria-label = EN 'Settings').
+    // Post Item-D refactor: this routes to AppSettingsPage (full-page surface) instead
+    // of opening a modal SettingsDialog.
     await user.click(screen.getByRole('button', { name: UI_STRINGS.en.anchors.settings }))
 
     // Find PT-BR radio button (native endonym — always 'Português (Brasil)' regardless of UI locale)
@@ -79,6 +81,12 @@ describe('App locale switching (Phase 19)', () => {
 
     // documentElement.lang must be updated
     expect(document.documentElement.lang).toBe('pt-BR')
+
+    // Navigate back to practice via the back button (aria-label now reflects the
+    // newly-active PT-BR locale's settings.close string). The Start-session button
+    // is only mounted on the practice surface, so we have to return there to
+    // assert the locale propagated across surfaces.
+    await user.click(screen.getByRole('button', { name: UI_STRINGS['pt-BR'].settings.close }))
 
     // At least one PT-BR idle-state string must be rendered: the Start-session button
     expect(

@@ -17,7 +17,7 @@ import {
   type AppPracticeSessionViewModel,
   type AppPracticeSettingsViewModel,
 } from './appViewModel'
-import type { AppModalDialogs } from './useAppDialogs'
+import type { AppNavigation } from './useAppNavigation'
 import {
   getBreathingPrimaryAction,
   getNaviKriyaPrimaryAction,
@@ -205,22 +205,17 @@ export function createEndSessionDialogViewModelsFromControllers({
 }
 
 export function createAppDialogsViewModel({
-  dialogs,
-  settingsInSessionView,
+  navigation,
   endSessionDialogs,
 }: {
-  dialogs: AppModalDialogs
-  settingsInSessionView: boolean
+  navigation: AppNavigation
   endSessionDialogs: readonly AppEndSessionDialogViewModel[]
 }): AppDialogsViewModel {
   return {
-    learnOpen: dialogs.learnOpen,
-    settingsOpen: dialogs.settingsOpen,
-    settingsInSessionView,
+    appScreen: navigation.appScreen,
     endSessionDialogs,
-    onLearnOpen: dialogs.onLearnOpen,
-    onLearnClose: dialogs.onLearnClose,
-    onSettingsOpen: dialogs.onSettingsOpen,
-    onSettingsClose: dialogs.onSettingsClose,
+    onLearnOpen: navigation.onLearnOpen,
+    onSettingsOpen: navigation.onSettingsOpen,
+    onBackToPractice: navigation.onBackToPractice,
   }
 }

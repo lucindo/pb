@@ -20,7 +20,7 @@ import {
   createPracticeSettingsViewModelFromControllers,
   getPracticePrimaryActionsFromControllers,
 } from './appControllerAdapters'
-import type { AppModalDialogs } from './useAppDialogs'
+import type { AppNavigation } from './useAppNavigation'
 
 const frame: SessionFrame = {
   phase: 'in',
@@ -219,14 +219,12 @@ describe('app controller adapters', () => {
     expect(dialogs[1]?.onCancel).toBe(naviCancel)
   })
 
-  it('combines modal dialog state with session dialog models', () => {
-    const modalDialogs: AppModalDialogs = {
-      learnOpen: true,
-      settingsOpen: false,
+  it('combines surface navigation state with session dialog models', () => {
+    const navigation: AppNavigation = {
+      appScreen: 'learn',
       onLearnOpen: noop,
-      onLearnClose: noop,
       onSettingsOpen: noop,
-      onSettingsClose: noop,
+      onBackToPractice: noop,
     }
     const endSessionDialogs = createEndSessionDialogViewModelsFromControllers({
       breathing: makeBreathingController(),
@@ -234,14 +232,14 @@ describe('app controller adapters', () => {
     })
 
     const dialogs = createAppDialogsViewModel({
-      dialogs: modalDialogs,
-      settingsInSessionView: true,
+      navigation,
       endSessionDialogs,
     })
 
-    expect(dialogs.learnOpen).toBe(true)
-    expect(dialogs.settingsOpen).toBe(false)
-    expect(dialogs.settingsInSessionView).toBe(true)
+    expect(dialogs.appScreen).toBe('learn')
     expect(dialogs.endSessionDialogs).toBe(endSessionDialogs)
+    expect(dialogs.onLearnOpen).toBe(noop)
+    expect(dialogs.onSettingsOpen).toBe(noop)
+    expect(dialogs.onBackToPractice).toBe(noop)
   })
 })

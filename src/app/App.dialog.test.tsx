@@ -259,11 +259,14 @@ describe('end-session confirmation modal (App integration)', () => {
   })
 })
 
-// UI-02 / WR-09: dialogs that are open when the user starts a session must
-// auto-close once the session view becomes active. Two cases mirror the WR-01
-// auto-close template above — same fake-timer setup, same startAndAdvancePastLeadIn
-// trigger, same `queryByRole('dialog') not in document` assertion shape.
-describe('WR-09 in-session dialog auto-close', () => {
+// UI-02 / WR-09: post Item-D refactor, Learn/Settings are full-page routes,
+// not modal overlays on the practice surface — so a session cannot start while
+// the user is on those pages (Start lives only on the practice surface). The
+// underlying closeOnSessionView invariant is covered by useAppNavigation.test.tsx
+// ("forcibly returns to practice when the session view becomes active"). What
+// we verify at the app integration level here is the routing-replaces-modal
+// behavior: clicking Learn navigates away from the practice surface.
+describe('WR-09 surface routing replaces dialog overlay', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(APP_TEST_NOW)
@@ -273,22 +276,25 @@ describe('WR-09 in-session dialog auto-close', () => {
     vi.useRealTimers()
   })
 
-  it('auto-closes LearnDialog when the session starts underneath it (WR-09)', async () => {
+  it('clicking Learn navigates to the LearnPage and unmounts the practice surface (no dialog overlay)', async () => {
     render(<App />)
 
-    // Open the Learn modal before starting (LearnAnchor's accessible name is "Learn"
-    // when not disabled — see LearnAnchor.tsx:22). The dialog itself is labelled
-    // by its h2 "About this practice" — see LearnDialog.tsx:77.
+    // Practice surface mounted before click — Start button is visible.
+    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+
     fireEvent.click(screen.getByRole('button', { name: 'Learn' }))
-    expect(screen.getByRole('dialog', { name: 'About this practice' })).toBeVisible()
 
-    // Start the session — inSessionView flips to true on appPhase = 'lead-in'.
-    await startAndAdvancePastLeadIn()
-
-    // The LearnDialog must auto-close on the inSessionView transition.
+    // No modal <dialog> for Learn — it's a full-page route now. The Learn page
+    // title is the h1 in TopAppBar.
     expect(
       screen.queryByRole('dialog', { name: 'About this practice' }),
     ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'About this practice' }),
+    ).toBeInTheDocument()
+
+    // Practice surface is unmounted — Start button is gone.
+    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
   })
 
 })

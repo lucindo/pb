@@ -1,4 +1,4 @@
-import type { MouseEventHandler, ReactNode } from 'react'
+import type { MouseEventHandler, Ref, ReactNode } from 'react'
 
 export type IconButtonSize = 'sm' | 'md'
 
@@ -15,12 +15,14 @@ export interface IconButtonProps {
   disabled?: boolean
   type?: 'button' | 'submit'
   className?: string
+  buttonRef?: Ref<HTMLButtonElement>
 }
 
 /** Round white icon button. Used for top-bar slots (info / gear / back) and
  *  modal-close affordances. Size sm = 32px, md = 40px (default). The icon
  *  prop is any ReactNode — typically one of the icons exported from
- *  src/components/icons/. */
+ *  src/components/icons/. `buttonRef` lets a parent imperatively focus the
+ *  underlying button (used by pages to focus the back chevron on mount). */
 export function IconButton({
   icon,
   label,
@@ -29,9 +31,11 @@ export function IconButton({
   disabled = false,
   type = 'button',
   className = '',
+  buttonRef,
 }: IconButtonProps) {
   return (
     <button
+      ref={buttonRef}
       type={type}
       aria-label={label}
       onClick={onClick}

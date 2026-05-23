@@ -8,7 +8,7 @@ import { PracticeToggle } from '../components/PracticeToggle'
 import { SettingsAnchor } from '../components/SettingsAnchor'
 import type { PracticeId } from '../storage/practices'
 import type { AppViewModel } from './appViewModel'
-import { AppDialogsView } from './AppDialogsView'
+import { EndSessionDialogsView } from './EndSessionDialogsView'
 import { PracticeControlsView } from './PracticeControlsView'
 import { PracticeSessionView } from './PracticeSessionView'
 import { PracticeSettingsView } from './PracticeSettingsView'
@@ -55,11 +55,15 @@ function PracticeWorkspace({
   )
 }
 
-interface AppScreenProps {
+interface PracticeScreenProps {
   vm: AppViewModel
 }
 
-export function AppScreen({ vm }: AppScreenProps): ReactElement {
+/** The practice surface — the appScreen='practice' route. Renders the
+ *  practice workspace, the install banner (this surface only), and the
+ *  end-session confirmation modals. Learn/Settings are no longer rendered
+ *  here as modals — they're sibling pages routed by ScreenRouter. */
+export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   return (
     <PageShell
       overlays={
@@ -72,12 +76,8 @@ export function AppScreen({ vm }: AppScreenProps): ReactElement {
               strings={vm.uiStrings.install}
             />
           )}
-          <AppDialogsView
-            activePractice={vm.activePractice}
+          <EndSessionDialogsView
             dialogs={vm.dialogs}
-            install={vm.install}
-            learnContent={vm.learnContent}
-            lockedCopy={vm.lockedCopy}
             uiStrings={vm.uiStrings}
           />
         </>

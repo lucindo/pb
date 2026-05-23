@@ -36,7 +36,7 @@ import {
   createPracticeSettingsViewModelFromControllers,
   getPracticePrimaryActionsFromControllers,
 } from './appControllerAdapters'
-import { useAppDialogs } from './useAppDialogs'
+import { useAppNavigation } from './useAppNavigation'
 import {
   getPracticeHeader,
   getPracticeTitle,
@@ -77,7 +77,7 @@ export function useAppViewModel(): AppViewModel {
   })
 
   const controlsDisabled = breathing.inSessionView || navi.sessionActive
-  const appDialogs = useAppDialogs({
+  const appNavigation = useAppNavigation({
     controlsDisabled,
     closeOnSessionView: breathing.inSessionView,
   })
@@ -194,8 +194,7 @@ export function useAppViewModel(): AppViewModel {
     featureFlags,
     install,
     dialogs: createAppDialogsViewModel({
-      dialogs: appDialogs,
-      settingsInSessionView: breathing.inSessionView,
+      navigation: appNavigation,
       endSessionDialogs,
     }),
     onSwitchPractice,

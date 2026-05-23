@@ -1,6 +1,7 @@
 import type { LEARN_CONTENT } from '../content/learnContent'
 import type { LOCKED_COPY } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
+import type { AppScreen } from './useAppNavigation'
 import type { AudioStatusFlag } from '../audio/audioStatus'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import type { SessionStatus } from '../domain/sessionController'
@@ -39,14 +40,11 @@ export interface AppEndSessionDialogViewModel {
 }
 
 export interface AppDialogsViewModel {
-  learnOpen: boolean
-  settingsOpen: boolean
-  settingsInSessionView: boolean
+  appScreen: AppScreen
   endSessionDialogs: readonly AppEndSessionDialogViewModel[]
   onLearnOpen(this: void): void
-  onLearnClose(this: void): void
   onSettingsOpen(this: void): void
-  onSettingsClose(this: void): void
+  onBackToPractice(this: void): void
 }
 
 export const AUDIO_RESUME_HINT_ID = 'mute-toggle-resume-hint'

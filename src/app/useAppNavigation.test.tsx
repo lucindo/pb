@@ -1,0 +1,87 @@
+import { act, renderHook } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+
+import { useAppNavigation, type UseAppNavigationArgs } from './useAppNavigation'
+
+function renderNavigation(args: UseAppNavigationArgs) {
+  return renderHook((props: UseAppNavigationArgs) => useAppNavigation(props), {
+    initialProps: args,
+  })
+}
+
+describe('useAppNavigation', () => {
+  it('defaults to the practice screen', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+    expect(result.current.appScreen).toBe('practice')
+  })
+
+  it('navigates to learn and back to practice', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onLearnOpen()
+    })
+    expect(result.current.appScreen).toBe('learn')
+
+    act(() => {
+      result.current.onBackToPractice()
+    })
+    expect(result.current.appScreen).toBe('practice')
+  })
+
+  it('navigates to appSettings and back to practice', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    expect(result.current.appScreen).toBe('appSettings')
+
+    act(() => {
+      result.current.onBackToPractice()
+    })
+    expect(result.current.appScreen).toBe('practice')
+  })
+
+  it('refuses to navigate away from practice while controls are disabled', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: true,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onLearnOpen()
+      result.current.onSettingsOpen()
+    })
+
+    expect(result.current.appScreen).toBe('practice')
+  })
+
+  it('forcibly returns to practice when the session view becomes active', () => {
+    const { result, rerender } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onLearnOpen()
+    })
+    expect(result.current.appScreen).toBe('learn')
+
+    rerender({
+      controlsDisabled: true,
+      closeOnSessionView: true,
+    })
+
+    expect(result.current.appScreen).toBe('practice')
+  })
+})

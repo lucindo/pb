@@ -27,8 +27,8 @@ State below is updated after every step transition.
 |-----|------|--------|
 | A | Theme tokens: elevation + scrim + destructive. Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | ✓ done — commit `0c1d372` |
 | B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | ✓ done — commit `c0bfe60` |
-| C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | **implemented — awaiting operator approval** |
-| D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | pending |
+| C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | ✓ done — commit `88305ea` |
+| D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | **implemented — awaiting operator approval** |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | pending |
 | F | Cleanup pass: `shapeConstants.ts` single-source-of-truth (TS↔CSS), `PracticeContext` provider replacing prop drilling, `UiStrings` surface-vocabulary rename plan, App.*.test.tsx vs. unit-test overlap audit, `CueGlyph` inline-style → className, presentation-safe type re-exports. | pending |
 | G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
@@ -37,38 +37,67 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** C — `PageShell` + `TopAppBar` primitives; extract `AppHeader`
+**Item:** D — Surface routing (`appScreen` + `ScreenRouter`); Learn/Settings become pages
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
 ### Implementation summary
 
-**Files added (4):**
+All five defaults honored: single commit, no browser-history integration, focus the back button on mount, install banner gated to PracticeScreen, `AppDialogsView` renamed to `EndSessionDialogsView`.
 
-`src/components/primitives/`
-- `PageShell.tsx` + `PageShell.test.tsx` — page wrapper: radial-gradient `<main>` + centered `<section>` (max-w-3xl). Children render inside the section. Optional `overlays` slot for siblings of the section (banners, dialogs) kept inside `<main>` for page semantics.
-- `TopAppBar.tsx` + `TopAppBar.test.tsx` — header bar: optional eyebrow above title, optional `leading` / `trailing` slots. Outer container is `relative w-full` so existing anchors' `absolute left-0 top-0` / `right-0 top-0` positioning resolves unchanged.
+**Files added (12):**
 
-**Files modified (2):**
-- `src/components/primitives/index.ts` — add `PageShell` + `TopAppBar` exports.
-- `src/app/AppScreen.tsx` — drop inline `AppHeader` (45 LOC); replace `<main>` + `<section>` with `<PageShell overlays={…}>`; replace inline header with `<TopAppBar eyebrow=… title=… leading={<SettingsAnchor …/>} trailing={<LearnAnchor …/>} />`. `PracticeWorkspace` unchanged. `SettingsAnchor`/`LearnAnchor` unchanged — they're slated for replacement in Item D.
+`src/app/`
+- `useAppNavigation.ts` + `useAppNavigation.test.tsx` — replaces `useAppDialogs`. State: `appScreen: 'practice' | 'learn' | 'appSettings'`. Same `controlsDisabled` + `closeOnSessionView` gates.
+- `ScreenRouter.tsx` + `ScreenRouter.test.tsx` — switch on `vm.dialogs.appScreen`; dispatches to `PracticeScreen` / `LearnPage` / `AppSettingsPage`. Tested with mocked page modules.
+- `PracticeScreen.tsx` — renamed from `AppScreen.tsx`. Renders the practice surface; install banner now lives only here (not on Learn/Settings).
+- `EndSessionDialogsView.tsx` — renamed from `AppDialogsView.tsx`. Renders only the end-session confirmation modals (those stay modal — they're confirmation flows, not destinations).
+- `pages/LearnPage.tsx` + `pages/LearnPage.test.tsx` — `PageShell` + `TopAppBar` (back chevron leading slot) + Card-wrapped `LearnPanel`. Focuses back button on mount via `IconButton`'s new `buttonRef` prop.
+- `pages/AppSettingsPage.tsx` + `pages/AppSettingsPage.test.tsx` — same shape; wraps `SettingsPanelBody`. `inSessionView` hard-coded to false (navigation to the page is gated by `controlsDisabled`).
 
-**API choices honored from proposal:**
-- TopAppBar slots are `ReactNode` (`leading`, `trailing`) — today's anchors plug in unchanged.
-- PageShell has no knobs yet (single default shape matches current practice surface). Add props in Item D if Learn/Settings need to diverge.
+`src/components/`
+- `LearnPanel.tsx` + `LearnPanel.test.tsx` — body extract of `LearnDialog` (sections, videos, explainer, resources, native-apps, taglines). No title, no Close button — those belong to the surrounding chrome.
+- `SettingsPanelBody.tsx` + `SettingsPanelBody.test.tsx` — body extract of `SettingsPanel` (pickers + install row). No title, no Close button.
 
-**Eyebrow note:** TopAppBar's eyebrow markup is inline, NOT the `Eyebrow` primitive. The page-header eyebrow is visually distinct (text-sm / tracking-0.35em / accent color) from the section-divider `Eyebrow` (text-xs / tracking-0.16em / muted color). Reuse would have forced a redesign decision out of scope here.
+**Files modified (11):**
+- `src/components/primitives/IconButton.tsx` — added optional `buttonRef` prop so pages can focus the back chevron on mount. Tests unchanged (additive prop).
+- `src/components/LearnDialog.tsx` — refactored to wrap `LearnPanel` for body content. Visual output byte-equivalent; existing 31 LearnDialog tests pass unchanged.
+- `src/components/SettingsPanel.tsx` — refactored to wrap `SettingsPanelBody` for picker stack + install row. Visual output byte-equivalent; existing SettingsDialog tests pass unchanged.
+- `src/app/appViewModel.ts` — `AppDialogsViewModel` shape: dropped `learnOpen`/`settingsOpen`/`settingsInSessionView`/`onLearnClose`/`onSettingsClose`; added `appScreen` + `onBackToPractice`.
+- `src/app/appControllerAdapters.ts` — `createAppDialogsViewModel` now takes `navigation: AppNavigation` instead of `dialogs: AppModalDialogs` + `settingsInSessionView: boolean`.
+- `src/app/appControllerAdapters.test.ts` — adapter test rewritten against new signature.
+- `src/app/useAppViewModel.ts` — wires `useAppNavigation` (replaces `useAppDialogs`).
+- `src/app/App.tsx` — uses `ScreenRouter` instead of `AppScreen`.
+- `src/app/App.locale.test.tsx` — locale switch test now navigates back to practice via the back button before asserting on the Start-session button (which only lives on PracticeScreen).
+- `src/app/App.dialog.test.tsx` — WR-09 case rewritten: clicking Learn now navigates (not opens modal); the closeOnSessionView invariant is covered by `useAppNavigation.test.tsx`.
+
+**Files deleted (4):**
+- `src/app/useAppDialogs.ts` + `useAppDialogs.test.tsx` (replaced by `useAppNavigation`)
+- `src/app/AppScreen.tsx` (renamed to `PracticeScreen`)
+- `src/app/AppDialogsView.tsx` (renamed to `EndSessionDialogsView`)
+
+**Files unchanged but now orphan-tested (deferred to Item G):**
+- `src/components/LearnDialog.tsx` + test — component still works in isolation but nothing in the live app graph imports it (LearnPage took over the route).
+- `src/components/SettingsDialog.tsx` + test — same.
+- `src/components/SettingsPanel.tsx` + test — still imported only by SettingsDialog. Goes with it in Item G.
+
+These deletions are intentionally deferred so this commit stays focused on the routing migration; Item G is the dedicated dead-code pass and will prune all three (plus SettingsAnchor / LearnAnchor) once their replacements are confirmed live.
+
+**Honest UX deltas (not strictly architecture):**
+- Learn / Settings unmount the practice surface (radial-gradient bg shows).
+- Back affordance is now a top-left chevron IconButton, not a center-bottom "Close" button.
+- No native focus trap (was inherent to `<dialog>`); replaced by focus-on-back-button on mount.
+- Back-button aria-label reuses `strings.{learn,settings}.close` ("Close") — content unchanged.
 
 **Verification:**
 - `npx tsc --noEmit`: clean
 - `npm run lint`: clean
-- `npm test -- --run src/components/primitives/PageShell.test.tsx src/components/primitives/TopAppBar.test.tsx`: 2 files / 11 tests pass
-- `npm test -- --run` full suite: 95 files / 1136 tests pass (was 93/1125 → +2 new test files, +11 new tests). All existing `App.test.tsx` integration tests pass unchanged — strongest evidence the extraction was byte-equivalent at the DOM level.
-- `npm run build`: production build clean (107 modules, 302 KB JS / 31 KB CSS)
-- **Not yet verified in a browser** — needs operator to load and confirm the header still looks identical (anchors top-left/top-right, eyebrow + title centered).
+- `npm test -- --run` full suite: **100 files / 1168 tests pass** (was 95/1136 → +5 files, +32 tests net after rewriting the two integration tests above).
+- `npm run build`: production build clean (107 modules, **301 KB JS (-1 KB)** / 31 KB CSS).
+- **Not yet verified in a browser** — needs operator confirmation that (a) clicking the gear / book book anchors routes to the new full-page surfaces; (b) the back chevron returns to practice; (c) starting a session from practice does NOT show Learn/Settings underneath (closeOnSessionView guarantee); (d) install banner shows only on practice.
 
-**Commit message:** `refactor(primitives): add PageShell + TopAppBar; route AppScreen through them`
+**Commit message:** `refactor(routing): introduce appScreen + ScreenRouter; migrate Learn/Settings to pages`
 
-### Archived — Proposal for Item C
+### Archived — Proposal for Item D
 
 **Goal**
 Add two layout primitives — `PageShell` (page-level wrapper: bg, padding, centered max-width column) and `TopAppBar` (eyebrow + title + leading/trailing slots, `position: relative` so existing anchors still position correctly). Rewire `AppScreen` to use both, replacing its current inline `<main>` + `<section>` + `AppHeader` code. **Visual output must be byte-equivalent** — this is plumbing, not redesign.
@@ -178,7 +207,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 |------|--------|-------|
 | A | `0c1d372` | Tokens + EndSessionDialog routed through destructive. Light byte-equivalent; dark visual TBD on real device. |
 | B | `c0bfe60` | Primitive + icon library landed. No consumers yet. |
-| C | (this commit) | PageShell + TopAppBar; AppScreen routed through them. Visual byte-equivalent (DOM tests pass); browser confirmation pending. |
+| C | `88305ea` | PageShell + TopAppBar; AppScreen routed through them. Visual byte-equivalent (DOM tests pass); browser confirmation pending. |
+| D | (this commit) | Surface routing: appScreen state + ScreenRouter; LearnPage / AppSettingsPage replace dialogs as route destinations. LearnDialog / SettingsDialog / SettingsPanel become orphan code (deletion deferred to G). |
 
 ---
 
