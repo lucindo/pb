@@ -26,7 +26,7 @@ export function EndSessionDialogsView({
           open={dialog.open}
           onConfirm={dialog.onConfirm}
           onCancel={dialog.onCancel}
-          strings={uiStrings.endSessionDialog}
+          strings={uiStrings.practice.endSessionDialog}
         />
       ))}
     </>

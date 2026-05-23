@@ -9,7 +9,7 @@ import { TopAppBar } from '../../components/primitives/TopAppBar'
 import type { UiStrings } from '../../content/strings'
 
 export interface AppSettingsPageProps {
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'cue' | 'timbres' | 'install'>
+  strings: Pick<UiStrings, 'appSettings' | 'install'>
   isIOS: boolean
   isStandalone: boolean
   installable: boolean
@@ -40,12 +40,12 @@ export function AppSettingsPage({
   return (
     <PageShell>
       <TopAppBar
-        title={strings.settings.title}
+        title={strings.appSettings.title}
         leading={
           <div className="absolute left-0 top-0">
             <IconButton
               icon={<ChevronBackIcon />}
-              label={strings.settings.close}
+              label={strings.appSettings.close}
               onClick={onBack}
               buttonRef={backButtonRef}
             />

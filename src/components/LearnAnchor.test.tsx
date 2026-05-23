@@ -15,12 +15,12 @@ const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 describe('LearnAnchor — enabled state (idle / D-03 enabled branch)', () => {
   it('renders a button with accessible name Learn', () => {
-    render(<LearnAnchor disabled={false} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.anchors} />)
+    render(<LearnAnchor disabled={false} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     expect(screen.getByRole('button', { name: 'Learn' })).toBeInTheDocument()
   })
 
   it('does NOT carry aria-disabled="true" when enabled', () => {
-    render(<LearnAnchor disabled={false} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.anchors} />)
+    render(<LearnAnchor disabled={false} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     const button = screen.getByRole('button', { name: 'Learn' })
     expect(button).not.toHaveAttribute('aria-disabled', 'true')
   })
@@ -28,7 +28,7 @@ describe('LearnAnchor — enabled state (idle / D-03 enabled branch)', () => {
   it('clicking the button invokes onClick exactly once', async () => {
     const user = userEvent.setup()
     const onClick = vi.fn()
-    render(<LearnAnchor disabled={false} onClick={onClick} strings={EN_STRINGS_FIXTURE.anchors} />)
+    render(<LearnAnchor disabled={false} onClick={onClick} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     const button = screen.getByRole('button', { name: 'Learn' })
     await user.click(button)
     expect(onClick).toHaveBeenCalledTimes(1)
@@ -37,14 +37,14 @@ describe('LearnAnchor — enabled state (idle / D-03 enabled branch)', () => {
 
 describe('LearnAnchor — disabled state (lead-in / running / D-03 disabled branch)', () => {
   it('renders a button with accessible name "Learn (unavailable during session)"', () => {
-    render(<LearnAnchor disabled={true} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.anchors} />)
+    render(<LearnAnchor disabled={true} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     expect(
       screen.getByRole('button', { name: 'Learn (unavailable during session)' }),
     ).toBeInTheDocument()
   })
 
   it('carries aria-disabled="true" when disabled', () => {
-    render(<LearnAnchor disabled={true} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.anchors} />)
+    render(<LearnAnchor disabled={true} onClick={vi.fn()} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     const button = screen.getByRole('button', { name: 'Learn (unavailable during session)' })
     expect(button).toHaveAttribute('aria-disabled', 'true')
   })
@@ -52,7 +52,7 @@ describe('LearnAnchor — disabled state (lead-in / running / D-03 disabled bran
   it('clicking the disabled button does NOT invoke onClick (JSX-layer no-op — T-06-11)', async () => {
     const user = userEvent.setup()
     const onClick = vi.fn()
-    render(<LearnAnchor disabled={true} onClick={onClick} strings={EN_STRINGS_FIXTURE.anchors} />)
+    render(<LearnAnchor disabled={true} onClick={onClick} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     const button = screen.getByRole('button', { name: 'Learn (unavailable during session)' })
     await user.click(button)
     expect(onClick).not.toHaveBeenCalled()
@@ -64,10 +64,10 @@ describe('LearnAnchor — no remount across enabled/disabled transition (D-18 in
     // D-18(d): the anchor's enabled/disabled transition is purely visual — React diffs
     // in place because the component shape is identical. The DOM node identity is preserved.
     const onClick = vi.fn()
-    const { rerender } = render(<LearnAnchor disabled={false} onClick={onClick} strings={EN_STRINGS_FIXTURE.anchors} />)
+    const { rerender } = render(<LearnAnchor disabled={false} onClick={onClick} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     const before = screen.getByRole('button', { name: 'Learn' })
 
-    rerender(<LearnAnchor disabled={true} onClick={onClick} strings={EN_STRINGS_FIXTURE.anchors} />)
+    rerender(<LearnAnchor disabled={true} onClick={onClick} strings={EN_STRINGS_FIXTURE.practice.topBar} />)
     const after = screen.getByRole('button', { name: 'Learn (unavailable during session)' })
 
     // Object identity: the same DOM element, not a remounted clone.

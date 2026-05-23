@@ -22,7 +22,7 @@ export interface MuteToggleProps {
    *  empty-content announcements (the live region text is the empty string when
    *  not in needs-resume mode). */
   resumeHintId: string
-  strings: UiStrings['mute']
+  strings: UiStrings['practice']['mute']
   onToggle(this: void): void
 }
 

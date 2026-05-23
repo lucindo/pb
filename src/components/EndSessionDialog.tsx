@@ -6,7 +6,7 @@ export interface EndSessionDialogProps {
   open: boolean
   onConfirm(this: void): void
   onCancel(this: void): void
-  strings: UiStrings['endSessionDialog']
+  strings: UiStrings['practice']['endSessionDialog']
   // D-12: optional summary slot rendered between the title and the action
   // buttons — the Navi Kriya completion dialog uses it for the rounds/duration
   // summary. When absent the dialog behaves byte-identically to before.

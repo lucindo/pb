@@ -14,7 +14,7 @@ import type { UiStrings } from '../content/strings'
 export interface LearnAnchorProps {
   disabled: boolean
   onClick(this: void): void
-  strings: UiStrings['anchors']
+  strings: UiStrings['practice']['topBar']
 }
 
 export function LearnAnchor({ disabled, onClick, strings }: LearnAnchorProps) {

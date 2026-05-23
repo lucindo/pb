@@ -18,7 +18,7 @@ export interface ResonantSettingsFormProps {
   isRunning: boolean
   onChange(this: void, settings: SessionSettings): void
   onExtendDuration(this: void, durationMinutes: number): void
-  strings: UiStrings['settingsForm']
+  strings: UiStrings['practice']['settingsForm']
 }
 
 export function ResonantSettingsForm({

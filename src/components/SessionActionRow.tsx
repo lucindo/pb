@@ -15,7 +15,7 @@ export interface SessionActionRowProps {
   primaryLabel: string
   onPrimaryClick(this: void): void
   audio: SessionAudioToggleProps
-  muteStrings: UiStrings['mute']
+  muteStrings: UiStrings['practice']['mute']
 }
 
 export function SessionActionRow({

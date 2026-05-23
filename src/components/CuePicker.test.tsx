@@ -32,7 +32,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
   // Test 1: aria-checked reflects the stored cue
   it('renders 3 radio buttons with aria-checked matching the seeded cue', () => {
     seedCue('arrow')
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(3)
     // Arrow button should be checked
@@ -48,7 +48,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
 
   // Test 2: renders section header with id="cue-picker-label"
   it('renders a section header <p id="cue-picker-label">Cue style</p> above the radiogroup', () => {
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const label = document.getElementById('cue-picker-label')
     expect(label).not.toBeNull()
     // Reason: label is asserted non-null on the line above; non-null assertion is invariant-safe.
@@ -58,14 +58,14 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
 
   // Test 3: no id collision with VariantPicker — cue-picker-label not variant-picker-label
   it('uses id="cue-picker-label" (NOT "variant-picker-label") to avoid DOM id collision', () => {
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     expect(document.getElementById('cue-picker-label')).not.toBeNull()
     expect(document.getElementById('variant-picker-label')).toBeNull()
   })
 
   // Test 4: aria-disabled + disabled attribute
   it('radiogroup has aria-disabled={disabled} and each button has native disabled={disabled}', () => {
-    render(<CuePicker disabled={true} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={true} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     expect(screen.getByRole('radiogroup')).toHaveAttribute('aria-disabled', 'true')
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
@@ -77,7 +77,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
   it('clicking an unselected button calls setCue — verified via savePrefs round-trip', async () => {
     seedCue('labels')
     const user = userEvent.setup()
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const arrowButton = screen.getByRole('radio', { name: /arrow/i })
     await user.click(arrowButton)
     const stored = window.localStorage.getItem(STATE_KEY)
@@ -92,7 +92,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
   it('clicking dispatches hrv:prefs-changed with { key: "cue", value: id }', async () => {
     seedCue('labels')
     const user = userEvent.setup()
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
     const arrowButton = screen.getByRole('radio', { name: /arrow/i })
@@ -108,7 +108,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
   it('when disabled=true, clicking does NOT write to disk and no CustomEvent fires', async () => {
     seedCue('labels')
     const user = userEvent.setup()
-    render(<CuePicker disabled={true} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={true} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
     const arrowButton = screen.getByRole('radio', { name: /arrow/i })
@@ -127,7 +127,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
   // Test 8: when disabled=true, selected option retains aria-checked="true"
   it('when disabled=true, the selected option button retains aria-checked="true" and is disabled', () => {
     seedCue('nose')
-    render(<CuePicker disabled={true} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={true} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const noseButton = screen.getByRole('radio', { name: /nose/i })
     expect(noseButton).toHaveAttribute('aria-checked', 'true')
     expect(noseButton).toBeDisabled()
@@ -135,7 +135,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
 
   // Test 9: each button contains a preview glyph (svg or span for labels mode)
   it('each button contains a preview CueGlyph element above the text label', () => {
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(3)
     // Each button should contain a child structure (glyph + label span)
@@ -147,7 +147,7 @@ describe('CuePicker — full radiogroup picker (Phase 25 Plan 04)', () => {
 
   // Test 10: radiogroup references cue-picker-label via aria-labelledby
   it('radiogroup has aria-labelledby="cue-picker-label"', () => {
-    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.cue} sectionLabel={EN_STRINGS_FIXTURE.settings.cueLabel} />)
+    render(<CuePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.cue} sectionLabel={EN_STRINGS_FIXTURE.appSettings.cueLabel} />)
     const radiogroup = screen.getByRole('radiogroup')
     expect(radiogroup).toHaveAttribute('aria-labelledby', 'cue-picker-label')
   })

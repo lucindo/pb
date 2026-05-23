@@ -38,13 +38,13 @@ describe('AppSettingsPage', () => {
 
   it('renders the back button with the locked Close aria-label', () => {
     renderPage()
-    expect(screen.getByRole('button', { name: UI_STRINGS.en.settings.close })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close })).toBeInTheDocument()
   })
 
   it('back button invokes onBack', async () => {
     const user = userEvent.setup()
     const { onBack } = renderPage()
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.settings.close }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
@@ -74,6 +74,6 @@ describe('AppSettingsPage', () => {
 
   it('focuses the back button on mount', () => {
     renderPage()
-    expect(screen.getByRole('button', { name: UI_STRINGS.en.settings.close })).toHaveFocus()
+    expect(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close })).toHaveFocus()
   })
 })

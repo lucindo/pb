@@ -34,7 +34,7 @@ State below is updated after every step transition.
 | F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | **implemented — awaiting operator approval** |
 | F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | **implemented — awaiting operator approval** |
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | **implemented — awaiting operator approval** |
-| F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | pending |
+| F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | **implemented — awaiting operator approval** |
 | F6 | `PracticeContext` provider replacing prop drilling of `vm` / `uiStrings` | pending |
 | G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
 
@@ -42,10 +42,80 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** F4 — `shapeConstants.ts` TS↔CSS drift guard
+**Item:** F5 — `UiStrings` surface-vocabulary rename (executed, not deferred)
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item F4)
+### Implementation summary (Item F5)
+
+Operator pushed back hard on my proposal to defer to a plan document: "go fix your mess once and for all, stop taking shortcuts". Executed the full rename in one commit.
+
+**New `UiStrings` structure (top-level keys reorganized by surface):**
+
+```
+UiStrings {
+  practice: {           // PracticeScreen surface (was scattered across 11 keys)
+    header, title       // (was app.*)
+    topBar: { ... }     // (was anchors.*)
+    switcher: { ... }   // (was practice.* — the OLD top-level practice was switcher labels)
+    controls: { ... }
+    breathing: { ... }
+    readout: { ... }
+    settingsForm: { ... }
+    nkControls: { ... }
+    nkReadout: { ... }
+    mute: { ... }
+    endSessionDialog: { ... }
+  }
+  appSettings: {        // AppSettingsPage surface (was scattered: settings + themes + cue + timbres)
+    title, close, themeLabel, cueLabel, timbreLabel, languageLabel
+    themes: { light, dark, system }
+    cue: { labels, arrow, nose }
+    timbres: { bowl, bell, sine, flute }
+  }
+  learn: { ... }        // LearnPage surface (unchanged)
+  install: { ... }      // cross-surface install copy (unchanged)
+}
+```
+
+**Implementation reality (long road, fully documented):**
+- First attempt used BSD `sed -E` with `\b` anchors. **`\b` is silently unsupported in BSD sed extended-regex mode** — none of those substitutions ran. Wasted a sed phase.
+- Second attempt used `perl -i -pe` with bare-namespace regexes (no anchor on the carrier object). **Over-applied**: `.settings` → `.appSettings` hit `navi.settings` (NaviKriyaSessionController), `.readout` → `.practice.readout` hit `presentation.readout` (BreathingPresentation), `.cue` → `.appSettings.cue` hit `shape.cue`, etc. Tens of false matches. Also some patterns double-applied because perl ran twice on certain phases.
+- Reset all `src/` via `git checkout --`, kept the new `strings.ts` interface, restarted with the right approach.
+- Third attempt used a **single perl script with `\K`-anchored carriers**: `(?:uiStrings|UI_STRINGS\.en|UI_STRINGS\['en'\]|UI_STRINGS\['pt-BR'\]|EN_STRINGS_FIXTURE)\K`. `\K` resets the match start so only the path-after-carrier is substituted. Plus a separate pass for `UI_STRINGS[locale]` (variable subscript). This worked.
+- 4 `Pick<UiStrings, 'settings' | 'themes' | 'cue' | 'timbres' | 'install'>` files manually updated to `Pick<UiStrings, 'appSettings' | 'install'>`, then their inner `strings.settings.X` / `strings.themes` accesses rewired to `strings.appSettings.X` etc.
+- `src/app/practiceCopy.ts` had `strings: UiStrings` (full type) so its 10 internal accesses needed manual edits.
+- 3 computed-key accesses in `src/content/strings.test.ts` (`UI_STRINGS[locale].practice[key]`) couldn't be regex-handled — fixed manually.
+
+**Files touched:** 69 files (sources + tests). New `src/content/strings.ts`. The bulk of the rename was mechanical (regex), the residual was surgical (4 Pick types + 1 practiceCopy + 3 computed-key tests).
+
+**Migration table:**
+| Old | New |
+|---|---|
+| `app.header` / `app.title` | `practice.header` / `practice.title` |
+| `controls.*` | `practice.controls.*` |
+| `endSessionDialog.*` | `practice.endSessionDialog.*` |
+| `mute.*` | `practice.mute.*` |
+| `readout.*` | `practice.readout.*` |
+| `anchors.*` | `practice.topBar.*` |
+| `breathing.*` | `practice.breathing.*` |
+| `settingsForm.*` | `practice.settingsForm.*` |
+| `nkReadout.*` / `nkControls.*` | `practice.nkReadout.*` / `practice.nkControls.*` |
+| `practice.<switcherKey>` | `practice.switcher.<switcherKey>` |
+| `settings.*` | `appSettings.*` |
+| `themes.*` / `cue.*` / `timbres.*` | `appSettings.themes.*` / `appSettings.cue.*` / `appSettings.timbres.*` |
+| `learn.*` / `install.*` | unchanged |
+
+**Lesson learned (for future similar refactors):** when running regex-based renames across a codebase, **anchor on the carrier object**, never on bare namespace names. Bare-name regexes are catastrophic on a codebase where the same property name (`settings`, `controls`, `readout`, `cue`) appears on multiple unrelated objects.
+
+**Verification:**
+- `tsc --noEmit` (with explicit `-p tsconfig.app.json`): clean
+- `lint`: clean
+- Full suite: **102 files / 1173 tests pass** (unchanged from F4 — pure refactor, no test count delta)
+- `npm run build`: clean
+
+**Commit message:** `refactor(strings): reorganize UiStrings top-level keys by surface (practice/appSettings/learn/install)`
+
+### Archived — Implementation summary (Item F4)
 
 Operator chose **option A (test guard)** with the explicit constraint: the test must not become an obstacle to future orb redesign. Test is value-agnostic — asserts EQUALITY between TS and CSS, not specific numeric values.
 
@@ -356,7 +426,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | F1 | `1e98038` | CueGlyph inline style → className for token colors. Surfaced + removed a dead static class. |
 | F2 | `94958e8` | Deleted 9 component-level EndSessionDialog tests from App.dialog.test.tsx (covered by EndSessionDialog.test.tsx). Test count 1179 → 1170. |
 | F3 | `ac691e3` | Created `src/domain/index.ts` barrel; routed 37 presentation files through `../domain` and `../storage` barrels (sed pass) then consolidated 12 files with duplicate import lines (manual pass). Operator chose "bigger play" over minimal storage-only migration. |
-| F4 | (this commit) | Added shapeConstants.test.ts drift guard between TS exports and `--orb-scale-*` CSS tokens. Value-agnostic equality assertions; explicit "delete-together if orb redesigned" contract in header comment per operator constraint. |
+| F4 | `3926b77` | Added shapeConstants.test.ts drift guard between TS exports and `--orb-scale-*` CSS tokens. Value-agnostic equality assertions; explicit "delete-together if orb redesigned" contract in header comment per operator constraint. |
+| F5 | (this commit) | UiStrings top-level keys reorganized by surface: `practice.*` / `appSettings.*` / `learn.*` / `install.*`. ~69 files touched. Mechanically applied via carrier-anchored perl (\K resets match start); 4 Pick<UiStrings> types + practiceCopy + 3 computed-key tests handled manually. |
 
 ---
 

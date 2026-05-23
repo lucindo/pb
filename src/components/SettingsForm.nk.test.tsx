@@ -13,8 +13,8 @@ import {
   type NaviKriyaSettings,
 } from '../domain'
 
-const EN = UI_STRINGS.en.settingsForm
-const NK = UI_STRINGS.en.nkControls
+const EN = UI_STRINGS.en.practice.settingsForm
+const NK = UI_STRINGS.en.practice.nkControls
 
 // Stateful harness — the duration estimate and stepper values are derived from
 // the nkSettings prop, so changes must flow through a real state holder for the

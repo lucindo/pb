@@ -9,9 +9,9 @@ import type { NaviKriyaPresentation } from './sessionPresentation'
 
 export interface NaviKriyaSessionSurfaceProps {
   presentation: NaviKriyaPresentation
-  breathingStrings: UiStrings['breathing']
-  readoutStrings: UiStrings['readout']
-  nkReadoutStrings: UiStrings['nkReadout']
+  breathingStrings: UiStrings['practice']['breathing']
+  readoutStrings: UiStrings['practice']['readout']
+  nkReadoutStrings: UiStrings['practice']['nkReadout']
 }
 
 export function NaviKriyaSessionSurface({

@@ -18,7 +18,7 @@ import {
 } from '../domain'
 import type { PracticeId } from '../storage'
 
-const EN = UI_STRINGS.en.settingsForm
+const EN = UI_STRINGS.en.practice.settingsForm
 
 interface RenderFormOverrides {
   activePractice?: PracticeId
@@ -65,7 +65,7 @@ function renderForm(overrides: RenderFormOverrides = {}) {
         strings={overrides.strings ?? EN}
         settings={overrides.nkSettings ?? DEFAULT_NK_SETTINGS}
         onChange={overrides.onNKSettingsChange ?? onNKSettingsChange}
-        nkControlsStrings={UI_STRINGS.en.nkControls}
+        nkControlsStrings={UI_STRINGS.en.practice.nkControls}
       />,
     )
   }
@@ -245,7 +245,7 @@ describe('Practice settings forms stay isolated by practice', () => {
   it('NaviKriyaSettingsForm renders the real NK controls and no inline practice heading', () => {
     renderForm({ activePractice: 'naviKriya' })
     expect(
-      screen.getByRole('group', { name: UI_STRINGS.en.nkControls.roundsLabel }),
+      screen.getByRole('group', { name: UI_STRINGS.en.practice.nkControls.roundsLabel }),
     ).toBeInTheDocument()
     // The practice is named in the app header/title, not by an inline heading.
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()

@@ -476,7 +476,7 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     // aria-live region should announce the transition. There are multiple
     // role="status" nodes in the tree (SessionReadout also has one); find ours
     // by its unique text content.
-    expect(screen.getByText(UI_STRINGS.en.mute.audioPausedAnnouncement)).toBeInTheDocument()
+    expect(screen.getByText(UI_STRINGS.en.practice.mute.audioPausedAnnouncement)).toBeInTheDocument()
     tracker.restore()
   })
 

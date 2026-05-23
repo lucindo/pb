@@ -7,7 +7,7 @@ import { CueGlyph } from './CueGlyph'
 export interface OrbShapeProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
-  strings: UiStrings['breathing']
+  strings: UiStrings['practice']['breathing']
   // Phase 25 Plan 03: OPTIONAL, default 'labels' — zero-regression for callers
   // that pre-date Phase 25. OrbLeadIn does NOT receive cue (D-07).
   cue?: CueStyleId
@@ -35,7 +35,7 @@ export function OrbShape({ frame, leadInDigit, strings, cue = 'labels', nkPhase 
   return <OrbBody frame={frame} strings={strings} cue={cue} />
 }
 
-function OrbBody({ frame, strings, cue }: { frame: SessionFrame; strings: UiStrings['breathing']; cue: CueStyleId }) {
+function OrbBody({ frame, strings, cue }: { frame: SessionFrame; strings: UiStrings['practice']['breathing']; cue: CueStyleId }) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -162,7 +162,7 @@ function OrbLeadIn({
   nkPhase,
 }: {
   digit: 1 | 2 | 3 | null
-  strings: UiStrings['breathing']
+  strings: UiStrings['practice']['breathing']
   nkPhase?: 'front' | 'back'
 }) {
   const labelProps =

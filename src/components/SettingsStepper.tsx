@@ -11,7 +11,7 @@ export interface SettingsStepperProps<T extends string | number> {
   disableIncrease?: boolean
   /** When true, render only the value (no +/- buttons) — a read-only display field. */
   readOnly?: boolean
-  strings: UiStrings['settingsForm']['stepper']
+  strings: UiStrings['practice']['settingsForm']['stepper']
 }
 
 export function SettingsStepper<T extends string | number>({

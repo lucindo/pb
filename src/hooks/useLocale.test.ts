@@ -33,7 +33,7 @@ describe('useLocale', () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     const { result } = renderHook(() => useLocale())
     expect(result.current.locale).toBe('en')
-    expect(result.current.uiStrings.controls.startSession.length).toBeGreaterThan(0)
+    expect(result.current.uiStrings.practice.controls.startSession.length).toBeGreaterThan(0)
   })
 
   it('writes document.documentElement.lang on mount (apply effect)', () => {

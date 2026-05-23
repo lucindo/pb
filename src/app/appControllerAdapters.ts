@@ -163,7 +163,7 @@ export function createPracticeControlsViewModelFromControllers({
 }: {
   activePractice: PracticeId
   actions: PracticePrimaryActions
-  strings: UiStrings['controls']
+  strings: UiStrings['practice']['controls']
   audio: AppAudioViewModel
   naviAudio: AppAudioToggleViewModel
   onBreathingPrimaryClick(this: void): void

@@ -20,9 +20,9 @@ export function PracticeSessionView({
     return (
       <NaviKriyaSessionSurface
         presentation={session.presentation}
-        breathingStrings={uiStrings.breathing}
-        readoutStrings={uiStrings.readout}
-        nkReadoutStrings={uiStrings.nkReadout}
+        breathingStrings={uiStrings.practice.breathing}
+        readoutStrings={uiStrings.practice.readout}
+        nkReadoutStrings={uiStrings.practice.nkReadout}
       />
     )
   }
@@ -30,8 +30,8 @@ export function PracticeSessionView({
   return (
     <BreathingSessionSurface
       presentation={session.presentation}
-      breathingStrings={uiStrings.breathing}
-      readoutStrings={uiStrings.readout}
+      breathingStrings={uiStrings.practice.breathing}
+      readoutStrings={uiStrings.practice.readout}
     />
   )
 }

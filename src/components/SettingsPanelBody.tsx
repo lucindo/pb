@@ -15,7 +15,7 @@ import { TimbrePicker } from './TimbrePicker'
 
 export interface SettingsPanelBodyProps {
   inSessionView: boolean
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'cue' | 'timbres' | 'install'>
+  strings: Pick<UiStrings, 'appSettings' | 'install'>
   isIOS: boolean
   isStandalone: boolean
   installable: boolean
@@ -80,10 +80,10 @@ export function SettingsPanelBody({
 }: SettingsPanelBodyProps): ReactElement {
   return (
     <div className="grid gap-5">
-      <ThemePicker disabled={inSessionView} strings={strings.themes} sectionLabel={strings.settings.themeLabel} />
-      <CuePicker disabled={inSessionView} strings={strings.cue} sectionLabel={strings.settings.cueLabel} />
-      <TimbrePicker disabled={inSessionView} strings={strings.timbres} sectionLabel={strings.settings.timbreLabel} />
-      <LanguagePicker disabled={inSessionView} sectionLabel={strings.settings.languageLabel} />
+      <ThemePicker disabled={inSessionView} strings={strings.appSettings.themes} sectionLabel={strings.appSettings.themeLabel} />
+      <CuePicker disabled={inSessionView} strings={strings.appSettings.cue} sectionLabel={strings.appSettings.cueLabel} />
+      <TimbrePicker disabled={inSessionView} strings={strings.appSettings.timbres} sectionLabel={strings.appSettings.timbreLabel} />
+      <LanguagePicker disabled={inSessionView} sectionLabel={strings.appSettings.languageLabel} />
       {installable && !isStandalone && (
         <SettingsInstallSection
           inSessionView={inSessionView}

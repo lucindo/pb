@@ -5,14 +5,14 @@ import { describe, expect, it } from 'vitest'
 import { NKShape, type NKShapeProps } from './NKShape'
 import { UI_STRINGS } from '../content/strings'
 
-const EN_STRINGS = UI_STRINGS.en.breathing
+const EN_STRINGS = UI_STRINGS.en.practice.breathing
 
 function renderShape(overrides: Partial<NKShapeProps> = {}) {
   const defaults: NKShapeProps = {
     count: 1,
     phase: 'front',
     strings: EN_STRINGS,
-    nkReadoutStrings: UI_STRINGS.en.nkReadout,
+    nkReadoutStrings: UI_STRINGS.en.practice.nkReadout,
   }
   return render(<NKShape {...defaults} {...overrides} />)
 }
@@ -32,7 +32,7 @@ describe('NKShape', () => {
     const { container } = renderShape({ count: 12, phase: 'front' })
     const root = container.querySelector('[role="img"]')
     expect(root?.getAttribute('aria-label')).toBe(
-      `Navi Kriya session: OM 12, phase ${UI_STRINGS.en.nkReadout.front}`,
+      `Navi Kriya session: OM 12, phase ${UI_STRINGS.en.practice.nkReadout.front}`,
     )
   })
 
@@ -40,7 +40,7 @@ describe('NKShape', () => {
     const { container } = renderShape({ count: 3, phase: 'back' })
     const root = container.querySelector('[role="img"]')
     expect(root?.getAttribute('aria-label')).toBe(
-      `Navi Kriya session: OM 3, phase ${UI_STRINGS.en.nkReadout.back}`,
+      `Navi Kriya session: OM 3, phase ${UI_STRINGS.en.practice.nkReadout.back}`,
     )
   })
 })

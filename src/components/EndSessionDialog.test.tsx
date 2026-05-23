@@ -18,7 +18,7 @@ function renderDialog(
       open={props.open ?? false}
       onConfirm={onConfirm}
       onCancel={onCancel}
-      strings={EN_STRINGS_FIXTURE.endSessionDialog}
+      strings={EN_STRINGS_FIXTURE.practice.endSessionDialog}
     />,
   )
   return { ...utils, onConfirm, onCancel }
@@ -94,7 +94,7 @@ describe('EndSessionDialog — optional body slot (D-12 NK completion summary)',
         open
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
-        strings={EN_STRINGS_FIXTURE.endSessionDialog}
+        strings={EN_STRINGS_FIXTURE.practice.endSessionDialog}
         body={<p>3 rounds complete</p>}
       />,
     )
@@ -120,7 +120,7 @@ describe('EndSessionDialog — open->close transition', () => {
         open={false}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
-        strings={EN_STRINGS_FIXTURE.endSessionDialog}
+        strings={EN_STRINGS_FIXTURE.practice.endSessionDialog}
       />,
     )
     expect(dialog.open).toBe(false)

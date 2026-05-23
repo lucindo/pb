@@ -16,7 +16,7 @@ function renderToggle(props: Partial<MuteToggleProps> = {}) {
       audioAvailable={props.audioAvailable ?? true}
       needsResume={props.needsResume}
       resumeHintId={props.resumeHintId ?? 'mute-toggle-resume-hint'}
-      strings={props.strings ?? EN_STRINGS_FIXTURE.mute}
+      strings={props.strings ?? EN_STRINGS_FIXTURE.practice.mute}
       onToggle={onToggle}
     />,
   )
@@ -69,7 +69,7 @@ describe('MuteToggle', () => {
 
   it('renders a speaker SVG when muted=false (3 path elements) and a speaker-with-slash SVG when muted=true (2 line elements)', () => {
     const { container: containerOn, unmount: unmountOn } = render(
-      <MuteToggle muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.mute} onToggle={vi.fn()} />,
+      <MuteToggle muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.practice.mute} onToggle={vi.fn()} />,
     )
     const svgOn = containerOn.querySelector('svg')
     expect(svgOn).not.toBeNull()
@@ -77,7 +77,7 @@ describe('MuteToggle', () => {
     unmountOn()
 
     const { container: containerOff } = render(
-      <MuteToggle muted={true} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.mute} onToggle={vi.fn()} />,
+      <MuteToggle muted={true} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.practice.mute} onToggle={vi.fn()} />,
     )
     const svgOff = containerOff.querySelector('svg')
     expect(svgOff).not.toBeNull()
@@ -93,7 +93,7 @@ describe('MuteToggle', () => {
 
   it('renders a refresh-arrow ResumeIcon (1 path + 1 polyline) when needsResume=true', () => {
     const { container } = render(
-      <MuteToggle needsResume={true} muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.mute} onToggle={vi.fn()} />,
+      <MuteToggle needsResume={true} muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.practice.mute} onToggle={vi.fn()} />,
     )
     const svg = container.querySelector('svg')
     expect(svg).not.toBeNull()

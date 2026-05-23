@@ -22,7 +22,7 @@ export interface StretchSettingsFormProps {
   isRunning: boolean
   settings: StretchSettings
   onChange(this: void, settings: StretchSettings): void
-  strings: UiStrings['settingsForm']
+  strings: UiStrings['practice']['settingsForm']
 }
 
 function ignoreReadOnlyDurationChange(): void {}

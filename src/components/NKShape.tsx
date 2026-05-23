@@ -16,9 +16,9 @@ export interface NKShapeProps {
   count: number                 // live OM count (0 during settle)
   phase: 'front' | 'back'       // WR-01: real NK phase, drives the aria-label
   isPaused?: boolean            // dims count to opacity-50 when true
-  strings: UiStrings['breathing']
+  strings: UiStrings['practice']['breathing']
   // WR-01: NK phase copy ('Front' / 'Back') for the screen-reader label.
-  nkReadoutStrings: UiStrings['nkReadout']
+  nkReadoutStrings: UiStrings['practice']['nkReadout']
 }
 
 export function NKShape({

@@ -12,7 +12,7 @@ import { SettingsPanelBody } from './SettingsPanelBody'
 export interface SettingsPanelProps {
   titleId: string
   inSessionView: boolean
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'cue' | 'timbres' | 'install'>
+  strings: Pick<UiStrings, 'appSettings' | 'install'>
   isIOS: boolean
   isStandalone: boolean
   installable: boolean
@@ -33,7 +33,7 @@ export function SettingsPanel({
   return (
     <div className="grid gap-5 p-6 sm:p-7">
       <h2 id={titleId} className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]">
-        {strings.settings.title}
+        {strings.appSettings.title}
       </h2>
       <SettingsPanelBody
         inSessionView={inSessionView}
@@ -49,7 +49,7 @@ export function SettingsPanel({
           onClick={onClose}
           className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
         >
-          {strings.settings.close}
+          {strings.appSettings.close}
         </button>
       </div>
     </div>

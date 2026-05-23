@@ -282,7 +282,7 @@ export interface CreatePracticeControlsViewModelArgs {
   activePractice: PracticeId
   breathingAction: SessionPrimaryAction
   naviAction: SessionPrimaryAction
-  strings: UiStrings['controls']
+  strings: UiStrings['practice']['controls']
   breathingAudio: AppAudioToggleViewModel
   naviAudio: AppAudioToggleViewModel
   onBreathingPrimaryClick(this: void): void

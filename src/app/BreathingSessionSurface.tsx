@@ -7,8 +7,8 @@ import type { BreathingPresentation } from './sessionPresentation'
 
 export interface BreathingSessionSurfaceProps {
   presentation: BreathingPresentation
-  breathingStrings: UiStrings['breathing']
-  readoutStrings: UiStrings['readout']
+  breathingStrings: UiStrings['practice']['breathing']
+  readoutStrings: UiStrings['practice']['readout']
 }
 
 export function BreathingSessionSurface({

@@ -5,7 +5,7 @@ import { PickerCardGrid } from './primitives/PickerCardGrid'
 
 export interface ThemePickerProps {
   disabled: boolean
-  strings: UiStrings['themes']
+  strings: UiStrings['appSettings']['themes']
   sectionLabel: string
 }
 

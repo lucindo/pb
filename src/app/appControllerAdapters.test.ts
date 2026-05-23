@@ -188,14 +188,14 @@ describe('app controller adapters', () => {
     const controls = createPracticeControlsViewModelFromControllers({
       activePractice: 'naviKriya',
       actions: { breathing: 'end', naviKriya: 'start' },
-      strings: UI_STRINGS.en.controls,
+      strings: UI_STRINGS.en.practice.controls,
       audio: audio.audio,
       naviAudio: audio.naviAudio,
       onBreathingPrimaryClick,
       onNaviPrimaryClick,
     })
 
-    expect(controls.primaryLabel).toBe(UI_STRINGS.en.controls.startSession)
+    expect(controls.primaryLabel).toBe(UI_STRINGS.en.practice.controls.startSession)
     expect(controls.onPrimaryClick).toBe(onNaviPrimaryClick)
     expect(controls.audio).toBe(audio.naviAudio)
   })

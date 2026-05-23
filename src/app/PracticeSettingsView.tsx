@@ -26,7 +26,7 @@ export function PracticeSettingsView({
         isRunning={settings.isRunning}
         onChange={settings.onChange}
         onExtendDuration={settings.onExtendDuration}
-        strings={uiStrings.settingsForm}
+        strings={uiStrings.practice.settingsForm}
       />
     )
   }
@@ -35,7 +35,7 @@ export function PracticeSettingsView({
     return (
       <StretchSettingsForm
         isRunning={settings.isRunning}
-        strings={uiStrings.settingsForm}
+        strings={uiStrings.practice.settingsForm}
         settings={settings.settings}
         onChange={settings.onChange}
       />
@@ -44,10 +44,10 @@ export function PracticeSettingsView({
 
   return (
     <NaviKriyaSettingsForm
-      strings={uiStrings.settingsForm}
+      strings={uiStrings.practice.settingsForm}
       settings={settings.settings}
       onChange={settings.onChange}
-      nkControlsStrings={uiStrings.nkControls}
+      nkControlsStrings={uiStrings.practice.nkControls}
     />
   )
 }

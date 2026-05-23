@@ -4,22 +4,22 @@ import type { PracticeId } from '../storage'
 export function getPracticeHeader(activePractice: PracticeId, strings: UiStrings): string {
   switch (activePractice) {
     case 'resonant':
-      return strings.app.header
+      return strings.practice.header
     case 'stretch':
-      return strings.practice.stretchHeader
+      return strings.practice.switcher.stretchHeader
     case 'naviKriya':
-      return strings.practice.naviKriyaHeader
+      return strings.practice.switcher.naviKriyaHeader
   }
 }
 
 export function getPracticeTitle(activePractice: PracticeId, strings: UiStrings): string {
   switch (activePractice) {
     case 'resonant':
-      return strings.app.title
+      return strings.practice.title
     case 'stretch':
-      return strings.practice.stretchHeading
+      return strings.practice.switcher.stretchHeading
     case 'naviKriya':
-      return strings.practice.naviKriyaHeading
+      return strings.practice.switcher.naviKriyaHeading
   }
 }
 
@@ -28,11 +28,11 @@ export function getPracticeToggleStrings(strings: UiStrings): {
   practiceNames: Record<PracticeId, string>
 } {
   return {
-    toggleLabel: strings.practice.toggleLabel,
+    toggleLabel: strings.practice.switcher.toggleLabel,
     practiceNames: {
-      resonant: strings.practice.resonantName,
-      stretch: strings.practice.stretchName,
-      naviKriya: strings.practice.naviKriyaName,
+      resonant: strings.practice.switcher.resonantName,
+      stretch: strings.practice.switcher.stretchName,
+      naviKriya: strings.practice.switcher.naviKriyaName,
     },
   }
 }

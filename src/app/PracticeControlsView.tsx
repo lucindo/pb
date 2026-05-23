@@ -24,11 +24,11 @@ export function PracticeControlsView({
         primaryLabel={controls.primaryLabel}
         onPrimaryClick={controls.onPrimaryClick}
         audio={controls.audio}
-        muteStrings={uiStrings.mute}
+        muteStrings={uiStrings.practice.mute}
       />
       <AudioResumeAnnouncement
         audio={audio}
-        announcement={uiStrings.mute.audioPausedAnnouncement}
+        announcement={uiStrings.practice.mute.audioPausedAnnouncement}
       />
     </>
   )

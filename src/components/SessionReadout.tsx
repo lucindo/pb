@@ -8,7 +8,7 @@ import type { UiStrings } from '../content/strings'
 import { StatusPanel } from './StatusPanel'
 
 // Exhaustive stage→label map — a new StretchStage without a case is a compile error.
-function stageText(stage: StretchStage, strings: UiStrings['readout']): string {
+function stageText(stage: StretchStage, strings: UiStrings['practice']['readout']): string {
   switch (stage) {
     case 'hold-initial':
       return strings.stageHoldInitial
@@ -46,7 +46,7 @@ function StretchRow({
   frame: SessionFrame
   timeLabel: string
   timeValue: string
-  strings: UiStrings['readout']
+  strings: UiStrings['practice']['readout']
 }) {
   return (
     <div
@@ -83,7 +83,7 @@ function StretchRow({
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null
-  strings: UiStrings['readout']
+  strings: UiStrings['practice']['readout']
 }
 
 export interface LeadInSessionReadoutProps extends SessionReadoutProps {

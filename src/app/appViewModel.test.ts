@@ -214,14 +214,14 @@ describe('app practice controls view model', () => {
       activePractice: 'resonant',
       breathingAction: 'end',
       naviAction: 'cancel',
-      strings: UI_STRINGS.en.controls,
+      strings: UI_STRINGS.en.practice.controls,
       breathingAudio,
       naviAudio,
       onBreathingPrimaryClick,
       onNaviPrimaryClick,
     })
 
-    expect(controls.primaryLabel).toBe(UI_STRINGS.en.controls.endSession)
+    expect(controls.primaryLabel).toBe(UI_STRINGS.en.practice.controls.endSession)
     expect(controls.onPrimaryClick).toBe(onBreathingPrimaryClick)
     expect(controls.audio).toBe(breathingAudio)
   })
@@ -245,14 +245,14 @@ describe('app practice controls view model', () => {
       activePractice: 'naviKriya',
       breathingAction: 'end',
       naviAction: 'cancel',
-      strings: UI_STRINGS.en.controls,
+      strings: UI_STRINGS.en.practice.controls,
       breathingAudio,
       naviAudio,
       onBreathingPrimaryClick,
       onNaviPrimaryClick,
     })
 
-    expect(controls.primaryLabel).toBe(UI_STRINGS.en.controls.cancel)
+    expect(controls.primaryLabel).toBe(UI_STRINGS.en.practice.controls.cancel)
     expect(controls.onPrimaryClick).toBe(onNaviPrimaryClick)
     expect(controls.audio).toBe(naviAudio)
   })

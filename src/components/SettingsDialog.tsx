@@ -10,7 +10,7 @@ export interface SettingsDialogProps {
   open: boolean
   onClose(this: void): void
   inSessionView: boolean
-  strings: Pick<UiStrings, 'settings' | 'themes' | 'cue' | 'timbres' | 'install'>
+  strings: Pick<UiStrings, 'appSettings' | 'install'>
   isIOS: boolean
   isStandalone: boolean
   installable: boolean

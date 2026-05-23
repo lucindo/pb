@@ -133,7 +133,7 @@ export function useAppViewModel(): AppViewModel {
   const practiceControls = createPracticeControlsViewModelFromControllers({
     activePractice,
     actions: primaryActions,
-    strings: uiStrings.controls,
+    strings: uiStrings.practice.controls,
     audio,
     naviAudio,
     onBreathingPrimaryClick,

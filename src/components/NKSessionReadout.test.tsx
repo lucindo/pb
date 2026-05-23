@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { NKSessionReadout, type NKSessionReadoutProps } from './NKSessionReadout'
 import { UI_STRINGS } from '../content/strings'
 
-const EN_STRINGS = UI_STRINGS.en.nkReadout
+const EN_STRINGS = UI_STRINGS.en.practice.nkReadout
 
 function renderReadout(overrides: Partial<NKSessionReadoutProps> = {}) {
   const defaults: NKSessionReadoutProps = {

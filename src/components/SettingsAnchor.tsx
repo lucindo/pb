@@ -13,7 +13,7 @@ import type { UiStrings } from '../content/strings'
 export interface SettingsAnchorProps {
   disabled: boolean
   onClick(this: void): void
-  strings: UiStrings['anchors']
+  strings: UiStrings['practice']['topBar']
 }
 
 export function SettingsAnchor({ disabled, onClick, strings }: SettingsAnchorProps) {

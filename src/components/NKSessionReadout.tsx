@@ -13,7 +13,7 @@ export interface NKSessionReadoutProps {
   totalRounds: number
   count: number           // live OM count for the current phase (0 during lead-in)
   target: number          // target OM count for the current phase
-  strings: UiStrings['nkReadout']
+  strings: UiStrings['practice']['nkReadout']
 }
 
 export function NKSessionReadout({ phase, round, totalRounds, count, target, strings }: NKSessionReadoutProps) {

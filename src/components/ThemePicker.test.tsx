@@ -30,12 +30,12 @@ afterEach(() => {
 
 describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
   it('renders the "Theme" section label', () => {
-    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     expect(screen.getByText('Theme')).toBeInTheDocument()
   })
 
   it('renders all 3 options as radio buttons with correct labels in order', () => {
-    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(3)
     const labels = Array.from(radios).map((b) => b.textContent)
@@ -44,7 +44,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
 
   it('aria-checked reflects the stored theme — seeded theme has aria-checked=true, others false', () => {
     seedTheme('dark')
-    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const radios = screen.getAllByRole('radio')
     // Find the Dark button (index 1 in order: light, dark, system)
     const darkButton = radios.find((b) => b.textContent === 'Dark')
@@ -58,7 +58,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
   it('clicking an option writes the new theme to disk (savePrefs via useThemeChoice)', async () => {
     seedTheme('light')
     const user = userEvent.setup()
-    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const systemButton = screen.getByRole('radio', { name: 'System' })
     await user.click(systemButton)
     const stored = window.localStorage.getItem(STATE_KEY)
@@ -72,7 +72,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
   it('clicking an option dispatches hrv:prefs-changed with { key: "theme", value: id }', async () => {
     seedTheme('light')
     const user = userEvent.setup()
-    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const spy = vi.fn()
     window.addEventListener('hrv:prefs-changed', spy)
     const darkButton = screen.getByRole('radio', { name: 'Dark' })
@@ -85,7 +85,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
   })
 
   it('when disabled=true, all 3 buttons have the disabled attribute and radiogroup has aria-disabled=true', () => {
-    render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const radios = screen.getAllByRole('radio')
     for (const button of radios) {
       expect(button).toBeDisabled()
@@ -96,7 +96,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
   it('when disabled=true, clicking a button does NOT write to disk', async () => {
     seedTheme('light')
     const user = userEvent.setup()
-    render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const darkButton = screen.getByRole('radio', { name: 'Dark' })
     await user.click(darkButton)
     const stored = window.localStorage.getItem(STATE_KEY)
@@ -110,7 +110,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
 
   it('selected option retains its aria-checked highlight even when disabled=true', () => {
     seedTheme('system')
-    render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.themes} sectionLabel={EN_STRINGS_FIXTURE.settings.themeLabel} />)
+    render(<ThemePicker disabled={true} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const systemButton = screen.getByRole('radio', { name: 'System' })
     expect(systemButton).toHaveAttribute('aria-checked', 'true')
     expect(systemButton).toBeDisabled()

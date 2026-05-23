@@ -43,11 +43,11 @@ interface RenderReadoutProps {
   frame?: SessionFrame | null
   status?: 'idle' | 'running' | 'complete'
   showCompletionHeadline?: boolean
-  strings?: UiStrings['readout']
+  strings?: UiStrings['practice']['readout']
 }
 
 function renderReadout(props: RenderReadoutProps = {}) {
-  const strings = props.strings ?? EN_STRINGS_FIXTURE.readout
+  const strings = props.strings ?? EN_STRINGS_FIXTURE.practice.readout
   const frame = props.frame ?? null
 
   if (props.mode === 'lead-in') {
@@ -82,7 +82,7 @@ describe('SessionReadout', () => {
     renderReadout({ mode: 'lead-in', frame: sampleFrame })
     expect(screen.getByText('Remaining')).toBeInTheDocument()
     expect(screen.getByText('10:00')).toBeInTheDocument()
-    expect(screen.queryByText(EN_STRINGS_FIXTURE.readout.sessionComplete)).not.toBeInTheDocument()
+    expect(screen.queryByText(EN_STRINGS_FIXTURE.practice.readout.sessionComplete)).not.toBeInTheDocument()
   })
 
   it('session mode with status "complete" and a non-null frame renders translated headline and hides chip', () => {
@@ -91,7 +91,7 @@ describe('SessionReadout', () => {
       status: 'complete',
       showCompletionHeadline: true,
     })
-    expect(screen.getByText(EN_STRINGS_FIXTURE.readout.sessionComplete)).toBeInTheDocument()
+    expect(screen.getByText(EN_STRINGS_FIXTURE.practice.readout.sessionComplete)).toBeInTheDocument()
     expect(screen.queryByText('Remaining')).not.toBeInTheDocument()
   })
 

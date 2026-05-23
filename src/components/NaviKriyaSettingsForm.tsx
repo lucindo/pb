@@ -16,8 +16,8 @@ import { SettingsStepper } from './SettingsStepper'
 export interface NaviKriyaSettingsFormProps {
   settings: NaviKriyaSettings
   onChange(this: void, settings: NaviKriyaSettings): void
-  strings: UiStrings['settingsForm']
-  nkControlsStrings: UiStrings['nkControls']
+  strings: UiStrings['practice']['settingsForm']
+  nkControlsStrings: UiStrings['practice']['nkControls']
 }
 
 export function NaviKriyaSettingsForm({

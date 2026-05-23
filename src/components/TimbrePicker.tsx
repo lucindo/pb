@@ -6,7 +6,7 @@ import { PickerCardGrid } from './primitives/PickerCardGrid'
 
 export interface TimbrePickerProps {
   disabled: boolean
-  strings: UiStrings['timbres']
+  strings: UiStrings['appSettings']['timbres']
   sectionLabel: string
 }
 

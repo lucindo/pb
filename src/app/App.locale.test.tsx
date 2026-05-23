@@ -73,7 +73,7 @@ describe('App locale switching (Phase 19)', () => {
     // Navigate to the Settings page via the gear anchor (aria-label = EN 'Settings').
     // Post Item-D refactor: this routes to AppSettingsPage (full-page surface) instead
     // of opening a modal SettingsDialog.
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.anchors.settings }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }))
 
     // Find PT-BR radio button (native endonym — always 'Português (Brasil)' regardless of UI locale)
     const ptBrButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
@@ -86,11 +86,11 @@ describe('App locale switching (Phase 19)', () => {
     // newly-active PT-BR locale's settings.close string). The Start-session button
     // is only mounted on the practice surface, so we have to return there to
     // assert the locale propagated across surfaces.
-    await user.click(screen.getByRole('button', { name: UI_STRINGS['pt-BR'].settings.close }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS['pt-BR'].appSettings.close }))
 
     // At least one PT-BR idle-state string must be rendered: the Start-session button
     expect(
-      screen.getByRole('button', { name: UI_STRINGS['pt-BR'].controls.startSession }),
+      screen.getByRole('button', { name: UI_STRINGS['pt-BR'].practice.controls.startSession }),
     ).toBeInTheDocument()
   })
 
@@ -132,21 +132,21 @@ describe('App locale switching (Phase 19)', () => {
 
     // Pre-session idle: confirm SettingsAnchor shows the active label
     expect(
-      screen.getByRole('button', { name: UI_STRINGS.en.anchors.settings }),
+      screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }),
     ).toBeInTheDocument()
 
     // Open SettingsDialog and verify LanguagePicker buttons are ENABLED
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.anchors.settings }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }))
     const enButton = screen.getByRole('radio', { name: 'English' })
     const ptBrButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     expect(enButton).not.toBeDisabled()
     expect(ptBrButton).not.toBeDisabled()
 
     // Close the dialog
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.settings.close }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close }))
 
     // Start a session (click Start — onStartClick is async; flush one microtask tick)
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.controls.startSession }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.practice.controls.startSession }))
     await act(async () => {
       await Promise.resolve()
     })
@@ -155,10 +155,10 @@ describe('App locale switching (Phase 19)', () => {
     // label variant (Phase 15 D-08: disabled={inSessionView}).
     // The disabled gear anchor MUST be present and the active-label variant MUST be absent.
     expect(
-      screen.getByRole('button', { name: UI_STRINGS.en.anchors.settingsDisabled }),
+      screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settingsDisabled }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: UI_STRINGS.en.anchors.settings }),
+      screen.queryByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }),
     ).not.toBeInTheDocument()
   })
 })

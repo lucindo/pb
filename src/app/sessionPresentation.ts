@@ -164,7 +164,7 @@ export type SessionPrimaryAction = BreathingPrimaryAction | NaviKriyaPrimaryActi
 
 export function getSessionPrimaryActionLabel(
   action: SessionPrimaryAction,
-  strings: UiStrings['controls'],
+  strings: UiStrings['practice']['controls'],
 ): string {
   switch (action) {
     case 'cancel':

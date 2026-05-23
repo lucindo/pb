@@ -6,7 +6,7 @@ import { PickerCardGrid } from './primitives/PickerCardGrid'
 
 export interface CuePickerProps {
   disabled: boolean
-  strings: UiStrings['cue']
+  strings: UiStrings['appSettings']['cue']
   sectionLabel: string
 }
 
