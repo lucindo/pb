@@ -28,8 +28,8 @@ State below is updated after every step transition.
 | A | Theme tokens: elevation + scrim + destructive. Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | ✓ done — commit `0c1d372` |
 | B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | ✓ done — commit `c0bfe60` |
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | ✓ done — commit `88305ea` |
-| D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | **implemented — awaiting operator approval** |
-| E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | pending |
+| D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | ✓ done — commit `039caeb` |
+| E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | **implemented — awaiting operator approval** |
 | F | Cleanup pass: `shapeConstants.ts` single-source-of-truth (TS↔CSS), `PracticeContext` provider replacing prop drilling, `UiStrings` surface-vocabulary rename plan, App.*.test.tsx vs. unit-test overlap audit, `CueGlyph` inline-style → className, presentation-safe type re-exports. | pending |
 | G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
 
@@ -37,8 +37,51 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** D — Surface routing (`appScreen` + `ScreenRouter`); Learn/Settings become pages
+**Item:** E — Unified `PickerCardGrid<T>` primitive
 **Step:** 4 (implemented + committed, awaiting operator approval)
+
+### Implementation summary (Item E)
+
+All defaults honored: explicit `labelId` prop (not `useId`), generic `<T extends string>`, class strings moved into primitive verbatim, CuePicker glyph stays in `renderOption`, `optionLayout` defaults `'inline'`, all 4 existing picker tests kept unchanged.
+
+**Files added (2):**
+- `src/components/primitives/PickerCardGrid.tsx` — generic `<T extends string>` radiogroup-cards primitive. ~70 LOC. Owns the section label `<p>`, the radiogroup `<div>`, the per-option card `<button>`, and the byte-identical selected/unselected/base class strings that were copy-pasted across the 4 picker files.
+- `src/components/primitives/PickerCardGrid.test.tsx` — 11 isolated tests using a synthetic `Fruit` type: label rendering, aria-labelledby wiring, radio count + names, aria-checked, click → onChange, disabled cascade, grid-cols-2 vs grid-cols-3, optionLayout inline vs stack, selected vs unselected class.
+
+**Files modified (5):**
+- `src/components/primitives/index.ts` — add `PickerCardGrid` + `PickerCardLayout` exports.
+- `src/components/ThemePicker.tsx` — 56 LOC → 22 LOC adapter. `columns=3`, default `inline` layout.
+- `src/components/LanguagePicker.tsx` — 65 LOC → 22 LOC adapter. `columns=2`, default `inline`.
+- `src/components/TimbrePicker.tsx` — 66 LOC → 27 LOC adapter. `columns=2`, default `inline`. The `playInhalePreview(id)` side effect stays in a wrapper `onChange` so the primitive doesn't need to know about audio.
+- `src/components/CuePicker.tsx` — 66 LOC → 38 LOC adapter. `columns=3`, `optionLayout='stack'`. `renderOption` returns the CueGlyph swatch above the label.
+
+**Also fixed:** `src/app/App.dialog.test.tsx` — dropped a stale `async` from the WR-09 test rewritten in Item D (lint surfaced it on this run; passed in Item D's lint cache).
+
+**API**
+
+```ts
+PickerCardGridProps<T extends string> {
+  sectionLabel: string
+  labelId: string
+  options: readonly T[]
+  value: T
+  onChange(this: void, next: T): void
+  renderOption(this: void, option: T): ReactNode
+  columns: 2 | 3
+  disabled: boolean
+  optionLayout?: 'inline' | 'stack'  // default 'inline'; 'stack' adds flex-col items-center gap-1
+}
+```
+
+**Verification:**
+- `npx tsc --noEmit`: clean
+- `npm run lint`: clean (after fixing the stale async)
+- `npm test -- --run` full suite: **101 files / 1179 tests pass** (was 100/1168 → +1 file, +11 tests). All 4 picker tests (Cue 19 / Theme 15 / Timbre 20 / Language 15) pass unchanged — strongest evidence the visual + a11y output is byte-equivalent.
+- `npm run build`: production build clean. **JS bundle 301.12 → 298.69 KB (-2.4 KB)** from the dedup.
+
+**Commit message:** `refactor(primitives): extract PickerCardGrid; collapse 4 pickers to thin adapters`
+
+### Archived — Proposal for Item E
 
 ### Implementation summary
 
@@ -208,7 +251,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | A | `0c1d372` | Tokens + EndSessionDialog routed through destructive. Light byte-equivalent; dark visual TBD on real device. |
 | B | `c0bfe60` | Primitive + icon library landed. No consumers yet. |
 | C | `88305ea` | PageShell + TopAppBar; AppScreen routed through them. Visual byte-equivalent (DOM tests pass); browser confirmation pending. |
-| D | (this commit) | Surface routing: appScreen state + ScreenRouter; LearnPage / AppSettingsPage replace dialogs as route destinations. LearnDialog / SettingsDialog / SettingsPanel become orphan code (deletion deferred to G). |
+| D | `039caeb` | Surface routing: appScreen state + ScreenRouter; LearnPage / AppSettingsPage replace dialogs as route destinations. LearnDialog / SettingsDialog / SettingsPanel become orphan code (deletion deferred to G). |
+| E | (this commit) | PickerCardGrid primitive extracted; 4 pickers each shrink from ~60 LOC to ~15-40 LOC adapters. Visual + a11y byte-equivalent (all picker tests pass unchanged). JS bundle -2.4 KB from the dedup. |
 
 ---
 

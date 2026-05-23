@@ -22,6 +22,9 @@ export type { IconButtonProps, IconButtonSize } from './IconButton'
 export { PageShell } from './PageShell'
 export type { PageShellProps } from './PageShell'
 
+export { PickerCardGrid } from './PickerCardGrid'
+export type { PickerCardGridProps, PickerCardLayout } from './PickerCardGrid'
+
 export { Pill } from './Pill'
 export type { PillProps, PillVariant } from './Pill'
 

@@ -276,7 +276,7 @@ describe('WR-09 surface routing replaces dialog overlay', () => {
     vi.useRealTimers()
   })
 
-  it('clicking Learn navigates to the LearnPage and unmounts the practice surface (no dialog overlay)', async () => {
+  it('clicking Learn navigates to the LearnPage and unmounts the practice surface (no dialog overlay)', () => {
     render(<App />)
 
     // Practice surface mounted before click — Start button is visible.
