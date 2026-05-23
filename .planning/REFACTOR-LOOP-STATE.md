@@ -33,7 +33,7 @@ State below is updated after every step transition.
 | F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | ✓ done — commit `1e98038` |
 | F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | **implemented — awaiting operator approval** |
 | F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | **implemented — awaiting operator approval** |
-| F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | pending |
+| F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | **implemented — awaiting operator approval** |
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | pending |
 | F6 | `PracticeContext` provider replacing prop drilling of `vm` / `uiStrings` | pending |
 | G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
@@ -42,10 +42,36 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** F3 — Presentation-safe type re-exports (bigger play: domain barrel + storage barrel)
+**Item:** F4 — `shapeConstants.ts` TS↔CSS drift guard
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item F3)
+### Implementation summary (Item F4)
+
+Operator chose **option A (test guard)** with the explicit constraint: the test must not become an obstacle to future orb redesign. Test is value-agnostic — asserts EQUALITY between TS and CSS, not specific numeric values.
+
+**Files added (1):**
+- `src/components/shapeConstants.test.ts` (~30 LOC, 3 tests). Reads `src/styles/theme.css` at test time via `readFileSync(resolve(__dirname, '..', 'styles', 'theme.css'))`. Regex-extracts `--orb-scale-{min,max,mid}` values and asserts each equals the corresponding TS export. Header comment explicitly states: "If the scale-based orb is replaced wholesale, delete shapeConstants.ts + the CSS vars + THIS TEST together — the test is not meant to anchor the constants to existence."
+
+**Files modified (2):**
+- `src/components/shapeConstants.ts` — updated header docstring to point at the new guard test as the enforcement mechanism. Dropped the per-line "keep in sync with --orb-scale-X" comments (now redundant — the test enforces it).
+- `src/styles/theme.css` — updated the comment block above `--orb-scale-*` definitions to reference the guard test. Dropped the per-line "keep in sync with MIN_SCALE" inline comments.
+
+**The contract (intentionally constrained):**
+- Test asserts equality only — not specific values. Changing scales requires editing both files; test stays green.
+- Test does NOT anchor the constants to existence. If the orb redesign removes the scale concept, delete all three (TS file + CSS vars + test) together.
+- Header comments on both sides spell this out so future-Claude (or future-operator) reads "it's a drift detector, not a value lock" before being tempted to fight it.
+
+**Verification:**
+- `tsc --noEmit` + `lint` clean
+- New test: 3/3 pass
+- Full suite: **102 files / 1173 tests pass** (was 101/1170 → +1 file, +3 tests)
+- Build clean
+
+**One small detour in implementation:** First attempt used `fileURLToPath(new URL('../styles/theme.css', import.meta.url))`. That fails in vitest's jsdom env because `import.meta.url` isn't a `file://` URL there. Switched to `resolve(__dirname, ...)` — the pattern already used by `content.no-removed-themes.test.ts` in this codebase.
+
+**Commit message:** `test(shapeConstants): add drift guard between TS exports and CSS --orb-scale-* tokens`
+
+### Archived — Implementation summary (Item F3)
 
 **Operator chose the bigger play** ("do domain barrel too"). Scope went beyond the minimal "route through existing storage barrel" to include a fresh `src/domain/index.ts` barrel + migration of all presentation deep imports.
 
@@ -329,7 +355,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | E | `bd22ca5` | PickerCardGrid primitive extracted; 4 pickers each shrink from ~60 LOC to ~15-40 LOC adapters. Visual + a11y byte-equivalent. JS bundle -2.4 KB. |
 | F1 | `1e98038` | CueGlyph inline style → className for token colors. Surfaced + removed a dead static class. |
 | F2 | `94958e8` | Deleted 9 component-level EndSessionDialog tests from App.dialog.test.tsx (covered by EndSessionDialog.test.tsx). Test count 1179 → 1170. |
-| F3 | (this commit) | Created `src/domain/index.ts` barrel; routed 37 presentation files through `../domain` and `../storage` barrels (sed pass) then consolidated 12 files with duplicate import lines (manual pass). Operator chose "bigger play" over minimal storage-only migration. |
+| F3 | `ac691e3` | Created `src/domain/index.ts` barrel; routed 37 presentation files through `../domain` and `../storage` barrels (sed pass) then consolidated 12 files with duplicate import lines (manual pass). Operator chose "bigger play" over minimal storage-only migration. |
+| F4 | (this commit) | Added shapeConstants.test.ts drift guard between TS exports and `--orb-scale-*` CSS tokens. Value-agnostic equality assertions; explicit "delete-together if orb redesigned" contract in header comment per operator constraint. |
 
 ---
 

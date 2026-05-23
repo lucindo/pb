@@ -70,14 +70,15 @@
   --color-modal-backdrop: rgb(46 52 64 / 0.30);
 
   /* Non-themable layout/sizing tokens (D-02: ONLY --color-* tokens are themable) */
-  /* IN-01: --orb-scale-{min,max,mid} are mirrored as the TS constants
-     MIN_SCALE/MAX_SCALE/MID_SCALE in `src/components/BreathingShape.tsx`. The TS
-     side drives the breathing math; the CSS side is consumed by stylesheet
-     fallbacks. If you edit one side, edit the other. */
+  /* --orb-scale-{min,max,mid} mirror the TS constants MIN_SCALE/MAX_SCALE/MID_SCALE
+     in src/components/shapeConstants.ts. The TS side drives the breathing math;
+     the CSS side is consumed by stylesheet fallbacks (reduced-motion + the
+     breath-loop-animation keyframes in index.css). Drift is caught at CI by
+     src/components/shapeConstants.test.ts. */
   --orb-size: clamp(180px, 35vw, 360px);
-  --orb-scale-min: 0.58; /* keep in sync with MIN_SCALE in BreathingShape.tsx */
-  --orb-scale-max: 1.0; /* keep in sync with MAX_SCALE in BreathingShape.tsx */
-  --orb-scale-mid: 0.79; /* keep in sync with MID_SCALE in BreathingShape.tsx */
+  --orb-scale-min: 0.58;
+  --orb-scale-max: 1.0;
+  --orb-scale-mid: 0.79;
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
 
   /* v2.0 surface elevation + scrim tokens (light).
