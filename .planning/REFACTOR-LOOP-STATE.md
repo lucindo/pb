@@ -25,8 +25,8 @@ State below is updated after every step transition.
 
 | Tag | Item | Status |
 |-----|------|--------|
-| A | Theme tokens: elevation + scrim + destructive (formerly B). Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | **implemented — awaiting operator approval** |
-| B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | pending |
+| A | Theme tokens: elevation + scrim + destructive. Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | ✓ done — commit `0c1d372` |
+| B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | **proposed — awaiting go-ahead** |
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | pending |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | pending |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | pending |
@@ -37,33 +37,66 @@ State below is updated after every step transition.
 
 ## Current focus
 
-**Item:** A — Theme tokens + EndSessionDialog destructive color
-**Step:** 4 (implemented + committed, awaiting operator approval)
+**Item:** B — Design-primitive component library + icon/glyph library
+**Step:** 1 (proposal posted, awaiting operator go-ahead)
 
-### Implementation summary
+### Proposal for Item B
 
-**Files changed (3):**
-- `src/styles/theme.css` — added `--shadow-card`, `--shadow-modal`, `--scrim-modal`, `--color-destructive`, `--color-destructive-hover`, `--color-destructive-active`, `--color-destructive-on` to both `@theme` (light) and `[data-theme='dark']:root` (dark). Updated the "deferred destructive token" comment block to mark it as closed.
-- `src/components/EndSessionDialog.tsx` — swapped the three hardcoded hex values (`#bf616a` / `#a85459` / `#92444c`) for `var(--color-destructive)` / `var(--color-destructive-hover)` / `var(--color-destructive-active)`. Text color now uses `var(--color-destructive-on)`.
-- `src/styles/theme.contrast.test.ts` — added a per-theme WCAG AA-large contrast test (`destructive` vs `destructive-on` ≥ 3.0).
+**Goal**
+Add a `src/components/primitives/` tree (one file per primitive) and a `src/components/icons/` tree (one file per glyph). Both are purely additive — no existing code modified. The primitives consume the tokens added in Item A. None are consumed by any surface yet; they become the toolkit for items C/D/E.
 
-**Verification:**
-- `npx tsc --noEmit`: clean
-- `npm test -- --run src/styles/theme.contrast.test.ts`: 6/6 (was 4/4 — added 2 new tests, one per theme)
-- `npm test -- --run src/components/EndSessionDialog.test.tsx`: 11/11
-- `npm test -- --run` full suite: 85 files, 1086 tests, all pass
+**Why now**
+Item C (`PageShell` + `TopAppBar`) and beyond compose entirely from these primitives. Building them first means each later item is small (drops in a primitive composition) rather than a re-implementation. The v2.0 redesign drift happened because every surface re-built its own pill/card/eyebrow — this is the foundation that prevents that recurrence.
 
-**Visual impact**
-- Light theme: byte-equivalent (destructive token hex = previous hardcoded hex)
-- Dark theme: same hex carries over — Nord Aurora red reads on both Polar Night and Snow Storm backdrops; can be re-tuned if real-device testing flags low contrast.
+**Scope — primitives (`src/components/primitives/`)**
 
-**Commit:** `refactor(tokens): add elevation/scrim/destructive theme tokens; route EndSessionDialog through destructive token`
+| File | Purpose | Rough API |
+|------|---------|-----------|
+| `Card.tsx` | Rounded surface w/ `--shadow-card`, configurable padding | `<Card padding="md" elevation="card\|modal\|none">…</Card>` |
+| `Eyebrow.tsx` | Uppercase tracked muted section label | `<Eyebrow>ABOUT</Eyebrow>` |
+| `IconButton.tsx` | Round white icon button (top-bar / close affordances) | `<IconButton icon={InfoIcon} label="..." onClick={...} size="md\|sm" />` |
+| `Pill.tsx` | Single pill button (filled / outlined, active state) | `<Pill variant="filled\|outlined" active>label</Pill>` |
+| `SegmentedControl.tsx` | Unified outer pill, N internal segments, filled-dark active | `<SegmentedControl options={...} value={...} onChange={...} renderGlyph?={...} />` |
+| `Stepper.tsx` | Minimal `[−] value [+]` row, no container | `<Stepper value={...} onChange={...} min={...} max={...} step={...} renderValue?={...} />` |
+| `Toggle.tsx` | iOS-style pill + knob | `<Toggle checked onChange={...} label="..." />` |
+| `ArrowLink.tsx` | Bold accent text + trailing `→` glyph | `<ArrowLink href? onClick?>Watch the video</ArrowLink>` |
+| `index.ts` | Re-export barrel | — |
+
+Each primitive has a co-located `.test.tsx` (props → DOM render, no logic to test beyond that). Each uses tokens from `theme.css` — no inline hex, no Tailwind arbitrary color values.
+
+**Scope — icons (`src/components/icons/`)**
+
+Audit current inline SVGs (in `InstallBanner`, `MuteToggle`, `SettingsAnchor`, `LearnAnchor`, `CueGlyph`, `IosInstallSteps`, etc.) and migrate each to its own file under `src/components/icons/`. Standardized:
+- 24×24 viewbox
+- 1.5 stroke
+- `stroke="currentColor"` and `fill="currentColor"` (or none) so color flows from CSS
+- Named exports: `<InfoIcon />`, `<GearIcon />`, `<ChevronBackIcon />`, `<ChevronRightIcon />`, `<CloseIcon />`, `<SpeakerIcon />`, `<SpeakerMutedIcon />`, `<ShareIcon />` (iOS install), etc.
+- One `index.ts` barrel
+
+`CueGlyph.tsx` and timbre glyphs (Bowl/Bell/Sine/Flute) are NOT icons — they're styled visual elements that depend on cue style and orb state. They stay where they are; the icon library is for chrome icons only.
+
+This step is a one-time consolidation pass — no existing consumer is rewired yet. That happens in items C/D/E as each surface gets rebuilt against the primitives.
+
+**Risk**
+Low. Pure addition. New files only. Existing files unchanged. Test coverage is per-primitive (each test renders the component in isolation and asserts on DOM/aria).
+
+**Files touched (estimate)**
+- New: `src/components/primitives/*.tsx` (~9 files) + `src/components/primitives/*.test.tsx` (~8 files) + `src/components/primitives/index.ts`
+- New: `src/components/icons/*.tsx` (~8 files) + `src/components/icons/index.ts`
+- No existing files modified
+
+Commit message: `refactor(primitives): add design-primitive library + centralized icon set (no consumers yet)`
+
+**Question for you before I start**
+Do you want me to lock specific visual values now (corner radii, padding scales, segmented-control active fill = `--color-breathing-accent-strong`, etc.) or leave them as sensible defaults that you'll tune later when surfaces consume them? My default: use the existing token vocabulary with sensible Tailwind utilities; flag any value I had to invent in the implementation summary.
 
 ---
 
 ## History
 
-(no items completed yet — Item A in awaiting-approval)
+| Item | Commit | Notes |
+|------|--------|-------|
+| A | `0c1d372` | Tokens + EndSessionDialog routed through destructive. Light byte-equivalent; dark visual TBD on real device. |
 
 ---
 
