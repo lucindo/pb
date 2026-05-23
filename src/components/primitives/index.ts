@@ -19,6 +19,9 @@ export type { EyebrowProps } from './Eyebrow'
 export { IconButton } from './IconButton'
 export type { IconButtonProps, IconButtonSize } from './IconButton'
 
+export { PageShell } from './PageShell'
+export type { PageShellProps } from './PageShell'
+
 export { Pill } from './Pill'
 export type { PillProps, PillVariant } from './Pill'
 
@@ -30,3 +33,6 @@ export type { StepperProps } from './Stepper'
 
 export { Toggle } from './Toggle'
 export type { ToggleProps } from './Toggle'
+
+export { TopAppBar } from './TopAppBar'
+export type { TopAppBarProps } from './TopAppBar'

@@ -27,7 +27,7 @@ State below is updated after every step transition.
 |-----|------|--------|
 | A | Theme tokens: elevation + scrim + destructive. Route `EndSessionDialog` off its hardcoded hex through the new destructive token. | ✓ done — commit `0c1d372` |
 | B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | ✓ done — commit `c0bfe60` |
-| C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | **proposed — awaiting go** |
+| C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | **implemented — awaiting operator approval** |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | pending |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | pending |
 | F | Cleanup pass: `shapeConstants.ts` single-source-of-truth (TS↔CSS), `PracticeContext` provider replacing prop drilling, `UiStrings` surface-vocabulary rename plan, App.*.test.tsx vs. unit-test overlap audit, `CueGlyph` inline-style → className, presentation-safe type re-exports. | pending |
@@ -38,9 +38,37 @@ State below is updated after every step transition.
 ## Current focus
 
 **Item:** C — `PageShell` + `TopAppBar` primitives; extract `AppHeader`
-**Step:** 1 (proposed, awaiting "go")
+**Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Proposal for Item C
+### Implementation summary
+
+**Files added (4):**
+
+`src/components/primitives/`
+- `PageShell.tsx` + `PageShell.test.tsx` — page wrapper: radial-gradient `<main>` + centered `<section>` (max-w-3xl). Children render inside the section. Optional `overlays` slot for siblings of the section (banners, dialogs) kept inside `<main>` for page semantics.
+- `TopAppBar.tsx` + `TopAppBar.test.tsx` — header bar: optional eyebrow above title, optional `leading` / `trailing` slots. Outer container is `relative w-full` so existing anchors' `absolute left-0 top-0` / `right-0 top-0` positioning resolves unchanged.
+
+**Files modified (2):**
+- `src/components/primitives/index.ts` — add `PageShell` + `TopAppBar` exports.
+- `src/app/AppScreen.tsx` — drop inline `AppHeader` (45 LOC); replace `<main>` + `<section>` with `<PageShell overlays={…}>`; replace inline header with `<TopAppBar eyebrow=… title=… leading={<SettingsAnchor …/>} trailing={<LearnAnchor …/>} />`. `PracticeWorkspace` unchanged. `SettingsAnchor`/`LearnAnchor` unchanged — they're slated for replacement in Item D.
+
+**API choices honored from proposal:**
+- TopAppBar slots are `ReactNode` (`leading`, `trailing`) — today's anchors plug in unchanged.
+- PageShell has no knobs yet (single default shape matches current practice surface). Add props in Item D if Learn/Settings need to diverge.
+
+**Eyebrow note:** TopAppBar's eyebrow markup is inline, NOT the `Eyebrow` primitive. The page-header eyebrow is visually distinct (text-sm / tracking-0.35em / accent color) from the section-divider `Eyebrow` (text-xs / tracking-0.16em / muted color). Reuse would have forced a redesign decision out of scope here.
+
+**Verification:**
+- `npx tsc --noEmit`: clean
+- `npm run lint`: clean
+- `npm test -- --run src/components/primitives/PageShell.test.tsx src/components/primitives/TopAppBar.test.tsx`: 2 files / 11 tests pass
+- `npm test -- --run` full suite: 95 files / 1136 tests pass (was 93/1125 → +2 new test files, +11 new tests). All existing `App.test.tsx` integration tests pass unchanged — strongest evidence the extraction was byte-equivalent at the DOM level.
+- `npm run build`: production build clean (107 modules, 302 KB JS / 31 KB CSS)
+- **Not yet verified in a browser** — needs operator to load and confirm the header still looks identical (anchors top-left/top-right, eyebrow + title centered).
+
+**Commit message:** `refactor(primitives): add PageShell + TopAppBar; route AppScreen through them`
+
+### Archived — Proposal for Item C
 
 **Goal**
 Add two layout primitives — `PageShell` (page-level wrapper: bg, padding, centered max-width column) and `TopAppBar` (eyebrow + title + leading/trailing slots, `position: relative` so existing anchors still position correctly). Rewire `AppScreen` to use both, replacing its current inline `<main>` + `<section>` + `AppHeader` code. **Visual output must be byte-equivalent** — this is plumbing, not redesign.
@@ -149,7 +177,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | Item | Commit | Notes |
 |------|--------|-------|
 | A | `0c1d372` | Tokens + EndSessionDialog routed through destructive. Light byte-equivalent; dark visual TBD on real device. |
-| B | (this commit) | Primitive + icon library landed. No consumers yet. |
+| B | `c0bfe60` | Primitive + icon library landed. No consumers yet. |
+| C | (this commit) | PageShell + TopAppBar; AppScreen routed through them. Visual byte-equivalent (DOM tests pass); browser confirmation pending. |
 
 ---
 
