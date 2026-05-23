@@ -31,21 +31,55 @@ State below is updated after every step transition.
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | ✓ done — commit `039caeb` |
 | E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | ✓ done — commit `bd22ca5` |
 | F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | ✓ done — commit `1e98038` |
-| F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | **implemented — awaiting operator approval** |
-| F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | **implemented — awaiting operator approval** |
-| F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | **implemented — awaiting operator approval** |
-| F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | **implemented — awaiting operator approval** |
-| F6 | `PracticeContext` provider replacing prop drilling of `vm` / `uiStrings` | pending |
+| F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | ✓ done — commit `94958e8` |
+| F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | ✓ done — commit `ac691e3` |
+| F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | ✓ done — commit `3926b77` |
+| F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | ✓ done — commit `498545a` |
+| F6 | `UiStringsContext` provider replacing drilling of `uiStrings` through the view layer (vm stays as explicit prop — see proposal) | **implemented — awaiting operator approval** |
 | G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
 
 ---
 
 ## Current focus
 
-**Item:** F5 — `UiStrings` surface-vocabulary rename (executed, not deferred)
+**Item:** F6 — `UiStringsContext` provider (narrowed scope: `uiStrings` only, not `vm`)
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item F5)
+### Implementation summary (Item F6)
+
+Operator approved the narrowed proposal: contextify only `uiStrings` (the full type), leave `vm` as an explicit prop (it's only one hop deep — `ScreenRouter → PracticeScreen`), and keep leaf components on narrow `Pick<UiStrings, ...>` slices so they stay context-free + testable in isolation.
+
+**Files added (2):**
+- `src/hooks/useUiStringsContext.tsx` — `UiStringsContext` (typed `UiStrings | null` with a null sentinel), `UiStringsProvider` component, `useUiStrings()` hook that throws on missing provider. ~22 LOC. Single targeted `eslint-disable-next-line react-refresh/only-export-components` on the hook export — the warning is benign for an app-wide Provider where HMR re-renders everything anyway.
+- `src/hooks/useUiStringsContext.test.tsx` — 3 tests: provider/consumer roundtrip, locale-switch propagation through Provider via rerender, missing-provider throws with the documented error message (with `console.error` mocked during the expected throw to suppress React's error-boundary noise).
+
+**Files modified (10):**
+- `src/app/App.tsx` — wraps `<ScreenRouter>` in `<UiStringsProvider value={vm.uiStrings}>`. Now 3 imports / 12 LOC.
+- `src/app/ScreenRouter.tsx` — dropped `strings={vm.uiStrings.learn}` from `<LearnPage>` and `strings={vm.uiStrings}` from `<AppSettingsPage>`. Pages read from context.
+- `src/app/pages/LearnPage.tsx` — dropped `strings` prop; `useUiStrings().learn` at top of component. `LearnPanel` (leaf) still receives the sliced `strings` prop.
+- `src/app/pages/AppSettingsPage.tsx` — dropped `strings` prop; `useUiStrings()` at top; rebuilds the `Pick<UiStrings, 'appSettings' | 'install'>` slice locally to pass to `SettingsPanelBody` (leaf — stays prop-driven).
+- `src/app/PracticeScreen.tsx` — dropped 4 `uiStrings={vm.uiStrings}` passes to the 4 child views. Kept `vm.uiStrings.install` to `InstallBanner` and `vm.uiStrings.practice.topBar` to `SettingsAnchor` / `LearnAnchor` (leaves stay prop-driven).
+- `src/app/EndSessionDialogsView.tsx`, `PracticeSessionView.tsx`, `PracticeSettingsView.tsx`, `PracticeControlsView.tsx` — each dropped `uiStrings: UiStrings` prop; calls `useUiStrings().practice.<slice>` at top of component. Still passes narrow slices to leaf components.
+- `src/app/pages/LearnPage.test.tsx`, `pages/AppSettingsPage.test.tsx` — wrap render with `<UiStringsProvider value={UI_STRINGS.en}>`. No assertion changes.
+
+**Not modified (intentional):**
+- Leaf components (`OrbShape`, `EndSessionDialog`, `StretchSettingsForm`, `MuteToggle`, `CuePicker`, `TimbrePicker`, `ThemePicker`, `LanguagePicker`, `LearnPanel`, `SettingsPanelBody`, `InstallBanner`, `IosInstallSteps`, `SessionReadout`, `NKSessionReadout`, `NaviKriyaSettingsForm`, `ResonantSettingsForm`, `SettingsStepper`, `LearnAnchor`, `SettingsAnchor`, `NKShape`, `SessionActionRow`) — all keep their narrow `Pick<UiStrings, ...>` / `UiStrings['x']['y']` props. They stay testable in isolation without a Provider wrapper. Their tests are untouched.
+- `sessionPresentation.ts` / `appControllerAdapters.ts` / `appViewModel.ts` / `practiceCopy.ts` / `useLocale.ts` — non-React or vm-construction code. They keep taking `UiStrings` as an explicit arg.
+- `ScreenRouter.test.tsx` — uses `vi.mock` to mock the three page components, so it never renders into real `useUiStrings()` calls. Stays green without changes.
+- `App.*.test.tsx` integration tests — render the real `App.tsx`, which now wraps with the Provider. Stay green without changes.
+
+**Slip in the proposal (corrected during implementation):**
+The proposal said "drop the 2 `strings={vm.uiStrings.practice.topBar}` passes (anchors)". But anchors are leaf components. Dropping the prop would force them to call `useUiStrings()`, violating the leaf-stay-context-free rule that's the foundation of the rest of this design. Caught and reverted to keeping the props before writing. Single-rule consistency wins over saving one prop.
+
+**Verification:**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean (0 errors, 0 warnings)
+- Full suite: **103 files / 1176 tests pass** (was 102/1173 → +1 file, +3 tests for `useUiStringsContext.test.tsx`)
+- `npm run build`: production build clean. JS bundle **298.69 → 299.05 KB (+0.36 KB)** for the Context object + Provider component + hook + the single Provider wrapping in `App.tsx`. Negligible.
+
+**Commit message:** `refactor(ui-strings): add UiStringsContext; remove uiStrings drilling from view layer`
+
+### Archived — Implementation summary (Item F5)
 
 Operator pushed back hard on my proposal to defer to a plan document: "go fix your mess once and for all, stop taking shortcuts". Executed the full rename in one commit.
 
@@ -427,7 +461,8 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | F2 | `94958e8` | Deleted 9 component-level EndSessionDialog tests from App.dialog.test.tsx (covered by EndSessionDialog.test.tsx). Test count 1179 → 1170. |
 | F3 | `ac691e3` | Created `src/domain/index.ts` barrel; routed 37 presentation files through `../domain` and `../storage` barrels (sed pass) then consolidated 12 files with duplicate import lines (manual pass). Operator chose "bigger play" over minimal storage-only migration. |
 | F4 | `3926b77` | Added shapeConstants.test.ts drift guard between TS exports and `--orb-scale-*` CSS tokens. Value-agnostic equality assertions; explicit "delete-together if orb redesigned" contract in header comment per operator constraint. |
-| F5 | (this commit) | UiStrings top-level keys reorganized by surface: `practice.*` / `appSettings.*` / `learn.*` / `install.*`. ~69 files touched. Mechanically applied via carrier-anchored perl (\K resets match start); 4 Pick<UiStrings> types + practiceCopy + 3 computed-key tests handled manually. |
+| F5 | `498545a` | UiStrings top-level keys reorganized by surface: `practice.*` / `appSettings.*` / `learn.*` / `install.*`. ~69 files touched. Mechanically applied via carrier-anchored perl (\K resets match start); 4 Pick<UiStrings> types + practiceCopy + 3 computed-key tests handled manually. |
+| F6 | (this commit) | `UiStringsContext` + `useUiStrings()` hook (throws on missing provider). `App.tsx` wraps everything in `UiStringsProvider`. 4 PracticeScreen child views + 2 pages stop receiving `uiStrings` / `strings` props and read from context. Leaf components (anchors, banners, forms, pickers, dialogs) keep narrow slice props to stay testable in isolation. Bundle +0.36 KB. |
 
 ---
 

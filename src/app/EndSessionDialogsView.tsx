@@ -1,13 +1,11 @@
 import type { ReactElement } from 'react'
 
 import { EndSessionDialog } from '../components/EndSessionDialog'
-import type { AppDialogsViewModel, AppViewModel } from './appViewModel'
-
-type UiStrings = AppViewModel['uiStrings']
+import { useUiStrings } from '../hooks/useUiStringsContext'
+import type { AppDialogsViewModel } from './appViewModel'
 
 interface EndSessionDialogsViewProps {
   dialogs: AppDialogsViewModel
-  uiStrings: UiStrings
 }
 
 /** Renders the per-practice end-session confirmation dialogs. These remain
@@ -16,8 +14,8 @@ interface EndSessionDialogsViewProps {
  *  while a session is running (which forces appScreen='practice'). */
 export function EndSessionDialogsView({
   dialogs,
-  uiStrings,
 }: EndSessionDialogsViewProps): ReactElement {
+  const strings = useUiStrings().practice.endSessionDialog
   return (
     <>
       {dialogs.endSessionDialogs.map((dialog) => (
@@ -26,7 +24,7 @@ export function EndSessionDialogsView({
           open={dialog.open}
           onConfirm={dialog.onConfirm}
           onCancel={dialog.onCancel}
-          strings={uiStrings.practice.endSessionDialog}
+          strings={strings}
         />
       ))}
     </>

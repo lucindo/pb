@@ -6,10 +6,9 @@ import { Card } from '../../components/primitives/Card'
 import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
-import type { UiStrings } from '../../content/strings'
+import { useUiStrings } from '../../hooks/useUiStringsContext'
 
 export interface AppSettingsPageProps {
-  strings: Pick<UiStrings, 'appSettings' | 'install'>
   isIOS: boolean
   isStandalone: boolean
   installable: boolean
@@ -24,13 +23,14 @@ export interface AppSettingsPageProps {
  *  so the user can only be here when no session is active. Focuses the back
  *  button on mount. */
 export function AppSettingsPage({
-  strings,
   isIOS,
   isStandalone,
   installable,
   onInstall,
   onBack,
 }: AppSettingsPageProps): ReactElement {
+  const allStrings = useUiStrings()
+  const strings = { appSettings: allStrings.appSettings, install: allStrings.install }
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {

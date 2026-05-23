@@ -6,18 +6,20 @@ import { describe, expect, it, vi } from 'vitest'
 import { LEARN_CONTENT } from '../../content/learnContent'
 import { LOCKED_COPY } from '../../content/lockedCopy'
 import { UI_STRINGS } from '../../content/strings'
+import { UiStringsProvider } from '../../hooks/useUiStringsContext'
 import { LearnPage } from './LearnPage'
 
 function renderPage(props: Partial<{ onBack: () => void }> = {}) {
   const onBack = props.onBack ?? vi.fn()
   const utils = render(
-    <LearnPage
-      learnContent={LEARN_CONTENT.en}
-      lockedCopy={LOCKED_COPY.en}
-      strings={UI_STRINGS.en.learn}
-      activePractice="resonant"
-      onBack={onBack}
-    />,
+    <UiStringsProvider value={UI_STRINGS.en}>
+      <LearnPage
+        learnContent={LEARN_CONTENT.en}
+        lockedCopy={LOCKED_COPY.en}
+        activePractice="resonant"
+        onBack={onBack}
+      />
+    </UiStringsProvider>,
   )
   return { ...utils, onBack }
 }

@@ -8,13 +8,12 @@ import { PageShell } from '../../components/primitives/PageShell'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
 import type { LearnContent } from '../../content/learnContent'
 import type { LockedCopy } from '../../content/lockedCopy'
-import type { UiStrings } from '../../content/strings'
+import { useUiStrings } from '../../hooks/useUiStringsContext'
 import type { PracticeId } from '../../storage/practices'
 
 export interface LearnPageProps {
   learnContent: LearnContent
   lockedCopy: LockedCopy
-  strings: UiStrings['learn']
   activePractice: PracticeId
   onBack(this: void): void
 }
@@ -27,10 +26,10 @@ export interface LearnPageProps {
 export function LearnPage({
   learnContent,
   lockedCopy,
-  strings,
   activePractice,
   onBack,
 }: LearnPageProps): ReactElement {
+  const strings = useUiStrings().learn
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {

@@ -3,20 +3,20 @@ import type { ReactElement } from 'react'
 import { NaviKriyaSettingsForm } from '../components/NaviKriyaSettingsForm'
 import { ResonantSettingsForm } from '../components/ResonantSettingsForm'
 import { StretchSettingsForm } from '../components/StretchSettingsForm'
+import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
 
-type UiStrings = AppViewModel['uiStrings']
 type PracticeSettingsViewModel = AppViewModel['practiceSettings']
 
 interface PracticeSettingsViewProps {
   settings: PracticeSettingsViewModel
-  uiStrings: UiStrings
 }
 
 export function PracticeSettingsView({
   settings,
-  uiStrings,
 }: PracticeSettingsViewProps): ReactElement | null {
+  const practice = useUiStrings().practice
+
   if (settings.kind === 'hidden') return null
 
   if (settings.kind === 'resonant') {
@@ -26,7 +26,7 @@ export function PracticeSettingsView({
         isRunning={settings.isRunning}
         onChange={settings.onChange}
         onExtendDuration={settings.onExtendDuration}
-        strings={uiStrings.practice.settingsForm}
+        strings={practice.settingsForm}
       />
     )
   }
@@ -35,7 +35,7 @@ export function PracticeSettingsView({
     return (
       <StretchSettingsForm
         isRunning={settings.isRunning}
-        strings={uiStrings.practice.settingsForm}
+        strings={practice.settingsForm}
         settings={settings.settings}
         onChange={settings.onChange}
       />
@@ -44,10 +44,10 @@ export function PracticeSettingsView({
 
   return (
     <NaviKriyaSettingsForm
-      strings={uiStrings.practice.settingsForm}
+      strings={practice.settingsForm}
       settings={settings.settings}
       onChange={settings.onChange}
-      nkControlsStrings={uiStrings.practice.nkControls}
+      nkControlsStrings={practice.nkControls}
     />
   )
 }

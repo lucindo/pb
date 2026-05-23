@@ -1,35 +1,31 @@
 import type { ReactElement } from 'react'
 
 import { SessionActionRow } from '../components/SessionActionRow'
+import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
 
-type UiStrings = AppViewModel['uiStrings']
 type AudioControls = AppViewModel['audio']
 type PracticeControlsViewModel = AppViewModel['practiceControls']
 
 interface PracticeControlsViewProps {
   controls: PracticeControlsViewModel
   audio: AudioControls
-  uiStrings: UiStrings
 }
 
 export function PracticeControlsView({
   controls,
   audio,
-  uiStrings,
 }: PracticeControlsViewProps): ReactElement {
+  const mute = useUiStrings().practice.mute
   return (
     <>
       <SessionActionRow
         primaryLabel={controls.primaryLabel}
         onPrimaryClick={controls.onPrimaryClick}
         audio={controls.audio}
-        muteStrings={uiStrings.practice.mute}
+        muteStrings={mute}
       />
-      <AudioResumeAnnouncement
-        audio={audio}
-        announcement={uiStrings.practice.mute.audioPausedAnnouncement}
-      />
+      <AudioResumeAnnouncement audio={audio} announcement={mute.audioPausedAnnouncement} />
     </>
   )
 }

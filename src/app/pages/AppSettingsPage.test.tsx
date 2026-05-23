@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { UI_STRINGS } from '../../content/strings'
+import { UiStringsProvider } from '../../hooks/useUiStringsContext'
 import { AppSettingsPage } from './AppSettingsPage'
 
 function renderPage(
@@ -18,14 +19,15 @@ function renderPage(
   const onBack = props.onBack ?? vi.fn()
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
   const utils = render(
-    <AppSettingsPage
-      strings={UI_STRINGS.en}
-      isIOS={props.isIOS ?? false}
-      isStandalone={props.isStandalone ?? false}
-      installable={props.installable ?? false}
-      onInstall={onInstall}
-      onBack={onBack}
-    />,
+    <UiStringsProvider value={UI_STRINGS.en}>
+      <AppSettingsPage
+        isIOS={props.isIOS ?? false}
+        isStandalone={props.isStandalone ?? false}
+        installable={props.installable ?? false}
+        onInstall={onInstall}
+        onBack={onBack}
+      />
+    </UiStringsProvider>,
   )
   return { ...utils, onBack, onInstall }
 }

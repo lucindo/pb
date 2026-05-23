@@ -76,10 +76,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
               strings={vm.uiStrings.install}
             />
           )}
-          <EndSessionDialogsView
-            dialogs={vm.dialogs}
-            uiStrings={vm.uiStrings}
-          />
+          <EndSessionDialogsView dialogs={vm.dialogs} />
         </>
       }
     >
@@ -110,19 +107,9 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
         practiceToggleStrings={vm.practiceToggleStrings}
         medicalAdviceLine={vm.lockedCopy.medicalAdviceLine}
       >
-        <PracticeSessionView
-          session={vm.practiceSession}
-          uiStrings={vm.uiStrings}
-        />
-        <PracticeSettingsView
-          settings={vm.practiceSettings}
-          uiStrings={vm.uiStrings}
-        />
-        <PracticeControlsView
-          controls={vm.practiceControls}
-          audio={vm.audio}
-          uiStrings={vm.uiStrings}
-        />
+        <PracticeSessionView session={vm.practiceSession} />
+        <PracticeSettingsView settings={vm.practiceSettings} />
+        <PracticeControlsView controls={vm.practiceControls} audio={vm.audio} />
       </PracticeWorkspace>
     </PageShell>
   )

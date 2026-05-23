@@ -22,7 +22,6 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
         <LearnPage
           learnContent={vm.learnContent}
           lockedCopy={vm.lockedCopy}
-          strings={vm.uiStrings.learn}
           activePractice={vm.activePractice}
           onBack={vm.dialogs.onBackToPractice}
         />
@@ -30,7 +29,6 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
     case 'appSettings':
       return (
         <AppSettingsPage
-          strings={vm.uiStrings}
           isIOS={vm.install.isIOS}
           isStandalone={vm.install.isStandalone}
           installable={vm.install.installable}
