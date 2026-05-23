@@ -201,6 +201,30 @@ describe('StretchSettingsForm', () => {
   })
 })
 
+describe('ResonantSettingsForm', () => {
+  it('keeps only duration controls available while running', () => {
+    renderForm({ activePractice: 'resonant', isRunning: true })
+
+    expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
+  })
+
+  it('extends duration through the session callback while running', async () => {
+    const user = userEvent.setup()
+    const { onChange, onExtendDuration } = renderForm({
+      activePractice: 'resonant',
+      isRunning: true,
+      settings: DEFAULT_SETTINGS,
+    })
+
+    await user.click(screen.getByRole('button', { name: /increase duration/i }))
+
+    expect(onExtendDuration).toHaveBeenCalledWith(15)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
 describe('Practice settings forms stay isolated by practice', () => {
   it('ResonantSettingsForm renders the resonant knobs', () => {
     renderForm({ activePractice: 'resonant' })

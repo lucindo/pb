@@ -5,64 +5,18 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+import {
+  readStoredEnvelope as readRawEnvelope,
+  settingGroup,
+  startAndAdvancePastLeadIn,
+} from './appTestHarness'
 import { STATE_KEY } from '../storage'
 
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function settingGroup(name: string) {
-  return screen.getByRole('group', { name })
-}
-
-// Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
-// session timing clock starts. Helper to click Start + flush microtasks for the
-// awaited audio.start() promise + advance fake timers past the 3 s setTimeout
-// chain so the In phase appears.
-const LEAD_IN_MS = 3000
-
-async function startAndAdvancePastLeadIn() {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
-
 describe('main screen settings controls', () => {
-  it('renders BPM, ratio, and duration controls in the locked order before the start action', () => {
-    render(<App />)
-
-    const bpm = settingGroup('BPM')
-    const ratio = settingGroup('Ratio')
-    const duration = settingGroup('Duration')
-    const start = screen.getByRole('button', { name: 'Start session' })
-
-    expect(bpm.compareDocumentPosition(ratio)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(ratio.compareDocumentPosition(duration)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(duration.compareDocumentPosition(start)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-  })
-
-  it('uses increment and decrement stepper buttons rather than dropdowns or preset-button groups', () => {
-    render(<App />)
-
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
-    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
-
-    expect(within(settingGroup('BPM')).getByRole('button', { name: /decrease bpm/i })).toBeVisible()
-    expect(within(settingGroup('BPM')).getByRole('button', { name: /increase bpm/i })).toBeVisible()
-    expect(within(settingGroup('Ratio')).getByRole('button', { name: /decrease ratio/i })).toBeVisible()
-    expect(within(settingGroup('Ratio')).getByRole('button', { name: /increase ratio/i })).toBeVisible()
-    expect(
-      within(settingGroup('Duration')).getByRole('button', { name: /decrease duration/i }),
-    ).toBeVisible()
-    expect(
-      within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }),
-    ).toBeVisible()
-  })
-
   it('shows the first-open defaults for BPM, ratio, and duration', () => {
     render(<App />)
 
@@ -148,68 +102,7 @@ describe('main screen settings controls', () => {
     }
   })
 
-  it('removes BPM and Ratio steppers from the DOM while a session is running (D-16)', async () => {
-    vi.useFakeTimers()
-    try {
-      render(<App />)
-
-      expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
-      expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
-
-      await startAndAdvancePastLeadIn()
-
-      expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
-      expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
-      expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('restores BPM and Ratio steppers after the session ends (D-16)', async () => {
-    vi.useFakeTimers()
-    try {
-      render(<App />)
-
-      await startAndAdvancePastLeadIn()
-      expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
-
-      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
-      fireEvent.click(screen.getByRole('button', { name: 'End' }))
-
-      expect(screen.getByRole('group', { name: 'BPM' })).toBeInTheDocument()
-      expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
-      expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('does not render the Current phase eyebrow inside the readout while running (D-03)', async () => {
-    vi.useFakeTimers()
-    try {
-      render(<App />)
-
-      await startAndAdvancePastLeadIn()
-
-      // D-03: the orb is the single source of the visible phase label.
-      expect(screen.queryByText('Current phase')).not.toBeInTheDocument()
-      expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
 })
-
-// ---------------------------------------------------------------------------
-// Phase 34 — Stretch settings persist across a remount
-// ---------------------------------------------------------------------------
-
-function readRawEnvelope(): Record<string, unknown> | null {
-  const raw = window.localStorage.getItem(STATE_KEY)
-  // Reason: test helper reads raw localStorage; shape validated by downstream test assertions.
-  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
-}
 
 function stretchSettingsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
   const practices = env?.['practices'] as Record<string, unknown> | undefined

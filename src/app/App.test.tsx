@@ -4,23 +4,13 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+import { APP_TEST_NOW, startAndAdvancePastLeadIn } from './appTestHarness'
 import { STATE_KEY } from '../storage'
 import type { CueStyleId } from '../domain/settings'
 
 // CUE-01 / T-25-09 capture-at-session-start integration tests (Phase 25 Plan 05).
 // Seeds localStorage[STATE_KEY] with a chosen cue BEFORE App renders to exercise
 // the sessionCueRef snapshot mechanism end-to-end — mirrors VARIANT-03 in App.session.test.tsx.
-
-const LEAD_IN_MS = 3000
-
-async function startAndAdvancePastLeadIn(): Promise<void> {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
 
 function seedCue(cue: CueStyleId): void {
   const envelope = {
@@ -33,7 +23,7 @@ function seedCue(cue: CueStyleId): void {
 describe('CUE-01 capture-at-session-start (T-25-09)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
     window.localStorage.clear()
   })
 

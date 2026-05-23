@@ -7,23 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EndSessionDialog } from '../components/EndSessionDialog'
 import { UI_STRINGS } from '../content/strings'
 import App from './App'
+import { APP_TEST_NOW, startAndAdvancePastLeadIn } from './appTestHarness'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
-
-// Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
-// session timing clock starts. Helper to click Start + flush microtasks for the
-// awaited audio.start() promise + advance fake timers past the 3 s setTimeout
-// chain so the In phase appears.
-const LEAD_IN_MS = 3000
-
-async function startAndAdvancePastLeadIn() {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
 
 function renderDialog(
   props: Partial<{ open: boolean; onConfirm: () => void; onCancel: () => void }> = {},
@@ -139,7 +125,7 @@ describe('EndSessionDialog (component-level)', () => {
 describe('end-session confirmation modal (App integration)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {
@@ -280,7 +266,7 @@ describe('end-session confirmation modal (App integration)', () => {
 describe('WR-09 in-session dialog auto-close', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {

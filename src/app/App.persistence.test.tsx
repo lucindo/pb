@@ -3,14 +3,18 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+import {
+  APP_TEST_NOW,
+  advanceTime,
+  readStoredEnvelope as readRawEnvelope,
+  startAndAdvancePastLeadIn,
+} from './appTestHarness'
 import { STATE_KEY } from '../storage'
 
 // NOTE: We use fireEvent (not userEvent) throughout this file because the
 // userEvent + vi.useFakeTimers() pairing hangs when combined with the async
 // onStartClick handler in App.tsx (same issue documented in App.session.test.tsx).
 // fireEvent + act(async () => { ... }) is sufficient for all persistence assertions here.
-
-const LEAD_IN_MS = 3000
 
 interface SeedOpts {
   settings?: { bpm?: number; ratio?: string; durationMinutes?: number | 'open-ended' }
@@ -32,15 +36,6 @@ function seedEnvelope(opts: SeedOpts = {}) {
   }))
 }
 
-// Reads raw localStorage with NO v1→v2 migration — unlike the production
-// readEnvelope in src/storage/storage.ts. Named distinctly to avoid implying
-// migration semantics this helper does not have.
-function readRawEnvelope(): Record<string, unknown> | null {
-  const raw = window.localStorage.getItem(STATE_KEY)
-  // Reason: test helper reads raw localStorage; shape validated by downstream test assertions.
-  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
-}
-
 // Phase 30: after the v1→v2 migration the authoritative resonant stats live at
 // env.practices.resonant.stats — recordResonantSession
 // writes here, not the flat env.stats orphan. This helper extracts that subtree.
@@ -58,27 +53,10 @@ function resonantSettingsOf(env: Record<string, unknown> | null): Record<string,
   return resonant?.['settings'] as Record<string, unknown> | undefined
 }
 
-async function startAndAdvancePastLeadIn() {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
-
-async function advanceTime(ms: number) {
-  // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
-  // eslint-disable-next-line @typescript-eslint/require-await
-  await act(async () => {
-    vi.advanceTimersByTime(ms)
-  })
-}
-
 // vitest.setup.ts already clears localStorage before each test.
 beforeEach(() => {
   vi.useFakeTimers()
-  vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  vi.setSystemTime(APP_TEST_NOW)
 })
 
 afterEach(() => {

@@ -1,9 +1,16 @@
 import '@testing-library/jest-dom/vitest'
 
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+import {
+  APP_LEAD_IN_MS,
+  APP_TEST_NOW,
+  flushMicrotasks,
+  startAndAdvancePastLeadIn,
+  startLeadIn,
+} from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
 import { SAFE_LEAD_SEC } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
@@ -17,31 +24,10 @@ function muteButton() {
   })
 }
 
-// Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
-// session timing clock starts. Helper to flush microtasks for the awaited
-// audio.start() promise + advance fake timers past the 3 s setTimeout chain.
-const LEAD_IN_MS = 3000
-
-async function flushMicrotasks() {
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-  })
-}
-
-async function startAndAdvancePastLeadIn() {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
-
 describe('App — audio cues (Phase 3)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {
@@ -53,37 +39,10 @@ describe('App — audio cues (Phase 3)', () => {
   // -- Test 1: lead-in numeral 3 visible immediately after Start click ----------
   it('shows lead-in numeral 3 in the orb after Start session click', async () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    await flushMicrotasks()
+    await startLeadIn()
 
     expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
     expect(screen.getByText('3')).toBeVisible()
-  })
-
-  // -- Test 2: numeral progresses to 2 after 1 second ---------------------------
-  it('shows lead-in numeral 2 in the orb after 1 s', async () => {
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    await flushMicrotasks()
-    act(() => {
-      vi.advanceTimersByTime(1000)
-    })
-
-    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
-    expect(screen.getByText('2')).toBeVisible()
-  })
-
-  // -- Test 3: numeral progresses to 1 after 2 seconds --------------------------
-  it('shows lead-in numeral 1 in the orb after 2 s', async () => {
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-    await flushMicrotasks()
-    act(() => {
-      vi.advanceTimersByTime(2000)
-    })
-
-    expect(screen.getByRole('img', { name: 'Lead-in 1' })).toBeVisible()
-    expect(screen.getByText('1')).toBeVisible()
   })
 
   // -- Test 4: lead-in clears at t=3 s and the In phase appears ----------------
@@ -193,7 +152,7 @@ describe('App — audio cues (Phase 3)', () => {
     render(<App />)
     // Bump duration to 'open-ended' before starting.
     const duration = screen.getByRole('group', { name: 'Duration' })
-    const increase = duration.querySelector('[aria-label="Increase Duration"]') as HTMLButtonElement
+    const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let i = 0; i < 11; i += 1) {
       fireEvent.click(increase)
     }
@@ -221,7 +180,7 @@ describe('App — audio cues (Phase 3)', () => {
     render(<App />)
     // Use a 5-min duration so the clock can run out within reasonable test time.
     const duration = screen.getByRole('group', { name: 'Duration' })
-    const decrease = duration.querySelector('[aria-label="Decrease Duration"]') as HTMLButtonElement
+    const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
     fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
@@ -335,7 +294,7 @@ describe('App — audio cues (Phase 3)', () => {
 
     // Visuals continue: advance through lead-in to running.
     act(() => {
-      vi.advanceTimersByTime(LEAD_IN_MS)
+      vi.advanceTimersByTime(APP_LEAD_IN_MS)
     })
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })

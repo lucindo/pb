@@ -24,25 +24,24 @@ import {
   type PracticeMap,
 } from '../storage'
 import {
-  createAudioViewModel,
   createInstallViewModel,
-  createNaviAudioToggleViewModel,
-  createPracticeControlsViewModel,
-  createPracticeSessionViewModel,
-  createPracticeSettingsViewModel,
-  type AppEndSessionDialogViewModel,
   type AppViewModel,
 } from './appViewModel'
+import {
+  createAppDialogsViewModel,
+  createAudioViewModelsFromBreathingController,
+  createEndSessionDialogViewModelsFromControllers,
+  createPracticeControlsViewModelFromControllers,
+  createPracticeSessionViewModelFromControllers,
+  createPracticeSettingsViewModelFromControllers,
+  getPracticePrimaryActionsFromControllers,
+} from './appControllerAdapters'
 import { useAppDialogs } from './useAppDialogs'
 import {
   getPracticeHeader,
   getPracticeTitle,
   getPracticeToggleStrings,
 } from './practiceCopy'
-import {
-  getBreathingPrimaryAction,
-  getNaviKriyaPrimaryAction,
-} from './sessionPresentation'
 
 export function useAppViewModel(): AppViewModel {
   const initialPractices = useMemo<PracticeMap>(() => loadPractices(), [])
@@ -89,12 +88,7 @@ export function useAppViewModel(): AppViewModel {
   const naviStart = navi.start
   const naviCancelStart = navi.cancelStart
   const naviRequestEnd = navi.requestEnd
-  const {
-    muted: audioMuted,
-    audioAvailable,
-    audioStatus,
-    onMuteOrResumeClick,
-  } = breathing.audio
+  const { onMuteOrResumeClick } = breathing.audio
   const onStretchSettingsChange = useCallback((next: StretchSettings): void => {
     setStretchSettings(next)
     saveStretchSettings(next)
@@ -104,113 +98,61 @@ export function useAppViewModel(): AppViewModel {
     void onMuteOrResumeClick()
   }, [onMuteOrResumeClick])
 
-  const audio = createAudioViewModel({
-    muted: audioMuted,
-    audioAvailable,
-    onMuteToggle,
-    audioStatus,
-  })
-  const naviAudio = createNaviAudioToggleViewModel({
-    muted: audioMuted,
-    audioAvailable,
+  const {
+    audio,
+    naviAudio,
+  } = createAudioViewModelsFromBreathingController({
+    breathing,
     onMuteToggle,
   })
-  const breathingPrimaryAction = getBreathingPrimaryAction({
-    status: breathing.session.state.status,
-    inLeadIn: breathing.phase === 'lead-in',
-  })
-  const naviPrimaryAction = getNaviKriyaPrimaryAction({
-    starting: navi.starting,
-    sessionActive: navi.sessionActive,
+  const primaryActions = getPracticePrimaryActionsFromControllers({
+    breathing,
+    navi,
   })
 
   const onBreathingPrimaryClick = useCallback((): void => {
-    if (breathingPrimaryAction === 'end') {
+    if (primaryActions.breathing === 'end') {
       breathingRequestEnd()
       return
     }
     void breathingStartOrCancel()
-  }, [breathingPrimaryAction, breathingRequestEnd, breathingStartOrCancel])
+  }, [primaryActions.breathing, breathingRequestEnd, breathingStartOrCancel])
 
   const onNaviPrimaryClick = useCallback((): void => {
-    if (naviPrimaryAction === 'cancel') {
+    if (primaryActions.naviKriya === 'cancel') {
       naviCancelStart()
       return
     }
-    if (naviPrimaryAction === 'end') {
+    if (primaryActions.naviKriya === 'end') {
       naviRequestEnd()
       return
     }
     naviStart()
-  }, [naviPrimaryAction, naviCancelStart, naviRequestEnd, naviStart])
+  }, [primaryActions.naviKriya, naviCancelStart, naviRequestEnd, naviStart])
 
-  const practiceControls = createPracticeControlsViewModel({
+  const practiceControls = createPracticeControlsViewModelFromControllers({
     activePractice,
-    breathingAction: breathingPrimaryAction,
-    naviAction: naviPrimaryAction,
+    actions: primaryActions,
     strings: uiStrings.controls,
-    breathingAudio: audio,
+    audio,
     naviAudio,
     onBreathingPrimaryClick,
     onNaviPrimaryClick,
   })
-  const practiceSession = createPracticeSessionViewModel({
+  const practiceSession = createPracticeSessionViewModelFromControllers({
     activePractice,
-    breathing: {
-      phase: breathing.phase,
-      sessionCue: breathing.sessionCue,
-      leadInDigit: breathing.leadInDigit,
-      leadInPlaceholderFrame: breathing.leadInPlaceholderFrame,
-      liveFrame: breathing.session.liveFrame,
-      status: breathing.session.state.status,
-      inSessionView: breathing.inSessionView,
-    },
-    navi: {
-      sessionActive: navi.sessionActive,
-      starting: navi.starting,
-      leadInDigit: navi.leadInDigit,
-      phase: navi.phase,
-      round: navi.round,
-      count: navi.count,
-      running: navi.running,
-      settings: navi.settings,
-      justCompleted: navi.justCompleted,
-    },
+    breathing,
+    navi,
     liveCue,
   })
-  const practiceSettings = createPracticeSettingsViewModel({
+  const practiceSettings = createPracticeSettingsViewModelFromControllers({
     activePractice,
-    naviSessionActive: navi.sessionActive,
-    resonant: {
-      settings: breathing.session.state.selectedSettings,
-      isRunning: breathing.inSessionView,
-      onChange: breathing.setSelectedSettings,
-      onExtendDuration: breathing.session.extendDuration,
-    },
-    stretch: {
-      settings: stretchSettings,
-      isRunning: breathing.inSessionView,
-      onChange: onStretchSettingsChange,
-    },
-    naviKriya: {
-      settings: navi.settings,
-      onChange: navi.setSettings,
-    },
+    breathing,
+    navi,
+    stretchSettings,
+    onStretchSettingsChange,
   })
-  const endSessionDialogs: readonly AppEndSessionDialogViewModel[] = [
-    {
-      id: 'breathing',
-      open: breathing.endDialogOpen,
-      onConfirm: breathing.confirmEnd,
-      onCancel: breathing.cancelEnd,
-    },
-    {
-      id: 'naviKriya',
-      open: navi.endDialogOpen,
-      onConfirm: navi.confirmEnd,
-      onCancel: navi.cancelEnd,
-    },
-  ]
+  const endSessionDialogs = createEndSessionDialogViewModelsFromControllers({ breathing, navi })
 
   const onSwitchPractice = useCallback((next: PracticeId): void => {
     if (controlsDisabled) return
@@ -251,16 +193,11 @@ export function useAppViewModel(): AppViewModel {
     practiceToggleStrings: getPracticeToggleStrings(uiStrings),
     featureFlags,
     install,
-    dialogs: {
-      learnOpen: appDialogs.learnOpen,
-      settingsOpen: appDialogs.settingsOpen,
+    dialogs: createAppDialogsViewModel({
+      dialogs: appDialogs,
       settingsInSessionView: breathing.inSessionView,
       endSessionDialogs,
-      onLearnOpen: appDialogs.onLearnOpen,
-      onLearnClose: appDialogs.onLearnClose,
-      onSettingsOpen: appDialogs.onSettingsOpen,
-      onSettingsClose: appDialogs.onSettingsClose,
-    },
+    }),
     onSwitchPractice,
   }
 }

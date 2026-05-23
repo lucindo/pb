@@ -1,0 +1,62 @@
+import { act, fireEvent, screen } from '@testing-library/react'
+import { vi } from 'vitest'
+
+import { LEAD_IN_DURATION_MS } from '../audio/audioEngine'
+import { STATE_KEY, type PracticeId } from '../storage'
+
+export const APP_TEST_NOW = new Date('2026-05-09T00:00:00.000Z')
+export const APP_LEAD_IN_MS = LEAD_IN_DURATION_MS
+
+export function settingGroup(name: string): HTMLElement {
+  return screen.getByRole('group', { name })
+}
+
+export function sessionReadout(): HTMLElement {
+  return screen.getByRole('region', { name: 'Session readout' })
+}
+
+export function clickStartSession(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+}
+
+export async function flushMicrotasks(): Promise<void> {
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
+export async function startLeadIn(): Promise<void> {
+  clickStartSession()
+  await flushMicrotasks()
+}
+
+export async function startAndAdvancePastLeadIn(): Promise<void> {
+  clickStartSession()
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+    vi.advanceTimersByTime(APP_LEAD_IN_MS)
+  })
+}
+
+export async function advanceTime(ms: number): Promise<void> {
+  await act(async () => {
+    vi.advanceTimersByTime(ms)
+    await Promise.resolve()
+  })
+}
+
+export function readStoredEnvelope(): Record<string, unknown> | null {
+  const raw = window.localStorage.getItem(STATE_KEY)
+  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
+}
+
+export function practiceStatsOf(
+  env: Record<string, unknown> | null,
+  practice: PracticeId,
+): Record<string, unknown> | undefined {
+  const practices = env?.['practices'] as Record<string, unknown> | undefined
+  const slice = practices?.[practice] as Record<string, unknown> | undefined
+  return slice?.['stats'] as Record<string, unknown> | undefined
+}

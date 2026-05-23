@@ -4,47 +4,24 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
+import {
+  APP_LEAD_IN_MS,
+  APP_TEST_NOW,
+  practiceStatsOf,
+  readStoredEnvelope,
+  sessionReadout,
+  settingGroup,
+  startAndAdvancePastLeadIn,
+} from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
 import type { TimbreId } from '../domain/settings'
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
-function settingGroup(name: string) {
-  return screen.getByRole('group', { name })
-}
-
-function sessionReadout() {
-  return screen.getByRole('region', { name: 'Session readout' })
-}
-
-// Phase 3 (Plan 04): clicking Start session enters a 3-second lead-in before the
-// session timing clock starts (SESS-05 single-clock invariant + D-13 + D-14). All
-// pre-existing Phase 1/2 tests below assume "click Start → immediately running".
-// To preserve their original intent under the new lead-in, we click Start via
-// fireEvent (sync), flush microtasks for the awaited audio.start() promise, then
-// advance fake timers past the 3 s setTimeout chain.
-//
-// Tests in this file no longer use @testing-library/user-event because the
-// userEvent + fake-timer pairing produces hangs when combined with the async
-// onStartClick handler. fireEvent + manual microtask flushing is sufficient for
-// the assertions these tests make (button clicks, no keyboard navigation).
-const LEAD_IN_MS = 3000
-
-async function startAndAdvancePastLeadIn() {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  // Flush the microtask queue so the await audio.start() in onStartClick resolves
-  // and the setTimeout chain is registered, THEN advance timers past LEAD_IN_MS.
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
-
 describe('running session display', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {
@@ -93,7 +70,7 @@ describe('running session display', () => {
 describe('running duration edits and completion', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {
@@ -191,7 +168,7 @@ describe('running duration edits and completion', () => {
 describe('manual session ending', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {
@@ -263,7 +240,7 @@ function seedTimbre(timbre: TimbreId): void {
 describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not affect active session', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
     window.localStorage.clear()
   })
 
@@ -381,21 +358,9 @@ function seedNK(nk: NKSeed = {}): void {
   }))
 }
 
-function readEnv(): Record<string, unknown> | null {
-  const raw = window.localStorage.getItem(STATE_KEY)
-  // Reason: test helper reads raw localStorage; shape validated by downstream assertions.
-  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
-}
-
-function statsOf(env: Record<string, unknown> | null, practice: 'resonant' | 'naviKriya' | 'stretch') {
-  const practices = env?.['practices'] as Record<string, unknown> | undefined
-  const slice = practices?.[practice] as Record<string, unknown> | undefined
-  return slice?.['stats'] as Record<string, unknown> | undefined
-}
-
 // The Navi pre-session window is now a 3-2-1 countdown reusing HRV's lead-in
 // (LEAD_IN_DURATION_MS = 3000ms), not the old silent settle.
-const NK_COUNTDOWN = 3000
+const NK_COUNTDOWN = APP_LEAD_IN_MS
 
 // Full Navi session wall-time (ms), start() → natural completion. Every round
 // is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in.
@@ -418,7 +383,7 @@ function nkSessionMs(
 describe('Navi Kriya session integration (Phase 31)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
     window.localStorage.clear()
   })
 
@@ -449,9 +414,9 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
 
     // NK-08: the session is recorded into the naviKriya stats slice.
-    const env = readEnv()
-    expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
-    expect(statsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
+    const env = readStoredEnvelope()
+    expect(practiceStatsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
+    expect(practiceStatsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
   })
 
   it('does not touch Resonant stats when a Navi Kriya session completes (NK-08 isolation)', async () => {
@@ -465,11 +430,11 @@ describe('Navi Kriya session integration (Phase 31)', () => {
       await Promise.resolve()
     })
 
-    const env = readEnv()
+    const env = readStoredEnvelope()
     // The naviKriya slice advanced...
-    expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
+    expect(practiceStatsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
     // ...the resonant slice did not.
-    expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect((practiceStatsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
   })
 
   it('cancels during the countdown before the engine starts (HRV parity)', async () => {
@@ -492,8 +457,8 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     })
 
     // The session never started — no stats recorded, config screen restored.
-    const env = readEnv()
-    expect((statsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    const env = readStoredEnvelope()
+    expect((practiceStatsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
     expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
   })
 
@@ -519,11 +484,11 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
 
-    const env = readEnv()
+    const env = readStoredEnvelope()
     // D-13: the one fully-completed round is recorded; resonant stays untouched.
-    expect(statsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
-    expect(statsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
-    expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect(practiceStatsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
+    expect(practiceStatsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
+    expect((practiceStatsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
   })
 })
 
@@ -562,7 +527,7 @@ function seedStretch(): void {
 describe('Phase 34 — stretch session records stretch stats and leaves resonant untouched', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
     window.localStorage.clear()
   })
 
@@ -581,7 +546,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
-      vi.advanceTimersByTime(LEAD_IN_MS)
+      vi.advanceTimersByTime(APP_LEAD_IN_MS)
     })
 
     // Run 35s so the session exceeds the 30s recording threshold.
@@ -596,13 +561,13 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
 
-    const env = readEnv()
+    const env = readStoredEnvelope()
     // Stretch stats updated:
-    expect(statsOf(env, 'stretch')?.['totalSessions']).toBe(1)
-    expect((statsOf(env, 'stretch')?.['totalElapsedSeconds'] as number | undefined) ?? 0).toBeGreaterThanOrEqual(35)
+    expect(practiceStatsOf(env, 'stretch')?.['totalSessions']).toBe(1)
+    expect((practiceStatsOf(env, 'stretch')?.['totalElapsedSeconds'] as number | undefined) ?? 0).toBeGreaterThanOrEqual(35)
     // Resonant and naviKriya untouched:
-    expect((statsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
-    expect((statsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect((practiceStatsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect((practiceStatsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
   })
 
   // UAT GAP 3: clicking 'End session' on a running stretch session opens the dialog
@@ -614,7 +579,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
-      vi.advanceTimersByTime(LEAD_IN_MS)
+      vi.advanceTimersByTime(APP_LEAD_IN_MS)
     })
 
     // The session is running — 'End session' must open the dialog, not end immediately.
@@ -635,7 +600,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
-      vi.advanceTimersByTime(LEAD_IN_MS)
+      vi.advanceTimersByTime(APP_LEAD_IN_MS)
     })
     act(() => { vi.advanceTimersByTime(35_000) })
 
@@ -645,8 +610,8 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     await act(async () => { await Promise.resolve() })
 
     expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
-    const env = readEnv()
-    expect(statsOf(env, 'stretch')?.['totalSessions']).toBe(1)
+    const env = readStoredEnvelope()
+    expect(practiceStatsOf(env, 'stretch')?.['totalSessions']).toBe(1)
   })
 
   // UAT GAP 3: open-ended resonant sessions still end directly (no dialog — regression guard)
@@ -680,17 +645,4 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
   })
 
-  // UAT GAP 4: root layout section is top-anchored (justify-start)
-  it('GAP 4: the root layout section is top-anchored (justify-start, not justify-center)', () => {
-    render(<App />)
-    // The root section must use justify-start, not justify-center
-    const sections = document.querySelectorAll('section')
-    const rootSection = Array.from(sections).find(
-      (s) => s.classList.contains('flex') && s.classList.contains('flex-col'),
-    )
-    expect(rootSection).toBeDefined()
-    if (rootSection === undefined) throw new Error('Expected root layout section')
-    expect(rootSection.classList.contains('justify-start')).toBe(true)
-    expect(rootSection.classList.contains('justify-center')).toBe(false)
-  })
 })

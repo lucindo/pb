@@ -4,33 +4,21 @@
 
 import '@testing-library/jest-dom/vitest'
 
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
-
-const LEAD_IN_MS = 3000
-
-async function flushMicrotasks() {
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-  })
-}
-
-async function startAndAdvancePastLeadIn() {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
-  await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
-    vi.advanceTimersByTime(LEAD_IN_MS)
-  })
-}
+import {
+  APP_LEAD_IN_MS,
+  APP_TEST_NOW,
+  flushMicrotasks,
+  startAndAdvancePastLeadIn,
+} from './appTestHarness'
 
 describe('App — wake lock (Phase 5)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+    vi.setSystemTime(APP_TEST_NOW)
   })
 
   afterEach(() => {
@@ -56,7 +44,7 @@ describe('App — wake lock (Phase 5)', () => {
     render(<App />)
     // Bump duration to 'open-ended' (mirror App.audio.test.tsx:185-190)
     const duration = screen.getByRole('group', { name: 'Duration' })
-    const increase = duration.querySelector('[aria-label="Increase Duration"]') as HTMLButtonElement
+    const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let i = 0; i < 11; i += 1) fireEvent.click(increase)
 
     await startAndAdvancePastLeadIn()
@@ -95,7 +83,7 @@ describe('App — wake lock (Phase 5)', () => {
     render(<App />)
     // Use a 5-min duration (mirrors App.audio.test.tsx:215-216 — one decrease click).
     const duration = screen.getByRole('group', { name: 'Duration' })
-    const decrease = duration.querySelector('[aria-label="Decrease Duration"]') as HTMLButtonElement
+    const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
     fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
@@ -167,7 +155,7 @@ describe('App — wake lock (Phase 5)', () => {
       await flushMicrotasks()
       expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
-      act(() => { vi.advanceTimersByTime(LEAD_IN_MS) })
+      act(() => { vi.advanceTimersByTime(APP_LEAD_IN_MS) })
       await flushMicrotasks()
       expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
 
