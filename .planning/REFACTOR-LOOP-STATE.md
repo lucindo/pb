@@ -29,8 +29,13 @@ State below is updated after every step transition.
 | B | Design-primitive component library (`Card`, `Pill`, `SegmentedControl`, `IconButton`, `Eyebrow`, `ArrowLink`, `Stepper`, `Toggle`) + icon/glyph library (centralized SVGs). | ✓ done — commit `c0bfe60` |
 | C | `PageShell` + `TopAppBar` primitives. Extract `AppHeader` (currently inline in `AppScreen.tsx`) into a real component. | ✓ done — commit `88305ea` |
 | D | Surface routing: introduce `appScreen` state (`'practice' \| 'learn' \| 'appSettings'`), add `ScreenRouter`. `LearnDialog` / `SettingsDialog` migrate to `LearnPage` / `AppSettingsPage` composed from primitives + PageShell. | ✓ done — commit `039caeb` |
-| E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | **implemented — awaiting operator approval** |
-| F | Cleanup pass: `shapeConstants.ts` single-source-of-truth (TS↔CSS), `PracticeContext` provider replacing prop drilling, `UiStrings` surface-vocabulary rename plan, App.*.test.tsx vs. unit-test overlap audit, `CueGlyph` inline-style → className, presentation-safe type re-exports. | pending |
+| E | Unified `PickerCardGrid<T>` primitive — collapses `CuePicker` / `LanguagePicker` / `ThemePicker` / `TimbrePicker` into one data-driven component. | ✓ done — commit `bd22ca5` |
+| F1 | `CueGlyph` inline-style → className (warmup: smallest, surgical) | pending |
+| F2 | `App.*.test.tsx` vs. unit-test overlap audit (mostly read-only; if deletions, low risk) | pending |
+| F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | pending |
+| F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | pending |
+| F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | pending |
+| F6 | `PracticeContext` provider replacing prop drilling of `vm` / `uiStrings` | pending |
 | G | Dead-code purge — delete `LearnDialog`, `SessionReadout`, `NKSessionReadout`, `StatusPanel`, `SettingsAnchor`, `LearnAnchor`, `SettingsDialog` (and tests) once their replacements are live. (Originally Item A; moved here after verifying all of them still have live importers in current state.) | pending |
 
 ---
