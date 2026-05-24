@@ -33,7 +33,7 @@ describe('App — wake lock (Phase 5)', () => {
   it('triggers navigator.wakeLock.request once on Start session click (D-01)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await flushMicrotasks()
     expect(requestSpy).toHaveBeenCalledTimes(1)
     expect(requestSpy).toHaveBeenCalledWith('screen')
@@ -104,7 +104,7 @@ describe('App — wake lock (Phase 5)', () => {
   it('releases the wake lock when the user cancels during lead-in (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await flushMicrotasks()
     act(() => { vi.advanceTimersByTime(500) })
     expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
@@ -152,7 +152,7 @@ describe('App — wake lock (Phase 5)', () => {
 
     it('starts a session with no error and no user-visible artifact when navigator.wakeLock is undefined (D-09)', async () => {
       render(<App />)
-      fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }))
       await flushMicrotasks()
       expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 

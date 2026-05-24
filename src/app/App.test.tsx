@@ -104,7 +104,7 @@ describe('CUE-01 capture-at-session-start (T-25-09)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
 
     // Start a new session — sessionCueRef was cleared on session end;
     // liveCue is now 'labels' (post-cross-tab update), so the new session captures 'labels'.

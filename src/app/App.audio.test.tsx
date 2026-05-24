@@ -64,7 +64,7 @@ describe('App — audio cues (Phase 3)', () => {
 
     render(<App />)
     expect(acSpy).not.toHaveBeenCalled() // Test 6 covers this too — kept here for clarity
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await flushMicrotasks()
     expect(acSpy).toHaveBeenCalledTimes(1)
   })
@@ -221,8 +221,8 @@ describe('App — audio cues (Phase 3)', () => {
     vi.stubGlobal('AudioContext', acSpy)
 
     render(<App />)
-    // Idle state — initial click to enter lead-in (button still reads 'Start session').
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    // Idle state — initial click to enter lead-in (button still reads 'Start').
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await flushMicrotasks()
     act(() => {
       vi.advanceTimersByTime(500)
@@ -251,10 +251,10 @@ describe('App — audio cues (Phase 3)', () => {
   it('LEAD-01 D-08: primary button shows "Cancel" (EN) during lead-in and disappears once session starts', async () => {
     render(<App />)
     // Confirm idle label before lead-in
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
 
     // Enter lead-in
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await flushMicrotasks()
     act(() => {
       vi.advanceTimersByTime(500)
@@ -262,8 +262,8 @@ describe('App — audio cues (Phase 3)', () => {
 
     // During lead-in the button must read 'Cancel' (EN)
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    // 'Start session' must no longer be queryable as a button
-    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+    // 'Start' must no longer be queryable as a button
+    expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
   })
 
   // -- Test 12: AC failure path (D-10 visuals-only fallback) ------------------
@@ -280,7 +280,7 @@ describe('App — audio cues (Phase 3)', () => {
     )
 
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     // Allow the failed promise to resolve through useAudioCues.start's catch branch.
     await flushMicrotasks()
 

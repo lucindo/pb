@@ -49,7 +49,7 @@ describe('end-session confirmation modal (App integration)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
   })
 
@@ -80,7 +80,7 @@ describe('end-session confirmation modal (App integration)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
   })
 
@@ -137,7 +137,7 @@ describe('end-session confirmation modal (App integration)', () => {
       expect(
         screen.queryByRole('dialog', { name: 'End this session?' }),
       ).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+      expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
       expect(screen.getByText('Session complete')).toBeVisible()
     })
   })
@@ -164,7 +164,7 @@ describe('WR-09 surface routing replaces dialog overlay', () => {
     render(<App />)
 
     // Practice surface mounted before click — Start button is visible.
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
 
     fireEvent.click(screen.getByRole('button', { name: 'Learn' }))
 
@@ -178,7 +178,7 @@ describe('WR-09 surface routing replaces dialog overlay', () => {
     ).toBeInTheDocument()
 
     // Practice surface is unmounted — Start button is gone.
-    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
   })
 
 })

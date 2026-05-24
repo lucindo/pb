@@ -171,7 +171,7 @@ describe('LOCL-02 — stats record on each end path', () => {
 
   it('does NOT record on cancel-during-lead-in (D-03 / Pitfall 2)', async () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await act(async () => {
       await Promise.resolve()
       vi.advanceTimersByTime(1000)  // mid-lead-in (1 of 3 seconds)
@@ -289,6 +289,6 @@ describe('Phase 34 — v2 envelope migrates to v3 and Stretch practice shows con
     // The stretch form should render Start BPM (one of the stretch knobs).
     expect(settingGroup('Start BPM')).toBeInTheDocument()
     // The Start session button should be present for the stretch practice.
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
   })
 })

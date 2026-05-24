@@ -144,7 +144,7 @@ describe('running duration edits and completion', () => {
     })
 
     expect(screen.getByText('Session complete')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
   })
 
   it('keeps open-ended sessions running when mocked time advances', async () => {
@@ -201,7 +201,7 @@ describe('manual session ending', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /Breathing shape/i })).not.toBeInTheDocument()
     expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
@@ -219,7 +219,7 @@ describe('manual session ending', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
   })
 })
@@ -402,7 +402,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     // Countdown, then the full self-rescheduling OM chain (100 front + 25 back).
     await act(async () => {
       await Promise.resolve()
@@ -414,7 +414,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     // headline (no popup) and returns to the config screen. Same "Session
     // complete" copy as the resonant practice.
     expect(screen.getByText('Session complete')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
 
     // NK-08: the session is recorded into the naviKriya stats slice.
     const env = readStoredEnvelope()
@@ -426,7 +426,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await act(async () => {
       await Promise.resolve()
       vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + 2_000)
@@ -444,7 +444,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     // Part-way into the 3-2-1 countdown the primary button reads 'Cancel'.
     await act(async () => {
       await Promise.resolve()
@@ -462,7 +462,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     // The session never started — no stats recorded, config screen restored.
     const env = readStoredEnvelope()
     expect((practiceStatsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
   })
 
   it('ending early records the completed rounds and elapsed time (NK-07, D-13)', async () => {
@@ -472,7 +472,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     seedNK({ frontCount: 100, omLength: 'fast', rounds: 2 })
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     // Countdown + all of round 1, then into round 2's front phase — so exactly
     // one round is complete when we end early. nkSessionMs(.., 1) is one round.
     await act(async () => {
@@ -545,7 +545,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
 
     // Start the session — the stretch practice uses the breathing engine
     // (the shared session action row renders for activePractice === 'stretch').
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
@@ -578,7 +578,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     seedStretch()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
@@ -590,8 +590,8 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     await act(async () => { await Promise.resolve() })
 
     expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
-    // Session is still active — 'End session' button is NOT replaced by 'Start session'
-    expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+    // Session is still active — 'End session' button is NOT replaced by 'Start'
+    expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
   })
 
   // UAT GAP 3: confirming the dialog ends the stretch session and records stats
@@ -599,7 +599,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     seedStretch()
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
@@ -612,7 +612,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
 
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
     const env = readStoredEnvelope()
     expect(practiceStatsOf(env, 'stretch')?.['totalSessions']).toBe(1)
   })
@@ -645,7 +645,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
 
     // Open-ended resonant session: dialog must NOT appear; session ends directly
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
   })
 
 })

@@ -62,7 +62,7 @@ describe('main screen settings controls', () => {
       await startAndAdvancePastLeadIn()
 
       expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
-      expect(screen.queryByRole('button', { name: 'Start session' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
@@ -77,7 +77,7 @@ describe('main screen settings controls', () => {
       fireEvent.click(screen.getByRole('button', { name: 'End session' }))
       fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-      expect(screen.getByRole('button', { name: 'Start session' })).toBeVisible()
+      expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
       expect(screen.queryByRole('button', { name: 'End session' })).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()

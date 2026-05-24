@@ -209,7 +209,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         stretchHeader: 'Stretch practice',
       },
       controls: {
-        startSession: 'Start session',
+        startSession: 'Start',
         endSession: 'End session',
         cancel: 'Cancel',
       },
@@ -375,7 +375,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         stretchHeader: 'Prática de Alongar',
       },
       controls: {
-        startSession: 'Iniciar sessão',
+        startSession: 'Iniciar',
         endSession: 'Encerrar sessão',
         cancel: 'Cancelar',
       },

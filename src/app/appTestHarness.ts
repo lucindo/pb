@@ -25,7 +25,7 @@ export function sessionReadout(): HTMLElement {
 }
 
 export function clickStartSession(): void {
-  fireEvent.click(screen.getByRole('button', { name: 'Start session' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Start' }))
 }
 
 export async function flushMicrotasks(): Promise<void> {
