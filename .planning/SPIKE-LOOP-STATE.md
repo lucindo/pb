@@ -160,7 +160,14 @@ Annotated but not in bullet list (awaits operator confirmation):
 **Dump #2 (mini)** — End button copy
 - "End session" → "End" (EN) / "Encerrar sessão" → "Encerrar" (PT-BR). 8 test files updated. Collision with EndSessionDialog's confirm button (also "End") resolved by scoping dialog-confirm queries to `within(dialog)`; JSDOM-only fix since browsers honor `<dialog>` inert. **DONE — commit `b300072`**
 
-**Awaiting more feedback from operator.**
+**Dump #3** — Settings page pickers (Language / Appearance / Cue Style / Timbre)
+
+- A — Language → SegmentedControl. SegmentedControl chrome updated to spike (border-soft container, accent-fill active, text-soft inactive, no shadow); added `disabled` prop. LanguagePicker swaps from PickerCardGrid → SegmentedControl. **DONE — commit `c9069c5`**
+- B — Appearance: PickerCardGrid chrome refactored to spike values (border-soft border on both states, bg-soft fill on selected, text-soft on unselected, no shadow, drop min-h-12; inline=rounded-full text-xs, stack=rounded-2xl text-[11px]). ThemePicker gains 14×14 round color-swatch icons per spike L1831-1834 — Light/Dark use literal bg hex (#f3f5f7 / #1a1d24), System uses a 50/50 linear-gradient between them. **DONE — commit `e2db3e6`**
+- C — Cue Style: PickerCardGrid columns extended to support 4; CuePicker columns 3 → 4 (matches spike VisualPicker L1564). Existing CueGlyph component kept per operator's "visual reference, NOT content" note. **DONE — commit `812d04f`**
+- D — Timbre: per-option Unicode glyph (◯ Bowl / ◐ Bell / ∿ Sine / ◊ Flute per spike L1672-1675) inline with label; aria-hidden so the radio's accessible name stays as the localized label. TimbrePicker.test.tsx 2 tests updated from textContent equality to accessible-name queries. **DONE — commit `035e099`**
+
+**Awaiting operator review of Dump #3.**
 
 ### Archived — Implementation summary (Item J10)
 
