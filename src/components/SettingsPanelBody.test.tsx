@@ -31,14 +31,43 @@ function renderBody(
   }
 }
 
-describe('SettingsPanelBody', () => {
-  it('renders all four pickers (Theme / Cue / Timbre / Language)', () => {
+const EN = UI_STRINGS.en.appSettings
+
+describe('SettingsPanelBody — J14 sectioning', () => {
+  it('renders the 4 section headings (Appearance / Language / Audio / About)', () => {
     renderBody()
-    expect(screen.getByText('Theme')).toBeInTheDocument()
-    expect(screen.getByText('Cue style')).toBeInTheDocument()
-    expect(screen.getByText('Timbre')).toBeInTheDocument()
-    expect(screen.getByText('Language')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.appearance })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.language })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.audio })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.about })).toBeInTheDocument()
+  })
+
+  it('renders all four pickers (4 radiogroups: Theme + Cue + Timbre + Language)', () => {
+    renderBody()
     expect(screen.getAllByRole('radiogroup')).toHaveLength(4)
+    expect(screen.getByRole('radiogroup', { name: EN.themeLabel })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: EN.cueLabel })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: EN.timbreLabel })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: EN.languageLabel })).toBeInTheDocument()
+  })
+
+  it('keeps Cue/Timbre sublabels visible (Audio multi-picker disambiguation)', () => {
+    const { container } = renderBody()
+    // Cue + Timbre sublabels render as visible <p> (no sr-only class).
+    const cueLabel = container.querySelector('#cue-picker-label')
+    const timbreLabel = container.querySelector('#timbre-picker-label')
+    expect(cueLabel).not.toBeNull()
+    expect(timbreLabel).not.toBeNull()
+    expect(cueLabel).not.toHaveClass('sr-only')
+    expect(timbreLabel).not.toHaveClass('sr-only')
+  })
+
+  it('hides Theme/Language sublabels visually (Appearance/Language are single-picker sections)', () => {
+    const { container } = renderBody()
+    const themeLabel = container.querySelector('#theme-picker-label')
+    const languageLabel = container.querySelector('#language-picker-label')
+    expect(themeLabel).toHaveClass('sr-only')
+    expect(languageLabel).toHaveClass('sr-only')
   })
 
   it('disables all picker radiogroups when inSessionView=true', () => {
@@ -47,7 +76,27 @@ describe('SettingsPanelBody', () => {
       expect(rg).toHaveAttribute('aria-disabled', 'true')
     }
   })
+})
 
+describe('SettingsPanelBody — About section', () => {
+  it('renders the Version row with the injected __APP_VERSION__', () => {
+    renderBody()
+    expect(screen.getByText(EN.about.versionLabel)).toBeVisible()
+    expect(screen.getByText(__APP_VERSION__)).toBeVisible()
+  })
+
+  it('renders the Source row with a GitHub link (external, rel=noopener)', () => {
+    renderBody()
+    expect(screen.getByText(EN.about.sourceLabel)).toBeVisible()
+    const link = screen.getByRole('link', { name: /GitHub/ })
+    expect(link).toBeVisible()
+    expect(link).toHaveAttribute('href', 'https://github.com/lucindo/hrv')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+})
+
+describe('SettingsPanelBody — Install affordance (now inside About)', () => {
   it('install row absent when installable=false', () => {
     renderBody({ installable: false })
     expect(screen.queryByText(UI_STRINGS.en.install.settingsLabel)).not.toBeInTheDocument()

@@ -3,9 +3,17 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import packageJson from './package.json' with { type: 'json' }
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/hrv/',
+  define: {
+    // J14: surface the package.json version to the runtime for the About
+    // section. Stringified at config-time; the bundle gets a plain literal,
+    // not a runtime require of package.json.
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [
     react(),
     tailwindcss(),

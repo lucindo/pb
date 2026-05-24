@@ -135,6 +135,17 @@ export interface UiStrings {
     readonly cueLabel: string
     readonly timbreLabel: string
     readonly languageLabel: string
+    readonly sections: {
+      readonly appearance: string
+      readonly language: string
+      readonly audio: string
+      readonly about: string
+    }
+    readonly about: {
+      readonly versionLabel: string
+      readonly sourceLabel: string
+      readonly sourceLinkText: string
+    }
     readonly themes: {
       readonly light: string
       readonly dark: string
@@ -292,6 +303,17 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       cueLabel: 'Cue style',
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
+      sections: {
+        appearance: 'Appearance',
+        language: 'Language',
+        audio: 'Audio',
+        about: 'About',
+      },
+      about: {
+        versionLabel: 'Version',
+        sourceLabel: 'Source',
+        sourceLinkText: 'GitHub',
+      },
       themes: {
         light: 'Light',
         dark: 'Dark',
@@ -447,6 +469,17 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       cueLabel: 'Estilo de guia',
       timbreLabel: 'Timbre',
       languageLabel: 'Idioma',
+      sections: {
+        appearance: 'Aparência',
+        language: 'Idioma',
+        audio: 'Áudio',
+        about: 'Sobre',
+      },
+      about: {
+        versionLabel: 'Versão',
+        sourceLabel: 'Código-fonte',
+        sourceLinkText: 'GitHub',
+      },
       themes: {
         light: 'Claro',
         dark: 'Escuro',

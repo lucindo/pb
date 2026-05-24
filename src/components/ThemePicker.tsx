@@ -7,13 +7,15 @@ export interface ThemePickerProps {
   disabled: boolean
   strings: UiStrings['appSettings']['themes']
   sectionLabel: string
+  sectionLabelHidden?: boolean
 }
 
-export function ThemePicker({ disabled, strings, sectionLabel }: ThemePickerProps) {
+export function ThemePicker({ disabled, strings, sectionLabel, sectionLabelHidden }: ThemePickerProps) {
   const { theme, setTheme } = useThemeChoice()
   return (
     <PickerCardGrid<ThemeId>
       sectionLabel={sectionLabel}
+      sectionLabelHidden={sectionLabelHidden}
       labelId="theme-picker-label"
       options={THEME_OPTIONS}
       value={theme}

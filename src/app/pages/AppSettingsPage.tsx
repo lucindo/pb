@@ -2,7 +2,6 @@ import { useEffect, useRef, type ReactElement } from 'react'
 
 import { ChevronBackIcon } from '../../components/icons'
 import { SettingsPanelBody } from '../../components/SettingsPanelBody'
-import { Card } from '../../components/primitives/Card'
 import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
@@ -51,17 +50,15 @@ export function AppSettingsPage({
           </div>
         }
       />
-      <div className="mt-6 w-full text-left">
-        <Card padding="lg">
-          <SettingsPanelBody
-            inSessionView={false}
-            strings={strings}
-            isIOS={isIOS}
-            isStandalone={isStandalone}
-            installable={installable}
-            onInstall={onInstall}
-          />
-        </Card>
+      <div className="w-full text-left">
+        <SettingsPanelBody
+          inSessionView={false}
+          strings={strings}
+          isIOS={isIOS}
+          isStandalone={isStandalone}
+          installable={installable}
+          onInstall={onInstall}
+        />
       </div>
     </PageShell>
   )

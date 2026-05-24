@@ -6,13 +6,15 @@ import { PickerCardGrid } from './primitives/PickerCardGrid'
 export interface LanguagePickerProps {
   disabled: boolean
   sectionLabel: string
+  sectionLabelHidden?: boolean
 }
 
-export function LanguagePicker({ disabled, sectionLabel }: LanguagePickerProps) {
+export function LanguagePicker({ disabled, sectionLabel, sectionLabelHidden }: LanguagePickerProps) {
   const { locale, setLocale } = useLocaleChoice()
   return (
     <PickerCardGrid<LocaleId>
       sectionLabel={sectionLabel}
+      sectionLabelHidden={sectionLabelHidden}
       labelId="language-picker-label"
       options={LOCALE_OPTIONS}
       value={locale}

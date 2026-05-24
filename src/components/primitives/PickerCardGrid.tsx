@@ -12,6 +12,10 @@ export interface PickerCardGridProps<T extends string> {
   columns: 2 | 3
   disabled: boolean
   optionLayout?: PickerCardLayout
+  // J14: when true, the `<p>` sublabel is rendered sr-only — visible label
+  // duty has moved to an enclosing SettingsSectionHeader, but the radiogroup's
+  // `aria-labelledby` link stays intact for screen readers.
+  sectionLabelHidden?: boolean
 }
 
 const COLUMNS_CLASS: Record<2 | 3, string> = {
@@ -54,17 +58,22 @@ export function PickerCardGrid<T extends string>({
   columns,
   disabled,
   optionLayout = 'inline',
+  sectionLabelHidden = false,
 }: PickerCardGridProps<T>): ReactElement {
   const layoutClass = optionLayout === 'stack' ? ` ${STACK_LAYOUT}` : ''
+  const labelClass = sectionLabelHidden
+    ? 'sr-only'
+    : 'text-sm font-semibold text-[var(--color-breathing-accent-strong)]'
+  const radiogroupMarginClass = sectionLabelHidden ? '' : 'mt-2 '
 
   return (
     <div>
-      <p id={labelId} className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">{sectionLabel}</p>
+      <p id={labelId} className={labelClass}>{sectionLabel}</p>
       <div
         role="radiogroup"
         aria-labelledby={labelId}
         aria-disabled={disabled}
-        className={`mt-2 grid ${COLUMNS_CLASS[columns]} gap-2`}
+        className={`${radiogroupMarginClass}grid ${COLUMNS_CLASS[columns]} gap-2`}
       >
         {options.map((id) => {
           const selected = value === id
