@@ -16,6 +16,7 @@ import {
   type WarmUpMinutes,
 } from '../domain'
 import { SettingsFormShell } from './SettingsFormShell'
+import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsStepper } from './SettingsStepper'
 
 export interface StretchSettingsFormProps {
@@ -71,12 +72,12 @@ export function StretchSettingsForm({
             onChange={(targetBpm) => { updateStretchSettings({ targetBpm }) }}
             strings={strings.stepper}
           />
-          <SettingsStepper<RatioLabel>
+          <SettingsSegmentedRow<RatioLabel>
             label={strings.ratioLabel}
+            ariaLabel={strings.stepper.fieldAriaLabel(strings.ratioLabel)}
             value={settings.ratio}
-            options={RATIO_OPTIONS}
+            options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
             onChange={(ratio) => { updateStretchSettings({ ratio }) }}
-            strings={strings.stepper}
           />
           <SettingsStepper<WarmUpMinutes>
             label={strings.holdInitialLabel}

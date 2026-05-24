@@ -79,9 +79,11 @@ describe('NaviKriyaSettingsForm', () => {
     const user = userEvent.setup()
     const onChangeSpy = vi.fn()
     render(<NKHarness initial={{ ...DEFAULT_NK_SETTINGS, omLength: 'medium' }} onChangeSpy={onChangeSpy} />)
+    // J16: OM pace is now a segmented control (radio buttons) inside the
+    // SettingsSegmentedRow fieldset, not a +/- stepper.
     const omGroup = screen.getByRole('group', { name: NK.omLengthLabel })
-    expect(within(omGroup).getByText(NK.omLengthMedium)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: EN.stepper.decreaseLabel(NK.omLengthLabel) }))
+    expect(within(omGroup).getByRole('radio', { name: NK.omLengthMedium })).toHaveAttribute('aria-checked', 'true')
+    await user.click(within(omGroup).getByRole('radio', { name: NK.omLengthFast }))
     expect((onChangeSpy.mock.calls[0]?.[0] as NaviKriyaSettings).omLength).toBe('fast')
   })
 
@@ -106,11 +108,12 @@ describe('NaviKriyaSettingsForm', () => {
     ).toBeInTheDocument()
   })
 
-  it('WR-04: the NK steppers and per-OM toggle render enabled (the form is unmounted mid-session, so there is no in-session disabled state)', () => {
+  it('WR-04: the NK controls render enabled (the form is unmounted mid-session, so there is no in-session disabled state)', () => {
     render(<NKHarness />)
     expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.roundsLabel) })).toBeEnabled()
     expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.frontCountLabel) })).toBeEnabled()
-    expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.omLengthLabel) })).toBeEnabled()
+    // OM pace is a segmented control after J16 — assert a radio is enabled.
+    expect(within(screen.getByRole('group', { name: NK.omLengthLabel })).getByRole('radio', { name: NK.omLengthFast })).toBeEnabled()
     // D-07: the per-OM tick toggle is stale-closure-safe and must remain live.
     expect(screen.getByRole('switch', { name: NK.perOmCueLabel })).toBeEnabled()
   })

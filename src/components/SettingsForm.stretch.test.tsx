@@ -195,8 +195,10 @@ describe('StretchSettingsForm', () => {
       activePractice: 'stretch',
       stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, ratio: '40:60' },
     })
+    // J16: ratio is now a segmented control (radio buttons) inside the
+    // SettingsSegmentedRow fieldset, not a +/- stepper.
     const ratioGroup = screen.getByRole('group', { name: 'Ratio' })
-    await user.click(within(ratioGroup).getByRole('button', { name: EN.stepper.decreaseLabel('Ratio') }))
+    await user.click(within(ratioGroup).getByRole('radio', { name: '50:50' }))
     expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
     expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).ratio).toBe('50:50')
   })

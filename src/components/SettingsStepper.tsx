@@ -9,11 +9,22 @@ export interface SettingsStepperProps<T extends string | number> {
   disabled?: boolean
   disableDecrease?: boolean
   disableIncrease?: boolean
-  /** When true, render only the value (no +/- buttons) — a read-only display field. */
+  /** When true, render label + value only (no +/- buttons) — read-only field
+   *  used by the Stretch sheet's derived total Duration row. */
   readOnly?: boolean
   strings: UiStrings['practice']['settingsForm']['stepper']
 }
 
+// Spike 010 Stepper (index.html L1503-1525):
+// - Row layout: label left / [- value unit +] right
+// - py-3, 1 px border-soft top
+// - Label: 15 px / weight 400 / text token
+// - Value: 16 px / weight 500 / text token / tabular-nums; unit 12 px / muted
+// - Buttons: 32 × 32 round / 1 px border-soft / transparent bg / text token
+//
+// The fieldset wrapper preserves role="group" + the aria-label that
+// `settingGroup(name)` in appTestHarness queries against. No visible legend —
+// the inline label span serves both visual and (via aria-labelledby) a11y.
 export function SettingsStepper<T extends string | number>({
   label,
   value,
@@ -37,65 +48,50 @@ export function SettingsStepper<T extends string | number>({
     }
   }
 
-  if (readOnly) {
-    return (
-      <fieldset
-        aria-label={strings.fieldAriaLabel(label)}
-        className="rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)]/80 p-4 shadow-sm shadow-teal-900/5"
-      >
-        <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-          {label}
-        </legend>
-        <div className="mt-3 flex items-center justify-center">
-          {/* AC-WR-06: read-only computed field — aria-live="off" so locale swaps
-              (the minutesUnit suffix changing) and mount do not produce screen-reader
-              noise on a value the user cannot directly change. The interactive
-              steppers below keep aria-live="polite". */}
-          <output
-            aria-live="off"
-            className="min-w-32 rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
-          >
-            {formatValue(value)}
-          </output>
-        </div>
-      </fieldset>
-    )
-  }
+  const buttonClass =
+    'grid size-8 place-items-center rounded-full border border-[var(--color-border-soft)] bg-transparent text-lg leading-none text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2'
 
   return (
     <fieldset
       aria-label={strings.fieldAriaLabel(label)}
-      className="rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)]/80 p-4 shadow-sm shadow-teal-900/5"
+      className="flex items-center justify-between border-t border-[var(--color-border-soft)] py-3"
     >
-      <legend className="px-1 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-        {label}
-      </legend>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          aria-label={strings.decreaseLabel(label)}
-          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-2xl leading-none text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-          disabled={disabled || disableDecrease || !canDecrease}
-          onClick={() => { changeBy(-1) }}
-        >
-          −
-        </button>
+      <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
+      {readOnly ? (
         <output
-          aria-live="polite"
-          className="min-w-32 rounded-2xl bg-[var(--color-breathing-bg-soft)] px-4 py-3 text-center text-2xl font-semibold text-[var(--color-breathing-accent-strong)]"
+          aria-live="off"
+          className="text-base font-medium tabular-nums text-[var(--color-breathing-text)]"
         >
           {formatValue(value)}
         </output>
-        <button
-          type="button"
-          aria-label={strings.increaseLabel(label)}
-          className="grid size-12 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-2xl leading-none text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-          disabled={disabled || disableIncrease || !canIncrease}
-          onClick={() => { changeBy(1) }}
-        >
-          +
-        </button>
-      </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={strings.decreaseLabel(label)}
+            className={buttonClass}
+            disabled={disabled || disableDecrease || !canDecrease}
+            onClick={() => { changeBy(-1) }}
+          >
+            −
+          </button>
+          <output
+            aria-live="polite"
+            className="min-w-[72px] text-center text-base font-medium tabular-nums text-[var(--color-breathing-text)]"
+          >
+            {formatValue(value)}
+          </output>
+          <button
+            type="button"
+            aria-label={strings.increaseLabel(label)}
+            className={buttonClass}
+            disabled={disabled || disableIncrease || !canIncrease}
+            onClick={() => { changeBy(1) }}
+          >
+            +
+          </button>
+        </div>
+      )}
     </fieldset>
   )
 }

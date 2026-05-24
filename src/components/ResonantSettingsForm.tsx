@@ -11,6 +11,7 @@ import {
   type SessionSettings,
 } from '../domain'
 import { SettingsFormShell } from './SettingsFormShell'
+import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsStepper } from './SettingsStepper'
 
 export interface ResonantSettingsFormProps {
@@ -61,12 +62,12 @@ export function ResonantSettingsForm({
             onChange={(bpm) => { updateSettings({ bpm }) }}
             strings={strings.stepper}
           />
-          <SettingsStepper<RatioLabel>
+          <SettingsSegmentedRow<RatioLabel>
             label={strings.ratioLabel}
+            ariaLabel={strings.stepper.fieldAriaLabel(strings.ratioLabel)}
             value={settings.ratio}
-            options={RATIO_OPTIONS}
+            options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
             onChange={(ratio) => { updateSettings({ ratio }) }}
-            strings={strings.stepper}
           />
         </>
       )}

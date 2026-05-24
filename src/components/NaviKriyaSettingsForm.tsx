@@ -9,9 +9,10 @@ import {
   type NaviKriyaSettings,
   type OmLength,
 } from '../domain'
-import { BooleanToggle } from './BooleanToggle'
 import { SettingsFormShell } from './SettingsFormShell'
+import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsStepper } from './SettingsStepper'
+import { SettingsToggleRow } from './SettingsToggleRow'
 
 export interface NaviKriyaSettingsFormProps {
   settings: NaviKriyaSettings
@@ -55,24 +56,22 @@ export function NaviKriyaSettingsForm({
         onChange={(frontCount) => { updateNkSettings({ frontCount }) }}
         strings={strings.stepper}
       />
-      <SettingsStepper<OmLength>
+      <SettingsSegmentedRow<OmLength>
         label={nkControlsStrings.omLengthLabel}
+        ariaLabel={strings.stepper.fieldAriaLabel(nkControlsStrings.omLengthLabel)}
         value={settings.omLength}
-        options={OM_LENGTH_OPTIONS}
-        formatValue={formatOmLength}
+        options={OM_LENGTH_OPTIONS.map((id) => ({ id, label: formatOmLength(id) }))}
         onChange={(omLength) => { updateNkSettings({ omLength }) }}
-        strings={strings.stepper}
       />
-      <BooleanToggle
-        isStretch={settings.perOmCue}
-        modeLabel={nkControlsStrings.perOmCueLabel}
-        standardLabel={nkControlsStrings.perOmCueOff}
-        stretchLabel={nkControlsStrings.perOmCueOn}
+      <SettingsToggleRow
+        label={nkControlsStrings.perOmCueLabel}
+        ariaLabel={nkControlsStrings.perOmCueLabel}
+        checked={settings.perOmCue}
         onChange={(perOmCue) => { updateNkSettings({ perOmCue }) }}
       />
       <p
         aria-live="polite"
-        className="text-center text-sm text-[var(--color-breathing-muted)]"
+        className="mt-3 text-center text-sm text-[var(--color-breathing-muted)]"
       >
         {nkControlsStrings.estimatedDuration(estimatedMinutes)}
       </p>

@@ -6,10 +6,10 @@ export interface ToggleProps {
   className?: string
 }
 
-/** iOS-style toggle: pill-shaped track with a circular knob that slides.
- *  Track is filled with the accent color when on; muted when off. The knob
- *  is a white circle with a subtle shadow. Renders as `role="switch"` so
- *  assistive tech announces it correctly. */
+// Spike 010 ToggleSwitch (index.html L1476-1500):
+// - 44 × 24 pill; bg=accent when on / transparent + 1 px border-soft when off
+// - 20 × 20 knob; on-accent color when on / muted when off
+// - 180 ms slide; subtle 0 1px 2px shadow on the knob
 export function Toggle({
   checked,
   onChange,
@@ -27,16 +27,18 @@ export function Toggle({
       onClick={() => {
         onChange(!checked)
       }}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-all disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 ${
         checked
-          ? 'bg-[var(--color-breathing-accent-strong)]'
-          : 'bg-[var(--color-breathing-muted)]'
+          ? 'border-transparent bg-[var(--color-breathing-accent)]'
+          : 'border-[var(--color-border-soft)] bg-transparent'
       } ${className}`.trim()}
     >
       <span
         aria-hidden="true"
-        className={`inline-block size-5 transform rounded-full bg-[var(--color-breathing-surface)] shadow-sm transition motion-reduce:transition-none ${
-          checked ? 'translate-x-[1.375rem]' : 'translate-x-0.5'
+        className={`absolute top-[1px] inline-block size-5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.15)] transition-[left] duration-[180ms] motion-reduce:transition-none ${
+          checked
+            ? 'left-[21px] bg-[var(--color-breathing-on-accent)]'
+            : 'left-[2px] bg-[var(--color-breathing-muted)]'
         }`}
       />
     </button>
