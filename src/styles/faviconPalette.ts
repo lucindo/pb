@@ -10,8 +10,8 @@ import type { ThemeId } from '../domain/settings'
 // These 2 hex values mirror the --color-breathing-accent-strong token per [data-theme] block.
 // If any token drifts, the favicon.sync.test.ts automated guard will fail the build.
 export const FAVICON_COLORS: Record<Exclude<ThemeId, 'system'>, string> = Object.freeze({
-  light: '#5e81ac',
-  dark: '#81a1c1',
+  light: '#414957',
+  dark: '#ccd0d9',
 })
 
 // D-01: Recolor-only SVG template. Spike 006 ("Breathing rings") replaced the

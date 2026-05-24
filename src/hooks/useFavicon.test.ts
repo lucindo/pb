@@ -73,7 +73,8 @@ describe('useFavicon', () => {
     seedPrefs('dark')
     renderHook(() => { useFavicon() })
     const href = getFaviconHref()
-    // dark palette hex is #81a1c1; URL-encoded: %2381a1c1 or the raw hex in the data URI
+    // Match against the URL-encoded rrggbb body of the current dark palette hex
+    // (FAVICON_COLORS is the source of truth — no hardcoded hex in this assertion).
     expect(href).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
   })
 

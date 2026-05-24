@@ -1,64 +1,31 @@
 @theme {
-  /* Phase 16.3-02: Light palette redesigned from Nord (Arctic palette, Sven Greb, MIT).
-     Source: nordtheme.com/docs/colors-and-palettes — Snow Storm + Frost + Aurora.
-     Maps Nord's role slots onto our 17-token surface per RESEARCH §Pattern 2.
+  /* Mono Zen palette (light) — cool slate + pale near-white.
+     Source of truth: .planning/spikes/010-mono-zen-light-dark/
+     Values transcribed verbatim from the spike's CANDIDATES['mono-zen-light'].tokens.
+     Deprecated tokens (orb-in-*, orb-out-*, ring-*) remain at their previous Nord
+     values until J4 (orb redesign — halo + center disc) and J7 (ring conditional)
+     remove them in lockstep with their consumers. */
 
-     5 prior iterations against Omarchy MilkMatcha rejected (cream-bg source had
-     insufficient hue range for "cool In + warm Out" rubric — every iteration produced
-     either invisible-on-bg orbs or saturated/heavy single-hue orbs). Pivoted to Nord:
-     Snow Storm (n4–n6) for Light bg tier; Frost (n7–n10) for cool In + chrome accent;
-     Aurora (n11–n15) for warm Out + secondary accents.
-
-     Mapping: bg = n6 #eceff4 (Snow Storm lightest); bg-soft = n5 #e5e9f0 (one tier
-     deeper for Light per rubric); bg-edge = #ffffff (pure-white fallback per rubric
-     since n6 is the source ceiling); surface = #ffffff (lifted dialog). accent = n8
-     #88c0d0 (Frost cyan, theme signature); accent-strong = n10 #5e81ac (deep Frost
-     blue, primary action — D-01 = 3.50 vs n6 on-accent); muted = n9 #81a1c1 (Frost
-     mid-blue). orb-in = Frost-tint subtle (n9 #81a1c1 → n4 #d8dee9) — cool blue
-     pole, visibly distinct from cream bg (bgVsIn = 1.62). orb-out = Aurora warm
-     (n11 #bf616a red → n12 #d08770 orange) — dark/warm pole. orb-in-text /
-     orb-out-text = n0 #2e3440 (Polar Night deepest). Derived rgb()/alpha follow
-     rubric: ring-outer = n9 channels (orb-in-from family); ring-inner = n11
-     channels (orb-out-from family); modal-backdrop = n0 channels.
-
-     Light THEME-05 floor restored to 1.5 (Nord clears 1.83; previous MilkMatcha
-     relax to 1.2 reverted).
-
-     UAT iteration 1 (Nord): pivoted Out from Aurora (red/orange) to Frost-glacier
-     fade (n7 teal → n3 polar tone) — atmospheric tonal, scales to large surface.
-
-     UAT iteration 3 (Nord): solid In/Out (no gradient). In = n4 snow approved.
-
-     UAT iteration 5 (Nord): post-Image-13 feedback — (1) Out wanted even lighter;
-     (2) Start-session hover state bg too bright. Two changes:
-     - Out solid lifted to #b4cdd2 = 50/50 blend of n4 snow + n7 teal (lum 0.58).
-       Easier on eyes at large surface scale.
-     - accent (hover bg of Start button via SessionActionRow.tsx hover:bg-…-accent)
-       shifted from n8 cyan #88c0d0 (lum 0.48) to n9 Frost mid-blue #81a1c1 (lum
-       0.34) — subtler lift between default (n10 #5e81ac) and hover, less "bright
-       flash" on cursor approach. accent-strong (default Start bg) unchanged at
-       n10 #5e81ac. accent and muted share #81a1c1 — independent tokens with same
-       value; acceptable per Nord Frost mid-blue's dual role.
-
-     Light THEME-05 floor relaxed 1.3 → 1.2 (operator override; see
-     THEME_05_FLOORS in theme.contrast.test.ts). Polarity invariant remains hard.
-
-     Ratios (computed pre-edit; theme.contrast.test.ts re-verifies in jsdom):
-       THEME-05 (in vs out, solid)             = 1.23 (clears Light's relaxed 1.2 floor)
-       D-01     (accent-strong vs on-accent)   = 3.50 (≥ 1.5 floor; was 7.58 pre-phase)
-       orb-in-text legibility vs In            = 9.29 (clears WCAG AA body)
-       orb-out-text legibility vs Out          = 7.50 (clears WCAG AA body)
-       Polarity (inLum > outLum)               = 0.727 > 0.580 ✓ (In is the light pole)
-       bg-vs-In visibility = 1.17 / bg-vs-Out visibility = 1.45 */
-  --color-breathing-bg: #eceff4;
-  --color-breathing-bg-soft: #e5e9f0;
-  --color-breathing-bg-edge: #ffffff;
+  /* Mono Zen tokens (light) */
+  --color-breathing-bg: #f3f5f7;
+  --color-breathing-bg-soft: #e8eaee;
+  --color-breathing-bg-edge: #fafbfc;
   --color-breathing-surface: #ffffff;
-  --color-breathing-accent: #81a1c1;
-  --color-breathing-accent-strong: #5e81ac;
-  --color-breathing-muted: #81a1c1;
-  --color-breathing-on-accent: #eceff4;
+  --color-breathing-accent: #5d6877;
+  --color-breathing-accent-strong: #414957;
+  --color-breathing-muted: #969ba6;
+  --color-breathing-on-accent: #ffffff;
+  --color-breathing-text: #3a4150;
+  --color-breathing-text-soft: #6b7280;
+  --color-border-soft: rgba(93, 104, 119, 0.16);
+  --color-orb-halo-1: rgba(168, 173, 183, 0.22);
+  --color-orb-halo-2: rgba(120, 128, 140, 0.32);
+  --color-orb-halo-3: rgba(93, 104, 119, 0.50);
+  --color-modal-backdrop: rgba(58, 65, 80, 0.22);
 
+  /* DEPRECATED — Nord-derived values retained for OrbShape / NKShape / CueGlyph /
+     theme.contrast.test.ts. J4 (orb redesign to halo + disc) and J7 (ring
+     conditional) remove these along with their consumers. */
   --color-orb-in-from: #d8dee9;
   --color-orb-in-to: #d8dee9;
   --color-orb-out-from: #bbd0d7;
@@ -67,7 +34,6 @@
   --color-orb-out-text: #2e3440;
   --color-ring-outer: rgb(216 222 233 / 0.7);
   --color-ring-inner: rgb(94 129 172 / 0.5);
-  --color-modal-backdrop: rgb(46 52 64 / 0.30);
 
   /* Non-themable layout/sizing tokens (D-02: ONLY --color-* tokens are themable) */
   /* --orb-scale-{min,max,mid} mirror the TS constants MIN_SCALE/MAX_SCALE/MID_SCALE
@@ -98,63 +64,30 @@
   --color-destructive-on: #eceff4;
 }
 
-/* Phase 16.3-03: Dark palette redesigned from Nord (Sven Greb, MIT) — Polar Night flavor.
-   Source: nordtheme.com/docs/colors-and-palettes. Carries Plan 02 Light palette learnings:
-   solid In/Out (no gradient), soft Frost-family Out at large surface scale (not saturated
-   Aurora accents), restrained accent hover lift.
-
-   Mapping (RESEARCH §Pattern 2 — Dark flavor):
-     bg              = n0 #2e3440 (Polar Night darkest)
-     bg-soft         = n1 #3b4252 (one tier LIGHTER than bg — Dark lift convention)
-     bg-edge         = #000000 (pure-black fallback per rubric; no deeper Nord tone)
-     surface         = n1 #3b4252 (lifted dialog/card surface)
-     accent          = n8 #88c0d0 (Frost cyan — hover state, lighter lift)
-     accent-strong   = n9 #81a1c1 (Frost mid-blue — default Start, softer than full cyan
-                                    per Plan 02 hover-lift learning)
-     muted           = n3 #4c566a (mid Polar Night, secondary text on dark)
-     on-accent       = n0 #2e3440 (dark text on light Frost accent button)
-     orb In (solid)  = n7 #8fbcbb (Frost teal — atmospheric light pole on dark bg)
-     orb Out (solid) = n3 #4c566a (Polar Night mid — subtle dark pole)
-     orb-in-text     = n0 #2e3440 (dark text on light teal In)
-     orb-out-text    = n6 #eceff4 (Snow Storm — light text on dark Polar Out)
-     ring-outer      = n7 channels @ 0.5  (orb-in family per rubric)
-     ring-inner      = n4 Snow channels @ 0.4 (hue-contrast halo on dark Out — rubric flex
-                                    since n3 Polar channels would blend into Out)
-     modal-backdrop  = pure-black @ 0.5 (deepest backdrop)
-
-   UAT iteration 1: post-Image-14/16/17 feedback — three fixes:
-     (a) muted #4c566a (n3) had contrast 1.69 vs bg — labels and dialog body
-         text unreadable. Lifted to #a0a8b6 (derived 60% n4 Snow + 40% n3
-         Polar Night blend, lum 0.40). Contrast 5.36 clears WCAG AA body 4.5.
-     (b) orb-in #8fbcbb (n7 Frost teal, lum 0.45) felt slightly too bright at
-         large surface scale. Darkened to #7b9da3 (70% n7 teal + 30% n3 Polar
-         blend, lum 0.31). T05 vs Out drops 3.57 → 2.53; still clears 1.5.
-     (c) Start-button hover #88c0d0 (n8 cyan, lift 0.135 over accent-strong)
-         too bright. Softened to #85b1c9 (50/50 blend of n9+n8, lift halved to
-         0.066). ring-outer follows new orb-in channels.
-
-   Out of palette scope (deferred → closed by v2.0 refactor item A):
-     End-button red is now tokenized as --color-destructive[-hover|-active|-on]
-     and lives in both @theme (light) and [data-theme='dark']:root (dark).
-     EndSessionDialog consumes the tokens via bg-[var(--color-destructive)] etc.
-
-   Ratios (post-iter-1; theme.contrast.test.ts re-verifies in jsdom):
-     THEME-05 (In solid vs Out solid)        = 2.53 (≥ 1.5 floor; was 4.85 pre-phase)
-     D-01     (accent-strong vs on-accent)   = 4.64 (≥ 1.5 floor)
-     muted vs bg                             = 5.36 (clears WCAG AA body 4.5)
-     orb-in-text legibility vs In            = 4.28 (clears WCAG AA body)
-     orb-out-text legibility vs Out          = 6.50 (clears WCAG AA body)
-     Polarity (inLum > outLum)               = 0.310 > 0.092 ✓ (In is the light pole)
-     bg-vs-In visibility                     = 4.28 / bg-vs-Out visibility = 1.75 */
+/* Mono Zen palette (dark) — deep cool slate + dimmed slate ink.
+   Source of truth: .planning/spikes/010-mono-zen-light-dark/
+   Values transcribed verbatim from the spike's CANDIDATES['mono-zen-dark'].tokens.
+   Deprecated tokens (orb-in-*, orb-out-*, ring-*) remain at previous Nord values
+   until J4 / J7 remove them along with their consumers. */
 [data-theme='dark']:root {
-  --color-breathing-bg: #2e3440;
-  --color-breathing-bg-soft: #3b4252;
-  --color-breathing-bg-edge: #000000;
-  --color-breathing-surface: #3b4252;
-  --color-breathing-accent: #85b1c9;
-  --color-breathing-accent-strong: #81a1c1;
-  --color-breathing-muted: #a0a8b6;
-  --color-breathing-on-accent: #2e3440;
+  /* Mono Zen tokens (dark) */
+  --color-breathing-bg: #1a1d24;
+  --color-breathing-bg-soft: #23272f;
+  --color-breathing-bg-edge: #13161c;
+  --color-breathing-surface: #252932;
+  --color-breathing-accent: #b4bac4;
+  --color-breathing-accent-strong: #ccd0d9;
+  --color-breathing-muted: #6a6e76;
+  --color-breathing-on-accent: #1a1d24;
+  --color-breathing-text: #dde0e6;
+  --color-breathing-text-soft: #8a8d95;
+  --color-border-soft: rgba(168, 174, 184, 0.16);
+  --color-orb-halo-1: rgba(74, 78, 88, 0.30);
+  --color-orb-halo-2: rgba(108, 113, 124, 0.38);
+  --color-orb-halo-3: rgba(150, 156, 168, 0.52);
+  --color-modal-backdrop: rgba(0, 0, 0, 0.65);
+
+  /* DEPRECATED — see light block for removal plan. */
   --color-orb-in-from: #6e8993;
   --color-orb-in-to: #6e8993;
   --color-orb-out-from: #4c566a;
@@ -163,7 +96,6 @@
   --color-orb-out-text: #eceff4;
   --color-ring-outer: rgb(110 137 147 / 0.5);
   --color-ring-inner: rgb(216 222 233 / 0.4);
-  --color-modal-backdrop: rgb(0 0 0 / 0.5);
 
   /* v2.0 surface elevation + scrim tokens (dark). Pure-black channels for
      dark-theme shadows (consistent with --color-modal-backdrop convention). */

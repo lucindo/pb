@@ -1,7 +1,10 @@
 // src/styles/faviconPalette.test.ts
 //
-// Phase 21 Plan 01 Task 1 (TDD RED): Unit tests for the faviconPalette module.
-// Verifies FAVICON_COLORS shape, hex values, FAVICON_SVG_TEMPLATE, and buildFaviconDataUri.
+// Unit tests for the faviconPalette module. Verifies the SHAPE + CONTRACT of the
+// module — not the specific hex values, which are design tokens that can change
+// with the palette (no-design-locking rule). The cross-site agreement
+// invariant (theme.css ↔ faviconPalette ↔ index.html) is enforced by
+// src/styles/favicon.sync.test.ts; this file only tests this module's own surface.
 
 import { describe, it, expect } from 'vitest'
 
@@ -18,18 +21,20 @@ describe('FAVICON_COLORS', () => {
     expect('system' in FAVICON_COLORS).toBe(false)
   })
 
-  it('light === #5e81ac', () => {
-    expect(FAVICON_COLORS.light).toBe('#5e81ac')
-  })
-
-  it('dark === #81a1c1', () => {
-    expect(FAVICON_COLORS.dark).toBe('#81a1c1')
-  })
-
   it('all concrete themes are present as keys', () => {
     for (const theme of CONCRETE_THEMES) {
       expect(FAVICON_COLORS).toHaveProperty(theme)
     }
+  })
+
+  it('every value is a well-formed 6-digit hex string', () => {
+    for (const theme of CONCRETE_THEMES) {
+      expect(FAVICON_COLORS[theme]).toMatch(/^#[0-9a-fA-F]{6}$/)
+    }
+  })
+
+  it('light and dark values differ', () => {
+    expect(FAVICON_COLORS.light).not.toBe(FAVICON_COLORS.dark)
   })
 })
 
@@ -45,7 +50,6 @@ describe('FAVICON_SVG_TEMPLATE', () => {
   })
 
   it('contains a fill placeholder', () => {
-    // The template should have a substitutable fill token
     expect(FAVICON_SVG_TEMPLATE).toContain('__FILL__')
   })
 })
@@ -62,14 +66,18 @@ describe('buildFaviconDataUri', () => {
     expect(light).not.toBe(dark)
   })
 
-  it('output contains the per-theme hex (light)', () => {
-    const result = buildFaviconDataUri('light')
-    // Accept raw or URL-encoded forms (#5e81ac or %235e81ac)
-    expect(result.toLowerCase()).toMatch(/5e81ac/)
+  it('output for each theme contains the corresponding FAVICON_COLORS hex (URL-encoded)', () => {
+    for (const theme of CONCRETE_THEMES) {
+      const result = buildFaviconDataUri(theme).toLowerCase()
+      // Hex appears either raw (#rrggbb) or URL-encoded (%23rrggbb); match the rrggbb part.
+      const rrggbb = FAVICON_COLORS[theme].slice(1).toLowerCase()
+      expect(result).toContain(rrggbb)
+    }
   })
 
-  it('output contains the per-theme hex (dark)', () => {
-    const result = buildFaviconDataUri('dark')
-    expect(result.toLowerCase()).toMatch(/81a1c1/)
+  it('output substitutes the placeholder (no __FILL__ remains)', () => {
+    for (const theme of CONCRETE_THEMES) {
+      expect(buildFaviconDataUri(theme)).not.toContain('__FILL__')
+    }
   })
 })

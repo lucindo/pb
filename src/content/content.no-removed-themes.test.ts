@@ -8,29 +8,27 @@
 //   - styles/ catches [data-theme='moss'/'slate'/'dusk'] CSS rules re-entering
 //     via theme.css.
 //
-// Forbidden token classes (CONTEXT D-04 — 12 entries total):
-//   1. Plain substring — 8 entries (case-sensitive):
-//        - 2 lowercase theme ids: 'moss', 'dusk'
-//          (the 3rd lowercase id 'slate' uses a word-bounded regex below — see WORD-BOUNDED NOTE)
-//        - 3 EN display strings: 'Moss', 'Slate', 'Dusk'
-//        - 3 PT-BR display strings: 'Musgo', 'Ardósia', 'Crepúsculo'
-//   2. Regex — 1 word-bounded lowercase 'slate' (Rule 3 narrowing — see WORD-BOUNDED NOTE)
-//   3. Regex — persisted-pref literals (theme: 'moss'/'slate'/'dusk')
-//   4. Regex — CSS attribute selectors ([data-theme='moss'/'slate'/'dusk'])
-//   5. Regex — object-key entries ('moss'/'slate'/'dusk': — catches favicon palette / contrast floor / etc.)
+// Forbidden token classes (CONTEXT D-04):
+//   1. Plain substring — case-sensitive lowercase theme ids: 'moss', 'dusk'
+//      (the 3rd lowercase id 'slate' is intentionally NOT a free-text matcher — see
+//      VOCABULARY NOTE below; theme-ID usages of 'slate' are still caught by the
+//      structural matchers — persisted-pref, CSS selector, object-key — that follow)
+//   2. Plain substring — EN display strings: 'Moss', 'Slate', 'Dusk'
+//   3. Plain substring — PT-BR display strings: 'Musgo', 'Ardósia', 'Crepúsculo'
+//   4. Regex — persisted-pref literals (theme: 'moss'/'slate'/'dusk')
+//   5. Regex — CSS attribute selectors ([data-theme='moss'/'slate'/'dusk'])
+//   6. Regex — object-key entries ('moss'/'slate'/'dusk': — catches favicon palette / contrast floor / etc.)
 //
-// WORD-BOUNDED NOTE (Plan 39-05 Task 1 step 8 Rule 3 deviation):
-//   The lowercase 'slate' substring collides with the CSS/Tailwind keyword 'translate'
-//   (and 'translate3d', 'translate-x-N', 'translate-y-N', 'translated', etc.) which
-//   appears in OrbShape.tsx, BooleanToggle.tsx, StatusPanel.tsx, SessionReadout.tsx as
-//   structural CSS transform code that cannot be rotated away. Per CONTEXT D-04 (Claude's
-//   Discretion: err on inclusion) and threat T-39-16 (excessive false-positive friction
-//   may narrow the substring entry to regex-only), the lowercase 'slate' matcher uses
-//   word-bounded `/(?<![a-zA-Z])slate(?![a-zA-Z])/` instead of `t.includes('slate')`.
-//   Still catches: 'slate' (theme id literal), [data-theme='slate'], slate: (object key),
-//   polar slate (free-text). Does NOT catch: translate*, translation, translated.
-//   The capitalized 'Slate' (EN display string) stays a plain substring — it has zero
-//   collisions in the current codebase and is the more likely re-introduction vector.
+// VOCABULARY NOTE (J1 spike-application loop, 2026-05-23):
+//   The lowercase 'slate' word is now a legitimate color-family descriptor in the
+//   Mono Zen palette (spike 010 — `cool slate` is the spike's own term). A bare
+//   word-bounded `slate` matcher would generate false positives every time the
+//   palette is referenced in a comment or docstring. The structural matchers
+//   (#4 persisted-pref, #5 CSS selector, #6 object-key) cover the real
+//   re-introduction vectors of `slate` as a *theme id*. The capitalized 'Slate'
+//   stays a plain substring (EN display string would only re-appear as a
+//   user-facing theme-name re-introduction). Previous lowercase free-text matcher
+//   removed; rationale logged here so the test file documents its own narrowing.
 //
 // WHY this file exists (CONTEXT D-06): Phase 39 collapsed the 5-palette theme system
 // to 3 options (light / dark / system) per the spike-010 visual lock. This drift-guard
@@ -85,18 +83,15 @@ const SCAN_FILES: string[] = [
   ...collectFiles(STYLES_DIR),
 ]
 
-// Forbidden token list (CONTEXT D-04 — 12 entries total).
+// Forbidden token list (CONTEXT D-04).
 // Each entry carries a human-readable label so the failure message names exactly which
 // token tripped the guard — making it immediately clear to the contributor what landed.
 const FORBIDDEN_TOKENS: Array<{ label: string; match: (text: string) => boolean }> = [
-  // Plain substring (case-sensitive lowercase theme ids — 2 of 3; 'slate' is word-bounded below)
+  // Plain substring (case-sensitive lowercase theme ids — 'slate' is intentionally
+  // omitted as a free-text matcher per the VOCABULARY NOTE in this file's header;
+  // the structural matchers below still catch any re-introduction of 'slate' as a theme id)
   { label: "'moss' (theme id)",  match: (t) => t.includes('moss') },
   { label: "'dusk' (theme id)",  match: (t) => t.includes('dusk') },
-  // Word-bounded regex for lowercase 'slate' (Rule 3 deviation — see WORD-BOUNDED NOTE in header)
-  {
-    label: "'slate' (theme id, word-bounded — avoids the 'translate' CSS/Tailwind collision)",
-    match: (t) => /(?<![a-zA-Z])slate(?![a-zA-Z])/.test(t),
-  },
   // Plain substring (case-sensitive EN display strings — 3 entries)
   { label: "'Moss' (EN display string)",  match: (t) => t.includes('Moss') },
   { label: "'Slate' (EN display string)", match: (t) => t.includes('Slate') },

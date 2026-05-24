@@ -79,8 +79,8 @@ describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
     const indexHtml = readFileSync(indexHtmlPath, 'utf-8')
 
     // Regex to extract the inline favicon hex map literal from the pre-paint script.
-    // Expected pattern: {light:'#5e81ac',dark:'#81a1c1'}
-    // or with double quotes and/or spaces — match the value for themeId.
+    // Expected pattern: {light:'#rrggbb',dark:'#rrggbb'} (single or double quotes,
+    // optional spaces) — match the hex value associated with themeId.
     const mapPattern = new RegExp(
       `['"]${themeId}['"]\\s*:\\s*['"]?(#[0-9a-fA-F]{6})['"]?`,
     )
