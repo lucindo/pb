@@ -1,6 +1,5 @@
 import { useCallback, useState, type ReactElement } from 'react'
 
-import { InstallBanner } from '../components/InstallBanner'
 import { LearnAnchor } from '../components/LearnAnchor'
 import { PageShell } from '../components/primitives/PageShell'
 import { TopAppBar } from '../components/primitives/TopAppBar'
@@ -39,21 +38,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   }
 
   return (
-    <PageShell
-      overlays={
-        <>
-          {vm.install.showBanner && (
-            <InstallBanner
-              isIOS={vm.install.isIOS}
-              onInstall={vm.install.onInstall}
-              onDismiss={vm.install.onDismiss}
-              strings={vm.uiStrings.install}
-            />
-          )}
-          <EndSessionDialogsView dialogs={vm.dialogs} />
-        </>
-      }
-    >
+    <PageShell overlays={<EndSessionDialogsView dialogs={vm.dialogs} />}>
       <TopAppBar
         eyebrow={vm.appHeader}
         title={vm.appTitle}
