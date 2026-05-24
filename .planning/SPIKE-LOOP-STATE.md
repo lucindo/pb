@@ -86,7 +86,7 @@ State below is updated after every step transition. The state file commits with 
 |-----|------|--------|
 | J1 | Theme tokens — Nord palette → Mono Zen light + dark (cool slate, semibold-ready); add `borderSoft`, `orbHalo1/2/3`, `modalBackdrop`; remove old gradient + ring tokens | done (commit `be13fb4`) |
 | J2 | Font system — Inter Variable + weight loading per spike (ultralight 200/300 for breath labels, semibold 600 for headings) | done (commit `0decf6a`) |
-| J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | pending |
+| J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | **implemented — awaiting operator approval** (commit `637ad75`) |
 | J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | pending |
 | J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | pending |
 | J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | pending |
@@ -107,47 +107,53 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J3 — No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16 px min gap above Start)
-**Step:** 1 (awaiting propose; J2 approved + committed)
+**Item:** J4 — Orb body redesign (3-layer halo + center disc + asymmetric border-radii organic-puddle; consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring)
+**Step:** 1 (awaiting propose; J3 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh:
+When you arrive here fresh after J3's approval:
 1. Read this whole file (you're here)
-2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "twelfth pass" and "no-jiggle" (the layout-anchoring section)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` PracticeScreen JSX — locate the three-zone layout (anchored top, flex-1 spacer, anchored bottom with 16 px gap above Start)
-5. Read current `src/components/PracticeScreen.tsx` (or whatever the equivalent surface component is — verify the file name first)
-6. Verify what layout pattern is currently in place; identify jiggle vectors (state-dependent inserts that push the orb up/down between Idle/Running/Complete)
-7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk
+2. Read MEMORY.md and the rules listed in Step 2 above; **especially [[orb-outer-ring-idle-only]]** (current Idle has a DEVIATION — extra outer stroke ring; spike orb has no extra outer stroke; J7 fixes this, but J4 must not re-introduce it)
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "layered-halo orb", "three layered translucent halos", "asymmetric border-radius", "puddle" (the pivot section + any later refinements)
+4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` `BreathingOrb` component — locate the 3 halo layers (sized 100% / 86% / 74% of orb area), the centre disc, the asymmetric border-radii values, the breathing-animation hooks (inhale → expand to scaleMax / exhale → contract to scaleMid)
+5. Read current `src/components/OrbShape.tsx` + `BreathingOrb*.tsx` (verify the file names — the surface component might be `BreathingOrbShape.tsx` or similar)
+6. Verify which tokens are currently consumed (`orbInFrom/To`, `orbOutFrom/To`, `ringOuter`, `ringInner` — all deprecated by J1; J4 removes consumers and lets J7 complete the ring-conditional)
+7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **Hold J4 to the orb body only — Idle ring behavior is J7.**
 
-### Archived — Implementation summary (Item J2)
+### Archived — Implementation summary (Item J3)
 
-Self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8. Three edits + one option pivot mid-implementation.
+Restructured `src/app/PracticeScreen.tsx` to match spike 010's `PracticeChrome` (index.html lines 1913-1956). Single file edit.
 
-**`package.json` / `package-lock.json`:** added `@fontsource-variable/inter` to `dependencies` (runtime-bundled, not a build-time tool).
+**Deleted:** the `PracticeWorkspace` inner component (the rounded-card wrapper with `rounded-[2rem] border bg-surface/70 shadow backdrop-blur p-5`). Inlined its responsibilities into `PracticeScreen` directly.
 
-**`src/index.css`:**
-- Added `@import '@fontsource-variable/inter';` as the FIRST line — before tailwindcss and theme.css imports, so the `@font-face` rules land in the cascade before anything else.
-- Updated body font-family stack from `Inter, ui-sans-serif, …` → `'Inter Variable', Inter, ui-sans-serif, …` so the variable family is preferred while leaving a fallback chain for environments where it doesn't resolve.
+**New structural tree inside `<PageShell>`:**
+1. `<TopAppBar>` — anchored top (first child)
+2. Switcher block: `<div className="w-full px-5 pb-4 sm:px-8">` containing `<PracticeToggle>`
+3. Orb + variable region: `<div className="flex w-full flex-col items-center px-5 pt-[18px] sm:px-8 sm:pt-7">` containing `<PracticeSessionView>` + `<PracticeSettingsView>`. The fixed `pt-[18px]` mobile / `sm:pt-7` (28 px) desktop is the spike's load-bearing orb y-anchor (line 1929).
+4. `<div className="flex-1" />` — spacer that absorbs remaining vertical room.
+5. Bottom controls: `<div className="w-full px-5 pt-4 sm:px-8">` containing `<PracticeControlsView>`. `pt-4` is the spike's 16 px min-gap (line 1940).
+6. Disclaimer `<p>` — full-width, centered, 11px / 400 / 0.02em / nowrap / muted (matches spike line 1944-1952). Padding-bottom uses `max(1.25rem, env(safe-area-inset-bottom))` to clear iOS home indicator without growing the gap on non-iOS.
 
-**`vite.config.ts` workbox:**
-- Added `woff2` to `globPatterns` so the bundled font files enter the SW precache.
-- Added `globIgnores` for cyrillic / cyrillic-ext / greek / greek-ext / vietnamese subsets — app locales are EN + pt-BR only (both Latin-script), so those subsets are dead weight in the install. Latin + Latin-ext (~133 KiB) still precache.
+**Tokens / classes shed:** `rounded-[2rem]`, `border-[var(--color-breathing-surface)]/80`, `bg-[var(--color-breathing-surface)]/70`, `shadow-[var(--shadow-breathing-card)]`, `backdrop-blur`, `mt-6 / mt-10`, `mb-5 mt-4` inner margins. CSS bundle dropped from 33.25 KB → 32.63 KB as a side effect (~620 bytes of Tailwind rules no longer reached).
 
-**Option pivot mid-implementation:** initial proposal said "~50 KB woff2"; the default `@fontsource-variable/inter` actually ships all 7 unicode subsets (~218 KB woff2). Per-user runtime cost is unicode-range-gated (48 KB EN, 133 KB pt-BR), but PWA precache would include all 7. Operator chose option (γ) — `globIgnores` to trim the 5 non-Latin subsets from the SW install. Files still emit to `dist/` (any user who somehow needs them gets a live network fetch — same as today's no-font-loaded state). Saved ~85 KiB precache: 24 entries / 702 KiB → 19 entries / 619 KiB.
+**`PageShell` UNCHANGED.** Shared with Learn/AppSettings — its `justify-start` stays. The flex-1 spacer hangs off PageShell's existing `<section>` flex-col + `min-h-[calc(100vh-3rem)]`, so the anchoring works without modifying the shell.
 
-**No test changes.** Typography load is a runtime/visual concern; per `no-design-locking`, no test asserts package names, URL substrings, or font-family literals.
+**`workspaceCompact` prop:** producer in `useAppViewModel.ts:184` + `AppViewModel` type in `appViewModel.ts:113` left in place; no longer consumed by `PracticeScreen`. Follow-up cleanup item (small) — defer to J17 or a quick standalone.
 
-**No `index.html` edits.** Self-host stays out of the document head entirely.
-
-**Out of scope (flagged for J17):** `vite.config.ts:28-29` still has stale Nord `theme_color: '#5e81ac'` + `background_color: '#eceff4'` in the PWA manifest — leftover from before J1.
+**No changes to:**
+- `PageShell.tsx` (shared)
+- `PracticeSessionView.tsx` / `PracticeSettingsView.tsx` / `PracticeControlsView.tsx` (internals unchanged — just restructured in their tree position)
+- Any audio / state / hooks / domain code
+- Any test (1117 / 1117 pass; no class-string assertion broke — codebase already follows [[no-design-locking]])
+- `InstallBanner` (stays in `PageShell.overlays` — J13 will move it inline)
 
 **Verification:**
 - `tsc --noEmit -p tsconfig.app.json`: clean
 - `npm run lint`: clean
 - Full suite: 101 files / 1117 tests pass (unchanged baseline)
-- `npm run build`: clean; `dist/assets/` contains 7 `inter-*-wght-normal-*.woff2` files (10 KB–85 KB each); `sw.js` precache: 19 entries / 618.75 KiB (was 24 / 701.95 KiB before globIgnores trim)
+- `npm run build`: clean; CSS marginally smaller; PWA precache 19 / 617.97 KiB (was 618.75 KiB before)
+- **Manual jiggle check (operator-side):** switch HRV ↔ Stretch ↔ Navi on Idle, watch orb y-position; start a session, watch; let it complete, watch. Orb y constant across all 9 combinations; disclaimer stays visible at viewport bottom.
 
-**Commit:** `0decf6a`
+**Commit:** `637ad75`
 
 ---
 
@@ -157,6 +163,7 @@ Self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8. Three edits 
 |------|--------|-------|
 | J1 | `be13fb4` | Theme tokens — Nord → Mono Zen cool slate. 9 token values replaced + 6 new tokens added (`text`, `text-soft`, `border-soft`, `orb-halo-1/2/3`) in both light + dark. Deprecated orb-in/out + ring tokens kept temporarily (J4/J7 remove). Favicon synced across 3 sites. Inline cleanup: 2 value-locking tests dropped + 2 derived rewrites in `faviconPalette.test.ts`; lowercase word-bounded `slate` matcher dropped from drift-guard test (mono-zen vocabulary collision); 2 stale comment refs fixed. 101 files / 1117 tests pass. |
 | J2 | `0decf6a` | Font system — self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8 (runtime dep). `src/index.css` imports the package + body font-family stack now prefers `'Inter Variable'`. Workbox `globPatterns` extended with `woff2`; `globIgnores` trims cyrillic/greek/vietnamese subsets from the SW precache (app is EN + pt-BR; Latin + Latin-ext are the only subsets needed). Bundle: 7 woff2 files emit to `dist/`; SW precache 19 entries / 619 KiB (was 24 / 702 KiB before globIgnores). 101 files / 1117 tests pass; no test changes — typography-load is verified at runtime, asserting it would violate `no-design-locking`. |
+| J3 | `637ad75` | No-jiggle PracticeScreen layout — restructured `src/app/PracticeScreen.tsx` to match spike's `PracticeChrome`. Removed inner `PracticeWorkspace` card (rounded-card chrome: border + bg + shadow + p-5 + backdrop-blur). New tree: top bar → switcher → orb-group (fixed `pt-[18px] sm:pt-7` paddingTop above orb) → variable region → `flex-1` spacer → controls (`pt-4` min-gap) → disclaimer (11 px / 400 / 0.02em / nowrap / muted, `pb: max(1.25rem, env(safe-area-inset-bottom))`). PageShell + session/settings/controls views unchanged. `workspaceCompact` prop now dead (left in place; followup cleanup). CSS bundle 33.25 → 32.63 KiB; PWA precache 19 / 617.97 KiB. 101 files / 1117 tests pass; no test changes. |
 
 ---
 
