@@ -16,9 +16,9 @@ export interface TimbrePickerProps {
 // chrome (operator: "follow the appearance reference").
 const TIMBRE_GLYPH: Record<TimbreId, string> = {
   bowl: '◯',
-  bell: '◐',
+  bell: '⟡',
   sine: '∿',
-  flute: '◊',
+  flute: '⌇',
 }
 
 export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerProps) {
