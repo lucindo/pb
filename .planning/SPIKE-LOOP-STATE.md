@@ -111,18 +111,19 @@ State below is updated after every step transition. The state file commits with 
 | J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | done — primitives only, no wiring (commit `748ce31`) |
 | J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | done (commit `6183e1e`) |
 | J13 | InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only | done — **DEVIATION**: banner removed entirely; install kept only on App Settings (commit `117310b`) |
-| J14 | App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time) | **implemented — awaiting operator approval** (commit `6988ccc`) |
+| J14 | App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time) | done (commit `6988ccc`) |
 | J15 | Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings | pending |
 | J16 | Locked-copy verification — disclaimer / install banner / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings | pending |
-| J17 | Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces | pending |
-| J18 | **(Gated)** Complete screen — operator decision: ship as distinct surface OR keep current inline "Session complete" headline | pending |
+| **J17** | **Operator feedback pass — cross-cutting polish & fixes across the entire spike loop. NO SCOPE PUSHBACK: every feedback item is in scope; "that's not what this step is about" is NEVER a valid response. Each feedback gets its own propose/go/implement/approve sub-cycle.** | pending |
+| J18 | Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces (formerly J17) | pending |
+| J19 | **(Gated)** Complete screen — operator decision: ship as distinct surface OR keep current inline "Session complete" headline (formerly J18) | pending |
 
 ---
 
 ## Current focus
 
 **Item:** J15 — Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings
-**Step:** 1 (awaiting propose; J14 implemented + committed, awaiting operator approval)
+**Step:** 1 (awaiting propose; J14 approved + committed)
 
 When you arrive here fresh after J14's approval:
 1. Read this whole file (you're here)
@@ -440,3 +441,4 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 - **State file commits with every step transition** — so the resume prompt always lands on truth
 - **No bundled items** — each item gets its own commit; operator can interrupt at any boundary
 - **Operator feedback dumps get acknowledged first** — do not edit code mid-dump per [[ack-dont-fix-inline]]
+- **J17 (Feedback pass) has NO SCOPE GUARDS** — during the feedback pass, ALL operator feedback is in scope by definition. The propose-step checklist still runs per sub-item, but its Section A is permissive ("this is feedback-pass work, cross-cutting allowed"). Never reply "that's not in this step's scope" inside J17 — the operator added the step specifically to avoid that response.
