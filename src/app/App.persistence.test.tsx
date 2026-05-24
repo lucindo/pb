@@ -148,7 +148,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
     await advanceTime(35_000)  // 35s elapsed — above 30s threshold (D-01)
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
     // Open-ended: no modal. End fires directly. Stats written in cleanup effect.
     const env = readRawEnvelope()
@@ -162,7 +162,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
     await advanceTime(10_000)  // 10s elapsed — below 30s threshold (D-01)
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
     const env = readRawEnvelope()
     const sessions = resonantStatsOf(env)?.['totalSessions'] as number | undefined
@@ -191,7 +191,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
     await advanceTime(35_000)
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     // Force any pending rAF/microtasks to flush — the cleanup effect runs here.
     // recordedSessionKeyRef prevents double-write via idempotency key.
     await advanceTime(100)

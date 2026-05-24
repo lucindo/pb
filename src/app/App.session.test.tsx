@@ -162,7 +162,7 @@ describe('running duration edits and completion', () => {
     })
 
     expect(screen.queryByText('Session complete')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
     const readout = sessionReadout()
     expect(within(readout).getByText('Elapsed')).toBeVisible()
   })
@@ -183,13 +183,13 @@ describe('manual session ending', () => {
     render(<App />)
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Keep going' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
     expect(screen.getByRole('status', { name: 'Session announcement' })).toBeVisible()
   })
 
@@ -198,8 +198,11 @@ describe('manual session ending', () => {
 
     fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'End this session?' }))
+        .getByRole('button', { name: 'End' }),
+    )
 
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
@@ -216,7 +219,7 @@ describe('manual session ending', () => {
       fireEvent.click(increase)
     }
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
@@ -483,8 +486,11 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     })
 
     // End early — the NK control opens the confirmation dialog.
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'End this session?' }))
+        .getByRole('button', { name: 'End' }),
+    )
     await act(async () => { await Promise.resolve() })
 
     const env = readStoredEnvelope()
@@ -556,12 +562,12 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     act(() => { vi.advanceTimersByTime(35_000) })
 
     // GAP 3: ending a stretch session now opens the end-confirmation dialog first.
-    // Click 'End session' to open the dialog, then confirm via the 'End' button.
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
-    await act(async () => { await Promise.resolve() })
-    // The dialog must be open before confirming
-    expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
+    // Click 'End' to open the dialog, then confirm via the dialog's 'End' button.
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    await act(async () => { await Promise.resolve() })
+    const endDialog = screen.getByRole('dialog', { name: 'End this session?' })
+    expect(endDialog).toBeVisible()
+    fireEvent.click(within(endDialog).getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
 
     const env = readStoredEnvelope()
@@ -573,7 +579,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     expect((practiceStatsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
   })
 
-  // UAT GAP 3: clicking 'End session' on a running stretch session opens the dialog
+  // UAT GAP 3: clicking 'End' on a running stretch session opens the dialog
   it('GAP 3: ending a running stretch session opens the end-confirmation dialog (session does not end immediately)', async () => {
     seedStretch()
     render(<App />)
@@ -585,12 +591,12 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
       vi.advanceTimersByTime(APP_LEAD_IN_MS)
     })
 
-    // The session is running — 'End session' must open the dialog, not end immediately.
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    // The session is running — 'End' must open the dialog, not end immediately.
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
 
     expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
-    // Session is still active — 'End session' button is NOT replaced by 'Start'
+    // Session is still active — 'End' button is NOT replaced by 'Start'
     expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
   })
 
@@ -607,9 +613,12 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     })
     act(() => { vi.advanceTimersByTime(35_000) })
 
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
-    await act(async () => { await Promise.resolve() })
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    await act(async () => { await Promise.resolve() })
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'End this session?' }))
+        .getByRole('button', { name: 'End' }),
+    )
     await act(async () => { await Promise.resolve() })
 
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
@@ -641,7 +650,7 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
     render(<App />)
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     // Open-ended resonant session: dialog must NOT appear; session ends directly
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

@@ -129,9 +129,10 @@ describe('App — audio cues (Phase 3)', () => {
 
     render(<App />)
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
-    expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    const endDialog = screen.getByRole('dialog', { name: 'End this session?' })
+    expect(endDialog).toBeVisible()
+    fireEvent.click(within(endDialog).getByRole('button', { name: 'End' }))
     await flushMicrotasks()
 
     expect(acInstance).not.toBeNull()
@@ -158,7 +159,7 @@ describe('App — audio cues (Phase 3)', () => {
     }
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await flushMicrotasks()
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()

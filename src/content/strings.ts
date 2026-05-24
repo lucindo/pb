@@ -210,7 +210,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       controls: {
         startSession: 'Start',
-        endSession: 'End session',
+        endSession: 'End',
         cancel: 'Cancel',
       },
       breathing: {
@@ -376,7 +376,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       controls: {
         startSession: 'Iniciar',
-        endSession: 'Encerrar sessão',
+        endSession: 'Encerrar',
         cancel: 'Cancelar',
       },
       breathing: {

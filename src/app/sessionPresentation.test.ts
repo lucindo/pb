@@ -151,7 +151,7 @@ describe('breathing primary action model', () => {
 describe('session primary action label', () => {
   it('maps action ids to localized control copy', () => {
     expect(getSessionPrimaryActionLabel('start', UI_STRINGS.en.practice.controls)).toBe('Start')
-    expect(getSessionPrimaryActionLabel('end', UI_STRINGS.en.practice.controls)).toBe('End session')
+    expect(getSessionPrimaryActionLabel('end', UI_STRINGS.en.practice.controls)).toBe('End')
     expect(getSessionPrimaryActionLabel('cancel', UI_STRINGS['pt-BR'].practice.controls)).toBe('Cancelar')
   })
 })

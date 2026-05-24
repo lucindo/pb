@@ -55,7 +55,7 @@ describe('App — wake lock (Phase 5)', () => {
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await flushMicrotasks()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(releaseSpy).toHaveBeenCalled()
@@ -71,9 +71,10 @@ describe('App — wake lock (Phase 5)', () => {
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
-    expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    const endDialog = screen.getByRole('dialog', { name: 'End this session?' })
+    expect(endDialog).toBeVisible()
+    fireEvent.click(within(endDialog).getByRole('button', { name: 'End' }))
     await flushMicrotasks()
     expect(releaseSpy).toHaveBeenCalled()
   })

@@ -61,7 +61,7 @@ describe('main screen settings controls', () => {
 
       await startAndAdvancePastLeadIn()
 
-      expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+      expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
       expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
@@ -74,11 +74,14 @@ describe('main screen settings controls', () => {
       render(<App />)
 
       await startAndAdvancePastLeadIn()
-      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
       fireEvent.click(screen.getByRole('button', { name: 'End' }))
+      fireEvent.click(
+        within(screen.getByRole('dialog', { name: 'End this session?' }))
+          .getByRole('button', { name: 'End' }),
+      )
 
       expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
-      expect(screen.queryByRole('button', { name: 'End session' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'End' })).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
@@ -91,8 +94,11 @@ describe('main screen settings controls', () => {
 
       fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
       await startAndAdvancePastLeadIn()
-      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
       fireEvent.click(screen.getByRole('button', { name: 'End' }))
+      fireEvent.click(
+        within(screen.getByRole('dialog', { name: 'End this session?' }))
+          .getByRole('button', { name: 'End' }),
+      )
 
       expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
       expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()

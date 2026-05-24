@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
@@ -101,8 +101,11 @@ describe('CUE-01 capture-at-session-start (T-25-09)', () => {
     })
 
     // End the session via End button → dialog confirm
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'End this session?' }))
+        .getByRole('button', { name: 'End' }),
+    )
 
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
 

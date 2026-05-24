@@ -20,24 +20,24 @@ describe('end-session confirmation modal (App integration)', () => {
     render(<App />)
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     const dialog = screen.getByRole('dialog', { name: 'End this session?' })
     expect(dialog).toBeVisible()
     const keepGoing = screen.getByRole('button', { name: 'Keep going' })
     expect(keepGoing).toHaveFocus()
-    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'End' })).toBeVisible()
   })
 
   it('keeps the session running when Keep going is clicked', async () => {
     render(<App />)
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
     fireEvent.click(screen.getByRole('button', { name: 'Keep going' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
     expect(screen.getByRole('region', { name: 'Session readout' })).toBeVisible()
   })
 
@@ -45,8 +45,9 @@ describe('end-session confirmation modal (App integration)', () => {
     render(<App />)
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    const endDialog = screen.getByRole('dialog', { name: 'End this session?' })
+    fireEvent.click(within(endDialog).getByRole('button', { name: 'End' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
@@ -57,14 +58,14 @@ describe('end-session confirmation modal (App integration)', () => {
     render(<App />)
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     const dialog = screen.getByRole('dialog', { name: 'End this session?' })
     // jsdom polyfill: dispatch the cancel event manually (Task 1 Test 7 pattern).
     fireEvent(dialog, new Event('cancel', { bubbles: false, cancelable: true }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'End session' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
   })
 
   it('open-ended sessions skip the modal entirely (D-14)', async () => {
@@ -77,7 +78,7 @@ describe('end-session confirmation modal (App integration)', () => {
     }
 
     await startAndAdvancePastLeadIn()
-    fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
     expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
@@ -93,7 +94,7 @@ describe('end-session confirmation modal (App integration)', () => {
       const readout = screen.getByRole('region', { name: 'Session readout' })
       expect(within(readout).getByText('10:00')).toBeVisible()
 
-      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
       // Modal opened, clock still at 10:00.
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
@@ -121,7 +122,7 @@ describe('end-session confirmation modal (App integration)', () => {
         }),
       )
       await startAndAdvancePastLeadIn()
-      fireEvent.click(screen.getByRole('button', { name: 'End session' }))
+      fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
       // Modal is open while the session is still running.
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
