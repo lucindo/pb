@@ -9,7 +9,7 @@ export interface PickerCardGridProps<T extends string> {
   value: T
   onChange(this: void, next: T): void
   renderOption(this: void, option: T): ReactNode
-  columns: 2 | 3
+  columns: 2 | 3 | 4
   disabled: boolean
   optionLayout?: PickerCardLayout
   // J14: when true, the `<p>` sublabel is rendered sr-only — visible label
@@ -18,22 +18,28 @@ export interface PickerCardGridProps<T extends string> {
   sectionLabelHidden?: boolean
 }
 
-const COLUMNS_CLASS: Record<2 | 3, string> = {
+const COLUMNS_CLASS: Record<2 | 3 | 4, string> = {
   2: 'grid-cols-2',
   3: 'grid-cols-3',
+  4: 'grid-cols-4',
 }
 
-// Class strings are byte-equivalent to the per-picker copies in Cue/Theme/
-// Timbre/LanguagePicker prior to Item E — kept verbatim so the radiogroup
-// posture (44×44 hit area via min-h-12, focus-visible ring chain, accent
-// border on selected, disabled opacity floor) stays identical.
+// Spike 010 picker chrome (index.html L1818-1830 inline, L1568-1577 stack):
+// - Selected: bg=bg-soft + 1px accent border + text token
+// - Unselected: bg=surface + 1px border-soft + text-soft
+// - No shadow
+// - Inline layout: rounded-full, px-3 py-1.5, 12 px label, icon + label in row
+// - Stack layout: rounded-2xl, py-3, 11 px label / 18 px glyph, glyph above label
 const BASE_BUTTON =
-  'min-h-12 rounded-full px-3 py-2 text-sm font-semibold shadow-sm transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45'
+  'transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45'
 const SELECTED_BUTTON =
-  'border-2 border-[var(--color-breathing-accent)] bg-[var(--color-breathing-bg-soft)] text-[var(--color-breathing-accent-strong)]'
+  'border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-bg-soft)] text-[var(--color-breathing-text)]'
 const UNSELECTED_BUTTON =
-  'border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-accent-strong)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'
-const STACK_LAYOUT = 'flex flex-col items-center gap-1'
+  'border border-[var(--color-border-soft)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-text-soft)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'
+const INLINE_LAYOUT =
+  'inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-xs'
+const STACK_LAYOUT =
+  'flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-[11px] tracking-[0.04em]'
 
 /** Radiogroup-as-cards primitive. Shared shape behind CuePicker / ThemePicker /
  *  TimbrePicker / LanguagePicker — each consumer becomes a thin adapter that
@@ -60,7 +66,7 @@ export function PickerCardGrid<T extends string>({
   optionLayout = 'inline',
   sectionLabelHidden = false,
 }: PickerCardGridProps<T>): ReactElement {
-  const layoutClass = optionLayout === 'stack' ? ` ${STACK_LAYOUT}` : ''
+  const layoutClass = optionLayout === 'stack' ? STACK_LAYOUT : INLINE_LAYOUT
   const labelClass = sectionLabelHidden
     ? 'sr-only'
     : 'text-sm font-semibold text-[var(--color-breathing-accent-strong)]'
@@ -85,7 +91,7 @@ export function PickerCardGrid<T extends string>({
               aria-checked={selected}
               disabled={disabled}
               onClick={() => { onChange(id) }}
-              className={`${BASE_BUTTON}${layoutClass} ${selected ? SELECTED_BUTTON : UNSELECTED_BUTTON}`}
+              className={`${BASE_BUTTON} ${layoutClass} ${selected ? SELECTED_BUTTON : UNSELECTED_BUTTON} ${selected ? 'font-semibold' : 'font-medium'}`}
             >
               {renderOption(id)}
             </button>
