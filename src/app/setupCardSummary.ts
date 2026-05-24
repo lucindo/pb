@@ -60,8 +60,8 @@ export function buildSetupCardSummary({
   const omLengthLabel = formatOmLength(n.omLength, nk)
   return [
     { label: nk.roundsLabel, value: String(n.rounds) },
-    { label: nk.frontCountLabel, value: String(n.frontCount) },
-    { label: nk.omLengthLabel, value: omLengthLabel },
+    { label: nk.frontCountShortLabel, value: String(n.frontCount) },
+    { label: nk.omLengthShortLabel, value: omLengthLabel },
   ]
 }
 

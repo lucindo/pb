@@ -92,7 +92,9 @@ export interface UiStrings {
     readonly nkControls: {
       readonly roundsLabel: string
       readonly frontCountLabel: string
+      readonly frontCountShortLabel: string
       readonly omLengthLabel: string
+      readonly omLengthShortLabel: string
       readonly omLengthFast: string
       readonly omLengthMedium: string
       readonly omLengthSlow: string
@@ -262,7 +264,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nkControls: {
         roundsLabel: 'Rounds',
         frontCountLabel: 'Front OMs',
+        frontCountShortLabel: 'OMs',
         omLengthLabel: 'OM pace',
+        omLengthShortLabel: 'Pace',
         omLengthFast: 'Fast',
         omLengthMedium: 'Medium',
         omLengthSlow: 'Slow',
@@ -430,7 +434,9 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nkControls: {
         roundsLabel: 'Rodadas',
         frontCountLabel: 'OMs de frente',
+        frontCountShortLabel: 'OMs',
         omLengthLabel: 'Ritmo do OM',
+        omLengthShortLabel: 'Ritmo',
         omLengthFast: 'Rápido',
         omLengthMedium: 'Médio',
         omLengthSlow: 'Lento',

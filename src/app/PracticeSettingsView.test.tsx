@@ -161,8 +161,8 @@ describe('PracticeSettingsView — naviKriya', () => {
     const card = screen.getByRole('button', { name: /^Edit Navi Kriya settings$/ })
     for (const label of [
       EN.practice.nkControls.roundsLabel,
-      EN.practice.nkControls.frontCountLabel,
-      EN.practice.nkControls.omLengthLabel,
+      EN.practice.nkControls.frontCountShortLabel,
+      EN.practice.nkControls.omLengthShortLabel,
     ]) {
       expect(within(card).getByText(label)).toBeVisible()
     }
