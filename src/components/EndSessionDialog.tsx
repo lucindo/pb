@@ -65,37 +65,35 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
       ref={dialogRef}
       aria-labelledby="end-session-title"
       onClick={handleBackdropClick}
-      className="modal-fade m-auto max-w-sm rounded-3xl border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-surface)] p-0 shadow-[var(--shadow-breathing-card)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-auto max-w-sm rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-breathing-surface)] p-0 shadow-[0_30px_80px_rgba(0,0,0,0.35)] backdrop:bg-[var(--color-modal-backdrop)]"
     >
       <div className="grid gap-5 p-6 sm:p-7">
         <h2
           id="end-session-title"
-          className="text-2xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)]"
+          style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' }}
+          className="text-[var(--color-breathing-text)]"
         >
           {strings.title}
         </h2>
         {body !== undefined && (
-          <div className="text-sm text-[var(--color-breathing-muted)]">{body}</div>
+          <div className="text-sm text-[var(--color-breathing-text-soft)]">{body}</div>
         )}
-        {/* F2: drop flex-col-reverse so mobile column order matches DOM order
-            (Keep going on top, End below). Previously column-reverse stacked the
-            destructive End above Keep going on mobile, which inverts the safety
-            stance behind D-12 (default focus on Keep going). Desktop layout
-            (sm:flex-row sm:justify-end) keeps Keep going left, End right, where
-            CTA conventions place primary actions. */}
+        {/* F2: column order matches DOM order on mobile (Keep going on top, End
+            below) so the destructive action doesn't sit above the safe one. On
+            desktop the row places primary action (End) right of Keep going. */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
             ref={cancelButtonRef}
             type="button"
             onClick={onCancel}
-            className="min-h-12 rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-base font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="rounded-full border border-[var(--color-border-soft)] bg-transparent px-5 py-3 text-[15px] font-medium tracking-[0.04em] text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.cancel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="min-h-12 rounded-full bg-[var(--color-destructive)] px-5 py-2 text-base font-semibold text-[var(--color-destructive-on)] shadow-lg shadow-red-900/20 transition hover:bg-[var(--color-destructive-hover)] active:bg-[var(--color-destructive-active)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="rounded-full bg-[var(--color-breathing-accent)] px-5 py-3 text-[15px] font-semibold tracking-[0.06em] text-[var(--color-breathing-on-accent)] transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.confirm}
           </button>
