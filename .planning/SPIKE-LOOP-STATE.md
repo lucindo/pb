@@ -134,7 +134,21 @@ State below is updated after every step transition. The state file commits with 
 4. Wait for next-feedback-or-approve
 
 **Feedback log (append as items come in):**
-- _(empty — awaiting operator dump)_
+
+**Dump #1 — Idle, desktop** (screenshots: spike vs current vs current-annotated)
+
+Visuals:
+- V1 — Settings + Learn buttons → bare icon-only (info-circle "i" top-left + gear top-right, matching spike's circular icon-button chrome). Drop the text labels. **DONE — commit `3da02c8`; awaiting operator approval**
+- V2 — Switcher colors are off vs spike. Match spike's active/inactive treatment.
+- V3 — Start button color → spike's lighter slate (current is too dark near-black).
+- V4 — App title styling → match spike font + size (currently giant heading "HRV Breathing"; spike is small centered "Resonant"). Spike uses smaller, lighter weight, centered above orb.
+
+Content:
+- C1 — Start button copy: "Start session" → "Start" (and PT-BR equivalent if applicable).
+- C2 — Practice titles use the EXISTING locked copy strings: "HRV Breathing" / "HRV Stretch" / "Navi Kriya". (These exist in i18n already; do not invent new copy.)
+
+Annotated but not in bullet list (note, don't act):
+- Operator drew red arrows under the setup-card row saying "the width is shorter than spike". Visual interpretation ambiguous (page width or content row width?). Will confirm when proposing related item.
 
 ### Archived — Implementation summary (Item J10)
 
