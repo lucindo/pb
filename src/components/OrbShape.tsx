@@ -1,6 +1,7 @@
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
-import type { BreathingShapeVariant } from '../featureFlags'
+import type { BreathingShapeVariant, OrbIdleBehavior } from '../featureFlags'
+import { useAmbientScale } from '../hooks/useAmbientScale'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
 import { CueGlyph } from './CueGlyph'
@@ -25,6 +26,11 @@ export interface OrbShapeProps {
   // 'minimal-rings' (V2) = single full-bleed accent halo at 0.16 opacity +
   // disc with no shadow + rings at 0.5 opacity.
   variant?: BreathingShapeVariant
+  // J6: when set AND no frame/leadIn/nkPhase, render the idle orb (empty
+  // centre disc; scale = MID_SCALE for 'still', breath-clock scale for
+  // 'ambient'). showRings is hard-set to false on the idle path per spike
+  // 010 IdleScreen line 1979 + CompleteScreen line 2026.
+  idleMode?: OrbIdleBehavior | null
 }
 
 // V1 3-layer halo geometry — transcribed verbatim from spike 010/index.html
@@ -59,6 +65,7 @@ export function OrbShape({
   nkPhase,
   showRings = true,
   variant = 'orb-halo',
+  idleMode,
 }: OrbShapeProps) {
   if (nkPhase != null) {
     return <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant} />
@@ -67,6 +74,9 @@ export function OrbShape({
     return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} />
   }
   if (frame === null) {
+    if (idleMode != null) {
+      return <OrbIdle idleMode={idleMode} variant={variant} />
+    }
     return null
   }
   return <OrbBody frame={frame} strings={strings} cue={cue} showRings={showRings} variant={variant} />
@@ -107,6 +117,30 @@ function OrbBody({ frame, strings, cue, showRings, variant }: OrbBodyProps) {
     >
       <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
     </OrbContainer>
+  )
+}
+
+// J6: idle orb — empty centre disc, no rings, scale = MID_SCALE for 'still'
+// or breath-clock-driven for 'ambient' (gated by ?orbIdle=ambient via
+// vm.featureFlags.orbIdle). useAmbientScale handles the reduced-motion case
+// internally (returns MID_SCALE static), so the OrbContainer can leave its
+// reducedMotion gate at false — moot when showRings=false anyway.
+function OrbIdle({
+  idleMode,
+  variant,
+}: {
+  idleMode: OrbIdleBehavior
+  variant: BreathingShapeVariant
+}) {
+  const ambientScale = useAmbientScale(idleMode === 'ambient')
+  return (
+    <OrbContainer
+      showRings={false}
+      reducedMotion={false}
+      orbScale={ambientScale}
+      discBg="var(--color-breathing-accent)"
+      variant={variant}
+    />
   )
 }
 

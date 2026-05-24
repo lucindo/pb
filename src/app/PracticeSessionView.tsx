@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 
-import type { BreathingShapeVariant } from '../featureFlags'
+import type { BreathingShapeVariant, OrbIdleBehavior } from '../featureFlags'
 import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
 import { BreathingSessionSurface } from './BreathingSessionSurface'
@@ -11,11 +11,13 @@ type PracticeSessionViewModel = AppViewModel['practiceSession']
 interface PracticeSessionViewProps {
   session: PracticeSessionViewModel
   variant: BreathingShapeVariant
+  idleMode: OrbIdleBehavior
 }
 
 export function PracticeSessionView({
   session,
   variant,
+  idleMode,
 }: PracticeSessionViewProps): ReactElement {
   const practice = useUiStrings().practice
 
@@ -27,6 +29,7 @@ export function PracticeSessionView({
         readoutStrings={practice.readout}
         nkReadoutStrings={practice.nkReadout}
         variant={variant}
+        idleMode={idleMode}
       />
     )
   }
@@ -37,6 +40,7 @@ export function PracticeSessionView({
       breathingStrings={practice.breathing}
       readoutStrings={practice.readout}
       variant={variant}
+      idleMode={idleMode}
     />
   )
 }

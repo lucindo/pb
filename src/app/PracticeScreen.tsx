@@ -67,7 +67,11 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
         />
       </div>
       <div className="flex w-full flex-col items-center px-5 pt-[18px] sm:px-8 sm:pt-7">
-        <PracticeSessionView session={vm.practiceSession} variant={vm.featureFlags.breathingShape} />
+        <PracticeSessionView
+          session={vm.practiceSession}
+          variant={vm.featureFlags.breathingShape}
+          idleMode={vm.featureFlags.orbIdle}
+        />
         <PracticeSettingsView settings={vm.practiceSettings} />
       </div>
       <div className="flex-1" />

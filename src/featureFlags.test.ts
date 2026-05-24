@@ -34,7 +34,11 @@ describe('parseQueryBoolean', () => {
 
 describe('readFeatureFlags', () => {
   it('returns defaults for empty search', () => {
-    expect(readFeatureFlags('')).toEqual({ switcherIcon: true, breathingShape: 'orb-halo' })
+    expect(readFeatureFlags('')).toEqual({
+      switcherIcon: true,
+      breathingShape: 'orb-halo',
+      orbIdle: 'still',
+    })
   })
 
   it('enables switcher icons for on values', () => {
@@ -76,6 +80,24 @@ describe('readFeatureFlags', () => {
 
   it('falls back to default for invalid breathingShape values', () => {
     expect(readFeatureFlags('?breathingShape=junk').breathingShape).toBe('orb-halo')
+  })
+
+  it('defaults orbIdle to still', () => {
+    expect(readFeatureFlags('').orbIdle).toBe('still')
+  })
+
+  it('parses orbIdle=ambient and orbIdle=still', () => {
+    expect(readFeatureFlags('?orbIdle=ambient').orbIdle).toBe('ambient')
+    expect(readFeatureFlags('?orbIdle=still').orbIdle).toBe('still')
+  })
+
+  it('orbIdle is case-insensitive and trims whitespace', () => {
+    expect(readFeatureFlags('?orbIdle=AMBIENT').orbIdle).toBe('ambient')
+    expect(readFeatureFlags('?orbIdle=%20Still%20').orbIdle).toBe('still')
+  })
+
+  it('falls back to default for invalid orbIdle values', () => {
+    expect(readFeatureFlags('?orbIdle=junk').orbIdle).toBe('still')
   })
 })
 

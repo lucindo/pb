@@ -5,10 +5,12 @@ export interface QueryFeatureFlagSpec<T> {
 }
 
 export type BreathingShapeVariant = 'orb-halo' | 'minimal-rings'
+export type OrbIdleBehavior = 'still' | 'ambient'
 
 export interface FeatureFlags {
   switcherIcon: boolean
   breathingShape: BreathingShapeVariant
+  orbIdle: OrbIdleBehavior
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
@@ -68,9 +70,21 @@ const BREATHING_SHAPE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<BreathingShapeVariant>
 
+const ORB_IDLE_FLAG = {
+  queryParam: 'orbIdle',
+  defaultValue: 'still' as OrbIdleBehavior,
+  parse(rawValue: string): OrbIdleBehavior | null {
+    const v = rawValue.trim().toLowerCase()
+    if (v === 'still') return 'still'
+    if (v === 'ambient') return 'ambient'
+    return null
+  },
+} satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
+
 export function readFeatureFlags(search: string): FeatureFlags {
   return {
     switcherIcon: readQueryFeatureFlag(search, SWITCHER_ICON_FLAG),
     breathingShape: readQueryFeatureFlag(search, BREATHING_SHAPE_FLAG),
+    orbIdle: readQueryFeatureFlag(search, ORB_IDLE_FLAG),
   }
 }
