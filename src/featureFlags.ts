@@ -4,8 +4,11 @@ export interface QueryFeatureFlagSpec<T> {
   parse(this: void, rawValue: string): T | null
 }
 
+export type BreathingShapeVariant = 'orb-halo' | 'minimal-rings'
+
 export interface FeatureFlags {
   switcherIcon: boolean
+  breathingShape: BreathingShapeVariant
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
@@ -54,8 +57,20 @@ const SWITCHER_ICON_FLAG = {
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
+const BREATHING_SHAPE_FLAG = {
+  queryParam: 'breathingShape',
+  defaultValue: 'orb-halo' as BreathingShapeVariant,
+  parse(rawValue: string): BreathingShapeVariant | null {
+    const v = rawValue.trim().toLowerCase()
+    if (v === 'orb-halo' || v === 'orb' || v === 'halo') return 'orb-halo'
+    if (v === 'minimal-rings' || v === 'minimal' || v === 'rings') return 'minimal-rings'
+    return null
+  },
+} satisfies QueryFeatureFlagSpec<BreathingShapeVariant>
+
 export function readFeatureFlags(search: string): FeatureFlags {
   return {
     switcherIcon: readQueryFeatureFlag(search, SWITCHER_ICON_FLAG),
+    breathingShape: readQueryFeatureFlag(search, BREATHING_SHAPE_FLAG),
   }
 }

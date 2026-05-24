@@ -5,6 +5,7 @@ import { NKShape } from '../components/NKShape'
 import { OrbShape } from '../components/OrbShape'
 import { StatusPanel } from '../components/StatusPanel'
 import type { UiStrings } from '../content/strings'
+import type { BreathingShapeVariant } from '../featureFlags'
 import type { NaviKriyaPresentation } from './sessionPresentation'
 
 export interface NaviKriyaSessionSurfaceProps {
@@ -12,6 +13,7 @@ export interface NaviKriyaSessionSurfaceProps {
   breathingStrings: UiStrings['practice']['breathing']
   readoutStrings: UiStrings['practice']['readout']
   nkReadoutStrings: UiStrings['practice']['nkReadout']
+  variant: BreathingShapeVariant
 }
 
 export function NaviKriyaSessionSurface({
@@ -19,6 +21,7 @@ export function NaviKriyaSessionSurface({
   breathingStrings,
   readoutStrings,
   nkReadoutStrings,
+  variant,
 }: NaviKriyaSessionSurfaceProps): ReactElement {
   return (
     <>
@@ -28,6 +31,7 @@ export function NaviKriyaSessionSurface({
           frame={null}
           leadInDigit={presentation.shape.leadInDigit}
           strings={breathingStrings}
+          variant={variant}
         />
       ) : (
         <NKShape
@@ -37,6 +41,7 @@ export function NaviKriyaSessionSurface({
           isPaused={presentation.shape.isPaused}
           strings={breathingStrings}
           nkReadoutStrings={nkReadoutStrings}
+          variant={variant}
         />
       )}
 

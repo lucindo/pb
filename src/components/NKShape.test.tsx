@@ -13,6 +13,7 @@ function renderShape(overrides: Partial<NKShapeProps> = {}) {
     phase: 'front',
     strings: EN_STRINGS,
     nkReadoutStrings: UI_STRINGS.en.practice.nkReadout,
+    variant: 'orb-halo',
   }
   return render(<NKShape {...defaults} {...overrides} />)
 }

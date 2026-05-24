@@ -1,4 +1,5 @@
 import type { UiStrings } from '../content/strings'
+import type { BreathingShapeVariant } from '../featureFlags'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MID_SCALE } from './shapeConstants'
 import { OrbShape } from './OrbShape'
@@ -19,6 +20,9 @@ export interface NKShapeProps {
   strings: UiStrings['practice']['breathing']
   // WR-01: NK phase copy ('Front' / 'Back') for the screen-reader label.
   nkReadoutStrings: UiStrings['practice']['nkReadout']
+  // J5: forwarded to the inner OrbShape so the NK shell uses the same orb
+  // variant the rest of the surface uses (?breathingShape=orb-halo|minimal-rings).
+  variant: BreathingShapeVariant
 }
 
 export function NKShape({
@@ -27,6 +31,7 @@ export function NKShape({
   isPaused = false,
   strings,
   nkReadoutStrings,
+  variant,
 }: NKShapeProps) {
   const reducedMotion = usePrefersReducedMotion()
 
@@ -101,6 +106,7 @@ export function NKShape({
           frame={null}
           nkPhase={phase}
           strings={strings}
+          variant={variant}
         />
       </div>
       {/* D-02: count number overlaid on top of the shape */}

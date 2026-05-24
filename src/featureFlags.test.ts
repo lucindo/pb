@@ -33,24 +33,49 @@ describe('parseQueryBoolean', () => {
 })
 
 describe('readFeatureFlags', () => {
-  it('keeps switcher icons enabled by default', () => {
-    expect(readFeatureFlags('')).toEqual({ switcherIcon: true })
+  it('returns defaults for empty search', () => {
+    expect(readFeatureFlags('')).toEqual({ switcherIcon: true, breathingShape: 'orb-halo' })
   })
 
   it('enables switcher icons for on values', () => {
-    expect(readFeatureFlags('?switcherIcon=1')).toEqual({ switcherIcon: true })
-    expect(readFeatureFlags('?switcherIcon=true')).toEqual({ switcherIcon: true })
-    expect(readFeatureFlags('?switcherIcon=on')).toEqual({ switcherIcon: true })
+    expect(readFeatureFlags('?switcherIcon=1').switcherIcon).toBe(true)
+    expect(readFeatureFlags('?switcherIcon=true').switcherIcon).toBe(true)
+    expect(readFeatureFlags('?switcherIcon=on').switcherIcon).toBe(true)
   })
 
   it('disables switcher icons for off values', () => {
-    expect(readFeatureFlags('?switcherIcon=0')).toEqual({ switcherIcon: false })
-    expect(readFeatureFlags('?switcherIcon=false')).toEqual({ switcherIcon: false })
-    expect(readFeatureFlags('?switcherIcon=off')).toEqual({ switcherIcon: false })
+    expect(readFeatureFlags('?switcherIcon=0').switcherIcon).toBe(false)
+    expect(readFeatureFlags('?switcherIcon=false').switcherIcon).toBe(false)
+    expect(readFeatureFlags('?switcherIcon=off').switcherIcon).toBe(false)
   })
 
   it('falls back to the default for invalid switcherIcon values', () => {
-    expect(readFeatureFlags('?switcherIcon=maybe')).toEqual({ switcherIcon: true })
+    expect(readFeatureFlags('?switcherIcon=maybe').switcherIcon).toBe(true)
+  })
+
+  it('defaults breathingShape to orb-halo (V1)', () => {
+    expect(readFeatureFlags('').breathingShape).toBe('orb-halo')
+  })
+
+  it('parses minimal-rings (V2) and its aliases', () => {
+    expect(readFeatureFlags('?breathingShape=minimal-rings').breathingShape).toBe('minimal-rings')
+    expect(readFeatureFlags('?breathingShape=minimal').breathingShape).toBe('minimal-rings')
+    expect(readFeatureFlags('?breathingShape=rings').breathingShape).toBe('minimal-rings')
+  })
+
+  it('parses orb-halo (V1) and its aliases', () => {
+    expect(readFeatureFlags('?breathingShape=orb-halo').breathingShape).toBe('orb-halo')
+    expect(readFeatureFlags('?breathingShape=orb').breathingShape).toBe('orb-halo')
+    expect(readFeatureFlags('?breathingShape=halo').breathingShape).toBe('orb-halo')
+  })
+
+  it('breathingShape is case-insensitive and trims whitespace', () => {
+    expect(readFeatureFlags('?breathingShape=MINIMAL-RINGS').breathingShape).toBe('minimal-rings')
+    expect(readFeatureFlags('?breathingShape=%20Minimal%20').breathingShape).toBe('minimal-rings')
+  })
+
+  it('falls back to default for invalid breathingShape values', () => {
+    expect(readFeatureFlags('?breathingShape=junk').breathingShape).toBe('orb-halo')
   })
 })
 

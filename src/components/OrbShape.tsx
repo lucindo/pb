@@ -1,5 +1,6 @@
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
+import type { BreathingShapeVariant } from '../featureFlags'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
 import { CueGlyph } from './CueGlyph'
@@ -19,20 +20,34 @@ export interface OrbShapeProps {
   // spike (rings show during Running). OrbLeadIn never shows rings — its prop
   // default is hard-set to false inside the component.
   showRings?: boolean
+  // J5: query-string-gated variant. 'orb-halo' (V1, default) = 3-layered
+  // organic-puddle halos + disc with soft shadow + rings at 0.45 opacity.
+  // 'minimal-rings' (V2) = single full-bleed accent halo at 0.16 opacity +
+  // disc with no shadow + rings at 0.5 opacity.
+  variant?: BreathingShapeVariant
 }
 
-// 3-layer halo geometry — transcribed verbatim from spike 010/index.html
+// V1 3-layer halo geometry — transcribed verbatim from spike 010/index.html
 // lines 617-619 (the VariantOrbHalo body). Asymmetric border-radii give
 // the organic puddle feel; small px shifts layer the halos with offset.
-const HALOS = [
+const V1_HALOS = [
   { token: '--color-orb-halo-1', pct: 1.0, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4, 2] },
   { token: '--color-orb-halo-2', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [3, -2] },
   { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1, 3] },
 ] as const
 
 const DISC_PCT = 0.62
-const RING_TRANSITION_MS = 400
-const DISC_BG_TRANSITION_MS = 400
+// J5: 600 ms ease per spike V1 line 635 + V2 line 746 (corrected from J4's
+// erroneous 400 ms ease-in-out, which was copied from the deleted
+// .shape-marker--inner CSS rule instead of transcribed from the spike).
+const RING_TRANSITION = 'opacity 600ms ease'
+const DISC_BG_TRANSITION = 'background 400ms ease-in-out'
+
+const V1_RING_OPACITY = 0.45
+const V2_RING_OPACITY = 0.5
+const V1_DISC_SHADOW = '0 6px 24px var(--color-border-soft)'
+const V2_DISC_SHADOW = 'none'
+const V2_HALO_OPACITY = 0.16
 
 // Phase 38 D-03: OrbShape is the sole shape — it now owns the idle null-return
 // guard that BreathingShape's dispatcher used to own (pre-Phase-38 D-04).
@@ -43,17 +58,18 @@ export function OrbShape({
   cue = 'labels',
   nkPhase,
   showRings = true,
+  variant = 'orb-halo',
 }: OrbShapeProps) {
   if (nkPhase != null) {
-    return <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} />
+    return <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant} />
   }
   if (leadInDigit != null) {
-    return <OrbLeadIn digit={leadInDigit} strings={strings} />
+    return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} />
   }
   if (frame === null) {
     return null
   }
-  return <OrbBody frame={frame} strings={strings} cue={cue} showRings={showRings} />
+  return <OrbBody frame={frame} strings={strings} cue={cue} showRings={showRings} variant={variant} />
 }
 
 interface OrbBodyProps {
@@ -61,9 +77,10 @@ interface OrbBodyProps {
   strings: UiStrings['practice']['breathing']
   cue: CueStyleId
   showRings: boolean
+  variant: BreathingShapeVariant
 }
 
-function OrbBody({ frame, strings, cue, showRings }: OrbBodyProps) {
+function OrbBody({ frame, strings, cue, showRings, variant }: OrbBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -86,6 +103,7 @@ function OrbBody({ frame, strings, cue, showRings }: OrbBodyProps) {
       reducedMotion={reducedMotion}
       orbScale={orbScale}
       discBg="var(--color-breathing-accent)"
+      variant={variant}
     >
       <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
     </OrbContainer>
@@ -103,10 +121,12 @@ function OrbLeadIn({
   digit,
   strings,
   nkPhase,
+  variant,
 }: {
   digit: 1 | 2 | 3 | null
   strings: UiStrings['practice']['breathing']
   nkPhase?: 'front' | 'back'
+  variant: BreathingShapeVariant
 }) {
   const labelProps =
     digit != null ? { role: 'img' as const, 'aria-label': strings.leadInAriaLabel(digit) } : {}
@@ -125,6 +145,7 @@ function OrbLeadIn({
       reducedMotion={false}
       orbScale={MID_SCALE}
       discBg={discBg}
+      variant={variant}
     >
       {digit != null && (
         <span className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl">
@@ -137,7 +158,9 @@ function OrbLeadIn({
 
 // Shared layout: outer container at --orb-size, optional ring layers, then
 // the breathing-scale wrapper (`.orb` class kept for `will-change: transform`
-// GPU promotion — see theme.css comment) containing the 3 halos + centre disc.
+// GPU promotion — see theme.css comment) containing the halo region + centre
+// disc. The halo region branches per variant: V1 renders 3 organic-puddle
+// halos, V2 renders a single full-bleed accent halo.
 interface OrbContainerProps {
   role?: 'img'
   ariaLabel?: string
@@ -148,6 +171,7 @@ interface OrbContainerProps {
   reducedMotion: boolean
   orbScale: number
   discBg: string
+  variant: BreathingShapeVariant
   children?: React.ReactNode
 }
 
@@ -161,6 +185,7 @@ function OrbContainer({
   reducedMotion,
   orbScale,
   discBg,
+  variant,
   children,
 }: OrbContainerProps) {
   const rootProps = {
@@ -172,6 +197,8 @@ function OrbContainer({
 
   const innerVisible = innerRingPhase === 'out' ? 1 : 0
   const innerSizePct = `${(MIN_SCALE * 100).toFixed(2)}%`
+  const ringOpacity = variant === 'minimal-rings' ? V2_RING_OPACITY : V1_RING_OPACITY
+  const discShadow = variant === 'minimal-rings' ? V2_DISC_SHADOW : V1_DISC_SHADOW
 
   return (
     <div
@@ -189,7 +216,7 @@ function OrbContainer({
               inset: 0,
               border: '1.5px solid var(--color-breathing-accent)',
               borderRadius: '50%',
-              opacity: 0.45,
+              opacity: ringOpacity,
             }}
           />
           {!reducedMotion && (
@@ -204,8 +231,8 @@ function OrbContainer({
                 transform: 'translate(-50%, -50%)',
                 border: '1.5px solid var(--color-breathing-accent)',
                 borderRadius: '50%',
-                opacity: innerVisible * 0.45,
-                transition: `opacity ${String(RING_TRANSITION_MS)}ms ease-in-out`,
+                opacity: innerVisible * ringOpacity,
+                transition: RING_TRANSITION,
               }}
             />
           )}
@@ -220,20 +247,33 @@ function OrbContainer({
           transform: `translate3d(0,0,0) scale(${String(orbScale)})`,
         }}
       >
-        {HALOS.map((h, i) => (
+        {variant === 'minimal-rings' ? (
           <div
-            key={i}
             aria-hidden="true"
             className="absolute"
             style={{
-              width: `${String(h.pct * 100)}%`,
-              height: `${String(h.pct * 100)}%`,
-              borderRadius: h.radius,
-              background: `var(${h.token})`,
-              transform: `translate(${String(h.shift[0])}px, ${String(h.shift[1])}px)`,
+              inset: 0,
+              borderRadius: '50%',
+              background: 'var(--color-breathing-accent)',
+              opacity: V2_HALO_OPACITY,
             }}
           />
-        ))}
+        ) : (
+          V1_HALOS.map((h, i) => (
+            <div
+              key={i}
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                width: `${String(h.pct * 100)}%`,
+                height: `${String(h.pct * 100)}%`,
+                borderRadius: h.radius,
+                background: `var(${h.token})`,
+                transform: `translate(${String(h.shift[0])}px, ${String(h.shift[1])}px)`,
+              }}
+            />
+          ))
+        )}
         <div
           className="absolute flex items-center justify-center"
           style={{
@@ -242,8 +282,8 @@ function OrbContainer({
             borderRadius: '50%',
             background: discBg,
             color: 'var(--color-breathing-on-accent)',
-            boxShadow: '0 6px 24px var(--color-border-soft)',
-            transition: `background ${String(DISC_BG_TRANSITION_MS)}ms ease-in-out`,
+            boxShadow: discShadow,
+            transition: DISC_BG_TRANSITION,
           }}
         >
           {children}
