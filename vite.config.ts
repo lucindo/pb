@@ -47,7 +47,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,wasm,css,html,png,svg}'],
+        globPatterns: ['**/*.{js,wasm,css,html,png,svg,woff2}'],
+        // App locales are EN + pt-BR (both Latin-script). Latin + Latin-ext
+        // woff2 still precache; cyrillic/greek/vietnamese subsets emit to
+        // dist/ but stay out of the SW install (~85 KB precache trim).
+        globIgnores: ['**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
         cleanupOutdatedCaches: true,
       },
     }),
