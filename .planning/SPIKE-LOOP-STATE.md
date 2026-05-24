@@ -93,7 +93,7 @@ State below is updated after every step transition. The state file commits with 
 | J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | done (commit `5d6439b`) |
 | J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | **implemented — awaiting operator approval** (commit `7a2884d`) |
 | J10 | Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running). | done (commits `2bf2834` + `d88f3d7` UAT fix) |
-| J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | pending |
+| J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | **implemented (primitives only, no wiring) — awaiting operator approval** (commit `748ce31`) |
 | J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | pending |
 | J13 | InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only | pending |
 | J14 | App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time) | pending |
@@ -106,23 +106,21 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J11 — FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives
-**Step:** 1 (awaiting propose; J10 approved + committed)
+**Item:** J12 — MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved
+**Step:** 1 (awaiting propose; J11 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh after J10's approval:
+When you arrive here fresh after J11's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "FeedbackHRV", "FeedbackCount", "feedback" sections (sixth pass) for the per-practice running-surface readout primitives
-4. Read current code (Running surface — the variable region under the orb during a session):
-   - `src/app/BreathingSessionSurface.tsx` — verify current running-surface readout for HRV / Stretch
-   - `src/app/NaviKriyaSessionSurface.tsx` — current Navi running-surface readout
-   - `src/components/SessionReadout.tsx` — likely the existing HRV time readout primitive
-   - `src/components/NKSessionReadout.tsx` — existing Navi count readout primitive
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "MuteToggle", "mute", "44" for the mute affordance chrome alignment
+4. Read current code:
+   - `src/components/MuteToggle.tsx` — current chrome (likely uses `accent / accent-strong` tokens)
+   - `src/components/PracticeControlsView.tsx` or wherever MuteToggle is placed — verify integration
 5. Apply the propose-step checklist. Scope:
-   - V1 FeedbackTime: big remaining time digit + small "pace" caption (HRV)
-   - V1 FeedbackCount: big number + " of N" + uppercase context line (Stretch + Navi shared primitive)
-   - Note: feedback primitives are READ-ONLY presentation — no domain/state changes
-   - Verify spike's data shape for FeedbackHRV / FeedbackCount in index.html (sixth pass, around line 2001-2005)
+   - Re-tokenize MuteToggle chrome: `accent / accent-strong` → `borderSoft / textSoft` (per Mono Zen quieter chrome decision)
+   - Preserve 44px minimum hit area (accessibility — touch target)
+   - Verify spike's mute button chrome (likely the `MuteButton` reference in index.html)
+   - Likely a small change but watch for downstream guards on the previous tokens
 
 ### Archived — Implementation summary (Item J10)
 
@@ -404,6 +402,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 | J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
+| J11 | `748ce31` | FeedbackTime + FeedbackCount visual primitives. Scope: primitives only (operator OQ-1), no wiring. NEW: `src/components/FeedbackTime.tsx` (~50 LOC) — HRV time-based readout: big primary number above uppercase secondary caption. NEW: `src/components/FeedbackCount.tsx` (~60 LOC) — Stretch + Navi count-based readout: big number baseline-aligned with mid suffix above uppercase context. Both carry role="status" + aria-live="polite" + caller-supplied ariaLabel; both accept pre-formatted localized strings (no in-component formatting). Spike values verbatim from index.html lines 1060-1121: FeedbackTime mt-28, primary 28/500/0.04em/text/tabular-nums, secondary 12/500/0.16em/muted/uppercase mt-6; FeedbackCount mt-22, baseline row gap-2 tabular-nums, big 36/600/-0.01em/text, mid 16/500/text-soft (spike line 1107 — slightly stronger than muted), small 12/500/0.14em/muted/uppercase mt-4. NOT wired — `BreathingSessionSurface` and `NaviKriyaSessionSurface` still render the existing `SessionReadout` / `NKSessionReadout`. Wiring deferred to a follow-up item (data-shape mapping for Stretch + StatusPanel-chrome decision + lead-in/completion-headline placement remain OQs). 13 behavioral tests (slot rendering, role=status + aria-live + ariaLabel, big/mid baseline grouping via shared parent, DOM order via span sibling index, Navi-shape + Stretch-shape data samples). 1152 → 1165 tests. 4 files changed (244/-0). |
 | J10 | `2bf2834` + `d88f3d7` | SetupCard + SettingsSheet wired on Idle. NEW: `src/app/setupCardSummary.ts` (pure per-practice formatter + practice-name resolver — sources from real app domain, NOT the spike's illustrative SETUP_SUMMARY). PracticeSettingsView atomic swap: inline form → SetupCard (always) + SettingsSheet wrapping the same forms (conditional children to prevent role=group leakage when closed). Per-practice cells: HRV 3, Stretch 6 (skipped derived total per OQ-1), Navi 3. Stretch Running hides card entirely per OQ-2 (no in-session affordance). Resonant Running keeps card enabled — extend-duration reachable inside sheet via the existing isRunning-gated form. Sheet header: generic "Practice" / "Prática" title (OQ-4) + per-practice subtitle reusing existing `switcher.*Heading` strings (OQ-3). Session-start edge auto-closes the sheet via the setState-during-render pattern (avoids the J6 react-hooks/set-state-in-effect lint trap). New i18n keys: `practice.settingsSheet.{title, close, editCardAriaLabel}`. Test infra: `settingGroup()` helper auto-opens sheet via SetupCard tap; direct `screen.getByRole('group', ...)` call sites in App.{dialog,persistence,settings,wakeLock,audio}.test.tsx migrated to the helper. 1 session test had to re-query Duration after `startAndAdvancePastLeadIn` because sheet auto-closes on session start, stale Idle-state DOM ref no longer matches Running controls. 1142 → 1152 tests (+10: new PracticeSettingsView.test.tsx). 12 files changed (398/-21); 2 new (setupCardSummary.ts + PracticeSettingsView.test.tsx). No domain/audio/storage/hooks edits; sealed layers untouched. PWA precache 625.98 KiB (+5.40). **UAT fix `d88f3d7`**: two pre-existing NK defects exposed by Mono Zen tightening — (A architectural) OM count was overlaid as sibling outside OrbShape so it inherited body grey instead of disc on-accent white; now OrbShape accepts `children` prop threaded through OrbLeadIn into the centre disc, count renders inside → crisp white. (B less invasive) `nk-om-pulse` rest was `scale(var(--orb-scale-mid))=0.79` which compounded with OrbContainer's own MID inner scale for visible 0.62 rest → orb appeared smaller & "dropped" vs lead-in 0.79; keyframes now rest at `scale(1)` peak `scale(1.06)` → compounded rest 0.79 matches lead-in with gentle 6% per-OM pulse. 3 files / 48-55. |
 
 ---
