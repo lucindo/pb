@@ -118,18 +118,25 @@ describe('PracticeSettingsView — resonant (HRV)', () => {
 })
 
 describe('PracticeSettingsView — stretch', () => {
-  it('renders 6 cells (initialBpm, targetBpm, ratio, warmUp, ramp, coolDown) on Idle', () => {
+  it('renders 3 summary cells (start, target, duration) on Idle', () => {
     renderView(makeStretchVM())
     const card = screen.getByRole('button', { name: /^Edit HRV Stretch settings$/ })
     for (const label of [
-      EN.practice.settingsForm.initialBpmLabel,
-      EN.practice.settingsForm.targetBpmLabel,
+      EN.practice.settingsForm.initialBpmShortLabel,
+      EN.practice.settingsForm.targetBpmShortLabel,
+      EN.practice.settingsForm.durationLabel,
+    ]) {
+      expect(within(card).getByText(label)).toBeVisible()
+    }
+    // The card no longer surfaces ratio/warm-up/ramp/cool-down labels — those
+    // live in the SettingsSheet form only.
+    for (const label of [
       EN.practice.settingsForm.ratioLabel,
       EN.practice.settingsForm.holdInitialLabel,
       EN.practice.settingsForm.rampDurationLabel,
       EN.practice.settingsForm.holdTargetLabel,
     ]) {
-      expect(within(card).getByText(label)).toBeVisible()
+      expect(within(card).queryByText(label)).not.toBeInTheDocument()
     }
   })
 

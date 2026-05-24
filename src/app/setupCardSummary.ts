@@ -40,19 +40,18 @@ export function buildSetupCardSummary({
   if (settings.kind === 'stretch') {
     if (settings.isRunning) return null
     const s = settings.settings
+    // Visual summary only: 3 cells matching the HRV card shape. The actual
+    // configuration (warm-up / ramp / cool-down / ratio) stays in the
+    // SettingsSheet form. Duration = warmUp + ramp + coolDown; if coolDown is
+    // open-ended the whole total is open-ended.
+    const durationValue =
+      s.coolDownMinutes === 'open-ended'
+        ? f.openEndedLabel
+        : `${String(s.warmUpMinutes + s.rampDurationMinutes + s.coolDownMinutes)} ${f.minutesUnit}`
     return [
-      { label: f.initialBpmLabel, value: `${String(s.initialBpm)} ${f.bpmUnit}` },
-      { label: f.targetBpmLabel, value: `${String(s.targetBpm)} ${f.bpmUnit}` },
-      { label: f.ratioLabel, value: s.ratio },
-      { label: f.holdInitialLabel, value: `${String(s.warmUpMinutes)} ${f.minutesUnit}` },
-      { label: f.rampDurationLabel, value: `${String(s.rampDurationMinutes)} ${f.minutesUnit}` },
-      {
-        label: f.holdTargetLabel,
-        value:
-          s.coolDownMinutes === 'open-ended'
-            ? f.holdOpenEndedLabel
-            : `${String(s.coolDownMinutes)} ${f.minutesUnit}`,
-      },
+      { label: f.initialBpmShortLabel, value: `${String(s.initialBpm)} ${f.bpmUnit}` },
+      { label: f.targetBpmShortLabel, value: `${String(s.targetBpm)} ${f.bpmUnit}` },
+      { label: f.durationLabel, value: durationValue },
     ]
   }
 
