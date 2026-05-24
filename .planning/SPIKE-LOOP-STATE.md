@@ -155,7 +155,12 @@ Annotated but not in bullet list (awaits operator confirmation):
 
 **New orphan introduced by V4:** `vm.appHeader` viewmodel field + `getPracticeHeader()` helper + LOCKED-COPY entries `practice.header` / `switcher.stretchHeader` / `switcher.naviKriyaHeader` (EN + PT-BR) — no consumer after TopAppBar's eyebrow prop was dropped. Added to orphan queue below.
 
-**Dump #1 batch — awaiting operator final review.**
+**Dump #1 batch — APPROVED by operator on review.**
+
+**Dump #2 (mini)** — End button copy
+- "End session" → "End" (EN) / "Encerrar sessão" → "Encerrar" (PT-BR). 8 test files updated. Collision with EndSessionDialog's confirm button (also "End") resolved by scoping dialog-confirm queries to `within(dialog)`; JSDOM-only fix since browsers honor `<dialog>` inert. **DONE — commit `b300072`**
+
+**Awaiting more feedback from operator.**
 
 ### Archived — Implementation summary (Item J10)
 
