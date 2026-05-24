@@ -89,7 +89,7 @@ State below is updated after every step transition. The state file commits with 
 | J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | done (commit `637ad75`) |
 | J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | done (commit `a742c0b`) |
 | J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | done (commit `7366f1b`) |
-| J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | pending |
+| J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | **implemented — awaiting operator approval** (commit `f54aa37`) |
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. Resolves [[orb-outer-ring-idle-only]] deviation. | pending |
 | J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | pending |
 | J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | pending |
@@ -107,71 +107,83 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J6 — Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator.
-**Step:** 1 (awaiting propose; J5 approved + committed)
+**Item:** J7 — Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. Resolves [[orb-outer-ring-idle-only]] deviation.
+**Step:** 1 (awaiting propose; J6 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh:
+When you arrive here fresh after J6's approval:
 1. Read this whole file (you're here)
-2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "ambient breath", "ambient", "still", "idle behaviour", "still vs ambient" (line 259 mentions "**still** with empty centre disc; harness has an `ambient" — find the full discussion of the toggle)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` — locate where `ambientBreath` prop is passed to `<BreathingOrb>` on IdleScreen / CompleteScreen (line 1979 + 2026 in earlier J4 reads); understand how `animate: ambientBreath` controls scale
-5. Look at the existing scale-driving plumbing in `OrbShape.tsx` post-J5 (the `orbScale` calculation in OrbBody from frame.phase + frame.phaseProgress; OrbLeadIn locked at MID_SCALE)
-6. Verify how Idle currently renders (does PracticeScreen at Idle have OrbShape with `frame={null}`? if so, OrbShape returns null today → the orb doesn't render at all on Idle → spike's "still" vs "ambient" requires the orb to render on Idle in a non-active state)
-7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **Default TBD: ask operator in chat (no picker per [[chat-not-pickers]]) — spike notes "ambient" is the loop's resting feel and "still" is more meditative. v16-visual-locks lists this as deferred.**
+2. Read MEMORY.md and the rules listed in Step 2 above — **[[orb-outer-ring-idle-only]]** is the deviation J7 closes
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` line 445-450 (the "Ring cues hidden on Idle (A) and Complete (C)" item — added to MANIFEST as a hard requirement)
+4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` IdleScreen line 1979 + CompleteScreen line 2026 — both pass `showRings: false` to BreathingOrb. RunningScreen leaves it at default `true`.
+5. Audit OrbShape's consumers post-J6 to verify the current ring-rendering state per phase:
+   - **Idle**: OrbShape gets `frame=null` + `idleMode='still'|'ambient'` → renders `OrbIdle` which passes `showRings={false}` (J6 already correct ✅ — verify in code)
+   - **Lead-in**: OrbShape gets `leadInDigit=N` → renders `OrbLeadIn` which passes `showRings={false}` (already correct ✅)
+   - **Running**: OrbShape gets a non-null `frame` → renders `OrbBody` with default `showRings={true}` (already correct per spike ✅)
+   - **Complete**: same null-frame path as Idle → renders `OrbIdle` with `showRings={false}` (J6 already correct ✅)
+   - **NK Idle (sessionActive=false)**: same null-frame path → idle orb, rings off (J6 already correct ✅)
+   - **NK Running (count branch)**: NKShape passes `nkPhase` → OrbLeadIn with `showRings={false}` — and that's the NK shell; the spike doesn't render rings on NK shell either (NK has no exhale-end cue; per the NKShape doc comment, rings are HRV-specific) ✅
+6. **Surprise check**: J6 may have already closed the deviation completely. If so, J7 becomes a verification + cleanup item (drop the stale `[[orb-outer-ring-idle-only]]` memory; possibly add a grep guard or test ensuring no future call passes `showRings={true}` outside Running).
+7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **If verification confirms J6 already closed the deviation, the propose should be small (cleanup + invariant guard); otherwise specify which consumer site needs the false-passing fix.**
 
-### Archived — Implementation summary (Item J5)
+### Archived — Implementation summary (Item J6)
 
-Added the V2 Minimal orb variant + a query-string-gated `breathingShape` feature flag + corrected a J4 transcription error in the same commit (atomic).
+Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
+
+**The gap J6 filled:** before J6, `OrbShape` returned null for any null-frame state. Idle and Complete rendered no orb at all — the surface had a slot for it (post-J3) but never populated it. After J6, both surfaces show an empty halo orb. This was a real correctness gap the spike never anticipated (spike harness always renders the orb).
 
 **`src/featureFlags.ts`:**
-- New `BreathingShapeVariant = 'orb-halo' | 'minimal-rings'` type, exported for use in `OrbShape` + the threading chain
-- New `BREATHING_SHAPE_FLAG` spec — default `'orb-halo'` (V1, the locked direction per operator decision), accepts canonical values + aliases (`halo`/`orb`; `minimal`/`rings`), case-insensitive + whitespace-trimmed
-- `FeatureFlags` interface gains `breathingShape: BreathingShapeVariant`
-- `readFeatureFlags()` includes the new field; existing `switcherIcon` plumbing unchanged
+- New `OrbIdleBehavior = 'still' | 'ambient'` type
+- New `ORB_IDLE_FLAG` spec — default `'still'` (per operator decision matching spike's `'Orb defaults to still'` line 259), canonical-only values (no aliases — already terse), case-insensitive + whitespace-trimmed
+- `FeatureFlags` gains `orbIdle: OrbIdleBehavior`; `readFeatureFlags()` returns the new field
+
+**`src/hooks/useAmbientScale.ts` (NEW):**
+- rAF clock matching spike's `useBreathPhase` (line 569-595): `PHASE_MS = 5500`, easeInOutSine interpolation between MIN_SCALE and MAX_SCALE
+- Three branches:
+  - inactive (`active=false`) → MID_SCALE static (no rAF subscription, no state churn)
+  - reduced motion → MID_SCALE static (no rAF subscription)
+  - otherwise → rAF-ticked, ~60 Hz setState
+- **Avoided React `set-state-in-effect` anti-pattern**: the inactive/reduced-motion branches don't `setScale(MID_SCALE)` inside the effect — instead the return statement short-circuits (`return animated ? scale : MID_SCALE`). The rAF cleanup handles the active→inactive transition; stale `scale` state is just ignored.
+
+**`src/hooks/useAmbientScale.test.tsx` (NEW):**
+- inactive → MID_SCALE
+- active + prefers-reduced-motion → MID_SCALE (matchMedia stubbed via the existing `// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion` pattern from `usePrefersReducedMotion.test.ts`)
+- active + normal motion, initial render before rAF → MID_SCALE (initial state of the `scale` ref; rAF advance left untested — math reads clearly enough)
 
 **`src/components/OrbShape.tsx`:**
-- Renamed `HALOS` → `V1_HALOS` (V1 3-organic-halo geometry, unchanged values from J4)
-- Added `variant?: BreathingShapeVariant` prop on `OrbShape` (default `'orb-halo'`); threaded through `OrbBody` + `OrbLeadIn` into `OrbContainer`
-- `OrbContainer` parameterizes per variant:
-  - **Halo region**: V1 → 3 organic halos via `V1_HALOS.map(...)`; V2 → single full-bleed `<div>` at `inset:0`, `borderRadius:'50%'`, `background:var(--color-breathing-accent)`, `opacity:V2_HALO_OPACITY (0.16)`
-  - **Disc shadow**: V1 → `V1_DISC_SHADOW ('0 6px 24px var(--color-border-soft)')`; V2 → `V2_DISC_SHADOW ('none')`
-  - **Ring opacity**: V1 → `V1_RING_OPACITY (0.45)`; V2 → `V2_RING_OPACITY (0.5)` (both outer + inner; the inner crossfades from 0 to `ringOpacity` × `innerVisible`)
-- **J4 deviation correction**: ring transition `400ms ease-in-out` → `600ms ease` (extracted to `RING_TRANSITION` const). Matches spike V1 line 635 + V2 line 746 verbatim. The earlier 400/ease-in-out value was carried over from the deleted `.shape-marker--inner` CSS rule.
-- `DISC_BG_TRANSITION` extracted as a const too (`'background 400ms ease-in-out'`, unchanged from J4 — NK front/back crossfade timing)
+- New `idleMode?: OrbIdleBehavior | null` prop on `OrbShape`
+- Dispatcher extended: `if (frame === null) { if (idleMode != null) return <OrbIdle .../>; return null }`
+- New `OrbIdle` component: calls `useAmbientScale(idleMode === 'ambient')`; renders `<OrbContainer showRings={false} reducedMotion={false} orbScale={ambientScale} discBg=accent variant />` with empty children (no label, no digit, no marker — spike line 259 "empty centre disc")
+- Reuses J4's OrbContainer + J5's variant branching; no new visual primitives
 
-**Threading (5 files, mechanical):**
-- `PracticeScreen.tsx` — `<PracticeSessionView variant={vm.featureFlags.breathingShape} />`
-- `PracticeSessionView.tsx` — accept `variant`, forward to both session surfaces
-- `BreathingSessionSurface.tsx` — accept `variant`, pass to `<OrbShape>`
-- `NaviKriyaSessionSurface.tsx` — accept `variant`, pass to both `<OrbShape>` (lead-in branch) and `<NKShape>`
-- `NKShape.tsx` — accept `variant`, pass to its inner `<OrbShape>`
-
-**Tests:**
-- `featureFlags.test.ts` — broke the existing single-field `toEqual({switcherIcon:true})` assertions into per-field `.switcherIcon === true` checks (otherwise the new `breathingShape` field would have broken them). Added 5 new tests: default V1, V2 + aliases, V1 + aliases, case/whitespace insensitivity, junk-value fallback.
-- `NKShape.test.tsx` — added `variant: 'orb-halo'` to the default render fixture.
-- `OrbShape.test.tsx`, `CueGlyph.test.tsx`, etc. — UNCHANGED. OrbShape has `variant` default → tests get V1, all 14 behavior assertions still pass.
+**Threading (4 files):**
+- `PracticeScreen.tsx` — `<PracticeSessionView idleMode={vm.featureFlags.orbIdle} ...>`
+- `PracticeSessionView.tsx` — accept + forward to both session surfaces
+- `BreathingSessionSurface.tsx` — accept + pass to OrbShape
+- `NaviKriyaSessionSurface.tsx` — accept + pass to OrbShape (only the `kind: 'orb'` branch — NKShape itself doesn't see idleMode since its count branch is always session-active)
+- `NKShape.tsx` UNCHANGED (no Idle state inside the count branch)
 
 **No changes to:**
-- `appViewModel.ts` / `useAppViewModel.ts` — `featureFlags: FeatureFlags` exposes the whole object; adding `breathingShape` to the type is sufficient (no new field to manually plumb)
-- domain / hooks / storage / audio / state machines
-- `CueGlyph.tsx` (currentColor still works for both variants)
+- `sessionPresentation.ts` — null-frame semantics unchanged; OrbShape's dispatcher handles the idle case
+- domain / state / audio / storage
+- `OrbShape.test.tsx`, `NKShape.test.tsx`, `CueGlyph.test.tsx` — existing assertions unchanged (default tests don't pass idleMode → null-frame still returns null)
 - theme.css
 
 **Verification:**
 - `tsc --noEmit -p tsconfig.app.json`: clean
-- `npm run lint`: clean
-- Full suite: 101 files / 1120 tests pass (was 1115; net +5 = the new breathingShape parser tests)
-- `npm run build`: clean; PWA precache 19 / 617.72 KiB
+- `npm run lint`: clean (1 fix during implementation: refactored useAmbientScale to avoid setState-in-effect anti-pattern flagged by `react-hooks/set-state-in-effect`)
+- Full suite: 102 files / 1127 tests pass (was 1120; net +7 = 4 orbIdle parser tests + 3 useAmbientScale tests)
+- `npm run build`: clean; PWA precache 19 / 618.62 KiB
 
 **Manual verification needed (operator-side):**
-- Default URL: V1 (3-halo organic puddle, disc with shadow, rings at 0.45)
-- `?breathingShape=minimal-rings` (or `?breathingShape=minimal`, `?breathingShape=rings`): V2 (single faint accent halo, disc no shadow, rings at 0.5)
-- `?breathingShape=orb-halo` (or `?breathingShape=halo`, `?breathingShape=orb`): V1 explicitly
-- `?breathingShape=junk`: defaults to V1
-- Inner-ring fade timing: now 600 ms (slightly slower, more meditative than the previous 400 ms; check it reads right during Out phase)
-- NK Front → Back transition still works regardless of variant
+- Default URL on Idle: orb visible with empty centre disc, no rings, static at MID_SCALE
+- `?orbIdle=ambient`: same orb but gently scaling over 11 s cycle (5.5 s in / 5.5 s out)
+- `?orbIdle=junk`: defaults back to `still`
+- `prefers-reduced-motion`: ambient stays at MID_SCALE
+- HRV / Stretch / Navi: all show the idle orb on Idle
+- Complete: empty idle orb visible (marker deferred to J18 per operator agreement)
+- Running session: unchanged (live frame still drives scale)
 
-**Commit:** `7366f1b`
+**Commit:** `f54aa37`
 
 ---
 
@@ -184,6 +196,7 @@ Added the V2 Minimal orb variant + a query-string-gated `breathingShape` feature
 | J3 | `637ad75` | No-jiggle PracticeScreen layout — restructured `src/app/PracticeScreen.tsx` to match spike's `PracticeChrome`. Removed inner `PracticeWorkspace` card (rounded-card chrome: border + bg + shadow + p-5 + backdrop-blur). New tree: top bar → switcher → orb-group (fixed `pt-[18px] sm:pt-7` paddingTop above orb) → variable region → `flex-1` spacer → controls (`pt-4` min-gap) → disclaimer (11 px / 400 / 0.02em / nowrap / muted, `pb: max(1.25rem, env(safe-area-inset-bottom))`). PageShell + session/settings/controls views unchanged. `workspaceCompact` prop now dead (left in place; followup cleanup). CSS bundle 33.25 → 32.63 KiB; PWA precache 19 / 617.97 KiB. 101 files / 1117 tests pass; no test changes. |
 | J4 | `a742c0b` | Orb body — replaced in/out gradient + ring stack with the spike's 3-halo (organic-puddle asymmetric border-radii, sized 100% / 86% / 74%, slate halo tokens) + centre disc (62% size, accent bg, on-accent text, border-soft shadow). Added `showRings` prop (defaults true; J7 wires Idle/Complete to false). NK front/back signal preserved via disc-bg crossfade (accent ↔ accent-strong, 400 ms). Removed deprecated tokens (orb-in-*, orb-out-*, ring-*) + CSS rules (.orb-layer--*, .shape-marker--*, reduced-motion @media). CueGlyph: in-orb uses currentColor; picker preview uses accent. NKShape: OM count inherits currentColor. `theme.contrast.test.ts`: removed obsolete in/out crossfade ratio test (1117 → 1115; net -2 = describe.each(light+dark) × 1 block). Reduced-motion: scale freeze unchanged; inner-ring suppression moved CSS @media → JS skip-render. CSS bundle 32.63 → 31.43 KiB; PWA precache 19 / 617.03 KiB. Files: OrbShape.tsx + CueGlyph.tsx + NKShape.tsx + theme.css + theme.contrast.test.ts. |
 | J5 | `7366f1b` | V2 Minimal variant + `breathingShape` query-string flag (default `orb-halo`; aliases `halo`/`orb`, `minimal`/`rings`; case-insensitive). OrbContainer parameterizes per variant: V1 = 3 organic halos + disc shadow + ring opacity 0.45; V2 = single full-bleed accent halo at 0.16 opacity + no disc shadow + ring opacity 0.5. Threaded through PracticeScreen → PracticeSessionView → {BreathingSessionSurface, NaviKriyaSessionSurface, NKShape} → OrbShape. Same commit corrects a J4 transcription deviation (ring transition 400 ms ease-in-out → 600 ms ease per spike V1 line 635 + V2 line 746). 1115 → 1120 tests; 5 new featureFlags parser tests. 9 files changed (133/-32). |
+| J6 | `f54aa37` | Idle-orb rendering + `orbIdle=still\|ambient` query flag (default `still` per spike line 259). Closed a real gap: pre-J6, Idle and Complete rendered NO orb at all (OrbShape returned null for null-frame). New OrbIdle branch in dispatcher; new useAmbientScale hook (rAF clock, 5500 ms phase per spike line 569, easeInOutSine). Hook avoids React setState-in-effect anti-pattern via return-side short-circuit (`return animated ? scale : MID_SCALE`). showRings={false} hard-set on the idle path. Threaded through PracticeScreen → PracticeSessionView → {BreathingSessionSurface, NaviKriyaSessionSurface}; NKShape unchanged (no Idle inside count branch). 1120 → 1127 tests (+7: 4 orbIdle parser + 3 useAmbientScale). 9 files changed (190/-6); +useAmbientScale hook + test files. |
 
 ---
 
