@@ -2,10 +2,11 @@
 // Pure presentational layer — receives props from the app view model and emits
 // a click callback. No hook calls, no AudioContext access.
 //
-// Class string mirrors src/components/SettingsStepper.tsx:42-50 (the Phase 2
-// icon-button baseline) verbatim, EXCEPT:
-// - size-12 → size-11 (44 px exact match for the Phase 2 D-17 hit-area floor)
-// - text-2xl + leading-none dropped (this button hosts an SVG icon, not a glyph)
+// Chrome (spike 010 MuteButton, index.html lines 455-486 — Mono Zen quieter
+// pairing): border-soft 1px + breathing-surface bg + text-soft icon stroke
+// (currentColor). Hit area 44px exact via size-11. No shadow per spike's flat
+// treatment. Hover/active drop to bg-soft; focus ring stays on accent for
+// keyboard visibility; disabled drops to 45% opacity.
 
 import type { UiStrings } from '../content/strings'
 
@@ -49,7 +50,7 @@ export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, s
       title={label}
       disabled={!audioAvailable}
       onClick={onToggle}
-      className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+      className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full border border-[var(--color-border-soft)] bg-[var(--color-breathing-surface)] text-[var(--color-breathing-text-soft)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
     >
       {needsResume ? <ResumeIcon /> : muted ? <SpeakerSlashIcon /> : <SpeakerIcon />}
     </button>
