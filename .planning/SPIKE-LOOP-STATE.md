@@ -112,32 +112,29 @@ State below is updated after every step transition. The state file commits with 
 | J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | done (commit `6183e1e`) |
 | J13 | InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only | done — **DEVIATION**: banner removed entirely; install kept only on App Settings (commit `117310b`) |
 | J14 | App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time) | done (commit `6988ccc`) |
-| J15 | Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings | **implemented — awaiting operator approval** (commit `c72d335`) |
-| J16 | Locked-copy verification — disclaimer / install banner / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings | pending |
-| **J17** | **Operator feedback pass — cross-cutting polish & fixes across the entire spike loop. NO SCOPE PUSHBACK: every feedback item is in scope; "that's not what this step is about" is NEVER a valid response. Each feedback gets its own propose/go/implement/approve sub-cycle.** | pending |
-| J18 | Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces (formerly J17) | pending |
-| J19 | **(Gated)** Complete screen — operator decision: ship as distinct surface OR keep current inline "Session complete" headline (formerly J18) | pending |
+| J15 | Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings | done (commit `c72d335`) |
+| **J16** | **Operator feedback pass — cross-cutting polish & fixes across the entire spike loop. NO SCOPE PUSHBACK: every feedback item is in scope; "that's not what this step is about" is NEVER a valid response. Each feedback gets its own propose/go/implement/approve sub-cycle (proposes can be terser — no Section-A scope worry).** | **ACTIVE — receiving feedback** |
+| J17 | Locked-copy verification — disclaimer / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings (formerly J16; moved after the feedback pass so verification runs against what actually lands) | pending |
+| J18 | Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces | pending |
+| J19 | **(Gated)** Complete screen — operator decision: ship as distinct surface OR keep current inline "Session complete" headline | pending |
 
 ---
 
 ## Current focus
 
-**Item:** J16 — Locked-copy verification — disclaimer / install banner / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings
-**Step:** 1 (awaiting propose; J15 implemented + committed, awaiting operator approval)
+**Item:** J16 — Operator feedback pass (ACTIVE)
+**Step:** receiving feedback (no propose yet — operator is dumping)
 
-When you arrive here fresh after J15's approval:
-1. Read this whole file (you're here)
-2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/MANIFEST.md` — locate the `LOCKED_COPY` table (full set of operator-locked strings)
-4. Read current code:
-   - `src/content/strings.ts` — EN + PT-BR string maps
-   - The locked-copy enforcement / verification file (if one exists — check `.planning/...`)
-5. Apply the propose-step checklist. Scope:
-   - Verify each LOCKED_COPY string is present verbatim in `strings.ts` for both locales
-   - Disclaimer line, "Session complete · Take a moment", 5 surface titles
-   - Note: install banner copy was deferred to orphan queue (J13 deviation); the install-related LOCKED_COPY entries are flagged for J18 cleanup, not J16
-   - Verification step likely produces a report / passes a grep guard; may need new test or update existing one
-   - Watch for any LOCKED_COPY entries that don't yet have a PT-BR pair
+**Mode:** operator is delivering cross-cutting feedback across the entire spike loop. Per [[ack-dont-fix-inline]]: ACKNOWLEDGE first, take notes, do NOT edit code until operator says "you can fix" (or equivalent). Per the J16 pinned rule: NO SCOPE PUSHBACK — every item is in scope by definition.
+
+**Per-feedback-item flow (once operator says "you can fix"):**
+1. Brief propose (Section A permissive: "feedback-pass work, cross-cutting allowed"; Section B applicable memory rules only if relevant)
+2. Goal / Scope / Risk / Verification (terse)
+3. Implement, commit atomically with a `fix(...): ... (J16 feedback)` prefix
+4. Wait for next-feedback-or-approve
+
+**Feedback log (append as items come in):**
+- _(empty — awaiting operator dump)_
 
 ### Archived — Implementation summary (Item J10)
 
@@ -419,6 +416,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 | J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
+| J16 | — | (renumbered) Operator feedback pass — see Current Focus for live state. |
 | J15 | `c72d335` | Desktop responsive layout per spike 010 eleventh pass (README lines 510-545). CSS (theme.css): `--orb-size` mobile clamp tightened to `clamp(180px, 50vw, 280px)` (was `35vw → 360px`); desktop (≥sm = 640px) locks to `320px` via `@media (min-width: 640px) :root { --orb-size }` override (OQ-1 + OQ-2 recommended). New `--page-bg-gradient` custom property: mobile keeps original `radial-gradient(circle at top, bg-soft, bg 48%, bg-edge)`; desktop overrides to spike's positioned variant `radial-gradient(50% 70% at 50% 25%, edge 0%, bg 50%, bg-soft 100%)` (OQ-3 b). PageShell: NEW `width?: 'practice' \| 'page'` prop (default 'page' = `sm:max-w-[600px]`; `'practice'` = `sm:max-w-[520px]`); mobile (<sm) full-width preserved. Drops the unconditional `max-w-3xl`. Background sourced from `var(--page-bg-gradient)`. PracticeScreen passes `width="practice"`; PracticeToggle + PracticeControlsView wrappers gain inner `mx-auto sm:max-w-[400px]` cap per spike line 528. AppSettingsPage + LearnPage default to 'page' (600px) — no explicit override. OrbShape / OrbContainer consume `var(--orb-size)` — auto-scale on media-query fire. PWA precache 626.18 KiB (+0.30). Tests unchanged (PageShell tests are behavioral; no class-string locking on widths). 3 files changed (76/-18). |
 | J14 | `6988ccc` | App Settings restructured into 4 spike-locked sections per spike 010 sixth + seventh pass (index.html lines 1797-1894): Appearance (Theme) / Language (Language picker) / Audio (Cue + Timbre) / About (Version + GitHub + Install). NEW: `SettingsSectionHeader.tsx` (~30 LOC) — `<h2>` by default with spike values verbatim (fontSize 11, weight 500, letterSpacing 0.16em, uppercase, color muted, mt-24/mb-8); 3 behavioral tests. EXTENDED: `PickerCardGrid.tsx` adds optional `sectionLabelHidden` prop → applies `sr-only` to the `<p>` sublabel (visually hidden, accessibility-tree preserved for radiogroup's `aria-labelledby`); ThemePicker + LanguagePicker forward the new prop. OQ-1 (a) — Install moves into About, sits below GitHub link with `border-soft` 1px top border. OQ-3 (a) — Appearance + Language pickers hide their sublabels (single-picker sections); OQ-3 (b) — Audio keeps Cue + Timbre sublabels visible (multi-picker disambiguation). OQ-2 (a) — version surfaced via `__APP_VERSION__` (vite `define` reads from package.json at config-time, declared globally in new `src/vite-env.d.ts`); GitHub URL constant `https://github.com/lucindo/hrv` with `target=_blank rel=noopener noreferrer`. OQ-4 — SectionHeader values verbatim from spike. Outer `<Card padding="lg">` wrap dropped from AppSettingsPage — each section card is now self-contained per spike. Per `[[spike-is-design-not-features]]`: spike Audio's "Subtle haptics" toggle deliberately omitted (no haptics in app domain). `THEME_OPTIONS` includes 'system' unchanged — flagged for J17 (domain change, separate item). 1158 → 1166 tests (+8). 11 files changed (338/-36); 3 new (SettingsSectionHeader.tsx + test + vite-env.d.ts). PWA precache 625.88 KiB (+2.22). |
 | J13 | `117310b` | **DEVIATION from spike 010 fourteenth pass (V3 inline card).** Operator decision: don't surface install on the practice screen at all — App Settings already exposes install via `SettingsInstallSection` (iOS expand + Android install, existing locked copy, `installable && !isStandalone` gate, `inSessionView` disable). DELETED: `src/components/InstallBanner.tsx` (~100 LOC) + `src/components/InstallBanner.test.tsx` (6 behavioral tests). EDIT: `src/app/PracticeScreen.tsx` — dropped the InstallBanner import + `{vm.install.showBanner && <InstallBanner .../>}` mount from PageShell overlays (now just `<EndSessionDialogsView />`). Orphans deferred to J17 audit queue (documented in this state file's new "Orphan cleanup queue" section): `vm.install.showBanner` + `onDismiss` viewmodel fields; `installDismissed` storage field; LOCKED_COPY `install.bannerText`/`regionLabel`/`dismiss` entries. 1165 → 1158 tests (-7). PWA precache 623.66 KiB (-2.16). 3 files changed (1/-207). |
@@ -440,4 +438,4 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 - **State file commits with every step transition** — so the resume prompt always lands on truth
 - **No bundled items** — each item gets its own commit; operator can interrupt at any boundary
 - **Operator feedback dumps get acknowledged first** — do not edit code mid-dump per [[ack-dont-fix-inline]]
-- **J17 (Feedback pass) has NO SCOPE GUARDS** — during the feedback pass, ALL operator feedback is in scope by definition. The propose-step checklist still runs per sub-item, but its Section A is permissive ("this is feedback-pass work, cross-cutting allowed"). Never reply "that's not in this step's scope" inside J17 — the operator added the step specifically to avoid that response.
+- **J16 (Feedback pass) has NO SCOPE GUARDS** — during the feedback pass, ALL operator feedback is in scope by definition. The propose-step checklist still runs per sub-item, but its Section A is permissive ("this is feedback-pass work, cross-cutting allowed"). Never reply "that's not in this step's scope" inside J16 — the operator added the step specifically to avoid that response.
