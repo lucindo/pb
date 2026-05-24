@@ -10,6 +10,17 @@ export interface TimbrePickerProps {
   sectionLabel: string
 }
 
+// Timbre glyphs match spike 010 PracticeSettingsSheet "Cue timbre" VisualPicker
+// (index.html L1672-1675). Unicode characters chosen as abstract representations
+// of each timbre — kept inline with the label to match the Appearance picker
+// chrome (operator: "follow the appearance reference").
+const TIMBRE_GLYPH: Record<TimbreId, string> = {
+  bowl: '◯',
+  bell: '◐',
+  sine: '∿',
+  flute: '◊',
+}
+
 export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerProps) {
   const { timbre, setTimbre } = useTimbreChoice()
   const onChange = (id: TimbreId): void => {
@@ -23,7 +34,14 @@ export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerPr
       options={TIMBRE_OPTIONS}
       value={timbre}
       onChange={onChange}
-      renderOption={(id) => strings[id]}
+      renderOption={(id) => (
+        <>
+          <span aria-hidden="true" className="text-sm leading-none">
+            {TIMBRE_GLYPH[id]}
+          </span>
+          <span>{strings[id]}</span>
+        </>
+      )}
       columns={2}
       disabled={disabled}
     />

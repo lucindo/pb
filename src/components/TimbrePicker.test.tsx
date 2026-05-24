@@ -52,19 +52,18 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     render(<TimbrePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.timbres} sectionLabel={EN_STRINGS_FIXTURE.appSettings.timbreLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(4)
-    const labels = Array.from(radios).map((b) => b.textContent)
+    // Accessible names (respects aria-hidden glyph spans).
+    const labels = radios.map((b) => b.getAttribute('aria-label') ?? b.textContent?.replace(/[^A-Za-z]/g, '') ?? '')
     expect(labels).toEqual(['Bowl', 'Bell', 'Sine', 'Flute'])
   })
 
   it('aria-checked reflects the stored timbre — seeded timbre has aria-checked=true, others false', () => {
     seedTimbre('bell')
     render(<TimbrePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.timbres} sectionLabel={EN_STRINGS_FIXTURE.appSettings.timbreLabel} />)
-    const radios = screen.getAllByRole('radio')
-    const bellButton = radios.find((b) => b.textContent === 'Bell')
-    const otherButtons = radios.filter((b) => b.textContent !== 'Bell')
+    const bellButton = screen.getByRole('radio', { name: 'Bell' })
     expect(bellButton).toHaveAttribute('aria-checked', 'true')
-    for (const button of otherButtons) {
-      expect(button).toHaveAttribute('aria-checked', 'false')
+    for (const name of ['Bowl', 'Sine', 'Flute']) {
+      expect(screen.getByRole('radio', { name })).toHaveAttribute('aria-checked', 'false')
     }
   })
 
