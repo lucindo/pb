@@ -40,13 +40,13 @@ export function NKShape({
   // the neck-lock head movement before OM 1. "0" is shown (not blank) so that
   // pause reads as a deliberate beat of the practice.
   // text-7xl sm:text-8xl font-semibold tracking-tight per UI-SPEC "NK Shape count-in-shape".
-  // Color tracks the phase the same way HRV's CueGlyph does — in-text on the
-  // Front (In) gradient, out-text on the Back (Out) gradient — so the digit
-  // stays legible after the orb crossfades to the Back color.
+  // J4: count inherits currentColor from OrbShape's centre disc, which sets
+  // color: var(--color-breathing-on-accent). The disc bg crossfades between
+  // accent (front) and accent-strong (back); on-accent reads legibly against
+  // both (the accent-strong/on-accent pairing is contrast-tested).
   const countContent = (
     <span
       className={`relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl${isPaused ? ' opacity-50' : ''}`}
-      style={{ color: phase === 'back' ? 'var(--color-orb-out-text)' : 'var(--color-orb-in-text)' }}
     >
       {String(count)}
     </span>

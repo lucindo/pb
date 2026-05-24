@@ -8,7 +8,10 @@
 //       no reduced-motion branch.
 // D-09 / CUE-03: arrow and nose modes render aria-hidden SVG + visually-hidden sr-only
 //                span so screen readers still announce the localized In/Out word.
-// D-23: token-only colors — var(--color-orb-in-text) / var(--color-orb-out-text), never hex.
+// J4: in-orb glyph uses currentColor — the parent centre disc sets
+//     color: var(--color-breathing-on-accent), which cascades into all 3 cue modes.
+//     Preview swatches (CuePicker) use var(--color-breathing-accent) so the glyph
+//     reads against the picker's surface bg.
 
 import type { CueStyleId } from '../domain'
 
@@ -16,11 +19,11 @@ export interface CueGlyphProps {
   cue: CueStyleId
   phase: 'in' | 'out'
   phaseLabel: string
-  // preview: picker-swatch rendering. Uses --color-orb-in-from so the glyph stays
-  // visible on dark themes, and renders the first character of phaseLabel for labels
-  // mode instead of the full phase word (which overflows the swatch). Preview glyphs
-  // are purely decorative — the arrow/nose branches skip the sr-only span entirely
-  // so the picker swatch emits no a11y node.
+  // preview: picker-swatch rendering. Uses --color-breathing-accent so the glyph
+  // stays visible on the picker's surface bg, and renders the first character of
+  // phaseLabel for labels mode instead of the full phase word (which overflows
+  // the swatch). Preview glyphs are purely decorative — the arrow/nose branches
+  // skip the sr-only span entirely so the picker swatch emits no a11y node.
   preview?: boolean
 }
 
@@ -60,14 +63,10 @@ const NOSE_OUT_ARROWS = {
 }
 
 export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphProps): React.ReactElement {
-  // Token-only color (D-23) via Tailwind arbitrary-value text-[var(...)] classes —
-  // matches the codebase convention. Preview swatches use --color-orb-in-from so
-  // the glyph reads on every theme; in-orb glyphs use the phase in/out text tokens.
-  const colorClass = preview
-    ? 'text-[var(--color-orb-in-from)]'
-    : phase === 'in'
-      ? 'text-[var(--color-orb-in-text)]'
-      : 'text-[var(--color-orb-out-text)]'
+  // J4: in-orb glyph inherits currentColor from the centre disc (which sets
+  // color: var(--color-breathing-on-accent)). Picker swatch uses the accent
+  // token directly so the glyph reads against the surface bg.
+  const colorClass = preview ? 'text-[var(--color-breathing-accent)]' : ''
 
   // ── labels mode ─────────────────────────────────────────────────────────────
   if (cue === 'labels') {

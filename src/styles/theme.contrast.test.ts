@@ -1,8 +1,10 @@
 // src/styles/theme.contrast.test.ts
 //
-// Phase 16 THEME-05: every shipped theme preserves reduced-motion crossfade contrast.
-// D-13 / D-14 / D-15 / D-16: WCAG luminance contrast ratio >= 1.5 on the orb-in vs orb-out
-// midpoint colors, iterated over the 2 concrete themes (light, dark).
+// J4: scoped to role-pair contrast checks (accent-strong vs on-accent for primary CTA
+// readability; destructive vs destructive-on for End-session button). The historical
+// orb-in vs orb-out gradient midpoint test (THEME-05 / D-14) was removed when the
+// orb body redesign replaced the in/out crossfade with halo layers + a single
+// centre disc — the primitive it asserted no longer exists.
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -67,16 +69,6 @@ function parseColorToRgb(value: string): [number, number, number] {
   )
 }
 
-function midpoint(
-  a: [number, number, number],
-  b: [number, number, number],
-): [number, number, number] {
-  return [
-    Math.round((a[0] + b[0]) / 2),
-    Math.round((a[1] + b[1]) / 2),
-    Math.round((a[2] + b[2]) / 2),
-  ]
-}
 
 function contrastRatio(
   rgb1: [number, number, number],
@@ -125,39 +117,14 @@ const CONCRETE_THEMES = THEME_OPTIONS.filter(
   (t): t is Exclude<ThemeId, 'system'> => t !== 'system',
 )
 
-// Phase 16.3-02 operator override (iterated): Light THEME-05 floor relaxed
-// 1.5 → 1.2 to admit Nord-derived "pale Frost teal" Out (50/50 blend of n7 teal
-// + n4 snow, lum 0.58 — easier-on-eyes at large surface scale per UAT). Polarity
-// invariant (inLum > outLum) remains hard. Dark keeps 1.5 floor.
-const THEME_05_FLOORS: Record<Exclude<ThemeId, 'system'>, number> = {
-  light: 1.15,
-  dark: 1.5,
-}
+// J4: the reduced-motion in/out gradient midpoint-contrast test was removed.
+// It asserted the perceptual distance of an `.orb-layer--in` / `.orb-layer--out`
+// gradient crossfade that no longer exists post-J4 (orb body is now halos +
+// centre disc, phase distinction comes from the inner-ring opacity fade gated
+// by `showRings`). The accent-strong / on-accent and destructive-contrast
+// tests below remain meaningful and unchanged.
 
 describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
-  it('reduced-motion crossfade midpoint contrast ratio meets per-theme floor (THEME-05 / D-14)', () => {
-    // Light is the @theme baseline -> no override block -> no data-theme attribute
-    // Other 4 themes have [data-theme='X']:root override blocks
-    if (themeId === 'light') {
-      delete document.documentElement.dataset.theme
-    } else {
-      document.documentElement.dataset.theme = themeId
-    }
-
-    const inFrom = readToken('--color-orb-in-from')
-    const inTo = readToken('--color-orb-in-to')
-    const outFrom = readToken('--color-orb-out-from')
-    const outTo = readToken('--color-orb-out-to')
-
-    const inMid = midpoint(inFrom, inTo)
-    const outMid = midpoint(outFrom, outTo)
-
-    const ratio = contrastRatio(inMid, outMid)
-
-    // D-14 floor: WCAG luminance contrast >= per-theme floor (see THEME_05_FLOORS above)
-    expect(ratio).toBeGreaterThanOrEqual(THEME_05_FLOORS[themeId])
-  })
-
   it('accent-strong vs on-accent contrast ratio is >= 1.5 (D-01)', () => {
     // Phase 16.1 D-01: new --color-breathing-on-accent token is the foreground role
     // when sitting on a --color-breathing-accent-strong background (e.g. primary

@@ -1,10 +1,7 @@
 @theme {
   /* Mono Zen palette (light) — cool slate + pale near-white.
      Source of truth: .planning/spikes/010-mono-zen-light-dark/
-     Values transcribed verbatim from the spike's CANDIDATES['mono-zen-light'].tokens.
-     Deprecated tokens (orb-in-*, orb-out-*, ring-*) remain at their previous Nord
-     values until J4 (orb redesign — halo + center disc) and J7 (ring conditional)
-     remove them in lockstep with their consumers. */
+     Values transcribed verbatim from the spike's CANDIDATES['mono-zen-light'].tokens. */
 
   /* Mono Zen tokens (light) */
   --color-breathing-bg: #f3f5f7;
@@ -22,18 +19,6 @@
   --color-orb-halo-2: rgba(120, 128, 140, 0.32);
   --color-orb-halo-3: rgba(93, 104, 119, 0.50);
   --color-modal-backdrop: rgba(58, 65, 80, 0.22);
-
-  /* DEPRECATED — Nord-derived values retained for OrbShape / NKShape / CueGlyph /
-     theme.contrast.test.ts. J4 (orb redesign to halo + disc) and J7 (ring
-     conditional) remove these along with their consumers. */
-  --color-orb-in-from: #d8dee9;
-  --color-orb-in-to: #d8dee9;
-  --color-orb-out-from: #bbd0d7;
-  --color-orb-out-to: #bbd0d7;
-  --color-orb-in-text: #2e3440;
-  --color-orb-out-text: #2e3440;
-  --color-ring-outer: rgb(216 222 233 / 0.7);
-  --color-ring-inner: rgb(94 129 172 / 0.5);
 
   /* Non-themable layout/sizing tokens (D-02: ONLY --color-* tokens are themable) */
   /* --orb-scale-{min,max,mid} mirror the TS constants MIN_SCALE/MAX_SCALE/MID_SCALE
@@ -66,9 +51,7 @@
 
 /* Mono Zen palette (dark) — deep cool slate + dimmed slate ink.
    Source of truth: .planning/spikes/010-mono-zen-light-dark/
-   Values transcribed verbatim from the spike's CANDIDATES['mono-zen-dark'].tokens.
-   Deprecated tokens (orb-in-*, orb-out-*, ring-*) remain at previous Nord values
-   until J4 / J7 remove them along with their consumers. */
+   Values transcribed verbatim from the spike's CANDIDATES['mono-zen-dark'].tokens. */
 [data-theme='dark']:root {
   /* Mono Zen tokens (dark) */
   --color-breathing-bg: #1a1d24;
@@ -86,16 +69,6 @@
   --color-orb-halo-2: rgba(108, 113, 124, 0.38);
   --color-orb-halo-3: rgba(150, 156, 168, 0.52);
   --color-modal-backdrop: rgba(0, 0, 0, 0.65);
-
-  /* DEPRECATED — see light block for removal plan. */
-  --color-orb-in-from: #6e8993;
-  --color-orb-in-to: #6e8993;
-  --color-orb-out-from: #4c566a;
-  --color-orb-out-to: #4c566a;
-  --color-orb-in-text: #2e3440;
-  --color-orb-out-text: #eceff4;
-  --color-ring-outer: rgb(110 137 147 / 0.5);
-  --color-ring-inner: rgb(216 222 233 / 0.4);
 
   /* v2.0 surface elevation + scrim tokens (dark). Pure-black channels for
      dark-theme shadows (consistent with --color-modal-backdrop convention). */
@@ -135,54 +108,6 @@
   will-change: transform;
 }
 
-.orb-layer--in {
-  background: linear-gradient(135deg, var(--color-orb-in-from), var(--color-orb-in-to));
-  opacity: 1;
-  transition: opacity 400ms ease-in-out;
-}
-
-.orb-layer--out {
-  background: linear-gradient(135deg, var(--color-orb-out-from), var(--color-orb-out-to));
-  opacity: 0;
-  transition: opacity 400ms ease-in-out;
-}
-
-[data-phase='out'] .orb-layer--in {
-  opacity: 0;
-}
-
-[data-phase='out'] .orb-layer--out {
-  opacity: 1;
-}
-
-.shape-marker--outer {
-  border-color: var(--color-ring-outer);
-  border-width: 1.5px;
-}
-
-/* Phase 13 (D-03, D-05): inner reference ring is the Out-phase arrival cue under
-   normal motion; suppressed under reduced motion (see @media block below).
-   - Hidden by default (opacity 0) so it does not distract during In phase or the
-     3-2-1 lead-in countdown (where there is no data-phase attribute on root).
-   - Fades in/out at the same 400ms ease-in-out as the orb-layer phase crossfade
-     (see .orb-layer--in / .orb-layer--out), so the ring appears in lockstep with
-     the orb shifting from teal to blue and recedes back during the next In flip.
-   - Reduced-motion: under `prefers-reduced-motion: reduce` the ring is suppressed
-     via `display: none` in the `@media` block below; .orb-layer--out opacity
-     crossfade alone carries the substitute phase indicator (D-07). Historical note:
-     ring was originally kept under reduced motion per Phase 7 UAT 2026-05-11; user
-     UAT correction 2026-05-12 reversed this (D-03, D-12). */
-.shape-marker--inner {
-  border-color: var(--color-ring-inner);
-  border-width: 1.5px;
-  opacity: 0;
-  transition: opacity 400ms ease-in-out;
-}
-
-[data-phase='out'] .shape-marker--inner {
-  opacity: 1;
-}
-
 /* F3: native <dialog> entry/exit fade per UI-SPEC §Confirmation Modal.
    Uses @starting-style + display/overlay allow-discrete so the dialog fades
    from opacity:0 → 1 on showModal() and 1 → 0 on close(). Reduced-motion
@@ -206,27 +131,14 @@ dialog.modal-fade[open]::backdrop {
   transition: background-color 200ms ease-out;
 }
 
-/* Reduced-motion (D-05, D-07, D-09, D-03):
-   - The .orb scale transition was removed (see .orb rule above), so this block
-     no longer needs to suppress it. Kept for the dialog modal fade only.
-   - Intentionally PRESERVE the .orb-layer--out opacity transition — it is the
-     substitute phase indicator under reduced-motion (D-07).
-   - CR-01: Do NOT set `transform: none !important` here. BreathingShape sets the
-     reduced-motion fixed scale via inline `transform: scale(var(--orb-scale-mid))`
-     when usePrefersReducedMotion() is true. Inline styles do NOT win over an
-     `!important` stylesheet rule, so a `transform: none !important` here would
-     silently nuke the JS-controlled MID_SCALE and render the orb at scale(1).
-   - F3: dialog modal fade also disabled here (per UI-SPEC: "in reduced-motion,
-     dialog appears immediately").
-   - Phase 13 (D-03): .shape-marker--inner is suppressed (display: none) — the inner
-     reference ring carries no information when the orb is locked at MID_SCALE;
-     the .orb-layer--out opacity crossfade remains the sole substitute phase cue. */
+/* Reduced-motion (F3 dialog only):
+   - J4: orb scale freeze + inner-ring suppression are now JS-side in OrbShape
+     (`usePrefersReducedMotion()` → MID_SCALE + skip-render the inner ring).
+     No CSS @media branch is needed for orb behavior anymore.
+   - F3: dialog modal fade disabled here (per UI-SPEC: "in reduced-motion,
+     dialog appears immediately"). */
 @media (prefers-reduced-motion: reduce) {
   dialog.modal-fade {
     transition: none !important;
-  }
-
-  .shape-marker--inner {
-    display: none;
   }
 }
