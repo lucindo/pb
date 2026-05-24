@@ -2,7 +2,6 @@ import { useEffect, useRef, type ReactElement } from 'react'
 
 import { ChevronBackIcon } from '../../components/icons'
 import { LearnPanel } from '../../components/LearnPanel'
-import { Card } from '../../components/primitives/Card'
 import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
@@ -47,15 +46,13 @@ export function LearnPage({
           />
         }
       />
-      <div className="mt-6 w-full text-left">
-        <Card padding="lg">
-          <LearnPanel
-            learnContent={learnContent}
-            lockedCopy={lockedCopy}
-            strings={strings}
-            activePractice={activePractice}
-          />
-        </Card>
+      <div className="w-full px-5 text-left sm:px-8">
+        <LearnPanel
+          learnContent={learnContent}
+          lockedCopy={lockedCopy}
+          strings={strings}
+          activePractice={activePractice}
+        />
       </div>
     </PageShell>
   )

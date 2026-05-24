@@ -1,10 +1,11 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage'
 import { getLearnPanelModel } from './learnPanelModel'
+import { SettingsSectionHeader } from './SettingsSectionHeader'
 
 // Body of the "About this practice" surface. Consumed by LearnPage.
 // Renders the sections, videos, explainer, resources, and native-apps
@@ -17,6 +18,33 @@ export interface LearnPanelProps {
   strings: UiStrings['learn']
   activePractice: PracticeId
 }
+
+// Spike-locked card chrome — 1px border-soft + surface bg + 20 px radius
+// (spike index.html L1809-1814). Mirrors SettingsPanelBody's private
+// SectionCard for visual consistency between Learn + AppSettings pages.
+function SectionCard({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <div
+      style={{
+        background: 'var(--color-breathing-surface)',
+        border: '1px solid var(--color-border-soft)',
+        borderRadius: 20,
+        padding: '16px 18px',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+const LINK_CLASSES =
+  'inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2'
+
+const H3_CLASSES =
+  'text-lg font-semibold text-[var(--color-breathing-text)]'
+
+const BODY_CLASSES =
+  'mt-1 text-base leading-6 text-[var(--color-breathing-text-soft)]'
 
 export function LearnPanel({
   learnContent,
@@ -32,22 +60,18 @@ export function LearnPanel({
   })
 
   return (
-    <div className="grid gap-5">
-      {/* Practice description — practice-specific (D-01 first, D-08 single signal). */}
-      <div className="grid gap-4">
-        <div>
-          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section1.title}</h3>
-          <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section1.body}</p>
-        </div>
-        <div>
-          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{practiceContent.description.section2.title}</h3>
-          <p className="text-base leading-6 text-[var(--color-breathing-muted)]">{practiceContent.description.section2.body}</p>
-        </div>
-      </div>
-
-      {/* Practice videos — practice-specific (D-01 second). D-07 link security. */}
-      <div>
-        <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{videosHeading}</h3>
+    <div className="grid gap-2">
+      <SettingsSectionHeader label={strings.practiceSectionLabel} />
+      <SectionCard>
+        <h3 className={H3_CLASSES}>{practiceContent.description.section1.title}</h3>
+        <p className={BODY_CLASSES}>{practiceContent.description.section1.body}</p>
+      </SectionCard>
+      <SectionCard>
+        <h3 className={H3_CLASSES}>{practiceContent.description.section2.title}</h3>
+        <p className={BODY_CLASSES}>{practiceContent.description.section2.body}</p>
+      </SectionCard>
+      <SectionCard>
+        <h3 className={H3_CLASSES}>{videosHeading}</h3>
         <div className="mt-1 grid gap-2">
           {practiceContent.videos.map((video) => (
             <a
@@ -55,87 +79,53 @@ export function LearnPanel({
               href={video.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+              className={LINK_CLASSES}
             >
               {video.label}
             </a>
           ))}
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Shared Forrest explainer (D-01 third, LEARN-03). */}
-      <div>
-        <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{explainer.forrest.title}</h3>
+      <SettingsSectionHeader label={strings.aboutSectionLabel} />
+      <SectionCard>
+        <h3 className={H3_CLASSES}>{explainer.forrest.title}</h3>
         {explainer.forrest.body.split('\n\n').map((paragraph) => (
-          <p key={paragraph} className="text-base leading-6 text-[var(--color-breathing-muted)] [&:not(:first-of-type)]:mt-2">{paragraph}</p>
+          <p key={paragraph} className={`${BODY_CLASSES} [&:not(:first-of-type)]:mt-2`}>{paragraph}</p>
         ))}
-      </div>
-
-      {/* Forrest resources — shared (D-01 fourth). */}
-      <div>
-        <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.resourcesHeading}</h3>
+      </SectionCard>
+      <SectionCard>
+        <h3 className={H3_CLASSES}>{strings.resourcesHeading}</h3>
         <div className="mt-1 grid gap-2">
-          <a
-            href={links.youtubeChannel.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
+          <a href={links.youtubeChannel.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
             {links.youtubeChannel.label}
           </a>
-          <a
-            href={links.website.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
+          <a href={links.website.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
             {links.website.label}
           </a>
-          <a
-            href={links.book.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
+          <a href={links.book.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
             {links.book.label}
           </a>
-          <a
-            href={links.patreon.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-          >
+          <a href={links.patreon.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
             {links.patreon.label}
           </a>
         </div>
-      </div>
-
-      {/* Native-apps sub-section — resonant only (D-02). */}
+      </SectionCard>
       {showNativeApps && (
-        <div>
-          <h3 className="text-xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.nativeAppsHeading}</h3>
+        <SectionCard>
+          <h3 className={H3_CLASSES}>{strings.nativeAppsHeading}</h3>
           <div className="mt-1 grid gap-2">
-            <a
-              href={links.appStoreIos.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-            >
+            <a href={links.appStoreIos.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
               {links.appStoreIos.label}
             </a>
-            <a
-              href={links.googlePlayAndroid.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-            >
+            <a href={links.googlePlayAndroid.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
               {links.googlePlayAndroid.label}
             </a>
           </div>
-        </div>
+        </SectionCard>
       )}
 
-      <p className="text-center text-xs font-bold italic first-letter:uppercase text-[var(--color-breathing-muted)]">{lockedCopy.inspiredByForrest}</p>
+      <p className="mt-6 text-center text-xs font-bold italic first-letter:uppercase text-[var(--color-breathing-muted)]">{lockedCopy.inspiredByForrest}</p>
       <p className="text-center text-xs text-[var(--color-breathing-muted)]">
         {lockedCopy.affiliationLine}
       </p>
