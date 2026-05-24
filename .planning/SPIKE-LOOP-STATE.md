@@ -78,6 +78,7 @@ Items deferred during the loop that J17's final-audit step should sweep up. Each
 - LOCKED_COPY entries `install.bannerText`, `install.regionLabel`, `install.dismiss` (EN + PT-BR) — same J13 deviation; no consumer after banner removal. Note: `install.installButton`, `install.iosStepsButton`, `install.settingsLabel`, `install.iosStep1/2/3` STAY (Settings still consumes them).
 - `SettingsInstallSection` chrome (still uses pre-J12 accent + accent-strong + shadow-sm pairing) — flagged during J12 propose as out-of-scope; J17 should decide whether to re-tokenize to the Mono Zen quieter pairing (border-soft + text-soft) for consistency with MuteToggle.
 - `THEME_OPTIONS = ['light', 'dark', 'system']` + `DEFAULT_THEME = 'system'` in `src/domain/settings.ts` — J1 v16-visual-locks said "light + dark only" but only updated tokens, not the picker option list. J14 surfaced this during the App Settings restructure; J17 should prune 'system' from `THEME_OPTIONS` + change `DEFAULT_THEME` to 'light' (or 'dark'), plus migrate any stored `theme: 'system'` user pref on read. Domain + storage change.
+- `vm.appHeader` viewmodel field + `getPracticeHeader()` helper + i18n `practice.header` / `switcher.stretchHeader` / `switcher.naviKriyaHeader` (EN + PT-BR) — J16 V4 dropped TopAppBar's `eyebrow` prop; no consumer remains. Cleanup: delete the viewmodel field + derivation + helper + 6 i18n entries + their strings.test.ts assertions.
 
 J17's propose step must read this section and create a per-orphan cleanup plan before declaring the loop done.
 
@@ -137,18 +138,24 @@ State below is updated after every step transition. The state file commits with 
 
 **Dump #1 — Idle, desktop** (screenshots: spike vs current vs current-annotated)
 
+**Mode shift (operator directive):** chain-proceed through ALL dump #1 items without per-item pause. Operator passes each on faith ("no point on checking now as any feedback you probably will reply it was not in scope or some other thing"). Implication: NO scope deflection — every annotation in the dump is in scope, even ones that arose ambient (e.g. width arrow). Final review of the whole batch at the end.
+
 Visuals:
-- V1 — Settings + Learn buttons → bare icon-only (info-circle "i" top-left + gear top-right, matching spike's circular icon-button chrome). Drop the text labels. **DONE — commit `3da02c8`; awaiting operator approval**
-- V2 — Switcher colors are off vs spike. Match spike's active/inactive treatment.
-- V3 — Start button color → spike's lighter slate (current is too dark near-black).
-- V4 — App title styling → match spike font + size (currently giant heading "HRV Breathing"; spike is small centered "Resonant"). Spike uses smaller, lighter weight, centered above orb.
+- V1 — Settings + Learn buttons → bare icon-only (info-circle "i" leading + gear trailing, matching spike's circular icon-button chrome). Drop the text labels. **DONE — commit `3da02c8`**
+- V2 — Switcher colors → spike's active/inactive treatment (filled accent pill + on-accent text + container border-soft). **DONE — commit `a546317`**
+- V3 — Start button color → spike's PrimaryButton chrome (accent fill, no shadow, 15 px / weight 600 / 0.06em tracking). **DONE — commit `295de73`**
+- V4 — App title → spike's 17 px / weight 600 / 0.01em inline between icons; eyebrow dropped; TopAppBar refactored to flex row. **DONE — commit `0c66e21`**
 
 Content:
-- C1 — Start button copy: "Start session" → "Start" (and PT-BR equivalent if applicable).
-- C2 — Practice titles use the EXISTING locked copy strings: "HRV Breathing" / "HRV Stretch" / "Navi Kriya". (These exist in i18n already; do not invent new copy.)
+- C1 — Start button copy: "Start session" → "Start" (EN) / "Iniciar sessão" → "Iniciar" (PT-BR). 9 test files updated to match. **DONE — commit `1d0540c`**
+- C2 — Practice titles use existing locked copy "HRV Breathing" / "HRV Stretch" / "Navi Kriya". **Satisfied by V4** — `appTitle` viewmodel already resolved to those exact strings via getPracticeTitle (`practice.title` / `switcher.stretchHeading` / `switcher.naviKriyaHeading`). V4's eyebrow-drop + title-render is what made the operator's expected copy visible as THE title. No separate commit.
 
-Annotated but not in bullet list (note, don't act):
-- Operator drew red arrows under the setup-card row saying "the width is shorter than spike". Visual interpretation ambiguous (page width or content row width?). Will confirm when proposing related item.
+Annotated but not in bullet list (awaits operator confirmation):
+- Operator drew red arrows under the setup-card row saying "the width is shorter than spike". Did not become an action item; flag at batch review.
+
+**New orphan introduced by V4:** `vm.appHeader` viewmodel field + `getPracticeHeader()` helper + LOCKED-COPY entries `practice.header` / `switcher.stretchHeader` / `switcher.naviKriyaHeader` (EN + PT-BR) — no consumer after TopAppBar's eyebrow prop was dropped. Added to orphan queue below.
+
+**Dump #1 batch — awaiting operator final review.**
 
 ### Archived — Implementation summary (Item J10)
 
