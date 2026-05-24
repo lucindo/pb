@@ -90,7 +90,7 @@ State below is updated after every step transition. The state file commits with 
 | J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | done (commit `7366f1b`) |
 | J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | done (commit `f54aa37`) |
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. | **skipped — false-positive item** (the orb-outer-ring-idle-only memory was stale from a prior implementation that got `git reset` away; the deviation never existed in the current code. J6's OrbIdle already hard-sets `showRings={false}`; OrbBody only renders on Running. Memory deleted; no test added.) |
-| J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | pending |
+| J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | **implemented — awaiting operator approval** (commit `5d6439b`) |
 | J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | pending |
 | J10 | Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running). | pending |
 | J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | pending |
@@ -106,16 +106,61 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J8 — SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance
-**Step:** 1 (awaiting propose; J7 skipped + J6 approved + committed)
+**Item:** J9 — Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button
+**Step:** 1 (awaiting propose; J8 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh:
+When you arrive here fresh after J8's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "SetupCard", "V1", "grid", "2×3", "whole-card tap", "chevron" (the locked V1 Grid layout + the 5-candidate exploration)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` — locate `SetupCardGrid` function (line 1214 from earlier grep) for the V1 implementation
-5. Read current code: the components that currently render the Idle setup card per practice — likely `ResonantSettingsForm`, `StretchSettingsForm`, `NaviKriyaSettingsForm` (referenced in J3's PracticeSettingsView). Verify whether they currently render as a stepper/form (today) or a summary card (spike) — they're forms today; the spike replaces them with a tap-to-open card.
-6. Apply the propose-step checklist. **Important**: J10 wires the SetupCard tap → Settings sheet flow. J8 is JUST the primitive (the SetupCard component itself, rendered as a static summary, not yet tap-wired). J9 builds the Settings sheet/modal. J10 wires them together. Keep J8 scoped tight.
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "Settings sheet", "bottom sheet", "modal", "stepper", "segmented", "visual picker", "toggle" (the practice-settings sheet sections — line 109-116, 277-282, etc.)
+4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` — locate the Settings sheet implementation (search for `SettingsSheet`, `PracticeSettings`, or similar; the spike showed it as a bottom sheet with internal scroll, capped at 58% of phone height)
+5. Read current code:
+   - `src/components/BottomSheet.tsx` or similar (if exists)
+   - existing modal patterns (likely `dialog.modal-fade` in theme.css references it)
+   - existing primitive controls: `SettingsStepper`, `SegmentedControl`, `TimbrePicker` / `CuePicker`, `BooleanToggle` (whatever the real-app primitives are)
+6. Apply the propose-step checklist. **J9 is JUST the sheet/modal primitive — the chrome/container.** The form-rendering inside (controls per practice) happens at J10. J9 should accept children as a slot and handle the responsive behavior (sheet on mobile / modal on desktop), backdrop, dismiss interactions, open/close animation, focus trap. Build-only like J8 — don't wire into PracticeScreen yet.
+
+### Archived — Implementation summary (Item J8)
+
+Created `src/components/SetupCard.tsx` (60 LOC) + `src/components/SetupCard.test.tsx` (90 LOC). Pure presentation primitive; no wiring.
+
+**Spike values transcribed verbatim from index.html lines 1188-1244:**
+- Card chrome: rounded-3xl, `border: 1px solid var(--color-border-soft)`, `background: var(--color-breathing-surface)`, `padding: 14px 18px`, `color: var(--color-breathing-text)`, `gap: 12` (via Tailwind `gap-3`)
+- Grid: `gridTemplateColumns: repeat(3, minmax(0, 1fr))`, `gap: '10px 18px'`, `flex: 1`
+- SettingCell label: `fontSize: 10`, `fontWeight: 500`, `letterSpacing: '0.16em'`, `textTransform: uppercase`, `color: var(--color-breathing-muted)`
+- SettingCell value: `fontSize: 14`, `fontWeight: 600`, `color: var(--color-breathing-text)`, `marginTop: 2`, `fontVariantNumeric: tabular-nums`
+- Chevron: 18×18 outer, viewBox 24×24, stroke-width 2, polyline `9 6 15 12 9 18`, `color: var(--color-breathing-text-soft)`, aria-hidden
+
+**Prop shape:**
+- `items: readonly SetupCardItem[]` (each `{ label: string; value: string }` — pre-formatted, pre-localized strings)
+- `onTap: () => void`
+- `ariaLabel: string` (caller supplies localized label like "Edit HRV settings")
+- `disabled?: boolean` (defaults false; applies native disabled + `disabled:opacity-50`)
+
+**Architecture decisions:**
+- SettingCell + ChevronRight are local helper functions inside SetupCard.tsx — not exported. SetupCard is the only consumer, premature export avoided.
+- Chevron inlined as SVG instead of added to `src/components/icons/` — matches the spike's inline approach; refactoring to a shared icon component is out of scope.
+- Caller responsible for: data derivation (current settings → items), i18n (label/value strings), onTap behavior. SetupCard is pure presentation.
+
+**6 behavioral tests** (no class-string assertions per `[[no-design-locking]]`):
+- Button role + aria-label
+- 3-item (HRV/Navi) label + value rendering
+- 6-item (Stretch) — all 6 visible (grid wraps to 2 rows naturally)
+- Click fires onTap
+- `disabled=true` → button disabled + onTap not fired
+- Chevron SVG (aria-hidden) present in DOM
+
+**No wiring.** SetupCard is not rendered anywhere in the app yet. J9 builds the Settings sheet primitive; J10 wires SetupCard tap → Settings sheet flow and atomically swaps out the existing per-practice forms.
+
+**Verification:**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean
+- Full suite: 103 files / 1133 tests pass (was 1127; net +6 = the 6 new SetupCard tests)
+- `npm run build`: clean; PWA precache 19 / 619.06 KiB
+
+**No manual UAT.** Visual landing is J10's job — SetupCard isn't rendered in the app surface yet. Operator approval at J8 is code-review of the file + test coverage.
+
+**Commit:** `5d6439b`
 
 ### Archived — J7 skipped (false-positive item from stale memory)
 
@@ -258,6 +303,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J5 | `7366f1b` | V2 Minimal variant + `breathingShape` query-string flag (default `orb-halo`; aliases `halo`/`orb`, `minimal`/`rings`; case-insensitive). OrbContainer parameterizes per variant: V1 = 3 organic halos + disc shadow + ring opacity 0.45; V2 = single full-bleed accent halo at 0.16 opacity + no disc shadow + ring opacity 0.5. Threaded through PracticeScreen → PracticeSessionView → {BreathingSessionSurface, NaviKriyaSessionSurface, NKShape} → OrbShape. Same commit corrects a J4 transcription deviation (ring transition 400 ms ease-in-out → 600 ms ease per spike V1 line 635 + V2 line 746). 1115 → 1120 tests; 5 new featureFlags parser tests. 9 files changed (133/-32). |
 | J6 | `f54aa37` | Idle-orb rendering + `orbIdle=still\|ambient` query flag (default `still` per spike line 259). Closed a real gap: pre-J6, Idle and Complete rendered NO orb at all (OrbShape returned null for null-frame). New OrbIdle branch in dispatcher; new useAmbientScale hook (rAF clock, 5500 ms phase per spike line 569, easeInOutSine). Hook avoids React setState-in-effect anti-pattern via return-side short-circuit (`return animated ? scale : MID_SCALE`). showRings={false} hard-set on the idle path. Threaded through PracticeScreen → PracticeSessionView → {BreathingSessionSurface, NaviKriyaSessionSurface}; NKShape unchanged (no Idle inside count branch). 1120 → 1127 tests (+7: 4 orbIdle parser + 3 useAmbientScale). 9 files changed (190/-6); +useAmbientScale hook + test files. |
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
+| J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 
 ---
 
