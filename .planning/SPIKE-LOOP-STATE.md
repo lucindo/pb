@@ -88,7 +88,7 @@ State below is updated after every step transition. The state file commits with 
 | J2 | Font system — Inter Variable + weight loading per spike (ultralight 200/300 for breath labels, semibold 600 for headings) | done (commit `0decf6a`) |
 | J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | done (commit `637ad75`) |
 | J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | done (commit `a742c0b`) |
-| J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | pending |
+| J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | **implemented — awaiting operator approval** (commit `7366f1b`) |
 | J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | pending |
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. Resolves [[orb-outer-ring-idle-only]] deviation. | pending |
 | J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | pending |
@@ -107,91 +107,71 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J5 — Orb V2 minimal variant (single accent disc + faint halo, gated by **query-string param** — extend `featureFlags.ts`, NOT VITE_*; default TBD by operator)
-**Step:** 1 (awaiting propose; J4 approved + committed)
+**Item:** J6 — Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator.
+**Step:** 1 (awaiting propose; J5 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh:
+When you arrive here fresh after J5's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "V2", "Minimal", "single accent disc", "minimal-rings" (the V2 description + the dev-toggle section line 478, line 489-490)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` `VariantOrbMinimal` (or similar) — locate the V2 component's structure (a single solid accent disc + a faint halo; no asymmetric halo layers; same outer/inner ring treatment as V1)
-5. Read current `src/lib/featureFlags.ts` (or wherever featureFlags live — verify the file path first; spike notes say "extend featureFlags.ts")
-6. Verify how `OrbShape` is structured post-J4 (variant gating point — likely at the OrbContainer level or as a switch in `OrbBody`)
-7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **Default TBD: ask operator in propose-step Section A — they explicitly want to decide at build time per v16-visual-locks (deferred decisions list).**
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "ambient breath", "ambient", "still", "idle behaviour", "still vs ambient" (line 259 mentions "**still** with empty centre disc; harness has an `ambient" — find the full discussion of the toggle)
+4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` — locate where `ambientBreath` prop is passed to `<BreathingOrb>` on IdleScreen / CompleteScreen (line 1979 + 2026 in earlier J4 reads); understand how `animate: ambientBreath` controls scale
+5. Look at the existing scale-driving plumbing in `OrbShape.tsx` post-J5 (the `orbScale` calculation in OrbBody from frame.phase + frame.phaseProgress; OrbLeadIn locked at MID_SCALE)
+6. Verify how Idle currently renders (does PracticeScreen at Idle have OrbShape with `frame={null}`? if so, OrbShape returns null today → the orb doesn't render at all on Idle → spike's "still" vs "ambient" requires the orb to render on Idle in a non-active state)
+7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **Default TBD: ask operator in chat (no picker per [[chat-not-pickers]]) — spike notes "ambient" is the loop's resting feel and "still" is more meditative. v16-visual-locks lists this as deferred.**
 
-### Archived — Implementation summary (Item J4)
+### Archived — Implementation summary (Item J5)
 
-Rewrote `src/components/OrbShape.tsx` to use the spike's 3-halo + centre disc structure. Two render paths (`OrbBody` for active breathing, `OrbLeadIn` for countdown/NK shell) share a new `OrbContainer` factor for the layout primitive.
+Added the V2 Minimal orb variant + a query-string-gated `breathingShape` feature flag + corrected a J4 transcription error in the same commit (atomic).
 
-**Halo geometry — transcribed verbatim from spike index.html lines 617-619:**
-```
-HALOS = [
-  { token: '--color-orb-halo-1', pct: 1.00, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4,  2] },
-  { token: '--color-orb-halo-2', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [ 3, -2] },
-  { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1,  3] },
-]
-DISC_PCT = 0.62  // centre disc at 62% of orb size
-boxShadow: '0 6px 24px var(--color-border-soft)'  // disc shadow per spike line 660
-```
+**`src/featureFlags.ts`:**
+- New `BreathingShapeVariant = 'orb-halo' | 'minimal-rings'` type, exported for use in `OrbShape` + the threading chain
+- New `BREATHING_SHAPE_FLAG` spec — default `'orb-halo'` (V1, the locked direction per operator decision), accepts canonical values + aliases (`halo`/`orb`; `minimal`/`rings`), case-insensitive + whitespace-trimmed
+- `FeatureFlags` interface gains `breathingShape: BreathingShapeVariant`
+- `readFeatureFlags()` includes the new field; existing `switcherIcon` plumbing unchanged
 
-**Rings (`showRings` prop, defaults true):**
-- Outer: `1.5px solid var(--color-breathing-accent)` at opacity 0.45, full-bleed
-- Inner: same stroke at opacity 0 (In) / 0.45 (Out), sized MIN_SCALE %, 400 ms ease-in-out crossfade
-- `showRings: false` skips both. J7 wires Idle + Complete to pass false (current state: still rendering rings on Idle = the orb-outer-ring-idle-only deviation continues briefly until J7).
+**`src/components/OrbShape.tsx`:**
+- Renamed `HALOS` → `V1_HALOS` (V1 3-organic-halo geometry, unchanged values from J4)
+- Added `variant?: BreathingShapeVariant` prop on `OrbShape` (default `'orb-halo'`); threaded through `OrbBody` + `OrbLeadIn` into `OrbContainer`
+- `OrbContainer` parameterizes per variant:
+  - **Halo region**: V1 → 3 organic halos via `V1_HALOS.map(...)`; V2 → single full-bleed `<div>` at `inset:0`, `borderRadius:'50%'`, `background:var(--color-breathing-accent)`, `opacity:V2_HALO_OPACITY (0.16)`
+  - **Disc shadow**: V1 → `V1_DISC_SHADOW ('0 6px 24px var(--color-border-soft)')`; V2 → `V2_DISC_SHADOW ('none')`
+  - **Ring opacity**: V1 → `V1_RING_OPACITY (0.45)`; V2 → `V2_RING_OPACITY (0.5)` (both outer + inner; the inner crossfades from 0 to `ringOpacity` × `innerVisible`)
+- **J4 deviation correction**: ring transition `400ms ease-in-out` → `600ms ease` (extracted to `RING_TRANSITION` const). Matches spike V1 line 635 + V2 line 746 verbatim. The earlier 400/ease-in-out value was carried over from the deleted `.shape-marker--inner` CSS rule.
+- `DISC_BG_TRANSITION` extracted as a const too (`'background 400ms ease-in-out'`, unchanged from J4 — NK front/back crossfade timing)
 
-**NK front/back signaling — preserved, new primitive:**
-- Old: in/out gradient layer crossfade on `[data-phase='out']`
-- New: centre-disc `background` inline-transition between `var(--color-breathing-accent)` (front) and `var(--color-breathing-accent-strong)` (back), 400 ms ease-in-out
-- Light: 5d6877 → 414957 (darker on back); dark: b4bac4 → ccd0d9 (lighter on back). Same on-accent text reads against both (the `accent-strong vs on-accent ≥ 1.5` test still locks the legible-contrast invariant).
+**Threading (5 files, mechanical):**
+- `PracticeScreen.tsx` — `<PracticeSessionView variant={vm.featureFlags.breathingShape} />`
+- `PracticeSessionView.tsx` — accept `variant`, forward to both session surfaces
+- `BreathingSessionSurface.tsx` — accept `variant`, pass to `<OrbShape>`
+- `NaviKriyaSessionSurface.tsx` — accept `variant`, pass to both `<OrbShape>` (lead-in branch) and `<NKShape>`
+- `NKShape.tsx` — accept `variant`, pass to its inner `<OrbShape>`
 
-**Reduced-motion:**
-- Orb scale freeze (MID_SCALE): unchanged JS path via `usePrefersReducedMotion()`
-- Inner ring suppression: moved from CSS `@media (prefers-reduced-motion) .shape-marker--inner { display:none }` to JS conditional render (`!reducedMotion` gate on the inner span)
-- Same UX guarantee, fewer moving parts
-
-**Deprecated tokens removed in lockstep:**
-- `--color-orb-in-from / -to / -text` (light + dark blocks)
-- `--color-orb-out-from / -to / -text` (light + dark blocks)
-- `--color-ring-outer`, `--color-ring-inner` (light + dark blocks)
-- CSS rules: `.orb-layer--in`, `.orb-layer--out`, `[data-phase='out'] .orb-layer--{in,out}`, `.shape-marker--outer`, `.shape-marker--inner`, `[data-phase='out'] .shape-marker--inner`, the reduced-motion `@media` block for shape-marker
-- `.orb { will-change: transform }` KEPT — the breathing-scale wrapper still uses the class for GPU promotion
-
-**CueGlyph (`src/components/CueGlyph.tsx`):**
-- In-orb glyph: dropped phase-keyed color class → uses `currentColor` (centre disc sets `color: var(--color-breathing-on-accent)`, which cascades)
-- Picker preview: `--color-orb-in-from` → `--color-breathing-accent`
-- Doc-comments updated
-
-**NKShape (`src/components/NKShape.tsx`):**
-- OM count `style={{ color: phase === 'back' ? ... : ... }}` removed → inherits currentColor from the centre disc
-- Phase distinction now conveyed by the disc bg crossfade (above), not the count color
-
-**`theme.contrast.test.ts`:**
-- Removed the `'reduced-motion crossfade midpoint contrast ratio…'` `it` block (light + dark iterations) — the in/out gradient primitive it asserted no longer exists
-- Removed the unused `midpoint()` helper + `THEME_05_FLOORS` const
-- File-top doc-comment updated to describe current scope (role-pair contrast checks)
-- The accent-strong vs on-accent + destructive contrast tests are unchanged
+**Tests:**
+- `featureFlags.test.ts` — broke the existing single-field `toEqual({switcherIcon:true})` assertions into per-field `.switcherIcon === true` checks (otherwise the new `breathingShape` field would have broken them). Added 5 new tests: default V1, V2 + aliases, V1 + aliases, case/whitespace insensitivity, junk-value fallback.
+- `NKShape.test.tsx` — added `variant: 'orb-halo'` to the default render fixture.
+- `OrbShape.test.tsx`, `CueGlyph.test.tsx`, etc. — UNCHANGED. OrbShape has `variant` default → tests get V1, all 14 behavior assertions still pass.
 
 **No changes to:**
-- `BreathingSessionSurface.tsx`, `NaviKriyaSessionSurface.tsx` — signatures unchanged
-- `CuePicker.tsx`, `CuePicker.test.tsx`, `CueGlyph.test.tsx`, `OrbShape.test.tsx` — all behavior-focused, all pass
-- domain / hooks / storage / state / audio
-- `shapeConstants.ts` — MIN_SCALE / MAX_SCALE / MID_SCALE unchanged
+- `appViewModel.ts` / `useAppViewModel.ts` — `featureFlags: FeatureFlags` exposes the whole object; adding `breathingShape` to the type is sufficient (no new field to manually plumb)
+- domain / hooks / storage / audio / state machines
+- `CueGlyph.tsx` (currentColor still works for both variants)
+- theme.css
 
 **Verification:**
 - `tsc --noEmit -p tsconfig.app.json`: clean
 - `npm run lint`: clean
-- Full suite: 101 files / 1115 tests pass (was 1117; net -2 = removed `describe.each([light, dark])` × 1 contrast-test block)
-- `npm run build`: clean; CSS bundle 32.63 → 31.43 KiB (~1.2 KiB shed from removed orb-layer/shape-marker rules + deprecated tokens × 2 themes); PWA precache 19 / 617.03 KiB
-- Grep guard (`orb-in-*|orb-out-*|ring-outer|ring-inner|.orb-layer--|.shape-marker--`): 0 active consumers (one explanatory comment in theme.contrast.test.ts documenting the removed primitive — intentional)
+- Full suite: 101 files / 1120 tests pass (was 1115; net +5 = the new breathingShape parser tests)
+- `npm run build`: clean; PWA precache 19 / 617.72 KiB
 
 **Manual verification needed (operator-side):**
-- Idle, light: halo body + centre disc visible; outer ring still renders (will go in J7); no extra strokes beyond the spike's
-- Running, light + dark: halo scale animates with breath; inner ring fades in on Out; outer ring constant
-- NK Front → Back transition: centre disc darkens on light theme / lightens on dark theme (~12-16 lum delta)
-- 3-2-1 countdown: digit centered INSIDE the centre disc; no animation
-- `prefers-reduced-motion`: orb at MID_SCALE; inner ring not rendered; outer ring still rendered
+- Default URL: V1 (3-halo organic puddle, disc with shadow, rings at 0.45)
+- `?breathingShape=minimal-rings` (or `?breathingShape=minimal`, `?breathingShape=rings`): V2 (single faint accent halo, disc no shadow, rings at 0.5)
+- `?breathingShape=orb-halo` (or `?breathingShape=halo`, `?breathingShape=orb`): V1 explicitly
+- `?breathingShape=junk`: defaults to V1
+- Inner-ring fade timing: now 600 ms (slightly slower, more meditative than the previous 400 ms; check it reads right during Out phase)
+- NK Front → Back transition still works regardless of variant
 
-**Commit:** `a742c0b`
+**Commit:** `7366f1b`
 
 ---
 
@@ -203,6 +183,7 @@ boxShadow: '0 6px 24px var(--color-border-soft)'  // disc shadow per spike line 
 | J2 | `0decf6a` | Font system — self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8 (runtime dep). `src/index.css` imports the package + body font-family stack now prefers `'Inter Variable'`. Workbox `globPatterns` extended with `woff2`; `globIgnores` trims cyrillic/greek/vietnamese subsets from the SW precache (app is EN + pt-BR; Latin + Latin-ext are the only subsets needed). Bundle: 7 woff2 files emit to `dist/`; SW precache 19 entries / 619 KiB (was 24 / 702 KiB before globIgnores). 101 files / 1117 tests pass; no test changes — typography-load is verified at runtime, asserting it would violate `no-design-locking`. |
 | J3 | `637ad75` | No-jiggle PracticeScreen layout — restructured `src/app/PracticeScreen.tsx` to match spike's `PracticeChrome`. Removed inner `PracticeWorkspace` card (rounded-card chrome: border + bg + shadow + p-5 + backdrop-blur). New tree: top bar → switcher → orb-group (fixed `pt-[18px] sm:pt-7` paddingTop above orb) → variable region → `flex-1` spacer → controls (`pt-4` min-gap) → disclaimer (11 px / 400 / 0.02em / nowrap / muted, `pb: max(1.25rem, env(safe-area-inset-bottom))`). PageShell + session/settings/controls views unchanged. `workspaceCompact` prop now dead (left in place; followup cleanup). CSS bundle 33.25 → 32.63 KiB; PWA precache 19 / 617.97 KiB. 101 files / 1117 tests pass; no test changes. |
 | J4 | `a742c0b` | Orb body — replaced in/out gradient + ring stack with the spike's 3-halo (organic-puddle asymmetric border-radii, sized 100% / 86% / 74%, slate halo tokens) + centre disc (62% size, accent bg, on-accent text, border-soft shadow). Added `showRings` prop (defaults true; J7 wires Idle/Complete to false). NK front/back signal preserved via disc-bg crossfade (accent ↔ accent-strong, 400 ms). Removed deprecated tokens (orb-in-*, orb-out-*, ring-*) + CSS rules (.orb-layer--*, .shape-marker--*, reduced-motion @media). CueGlyph: in-orb uses currentColor; picker preview uses accent. NKShape: OM count inherits currentColor. `theme.contrast.test.ts`: removed obsolete in/out crossfade ratio test (1117 → 1115; net -2 = describe.each(light+dark) × 1 block). Reduced-motion: scale freeze unchanged; inner-ring suppression moved CSS @media → JS skip-render. CSS bundle 32.63 → 31.43 KiB; PWA precache 19 / 617.03 KiB. Files: OrbShape.tsx + CueGlyph.tsx + NKShape.tsx + theme.css + theme.contrast.test.ts. |
+| J5 | `7366f1b` | V2 Minimal variant + `breathingShape` query-string flag (default `orb-halo`; aliases `halo`/`orb`, `minimal`/`rings`; case-insensitive). OrbContainer parameterizes per variant: V1 = 3 organic halos + disc shadow + ring opacity 0.45; V2 = single full-bleed accent halo at 0.16 opacity + no disc shadow + ring opacity 0.5. Threaded through PracticeScreen → PracticeSessionView → {BreathingSessionSurface, NaviKriyaSessionSurface, NKShape} → OrbShape. Same commit corrects a J4 transcription deviation (ring transition 400 ms ease-in-out → 600 ms ease per spike V1 line 635 + V2 line 746). 1115 → 1120 tests; 5 new featureFlags parser tests. 9 files changed (133/-32). |
 
 ---
 
