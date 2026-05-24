@@ -87,7 +87,7 @@ State below is updated after every step transition. The state file commits with 
 | J1 | Theme tokens — Nord palette → Mono Zen light + dark (cool slate, semibold-ready); add `borderSoft`, `orbHalo1/2/3`, `modalBackdrop`; remove old gradient + ring tokens | done (commit `be13fb4`) |
 | J2 | Font system — Inter Variable + weight loading per spike (ultralight 200/300 for breath labels, semibold 600 for headings) | done (commit `0decf6a`) |
 | J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | done (commit `637ad75`) |
-| J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | pending |
+| J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | **implemented — awaiting operator approval** (commit `a742c0b`) |
 | J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | pending |
 | J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | pending |
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. Resolves [[orb-outer-ring-idle-only]] deviation. | pending |
@@ -107,53 +107,91 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J4 — Orb body redesign (3-layer halo + center disc + asymmetric border-radii organic-puddle; consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring)
-**Step:** 1 (awaiting propose; J3 approved + committed)
+**Item:** J5 — Orb V2 minimal variant (single accent disc + faint halo, gated by **query-string param** — extend `featureFlags.ts`, NOT VITE_*; default TBD by operator)
+**Step:** 1 (awaiting propose; J4 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh:
+When you arrive here fresh after J4's approval:
 1. Read this whole file (you're here)
-2. Read MEMORY.md and the rules listed in Step 2 above; **especially [[orb-outer-ring-idle-only]]** (current Idle has a DEVIATION — extra outer stroke ring; spike orb has no extra outer stroke; J7 fixes this, but J4 must not re-introduce it)
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "layered-halo orb", "three layered translucent halos", "asymmetric border-radius", "puddle" (the pivot section + any later refinements)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` `BreathingOrb` component — locate the 3 halo layers (sized 100% / 86% / 74% of orb area), the centre disc, the asymmetric border-radii values, the breathing-animation hooks (inhale → expand to scaleMax / exhale → contract to scaleMid)
-5. Read current `src/components/OrbShape.tsx` + `BreathingOrb*.tsx` (verify the file names — the surface component might be `BreathingOrbShape.tsx` or similar)
-6. Verify which tokens are currently consumed (`orbInFrom/To`, `orbOutFrom/To`, `ringOuter`, `ringInner` — all deprecated by J1; J4 removes consumers and lets J7 complete the ring-conditional)
-7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **Hold J4 to the orb body only — Idle ring behavior is J7.**
+2. Read MEMORY.md and the rules listed in Step 2 above
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "V2", "Minimal", "single accent disc", "minimal-rings" (the V2 description + the dev-toggle section line 478, line 489-490)
+4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` `VariantOrbMinimal` (or similar) — locate the V2 component's structure (a single solid accent disc + a faint halo; no asymmetric halo layers; same outer/inner ring treatment as V1)
+5. Read current `src/lib/featureFlags.ts` (or wherever featureFlags live — verify the file path first; spike notes say "extend featureFlags.ts")
+6. Verify how `OrbShape` is structured post-J4 (variant gating point — likely at the OrbContainer level or as a switch in `OrbBody`)
+7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk. **Default TBD: ask operator in propose-step Section A — they explicitly want to decide at build time per v16-visual-locks (deferred decisions list).**
 
-### Archived — Implementation summary (Item J3)
+### Archived — Implementation summary (Item J4)
 
-Restructured `src/app/PracticeScreen.tsx` to match spike 010's `PracticeChrome` (index.html lines 1913-1956). Single file edit.
+Rewrote `src/components/OrbShape.tsx` to use the spike's 3-halo + centre disc structure. Two render paths (`OrbBody` for active breathing, `OrbLeadIn` for countdown/NK shell) share a new `OrbContainer` factor for the layout primitive.
 
-**Deleted:** the `PracticeWorkspace` inner component (the rounded-card wrapper with `rounded-[2rem] border bg-surface/70 shadow backdrop-blur p-5`). Inlined its responsibilities into `PracticeScreen` directly.
+**Halo geometry — transcribed verbatim from spike index.html lines 617-619:**
+```
+HALOS = [
+  { token: '--color-orb-halo-1', pct: 1.00, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4,  2] },
+  { token: '--color-orb-halo-2', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [ 3, -2] },
+  { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1,  3] },
+]
+DISC_PCT = 0.62  // centre disc at 62% of orb size
+boxShadow: '0 6px 24px var(--color-border-soft)'  // disc shadow per spike line 660
+```
 
-**New structural tree inside `<PageShell>`:**
-1. `<TopAppBar>` — anchored top (first child)
-2. Switcher block: `<div className="w-full px-5 pb-4 sm:px-8">` containing `<PracticeToggle>`
-3. Orb + variable region: `<div className="flex w-full flex-col items-center px-5 pt-[18px] sm:px-8 sm:pt-7">` containing `<PracticeSessionView>` + `<PracticeSettingsView>`. The fixed `pt-[18px]` mobile / `sm:pt-7` (28 px) desktop is the spike's load-bearing orb y-anchor (line 1929).
-4. `<div className="flex-1" />` — spacer that absorbs remaining vertical room.
-5. Bottom controls: `<div className="w-full px-5 pt-4 sm:px-8">` containing `<PracticeControlsView>`. `pt-4` is the spike's 16 px min-gap (line 1940).
-6. Disclaimer `<p>` — full-width, centered, 11px / 400 / 0.02em / nowrap / muted (matches spike line 1944-1952). Padding-bottom uses `max(1.25rem, env(safe-area-inset-bottom))` to clear iOS home indicator without growing the gap on non-iOS.
+**Rings (`showRings` prop, defaults true):**
+- Outer: `1.5px solid var(--color-breathing-accent)` at opacity 0.45, full-bleed
+- Inner: same stroke at opacity 0 (In) / 0.45 (Out), sized MIN_SCALE %, 400 ms ease-in-out crossfade
+- `showRings: false` skips both. J7 wires Idle + Complete to pass false (current state: still rendering rings on Idle = the orb-outer-ring-idle-only deviation continues briefly until J7).
 
-**Tokens / classes shed:** `rounded-[2rem]`, `border-[var(--color-breathing-surface)]/80`, `bg-[var(--color-breathing-surface)]/70`, `shadow-[var(--shadow-breathing-card)]`, `backdrop-blur`, `mt-6 / mt-10`, `mb-5 mt-4` inner margins. CSS bundle dropped from 33.25 KB → 32.63 KB as a side effect (~620 bytes of Tailwind rules no longer reached).
+**NK front/back signaling — preserved, new primitive:**
+- Old: in/out gradient layer crossfade on `[data-phase='out']`
+- New: centre-disc `background` inline-transition between `var(--color-breathing-accent)` (front) and `var(--color-breathing-accent-strong)` (back), 400 ms ease-in-out
+- Light: 5d6877 → 414957 (darker on back); dark: b4bac4 → ccd0d9 (lighter on back). Same on-accent text reads against both (the `accent-strong vs on-accent ≥ 1.5` test still locks the legible-contrast invariant).
 
-**`PageShell` UNCHANGED.** Shared with Learn/AppSettings — its `justify-start` stays. The flex-1 spacer hangs off PageShell's existing `<section>` flex-col + `min-h-[calc(100vh-3rem)]`, so the anchoring works without modifying the shell.
+**Reduced-motion:**
+- Orb scale freeze (MID_SCALE): unchanged JS path via `usePrefersReducedMotion()`
+- Inner ring suppression: moved from CSS `@media (prefers-reduced-motion) .shape-marker--inner { display:none }` to JS conditional render (`!reducedMotion` gate on the inner span)
+- Same UX guarantee, fewer moving parts
 
-**`workspaceCompact` prop:** producer in `useAppViewModel.ts:184` + `AppViewModel` type in `appViewModel.ts:113` left in place; no longer consumed by `PracticeScreen`. Follow-up cleanup item (small) — defer to J17 or a quick standalone.
+**Deprecated tokens removed in lockstep:**
+- `--color-orb-in-from / -to / -text` (light + dark blocks)
+- `--color-orb-out-from / -to / -text` (light + dark blocks)
+- `--color-ring-outer`, `--color-ring-inner` (light + dark blocks)
+- CSS rules: `.orb-layer--in`, `.orb-layer--out`, `[data-phase='out'] .orb-layer--{in,out}`, `.shape-marker--outer`, `.shape-marker--inner`, `[data-phase='out'] .shape-marker--inner`, the reduced-motion `@media` block for shape-marker
+- `.orb { will-change: transform }` KEPT — the breathing-scale wrapper still uses the class for GPU promotion
+
+**CueGlyph (`src/components/CueGlyph.tsx`):**
+- In-orb glyph: dropped phase-keyed color class → uses `currentColor` (centre disc sets `color: var(--color-breathing-on-accent)`, which cascades)
+- Picker preview: `--color-orb-in-from` → `--color-breathing-accent`
+- Doc-comments updated
+
+**NKShape (`src/components/NKShape.tsx`):**
+- OM count `style={{ color: phase === 'back' ? ... : ... }}` removed → inherits currentColor from the centre disc
+- Phase distinction now conveyed by the disc bg crossfade (above), not the count color
+
+**`theme.contrast.test.ts`:**
+- Removed the `'reduced-motion crossfade midpoint contrast ratio…'` `it` block (light + dark iterations) — the in/out gradient primitive it asserted no longer exists
+- Removed the unused `midpoint()` helper + `THEME_05_FLOORS` const
+- File-top doc-comment updated to describe current scope (role-pair contrast checks)
+- The accent-strong vs on-accent + destructive contrast tests are unchanged
 
 **No changes to:**
-- `PageShell.tsx` (shared)
-- `PracticeSessionView.tsx` / `PracticeSettingsView.tsx` / `PracticeControlsView.tsx` (internals unchanged — just restructured in their tree position)
-- Any audio / state / hooks / domain code
-- Any test (1117 / 1117 pass; no class-string assertion broke — codebase already follows [[no-design-locking]])
-- `InstallBanner` (stays in `PageShell.overlays` — J13 will move it inline)
+- `BreathingSessionSurface.tsx`, `NaviKriyaSessionSurface.tsx` — signatures unchanged
+- `CuePicker.tsx`, `CuePicker.test.tsx`, `CueGlyph.test.tsx`, `OrbShape.test.tsx` — all behavior-focused, all pass
+- domain / hooks / storage / state / audio
+- `shapeConstants.ts` — MIN_SCALE / MAX_SCALE / MID_SCALE unchanged
 
 **Verification:**
 - `tsc --noEmit -p tsconfig.app.json`: clean
 - `npm run lint`: clean
-- Full suite: 101 files / 1117 tests pass (unchanged baseline)
-- `npm run build`: clean; CSS marginally smaller; PWA precache 19 / 617.97 KiB (was 618.75 KiB before)
-- **Manual jiggle check (operator-side):** switch HRV ↔ Stretch ↔ Navi on Idle, watch orb y-position; start a session, watch; let it complete, watch. Orb y constant across all 9 combinations; disclaimer stays visible at viewport bottom.
+- Full suite: 101 files / 1115 tests pass (was 1117; net -2 = removed `describe.each([light, dark])` × 1 contrast-test block)
+- `npm run build`: clean; CSS bundle 32.63 → 31.43 KiB (~1.2 KiB shed from removed orb-layer/shape-marker rules + deprecated tokens × 2 themes); PWA precache 19 / 617.03 KiB
+- Grep guard (`orb-in-*|orb-out-*|ring-outer|ring-inner|.orb-layer--|.shape-marker--`): 0 active consumers (one explanatory comment in theme.contrast.test.ts documenting the removed primitive — intentional)
 
-**Commit:** `637ad75`
+**Manual verification needed (operator-side):**
+- Idle, light: halo body + centre disc visible; outer ring still renders (will go in J7); no extra strokes beyond the spike's
+- Running, light + dark: halo scale animates with breath; inner ring fades in on Out; outer ring constant
+- NK Front → Back transition: centre disc darkens on light theme / lightens on dark theme (~12-16 lum delta)
+- 3-2-1 countdown: digit centered INSIDE the centre disc; no animation
+- `prefers-reduced-motion`: orb at MID_SCALE; inner ring not rendered; outer ring still rendered
+
+**Commit:** `a742c0b`
 
 ---
 
@@ -164,6 +202,7 @@ Restructured `src/app/PracticeScreen.tsx` to match spike 010's `PracticeChrome` 
 | J1 | `be13fb4` | Theme tokens — Nord → Mono Zen cool slate. 9 token values replaced + 6 new tokens added (`text`, `text-soft`, `border-soft`, `orb-halo-1/2/3`) in both light + dark. Deprecated orb-in/out + ring tokens kept temporarily (J4/J7 remove). Favicon synced across 3 sites. Inline cleanup: 2 value-locking tests dropped + 2 derived rewrites in `faviconPalette.test.ts`; lowercase word-bounded `slate` matcher dropped from drift-guard test (mono-zen vocabulary collision); 2 stale comment refs fixed. 101 files / 1117 tests pass. |
 | J2 | `0decf6a` | Font system — self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8 (runtime dep). `src/index.css` imports the package + body font-family stack now prefers `'Inter Variable'`. Workbox `globPatterns` extended with `woff2`; `globIgnores` trims cyrillic/greek/vietnamese subsets from the SW precache (app is EN + pt-BR; Latin + Latin-ext are the only subsets needed). Bundle: 7 woff2 files emit to `dist/`; SW precache 19 entries / 619 KiB (was 24 / 702 KiB before globIgnores). 101 files / 1117 tests pass; no test changes — typography-load is verified at runtime, asserting it would violate `no-design-locking`. |
 | J3 | `637ad75` | No-jiggle PracticeScreen layout — restructured `src/app/PracticeScreen.tsx` to match spike's `PracticeChrome`. Removed inner `PracticeWorkspace` card (rounded-card chrome: border + bg + shadow + p-5 + backdrop-blur). New tree: top bar → switcher → orb-group (fixed `pt-[18px] sm:pt-7` paddingTop above orb) → variable region → `flex-1` spacer → controls (`pt-4` min-gap) → disclaimer (11 px / 400 / 0.02em / nowrap / muted, `pb: max(1.25rem, env(safe-area-inset-bottom))`). PageShell + session/settings/controls views unchanged. `workspaceCompact` prop now dead (left in place; followup cleanup). CSS bundle 33.25 → 32.63 KiB; PWA precache 19 / 617.97 KiB. 101 files / 1117 tests pass; no test changes. |
+| J4 | `a742c0b` | Orb body — replaced in/out gradient + ring stack with the spike's 3-halo (organic-puddle asymmetric border-radii, sized 100% / 86% / 74%, slate halo tokens) + centre disc (62% size, accent bg, on-accent text, border-soft shadow). Added `showRings` prop (defaults true; J7 wires Idle/Complete to false). NK front/back signal preserved via disc-bg crossfade (accent ↔ accent-strong, 400 ms). Removed deprecated tokens (orb-in-*, orb-out-*, ring-*) + CSS rules (.orb-layer--*, .shape-marker--*, reduced-motion @media). CueGlyph: in-orb uses currentColor; picker preview uses accent. NKShape: OM count inherits currentColor. `theme.contrast.test.ts`: removed obsolete in/out crossfade ratio test (1117 → 1115; net -2 = describe.each(light+dark) × 1 block). Reduced-motion: scale freeze unchanged; inner-ring suppression moved CSS @media → JS skip-render. CSS bundle 32.63 → 31.43 KiB; PWA precache 19 / 617.03 KiB. Files: OrbShape.tsx + CueGlyph.tsx + NKShape.tsx + theme.css + theme.contrast.test.ts. |
 
 ---
 
