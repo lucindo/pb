@@ -19,7 +19,7 @@ export function CuePicker({ disabled, strings, sectionLabel }: CuePickerProps) {
       options={CUE_OPTIONS}
       value={cue}
       onChange={setCue}
-      columns={4}
+      columns={3}
       disabled={disabled}
       optionLayout="stack"
       renderOption={(id) => {

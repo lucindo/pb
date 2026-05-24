@@ -52,9 +52,12 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     render(<TimbrePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.timbres} sectionLabel={EN_STRINGS_FIXTURE.appSettings.timbreLabel} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(4)
-    // Accessible names (respects aria-hidden glyph spans).
-    const labels = radios.map((b) => b.getAttribute('aria-label') ?? b.textContent?.replace(/[^A-Za-z]/g, '') ?? '')
-    expect(labels).toEqual(['Bowl', 'Bell', 'Sine', 'Flute'])
+    // Accessible names (respects aria-hidden glyph spans) — the textContent of
+    // the visible label span sits inside a non-aria-hidden span sibling.
+    expect(screen.getByRole('radio', { name: 'Bowl' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Bell' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Sine' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Flute' })).toBeInTheDocument()
   })
 
   it('aria-checked reflects the stored timbre — seeded timbre has aria-checked=true, others false', () => {
