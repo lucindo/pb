@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 
 import { LEARN_CONTENT } from '../content/learnContent'
 import { UI_STRINGS } from '../content/strings'
-import { getLearnDialogModel } from './learnDialogModel'
+import { getLearnPanelModel } from './learnPanelModel'
 
 const EN_CONTENT = LEARN_CONTENT.en
 const EN_STRINGS = UI_STRINGS.en.learn
 
-describe('getLearnDialogModel', () => {
+describe('getLearnPanelModel', () => {
   it('uses resonant content, heading, and native app links for the resonant practice', () => {
-    const model = getLearnDialogModel({
+    const model = getLearnPanelModel({
       activePractice: 'resonant',
       learnContent: EN_CONTENT,
       strings: EN_STRINGS,
@@ -22,7 +22,7 @@ describe('getLearnDialogModel', () => {
   })
 
   it('uses Navi Kriya content and hides native app links for Navi Kriya', () => {
-    const model = getLearnDialogModel({
+    const model = getLearnPanelModel({
       activePractice: 'naviKriya',
       learnContent: EN_CONTENT,
       strings: EN_STRINGS,
@@ -35,7 +35,7 @@ describe('getLearnDialogModel', () => {
   })
 
   it('falls stretch back to resonant content without showing native app links', () => {
-    const model = getLearnDialogModel({
+    const model = getLearnPanelModel({
       activePractice: 'stretch',
       learnContent: EN_CONTENT,
       strings: EN_STRINGS,

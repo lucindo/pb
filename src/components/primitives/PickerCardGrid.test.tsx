@@ -80,34 +80,24 @@ describe('PickerCardGrid', () => {
     }
   })
 
-  it('applies the grid-cols-3 class when columns=3', () => {
-    renderGrid({ columns: 3 })
-    expect(screen.getByRole('radiogroup')).toHaveClass('grid-cols-3')
-  })
-
-  it('applies the grid-cols-2 class when columns=2', () => {
-    renderGrid({ columns: 2 })
-    expect(screen.getByRole('radiogroup')).toHaveClass('grid-cols-2')
-  })
-
-  it('default optionLayout=inline does NOT add flex-col to option buttons', () => {
-    renderGrid()
-    expect(screen.getAllByRole('radio')[0]).not.toHaveClass('flex-col')
-  })
-
-  it('optionLayout=stack adds flex-col + items-center + gap-1 to option buttons', () => {
-    renderGrid({ optionLayout: 'stack' })
-    const radio = screen.getAllByRole('radio')[0]
-    expect(radio).toHaveClass('flex')
-    expect(radio).toHaveClass('flex-col')
-    expect(radio).toHaveClass('items-center')
-    expect(radio).toHaveClass('gap-1')
-  })
-
-  it('selected option has the border-2 + accent fill class; unselected stays border (single)', () => {
-    renderGrid({ value: 'apple' })
-    const radios = screen.getAllByRole('radio')
-    expect(radios[0]).toHaveClass('border-2')
-    expect(radios[1]).not.toHaveClass('border-2')
+  it('renders without error across every (columns × optionLayout) combination', () => {
+    for (const columns of [2, 3] as const) {
+      for (const optionLayout of ['inline', 'stack'] as const) {
+        const { unmount } = render(
+          <PickerCardGrid<Fruit>
+            sectionLabel={`grid-${String(columns)}-${optionLayout}`}
+            labelId={`grid-${String(columns)}-${optionLayout}`}
+            options={['apple', 'banana', 'cherry']}
+            value="apple"
+            onChange={() => {}}
+            renderOption={(o) => o}
+            columns={columns}
+            disabled={false}
+            optionLayout={optionLayout}
+          />,
+        )
+        unmount()
+      }
+    }
   })
 })

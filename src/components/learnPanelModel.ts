@@ -4,7 +4,7 @@ import type { PracticeId } from '../storage'
 
 export type LearnPracticeContentKey = keyof LearnContent['practices']
 
-export interface LearnDialogModel {
+export interface LearnPanelModel {
   practiceContentKey: LearnPracticeContentKey
   practiceContent: PracticeLearnContent
   videosHeading: string
@@ -15,11 +15,11 @@ function getPracticeContentKey(activePractice: PracticeId): LearnPracticeContent
   return activePractice === 'naviKriya' ? 'naviKriya' : 'resonant'
 }
 
-export function getLearnDialogModel(input: {
+export function getLearnPanelModel(input: {
   activePractice: PracticeId
   learnContent: LearnContent
   strings: UiStrings['learn']
-}): LearnDialogModel {
+}): LearnPanelModel {
   const practiceContentKey = getPracticeContentKey(input.activePractice)
 
   return {

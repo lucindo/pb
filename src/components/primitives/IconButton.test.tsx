@@ -7,8 +7,7 @@ import { IconButton } from './IconButton'
 describe('IconButton', () => {
   it('renders the icon and exposes the aria-label', () => {
     render(<IconButton icon={<span data-testid="glyph">●</span>} label="Open" />)
-    const button = screen.getByRole('button', { name: 'Open' })
-    expect(button).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open' })).toBeInTheDocument()
     expect(screen.getByTestId('glyph')).toBeInTheDocument()
   })
 
@@ -19,14 +18,12 @@ describe('IconButton', () => {
     expect(onClick).toHaveBeenCalledOnce()
   })
 
-  it('applies the medium size by default', () => {
-    render(<IconButton icon="●" label="Open" />)
-    expect(screen.getByRole('button', { name: 'Open' })).toHaveClass('size-10')
-  })
-
-  it('applies the small size when requested', () => {
-    render(<IconButton icon="●" label="Open" size="sm" />)
-    expect(screen.getByRole('button', { name: 'Open' })).toHaveClass('size-8')
+  it('renders without error across every size variant', () => {
+    for (const size of ['sm', 'md'] as const) {
+      render(<IconButton icon="●" label={`size-${size}`} size={size} />)
+    }
+    expect(screen.getByRole('button', { name: 'size-sm' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'size-md' })).toBeInTheDocument()
   })
 
   it('honors disabled and suppresses onClick', () => {

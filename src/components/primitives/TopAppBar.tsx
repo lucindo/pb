@@ -9,12 +9,14 @@ export interface TopAppBarProps {
 
 /** Page-level header bar: optional eyebrow above title, optional
  *  `leading` / `trailing` slots that position themselves with their own
- *  `absolute left-0 top-0` / `absolute right-0 top-0` classes. The bar
- *  itself is `position: relative` so absolutely-positioned slot children
- *  resolve correctly. Visual values match the previous inline AppHeader
- *  in AppScreen.tsx — eyebrow uses page-header scale (text-sm,
- *  tracking-[0.35em], accent color), distinct from the small section
- *  Eyebrow primitive which targets card-group dividers. */
+ *  `absolute left-0 top-0` / `absolute right-0 top-0` classes.
+ *
+ *  CONTRACT: the outer container MUST stay `position: relative` (i.e. the
+ *  `relative` Tailwind class on the root <div> below). Absolutely-positioned
+ *  slot children (SettingsAnchor, LearnAnchor, page back-buttons) pin
+ *  against this container — removing the `relative` class will cause them
+ *  to escape to the nearest positioned ancestor, breaking the header
+ *  layout silently. */
 export function TopAppBar({ title, eyebrow, leading, trailing }: TopAppBarProps) {
   return (
     <div className="relative w-full">

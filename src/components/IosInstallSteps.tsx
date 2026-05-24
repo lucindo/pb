@@ -47,7 +47,7 @@ function IOsShareIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ display: 'inline', verticalAlign: 'middle' }}
+      className="inline align-middle"
     >
       {/* Upward arrow */}
       <line x1="12" y1="17" x2="12" y2="3" />

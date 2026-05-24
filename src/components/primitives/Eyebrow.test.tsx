@@ -10,12 +10,6 @@ describe('Eyebrow', () => {
     expect(screen.getByText('ABOUT')).toBeInTheDocument()
   })
 
-  it('applies uppercase + tracked typography classes', () => {
-    const { container } = render(<Eyebrow>x</Eyebrow>)
-    expect(container.firstChild).toHaveClass('uppercase')
-    expect(container.firstChild).toHaveClass('tracking-[0.16em]')
-  })
-
   it('forwards a custom className', () => {
     const { container } = render(<Eyebrow className="extra">x</Eyebrow>)
     expect(container.firstChild).toHaveClass('extra')

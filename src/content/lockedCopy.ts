@@ -4,9 +4,9 @@
 // 3 EN values via .toBe() — never .toMatchInlineSnapshot() (auto-update defeats the lock).
 // D-03: Lock scope = 3 D-12 minimum entries: inspiredByForrest + medicalAdviceLine +
 // affiliationLine. Matches Phase 6 D-12 literally. Smallest blast radius.
-// D-04: Composition — LearnDialog.tsx renders LOCKED_COPY[locale].inspiredByForrest as a
-// separate paragraph after forrest.body; App.tsx renders LOCKED_COPY[locale].medicalAdviceLine
-// and LearnDialog.tsx renders LOCKED_COPY[locale].affiliationLine (Phase 19).
+// D-04: Composition — these locked strings are composed at render time by the
+// surfaces that need them (LearnPanel for inspiredByForrest + affiliationLine;
+// PracticeScreen for medicalAdviceLine).
 
 import type { LocaleId } from '../domain/settings'
 

@@ -4,14 +4,12 @@ import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage'
-import { getLearnDialogModel } from './learnDialogModel'
+import { getLearnPanelModel } from './learnPanelModel'
 
-// Body of the "About this practice" surface. Shared by:
-//   - LearnDialog.tsx (legacy modal path; scheduled for removal in Item G)
-//   - app/pages/LearnPage.tsx (full-page surface via PageShell + TopAppBar)
-// Visual output here is byte-equivalent to the previous inline LearnDialog
-// body (everything inside <dialog> minus the dialog title h2 and the bottom
-// Close button — both moved up to the surrounding chrome).
+// Body of the "About this practice" surface. Consumed by LearnPage.
+// Renders the sections, videos, explainer, resources, and native-apps
+// blocks; the surrounding chrome (title + back affordance) is the page's
+// responsibility.
 
 export interface LearnPanelProps {
   learnContent: LearnContent
@@ -27,7 +25,7 @@ export function LearnPanel({
   activePractice,
 }: LearnPanelProps): ReactElement {
   const { explainer, links } = learnContent
-  const { practiceContent, videosHeading, showNativeApps } = getLearnDialogModel({
+  const { practiceContent, videosHeading, showNativeApps } = getLearnPanelModel({
     activePractice,
     learnContent,
     strings,

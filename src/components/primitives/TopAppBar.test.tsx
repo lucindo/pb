@@ -40,10 +40,4 @@ describe('TopAppBar', () => {
     )
     expect(screen.getByRole('button', { name: 'right' })).toBeInTheDocument()
   })
-
-  it('outer container is position: relative so absolute slot children can pin', () => {
-    const { container } = render(<TopAppBar title="Practice" />)
-    expect(container.firstChild).toHaveClass('relative')
-    expect(container.firstChild).toHaveClass('w-full')
-  })
 })

@@ -36,16 +36,61 @@ State below is updated after every step transition.
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | ✓ done — commit `3926b77` |
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | ✓ done — commit `498545a` |
 | F6 | `UiStringsContext` provider replacing drilling of `uiStrings` through the view layer (vm stays as explicit prop — see proposal) | **implemented — awaiting operator approval** |
-| G | Dead-code purge — delete `LearnDialog` + `SettingsDialog` + `SettingsPanel` (and their tests) after audit narrowed the original 8-file list to 3 confirmed orphans; other 5 are LIVE. | **implemented — awaiting operator approval** |
+| G | Dead-code purge — delete `LearnDialog` + `SettingsDialog` + `SettingsPanel` (and their tests) after audit narrowed the original 8-file list to 3 confirmed orphans; other 5 are LIVE. | ✓ done — commit `0844ab9` |
+| H | Test pristineness pass — drop design-token-locking assertions in 7 primitive tests; rename `learnDialogModel` → `learnPanelModel` (LSP-unavailable → manual per-file Edit fallback per rule); fix 3 stale `LearnDialog` comment references + 1 inline style. First item executed using the new mandatory propose-step checklist ([[propose-step-checklist]] + [[no-design-locking]] memories). | **implemented — awaiting operator approval** |
 
 ---
 
 ## Current focus
 
-**Item:** G — Dead-code purge (audit-corrected scope)
+**Item:** H — Test pristineness pass (post-audit remediation)
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item G)
+### Implementation summary (Item H)
+
+Post-G audit (3 parallel agents — test quality, structural, visual-readiness) surfaced that 7 primitive test files contained ~30 class-locking assertions (`toHaveClass('p-6')`, `toHaveClass('bg-[var(--color-breathing-accent-strong)]')`, etc.) written during Item B (commit `c0bfe60`). Same model, same codebase — but Item B's "test the prop API" framing produced exactly the design-locking pattern the post-G audit ("what blocks visual freedom?") was looking for.
+
+Operator pushed back on the pattern itself: **"you propose to fix and then implement new problems as solution. Can't you see the pattern?"** Two memory rules created in response, both general (not test-specific):
+- [[no-design-locking]] — broad rule covering tests, code, AND comments. No anchoring of downstream-modifiable values (Tailwind classes, hex, design tokens, deleted-code refs, stale future-tense notes).
+- [[propose-step-checklist]] — procedural enforcement. Every propose-step gets mandatory Downstream Constraints + Applicable Memory Rules sections before Goal/Scope/Risk. The checklist makes the "review hat" framing mandatory at "implement hat" decision points.
+
+**Item H is the first item executed under the new propose-step checklist** — the proposal itself printed both sections, and the verification step caught 3 additional stale comment references the proposal missed (LearnDialog refs in LearnPage.tsx + lockedCopy.ts + learnContent.ts). Fixed inline since they fall under the same no-design-locking rule that motivated H.
+
+**Test rewrites (7 files, -10 tests net):**
+- `PageShell.test.tsx` — dropped 6 layout/background class assertions (min-h-screen, max-w-3xl, bg-[radial-gradient, mx-auto, flex-col, items-center). Kept structural assertions (children inside section, section inside main, overlays as siblings). 5 → 4 tests.
+- `Card.test.tsx` — dropped 4 padding/shadow class assertions (p-6, p-8, shadow-[var(--shadow-card)], shadow-[var(--shadow-modal)]). Replaced with "renders without error across every variant" loops that exercise the prop API without locking the class output. 6 → 4 tests.
+- `Eyebrow.test.tsx` — dropped 2 typography assertions (uppercase, tracking-[0.16em]). 3 → 2 tests.
+- `IconButton.test.tsx` — dropped 2 size-class assertions (size-10, size-8). Replaced with variant-loop. 5 → 4 tests.
+- `Pill.test.tsx` — dropped 3 background-color assertions for filled/outlined/active. Replaced with aria-pressed assertions (the behavioral contract) + variant-loop. 6 → 6 tests.
+- `PickerCardGrid.test.tsx` — dropped 6 grid/layout/selected-state class assertions. Kept all 6 behavioral aria/role/event tests. Added 1 variant-matrix render-without-error test. 11 → 7 tests.
+- `TopAppBar.test.tsx` — DELETED the `relative` + `w-full` test entirely; replaced with a strengthened CONTRACT comment in `TopAppBar.tsx` source explaining that the `relative` class MUST stay or absolutely-positioned slot children silently escape. 6 → 5 tests.
+
+**Cleanup (5 spots):**
+- Renamed `learnDialogModel.{ts,test.ts}` → `learnPanelModel.{ts,test.ts}` (file move via `git mv`); renamed `LearnDialogModel` interface → `LearnPanelModel`, `getLearnDialogModel` function → `getLearnPanelModel`. LSP server unavailable for `.ts` files in this environment — used the documented fallback per [[use-lsp-for-renames]]: grep all references type-aware (3 files: definition, importer, test), Edit each site by hand. No sed/perl/regex used.
+- Removed stale "shared by LearnDialog... scheduled for removal in Item G" comment block in `LearnPanel.tsx`.
+- Removed stale LearnDialog references in `LearnPage.tsx` docstring, `lockedCopy.ts` D-04 comment, `learnContent.ts` D-04 comment. Caught by the verification-step grep, not the proposal.
+- Tailwind-ified `IosInstallSteps.tsx:50` inline style (`style={{ display: 'inline', verticalAlign: 'middle' }}` → `className="inline align-middle"`).
+
+**Out of scope kept out:**
+- PageShell prop expansion (YAGNI) — no new `maxWidth?` / `layout?` props
+- Audio hook wrapper for `playInhalePreview` — non-violation
+- OrbShape inline styles — dynamic + token-based, can't be classes
+- No changes to domain / audio / storage / hooks / appViewModel / sessionPresentation / useAppViewModel — sealed by design
+
+**Three verification grep guards (post-change, must return zero hits):**
+1. `grep ... toHaveClass | grep -E 'p-[0-9]|bg-\[|text-\[var|size-[0-9]|grid-cols|flex-col|...'` in primitives — clean
+2. `grep -rn 'LearnDialog\|learnDialog'` in src — clean (after the 3 comment fixes)
+3. `grep -rn 'style='` in components+app outside OrbShape/NKShape — clean
+
+**Verification:**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean
+- Full suite: **101 files / 1117 tests pass** (was 101/1127 → -10 design-locking tests removed, no behavioral coverage lost)
+- `npm run build`: clean. JS bundle unchanged.
+
+**Commit message:** `refactor(tests+cleanup): drop design-token-locking assertions; rename historical learnDialogModel; drop stale comments`
+
+### Archived — Implementation summary (Item G)
 
 Ground-truth audit (precise module-path grep `from ['\"].*/${name}['\"]`, excluding self + own test) corrected the original 8-file Item-G table down to **3 confirmed orphans**. The other 5 names in the table were a stale snapshot from before items C/D landed.
 
@@ -498,6 +543,7 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | F5 | `498545a` | UiStrings top-level keys reorganized by surface: `practice.*` / `appSettings.*` / `learn.*` / `install.*`. ~69 files touched. Mechanically applied via carrier-anchored perl (\K resets match start); 4 Pick<UiStrings> types + practiceCopy + 3 computed-key tests handled manually. |
 | F6 | `fe14c47` | `UiStringsContext` + `useUiStrings()` hook (throws on missing provider). `App.tsx` wraps everything in `UiStringsProvider`. 4 PracticeScreen child views + 2 pages stop receiving `uiStrings` / `strings` props and read from context. Leaf components (anchors, banners, forms, pickers, dialogs) keep narrow slice props to stay testable in isolation. Bundle +0.36 KB. |
 | G | `0844ab9` | Audit-corrected dead-code purge: deleted `LearnDialog`, `SettingsDialog`, `SettingsPanel` + the 2 dialog tests (49 tests removed). Original 8-file Item-G list was an outdated snapshot — module-path-precise grep found 5 of the listed files (Readout/StatusPanel pair, anchors) STILL LIVE. Bundle unchanged (Vite was already tree-shaking these). |
+| H | (this commit) | Test pristineness pass — rewrote 7 primitive test files to drop ~30 design-token-locking class assertions (e.g., `toHaveClass('p-6')`, `toHaveClass('bg-[var(--color-breathing-accent-strong)]')`). Renamed historical `learnDialogModel` → `learnPanelModel` via manual per-file Edit (LSP unavailable for .ts in this env). Removed 3 stale LearnDialog comment refs (caught by verification grep). Tailwind-ified 1 inline style. Net -10 tests, behavioral coverage preserved. First item executed under the new mandatory propose-step checklist memory rules. |
 
 ---
 

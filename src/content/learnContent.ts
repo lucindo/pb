@@ -5,7 +5,7 @@
 // description sections and video links.
 // The locked Forrest phrase no longer appears inside forrest.body — it lives in
 // src/content/lockedCopy.ts (LOCKED_COPY.*.inspiredByForrest) and is composed at
-// render time by LearnDialog.tsx (Phase 19 D-04).
+// render time by the LearnPanel surface.
 
 import type { LocaleId } from '../domain/settings'
 
