@@ -38,7 +38,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   }
 
   return (
-    <PageShell overlays={<EndSessionDialogsView dialogs={vm.dialogs} />}>
+    <PageShell width="practice" overlays={<EndSessionDialogsView dialogs={vm.dialogs} />}>
       <TopAppBar
         eyebrow={vm.appHeader}
         title={vm.appTitle}
@@ -58,13 +58,15 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
         }
       />
       <div className="w-full px-5 pb-4 sm:px-8">
-        <PracticeToggle
-          active={vm.activePractice}
-          disabled={vm.controlsDisabled}
-          showIcons={vm.featureFlags.switcherIcon}
-          onSwitch={vm.onSwitchPractice}
-          strings={vm.practiceToggleStrings}
-        />
+        <div className="mx-auto w-full sm:max-w-[400px]">
+          <PracticeToggle
+            active={vm.activePractice}
+            disabled={vm.controlsDisabled}
+            showIcons={vm.featureFlags.switcherIcon}
+            onSwitch={vm.onSwitchPractice}
+            strings={vm.practiceToggleStrings}
+          />
+        </div>
       </div>
       <div className="flex w-full flex-col items-center px-5 pt-[18px] sm:px-8 sm:pt-7">
         <PracticeSessionView
@@ -81,7 +83,9 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
       </div>
       <div className="flex-1" />
       <div className="w-full px-5 pt-4 sm:px-8">
-        <PracticeControlsView controls={vm.practiceControls} audio={vm.audio} />
+        <div className="mx-auto w-full sm:max-w-[400px]">
+          <PracticeControlsView controls={vm.practiceControls} audio={vm.audio} />
+        </div>
       </div>
       <p
         className="w-full whitespace-nowrap px-5 pt-3 text-center text-[11px] font-normal leading-[1.4] tracking-[0.02em] text-[var(--color-breathing-muted)] sm:px-8"

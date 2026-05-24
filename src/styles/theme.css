@@ -26,7 +26,7 @@
      the CSS side is consumed by stylesheet fallbacks (reduced-motion + the
      breath-loop-animation keyframes in index.css). Drift is caught at CI by
      src/components/shapeConstants.test.ts. */
-  --orb-size: clamp(180px, 35vw, 360px);
+  --orb-size: clamp(180px, 50vw, 280px);
   --orb-scale-min: 0.58;
   --orb-scale-max: 1.0;
   --orb-scale-mid: 0.79;
@@ -140,5 +140,40 @@ dialog.modal-fade[open]::backdrop {
 @media (prefers-reduced-motion: reduce) {
   dialog.modal-fade {
     transition: none !important;
+  }
+}
+
+/* J15: Desktop orb size lock — spike 010 eleventh pass (README line 525):
+   320 px diameter on desktop (≥sm = 640 px). Mobile keeps the responsive
+   clamp(180px, 50vw, 280px) defined in @theme above. Overrides via cascade
+   on :root so the variable resolves correctly inside all components that
+   reference var(--orb-size). */
+@media (min-width: 640px) {
+  :root {
+    --orb-size: 320px;
+  }
+}
+
+/* J15: Page background gradient — mobile uses the original circle-at-top
+   wash; desktop (≥sm) switches to the spike's positioned wider-canvas
+   variant (eleventh pass line 521). Defined as a custom property so
+   PageShell can apply it via Tailwind arbitrary value without per-
+   breakpoint conditional class strings. */
+:root {
+  --page-bg-gradient: radial-gradient(
+    circle at top,
+    var(--color-breathing-bg-soft),
+    var(--color-breathing-bg) 48%,
+    var(--color-breathing-bg-edge)
+  );
+}
+@media (min-width: 640px) {
+  :root {
+    --page-bg-gradient: radial-gradient(
+      50% 70% at 50% 25%,
+      var(--color-breathing-bg-edge) 0%,
+      var(--color-breathing-bg) 50%,
+      var(--color-breathing-bg-soft) 100%
+    );
   }
 }
