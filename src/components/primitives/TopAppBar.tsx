@@ -2,34 +2,23 @@ import type { ReactNode } from 'react'
 
 export interface TopAppBarProps {
   title: string
-  eyebrow?: string
   leading?: ReactNode
   trailing?: ReactNode
 }
 
-/** Page-level header bar: optional eyebrow above title, optional
- *  `leading` / `trailing` slots that position themselves with their own
- *  `absolute left-0 top-0` / `absolute right-0 top-0` classes.
- *
- *  CONTRACT: the outer container MUST stay `position: relative` (i.e. the
- *  `relative` Tailwind class on the root <div> below). Absolutely-positioned
- *  slot children (SettingsAnchor, LearnAnchor, page back-buttons) pin
- *  against this container — removing the `relative` class will cause them
- *  to escape to the nearest positioned ancestor, breaking the header
- *  layout silently. */
-export function TopAppBar({ title, eyebrow, leading, trailing }: TopAppBarProps) {
+// Page-level header: 36×36 leading slot, centered title, 36×36 trailing slot.
+// Title sizing verbatim from spike 010 PracticeTopBar / PageTopBar
+// (index.html L1020-1054): 17 px / weight 600 / tracking 0.01em / text token.
+// Empty 36×36 placeholders maintain title centering when a slot is absent
+// (mirrors spike's L1051 `<div style={{ width: 36, height: 36 }}></div>`).
+export function TopAppBar({ title, leading, trailing }: TopAppBarProps) {
   return (
-    <div className="relative w-full">
-      {eyebrow !== undefined && (
-        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[var(--color-breathing-accent)]">
-          {eyebrow}
-        </p>
-      )}
-      <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-breathing-accent-strong)] sm:text-5xl">
+    <div className="flex w-full items-center justify-between px-5 pb-3 pt-[50px] sm:px-8">
+      {leading ?? <div className="size-9" aria-hidden="true" />}
+      <h1 className="text-[17px] font-semibold tracking-[0.01em] text-[var(--color-breathing-text)]">
         {title}
       </h1>
-      {leading}
-      {trailing}
+      {trailing ?? <div className="size-9" aria-hidden="true" />}
     </div>
   )
 }

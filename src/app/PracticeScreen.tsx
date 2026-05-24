@@ -40,7 +40,6 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   return (
     <PageShell width="practice" overlays={<EndSessionDialogsView dialogs={vm.dialogs} />}>
       <TopAppBar
-        eyebrow={vm.appHeader}
         title={vm.appTitle}
         leading={
           <SettingsAnchor

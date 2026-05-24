@@ -1,6 +1,6 @@
-// Persistent icon anchor labeled `Learn`, top-left of the breathing column.
+// Persistent icon anchor labeled `Learn`, leading slot of TopAppBar.
 // D-03: disabled (not hidden) during lead-in and running — aria-disabled +
-// no-op click handler. Parent MUST provide `position: relative` (TopAppBar).
+// no-op click handler.
 
 import type { UiStrings } from '../content/strings'
 
@@ -17,7 +17,7 @@ export function LearnAnchor({ disabled, onClick, strings }: LearnAnchorProps) {
       aria-disabled={disabled || undefined}
       aria-label={disabled ? strings.learnDisabled : strings.learn}
       onClick={disabled ? undefined : onClick}
-      className={`absolute left-0 top-0 inline-flex size-9 items-center justify-center rounded-full border bg-[var(--color-breathing-surface)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
+      className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full border bg-[var(--color-breathing-surface)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
         disabled
           ? 'cursor-not-allowed border-[var(--color-breathing-muted)] text-[var(--color-breathing-muted)]'
           : 'border-[var(--color-border-soft)] text-[var(--color-breathing-text-soft)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'

@@ -40,14 +40,12 @@ export function AppSettingsPage({
       <TopAppBar
         title={strings.appSettings.title}
         leading={
-          <div className="absolute left-0 top-0">
-            <IconButton
-              icon={<ChevronBackIcon />}
-              label={strings.appSettings.close}
-              onClick={onBack}
-              buttonRef={backButtonRef}
-            />
-          </div>
+          <IconButton
+            icon={<ChevronBackIcon />}
+            label={strings.appSettings.close}
+            onClick={onBack}
+            buttonRef={backButtonRef}
+          />
         }
       />
       <div className="w-full text-left">

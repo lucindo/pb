@@ -1,6 +1,6 @@
-// Persistent icon anchor for the Settings page, top-right of the breathing
-// column. D-03: disabled (not hidden) during lead-in and running —
-// aria-disabled + no-op click handler. Parent MUST provide `position: relative`.
+// Persistent icon anchor for the Settings page, trailing slot of TopAppBar.
+// D-03: disabled (not hidden) during lead-in and running — aria-disabled +
+// no-op click handler.
 
 import type { UiStrings } from '../content/strings'
 
@@ -17,7 +17,7 @@ export function SettingsAnchor({ disabled, onClick, strings }: SettingsAnchorPro
       aria-disabled={disabled || undefined}
       aria-label={disabled ? strings.settingsDisabled : strings.settings}
       onClick={disabled ? undefined : onClick}
-      className={`absolute right-0 top-0 inline-flex size-9 items-center justify-center rounded-full border bg-[var(--color-breathing-surface)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
+      className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full border bg-[var(--color-breathing-surface)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 motion-reduce:transition-none ${
         disabled
           ? 'cursor-not-allowed border-[var(--color-breathing-muted)] text-[var(--color-breathing-muted)]'
           : 'border-[var(--color-border-soft)] text-[var(--color-breathing-text-soft)] hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)]'

@@ -39,14 +39,12 @@ export function LearnPage({
       <TopAppBar
         title={strings.title}
         leading={
-          <div className="absolute left-0 top-0">
-            <IconButton
-              icon={<ChevronBackIcon />}
-              label={strings.close}
-              onClick={onBack}
-              buttonRef={backButtonRef}
-            />
-          </div>
+          <IconButton
+            icon={<ChevronBackIcon />}
+            label={strings.close}
+            onClick={onBack}
+            buttonRef={backButtonRef}
+          />
         }
       />
       <div className="mt-6 w-full text-left">
