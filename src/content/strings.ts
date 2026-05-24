@@ -172,8 +172,6 @@ export interface UiStrings {
     readonly naviKriyaVideosHeading: string
     readonly naviKriyaDescriptionSection1Title: string
     readonly naviKriyaDescriptionSection2Title: string
-    readonly practiceSectionLabel: string
-    readonly aboutSectionLabel: string
   }
   readonly install: {
     readonly regionLabel: string
@@ -342,8 +340,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaVideosHeading: 'Selected Navi Kriya Videos',
       naviKriyaDescriptionSection1Title: 'What is Navi Kriya',
       naviKriyaDescriptionSection2Title: 'How this app paces it',
-      practiceSectionLabel: 'Practice',
-      aboutSectionLabel: 'About Forrest Knutson',
     },
     install: {
       regionLabel: 'Install app',
@@ -510,8 +506,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya',
       naviKriyaDescriptionSection1Title: 'O que é Navi Kriya',
       naviKriyaDescriptionSection2Title: 'Como este app guia a prática',
-      practiceSectionLabel: 'Prática',
-      aboutSectionLabel: 'Sobre Forrest Knutson',
     },
     install: {
       regionLabel: 'Instalar app',

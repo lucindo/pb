@@ -8,9 +8,10 @@ import { getLearnPanelModel } from './learnPanelModel'
 import { SettingsSectionHeader } from './SettingsSectionHeader'
 
 // Body of the "About this practice" surface. Consumed by LearnPage.
-// Renders the sections, videos, explainer, resources, and native-apps
-// blocks; the surrounding chrome (title + back affordance) is the page's
-// responsibility.
+// Each existing learn-content section title is hoisted to a
+// SettingsSectionHeader (eyebrow) above its own SectionCard so the page
+// reads as a stack of small labeled groups — same chrome pattern as the
+// AppSettings page.
 
 export interface LearnPanelProps {
   learnContent: LearnContent
@@ -40,11 +41,8 @@ function SectionCard({ children }: { children: ReactNode }): ReactElement {
 const LINK_CLASSES =
   'inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2'
 
-const H3_CLASSES =
-  'text-lg font-semibold text-[var(--color-breathing-text)]'
-
 const BODY_CLASSES =
-  'mt-1 text-base leading-6 text-[var(--color-breathing-text-soft)]'
+  'text-base leading-6 text-[var(--color-breathing-text-soft)]'
 
 export function LearnPanel({
   learnContent,
@@ -60,19 +58,20 @@ export function LearnPanel({
   })
 
   return (
-    <div className="grid gap-2">
-      <SettingsSectionHeader label={strings.practiceSectionLabel} />
+    <div>
+      <SettingsSectionHeader label={practiceContent.description.section1.title} />
       <SectionCard>
-        <h3 className={H3_CLASSES}>{practiceContent.description.section1.title}</h3>
         <p className={BODY_CLASSES}>{practiceContent.description.section1.body}</p>
       </SectionCard>
+
+      <SettingsSectionHeader label={practiceContent.description.section2.title} />
       <SectionCard>
-        <h3 className={H3_CLASSES}>{practiceContent.description.section2.title}</h3>
         <p className={BODY_CLASSES}>{practiceContent.description.section2.body}</p>
       </SectionCard>
+
+      <SettingsSectionHeader label={videosHeading} />
       <SectionCard>
-        <h3 className={H3_CLASSES}>{videosHeading}</h3>
-        <div className="mt-1 grid gap-2">
+        <div className="grid gap-2">
           {practiceContent.videos.map((video) => (
             <a
               key={video.url}
@@ -87,16 +86,16 @@ export function LearnPanel({
         </div>
       </SectionCard>
 
-      <SettingsSectionHeader label={strings.aboutSectionLabel} />
+      <SettingsSectionHeader label={explainer.forrest.title} />
       <SectionCard>
-        <h3 className={H3_CLASSES}>{explainer.forrest.title}</h3>
         {explainer.forrest.body.split('\n\n').map((paragraph) => (
           <p key={paragraph} className={`${BODY_CLASSES} [&:not(:first-of-type)]:mt-2`}>{paragraph}</p>
         ))}
       </SectionCard>
+
+      <SettingsSectionHeader label={strings.resourcesHeading} />
       <SectionCard>
-        <h3 className={H3_CLASSES}>{strings.resourcesHeading}</h3>
-        <div className="mt-1 grid gap-2">
+        <div className="grid gap-2">
           <a href={links.youtubeChannel.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
             {links.youtubeChannel.label}
           </a>
@@ -111,18 +110,21 @@ export function LearnPanel({
           </a>
         </div>
       </SectionCard>
+
       {showNativeApps && (
-        <SectionCard>
-          <h3 className={H3_CLASSES}>{strings.nativeAppsHeading}</h3>
-          <div className="mt-1 grid gap-2">
-            <a href={links.appStoreIos.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
-              {links.appStoreIos.label}
-            </a>
-            <a href={links.googlePlayAndroid.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
-              {links.googlePlayAndroid.label}
-            </a>
-          </div>
-        </SectionCard>
+        <>
+          <SettingsSectionHeader label={strings.nativeAppsHeading} />
+          <SectionCard>
+            <div className="grid gap-2">
+              <a href={links.appStoreIos.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
+                {links.appStoreIos.label}
+              </a>
+              <a href={links.googlePlayAndroid.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
+                {links.googlePlayAndroid.label}
+              </a>
+            </div>
+          </SectionCard>
+        </>
       )}
 
       <p className="mt-6 text-center text-xs font-bold italic first-letter:uppercase text-[var(--color-breathing-muted)]">{lockedCopy.inspiredByForrest}</p>
