@@ -37,16 +37,55 @@ State below is updated after every step transition.
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | ✓ done — commit `498545a` |
 | F6 | `UiStringsContext` provider replacing drilling of `uiStrings` through the view layer (vm stays as explicit prop — see proposal) | **implemented — awaiting operator approval** |
 | G | Dead-code purge — delete `LearnDialog` + `SettingsDialog` + `SettingsPanel` (and their tests) after audit narrowed the original 8-file list to 3 confirmed orphans; other 5 are LIVE. | ✓ done — commit `0844ab9` |
-| H | Test pristineness pass — drop design-token-locking assertions in 7 primitive tests; rename `learnDialogModel` → `learnPanelModel` (LSP-unavailable → manual per-file Edit fallback per rule); fix 3 stale `LearnDialog` comment references + 1 inline style. First item executed using the new mandatory propose-step checklist ([[propose-step-checklist]] + [[no-design-locking]] memories). | **implemented — awaiting operator approval** |
+| H | Test pristineness pass — drop design-token-locking assertions in 7 primitive tests; rename `learnDialogModel` → `learnPanelModel` (LSP-unavailable → manual per-file Edit fallback per rule); fix 3 stale `LearnDialog` comment references + 1 inline style. First item executed using the new mandatory propose-step checklist ([[propose-step-checklist]] + [[no-design-locking]] memories). | ✓ done — commit `4457259` |
+| I | Sibling-pattern stale-comment cleanup — 3-agent re-audit confirmed READY-FOR-SPIKE, but my own grep found 9 stale `SettingsDialog` / `SettingsPanel` / "Phase 15" / "legacy modal" / "scheduled for removal" references that H missed because it only fixed the `LearnDialog` family. Same meta-pattern as before — the rule was applied narrowly, not broadly. 5 files touched, comments only. | **implemented — awaiting operator approval** |
 
 ---
 
 ## Current focus
 
-**Item:** H — Test pristineness pass (post-audit remediation)
+**Item:** I — Sibling-pattern stale-comment cleanup
 **Step:** 4 (implemented + committed, awaiting operator approval)
 
-### Implementation summary (Item H)
+### Implementation summary (Item I)
+
+After H, operator approved "run the audit again to confirm clean." Three parallel agents (test quality, structural, visual-readiness) ALL returned **READY-FOR-SPIKE** with zero blockers. My own independent grep verification confirmed: zero `toHaveClass` design-token assertions, zero hex outside theme, zero static inline styles, zero Tailwind palette colors, zero imports of deleted components.
+
+**BUT** — the same independent grep found **9 stale comment references** to deleted `SettingsDialog` / `SettingsPanel` / "Phase 15" / "legacy modal path" / "scheduled for removal" that H had missed. These are the exact sibling pattern of the `LearnDialog` references H fixed. Same rule, different family name — I caught the LearnDialog family because I was renaming `learnDialogModel`, missed the SettingsDialog family because I wasn't actively looking.
+
+This is the meta-pattern documented in [[propose-step-checklist]]: the rule fires on the family I'm thinking about, not on every applicable instance. The v2 application (this item) explicitly scanned for SIBLING patterns of the previously-found violation.
+
+**Files modified (5):**
+- `src/app/pages/AppSettingsPage.tsx` — dropped "Replaces the legacy SettingsDialog modal route" from docstring (exact mirror of the LearnPage fix in H).
+- `src/components/SettingsAnchor.tsx` — replaced "Phase 15 SettingsDialog Shell — D-07, D-08..." header with a current-state description (gear-icon anchor for Settings page, disabled in-session, mirrors LearnAnchor with two doc'd differences). Dropped 6 D-XX markers that referenced the deleted dialog's phase context.
+- `src/components/SettingsPanelBody.tsx` — replaced "Shared by SettingsPanel.tsx (legacy modal path; SettingsDialog wraps it; deleted in Item G) // AppSettingsPage.tsx" with "Consumed by AppSettingsPage. Excludes the title and back affordance." Two references to deleted code removed.
+- `src/app/App.session.test.tsx` — one comment: "user who never opens SettingsDialog" → "user who never visits the Settings page."
+- `src/app/App.locale.test.tsx` — 5 comment + 1 test-name edits:
+  - section header "PT-BR is clicked via SettingsDialog" → "...on the Settings page"
+  - dropped "Post Item-D refactor: this routes to AppSettingsPage (full-page surface) instead of opening a modal SettingsDialog" (migration is closed; the historical reference is rot)
+  - test name "locale picker buttons are disabled when SettingsDialog is opened in-session" → "Settings is unreachable in-session via the gear anchor being disabled" (the test was renamed in H to AppSettingsPage flow but the name still said SettingsDialog)
+  - 5-line comment block about "SettingsDialog auto-closes on inSessionView (App.tsx WR-09 useEffect)..." rewritten to describe the current `useAppNavigation.closeOnSessionView` mechanism and `controlsDisabled` gate
+  - "Open SettingsDialog and verify..." → "Open the Settings page and verify..."
+  - "Close the dialog" → "Navigate back to practice"
+  - dropped "(Phase 15 D-08: ...)" qualifier on a comment about the SettingsAnchor disabled state
+
+**No code behavior changed.** All edits are comments, docstrings, or one test name.
+
+**Four verification grep guards (post-change, must return zero):**
+1. `grep -rn 'SettingsDialog' src` — clean
+2. `grep -rn 'LearnDialog\b' src` — clean
+3. `grep -rn 'SettingsPanel\b' src | grep -v 'SettingsPanelBody'` — clean (only SettingsPanelBody, the live component)
+4. `grep -rn 'scheduled for removal\|legacy modal' src` — clean
+
+**Verification:**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean
+- Full suite: **101 files / 1117 tests pass** (unchanged from H — pure comment work)
+- Build clean. Bundle unchanged.
+
+**Commit message:** `docs: drop stale SettingsDialog/SettingsPanel comment references (sibling pattern to H's LearnDialog cleanup)`
+
+### Archived — Implementation summary (Item H)
 
 Post-G audit (3 parallel agents — test quality, structural, visual-readiness) surfaced that 7 primitive test files contained ~30 class-locking assertions (`toHaveClass('p-6')`, `toHaveClass('bg-[var(--color-breathing-accent-strong)]')`, etc.) written during Item B (commit `c0bfe60`). Same model, same codebase — but Item B's "test the prop API" framing produced exactly the design-locking pattern the post-G audit ("what blocks visual freedom?") was looking for.
 
@@ -544,6 +583,7 @@ Do you want me to lock specific visual values now (corner radii, padding scales,
 | F6 | `fe14c47` | `UiStringsContext` + `useUiStrings()` hook (throws on missing provider). `App.tsx` wraps everything in `UiStringsProvider`. 4 PracticeScreen child views + 2 pages stop receiving `uiStrings` / `strings` props and read from context. Leaf components (anchors, banners, forms, pickers, dialogs) keep narrow slice props to stay testable in isolation. Bundle +0.36 KB. |
 | G | `0844ab9` | Audit-corrected dead-code purge: deleted `LearnDialog`, `SettingsDialog`, `SettingsPanel` + the 2 dialog tests (49 tests removed). Original 8-file Item-G list was an outdated snapshot — module-path-precise grep found 5 of the listed files (Readout/StatusPanel pair, anchors) STILL LIVE. Bundle unchanged (Vite was already tree-shaking these). |
 | H | `4457259` | Test pristineness pass — rewrote 7 primitive test files to drop ~30 design-token-locking class assertions (e.g., `toHaveClass('p-6')`, `toHaveClass('bg-[var(--color-breathing-accent-strong)]')`). Renamed historical `learnDialogModel` → `learnPanelModel` via manual per-file Edit (LSP unavailable for .ts in this env). Removed 3 stale LearnDialog comment refs (caught by verification grep). Tailwind-ified 1 inline style. Net -10 tests, behavioral coverage preserved. First item executed under the new mandatory propose-step checklist memory rules. |
+| I | (this commit) | Sibling-pattern stale-comment cleanup. 3-agent post-H audit said READY-FOR-SPIKE, but my independent grep found 9 stale `SettingsDialog`/`SettingsPanel`/Phase-15 comment references H missed because it only fixed the LearnDialog family. 5 files touched (AppSettingsPage docstring, SettingsAnchor header, SettingsPanelBody comment, 2 App.*.test.tsx files). Comments only — zero code behavior change, tests pass unchanged. |
 
 ---
 

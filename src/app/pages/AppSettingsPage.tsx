@@ -16,12 +16,11 @@ export interface AppSettingsPageProps {
   onBack(this: void): void
 }
 
-/** Full-page Settings surface. Replaces the legacy SettingsDialog modal
- *  route. Composes PageShell + TopAppBar (back chevron in the leading slot)
- *  + Card-wrapped SettingsPanelBody. `inSessionView` is hard-coded false:
- *  navigation to this page is gated by `controlsDisabled` in useAppNavigation,
- *  so the user can only be here when no session is active. Focuses the back
- *  button on mount. */
+/** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron
+ *  in the leading slot) + Card-wrapped SettingsPanelBody. `inSessionView` is
+ *  hard-coded false: navigation to this page is gated by `controlsDisabled`
+ *  in useAppNavigation, so the user can only be here when no session is
+ *  active. Focuses the back button on mount. */
 export function AppSettingsPage({
   isIOS,
   isStandalone,

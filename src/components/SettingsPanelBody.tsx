@@ -7,11 +7,9 @@ import { LanguagePicker } from './LanguagePicker'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
 
-// Body of the Settings surface — pickers + install row. Shared by:
-//   - SettingsPanel.tsx (legacy modal path; SettingsDialog wraps it; deleted in Item G)
-//   - app/pages/AppSettingsPage.tsx (full-page surface via PageShell + TopAppBar)
-// Excludes the title and bottom Close button — those belong to the surrounding
-// chrome (modal h2 / page TopAppBar).
+// Body of the Settings surface — pickers + install row. Consumed by
+// AppSettingsPage. Excludes the title and back affordance — those belong
+// to the surrounding page chrome (TopAppBar).
 
 export interface SettingsPanelBodyProps {
   inSessionView: boolean

@@ -318,7 +318,7 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
 
     await startAndAdvancePastLeadIn()
 
-    // Sine proof at the App layer: a new user who never opens SettingsDialog
+    // Sine proof at the App layer: a new user who never visits the Settings page
     // has prefs.timbre='sine', so audioStart(plan, 'sine') routes through the engine's
     // sine path — default updated via quick task 260519-9mi (2026-05-19).
     expect(scheduleInSpy).toHaveBeenCalled()

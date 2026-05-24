@@ -1,12 +1,10 @@
-// Phase 15 SettingsDialog Shell — D-07, D-08, D-09, D-18.
-// This file mirrors src/components/LearnAnchor.tsx with three documented changes:
-// (1) position class `left-0` instead of `right-0` for the symmetric left/right anchor pair
-//     (D-07: gear sits top-left of the breathing column, LearnAnchor at top-right);
-// (2) aria-labels `Settings` / `Settings (unavailable during session)` replacing Learn variants (D-18 locked copy);
-// (3) hand-coded inline gear SVG (circle + outer path) replacing the book SVG paths (D-15 zero new deps).
-// D-08: disabled in place during session — aria-disabled="true", no-op click handler, no unmount.
-// D-09: component name = SettingsAnchor (mirrors *Anchor vocabulary from LearnAnchor).
-// Parent MUST provide `position: relative` (same contract as LearnAnchor; AppHeader does).
+// Persistent gear-icon anchor for the Settings page, always visible across idle,
+// lead-in, and running session states (never unmounted). Disabled in place during
+// session (aria-disabled="true", no-op click handler). Mirrors LearnAnchor in
+// structure with two differences: position class `left-0` (gear sits top-left of
+// the breathing column, LearnAnchor at top-right) and a hand-coded inline gear
+// SVG (circle + outer path) instead of the book SVG paths.
+// Parent MUST provide `position: relative` (TopAppBar does).
 
 import type { UiStrings } from '../content/strings'
 

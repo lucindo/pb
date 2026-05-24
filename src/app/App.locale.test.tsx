@@ -60,7 +60,7 @@ describe('App locale switching (Phase 19)', () => {
 
   // -------------------------------------------------------------------------
   // Test 3: switches UI strings + documentElement.lang when LanguagePicker
-  // PT-BR is clicked via SettingsDialog
+  // PT-BR is clicked on the Settings page
   // -------------------------------------------------------------------------
   it('switches UI strings + documentElement.lang when LanguagePicker PT-BR is clicked', async () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
@@ -71,8 +71,6 @@ describe('App locale switching (Phase 19)', () => {
     expect(document.documentElement.lang).toBe('en')
 
     // Navigate to the Settings page via the gear anchor (aria-label = EN 'Settings').
-    // Post Item-D refactor: this routes to AppSettingsPage (full-page surface) instead
-    // of opening a modal SettingsDialog.
     await user.click(screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }))
 
     // Find PT-BR radio button (native endonym — always 'Português (Brasil)' regardless of UI locale)
@@ -120,12 +118,13 @@ describe('App locale switching (Phase 19)', () => {
   // -------------------------------------------------------------------------
   // Test 5: locale picker buttons are disabled while inSessionView
   // -------------------------------------------------------------------------
-  it('locale picker buttons are disabled when SettingsDialog is opened in-session', async () => {
-    // Phase 15 D-08: SettingsDialog auto-closes on inSessionView (App.tsx WR-09 useEffect).
-    // Strategy: open SettingsDialog in idle state, confirm pickers are enabled, then close,
-    // start a session (lead-in), and confirm the SettingsAnchor becomes disabled — which is
-    // the enforceable surface for the in-session lock (the dialog would auto-close even if
-    // somehow opened while inSessionView).
+  it('Settings is unreachable in-session via the gear anchor being disabled', async () => {
+    // The Settings page is gated by `controlsDisabled` in useAppNavigation, and
+    // useAppNavigation also forces appScreen='practice' whenever inSessionView
+    // becomes true (the closeOnSessionView effect). The enforceable surface for
+    // the in-session lock is the SettingsAnchor's disabled state — verify that
+    // pickers are reachable when idle and that the gear anchor becomes disabled
+    // once a session starts.
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     const user = userEvent.setup()
     render(<App />)
@@ -135,14 +134,14 @@ describe('App locale switching (Phase 19)', () => {
       screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }),
     ).toBeInTheDocument()
 
-    // Open SettingsDialog and verify LanguagePicker buttons are ENABLED
+    // Open the Settings page and verify LanguagePicker buttons are ENABLED
     await user.click(screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settings }))
     const enButton = screen.getByRole('radio', { name: 'English' })
     const ptBrButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     expect(enButton).not.toBeDisabled()
     expect(ptBrButton).not.toBeDisabled()
 
-    // Close the dialog
+    // Navigate back to practice
     await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close }))
 
     // Start a session (click Start — onStartClick is async; flush one microtask tick)
@@ -152,7 +151,7 @@ describe('App locale switching (Phase 19)', () => {
     })
 
     // After session start (appPhase = 'lead-in') the SettingsAnchor switches to the disabled
-    // label variant (Phase 15 D-08: disabled={inSessionView}).
+    // label variant (disabled={inSessionView}).
     // The disabled gear anchor MUST be present and the active-label variant MUST be absent.
     expect(
       screen.getByRole('button', { name: UI_STRINGS.en.practice.topBar.settingsDisabled }),
