@@ -58,12 +58,12 @@ export function PracticeToggle({
   onSwitch,
   strings,
 }: PracticeToggleProps): ReactElement {
-  // The muted border bounds the control on every theme — on the dark theme
-  // the bg-soft container fill is identical to surface, so without a border
-  // the switcher dissolves into the card (matches the SESSION MODE fieldset).
+  // The border-soft bound is what distinguishes the switcher container from
+  // bg-soft on the dark theme (where bg-soft === surface — see
+  // [[dark-theme-token-collapse]]).
   const containerClass = [
-    'flex rounded-full border border-[var(--color-breathing-muted)] bg-[var(--color-breathing-bg-soft)] p-1',
-    disabled ? 'opacity-50 cursor-not-allowed' : '',
+    'flex rounded-full border border-[var(--color-border-soft)] bg-[var(--color-breathing-bg-soft)] p-1',
+    disabled ? 'opacity-[0.55] cursor-not-allowed' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -72,22 +72,16 @@ export function PracticeToggle({
     <div role="group" aria-label={strings.toggleLabel} className={containerClass}>
       {PRACTICE_IDS.map((id) => {
         const isActive = active === id
-        // The active pill carries an accent border (the codebase's raised-
-        // interactive convention — stepper buttons, the mode-toggle track);
-        // inactive pills keep a transparent border so there is no layout
-        // shift between states. On the dark theme this accent outline is
-        // what distinguishes the selected pill, since its surface fill
-        // matches the bg-soft container.
-        // flex + items-center + justify-center + gap-1 make the button itself a
-        // flex container so the Treatment B glyph and the label <span> sit inline
-        // on one baseline. flex-1 controls the pill's WIDTH in the row (grid
-        // sizing) — flex enables the button's own inline layout independently.
+        // Active pill = accent fill + on-accent text (spike 010 verbatim,
+        // index.html L544-552: bg accent, color onAccent, weight 600/500, 14px,
+        // px-3 py-2, no pill border, no shadow). flex + items-center +
+        // justify-center + gap-1 keep the optional glyph + label inline.
         const pillClass = [
-          'flex-1 flex items-center justify-center gap-1 rounded-full min-h-[44px] border px-4 py-2 text-sm',
+          'flex-1 flex items-center justify-center gap-1 rounded-full px-3 py-2 text-sm',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2',
           isActive
-            ? 'border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] shadow font-semibold text-[var(--color-breathing-accent-strong)]'
-            : 'border-transparent font-normal text-[var(--color-breathing-muted)]',
+            ? 'bg-[var(--color-breathing-accent)] font-semibold text-[var(--color-breathing-on-accent)]'
+            : 'font-medium text-[var(--color-breathing-text-soft)]',
         ].join(' ')
 
         return (
