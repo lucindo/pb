@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react'
+import type { ReactElement } from 'react'
 
 import { InstallBanner } from '../components/InstallBanner'
 import { LearnAnchor } from '../components/LearnAnchor'
@@ -6,63 +6,22 @@ import { PageShell } from '../components/primitives/PageShell'
 import { TopAppBar } from '../components/primitives/TopAppBar'
 import { PracticeToggle } from '../components/PracticeToggle'
 import { SettingsAnchor } from '../components/SettingsAnchor'
-import type { PracticeId } from '../storage'
 import type { AppViewModel } from './appViewModel'
 import { EndSessionDialogsView } from './EndSessionDialogsView'
 import { PracticeControlsView } from './PracticeControlsView'
 import { PracticeSessionView } from './PracticeSessionView'
 import { PracticeSettingsView } from './PracticeSettingsView'
 
-interface PracticeWorkspaceProps {
-  compact: boolean
-  activePractice: PracticeId
-  controlsDisabled: boolean
-  showSwitcherIcons: boolean
-  onSwitchPractice(this: void, next: PracticeId): void
-  practiceToggleStrings: AppViewModel['practiceToggleStrings']
-  medicalAdviceLine: string
-  children: ReactNode
-}
-
-function PracticeWorkspace({
-  compact,
-  activePractice,
-  controlsDisabled,
-  showSwitcherIcons,
-  onSwitchPractice,
-  practiceToggleStrings,
-  medicalAdviceLine,
-  children,
-}: PracticeWorkspaceProps): ReactElement {
-  return (
-    <div className={`${compact ? 'mt-6' : 'mt-10'} w-full rounded-[2rem] border border-[var(--color-breathing-surface)]/80 bg-[var(--color-breathing-surface)]/70 p-5 shadow-[var(--shadow-breathing-card)] backdrop-blur sm:p-6`}>
-      <div className="mb-5">
-        <PracticeToggle
-          active={activePractice}
-          disabled={controlsDisabled}
-          showIcons={showSwitcherIcons}
-          onSwitch={onSwitchPractice}
-          strings={practiceToggleStrings}
-        />
-      </div>
-
-      {children}
-
-      <p className="mt-4 text-sm leading-6 text-[var(--color-breathing-muted)]">
-        {medicalAdviceLine}
-      </p>
-    </div>
-  )
-}
-
 interface PracticeScreenProps {
   vm: AppViewModel
 }
 
-/** The practice surface — the appScreen='practice' route. Renders the
- *  practice workspace, the install banner (this surface only), and the
- *  end-session confirmation modals. Learn/Settings are no longer rendered
- *  here as modals — they're sibling pages routed by ScreenRouter. */
+/** The practice surface — the appScreen='practice' route. Anchoring per
+ *  spike 010 PracticeChrome: top group (top bar → switcher → orb → variable
+ *  region) anchors to viewport top; flex-1 spacer absorbs remaining vertical
+ *  space; bottom group (controls → disclaimer) anchors to viewport bottom
+ *  with a 16 px min-gap above Start. The orb's y-position is constant
+ *  across practice × phase combinations. */
 export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   return (
     <PageShell
@@ -98,19 +57,29 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
           />
         }
       />
-      <PracticeWorkspace
-        compact={vm.workspaceCompact}
-        activePractice={vm.activePractice}
-        controlsDisabled={vm.controlsDisabled}
-        showSwitcherIcons={vm.featureFlags.switcherIcon}
-        onSwitchPractice={vm.onSwitchPractice}
-        practiceToggleStrings={vm.practiceToggleStrings}
-        medicalAdviceLine={vm.lockedCopy.medicalAdviceLine}
-      >
+      <div className="w-full px-5 pb-4 sm:px-8">
+        <PracticeToggle
+          active={vm.activePractice}
+          disabled={vm.controlsDisabled}
+          showIcons={vm.featureFlags.switcherIcon}
+          onSwitch={vm.onSwitchPractice}
+          strings={vm.practiceToggleStrings}
+        />
+      </div>
+      <div className="flex w-full flex-col items-center px-5 pt-[18px] sm:px-8 sm:pt-7">
         <PracticeSessionView session={vm.practiceSession} />
         <PracticeSettingsView settings={vm.practiceSettings} />
+      </div>
+      <div className="flex-1" />
+      <div className="w-full px-5 pt-4 sm:px-8">
         <PracticeControlsView controls={vm.practiceControls} audio={vm.audio} />
-      </PracticeWorkspace>
+      </div>
+      <p
+        className="w-full whitespace-nowrap px-5 pt-3 text-center text-[11px] font-normal leading-[1.4] tracking-[0.02em] text-[var(--color-breathing-muted)] sm:px-8"
+        style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+      >
+        {vm.lockedCopy.medicalAdviceLine}
+      </p>
     </PageShell>
   )
 }
