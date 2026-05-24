@@ -39,10 +39,10 @@ function SectionCard({ children }: { children: ReactNode }): ReactElement {
 }
 
 const LINK_CLASSES =
-  'inline-flex min-h-[44px] items-center text-base font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2'
+  'inline-flex min-h-[44px] items-center text-sm font-medium text-[var(--color-breathing-accent)] hover:text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2'
 
 const BODY_CLASSES =
-  'text-base leading-6 text-[var(--color-breathing-text-soft)]'
+  'text-sm leading-relaxed text-[var(--color-breathing-text-soft)]'
 
 export function LearnPanel({
   learnContent,
