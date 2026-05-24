@@ -91,7 +91,7 @@ State below is updated after every step transition. The state file commits with 
 | J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | done (commit `f54aa37`) |
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. | **skipped — false-positive item** (the orb-outer-ring-idle-only memory was stale from a prior implementation that got `git reset` away; the deviation never existed in the current code. J6's OrbIdle already hard-sets `showRings={false}`; OrbBody only renders on Running. Memory deleted; no test added.) |
 | J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | done (commit `5d6439b`) |
-| J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | pending |
+| J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | **implemented — awaiting operator approval** (commit `7a2884d`) |
 | J10 | Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running). | pending |
 | J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | pending |
 | J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | pending |
@@ -106,61 +106,86 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J9 — Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button
-**Step:** 1 (awaiting propose; J8 approved + committed)
+**Item:** J10 — Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running).
+**Step:** 1 (awaiting propose; J9 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh:
+When you arrive here fresh after J9's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "Settings sheet", "bottom sheet", "modal", "stepper", "segmented", "visual picker", "toggle" (the practice-settings sheet sections — line 109-116, 277-282, etc.)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` — locate the Settings sheet implementation (search for `SettingsSheet`, `PracticeSettings`, or similar; the spike showed it as a bottom sheet with internal scroll, capped at 58% of phone height)
-5. Read current code:
-   - `src/components/BottomSheet.tsx` or similar (if exists)
-   - existing modal patterns (likely `dialog.modal-fade` in theme.css references it)
-   - existing primitive controls: `SettingsStepper`, `SegmentedControl`, `TimbrePicker` / `CuePicker`, `BooleanToggle` (whatever the real-app primitives are)
-6. Apply the propose-step checklist. **J9 is JUST the sheet/modal primitive — the chrome/container.** The form-rendering inside (controls per practice) happens at J10. J9 should accept children as a slot and handle the responsive behavior (sheet on mobile / modal on desktop), backdrop, dismiss interactions, open/close animation, focus trap. Build-only like J8 — don't wire into PracticeScreen yet.
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "extend duration", "increase", "in-session", "Adjust" (the in-session extend-duration affordance discussion)
+4. Read current code:
+   - `src/app/PracticeSettingsView.tsx` — currently renders `ResonantSettingsForm` / `StretchSettingsForm` / `NaviKriyaSettingsForm` inline. J10 replaces this with the SetupCard (Idle) and moves form-rendering into the SettingsSheet.
+   - `src/components/ResonantSettingsForm.tsx` (and Stretch/Navi variants) — verify the current "Increase button stays enabled during Running" affordance (likely via `disabled` prop only applied to some controls; the increase-duration button is the exception)
+   - `src/app/appViewModel.ts` → `practiceSettings` → `onExtendDuration` callback (J3's plan mentioned it; verify it's still wired post-J6)
+   - `src/content/strings.ts` — string keys for the new card aria-labels + close button + settings titles per practice
+5. Apply the propose-step checklist. **This is the FIRST wiring item in the J8-J10 trilogy. Visual landing finally happens here**. Critical scope concerns:
+   - Item-list note: "MUST preserve in-session extend-duration affordance"
+   - Atomic swap: the existing inline forms come out; SetupCard goes in their slot on Idle; SettingsSheet wraps the same form components but as a modal/sheet
+   - Sheet open/close state lives where? Probably `useState` inside PracticeScreen or a small hook; not in viewModel (transient UI state, not domain state)
+   - Per-practice formatter: turn current settings into SetupCardItem[] for the card. Pure function next to SetupCard or inside the screen module.
+   - **MASSIVE risk surface**: this is the first UI feature change in the spike loop that affects user behavior. Forms are no longer always-visible; tapping the card now opens a sheet to edit. Verify all existing test paths still work (App.locale.test.tsx, App.dialog.test.tsx).
 
-### Archived — Implementation summary (Item J8)
+### Archived — Implementation summary (Item J9)
 
-Created `src/components/SetupCard.tsx` (60 LOC) + `src/components/SetupCard.test.tsx` (90 LOC). Pure presentation primitive; no wiring.
+Created `src/components/SettingsSheet.tsx` (90 LOC) + `src/components/SettingsSheet.test.tsx` (100 LOC). Pure responsive presentation primitive; no wiring.
 
-**Spike values transcribed verbatim from index.html lines 1188-1244:**
-- Card chrome: rounded-3xl, `border: 1px solid var(--color-border-soft)`, `background: var(--color-breathing-surface)`, `padding: 14px 18px`, `color: var(--color-breathing-text)`, `gap: 12` (via Tailwind `gap-3`)
-- Grid: `gridTemplateColumns: repeat(3, minmax(0, 1fr))`, `gap: '10px 18px'`, `flex: 1`
-- SettingCell label: `fontSize: 10`, `fontWeight: 500`, `letterSpacing: '0.16em'`, `textTransform: uppercase`, `color: var(--color-breathing-muted)`
-- SettingCell value: `fontSize: 14`, `fontWeight: 600`, `color: var(--color-breathing-text)`, `marginTop: 2`, `fontVariantNumeric: tabular-nums`
-- Chevron: 18×18 outer, viewBox 24×24, stroke-width 2, polyline `9 6 15 12 9 18`, `color: var(--color-breathing-text-soft)`, aria-hidden
+**Architecture:**
+- Native `<dialog>` via the existing `useModalDialog` hook (focus trap, Esc handling, backdrop click delegated to the codebase's established pattern)
+- Responsive positioning purely via Tailwind `sm:` breakpoint (640 px) — no JS media query
+- Mobile (`< sm`): bottom-anchored full-width sheet, `m-0 mt-auto mb-0 max-h-[58vh] w-full rounded-t-3xl shadow-up p-5/5/7 + drag handle`
+- Desktop (`≥ sm`): auto-centered modal, `m-auto max-h-[82vh] w-[88%] max-w-[460px] rounded-3xl shadow-down-large p-6/6/7, no drag handle (sm:hidden)`
+
+**Spike values transcribed verbatim from index.html lines 1603-1645:**
+- Mobile shadow: `0 -10px 30px rgba(0,0,0,0.10)`
+- Desktop shadow: `0 30px 80px rgba(0,0,0,0.35)`
+- Drag handle: 44×4, rounded-full, `var(--color-border-soft)` bg, `margin: 0 auto 16px`
+- Title: 22 px, weight 600, letter-spacing -0.01em, `var(--color-breathing-text)`
+- Close button: transparent bg, 1 px `var(--color-border-soft)` border, `var(--color-breathing-text-soft)` color, rounded-full, px-3 py-1.5, 12 px, weight 500
+- Subtitle: uppercase, 11 px, letter-spacing 0.12em, `var(--color-breathing-muted)`, mb-2
+- `overscroll-behavior: contain` on the dialog so swipes inside the sheet don't propagate to the page
+- `modal-fade` class for 200 ms cross-fade (reduced-motion override already wired in theme.css)
+- No slide-up animation — flagged as polish, not spike-locked structure
 
 **Prop shape:**
-- `items: readonly SetupCardItem[]` (each `{ label: string; value: string }` — pre-formatted, pre-localized strings)
-- `onTap: () => void`
-- `ariaLabel: string` (caller supplies localized label like "Edit HRV settings")
-- `disabled?: boolean` (defaults false; applies native disabled + `disabled:opacity-50`)
+- `open: boolean`
+- `onClose: () => void`
+- `title: string` (required)
+- `subtitle?: string` (optional second-line text, used for practice name in J10)
+- `closeLabel: string` (i18n'd close button text; not hardcoded "Close")
+- `children: ReactNode` (sheet body slot — J10 fills with the form components)
 
 **Architecture decisions:**
-- SettingCell + ChevronRight are local helper functions inside SetupCard.tsx — not exported. SetupCard is the only consumer, premature export avoided.
-- Chevron inlined as SVG instead of added to `src/components/icons/` — matches the spike's inline approach; refactoring to a shared icon component is out of scope.
-- Caller responsible for: data derivation (current settings → items), i18n (label/value strings), onTap behavior. SetupCard is pure presentation.
+- Uses `useId()` to generate `aria-labelledby` linkage to the title `<h2>` — clean React-idiomatic pattern
+- Inlines the dialog setup (mirroring EndSessionDialog) rather than extending ModalDialogShell — sheet has specific responsive DOM that the generic shell doesn't capture
+- All animation handled by the existing `modal-fade` CSS class — no new CSS rules added
+- Backdrop overrides via `backdrop:bg-[var(--color-modal-backdrop)]` (already a project pattern)
 
-**6 behavioral tests** (no class-string assertions per `[[no-design-locking]]`):
-- Button role + aria-label
-- 3-item (HRV/Navi) label + value rendering
-- 6-item (Stretch) — all 6 visible (grid wraps to 2 rows naturally)
-- Click fires onTap
-- `disabled=true` → button disabled + onTap not fired
-- Chevron SVG (aria-hidden) present in DOM
+**9 behavioral tests** (no class-string assertions per `[[no-design-locking]]`):
+- Dialog opens (`.open === true`) when `open=true`
+- Dialog closed (`.open === false`) when `open=false`
+- Title rendered + `aria-labelledby` correctly linked to `<h2>` id
+- Subtitle conditional render (provided → visible; omitted → not in DOM)
+- Children slot renders custom content
+- Close button uses supplied `closeLabel` + fires `onClose` on click
+- Backdrop click (`target === dialog`) → fires `onClose`
+- Esc (cancel event) → fires `onClose` via useModalDialog's wired handler
 
-**No wiring.** SetupCard is not rendered anywhere in the app yet. J9 builds the Settings sheet primitive; J10 wires SetupCard tap → Settings sheet flow and atomically swaps out the existing per-practice forms.
+**No wiring.** SettingsSheet is not rendered anywhere in the app yet. J10 will:
+1. Add per-practice formatter to derive `SetupCardItem[]` from current settings
+2. Replace `PracticeSettingsView`'s inline form rendering with `<SetupCard>` on Idle
+3. Add sheet open state (likely `useState` in PracticeScreen)
+4. Mount `<SettingsSheet>` with the existing per-practice form components inside the children slot
+5. Preserve the in-session extend-duration affordance (Increase button on Duration stepper stays enabled during Running)
 
 **Verification:**
 - `tsc --noEmit -p tsconfig.app.json`: clean
 - `npm run lint`: clean
-- Full suite: 103 files / 1133 tests pass (was 1127; net +6 = the 6 new SetupCard tests)
-- `npm run build`: clean; PWA precache 19 / 619.06 KiB
+- Full suite: 104 files / 1142 tests pass (was 1133; net +9 = the 9 new SettingsSheet tests)
+- `npm run build`: clean; PWA precache 19 / 620.58 KiB
 
-**No manual UAT.** Visual landing is J10's job — SetupCard isn't rendered in the app surface yet. Operator approval at J8 is code-review of the file + test coverage.
+**No manual UAT.** Visual landing is J10's job — SettingsSheet isn't rendered in the app surface yet. Operator approval at J9 is code-review of the file + test coverage.
 
-**Commit:** `5d6439b`
+**Commit:** `7a2884d`
 
 ### Archived — J7 skipped (false-positive item from stale memory)
 
@@ -304,6 +329,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J6 | `f54aa37` | Idle-orb rendering + `orbIdle=still\|ambient` query flag (default `still` per spike line 259). Closed a real gap: pre-J6, Idle and Complete rendered NO orb at all (OrbShape returned null for null-frame). New OrbIdle branch in dispatcher; new useAmbientScale hook (rAF clock, 5500 ms phase per spike line 569, easeInOutSine). Hook avoids React setState-in-effect anti-pattern via return-side short-circuit (`return animated ? scale : MID_SCALE`). showRings={false} hard-set on the idle path. Threaded through PracticeScreen → PracticeSessionView → {BreathingSessionSurface, NaviKriyaSessionSurface}; NKShape unchanged (no Idle inside count branch). 1120 → 1127 tests (+7: 4 orbIdle parser + 3 useAmbientScale). 9 files changed (190/-6); +useAmbientScale hook + test files. |
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
+| J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
 
 ---
 
