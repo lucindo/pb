@@ -26,9 +26,11 @@ export function SettingsSegmentedRow<T extends string>({
   return (
     <fieldset
       aria-label={ariaLabel}
-      className="flex flex-col gap-2 border-t border-[var(--color-border-soft)] py-3"
+      className="border-t border-[var(--color-border-soft)] py-3"
     >
-      <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
+      </div>
       <SegmentedControl<T>
         options={options}
         value={value}
