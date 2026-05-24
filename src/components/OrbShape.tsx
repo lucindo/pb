@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
 import type { BreathingShapeVariant, OrbIdleBehavior } from '../featureFlags'
@@ -31,6 +33,11 @@ export interface OrbShapeProps {
   // 'ambient'). showRings is hard-set to false on the idle path per spike
   // 010 IdleScreen line 1979 + CompleteScreen line 2026.
   idleMode?: OrbIdleBehavior | null
+  // Rendered inside the centre disc — currently only consumed by the nkPhase
+  // branch, where NKShape passes the live OM count so it inherits the disc's
+  // on-accent text color (instead of overlaying as a sibling with default
+  // body color, which read as washed-out grey on Mono Zen).
+  children?: ReactNode
 }
 
 // V1 3-layer halo geometry — transcribed verbatim from spike 010/index.html
@@ -66,9 +73,14 @@ export function OrbShape({
   showRings = true,
   variant = 'orb-halo',
   idleMode,
+  children,
 }: OrbShapeProps) {
   if (nkPhase != null) {
-    return <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant} />
+    return (
+      <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant}>
+        {children}
+      </OrbLeadIn>
+    )
   }
   if (leadInDigit != null) {
     return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} />
@@ -156,11 +168,13 @@ function OrbLeadIn({
   strings,
   nkPhase,
   variant,
+  children,
 }: {
   digit: 1 | 2 | 3 | null
   strings: UiStrings['practice']['breathing']
   nkPhase?: 'front' | 'back'
   variant: BreathingShapeVariant
+  children?: ReactNode
 }) {
   const labelProps =
     digit != null ? { role: 'img' as const, 'aria-label': strings.leadInAriaLabel(digit) } : {}
@@ -186,6 +200,7 @@ function OrbLeadIn({
           {digit}
         </span>
       )}
+      {children}
     </OrbContainer>
   )
 }

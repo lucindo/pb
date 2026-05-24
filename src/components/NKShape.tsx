@@ -40,18 +40,17 @@ export function NKShape({
   // via the shape component's own locked scale, but the count still updates.
   const pulseClass = reducedMotion ? '' : 'nk-om-pulse'
 
-  // D-02: live count number centered inside the shape — replaces the CueGlyph slot.
+  // D-02: live count number rendered inside the orb's centre disc.
   // Phase 31: count === 0 is the post-marker lead-in window — the user performs
   // the neck-lock head movement before OM 1. "0" is shown (not blank) so that
   // pause reads as a deliberate beat of the practice.
   // text-7xl sm:text-8xl font-semibold tracking-tight per UI-SPEC "NK Shape count-in-shape".
-  // J4: count inherits currentColor from OrbShape's centre disc, which sets
+  // Color: inherits currentColor from OrbContainer's centre disc, which sets
   // color: var(--color-breathing-on-accent). The disc bg crossfades between
-  // accent (front) and accent-strong (back); on-accent reads legibly against
-  // both (the accent-strong/on-accent pairing is contrast-tested).
+  // accent (front) and accent-strong (back); on-accent reads legibly against both.
   const countContent = (
     <span
-      className={`relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl${isPaused ? ' opacity-50' : ''}`}
+      className={`text-7xl font-semibold tracking-tight sm:text-8xl${isPaused ? ' opacity-50' : ''}`}
     >
       {String(count)}
     </span>
@@ -59,58 +58,33 @@ export function NKShape({
 
   // D-02: aria-label announces the current OM count and phase for screen readers.
   // WR-01: the phase label is the REAL NK phase (Front/Back) sourced from
-  // nkReadoutStrings, not strings.inhale — a blind user must hear the practice
-  // move from Front to Back.
-  // The aria-label format is locked: "Navi Kriya session: OM ${count}, phase ${phaseLabel}"
+  // nkReadoutStrings — a blind user must hear the practice move Front → Back.
   const phaseLabel = phase === 'back' ? nkReadoutStrings.back : nkReadoutStrings.front
   const ariaLabel = `Navi Kriya session: OM ${String(count)}, phase ${phaseLabel}`
 
-  // The NKShape renders OrbShape locked at MID_SCALE.
+  // Architecture: OrbShape's nkPhase branch renders the OrbLeadIn structure
+  // (MID_SCALE host + halos + centre disc + outer ring, no inner ring) and
+  // accepts children that render INSIDE the centre disc. The count slots in
+  // there so it inherits the disc's on-accent text color (pre-fix it was
+  // overlaid as a sibling and inherited the body text color → washed grey).
   //
-  // ARCHITECTURE: OrbShape exposes an `nkPhase` prop that renders its LeadIn
-  // structure (MID_SCALE host + both gradient layers + the outer reference ring)
-  // WITHOUT a countdown numeral. The inner ring is dropped — it is HRV's
-  // exhale-end cue and has no meaning here. The nkPhase value sets data-phase
-  // so theme.css crossfades to the Out gradient on Back — the same In/Out
-  // treatment as the live breathing body. We then overlay our own live OM count
-  // via a wrapper div.
-  //
-  // This reuses the exact CSS/DOM structure from OrbShape's LeadIn (already
-  // tested and known good) while supplying our own count content.
-  //
-  // Phase 31 fix: the earlier approach passed leadInDigit={1} and relied on
-  // z-index layering to hide the shape's own "1". That "1" leaked from behind
-  // any count other than 1 (e.g. a "2" left the "1" stroke visible). nkPhase
-  // suppresses the numeral at the source, so nothing is left behind.
-
+  // The outer wrapper carries the NK-specific aria-label/role and the per-OM
+  // pulse animation class. OrbContainer provides the size + my-12 margin, so
+  // this wrapper stays unsized.
   return (
     <div
-      data-variant="orb"
-      // my-12 mirrors the vertical margin OrbShape/OrbLeadIn carry — without it
-      // the shape box collapses and the StatusPanel rides up over the shape
-      // (visible as a jump when the countdown hands off to the running session).
-      className={`relative mx-auto my-12 grid place-items-center${pulseClass ? ` ${pulseClass}` : ''}`}
-      style={{
-        width: 'var(--orb-size)',
-        height: 'var(--orb-size)',
-      }}
+      className={pulseClass}
       aria-label={ariaLabel}
       role="img"
     >
-      {/* Render OrbShape locked at MID_SCALE via nkPhase — no numeral,
-          In/Out gradient driven by the Front/Back phase. The shape renders a
-          decorative subtree (no role/aria-label) and the wrapper is aria-hidden,
-          since the parent div carries the NK-specific aria-label. */}
-      <div aria-hidden="true" className="absolute inset-0">
-        <OrbShape
-          frame={null}
-          nkPhase={phase}
-          strings={strings}
-          variant={variant}
-        />
-      </div>
-      {/* D-02: count number overlaid on top of the shape */}
-      {countContent}
+      <OrbShape
+        frame={null}
+        nkPhase={phase}
+        strings={strings}
+        variant={variant}
+      >
+        {countContent}
+      </OrbShape>
     </div>
   )
 }
