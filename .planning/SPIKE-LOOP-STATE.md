@@ -88,7 +88,7 @@ State below is updated after every step transition. The state file commits with 
 | J2 | Font system — Inter Variable + weight loading per spike (ultralight 200/300 for breath labels, semibold 600 for headings) | done (commit `0decf6a`) |
 | J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | done (commit `637ad75`) |
 | J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | done (commit `a742c0b`) |
-| J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | **implemented — awaiting operator approval** (commit `7366f1b`) |
+| J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | done (commit `7366f1b`) |
 | J6 | Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator. | pending |
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. Resolves [[orb-outer-ring-idle-only]] deviation. | pending |
 | J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | pending |
@@ -108,9 +108,9 @@ State below is updated after every step transition. The state file commits with 
 ## Current focus
 
 **Item:** J6 — Orb idle behavior (still vs ambient) — **query-string param**, NOT VITE_*. Default TBD by operator.
-**Step:** 1 (awaiting propose; J5 implemented + committed, awaiting operator approval)
+**Step:** 1 (awaiting propose; J5 approved + committed)
 
-When you arrive here fresh after J5's approval:
+When you arrive here fresh:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
 3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "ambient breath", "ambient", "still", "idle behaviour", "still vs ambient" (line 259 mentions "**still** with empty centre disc; harness has an `ambient" — find the full discussion of the toggle)
