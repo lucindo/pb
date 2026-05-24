@@ -241,7 +241,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         bpmLabel: 'BPM',
         ratioLabel: 'Ratio',
         durationLabel: 'Duration',
-        openEndedLabel: 'Open-ended',
+        openEndedLabel: '∞',
         bpmUnit: 'BPM',
         minutesUnit: 'min',
         stepper: {
@@ -259,7 +259,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdInitialLabel: 'Warm-up',
         holdTargetLabel: 'Settle',
         rampDurationLabel: 'Stretch',
-        holdOpenEndedLabel: 'Open-ended',
+        holdOpenEndedLabel: '∞',
       },
       nkControls: {
         roundsLabel: 'Rounds',
@@ -411,7 +411,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         bpmLabel: 'RPM',
         ratioLabel: 'Proporção',
         durationLabel: 'Duração',
-        openEndedLabel: 'Sem limite',
+        openEndedLabel: '∞',
         bpmUnit: 'RPM',
         minutesUnit: 'min',
         stepper: {
@@ -429,7 +429,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdInitialLabel: 'Aquecimento',
         holdTargetLabel: 'Estabilizar',
         rampDurationLabel: 'Progressão',
-        holdOpenEndedLabel: 'Sem limite',
+        holdOpenEndedLabel: '∞',
       },
       nkControls: {
         roundsLabel: 'Rodadas',

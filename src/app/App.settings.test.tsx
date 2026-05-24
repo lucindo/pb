@@ -51,7 +51,7 @@ describe('main screen settings controls', () => {
     expect(within(duration).getByText('60 min')).toBeVisible()
 
     await user.click(increase)
-    expect(within(duration).getByText('Open-ended')).toBeVisible()
+    expect(within(duration).getByText('∞')).toBeVisible()
   })
 
   it('starts a running session from the primary idle action', async () => {

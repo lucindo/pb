@@ -137,7 +137,7 @@ describe('StretchSettingsForm', () => {
       stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, coolDownMinutes: 'open-ended' },
     })
     const duration = screen.getByRole('group', { name: 'Duration' })
-    expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
+    expect(within(duration).getByText('∞')).toBeInTheDocument()
   })
 
   // UAT GAP 1: Duration readout shows a rounded whole-minute value (not an unrounded float)
@@ -163,7 +163,7 @@ describe('StretchSettingsForm', () => {
       stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, coolDownMinutes: 'open-ended' },
     })
     const duration = screen.getByRole('group', { name: 'Duration' })
-    expect(within(duration).getByText('Open-ended')).toBeInTheDocument()
+    expect(within(duration).getByText('∞')).toBeInTheDocument()
     expect(within(duration).queryByText(/\d+\.\d+ min/)).not.toBeInTheDocument()
   })
 

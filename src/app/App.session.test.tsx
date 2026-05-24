@@ -109,7 +109,7 @@ describe('running duration edits and completion', () => {
 
     expect(within(duration).getByText('60 min')).toBeVisible()
     expect(increase).toBeDisabled()
-    expect(within(duration).queryByText('Open-ended')).not.toBeInTheDocument()
+    expect(within(duration).queryByText('∞')).not.toBeInTheDocument()
   })
 
   it('does not allow running duration edits for open-ended sessions', async () => {
