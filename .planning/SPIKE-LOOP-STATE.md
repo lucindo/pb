@@ -68,6 +68,20 @@ Operator says "next" or "approve" → mark item done, update Current Focus to th
 
 ---
 
+## Orphan cleanup queue (for J17 audit to pick up)
+
+Items deferred during the loop that J17's final-audit step should sweep up. Each line: WHAT (the orphan) · WHEN (which item left it) · WHY (operator decision or intentional deferral).
+
+- `vm.install.showBanner` viewmodel field — J13 deviation removed the practice-screen install banner; field is no longer consumed (PracticeScreen.tsx) but still derived in `appViewModel.ts:153`. Cleanup: delete the field + its derivation + the appViewModel.test.ts `showBanner` assertions.
+- `vm.install.onDismiss` viewmodel field + wiring path — same J13 deviation; no remaining consumer.
+- `installDismissed` storage field + persistence read/write — same J13 deviation; nothing writes it anymore (banner's dismiss button is gone). Touches sealed storage layer, so a domain task to sequence properly.
+- LOCKED_COPY entries `install.bannerText`, `install.regionLabel`, `install.dismiss` (EN + PT-BR) — same J13 deviation; no consumer after banner removal. Note: `install.installButton`, `install.iosStepsButton`, `install.settingsLabel`, `install.iosStep1/2/3` STAY (Settings still consumes them).
+- `SettingsInstallSection` chrome (still uses pre-J12 accent + accent-strong + shadow-sm pairing) — flagged during J12 propose as out-of-scope; J17 should decide whether to re-tokenize to the Mono Zen quieter pairing (border-soft + text-soft) for consistency with MuteToggle.
+
+J17's propose step must read this section and create a per-orphan cleanup plan before declaring the loop done.
+
+---
+
 ## Workflow per item (same 4-step loop as refactor)
 
 1. **Propose** — Section A + B + Goal/Scope/Risk/Verification/Commit message. Wait.
@@ -94,8 +108,8 @@ State below is updated after every step transition. The state file commits with 
 | J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | **implemented — awaiting operator approval** (commit `7a2884d`) |
 | J10 | Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running). | done (commits `2bf2834` + `d88f3d7` UAT fix) |
 | J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | done — primitives only, no wiring (commit `748ce31`) |
-| J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | **implemented — awaiting operator approval** (commit `6183e1e`) |
-| J13 | InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only | pending |
+| J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | done (commit `6183e1e`) |
+| J13 | InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only | **DEVIATION** — banner removed entirely; install kept only on App Settings (commit `117310b`) |
 | J14 | App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time) | pending |
 | J15 | Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings | pending |
 | J16 | Locked-copy verification — disclaimer / install banner / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings | pending |
@@ -106,22 +120,21 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J13 — InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only
-**Step:** 1 (awaiting propose; J12 implemented + committed, awaiting operator approval)
+**Item:** J14 — App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time)
+**Step:** 1 (awaiting propose; J13 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh after J12's approval:
+When you arrive here fresh after J13's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "InstallBanner", "install", "V3", "inline card" (fourteenth pass per the session-start protocol hint)
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "App Settings", "Appearance / Language / Audio / About", "App-wide chrome only" (sixth pass + seventh pass)
 4. Read current code:
-   - `src/components/InstallBanner.tsx` — current install affordance
-   - `src/components/SetupCard.tsx` — J8's primitive that V3 reuses
-   - `src/app/PracticeScreen.tsx` — where InstallBanner mounts (currently in `<PageShell overlays={...}>`)
+   - `src/components/SettingsPanelBody.tsx` — current section structure (Theme + Cue + Timbre + Language + Install in a flat grid)
+   - `src/app/AppSettingsPage.tsx` or wherever it mounts — page chrome
 5. Apply the propose-step checklist. Scope:
-   - V3 = inline card variant that reuses the SetupCard chrome (rounded-3xl + border-soft + breathing-surface + chevron-style affordance)
-   - Mobile + idle only (current banner is also mobile + idle, but rendered as an overlay/dismissible banner; V3 lands it inline above the orb or near the SetupCard, per spike layout)
-   - iOS vs canPromptInstall paths preserved (no behavior change)
-   - Verify spike line 645 + 679 ("Inline card with chevron... reuses the locked V1 SetupCard pattern")
+   - Restructure flat grid into 4 sections: Appearance (Theme), Language (Language picker), Audio (Cue style + Timbre + Install? — verify), About (version + GitHub link?)
+   - Verify what's already grouped vs flat
+   - Section headings: spike uses quiet uppercase tracked headers (verify exact style)
+   - Install affordance probably belongs in About or stays in its current spot — operator OQ
 
 ### Archived — Implementation summary (Item J10)
 
@@ -403,6 +416,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 | J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
+| J13 | `117310b` | **DEVIATION from spike 010 fourteenth pass (V3 inline card).** Operator decision: don't surface install on the practice screen at all — App Settings already exposes install via `SettingsInstallSection` (iOS expand + Android install, existing locked copy, `installable && !isStandalone` gate, `inSessionView` disable). DELETED: `src/components/InstallBanner.tsx` (~100 LOC) + `src/components/InstallBanner.test.tsx` (6 behavioral tests). EDIT: `src/app/PracticeScreen.tsx` — dropped the InstallBanner import + `{vm.install.showBanner && <InstallBanner .../>}` mount from PageShell overlays (now just `<EndSessionDialogsView />`). Orphans deferred to J17 audit queue (documented in this state file's new "Orphan cleanup queue" section): `vm.install.showBanner` + `onDismiss` viewmodel fields; `installDismissed` storage field; LOCKED_COPY `install.bannerText`/`regionLabel`/`dismiss` entries. 1165 → 1158 tests (-7). PWA precache 623.66 KiB (-2.16). 3 files changed (1/-207). |
 | J12 | `6183e1e` | MuteToggle chrome re-tokenized to Mono Zen quieter pairing. Spike 010 MuteButton (index.html lines 455-486) verbatim: `border-[var(--color-breathing-accent)]` → `border-[var(--color-border-soft)]`; `text-[var(--color-breathing-accent-strong)]` → `text-[var(--color-breathing-text-soft)]`; drop `shadow-sm` per operator OQ-1 (spike's flat treatment). Preserved: 44px hit area (`size-11 min-h-11 min-w-11`), `bg-[var(--color-breathing-surface)]`, hover/active `bg-[var(--color-breathing-bg-soft)]`, focus ring on accent for keyboard visibility, disabled cursor + 45% opacity. SVG icons inherit text-soft via `currentColor`. Stale "mirrors SettingsStepper:42-50 verbatim" header comment updated to explain spike-driven chrome rationale. Other icon-button chrome (SettingsStepper / SegmentedControl) keeps accent treatment — J17 audit concern. No tests changed (MuteToggle.test.tsx is fully behavioral — `aria-pressed`, accessible names, disabled state, SVG element counts; zero `toHaveClass`). 1 file changed (6/-5). PWA precache 625.82 KiB (+0.14 KiB, negligible). |
 | J11 | `748ce31` | FeedbackTime + FeedbackCount visual primitives. Scope: primitives only (operator OQ-1), no wiring. NEW: `src/components/FeedbackTime.tsx` (~50 LOC) — HRV time-based readout: big primary number above uppercase secondary caption. NEW: `src/components/FeedbackCount.tsx` (~60 LOC) — Stretch + Navi count-based readout: big number baseline-aligned with mid suffix above uppercase context. Both carry role="status" + aria-live="polite" + caller-supplied ariaLabel; both accept pre-formatted localized strings (no in-component formatting). Spike values verbatim from index.html lines 1060-1121: FeedbackTime mt-28, primary 28/500/0.04em/text/tabular-nums, secondary 12/500/0.16em/muted/uppercase mt-6; FeedbackCount mt-22, baseline row gap-2 tabular-nums, big 36/600/-0.01em/text, mid 16/500/text-soft (spike line 1107 — slightly stronger than muted), small 12/500/0.14em/muted/uppercase mt-4. NOT wired — `BreathingSessionSurface` and `NaviKriyaSessionSurface` still render the existing `SessionReadout` / `NKSessionReadout`. Wiring deferred to a follow-up item (data-shape mapping for Stretch + StatusPanel-chrome decision + lead-in/completion-headline placement remain OQs). 13 behavioral tests (slot rendering, role=status + aria-live + ariaLabel, big/mid baseline grouping via shared parent, DOM order via span sibling index, Navi-shape + Stretch-shape data samples). 1152 → 1165 tests. 4 files changed (244/-0). |
 | J10 | `2bf2834` + `d88f3d7` | SetupCard + SettingsSheet wired on Idle. NEW: `src/app/setupCardSummary.ts` (pure per-practice formatter + practice-name resolver — sources from real app domain, NOT the spike's illustrative SETUP_SUMMARY). PracticeSettingsView atomic swap: inline form → SetupCard (always) + SettingsSheet wrapping the same forms (conditional children to prevent role=group leakage when closed). Per-practice cells: HRV 3, Stretch 6 (skipped derived total per OQ-1), Navi 3. Stretch Running hides card entirely per OQ-2 (no in-session affordance). Resonant Running keeps card enabled — extend-duration reachable inside sheet via the existing isRunning-gated form. Sheet header: generic "Practice" / "Prática" title (OQ-4) + per-practice subtitle reusing existing `switcher.*Heading` strings (OQ-3). Session-start edge auto-closes the sheet via the setState-during-render pattern (avoids the J6 react-hooks/set-state-in-effect lint trap). New i18n keys: `practice.settingsSheet.{title, close, editCardAriaLabel}`. Test infra: `settingGroup()` helper auto-opens sheet via SetupCard tap; direct `screen.getByRole('group', ...)` call sites in App.{dialog,persistence,settings,wakeLock,audio}.test.tsx migrated to the helper. 1 session test had to re-query Duration after `startAndAdvancePastLeadIn` because sheet auto-closes on session start, stale Idle-state DOM ref no longer matches Running controls. 1142 → 1152 tests (+10: new PracticeSettingsView.test.tsx). 12 files changed (398/-21); 2 new (setupCardSummary.ts + PracticeSettingsView.test.tsx). No domain/audio/storage/hooks edits; sealed layers untouched. PWA precache 625.98 KiB (+5.40). **UAT fix `d88f3d7`**: two pre-existing NK defects exposed by Mono Zen tightening — (A architectural) OM count was overlaid as sibling outside OrbShape so it inherited body grey instead of disc on-accent white; now OrbShape accepts `children` prop threaded through OrbLeadIn into the centre disc, count renders inside → crisp white. (B less invasive) `nk-om-pulse` rest was `scale(var(--orb-scale-mid))=0.79` which compounded with OrbContainer's own MID inner scale for visible 0.62 rest → orb appeared smaller & "dropped" vs lead-in 0.79; keyframes now rest at `scale(1)` peak `scale(1.06)` → compounded rest 0.79 matches lead-in with gentle 6% per-OM pulse. 3 files / 48-55. |
