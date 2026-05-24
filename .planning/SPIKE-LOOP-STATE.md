@@ -84,8 +84,8 @@ State below is updated after every step transition. The state file commits with 
 
 | Tag | Item | Status |
 |-----|------|--------|
-| J1 | Theme tokens — Nord palette → Mono Zen light + dark (cool slate, semibold-ready); add `borderSoft`, `orbHalo1/2/3`, `modalBackdrop`; remove old gradient + ring tokens | **implemented — awaiting operator approval** (commit `be13fb4`) |
-| J2 | Font system — Inter Variable + weight loading per spike (ultralight 200/300 for breath labels, semibold 600 for headings) | pending |
+| J1 | Theme tokens — Nord palette → Mono Zen light + dark (cool slate, semibold-ready); add `borderSoft`, `orbHalo1/2/3`, `modalBackdrop`; remove old gradient + ring tokens | done (commit `be13fb4`) |
+| J2 | Font system — Inter Variable + weight loading per spike (ultralight 200/300 for breath labels, semibold 600 for headings) | **implemented — awaiting operator approval** (commit `0decf6a`) |
 | J3 | No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16px min gap above Start) | pending |
 | J4 | Orb body — 3-layer halo + center disc + asymmetric border-radii (organic-puddle); consumes `orbHalo1/2/3` + `accent`; replaces gradient + outer/inner ring | pending |
 | J5 | Orb V2 minimal variant — single accent disc + faint halo, gated by **query-string param** (extend `featureFlags.ts`), NOT VITE_*. Default TBD by operator. | pending |
@@ -107,64 +107,47 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J2 — Font system (Inter Variable + weight loading per spike)
-**Step:** 1 (awaiting propose; J1 implemented + committed, awaiting operator approval)
+**Item:** J3 — No-jiggle PracticeScreen layout (anchored top group → flex-1 spacer → anchored bottom group, 16 px min gap above Start)
+**Step:** 1 (awaiting propose; J2 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh after J1's approval:
+When you arrive here fresh after J2's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — focus on the typography mentions ("Inter Variable", "ultralight 200/300", "semibold 600", the cool-slate pivot section)
-4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` head element — look at the `<link>` for Google Fonts (weight axis) and the inline `<style>` body font-family rule
-5. Read current `index.html` head + `src/index.css` font setup
-6. Verify which weights are currently loaded vs the spike's requirement
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "twelfth pass" and "no-jiggle" (the layout-anchoring section)
+4. Read `.planning/spikes/010-mono-zen-light-dark/index.html` PracticeScreen JSX — locate the three-zone layout (anchored top, flex-1 spacer, anchored bottom with 16 px gap above Start)
+5. Read current `src/components/PracticeScreen.tsx` (or whatever the equivalent surface component is — verify the file name first)
+6. Verify what layout pattern is currently in place; identify jiggle vectors (state-dependent inserts that push the orb up/down between Idle/Running/Complete)
 7. Apply the propose-step checklist and print Section A + B + Goal/Scope/Risk
 
-### Archived — Implementation summary (Item J1)
+### Archived — Implementation summary (Item J2)
 
-Replaced Nord palette (Snow Storm + Frost + Aurora) with Mono Zen cool slate in `src/styles/theme.css` light + dark blocks. Transcribed verbatim from the spike's `CANDIDATES['mono-zen-light'].tokens` and `CANDIDATES['mono-zen-dark'].tokens` (index.html lines 80-120).
+Self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8. Three edits + one option pivot mid-implementation.
 
-**Tokens added (in both light + dark):**
-- `--color-breathing-text` — body text
-- `--color-breathing-text-soft` — secondary copy
-- `--color-border-soft` — slate at 0.16 alpha; pre-empts the spike-008 dark-theme token-collapse pattern
-- `--color-orb-halo-1`, `-2`, `-3` — for J4's halo orb redesign
+**`package.json` / `package-lock.json`:** added `@fontsource-variable/inter` to `dependencies` (runtime-bundled, not a build-time tool).
 
-**Token values changed (per spike):**
-| Token | Light | Dark |
-|---|---|---|
-| `--color-breathing-bg` | `#eceff4` → `#f3f5f7` | `#2e3440` → `#1a1d24` |
-| `--color-breathing-bg-soft` | `#e5e9f0` → `#e8eaee` | `#3b4252` → `#23272f` |
-| `--color-breathing-bg-edge` | `#ffffff` → `#fafbfc` | `#000000` → `#13161c` |
-| `--color-breathing-surface` | `#ffffff` (unchanged) | `#3b4252` → `#252932` |
-| `--color-breathing-accent` | `#81a1c1` → `#5d6877` | `#85b1c9` → `#b4bac4` |
-| `--color-breathing-accent-strong` | `#5e81ac` → `#414957` | `#81a1c1` → `#ccd0d9` |
-| `--color-breathing-muted` | `#81a1c1` → `#969ba6` | `#a0a8b6` → `#6a6e76` |
-| `--color-breathing-on-accent` | `#eceff4` → `#ffffff` | `#2e3440` → `#1a1d24` |
-| `--color-modal-backdrop` | `rgb(46 52 64 / 0.30)` → `rgba(58, 65, 80, 0.22)` | `rgb(0 0 0 / 0.5)` → `rgba(0, 0, 0, 0.65)` |
+**`src/index.css`:**
+- Added `@import '@fontsource-variable/inter';` as the FIRST line — before tailwindcss and theme.css imports, so the `@font-face` rules land in the cascade before anything else.
+- Updated body font-family stack from `Inter, ui-sans-serif, …` → `'Inter Variable', Inter, ui-sans-serif, …` so the variable family is preferred while leaving a fallback chain for environments where it doesn't resolve.
 
-**Deprecated tokens (kept temporarily until J4 / J7 remove them in lockstep with consumers):**
-- `--color-orb-in-from`, `--color-orb-in-to`, `--color-orb-out-from`, `--color-orb-out-to`, `--color-orb-in-text`, `--color-orb-out-text`, `--color-ring-outer`, `--color-ring-inner`
-- Marked with a "DEPRECATED — J4 / J7 remove these" comment block
+**`vite.config.ts` workbox:**
+- Added `woff2` to `globPatterns` so the bundled font files enter the SW precache.
+- Added `globIgnores` for cyrillic / cyrillic-ext / greek / greek-ext / vietnamese subsets — app locales are EN + pt-BR only (both Latin-script), so those subsets are dead weight in the install. Latin + Latin-ext (~133 KiB) still precache.
 
-**Cross-site favicon sync:**
-- `src/styles/faviconPalette.ts`: `FAVICON_COLORS.light` `#5e81ac` → `#414957`; `dark` `#81a1c1` → `#ccd0d9`
-- `index.html` 3 hex sites updated (meta theme-color + inline favicon script light/dark/fallback)
+**Option pivot mid-implementation:** initial proposal said "~50 KB woff2"; the default `@fontsource-variable/inter` actually ships all 7 unicode subsets (~218 KB woff2). Per-user runtime cost is unicode-range-gated (48 KB EN, 133 KB pt-BR), but PWA precache would include all 7. Operator chose option (γ) — `globIgnores` to trim the 5 non-Latin subsets from the SW install. Files still emit to `dist/` (any user who somehow needs them gets a live network fetch — same as today's no-font-loaded state). Saved ~85 KiB precache: 24 entries / 702 KiB → 19 entries / 619 KiB.
 
-**Inline test-cleanup under the same `no-design-locking` rule (caught by verification grep):**
-- `faviconPalette.test.ts`: dropped 2 value-locking tests (`light === '#5e81ac'` / `dark === '#81a1c1'`); rewrote 2 buildFaviconDataUri hex-matchers to derive from `FAVICON_COLORS` itself. Net test count unchanged (-2 + 2 = 0). Cross-site agreement still locked by `favicon.sync.test.ts`.
-- `content.no-removed-themes.test.ts`: removed the lowercase word-bounded `slate` free-text matcher — mono-zen vocabulary legitimately uses "cool slate" as a color-family name; the structural matchers (`theme: 'X'` literal, `[data-theme='X']` selector, `'X':` object key) still catch every real re-introduction vector of `slate` as a theme id. Header documents the narrowing.
-- `favicon.sync.test.ts` line 82 + `useFavicon.test.ts` line 76: stale comments referencing old specific hex values (sibling pattern to H/I's LearnDialog stale-comment cleanup) — replaced with descriptive text.
+**No test changes.** Typography load is a runtime/visual concern; per `no-design-locking`, no test asserts package names, URL substrings, or font-family literals.
 
-**Docstring replaced:** the 50-line Nord palette derivation docstring at the top of `theme.css` is gone; replaced with a 5-line "spike 010 source of truth" pointer per the `no-design-locking` comment rule.
+**No `index.html` edits.** Self-host stays out of the document head entirely.
+
+**Out of scope (flagged for J17):** `vite.config.ts:28-29` still has stale Nord `theme_color: '#5e81ac'` + `background_color: '#eceff4'` in the PWA manifest — leftover from before J1.
 
 **Verification:**
 - `tsc --noEmit -p tsconfig.app.json`: clean
 - `npm run lint`: clean
-- Full suite: 101 files / 1117 tests pass (unchanged baseline — net 0 test count delta from the cleanup)
-- `npm run build`: clean, bundle unchanged
-- Hex audit grep: only kept-deprecated orb-out-from/to + orb-out-text and destructive-on remain at old Nord values (intentional, scoped out per propose-step)
+- Full suite: 101 files / 1117 tests pass (unchanged baseline)
+- `npm run build`: clean; `dist/assets/` contains 7 `inter-*-wght-normal-*.woff2` files (10 KB–85 KB each); `sw.js` precache: 19 entries / 618.75 KiB (was 24 / 701.95 KiB before globIgnores trim)
 
-**Commit:** `be13fb4`
+**Commit:** `0decf6a`
 
 ---
 
@@ -173,6 +156,7 @@ Replaced Nord palette (Snow Storm + Frost + Aurora) with Mono Zen cool slate in 
 | Item | Commit | Notes |
 |------|--------|-------|
 | J1 | `be13fb4` | Theme tokens — Nord → Mono Zen cool slate. 9 token values replaced + 6 new tokens added (`text`, `text-soft`, `border-soft`, `orb-halo-1/2/3`) in both light + dark. Deprecated orb-in/out + ring tokens kept temporarily (J4/J7 remove). Favicon synced across 3 sites. Inline cleanup: 2 value-locking tests dropped + 2 derived rewrites in `faviconPalette.test.ts`; lowercase word-bounded `slate` matcher dropped from drift-guard test (mono-zen vocabulary collision); 2 stale comment refs fixed. 101 files / 1117 tests pass. |
+| J2 | `0decf6a` | Font system — self-hosted Inter Variable via `@fontsource-variable/inter` ^5.2.8 (runtime dep). `src/index.css` imports the package + body font-family stack now prefers `'Inter Variable'`. Workbox `globPatterns` extended with `woff2`; `globIgnores` trims cyrillic/greek/vietnamese subsets from the SW precache (app is EN + pt-BR; Latin + Latin-ext are the only subsets needed). Bundle: 7 woff2 files emit to `dist/`; SW precache 19 entries / 619 KiB (was 24 / 702 KiB before globIgnores). 101 files / 1117 tests pass; no test changes — typography-load is verified at runtime, asserting it would violate `no-design-locking`. |
 
 ---
 
