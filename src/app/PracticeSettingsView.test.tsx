@@ -1,0 +1,199 @@
+import '@testing-library/jest-dom/vitest'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { useState, type ReactElement } from 'react'
+import { describe, expect, it, vi } from 'vitest'
+
+import { UI_STRINGS } from '../content/strings'
+import {
+  DEFAULT_NK_SETTINGS,
+  DEFAULT_SETTINGS,
+  DEFAULT_STRETCH_SETTINGS,
+  type NaviKriyaSettings,
+  type SessionSettings,
+  type StretchSettings,
+} from '../domain'
+import { UiStringsProvider } from '../hooks/useUiStringsContext'
+import type { AppPracticeSettingsViewModel } from './appViewModel'
+import { PracticeSettingsView } from './PracticeSettingsView'
+
+const EN = UI_STRINGS.en
+
+const noopChange = (): void => {}
+const noopExtend = (): void => {}
+
+function makeResonantVM(overrides: {
+  settings?: SessionSettings
+  isRunning?: boolean
+} = {}): AppPracticeSettingsViewModel {
+  return {
+    kind: 'resonant',
+    settings: overrides.settings ?? DEFAULT_SETTINGS,
+    isRunning: overrides.isRunning ?? false,
+    onChange: noopChange,
+    onExtendDuration: noopExtend,
+  }
+}
+
+function makeStretchVM(overrides: {
+  settings?: StretchSettings
+  isRunning?: boolean
+} = {}): AppPracticeSettingsViewModel {
+  return {
+    kind: 'stretch',
+    settings: overrides.settings ?? DEFAULT_STRETCH_SETTINGS,
+    isRunning: overrides.isRunning ?? false,
+    onChange: noopChange,
+  }
+}
+
+function makeNaviVM(overrides: {
+  settings?: NaviKriyaSettings
+} = {}): AppPracticeSettingsViewModel {
+  return {
+    kind: 'naviKriya',
+    settings: overrides.settings ?? DEFAULT_NK_SETTINGS,
+    onChange: noopChange,
+  }
+}
+
+// Mounts PracticeSettingsView with stateful sheet open/close so we can drive
+// the full SetupCard → SettingsSheet → form flow from the test perspective.
+function renderView(vm: AppPracticeSettingsViewModel): { rerender: () => void } {
+  function Host(): ReactElement {
+    const [open, setOpen] = useState(false)
+    return (
+      <UiStringsProvider value={EN}>
+        <PracticeSettingsView
+          settings={vm}
+          isSheetOpen={open}
+          onOpenSheet={() => { setOpen(true) }}
+          onCloseSheet={() => { setOpen(false) }}
+        />
+      </UiStringsProvider>
+    )
+  }
+  const utils = render(<Host />)
+  return { rerender: () => { utils.rerender(<Host />) } }
+}
+
+describe('PracticeSettingsView — resonant (HRV)', () => {
+  it('renders the SetupCard with PACE / RATIO / DURATION cells from current settings', () => {
+    renderView(makeResonantVM())
+    const card = screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ })
+    expect(within(card).getByText(EN.practice.settingsForm.bpmLabel)).toBeVisible()
+    expect(within(card).getByText(EN.practice.settingsForm.ratioLabel)).toBeVisible()
+    expect(within(card).getByText(EN.practice.settingsForm.durationLabel)).toBeVisible()
+    expect(within(card).getByText('5.5 BPM')).toBeVisible()
+    expect(within(card).getByText('10 min')).toBeVisible()
+  })
+
+  it('formats an open-ended duration with the openEndedLabel string', () => {
+    renderView(makeResonantVM({
+      settings: { ...DEFAULT_SETTINGS, durationMinutes: 'open-ended' },
+    }))
+    const card = screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ })
+    expect(within(card).getByText(EN.practice.settingsForm.openEndedLabel)).toBeVisible()
+  })
+
+  it('does not render the form on Idle until the SetupCard is tapped', async () => {
+    const user = userEvent.setup()
+    renderView(makeResonantVM())
+    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeNull()
+    await user.click(screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ }))
+    expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
+  })
+
+  it('keeps the SetupCard visible on Running (extend-duration affordance lives in the sheet)', async () => {
+    const user = userEvent.setup()
+    renderView(makeResonantVM({ isRunning: true }))
+    const card = screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ })
+    expect(card).toBeEnabled()
+    await user.click(card)
+    const duration = screen.getByRole('group', { name: EN.practice.settingsForm.durationLabel })
+    // ResonantSettingsForm with isRunning=true exposes the Duration stepper
+    // with Increase enabled when the next finite duration option exists.
+    expect(within(duration).getByRole('button', { name: /increase duration/i })).toBeEnabled()
+  })
+})
+
+describe('PracticeSettingsView — stretch', () => {
+  it('renders 6 cells (initialBpm, targetBpm, ratio, warmUp, ramp, coolDown) on Idle', () => {
+    renderView(makeStretchVM())
+    const card = screen.getByRole('button', { name: /^Edit HRV Stretch settings$/ })
+    for (const label of [
+      EN.practice.settingsForm.initialBpmLabel,
+      EN.practice.settingsForm.targetBpmLabel,
+      EN.practice.settingsForm.ratioLabel,
+      EN.practice.settingsForm.holdInitialLabel,
+      EN.practice.settingsForm.rampDurationLabel,
+      EN.practice.settingsForm.holdTargetLabel,
+    ]) {
+      expect(within(card).getByText(label)).toBeVisible()
+    }
+  })
+
+  it('renders nothing on Running (no in-session affordance for Stretch)', () => {
+    const { container } = render(
+      <UiStringsProvider value={EN}>
+        <PracticeSettingsView
+          settings={makeStretchVM({ isRunning: true })}
+          isSheetOpen={false}
+          onOpenSheet={vi.fn()}
+          onCloseSheet={vi.fn()}
+        />
+      </UiStringsProvider>,
+    )
+    expect(container).toBeEmptyDOMElement()
+  })
+})
+
+describe('PracticeSettingsView — naviKriya', () => {
+  it('renders 3 cells (rounds, frontCount, omLength) on Idle', () => {
+    renderView(makeNaviVM())
+    const card = screen.getByRole('button', { name: /^Edit Navi Kriya settings$/ })
+    for (const label of [
+      EN.practice.nkControls.roundsLabel,
+      EN.practice.nkControls.frontCountLabel,
+      EN.practice.nkControls.omLengthLabel,
+    ]) {
+      expect(within(card).getByText(label)).toBeVisible()
+    }
+  })
+})
+
+describe('PracticeSettingsView — hidden (navi session active)', () => {
+  it('renders nothing when the viewmodel is in the hidden state', () => {
+    const { container } = render(
+      <UiStringsProvider value={EN}>
+        <PracticeSettingsView
+          settings={{ kind: 'hidden' }}
+          isSheetOpen={false}
+          onOpenSheet={vi.fn()}
+          onCloseSheet={vi.fn()}
+        />
+      </UiStringsProvider>,
+    )
+    expect(container).toBeEmptyDOMElement()
+  })
+})
+
+describe('PracticeSettingsView — sheet header reuses the switcher heading', () => {
+  it('uses "Practice" as the title and the practice heading as the subtitle', async () => {
+    const user = userEvent.setup()
+    renderView(makeResonantVM())
+    await user.click(screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ }))
+    const dialog = screen.getByRole('dialog', { name: EN.practice.settingsSheet.title })
+    expect(within(dialog).getByRole('heading', { level: 2, name: EN.practice.settingsSheet.title })).toBeVisible()
+    expect(within(dialog).getByText(EN.practice.switcher.resonantHeading)).toBeVisible()
+  })
+
+  it('the close button uses the localized close label and closes the sheet', async () => {
+    const user = userEvent.setup()
+    renderView(makeResonantVM())
+    await user.click(screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ }))
+    expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: EN.practice.settingsSheet.close }))
+    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeNull()
+  })
+})

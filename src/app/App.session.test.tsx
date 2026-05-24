@@ -115,16 +115,19 @@ describe('running duration edits and completion', () => {
   it('does not allow running duration edits for open-ended sessions', async () => {
     render(<App />)
 
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
+    const idleDuration = settingGroup('Duration')
+    const idleIncrease = within(idleDuration).getByRole('button', { name: /increase duration/i })
     for (let index = 0; index < 11; index += 1) {
-      fireEvent.click(increase)
+      fireEvent.click(idleIncrease)
     }
     await startAndAdvancePastLeadIn()
 
+    // Re-query through settingGroup — the session-start edge auto-closes the
+    // sheet, so we need to re-open it to inspect the running-state controls.
+    const runningDuration = settingGroup('Duration')
     expect(screen.queryByRole('group', { name: 'Extend duration' })).not.toBeInTheDocument()
-    expect(within(duration).getByRole('button', { name: /decrease duration/i })).toBeDisabled()
-    expect(within(duration).getByRole('button', { name: /increase duration/i })).toBeDisabled()
+    expect(within(runningDuration).getByRole('button', { name: /decrease duration/i })).toBeDisabled()
+    expect(within(runningDuration).getByRole('button', { name: /increase duration/i })).toBeDisabled()
   })
 
   it('automatically renders Session complete when a timed session reaches the end', async () => {

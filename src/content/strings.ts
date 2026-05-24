@@ -122,6 +122,11 @@ export interface UiStrings {
       readonly confirm: string
       readonly cancel: string
     }
+    readonly settingsSheet: {
+      readonly title: string
+      readonly close: string
+      readonly editCardAriaLabel: (practiceName: string) => string
+    }
   }
   readonly appSettings: {
     readonly title: string
@@ -274,6 +279,11 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         confirm: 'End',
         cancel: 'Keep going',
       },
+      settingsSheet: {
+        title: 'Practice',
+        close: 'Close',
+        editCardAriaLabel: (name) => `Edit ${name} settings`,
+      },
     },
     appSettings: {
       title: 'Settings',
@@ -423,6 +433,11 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         title: 'Encerrar esta sessão?',
         confirm: 'Encerrar',
         cancel: 'Continuar',
+      },
+      settingsSheet: {
+        title: 'Prática',
+        close: 'Fechar',
+        editCardAriaLabel: (name) => `Editar configurações de ${name}`,
       },
     },
     appSettings: {

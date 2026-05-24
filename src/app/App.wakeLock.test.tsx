@@ -12,6 +12,7 @@ import {
   APP_LEAD_IN_MS,
   APP_TEST_NOW,
   flushMicrotasks,
+  settingGroup,
   startAndAdvancePastLeadIn,
 } from './appTestHarness'
 
@@ -43,7 +44,7 @@ describe('App — wake lock (Phase 5)', () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
     // Bump duration to 'open-ended' (mirror App.audio.test.tsx:185-190)
-    const duration = screen.getByRole('group', { name: 'Duration' })
+    const duration = settingGroup('Duration')
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let i = 0; i < 11; i += 1) fireEvent.click(increase)
 
@@ -82,7 +83,7 @@ describe('App — wake lock (Phase 5)', () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
     // Use a 5-min duration (mirrors App.audio.test.tsx:215-216 — one decrease click).
-    const duration = screen.getByRole('group', { name: 'Duration' })
+    const duration = settingGroup('Duration')
     const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
     fireEvent.click(decrease)
 

@@ -7,8 +7,17 @@ import { STATE_KEY, type PracticeId } from '../storage'
 export const APP_TEST_NOW = new Date('2026-05-09T00:00:00.000Z')
 export const APP_LEAD_IN_MS = LEAD_IN_DURATION_MS
 
+// After J10 the per-practice settings forms live inside the SettingsSheet,
+// which only mounts its children when open. Auto-open the sheet (by clicking
+// the SetupCard) when a requested group is not yet visible.
 export function settingGroup(name: string): HTMLElement {
-  return screen.getByRole('group', { name })
+  let group = screen.queryByRole('group', { name })
+  if (group !== null) return group
+  const card = screen.queryByRole('button', { name: /^Edit .* settings$/ })
+  if (card !== null) fireEvent.click(card)
+  group = screen.queryByRole('group', { name })
+  if (group === null) throw new Error(`settingGroup: group "${name}" not found`)
+  return group
 }
 
 export function sessionReadout(): HTMLElement {

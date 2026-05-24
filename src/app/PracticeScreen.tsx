@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import { useCallback, useState, type ReactElement } from 'react'
 
 import { InstallBanner } from '../components/InstallBanner'
 import { LearnAnchor } from '../components/LearnAnchor'
@@ -23,6 +23,21 @@ interface PracticeScreenProps {
  *  with a 16 px min-gap above Start. The orb's y-position is constant
  *  across practice × phase combinations. */
 export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)
+  const onOpenSettingsSheet = useCallback(() => { setSettingsSheetOpen(true) }, [])
+  const onCloseSettingsSheet = useCallback(() => { setSettingsSheetOpen(false) }, [])
+
+  // Auto-close the sheet on the Idle→in-session edge so the modal backdrop
+  // never covers the running orb. The resonant extend-duration affordance
+  // stays reachable by re-tapping the SetupCard while Running. Uses the
+  // setState-during-render pattern (React docs: storing info from previous
+  // renders) to avoid the react-hooks/set-state-in-effect anti-pattern.
+  const [wasInSession, setWasInSession] = useState(vm.controlsDisabled)
+  if (vm.controlsDisabled !== wasInSession) {
+    setWasInSession(vm.controlsDisabled)
+    if (vm.controlsDisabled && settingsSheetOpen) setSettingsSheetOpen(false)
+  }
+
   return (
     <PageShell
       overlays={
@@ -72,7 +87,12 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
           variant={vm.featureFlags.breathingShape}
           idleMode={vm.featureFlags.orbIdle}
         />
-        <PracticeSettingsView settings={vm.practiceSettings} />
+        <PracticeSettingsView
+          settings={vm.practiceSettings}
+          isSheetOpen={settingsSheetOpen}
+          onOpenSheet={onOpenSettingsSheet}
+          onCloseSheet={onCloseSettingsSheet}
+        />
       </div>
       <div className="flex-1" />
       <div className="w-full px-5 pt-4 sm:px-8">

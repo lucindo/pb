@@ -7,6 +7,7 @@ import {
   APP_TEST_NOW,
   advanceTime,
   readStoredEnvelope as readRawEnvelope,
+  settingGroup,
   startAndAdvancePastLeadIn,
 } from './appTestHarness'
 import { STATE_KEY } from '../storage'
@@ -110,7 +111,7 @@ describe('LOCL-01 — persistence on change', () => {
   it('persists settings change to the resonant practice slice (LOCL-01 / CR-01)', async () => {
     render(<App />)
     // Click the BPM decrease button — default is 5.5 BPM; decrease goes to 5 BPM.
-    const bpmGroup = screen.getByRole('group', { name: 'BPM' })
+    const bpmGroup = settingGroup('BPM')
     fireEvent.click(within(bpmGroup).getByRole('button', { name: 'Decrease BPM' }))
     await act(async () => { await Promise.resolve() })
     const env = readRawEnvelope()
@@ -286,7 +287,7 @@ describe('Phase 34 — v2 envelope migrates to v3 and Stretch practice shows con
     // After switching, the stretch branch shows. Stretch settings are migrated from
     // the resonant blob — coerced to valid StretchSettings defaults if needed.
     // The stretch form should render Start BPM (one of the stretch knobs).
-    expect(screen.getByRole('group', { name: 'Start BPM' })).toBeInTheDocument()
+    expect(settingGroup('Start BPM')).toBeInTheDocument()
     // The Start session button should be present for the stretch practice.
     expect(screen.getByRole('button', { name: 'Start session' })).toBeInTheDocument()
   })

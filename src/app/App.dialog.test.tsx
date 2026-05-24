@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
-import { APP_TEST_NOW, startAndAdvancePastLeadIn } from './appTestHarness'
+import { APP_TEST_NOW, settingGroup, startAndAdvancePastLeadIn } from './appTestHarness'
 
 describe('end-session confirmation modal (App integration)', () => {
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('end-session confirmation modal (App integration)', () => {
   it('open-ended sessions skip the modal entirely (D-14)', async () => {
     render(<App />)
 
-    const duration = screen.getByRole('group', { name: 'Duration' })
+    const duration = settingGroup('Duration')
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let i = 0; i < 11; i += 1) {
       fireEvent.click(increase)
@@ -116,7 +116,7 @@ describe('end-session confirmation modal (App integration)', () => {
 
       // Use a 5-min duration so the clock can run out within the test.
       fireEvent.click(
-        within(screen.getByRole('group', { name: 'Duration' })).getByRole('button', {
+        within(settingGroup('Duration')).getByRole('button', {
           name: /decrease duration/i,
         }),
       )

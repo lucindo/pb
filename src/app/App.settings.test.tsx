@@ -144,11 +144,11 @@ describe('Phase 34 — stretch settings persist across a remount', () => {
     const { unmount } = render(<App />)
 
     // Verify start BPM group is visible (stretch branch active)
-    const startBpmGroup = screen.getByRole('group', { name: 'Start BPM' })
+    const startBpmGroup = settingGroup('Start BPM')
     expect(startBpmGroup).toBeInTheDocument()
 
     // Increase warm-up duration — default is 5, increasing goes to 10 min
-    const warmUpGroup = screen.getByRole('group', { name: 'Warm-up' })
+    const warmUpGroup = settingGroup('Warm-up')
     fireEvent.click(within(warmUpGroup).getByRole('button', { name: /increase warm-up/i }))
     await act(async () => { await Promise.resolve() })
 
@@ -160,7 +160,7 @@ describe('Phase 34 — stretch settings persist across a remount', () => {
     unmount()
     render(<App />)
     // Still on stretch practice; warm-up still 10 min
-    const warmUpGroup2 = screen.getByRole('group', { name: 'Warm-up' })
+    const warmUpGroup2 = settingGroup('Warm-up')
     expect(within(warmUpGroup2).getByText('10 min')).toBeInTheDocument()
   })
 })

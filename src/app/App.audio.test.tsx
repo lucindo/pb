@@ -8,6 +8,7 @@ import {
   APP_LEAD_IN_MS,
   APP_TEST_NOW,
   flushMicrotasks,
+  settingGroup,
   startAndAdvancePastLeadIn,
   startLeadIn,
 } from './appTestHarness'
@@ -150,7 +151,7 @@ describe('App — audio cues (Phase 3)', () => {
 
     render(<App />)
     // Bump duration to 'open-ended' before starting.
-    const duration = screen.getByRole('group', { name: 'Duration' })
+    const duration = settingGroup('Duration')
     const increase = within(duration).getByRole('button', { name: /increase duration/i })
     for (let i = 0; i < 11; i += 1) {
       fireEvent.click(increase)
@@ -160,7 +161,7 @@ describe('App — audio cues (Phase 3)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End session' }))
     await flushMicrotasks()
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'End this session?' })).not.toBeInTheDocument()
     expect(acInstance).not.toBeNull()
     const closeMock = (acInstance as unknown as { close: ReturnType<typeof vi.fn> }).close
     expect(closeMock).toHaveBeenCalled()
@@ -178,7 +179,7 @@ describe('App — audio cues (Phase 3)', () => {
 
     render(<App />)
     // Use a 5-min duration so the clock can run out within reasonable test time.
-    const duration = screen.getByRole('group', { name: 'Duration' })
+    const duration = settingGroup('Duration')
     const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
     fireEvent.click(decrease)
 
