@@ -92,7 +92,7 @@ State below is updated after every step transition. The state file commits with 
 | J7 | Ring cue conditional — outer + inner ring visible ONLY on Running; hidden on Idle + Complete. | **skipped — false-positive item** (the orb-outer-ring-idle-only memory was stale from a prior implementation that got `git reset` away; the deviation never existed in the current code. J6's OrbIdle already hard-sets `showRings={false}`; OrbBody only renders on Running. Memory deleted; no test added.) |
 | J8 | SetupCard primitive — V1 Grid 2×3 (1 row HRV/Navi, 2 rows Stretch); whole card is tap target with right-chevron affordance | done (commit `5d6439b`) |
 | J9 | Settings sheet/modal primitive — bottom sheet on mobile, center modal on desktop; renders stepper, segmented, visual picker, toggle, accent button | **implemented — awaiting operator approval** (commit `7a2884d`) |
-| J10 | Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running). | pending |
+| J10 | Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running). | **implemented — awaiting operator approval** (commit `2bf2834`) |
 | J11 | FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives | pending |
 | J12 | MuteToggle chrome alignment — `accent / accent-strong` → `borderSoft / textSoft`; 44px hit area preserved | pending |
 | J13 | InstallBanner V3 — inline card, reuses SetupCard shape, mobile + idle only | pending |
@@ -106,24 +106,98 @@ State below is updated after every step transition. The state file commits with 
 
 ## Current focus
 
-**Item:** J10 — Wire SetupCard → Settings sheet → form rendering on Idle. **MUST preserve in-session extend-duration affordance** (currently the Increase button on the Duration stepper stays enabled during Running).
-**Step:** 1 (awaiting propose; J9 implemented + committed, awaiting operator approval)
+**Item:** J11 — FeedbackTime (HRV, big remaining time + small pace caption) + FeedbackCount (Stretch + Navi, big number + " of N" + uppercase context) primitives
+**Step:** 1 (awaiting propose; J10 implemented + committed, awaiting operator approval)
 
-When you arrive here fresh after J9's approval:
+When you arrive here fresh after J10's approval:
 1. Read this whole file (you're here)
 2. Read MEMORY.md and the rules listed in Step 2 above
-3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "extend duration", "increase", "in-session", "Adjust" (the in-session extend-duration affordance discussion)
-4. Read current code:
-   - `src/app/PracticeSettingsView.tsx` — currently renders `ResonantSettingsForm` / `StretchSettingsForm` / `NaviKriyaSettingsForm` inline. J10 replaces this with the SetupCard (Idle) and moves form-rendering into the SettingsSheet.
-   - `src/components/ResonantSettingsForm.tsx` (and Stretch/Navi variants) — verify the current "Increase button stays enabled during Running" affordance (likely via `disabled` prop only applied to some controls; the increase-duration button is the exception)
-   - `src/app/appViewModel.ts` → `practiceSettings` → `onExtendDuration` callback (J3's plan mentioned it; verify it's still wired post-J6)
-   - `src/content/strings.ts` — string keys for the new card aria-labels + close button + settings titles per practice
-5. Apply the propose-step checklist. **This is the FIRST wiring item in the J8-J10 trilogy. Visual landing finally happens here**. Critical scope concerns:
-   - Item-list note: "MUST preserve in-session extend-duration affordance"
-   - Atomic swap: the existing inline forms come out; SetupCard goes in their slot on Idle; SettingsSheet wraps the same form components but as a modal/sheet
-   - Sheet open/close state lives where? Probably `useState` inside PracticeScreen or a small hook; not in viewModel (transient UI state, not domain state)
-   - Per-practice formatter: turn current settings into SetupCardItem[] for the card. Pure function next to SetupCard or inside the screen module.
-   - **MASSIVE risk surface**: this is the first UI feature change in the spike loop that affects user behavior. Forms are no longer always-visible; tapping the card now opens a sheet to edit. Verify all existing test paths still work (App.locale.test.tsx, App.dialog.test.tsx).
+3. Read `.planning/spikes/010-mono-zen-light-dark/README.md` — search for "FeedbackHRV", "FeedbackCount", "feedback" sections (sixth pass) for the per-practice running-surface readout primitives
+4. Read current code (Running surface — the variable region under the orb during a session):
+   - `src/app/BreathingSessionSurface.tsx` — verify current running-surface readout for HRV / Stretch
+   - `src/app/NaviKriyaSessionSurface.tsx` — current Navi running-surface readout
+   - `src/components/SessionReadout.tsx` — likely the existing HRV time readout primitive
+   - `src/components/NKSessionReadout.tsx` — existing Navi count readout primitive
+5. Apply the propose-step checklist. Scope:
+   - V1 FeedbackTime: big remaining time digit + small "pace" caption (HRV)
+   - V1 FeedbackCount: big number + " of N" + uppercase context line (Stretch + Navi shared primitive)
+   - Note: feedback primitives are READ-ONLY presentation — no domain/state changes
+   - Verify spike's data shape for FeedbackHRV / FeedbackCount in index.html (sixth pass, around line 2001-2005)
+
+### Archived — Implementation summary (Item J10)
+
+Atomic swap of the per-practice Idle settings UI: inline forms out, SetupCard + SettingsSheet in.
+
+**New files:**
+- `src/app/setupCardSummary.ts` — pure helper. `buildSetupCardSummary({ settings, practice })` returns the per-practice `SetupCardItem[]` (or `null` for hidden / stretch-running). `resolveSheetPracticeName(settings, switcher)` reuses existing switcher headings for the aria-label + sheet subtitle (no new copy keys for the practice names themselves).
+- `src/app/PracticeSettingsView.test.tsx` — 10 behavioral tests; no class-string locking.
+
+**Per-practice cell shapes (operator-decided OQ-1, sourced from real app domain, NOT spike's illustrative SETUP_SUMMARY):**
+- Resonant (HRV): 3 cells — bpmLabel/ratioLabel/durationLabel; values format BPM as `${bpm} ${bpmUnit}`, ratio direct, duration as `${minutes} ${minutesUnit}` or openEndedLabel.
+- Stretch: 6 cells — initialBpm/targetBpm/ratio/warmUp/ramp/coolDown. Derived total duration deliberately omitted (operator: "skip total"). coolDownMinutes may be `'open-ended'` → uses holdOpenEndedLabel.
+- NaviKriya: 3 cells — rounds/frontCount/omLength (formatted via fast/medium/slow strings). perOmCue toggle stays sheet-only.
+
+**Running behavior (OQ-2 — operator: "hide" Stretch):**
+- Resonant Running: card enabled, tap opens sheet, ResonantSettingsForm with `isRunning=true` shows just the Duration stepper with Increase enabled when `getNextDurationOption` returns a number.
+- Stretch Running: `buildSetupCardSummary` returns null → PracticeSettingsView returns null. No card, no sheet (no in-session affordance for Stretch in the current form).
+- Navi Running: viewmodel `kind: 'hidden'` upstream → already returns null.
+
+**Sheet header (OQ-3 + OQ-4):**
+- Title: generic `'Practice'` / `'Prática'` (new keys `practice.settingsSheet.title`).
+- Subtitle: per-practice resolved via existing `switcher.{resonant,stretch,naviKriya}Heading` strings (`HRV Breathing` / `HRV Stretch` / `Navi Kriya`). No new per-practice copy.
+- Close button: localized via `practice.settingsSheet.close` (`Close` / `Fechar`).
+- Card aria-label: `practice.settingsSheet.editCardAriaLabel(name)` returns `Edit ${name} settings` / `Editar configurações de ${name}` with the resolved practice name.
+
+**PracticeScreen state:**
+- `useState(false)` for `settingsSheetOpen` — transient UI state in the screen module, not in viewmodel.
+- Auto-close on the Idle→Running edge uses the **setState-during-render** pattern (React docs: "storing info from previous renders") to avoid the `react-hooks/set-state-in-effect` anti-pattern that J6 already had to dodge:
+  ```tsx
+  const [wasInSession, setWasInSession] = useState(vm.controlsDisabled)
+  if (vm.controlsDisabled !== wasInSession) {
+    setWasInSession(vm.controlsDisabled)
+    if (vm.controlsDisabled && settingsSheetOpen) setSettingsSheetOpen(false)
+  }
+  ```
+- Resonant Running extend-duration is reachable: user re-taps the SetupCard → `onOpenSheet` sets state true → sheet renders the form with `isRunning=true`.
+
+**SettingsSheet children gating:**
+- `<SettingsSheet>` only renders form children when `open={true}` (`{isSheetOpen ? renderForm(...) : null}`). Prevents form `role=group` elements from leaking into the accessibility tree when the sheet is closed (JSDOM doesn't filter closed-dialog children).
+
+**Sealed layers unchanged (per `[[design-logic-separation]]`):**
+- `src/app/appViewModel.ts` — viewmodel shape untouched; per-practice formatter consumes existing fields.
+- `src/app/appControllerAdapters.ts` — no plumbing changes.
+- `src/components/{Resonant,Stretch,NaviKriya}SettingsForm.tsx` — rendered as-is inside the sheet's children slot. Zero form edits.
+- Domain / audio / storage / hooks — untouched.
+
+**Test infrastructure migration:**
+- `src/app/appTestHarness.ts` → `settingGroup(name)` now auto-opens the sheet via the SetupCard tap when the requested group isn't already in the DOM. Existing call sites work unchanged.
+- Direct `screen.getByRole('group', ...)` call sites migrated to `settingGroup`:
+  - `App.dialog.test.tsx` (2 sites)
+  - `App.persistence.test.tsx` (2 sites)
+  - `App.settings.test.tsx` (3 sites — stretch persistence test)
+  - `App.wakeLock.test.tsx` (2 sites, `replace_all`)
+  - `App.audio.test.tsx` (2 sites)
+- `App.session.test.tsx` one test ("does not allow running duration edits for open-ended") needed an explicit re-query of `settingGroup('Duration')` after `startAndAdvancePastLeadIn()` because the sheet auto-closes on session start; the stale Idle-state DOM ref no longer matches the Running-state controls.
+- `App.audio.test.tsx` one `queryByRole('dialog')` disambiguated by name to `'End this session?'` to avoid potential overlap (defensive — the auto-close handles it but the name-specific query preserves the test's intent of checking the EndSessionDialog specifically).
+
+**Verification:**
+- `npm run lint`: clean.
+- `npx tsc --noEmit -p tsconfig.app.json`: clean.
+- Full suite: 105 files / 1152 tests pass (was 1142; net +10 = the 10 new PracticeSettingsView tests).
+- `npm run build`: clean; PWA precache 19 / 625.98 KiB (was 620.58 KiB; +5.40 KiB from the new components).
+- No `toHaveClass(` or hex literals in new code; tokens used throughout.
+
+**Manual verification needed (operator-side):**
+- HRV Idle: SetupCard with 3 cells (BPM / Ratio / Duration); tap opens sheet with the existing form; close via Close button / backdrop / Esc.
+- HRV Running: SetupCard still visible; tap opens sheet with just the Duration stepper, Increase enabled while next finite option exists.
+- Stretch Idle: SetupCard with 6 cells (Start BPM / Target BPM / Ratio / Warm-up / Stretch / Settle); tap opens sheet with the full stretch form.
+- Stretch Running: SetupCard hidden entirely (no in-session controls).
+- Navi Idle: SetupCard with 3 cells (Rounds / Front OMs / OM pace); tap opens sheet with the full navi form (including the perOmCue toggle that's not in the card).
+- Navi Running: SetupCard hidden (viewmodel kind 'hidden').
+- Locale switch EN ↔ PT-BR: card labels + sheet title + close button + aria-label all flip.
+- Idle → Start session: sheet auto-closes if it was open.
+
+**Commit:** `2bf2834`
 
 ### Archived — Implementation summary (Item J9)
 
@@ -330,6 +404,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 | J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
+| J10 | `2bf2834` | SetupCard + SettingsSheet wired on Idle. NEW: `src/app/setupCardSummary.ts` (pure per-practice formatter + practice-name resolver — sources from real app domain, NOT the spike's illustrative SETUP_SUMMARY). PracticeSettingsView atomic swap: inline form → SetupCard (always) + SettingsSheet wrapping the same forms (conditional children to prevent role=group leakage when closed). Per-practice cells: HRV 3, Stretch 6 (skipped derived total per OQ-1), Navi 3. Stretch Running hides card entirely per OQ-2 (no in-session affordance). Resonant Running keeps card enabled — extend-duration reachable inside sheet via the existing isRunning-gated form. Sheet header: generic "Practice" / "Prática" title (OQ-4) + per-practice subtitle reusing existing `switcher.*Heading` strings (OQ-3). Session-start edge auto-closes the sheet via the setState-during-render pattern (avoids the J6 react-hooks/set-state-in-effect lint trap). New i18n keys: `practice.settingsSheet.{title, close, editCardAriaLabel}`. Test infra: `settingGroup()` helper auto-opens sheet via SetupCard tap; direct `screen.getByRole('group', ...)` call sites in App.{dialog,persistence,settings,wakeLock,audio}.test.tsx migrated to the helper. 1 session test had to re-query Duration after `startAndAdvancePastLeadIn` because sheet auto-closes on session start, stale Idle-state DOM ref no longer matches Running controls. 1142 → 1152 tests (+10: new PracticeSettingsView.test.tsx). 12 files changed (398/-21); 2 new (setupCardSummary.ts + PracticeSettingsView.test.tsx). No domain/audio/storage/hooks edits; sealed layers untouched. PWA precache 625.98 KiB (+5.40). |
 
 ---
 
