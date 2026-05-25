@@ -62,7 +62,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 
 ### Pending Todos
 
-- v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants. (Many of these were obviated by Phase 41's orb rewrite — re-audit at v2.0 close.)
+- v1.x deferred (partially dispositioned): `.orb-layer--in/--out` → `.shape-layer--in/--out` rename — **obsolete-by-redesign** per D-05: CSS classes deleted in Phase 41 J4 commit `a742c0b`; only an archived comment at `src/styles/theme.contrast.test.ts:121` remained, updated in Phase 44 Plan 04 refactor commit (POLISH-05). The remaining items from this entry — per-variant token sets; live idle preview; additional shape variants — remain deferred (not yet obviated).
 - Phase 44 (POLISH) — full code review sweep across the redesigned codebase (POLISH-01..06); 28 Info-severity findings from 2026-05-16 disposition; test cleanup; Tiger Style WHY-only comment audit; refactoring + security re-review.
 - Phase 40 lint carry-forward: `src/audio/previewContext.test.ts` carries +2 errors / +1 warning vs pre-Phase-40 baseline (vi.mocked + non-null-assertion idioms). Fold into Phase 44 POLISH-02.
 - J19 (Complete-screen distinct-surface decision) — gated on a separate operator call; not a spike-loop or Phase 44 item.

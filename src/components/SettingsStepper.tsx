@@ -1,5 +1,7 @@
 import type { UiStrings } from '../content/strings'
 
+import { SettingsRow } from './SettingsRow'
+
 export interface SettingsStepperProps<T extends string | number> {
   label: string
   value: T
@@ -58,11 +60,12 @@ export function SettingsStepper<T extends string | number>({
     'grid size-8 place-items-center rounded-full border border-[var(--color-border-soft)] bg-transparent text-lg leading-none text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] disabled:cursor-not-allowed disabled:opacity-45 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2'
 
   return (
-    <fieldset
-      aria-label={strings.fieldAriaLabel(label)}
-      className={`flex items-center justify-between py-3${hideTopBorder ? '' : ' border-t border-[var(--color-border-soft)]'}`}
+    <SettingsRow
+      label={label}
+      ariaLabel={strings.fieldAriaLabel(label)}
+      className="flex items-center justify-between"
+      noBorder={hideTopBorder}
     >
-      <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
       {readOnly ? (
         <output
           aria-live="off"
@@ -98,6 +101,6 @@ export function SettingsStepper<T extends string | number>({
           </button>
         </div>
       )}
-    </fieldset>
+    </SettingsRow>
   )
 }

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 
 import { SegmentedControl, type SegmentedControlOption } from './primitives/SegmentedControl'
+import { SettingsRow } from './SettingsRow'
 
 export interface SettingsSegmentedRowProps<T extends string> {
   label: string
@@ -24,13 +25,7 @@ export function SettingsSegmentedRow<T extends string>({
   disabled = false,
 }: SettingsSegmentedRowProps<T>): ReactElement {
   return (
-    <fieldset
-      aria-label={ariaLabel}
-      className="border-t border-[var(--color-border-soft)] py-3"
-    >
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
-      </div>
+    <SettingsRow label={label} ariaLabel={ariaLabel} labelContainerClassName="mb-2 flex items-center justify-between">
       <SegmentedControl<T>
         options={options}
         value={value}
@@ -38,6 +33,6 @@ export function SettingsSegmentedRow<T extends string>({
         ariaLabel={ariaLabel}
         disabled={disabled}
       />
-    </fieldset>
+    </SettingsRow>
   )
 }

@@ -118,11 +118,11 @@ const CONCRETE_THEMES = THEME_OPTIONS.filter(
 )
 
 // J4: the reduced-motion in/out gradient midpoint-contrast test was removed.
-// It asserted the perceptual distance of an `.orb-layer--in` / `.orb-layer--out`
-// gradient crossfade that no longer exists post-J4 (orb body is now halos +
-// centre disc, phase distinction comes from the inner-ring opacity fade gated
-// by `showRings`). The accent-strong / on-accent and destructive-contrast
-// tests below remain meaningful and unchanged.
+// The orb body is now halos + centre disc (Phase 41 J4, commit a742c0b); the
+// gradient crossfade it asserted no longer exists in the codebase. Phase
+// distinction comes from the inner-ring opacity fade gated by `showRings`.
+// The accent-strong / on-accent and destructive-contrast tests below remain
+// meaningful and unchanged.
 
 describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
   it('accent-strong vs on-accent contrast ratio is >= 1.5 (D-01)', () => {

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 
 import { Toggle } from './primitives/Toggle'
+import { SettingsRow } from './SettingsRow'
 
 export interface SettingsToggleRowProps {
   label: string
@@ -21,12 +22,8 @@ export function SettingsToggleRow({
   disabled = false,
 }: SettingsToggleRowProps): ReactElement {
   return (
-    <fieldset
-      aria-label={ariaLabel}
-      className="flex items-center justify-between border-t border-[var(--color-border-soft)] py-3"
-    >
-      <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
+    <SettingsRow label={label} ariaLabel={ariaLabel} className="flex items-center justify-between">
       <Toggle checked={checked} onChange={onChange} label={ariaLabel} disabled={disabled} />
-    </fieldset>
+    </SettingsRow>
   )
 }
