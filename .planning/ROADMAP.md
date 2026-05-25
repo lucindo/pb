@@ -175,7 +175,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 44-03-PLAN.md — Tiger Style WHY-only comment audit (broad sweep — Item I sibling-pattern lesson) (POLISH-04)
 - [x] 44-04-PLAN.md — Refactor pass: reconcile obsolete .orb-layer rename + extract SettingsRow primitive (POLISH-05)
 - [x] 44-05-PLAN.md — Readability remainder: zero leftover Square/Diamond/Moss/Slate/Dusk/Chime refs (POLISH-07)
-- [ ] 44-06-PLAN.md — Security re-review: 44-SECURITY.md covering preview audio + query-string toggles + font asset surfaces (POLISH-06)
+- [x] 44-06-PLAN.md — Security re-review: 44-SECURITY.md covering preview audio + query-string toggles + font asset surfaces (POLISH-06)
 - [ ] 44-07-PLAN.md — Invariant verification: zero net-new deps + per-commit green-gate held + 44-VERIFICATION.md (POLISH-08, POLISH-09)
 
 ## Progress
