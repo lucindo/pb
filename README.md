@@ -60,15 +60,16 @@ A pill switcher at the top of the page moves between three practices; each keeps
 
 ### Everything else
 
-- A single calm visual guide with three interchangeable variants — Orb, Square, and Diamond — each with a synchronized In / Out label.
-- Five named color palettes (theme switching) so the visual guide matches your preferred calm tone.
+- A single calm visual guide — `OrbShape` with two render variants (`orb-halo`, `minimal-rings`) for the breathing practices, plus `NKShape` for Navi Kriya's OM-count guide.
+- Light / Dark / System theme switching — single "Mono Zen" palette tuned in both light and dark, with a matching favicon.
 - EN / PT-BR language switching — the full interface, including the Learn explainer, is available in English and Brazilian Portuguese.
-- Optional generated audio cues — soft bowl-like tones at each phase boundary (mutable), with four selectable timbres.
+- Configurable cue style — `labels` (synchronized In / Out text), `arrow`, or `nose` indicator — picked from the settings panel.
+- Optional generated audio cues — soft bowl-like tones at each phase boundary (mutable), with four selectable timbres (`bowl`, `bell`, `sine`, `flute`).
 - 3-2-1 audible + visual lead-in before the timing clock starts.
 - Installable as a Progressive Web App — the production build registers a service worker that caches assets for offline use and auto-updates on revisit. On phones, an inline install banner offers add-to-home-screen, with step-by-step instructions on iOS.
 - Local-only practice stats (sessions completed, total time) — stored in browser localStorage; never sent anywhere.
 - Hands-off resilience — Wake Lock keeps the screen on while a session runs (where supported); the visual guide / tones / clock re-anchor cleanly after suspend / resume / mute / unmute on mobile.
-- Calm, claim-safe in-app explainer modal (`Learn` corner anchor → modal with explanation + Forrest links + disclaimers).
+- Calm, claim-safe in-app explainer — `Learn` corner anchor opens an in-place panel with explanation + Forrest links + disclaimers; a full `LearnPage` route is also available as an alternate entry.
 - Honors `prefers-reduced-motion` — the visual guide swaps from a breathing scale animation to a fixed mid-scale gradient crossfade.
 - Responsive: pocket-sized on mobile, fits comfortably on tablet and desktop without zoom.
 
@@ -82,11 +83,12 @@ A pill switcher at the top of the page moves between three practices; each keeps
 
 - React 19 + TypeScript, built with Vite.
 - Tailwind CSS v4 via `@tailwindcss/vite`.
-- Vitest + Testing Library for unit + behavior tests (1255 tests across the codebase).
+- Vitest + Testing Library for unit + behavior tests (1166 tests across the codebase).
 - ESLint (TypeScript + React Hooks + React Refresh rule packs).
 - Web APIs: `<dialog>` (top-layer modals), `AudioContext` (generated cues), Page Visibility / Wake Lock (resume / screen-on), `localStorage` (settings + stats).
 - Installable PWA via `vite-plugin-pwa` (Workbox `generateSW`, auto-update) — offline-capable once cached.
 - No backend, no telemetry, no analytics, no third-party scripts.
+- Multi-version hosting on GitHub Pages — each tagged release is built into its own subpath (`/hrv/<tag>/`), with `versions.json` driving the `official` redirect at the project root and a `latest/` alias for the newest tag.
 
 ---
 
@@ -115,7 +117,14 @@ npm run preview
 
 Open the URL Vite prints (typically `http://localhost:5173`) and the app is ready — no accounts, no setup beyond `npm install`.
 
-Runtime feature flags can be set with query parameters. `switcherIcon` controls practice-switcher icons and defaults on. Use values like `?switcherIcon=1`, `?switcherIcon=on`, or `?switcherIcon=true` to show icons; use `?switcherIcon=0`, `?switcherIcon=off`, or `?switcherIcon=false` to hide them.
+Runtime feature flags can be set with query parameters:
+
+- `switcherIcon` (default `off`) — show icons on the practice switcher pills
+- `breathingShape` (`orb-halo` | `minimal-rings`) — breathing-guide render variant
+- `orbIdle` (`still` | `ambient`) — orb idle behavior between sessions
+- `ringCue` (`outer-inner` | `progress-arc`) — per-breath ring-cue style
+
+Boolean flags accept `1` / `on` / `true` / `yes` / `enable` (true) and `0` / `off` / `false` / `no` / `disable` (false). String-valued flags fall back to their default when the value isn't recognized. See `src/featureFlags.ts` for the canonical parsers.
 
 ---
 
@@ -124,28 +133,41 @@ Runtime feature flags can be set with query parameters. `switcherIcon` controls 
 ```
 src/
   app/            React entry — App.tsx wires the page and owns
-                  practice / session state
+                  practice / session state; PracticeScreen +
+                  PracticeSessionView host the per-practice surfaces
+                  (BreathingSessionSurface, NaviKriyaSessionSurface)
+                  and the LearnPage route
   components/     PracticeToggle (the practice switcher); the breathing
-                  visual-guide variants (Orb / Square / Diamond) plus the
-                  Navi Kriya guide (NKShape); SessionReadout /
-                  NKSessionReadout, SessionControls, SettingsForm,
-                  SettingsDialog, StatsFooter, the End / Reset dialogs,
-                  LearnAnchor / LearnDialog, InstallBanner / IosInstallSteps,
-                  and the Theme / Variant / Cue / Timbre / Language pickers
-  content/        learnContent + strings — typed copy, Forrest link
-                  record, and EN / PT-BR interface strings
-  domain/         breathingPlan, sessionMath, sessionController, settings,
-                  stretchRamp (Stretch ramp), naviKriyaSettings — pure
-                  functions
-  hooks/          useSessionEngine + useNKEngine (the two session engines),
-                  useAudioCues, useWakeLock, useTheme, useVisualVariant,
-                  useLocale, the PWA-install hooks, and the matching
-                  choice hooks
-  audio/          audioEngine + cueSynth + nkCueSynth + timbres — Web
-                  Audio API layer
+                  guide (OrbShape with `orb-halo` / `minimal-rings`
+                  variants) plus the Navi Kriya guide (NKShape);
+                  SessionReadout / NKSessionReadout, SessionActionRow,
+                  SettingsFormShell + ResonantSettingsForm /
+                  StretchSettingsForm / NaviKriyaSettingsForm,
+                  SettingsSheet, FeedbackCount / FeedbackTime,
+                  EndSessionDialog, LearnAnchor / LearnPanel,
+                  IosInstallSteps, and the Theme / Cue / Timbre /
+                  Language pickers
+  content/        learnContent + strings + lockedCopy — typed copy,
+                  Forrest link record, and EN / PT-BR interface strings
+  domain/         breathingPlan, sessionMath, sessionController,
+                  sessionLifecycle, sessionAudio, settings, stretchRamp
+                  (Stretch ramp), naviKriyaSession + naviKriyaSettings
+                  — pure functions
+  hooks/          useSessionEngine + useNKEngine (the two session
+                  engines), useBreathingSessionController +
+                  useNaviKriyaSessionController, useAudioCues +
+                  useNaviKriyaAudio, useWakeLock, useTheme, useVisualCue,
+                  useFeatureFlags, useAmbientScale, useFavicon,
+                  useLocale, usePrefersReducedMotion,
+                  useBeforeInstallPrompt + useIsStandaloneOrPhone (PWA
+                  install), and the matching choice hooks
+  audio/          audioEngine + cueSynth + nkCueSynth + timbres +
+                  previewContext — Web Audio API layer
   storage/        localStorage wrappers — per-practice settings + stats,
-                  prefs, and install-banner dismissal
-  styles/         theme palettes + favicon palette sync
+                  prefs, practices, and install-banner dismissal
+  styles/         theme palette CSS + favicon palette sync
+  featureFlags.ts Query-parameter feature flags (switcherIcon,
+                  breathingShape, orbIdle, ringCue)
 .planning/        Planning artifacts (specs, phases, ROADMAP) — see
                   PROJECT.md if you want to dive into the design history
 ```
