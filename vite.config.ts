@@ -59,7 +59,7 @@ export default defineConfig({
         theme_color: '#5e81ac',
         background_color: '#eceff4',
         display: 'standalone',
-        // start_url and scope intentionally omitted — auto-default to Vite base '/hrv/'
+        // start_url and scope intentionally omitted — auto-default to Vite base, which is now parameterized at build time via `--base` (e.g. `/hrv/`, `/hrv/v2.0/`). Each versioned build's SW auto-scopes to its own subpath; root and versioned subpaths do not collide.
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
