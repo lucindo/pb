@@ -72,61 +72,61 @@ Operator-added: switching the Timbre selection in App Settings plays the inhale 
 - [x] **PREV-04**: Preview is only triggered outside an active session (App Settings is inaccessible during a session in the redesign anyway).
 - [x] **PREV-05**: Preview latency is acceptable (≤ 100 ms from picker tap to first audio sample on commodity hardware).
 
-### TOK — Mono Zen palette + tokens (Phase 41)
+### TOK — Mono Zen palette + tokens (delivered in Phase 41 via spike-loop J1-J2)
 
 Apply the spike-010 light + dark palettes and introduce the new token vocabulary.
 
-- [ ] **TOK-01**: Light palette tokens applied — `bg #f3f5f7`, `surface #ffffff`, `accent #5d6877` (cool slate), per spike-010.
-- [ ] **TOK-02**: Dark palette tokens applied — `bg #1a1d24`, `surface #252932`, `accent #b4bac4` (cool dimmed mid-slate; explicitly NOT bleached white), per spike-010.
-- [ ] **TOK-03**: `borderSoft` token is added to the theme vocabulary (addresses the dark-theme token-collapse pattern from spike-008).
-- [ ] **TOK-04**: `textSoft` token is added (used by top-bar icons and the new MuteToggle chrome).
-- [ ] **TOK-05**: `orbHalo1` / `orbHalo2` / `orbHalo3` rgba tokens are introduced (replace previous orb gradient + ring tokens).
-- [ ] **TOK-06**: `onAccent` token is added (used for the breath label rendered inside the centre disc).
-- [ ] **TOK-07**: Semibold Inter typography is applied app-wide (replaces existing weight).
-- [ ] **TOK-08**: WCAG luminance contrast guard passes on the new light + dark palettes (≥ 1.5 on orb In/Out midpoints; ≥ 4.5 AA on all text-against-surface combinations).
+- [x] **TOK-01**: Light palette tokens applied — `bg #f3f5f7`, `surface #ffffff`, `accent #5d6877` (cool slate), per spike-010. Delivered J1 (commit `be13fb4`).
+- [x] **TOK-02**: Dark palette tokens applied — `bg #1a1d24`, `surface #252932`, `accent #b4bac4` (cool dimmed mid-slate; explicitly NOT bleached white), per spike-010. Delivered J1 (commit `be13fb4`).
+- [x] **TOK-03**: `borderSoft` token is added to the theme vocabulary (addresses the dark-theme token-collapse pattern from spike-008). Delivered J1 (commit `be13fb4`).
+- [x] **TOK-04**: `textSoft` token is added (used by top-bar icons and the new MuteToggle chrome). Delivered J1 (commit `be13fb4`).
+- [x] **TOK-05**: `orbHalo1` / `orbHalo2` / `orbHalo3` rgba tokens are introduced (replace previous orb gradient + ring tokens). Delivered J1 (commit `be13fb4`).
+- [x] **TOK-06**: `onAccent` token is added (used for the breath label rendered inside the centre disc). Delivered J1 (commit `be13fb4`).
+- [x] **TOK-07**: Semibold Inter typography is applied app-wide (replaces existing weight). Delivered J2 (commit `0decf6a`) via `@fontsource-variable/inter` self-hosted; Workbox precaches Latin + Latin-ext woff2 only.
+- [x] **TOK-08**: WCAG luminance contrast guard passes on the new light + dark palettes (≥ 1.5 on orb In/Out midpoints; ≥ 4.5 AA on all text-against-surface combinations). Delivered J1 — `src/styles/theme.contrast.test.ts` regenerated in the same atomic commit as the palette swap.
 
-### ORB — New orb implementation (Phase 42)
+### ORB — New orb implementation (delivered in Phase 41 via spike-loop J4-J7, J12)
 
 Rebuild the orb per spike-010: three-layer halo + centre disc with the in-disc breath label, two dev-toggled shapes, preserved ring cues.
 
-- [ ] **ORB-01**: Orb is rebuilt as a three-layer translucent-halo (using `orbHalo1/2/3` tokens) + solid centre disc with asymmetric border-radii (organic-puddle feel).
-- [ ] **ORB-02**: The breath label (In/Out, localized) is rendered inside the centre disc in `onAccent` color.
-- [ ] **ORB-03**: V1 (Orb-halo) shape variant ships behind `VITE_BREATHING_SHAPE=orb-halo`.
-- [ ] **ORB-04**: V2 (Minimal) shape variant ships — single accent disc + faint halo, behind `VITE_BREATHING_SHAPE=minimal-rings`.
-- [ ] **ORB-05**: `VITE_BREATHING_SHAPE` dev toggle (build-time env var; same shape as `VITE_SWITCHER_TREATMENT` from spike-007).
-- [ ] **ORB-06**: `VITE_ORB_IDLE_BEHAVIOR=still|ambient` dev toggle — `still` = no animation + empty disc; `ambient` = gentle scale animation + no In/Out label.
-- [ ] **ORB-07**: End-of-phase outer ring cue is always visible during a Running session (marks end-of-inhale).
-- [ ] **ORB-08**: End-of-phase inner ring cue appears only during the exhale phase (marks end-of-exhale).
-- [ ] **ORB-09**: Both ring cues are hidden on Idle (A) and Complete (C) screens — even when ambient-breath idle is active.
-- [ ] **ORB-10**: `MuteToggle.tsx:52` chrome updated from `border-[var(--color-breathing-accent)]` + `text-[var(--color-breathing-accent-strong)]` to `borderSoft` + `textSoft` (matches top-bar icon weight); hit area stays 44 px (size-11) — only colour classes change.
-- [ ] **ORB-11**: Both V1 and V2 carry the same end-of-phase ring cue contract (ORB-07/08/09).
+- [x] **ORB-01**: Orb is rebuilt as a three-layer translucent-halo (using `orbHalo1/2/3` tokens) + solid centre disc with asymmetric border-radii (organic-puddle feel). Delivered J4 (commit `a742c0b`).
+- [x] **ORB-02**: The breath label (In/Out, localized) is rendered inside the centre disc in `onAccent` color. Delivered J4 (CueGlyph rendered inside disc, inherits currentColor → on-accent).
+- [x] **ORB-03**: V1 (Orb-halo) shape variant ships as default. Delivered J5 (commit `7366f1b`).
+- [x] **ORB-04**: V2 (Minimal) shape variant ships — single accent disc + faint halo. Delivered J5 (commit `7366f1b`).
+- [x] **ORB-05** ⚠️ **deviated**: Dev toggle uses **query-string** `?breathingShape=orb-halo|minimal-rings` (with aliases halo/orb + minimal/rings, case-insensitive, default-on-junk) **instead of `VITE_BREATHING_SHAPE` env var**. Operator decision at J5 propose: per-tab toggling without rebuild. Parser in `src/featureFlags.ts`.
+- [x] **ORB-06** ⚠️ **deviated**: Dev toggle uses **query-string** `?orbIdle=still|ambient` (default `still` per spike L259) **instead of `VITE_ORB_IDLE_BEHAVIOR` env var**. Same operator rationale as ORB-05. Delivered J6 (commit `f54aa37`). `still` = MID_SCALE static, `ambient` = 5.5 BPM 40:60 inhale:exhale scaling (operator-tuned at J16 commit `a70fd22`).
+- [x] **ORB-07**: End-of-phase outer ring cue always visible during Running. OrbBody hardcodes `showRings={true}`; J4 + J5 both honor.
+- [x] **ORB-08**: End-of-phase inner ring cue appears only during exhale. OrbContainer's `innerRingPhase={frame.phase}` gates inner-ring opacity on `[data-phase='out']` (reduced-motion-safe via CSS).
+- [x] **ORB-09**: Both ring cues hidden on Idle + Complete. J6 OrbIdle hardcodes `showRings={false}`; J7 audit (item skipped — verified already correct) confirmed no other consumer renders rings outside the Running OrbBody path.
+- [x] **ORB-10**: `MuteToggle` chrome re-tokenized `border-accent` + `text-accent-strong` + `shadow-sm` → `border-soft` + `text-soft`, no shadow. Hit area preserved (size-11). Delivered J12 (commit `6183e1e`).
+- [x] **ORB-11**: Both V1 and V2 share the OrbContainer with variant-aware ring rendering; J5 wiring threaded the same `showRings` contract through both variants.
 
-### UX — Five-surface redesign (Phase 43)
+### UX — Five-surface redesign (delivered in Phase 41 via spike-loop J3, J8-J17)
 
 The full visual + interaction redesign across all five app surfaces, plus the V3 install banner, desktop layout, and no-jiggle invariant.
 
-- [ ] **UX-01**: A new App Settings page exists, opened by the gear icon in the top app bar. Sections: Appearance, Language, Audio, About.
-- [ ] **UX-02**: The theme picker moves from the Practice Settings sheet to App Settings (Appearance section).
-- [ ] **UX-03**: Idle screen renders a 2×3 Grid SetupCard showing the active practice's settings — 1 row for 3-setting practices (HRV/Navi), 2 rows for Stretch's 6 settings.
-- [ ] **UX-04**: The whole Grid SetupCard is the tap target → opens the Practice Settings sheet. A right-chevron affordance is vertically centred to the card.
-- [ ] **UX-05**: Practice Settings opens as a bottom sheet on mobile and a center modal on desktop (responsive breakpoint).
-- [ ] **UX-06**: Practice Settings sheet content per practice — HRV/Stretch: BPM + Ratio + Duration steppers + Cue timbre + Cue sound. Navi: Front OM count + Rounds + Cue timbre + Cue sound + Per-OM tick.
-- [ ] **UX-07**: Running screen renders the orb breathing (In/Out inside disc) with practice-specific feedback under the orb — HRV uses a time-based primitive (large remaining time + small pace caption); Stretch and Navi share a `FeedbackCount` primitive (big primary number + small "of N" mid + small uppercase tracked context line).
-- [ ] **UX-08**: Running screen disables the practice switcher (consistent with v1.5 behavior).
-- [ ] **UX-09**: Running screen exposes End + Mute controls only.
-- [ ] **UX-10**: Complete screen renders the orb (still + subtle check marker in centre disc), the line "Session complete · Take a moment", and Done + Mute controls. (Operator may drop this screen at implementation — decision deferred per spike-010.)
-- [ ] **UX-11**: Learn surface is reorganized: info icon in the top app bar opens it; sections cover About Forrest, per-practice intros, and Resources.
-- [ ] **UX-12**: V3 inline-card install banner replaces the current `InstallBanner.tsx` — rounded `surface` card with `borderSoft` border, app-icon glyph on the left, two-line content (title + locked `bannerText` sub-line "Add to your home screen for offline use"), tap-to-install affordance with right chevron, plus a small dismiss X.
-- [ ] **UX-13**: Install banner is mobile-only + idle-only (never on desktop, never during Running / Complete); renders below the top app bar so the orb position doesn't shift on appear/dismiss.
-- [ ] **UX-14**: Install banner action label branches on `isIOS` — "Install" (Android / Chrome triggers `deferredPrompt`) vs "How to install" (iOS expands the existing `IosInstallSteps` panel below the card).
-- [ ] **UX-15**: Desktop layout — locked mobile design renders inside a centered column: 520 px wide for practice screens (A/B/C), 600 px for Learn + App Settings. Orb scales up to 320 px diameter.
-- [ ] **UX-16**: Practice Settings becomes a center modal at desktop sizes (instead of a bottom sheet).
-- [ ] **UX-17**: No-jiggle invariant — every screen state (Idle / Running / Complete) fits inside the viewport at all supported sizes without vertical scrolling.
-- [ ] **UX-18**: No-jiggle invariant — switching practices (HRV ↔ Stretch ↔ Navi) does not cause vertical layout shifts of the orb, switcher, or controls.
-- [ ] **UX-19**: No-jiggle invariant — phase transitions (A ↔ B ↔ C) do not cause vertical layout shifts.
-- [ ] **UX-20**: Top app bar icons (info + gear) use `borderSoft` + `textSoft` — same visual weight as the MuteToggle chrome (ORB-10).
-- [ ] **UX-21**: All five surfaces verified at the smallest device width (320 px) in EN + PT-BR, including the wordiest practice (Stretch's 6-setting Idle SetupCard).
-- [ ] **UX-22**: `LOCKED_COPY` strings (`install.*`, claim-safe disclaimers, Forrest framing) carry verbatim through the redesign; frozen-EN byte-equality guard intact.
+- [x] **UX-01**: New App Settings page with 4 sections (Appearance / Language / Feedback / About — "Audio" renamed to "Feedback" per J16 commit `4ab2776`). Delivered J14 (commit `6988ccc`).
+- [x] **UX-02**: Theme picker lives in App Settings → Appearance. Delivered J14 + J16 dump #3 B (commit `e2db3e6`) with color-swatch icons per spike L1831-1834.
+- [x] **UX-03**: SetupCard renders 2×3 grid (1 row HRV/Navi, 2 rows Stretch). Delivered J8 (commit `5d6439b`). Note: Stretch Idle simplified to 3 cells per operator J16 `167f536` for congruence.
+- [x] **UX-04**: Whole `<button>` element is the tap target; right-chevron centered vertically. Delivered J8.
+- [x] **UX-05**: SettingsSheet responsive — mobile bottom-sheet + drag handle / desktop center-modal max-width 460px. Delivered J9 (commit `7a2884d`).
+- [x] **UX-06** ⚠️ **field labels operator-decided**: Sheet content per practice. **Field labels sourced from real app domain (`settingsForm.*` + `nkControls.*`) NOT spike's illustrative SETUP_SUMMARY** per operator OQ-1 at J10 propose. Delivered J10 (commit `2bf2834`).
+- [x] **UX-07**: HRV → FeedbackTime (big remaining time + uppercase tracked secondary). Stretch + Navi → FeedbackCount (big number + " / N" mid + uppercase context). Primitives J11 (`748ce31`); wiring J16 (`62d6693`).
+- [x] **UX-08**: PracticeToggle `disabled` wired to `vm.controlsDisabled` (pre-existing behavior preserved through redesign).
+- [x] **UX-09**: Running surface renders only End + Mute via SessionActionRow.
+- [x] **UX-10**: Complete screen with checkmark orb + "Session complete" + "Take a moment" + Done button. **Not dropped** — operator chose to keep. HRV+Stretch via SessionReadout (J16 `afe45eb`); Navi parity restored J17 (`7d7ca2a`).
+- [x] **UX-11**: Learn opens via info icon (LearnAnchor); content restructured to SectionHeader + SectionCard pattern. Delivered J14 + J16 dump #3 (commits `556463f` / `7f1d10e` / `c0347ba`).
+- [ ] ~~**UX-12**~~ ❌ **DROPPED per operator J13 decision**: V3 inline-card install banner NOT implemented. J13 commit `117510b` removed the banner entirely; install stays only in App Settings → About → Install row. Per [[v2-carryforward-disposition]].
+- [ ] ~~**UX-13**~~ ❌ **OBSOLETE**: Install banner mobile-only + idle-only — moot since banner is gone.
+- [ ] ~~**UX-14**~~ ❌ **OBSOLETE**: Install banner action label `isIOS` branching — the branching logic survives in `SettingsInstallSection` (App Settings install row) but no longer applies to a banner.
+- [x] **UX-15**: Desktop responsive — PageShell `width="practice"` (520px) for PracticeScreen; default `"page"` (600px) for Learn + App Settings; orb scales to 320px via `@media (min-width: 640px)` CSS. Delivered J15 (commit `c72d335`).
+- [x] **UX-16**: SettingsSheet desktop branch renders as center modal. Delivered J9.
+- [x] **UX-17**: No-jiggle invariant — layout fits in viewport on supported sizes. J3 anchored top group + flex-1 spacer + anchored bottom group (commit `637ad75`).
+- [x] **UX-18**: Practice switching does not shift orb / switcher / controls — orb sits at fixed y-position; variable region grows/shrinks below into spacer. Same J3 anchoring.
+- [x] **UX-19**: Phase transitions (A ↔ B ↔ C) do not cause vertical shifts. Same J3 anchoring.
+- [x] **UX-20**: Top app bar icons (SettingsAnchor + LearnAnchor) use `border-soft` + `text-soft` matching MuteToggle (ORB-10). Delivered J16 V1 (commit `3da02c8`).
+- [x] **UX-21**: All five surfaces at 320 px in EN + PT-BR including Stretch's wordiest SetupCard. Operator UAT — surface in `41-VERIFICATION.md` human_verification block.
+- [x] **UX-22**: `LOCKED_COPY` carries verbatim through redesign. J17 cross-surface walk verified.
 
 ### POLISH — Final polish (Phase 44)
 
@@ -138,9 +138,9 @@ Closeout sweep — code review, test cleanup, comment audit, refactoring, securi
 - [ ] **POLISH-04**: Comment audit (Tiger Style) — no narration of WHAT; only WHY-comments survive (constraints, invariants, surprising behavior, workarounds).
 - [ ] **POLISH-05**: Refactoring pass — any duplication or boundary violations introduced by the redesign are resolved.
 - [ ] **POLISH-06**: Security re-review — `/gsd-secure-phase 44` on the full milestone surface; new attack surfaces (preview audio path, new env vars, dev toggles) reviewed.
-- [ ] **POLISH-07**: Readability pass — file/function/token names align with the new mono-zen vocabulary; no leftover references to dropped variants/themes.
-- [ ] **POLISH-08**: Zero net-new runtime dependencies (carrying the v1.0.1 invariant — `dependencies` stays `react` + `react-dom`).
-- [ ] **POLISH-09**: Per-commit green-gate maintained throughout v2.0 (`tsc && lint && build && test` exits 0 on every commit on `main`).
+- [x] **POLISH-07** (partial — Phase 41 J18 sweep): Readability pass. J18.1 deleted 3 dead components (Card / BooleanToggle / StatusPanel); J18.2 deleted dead viewmodel field + 6 i18n keys + helper; J18.3 deleted 3 orphan i18n entries. No leftover references to dropped variants/themes. Drift-guard `content.no-removed-keys.test.ts` locks the deletion done-state. **Remaining for Phase 44:** broader readability pass against the redesigned codebase.
+- [x] **POLISH-08** (Phase 41): Zero net-new runtime code dependencies maintained. `@fontsource-variable/inter` is a font asset (woff2 in dist/), not a code dep — `dependencies` in package.json still `react` + `react-dom`.
+- [x] **POLISH-09** (Phase 41): Per-commit green-gate maintained. Every spike-loop item ran `tsc && lint && build && test` before commit. Lint debt from Phase 40 (`previewContext.test.ts`, +2 errors / +1 warning vs pre-Phase-40 baseline) carries forward to Phase 44 POLISH-02 sweep.
 
 ## Future Requirements
 

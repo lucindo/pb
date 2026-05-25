@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
 status: ready_to_plan
-stopped_at: Phase 40 context gathered
-last_updated: "2026-05-21T22:52:11.624Z"
-last_activity: 2026-05-21 -- Phase 40 execution started
+stopped_at: Phase 41 closed via spike-loop (J1-J18); awaiting Phase 44 POLISH decision
+last_updated: "2026-05-25T03:00:00.000Z"
+last_activity: 2026-05-25 -- Phase 41 closed at commit d2b886b; GSD reconciliation
 progress:
-  total_phases: 9
-  completed_phases: 5
-  total_plans: 25
+  total_phases: 7   # 36-41 + 44 (42/43 absorbed into 41 — see ROADMAP reconciliation note)
+  completed_phases: 6
+  total_plans: 21   # 9 phase-36 + 3 phase-37 + 4 phase-38 + 5 phase-39 + 4 phase-40 + spike-loop-18 = treated as phase-41's "plans"; Phase 44 TBD
   completed_plans: 21
-  percent: 56
+  percent: 86   # 6/7 phases done
 ---
 
 # Project State
@@ -21,14 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 40 — timbre-preview-cue
+**Current focus:** Phase 44 — final polish (next planned)
 
 ## Current Position
 
-Phase: 41
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-21
+Phase: 41 (closed at commit `d2b886b`, 2026-05-25)
+Next phase: 44 (final polish — awaiting plan)
+Last activity: 2026-05-25 — GSD reconciliation (created phase 41 dir + archived spike-loop state + updated ROADMAP/REQUIREMENTS/STATE/PROJECT)
+
+**Spike-loop note:** Phase 41 absorbed the originally-planned Phases 41 (palette+tokens), 42 (new orb), 43 (five-surface redesign) into a single tightly-coupled implementation using a per-item propose/go/implement/approve 4-step loop (items J1-J18). See `.planning/phases/41-spike-mono-zen/41-CONTEXT.md` for the framing and `41-SPIKE-LOOP-ARCHIVE.md` for the per-item history.
 
 ## Performance Metrics
 
@@ -51,14 +52,23 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 - [Phase ?]: [Phase 36]: Plan 36-07: Closed HOUSE-10 by a single git mv of all 6 v1.5 phase dirs (Phases 30-35) to .planning/milestones/v1.5-phases/ — 106 file renames, rename history preserved, zero deletions, full artifact carry-through per CONTEXT D-02. Backfilled artifacts from 36-02/03/04 traveled byte-for-byte; single docs(36): commit 55d057a. CONTEXT D-01 single-batch restore→backfill→archive flow closes here; working tree clean for all affected paths. Phase 28 SUMMARYs stay at .planning/phases/28-phone-install-banner/ (v1.4 archive deferred). Phase 36 success criterion #3 satisfied.
 - [Phase ?]: [Phase 36]: Plan 36-08: Closed HOUSE-11..13 in a single combined commit 4a8263c — removed root CLAUDE.md (orphan pointer to the deleted skill), git rm -r'd .claude/skills/spike-findings-hrv/ (21 tracked files, content absorbed into v1.5 phases / .planning/spikes/MANIFEST.md), and appended .claude/ to .gitignore under a new # Claude Code per-project files section. CONTEXT D-05 commit #8 of ~7-8 logical-group commits; D-05 Claude's Discretion picked combined-over-split because the three changes are tightly coupled. 23 files changed (1 modify + 22 deletes), 3 insertions, 3974 deletions, zero src/ touches. git check-ignore -q .claude/ exits 0; working tree clean. Phase 36 success criterion #4 closed. Remaining: HOUSE-14 (green-gate + push) in plan 36-09.
 - [Phase Phase 36]: Plan 36-09: Closed HOUSE-14 by running operator-revised split-gate (tsc + build + test all exit 0; 1257/1257 tests pass; lint deferred to Phase 44 POLISH-02 per operator decision) then plain fast-forward git push origin main (e5d1257..e8e1781 — 26 commits landed in one push). Task 2 D-12 fix-up NOT triggered; option-a (gate passed) selected. Post-push: local HEAD === remote HEAD = e8e1781; working tree clean. Phase 36 fully closed (all 14 HOUSE-XX requirements satisfied); v1.x procedural backlog publicly visible on origin/main; v2.0 GSD baseline reset complete.
+- [Phase 41]: Format decision — adopt spike-loop format (per-item propose/go/implement/approve 4-step cycle with per-transition state-file commits) instead of standard `/gsd:plan-phase` workflow. Rationale: the visual system is tightly coupled across all 5 surfaces; sequencing as 3 separate phases × N plans would have meant landing surface-by-surface with intermediate broken states the operator couldn't usefully review. The spike-loop format kept operator-in-the-loop on every visual increment and absorbed mid-stream feedback dumps (J16 landed ~50 sub-commits this way).
+- [Phase 41]: Scope decision — Phases 41 (palette+tokens) + 42 (new orb) + 43 (five-surface redesign) collapse into single Phase 41 "Spike 010 Mono Zen — full implementation". 42/43 numbering gaps preserved in ROADMAP for audit trail. Phase 44 (POLISH) stays as a separate planned phase.
+- [Phase 41]: ORB-05/06 deviation — dev toggles use **query-string** params (`?breathingShape=` + `?orbIdle=`) instead of `VITE_*` env vars (operator decision at J5 + J6 propose: per-tab toggling without rebuild).
+- [Phase 41]: UX-12/13/14 dropped — V3 inline-card install banner not implemented per operator J13 decision. Install kept only in App Settings → About → Install row. Per [[v2-carryforward-disposition]].
+- [Phase 41]: Cleanup orphan queue swept in J18 (commits `75af962` `ba12418` `f562ff1` `d9e66df` `3fb46c4` `ec77c67`). Decision A2 for `installDismissed` storage — keep storage + writers alive (still used by useBeforeInstallPrompt on appinstalled + triggerInstall success), only remove dead read in useAppViewModel. Decision B for THEME_OPTIONS — `'system'` option intentionally KEPT (operator validated 3-option theme picker during design); orphan-queue claim that 'system' should be pruned superseded.
+- [Phase 41]: J18.8 drift-guard test `src/content/content.no-removed-keys.test.ts` locks the deletion done-state structurally (10 forbidden-pattern matchers across components/+app/+content/). Canary-tested end-to-end.
 
 ### Pending Todos
 
-- v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants. (Many of these are obviated by Phase 42's orb rewrite — re-audit at v2.0 close.)
+- v1.x deferred: `.orb-layer--in/--out` → `.shape-layer--in/--out` rename for naming consistency; per-variant token sets; live idle preview; additional shape variants. (Many of these were obviated by Phase 41's orb rewrite — re-audit at v2.0 close.)
+- Phase 44 (POLISH) — full code review sweep across the redesigned codebase (POLISH-01..06); 28 Info-severity findings from 2026-05-16 disposition; test cleanup; Tiger Style WHY-only comment audit; refactoring + security re-review.
+- Phase 40 lint carry-forward: `src/audio/previewContext.test.ts` carries +2 errors / +1 warning vs pre-Phase-40 baseline (vi.mocked + non-null-assertion idioms). Fold into Phase 44 POLISH-02.
+- J19 (Complete-screen distinct-surface decision) — gated on a separate operator call; not a spike-loop or Phase 44 item.
 
 ### Blockers/Concerns
 
-- None blocking. v2.0 roadmap defined 2026-05-20 — 9 phases (36–44), 87 requirements mapped 1:1 against REQUIREMENTS.md. Phase 36 is the procedural reset (no source changes; pushes to `origin/main` at phase close).
+- None blocking. Phase 41 closed at commit `d2b886b` (2026-05-25). Phase 44 ready to plan when operator is ready. Milestone v2.0 closes after Phase 44 lands.
 
 ### Quick Tasks Completed
 

@@ -15,15 +15,15 @@
 
 ### v2.0 New Design (Phases 36–44)
 
+> **Reconciliation note (2026-05-25):** The originally-planned Phases 41 / 42 / 43 (Mono Zen palette+tokens / New orb / Five-surface redesign) were delivered as a single tightly-coupled spike-loop implementation (items J1-J18, 2026-05-24) — see Phase 41 below for the absorbed scope. The 42/43 numbering gaps are kept intentionally to preserve the audit trail. Phase 44 (POLISH) remains as a separate planned phase.
+
 - [x] **Phase 36: Housekeeping bookkeeping reset** (9 plans) - Retroactively close the v1.x procedural backlog (Phase 12 VALIDATION + SECURITY, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill, legacy human_needed flips, 28-01/28-03 SUMMARY drift, v1→v2→v3 chained-migration regression test), remove root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/`, gitignore `.claude/`, push to origin/main
-- [ ] **Phase 37: Stats UI removal** (3 plans) - Remove `StatsFooter`, `ResetStatsDialog`, and the Practice Settings "Reset stats" affordance; keep `recordSession` computation + localStorage persistence intact
+- [x] **Phase 37: Stats UI removal** (3 plans) - Remove `StatsFooter`, `ResetStatsDialog`, and the Practice Settings "Reset stats" affordance; keep `recordSession` computation + localStorage persistence intact (shipped 2026-05-21)
 - [x] **Phase 38: Variant removal** (4 plans) - Drop the Square + Diamond shape variants from code/tokens/picker/Start-capture refs; coerce persisted `variant: 'square'|'diamond'` to `'orb'`
-- [ ] **Phase 39: Theme simplification** (TBD plans) - Remove Moss/Slate/Dusk palettes; reduce ThemePicker to Light/Dark/System; coerce persisted theme outside `{light, dark, system}` to `'system'`; regenerate WCAG guard
-- [ ] **Phase 40: Timbre preview cue** (4 plans) - Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch via the existing `cueSynth` scheduler (preview plays even when muted)
-- [ ] **Phase 41: Mono Zen palette + tokens** (TBD plans) - Apply the spike-010 light + dark cool-slate palettes, add `borderSoft` / `textSoft` / `orbHalo1/2/3` / `onAccent` tokens, switch to semibold Inter typography, regenerate the WCAG contrast guard
-- [ ] **Phase 42: New orb implementation** (TBD plans) - Rebuild the orb as a three-layer translucent-halo + solid centre disc with the breath label inside the disc in `onAccent`; ship V1 (orb-halo) + V2 (minimal) behind `VITE_BREATHING_SHAPE`; add `VITE_ORB_IDLE_BEHAVIOR=still|ambient`; preserve end-of-phase ring cues (hidden on Idle/Complete); align `MuteToggle` chrome to `borderSoft`/`textSoft`
-- [ ] **Phase 43: Five-surface redesign** (TBD plans) - Redesign Learn / App Settings / Idle / Running / Complete (Appearance/Language/Audio/About on App Settings; Idle V1 Grid SetupCard; Practice Settings bottom-sheet on mobile + center-modal on desktop; per-practice Running feedback with `FeedbackCount` primitive; V3 inline-card install banner; desktop centered column 520/600 px; no-jiggle invariant)
-- [ ] **Phase 44: Final polish** (TBD plans) - Full-codebase `/gsd-code-review --all --fix` sweep, disposition the 28 Info-severity findings from 2026-05-16, test-name cleanup, Tiger Style WHY-only comment audit, refactoring + security re-review + readability pass, zero-Warning closeout
+- [x] **Phase 39: Theme simplification** (5 plans) - Remove Moss/Slate/Dusk palettes; reduce ThemePicker to Light/Dark/System; coerce persisted theme outside `{light, dark, system}` to `'system'`; regenerate WCAG guard (shipped 2026-05-21)
+- [x] **Phase 40: Timbre preview cue** (4 plans) - Switching the Timbre selection in App Settings plays the inhale cue once at the current pitch via the existing `cueSynth` scheduler (preview plays even when muted) (shipped 2026-05-21)
+- [x] **Phase 41: Spike 010 Mono Zen — full implementation** (spike-loop items J1-J18 + architecture refactor loop items A-I) - Absorbed the originally-planned Phases 41 (palette+tokens), 42 (new orb), and 43 (five-surface redesign) into a single tightly-coupled implementation. Delivered: Mono Zen light + dark palettes with new `borderSoft`/`textSoft`/`orbHalo1/2/3`/`onAccent` tokens; self-hosted Inter Variable typography; 3-halo + centre disc orb with V1/V2 variants behind query-string flags (operator decision — NOT VITE_*); idle orb states (still/ambient); SetupCard + SettingsSheet + FeedbackTime + FeedbackCount primitives; 4-section App Settings page (Appearance/Language/Feedback/About); desktop responsive (520/600 px columns + 320 px orb); LOCKED_COPY carry-through verified J17; J18 final audit + orphan cleanup + drift-guard. **Deviations:** install banner V3 (UX-12/13/14) dropped entirely per operator J13 decision — install kept only in App Settings. Shipped 2026-05-25 at commit `d2b886b`. See `.planning/phases/41-spike-mono-zen/`.
+- [ ] **Phase 44: Final polish** (TBD plans) - Full-codebase `/gsd-code-review --all --fix` sweep, disposition the 28 Info-severity findings from 2026-05-16, test-name cleanup, Tiger Style WHY-only comment audit, refactoring + security re-review + readability pass, zero-Warning closeout. **Carries forward from Phase 41:** lint debt from Phase 40 (55 errors / 4 warnings on `main`, +2/+1 vs pre-Phase-40 baseline, all in `previewContext.test.ts`); plus the broad code review sweep against the redesigned codebase.
 
 <details>
 <summary>✅ v1.5 Multi-Practice (Phases 30–35) — SHIPPED 2026-05-19</summary>
@@ -144,47 +144,24 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 40-03-PLAN.md — Wire TimbrePicker onClick to playInhalePreview + wiring tests (PREV-01 PREV-04 / D-04 D-05 D-09 D-10e-g)
 - [x] 40-04-PLAN.md — Add 40-HUMAN-UAT.md with 4 empirical items (PREV-01 PREV-03 PREV-05 / D-08 D-13)
 
-### Phase 41: Mono Zen palette + tokens
-**Goal**: Apply the spike-010 Monochrome Zen visual vocabulary — cool-slate light + dark palettes, the new `borderSoft` / `textSoft` / `orbHalo*` / `onAccent` tokens, and semibold Inter typography app-wide — so Phase 42 and 43 can build the new orb and surfaces against the locked token set.
-**Depends on**: Phase 39 (theme set must be collapsed first so the Mono Zen palette replaces fewer palettes) and Phase 38 (no variant tokens left to thread through)
-**Requirements**: TOK-01, TOK-02, TOK-03, TOK-04, TOK-05, TOK-06, TOK-07, TOK-08
+### Phase 41: Spike 010 Mono Zen — full implementation
+**Goal**: Implement the spike-010 Monochrome Zen visual system end-to-end across all 5 app surfaces. Absorbs the originally-planned Phases 41 (palette + tokens), 42 (new orb), and 43 (five-surface redesign) into a single tightly-coupled implementation using a spike-loop format (per-item propose/go/implement/approve 4-step cycle), with the architecture refactor loop (items A-I) as preparation.
+**Depends on**: Phase 39 (theme set collapsed) + Phase 38 (variants removed) + Phase 37 (StatsFooter gone) + Phase 40 (timbre preview wiring intact through redesign)
+**Requirements**: TOK-01..08, ORB-01..11, UX-01..22 (less UX-12/13/14 dropped per operator J13 decision), POLISH-07 (partial), POLISH-08, POLISH-09
 **Success Criteria** (what must be TRUE):
-  1. The light palette in `theme.css` reads `bg #f3f5f7` / `surface #ffffff` / `accent #5d6877`; the dark palette reads `bg #1a1d24` / `surface #252932` / `accent #b4bac4` (cool dimmed mid-slate, explicitly not bleached white) (TOK-01, TOK-02).
-  2. The theme token vocabulary includes `borderSoft`, `textSoft`, `onAccent`, and `orbHalo1` / `orbHalo2` / `orbHalo3` (rgba) — and the legacy orb gradient + ring tokens they replace are removed (TOK-03..06).
-  3. Inter semibold renders app-wide; no surface still uses the previous weight (TOK-07).
-  4. The WCAG luminance contrast guard passes on the new light + dark palettes — ≥ 1.5 on orb In/Out midpoints and ≥ 4.5 AA on text-against-surface combinations (TOK-08).
-**Plans**: TBD
-
-### Phase 42: New orb implementation
-**Goal**: Rebuild the orb per spike-010 — three-layer translucent-halo + solid centre disc with the in-disc breath label, two dev-toggled shape variants (V1 halo / V2 minimal), preserved end-of-phase ring cues, and `MuteToggle` chrome aligned to the new tokens.
-**Depends on**: Phase 41 (token vocabulary must exist) and Phase 38 (single shape to dispatch to)
-**Requirements**: ORB-01, ORB-02, ORB-03, ORB-04, ORB-05, ORB-06, ORB-07, ORB-08, ORB-09, ORB-10, ORB-11
-**Success Criteria** (what must be TRUE):
-  1. The orb renders as a three-layer translucent-halo (using `orbHalo1/2/3`) plus a solid centre disc with asymmetric border-radii (organic-puddle feel); the In/Out label is inside the centre disc in `onAccent` (ORB-01, ORB-02).
-  2. `VITE_BREATHING_SHAPE=orb-halo` ships V1 and `VITE_BREATHING_SHAPE=minimal-rings` ships V2; `VITE_ORB_IDLE_BEHAVIOR=still|ambient` toggles between empty-disc-no-animation and gentle-scale-no-label idle behaviors (ORB-03..06).
-  3. During a Running session, the outer ring cue is always visible (end-of-inhale) and the inner ring cue appears only during exhale (end-of-exhale); both V1 and V2 carry the same cue contract (ORB-07, ORB-08, ORB-11).
-  4. Both ring cues are hidden on Idle (A) and Complete (C) even when ambient-breath idle is on — only the breathing shape itself scales there (ORB-09).
-  5. `MuteToggle.tsx` chrome reads `borderSoft` / `textSoft` (matching the top-bar icons), the 44 px hit area is preserved (size-11), and only colour classes change (ORB-10).
-**Plans**: TBD
+  1. Mono Zen light + dark palettes applied in `theme.css` (cool slate); new tokens `borderSoft` / `textSoft` / `onAccent` / `orbHalo1/2/3` consumed across components; legacy orb gradient + ring tokens removed; WCAG luminance contrast guard regenerated and green (TOK-01..08).
+  2. Orb rebuilt as 3-layer translucent halo + solid centre disc with asymmetric organic-puddle border-radii; In/Out breath label inside disc in `onAccent`; V1 (orb-halo) + V2 (minimal) variants ship behind **query-string** flag `?breathingShape=` (operator deviation from VITE_*); idle states `?orbIdle=still|ambient` (operator deviation); ring cues preserved (outer always during Running, inner during exhale, both hidden on Idle + Complete); `MuteToggle` chrome aligned to `borderSoft` + `textSoft` with no shadow (ORB-01..11).
+  3. All 5 surfaces redesigned: new App Settings page (4 sections — Appearance / Language / Feedback / About); Idle V1 Grid SetupCard (whole-card tap → SettingsSheet); SettingsSheet primitive responsive (bottom-sheet mobile / center-modal desktop); per-practice Running feedback (HRV `FeedbackTime`; Stretch + Navi `FeedbackCount`); Complete screen (checkmark orb + "Session complete" + "Take a moment" + Done — kept, not dropped); Learn restructured to SectionHeader + SectionCard pattern; desktop centered column (520 px practice / 600 px page / 320 px orb); no-jiggle invariant across all phases + practices; `LOCKED_COPY` strings verified verbatim across redesign (UX-01..11, UX-15..22).
+  4. **Install banner V3 NOT implemented** — operator J13 decision dropped UX-12/13/14 per [[v2-carryforward-disposition]]; install stays only in App Settings → About → Install row, re-tokenized in J18.6 to Mono Zen quieter pairing.
+  5. J18 final audit closed: 8-item orphan cleanup queue swept (dead components Card / BooleanToggle / StatusPanel deleted; dead viewmodel fields + 6 i18n keys + helper deleted; install LOCKED_COPY orphans trimmed; SettingsInstallSection re-tokenized; drift-guard `content.no-removed-keys.test.ts` locks the deletion done-state and was canary-tested); spike-fidelity walkthrough across all 5 surfaces green; per-commit green-gate maintained throughout (POLISH-07 partial, POLISH-08, POLISH-09).
+**Plans**: spike-loop items J1-J18 (J7 skipped) — see `.planning/phases/41-spike-mono-zen/41-SPIKE-LOOP-ARCHIVE.md` for the per-item history; architecture-prep in `.planning/REFACTOR-LOOP-STATE.md` (items A-I).
 **UI hint**: yes
-
-### Phase 43: Five-surface redesign
-**Goal**: Land the full spike-010 visual + interaction redesign across Learn / App Settings / Idle / Running / Complete — new App Settings page, V1 Grid SetupCard, Practice Settings bottom-sheet/center-modal, per-practice Running feedback, V3 inline-card install banner, desktop centered column, and the no-jiggle invariant.
-**Depends on**: Phase 42 (orb shape locked) and Phase 41 (token vocabulary locked) and Phase 37 (no StatsFooter to thread around)
-**Requirements**: UX-01, UX-02, UX-03, UX-04, UX-05, UX-06, UX-07, UX-08, UX-09, UX-10, UX-11, UX-12, UX-13, UX-14, UX-15, UX-16, UX-17, UX-18, UX-19, UX-20, UX-21, UX-22
-**Success Criteria** (what must be TRUE):
-  1. The top app bar carries an info icon (opens Learn — About Forrest / per-practice intros / Resources) and a gear icon (opens the new App Settings page with Appearance / Language / Audio / About sections); the theme picker now lives in App Settings → Appearance, not in Practice Settings (UX-01, UX-02, UX-11).
-  2. The Idle screen renders a V1 2×3 Grid SetupCard for the active practice — 1 row for HRV/Navi's 3 settings, 2 rows for Stretch's 6 settings — and the whole card is the tap target with a right-chevron affordance vertically centred; tapping opens the Practice Settings sheet on mobile or the center modal on desktop, carrying the per-practice steppers + cue timbre + cue sound (UX-03..06, UX-16).
-  3. The Running screen renders the orb (In/Out inside disc) with practice-specific feedback under it — HRV uses a time-based primitive (large remaining time + small pace caption), Stretch and Navi share the `FeedbackCount` primitive (big primary number + small "of N" mid + small uppercase tracked context line); the practice switcher is disabled and only End + Mute controls are exposed (UX-07..09).
-  4. The Complete screen renders the orb (still + subtle check marker in the centre disc), the line "Session complete · Take a moment", and Done + Mute (operator may drop this screen at implementation — decision deferred per spike-010) (UX-10).
-  5. The V3 inline-card install banner ships — surface card with `borderSoft` border, app-icon glyph + two-line title/`bannerText`, right chevron, small dismiss X; mobile-only + idle-only, renders below the top app bar (no orb shift on appear/dismiss); action label branches on `isIOS` (Install vs How to install with inline `IosInstallSteps`) (UX-12..14).
-  6. Desktop layout renders the locked mobile design inside a centered column — 520 px wide for A/B/C, 600 px for Learn + App Settings, orb scales up to 320 px; the no-jiggle invariant holds on all five surfaces at 320 px in EN + PT-BR, including Stretch's 6-setting Idle SetupCard, and `LOCKED_COPY` strings carry verbatim with the frozen-EN byte-equality guard intact (UX-15, UX-17..22).
-**Plans**: TBD
-**UI hint**: yes
+**Shipped**: 2026-05-25 (J18 closed at commit `d2b886b` 2026-05-24T23:40)
+**Status**: ✅ done
 
 ### Phase 44: Final polish
 **Goal**: Closeout sweep against the full v2.0 surface — zero open Warning-severity findings, dispositioned Info backlog, tight test names, Tiger Style WHY-only comments, refactoring + security re-review + readability pass, with the zero-net-new-runtime-deps and per-commit green-gate invariants intact.
-**Depends on**: Phase 36, 37, 38, 39, 40, 41, 42, 43 (sweeps the entire milestone)
+**Depends on**: Phase 36, 37, 38, 39, 40, 41 (sweeps the entire milestone — 42/43 absorbed into 41)
 **Requirements**: POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05, POLISH-06, POLISH-07, POLISH-08, POLISH-09
 **Success Criteria** (what must be TRUE):
   1. A full `/gsd-code-review --all --fix` sweep finishes with zero Warning-severity findings open at milestone close (POLISH-01).
@@ -197,7 +174,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44
+Phases executed in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 44 (42/43 absorbed into 41 — see reconciliation note at top of v2.0 phases block).
 
 | Milestone | Phase | Plans Complete | Status | Completed |
 | --------- | ----- | -------------- | ------ | --------- |
