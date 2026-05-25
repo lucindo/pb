@@ -19,7 +19,6 @@ import { playInhalePreview } from '../audio/previewContext'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
-// Phase 18 plan 05 test coverage — verbatim parity with ThemePicker.test.tsx (D-06 mirror).
 // Helper seeds localStorage with a known timbre so useTimbreChoice reads it on mount.
 function seedTimbre(timbre: TimbreId): void {
   const envelope = {

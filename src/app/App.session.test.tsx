@@ -296,8 +296,6 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
 })
 
 // ---------------------------------------------------------------------------
-// Phase 31 — Navi Kriya session integration (NK-01/05/07/08/09, D-11/12/13)
-// ---------------------------------------------------------------------------
 
 interface NKSeed {
   frontCount?: number
@@ -462,8 +460,6 @@ describe('Navi Kriya session integration (Phase 31)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// Phase 34: Stretch session records stretch stats and leaves resonant untouched
 // ---------------------------------------------------------------------------
 
 function seedStretch(): void {

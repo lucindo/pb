@@ -1,4 +1,3 @@
-// Phase 30 PRACTICE-01 + PRACTICE-03
 // Presentational segmented-control practice switcher.
 // Extended to 3 pills (resonant, stretch, naviKriya). The app view model owns
 // feature-flag lookup and passes showIcons as a plain presentation prop.
