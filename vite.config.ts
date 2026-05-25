@@ -56,8 +56,8 @@ export default defineConfig({
         name: 'HRV Breathing',
         short_name: 'HRV Breathing',
         description: 'Guided HRV breathing sessions — inhale, exhale, relax.',
-        theme_color: '#5e81ac',
-        background_color: '#eceff4',
+        theme_color: '#1a1d24',
+        background_color: '#1a1d24',
         display: 'standalone',
         // start_url and scope intentionally omitted — auto-default to Vite base, which is now parameterized at build time via `--base` (e.g. `/hrv/`, `/hrv/v2.0/`). Each versioned build's SW auto-scopes to its own subpath; root and versioned subpaths do not collide.
         icons: [
