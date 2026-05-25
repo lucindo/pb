@@ -81,6 +81,7 @@ Items deferred during the loop that J17's final-audit step should sweep up. Each
 - `vm.appHeader` viewmodel field + `getPracticeHeader()` helper + i18n `practice.header` / `switcher.stretchHeader` / `switcher.naviKriyaHeader` (EN + PT-BR) — J16 V4 dropped TopAppBar's `eyebrow` prop; no consumer remains. Cleanup: delete the viewmodel field + derivation + helper + 6 i18n entries + their strings.test.ts assertions.
 - `src/components/primitives/Card.tsx` + `Card.test.tsx` — J16 dump #3 "Learn restructure" commit `556463f` dropped the only consumer (LearnPage). Cleanup: delete the primitive + test, OR repurpose as the shared SectionCard chrome (SectionCard is currently inlined in both LearnPanel.tsx + SettingsPanelBody.tsx with identical styles).
 - `src/components/BooleanToggle.tsx` — J16 practice-settings restyle commit `7226b3e` switched NaviKriyaSettingsForm's OM Tick row from BooleanToggle (flanking labels + larger knob) to SettingsToggleRow (single label + Toggle). No consumer remains. Cleanup: delete BooleanToggle.tsx.
+- `src/components/StatusPanel.tsx` — J16 session-readout rewire commit `62d6693` dropped both consumers (SessionReadout + NaviKriyaSessionSurface) when FeedbackTime / FeedbackCount replaced the StatusPanel-wrapped chrome. Cleanup: delete StatusPanel.tsx.
 
 J17's propose step must read this section and create a per-orphan cleanup plan before declaring the loop done.
 
