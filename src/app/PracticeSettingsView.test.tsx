@@ -104,15 +104,13 @@ describe('PracticeSettingsView — resonant (HRV)', () => {
     expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
   })
 
-  it('keeps the SetupCard visible on Running (extend-duration affordance lives in the sheet)', async () => {
-    const user = userEvent.setup()
+  it('on Running surfaces an inline Duration stepper directly (no SetupCard, no sheet)', () => {
+    // J16: HRV-running replaces the SetupCard + sheet detour with an inline
+    // Duration stepper card. The +/- buttons live on the practice surface
+    // itself — no tap-to-open-sheet step.
     renderView(makeResonantVM({ isRunning: true }))
-    const card = screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ })
-    expect(card).toBeEnabled()
-    await user.click(card)
+    expect(screen.queryByRole('button', { name: /^Edit HRV Breathing settings$/ })).toBeNull()
     const duration = screen.getByRole('group', { name: EN.practice.settingsForm.durationLabel })
-    // ResonantSettingsForm with isRunning=true exposes the Duration stepper
-    // with Increase enabled when the next finite duration option exists.
     expect(within(duration).getByRole('button', { name: /increase duration/i })).toBeEnabled()
   })
 })

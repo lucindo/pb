@@ -12,6 +12,11 @@ export interface SettingsStepperProps<T extends string | number> {
   /** When true, render label + value only (no +/- buttons) — read-only field
    *  used by the Stretch sheet's derived total Duration row. */
   readOnly?: boolean
+  /** When true, drops the row's `border-t` divider. Used when the stepper
+   *  is the sole row inside its container (e.g. the HRV-running inline
+   *  Duration card, where the surrounding rounded card already separates
+   *  the row from page content). */
+  hideTopBorder?: boolean
   strings: UiStrings['practice']['settingsForm']['stepper']
 }
 
@@ -35,6 +40,7 @@ export function SettingsStepper<T extends string | number>({
   disableDecrease = false,
   disableIncrease = false,
   readOnly = false,
+  hideTopBorder = false,
   strings,
 }: SettingsStepperProps<T>) {
   const selectedIndex = options.indexOf(value)
@@ -54,7 +60,7 @@ export function SettingsStepper<T extends string | number>({
   return (
     <fieldset
       aria-label={strings.fieldAriaLabel(label)}
-      className="flex items-center justify-between border-t border-[var(--color-border-soft)] py-3"
+      className={`flex items-center justify-between py-3${hideTopBorder ? '' : ' border-t border-[var(--color-border-soft)]'}`}
     >
       <span className="text-[15px] font-normal text-[var(--color-breathing-text)]">{label}</span>
       {readOnly ? (
