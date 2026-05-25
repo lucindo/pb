@@ -185,6 +185,20 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
   update `MuteToggle.tsx` to the lighter treatment so all top/bottom icons sit at the
   same visual weight. Hit area stays 44 px (size-11) for the a11y floor — only colour
   classes change. (Spike 010, operator decision.)
+- A **Spiritual-Eye orb variant** ships alongside the production orb-halo: the
+  three concentric halos carry a warm-cool gradient (champagne gold outer →
+  tan blend mid → cool slate inner — gold halos carry the "ring of light"
+  imagery rather than a hard ring stroke), the accent disc becomes a radial-gradient
+  opalescent **dark indigo** (light: `#4a5a96 → #34406f → #2a356a` from a
+  `42% / 50%` centre; dark: `#6c7cb6 → #4a5a96 → #38477e`), and a small
+  white 5-point star (20% of disc, outer:inner radius ratio 2.5, point up,
+  stroke 0.5) sits at the centre. Reuses production halo geometry, outer
+  ring, progress arc, motion, and idle states verbatim — only colour/glyph
+  changes. Locked V5 values + per-theme RGBA + build-phase mapping live in
+  `.planning/spikes/012-spiritual-eye-orb/README.md`. The exposure strategy
+  (new `BreathingShapeVariant` value behind `VITE_BREATHING_SHAPE` /
+  default-for-Navi-Kriya-only / user-visible picker) is left for the build
+  phase — *not* locked by this spike. (Spike 012, operator decision.)
 - The **Chime cue timbre is replaced by a Flute** — Chime is structurally a near-clone of
   Bowl (Bowl's `1.0 / 2.76 / 5.4` stack + a `7.6×` shimmer), which is why the two sound
   too close. Bowl is kept; the fourth timbre slot becomes a flute with a **soft breath
@@ -216,3 +230,4 @@ Design decisions that emerged during spiking — non-negotiable for the real bui
 | 009 | look-feel-alternatives | comparison | Six fully-composed aesthetic directions (palette + typography + orb gradient + ambient surface + chrome) for the practice screen — calm/clean meditation-appropriate look to replace the current 5-theme system | VALIDATED — winner: F. Monochrome Zen (refined in 010); collapses 5-theme system to light+dark | ui, look-and-feel, palette, typography, theme, aesthetic, comparison |
 | 010 | mono-zen-light-dark | comparison | Tightened Monochrome Zen as the full v1.6 visual system — paired light + dark cool-slate palette, 5 screens (Learn / App Settings / Idle / Running / Complete), 3 practices with per-practice feedback shapes, V1 grid SetupCard, V1 orb-halo + V2 minimal shape variants behind a dev toggle, no-jiggle layout, desktop validation, V3 inline-card install banner | VALIDATED — full visual system locked; see Requirements above for the carry-forward list | ui, look-and-feel, theme, mono-zen, controls, layout, install, desktop, comparison |
 | 011 | ring-progress-cue | comparison | A south-anchored bidirectional progress arc (grows from south to north during inhale, retracts during exhale) reads as one continuous calm motion and preserves the "pace by sight" affordance — credible companion to the production outer + inner cue | VALIDATED — ships behind dev toggle `?ringCue=progress-arc` (Phase 45); production default `outer-inner` unchanged | ui, orb, ring, pacing-cue, breathing-visual, comparison |
+| 012 | spiritual-eye-orb | comparison | Reinterpret the production orb with kutastha layered iconography (gold ring + blue field + white 5-point star) while staying inside the locked Mono Zen cool-slate system — at least one of 5 variants reads as spiritual-eye AND as calm Mono Zen | VALIDATED — winner V5 Halo Flame: warm-cool halo gradient + opalescent indigo disc (radial gradient) + small white 5-point star (20% of disc); production geometry/ring-cue/motion unchanged; locked tokens in spike README | ui, orb, kutastha, spiritual-eye, kriya-yoga, breathing-visual, comparison |
