@@ -3,10 +3,8 @@ import type { ReactElement } from 'react'
 import { NaviKriyaSettingsForm } from '../components/NaviKriyaSettingsForm'
 import { ResonantSettingsForm } from '../components/ResonantSettingsForm'
 import { SettingsSheet } from '../components/SettingsSheet'
-import { SettingsStepper } from '../components/SettingsStepper'
 import { SetupCard } from '../components/SetupCard'
 import { StretchSettingsForm } from '../components/StretchSettingsForm'
-import { DURATION_OPTIONS, getNextDurationOption, type DurationOption } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
@@ -21,6 +19,16 @@ interface PracticeSettingsViewProps {
   onCloseSheet(this: void): void
 }
 
+// During a running session NONE of the three practices surface a settings
+// affordance on screen — for congruence with stretch + navi, the HRV running
+// state also renders nothing here.
+//
+// The extend-duration logic remains in the codebase (BreathingSessionController
+// .extendDuration + the AppPracticeSettingsViewModel.resonant.onExtendDuration
+// callback) but is intentionally not wired to any UI on the practice surface.
+// If a future design wants to bring back an extend-duration affordance during
+// running, it can plug directly into the existing callback without any domain
+// changes.
 export function PracticeSettingsView({
   settings,
   isSheetOpen,
@@ -28,14 +36,6 @@ export function PracticeSettingsView({
   onCloseSheet,
 }: PracticeSettingsViewProps): ReactElement | null {
   const practice = useUiStrings().practice
-
-  // HRV running: replace the SetupCard + sheet wiring with just an inline
-  // Duration stepper. The card's only purpose during running was the
-  // extend-duration affordance — surfacing the stepper directly removes
-  // the 2-tap sheet detour (per operator on running HRV).
-  if (settings.kind === 'resonant' && settings.isRunning) {
-    return <RunningDurationCard settings={settings} strings={practice.settingsForm} />
-  }
 
   const items = buildSetupCardSummary({ settings, practice })
   if (items === null) return null
@@ -61,51 +61,6 @@ export function PracticeSettingsView({
       >
         {isSheetOpen ? renderForm(settings, practice) : null}
       </SettingsSheet>
-    </div>
-  )
-}
-
-interface RunningDurationCardProps {
-  settings: Extract<PracticeSettingsViewModel, { kind: 'resonant' }>
-  strings: UiStrings['practice']['settingsForm']
-}
-
-function RunningDurationCard({
-  settings,
-  strings,
-}: RunningDurationCardProps): ReactElement {
-  const formatDuration = (value: DurationOption): string =>
-    value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
-
-  const onChange = (next: DurationOption): void => {
-    if (typeof next === 'number') {
-      settings.onExtendDuration(next)
-    }
-  }
-
-  const nextDuration = getNextDurationOption(settings.settings.durationMinutes)
-
-  return (
-    <div
-      className="w-full"
-      style={{
-        background: 'var(--color-breathing-surface)',
-        border: '1px solid var(--color-border-soft)',
-        borderRadius: 24,
-        padding: '4px 18px',
-      }}
-    >
-      <SettingsStepper<DurationOption>
-        label={strings.durationLabel}
-        value={settings.settings.durationMinutes}
-        options={DURATION_OPTIONS}
-        formatValue={formatDuration}
-        onChange={onChange}
-        disableDecrease={true}
-        disableIncrease={typeof nextDuration !== 'number'}
-        hideTopBorder={true}
-        strings={strings.stepper}
-      />
     </div>
   )
 }

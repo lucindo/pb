@@ -104,14 +104,13 @@ describe('PracticeSettingsView — resonant (HRV)', () => {
     expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
   })
 
-  it('on Running surfaces an inline Duration stepper directly (no SetupCard, no sheet)', () => {
-    // J16: HRV-running replaces the SetupCard + sheet detour with an inline
-    // Duration stepper card. The +/- buttons live on the practice surface
-    // itself — no tap-to-open-sheet step.
+  it('renders nothing on Running (congruent with stretch + navi running)', () => {
+    // J16: HRV running surfaces no settings UI — SetupCard, sheet, and any
+    // inline stepper are all hidden. extendDuration logic stays in the
+    // viewmodel + controller but is unwired here.
     renderView(makeResonantVM({ isRunning: true }))
     expect(screen.queryByRole('button', { name: /^Edit HRV Breathing settings$/ })).toBeNull()
-    const duration = screen.getByRole('group', { name: EN.practice.settingsForm.durationLabel })
-    expect(within(duration).getByRole('button', { name: /increase duration/i })).toBeEnabled()
+    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.durationLabel })).toBeNull()
   })
 })
 

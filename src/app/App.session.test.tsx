@@ -77,57 +77,16 @@ describe('running duration edits and completion', () => {
     vi.useRealTimers()
   })
 
-  it('extends timed sessions from the existing duration stepper increase button', async () => {
+  it('surfaces no settings UI during a running HRV session (congruent with stretch + navi)', async () => {
+    // J16: the SetupCard + sheet + any inline Duration stepper are all hidden
+    // during a running session. The BreathingSessionController.extendDuration
+    // logic stays in the codebase but is intentionally unwired from any UI on
+    // the practice surface — see PracticeSettingsView for the docs.
     render(<App />)
-
     await startAndAdvancePastLeadIn()
-
-    const duration = settingGroup('Duration')
-    expect(screen.queryByRole('group', { name: 'Extend duration' })).not.toBeInTheDocument()
-    expect(within(duration).getByRole('button', { name: /decrease duration/i })).toBeDisabled()
-    expect(within(duration).getByRole('button', { name: /increase duration/i })).toBeEnabled()
-
-    fireEvent.click(within(duration).getByRole('button', { name: /increase duration/i }))
-
-    expect(within(duration).getByText('15 min')).toBeVisible()
-  })
-
-  it('does not allow shortening or switching a timed running session to open-ended', async () => {
-    render(<App />)
-
-    await startAndAdvancePastLeadIn()
-
-    const duration = settingGroup('Duration')
-    const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-
-    expect(decrease).toBeDisabled()
-
-    for (let index = 0; index < 10; index += 1) {
-      fireEvent.click(increase)
-    }
-
-    expect(within(duration).getByText('60 min')).toBeVisible()
-    expect(increase).toBeDisabled()
-    expect(within(duration).queryByText('∞')).not.toBeInTheDocument()
-  })
-
-  it('does not allow running duration edits for open-ended sessions', async () => {
-    render(<App />)
-
-    const idleDuration = settingGroup('Duration')
-    const idleIncrease = within(idleDuration).getByRole('button', { name: /increase duration/i })
-    for (let index = 0; index < 11; index += 1) {
-      fireEvent.click(idleIncrease)
-    }
-    await startAndAdvancePastLeadIn()
-
-    // Re-query through settingGroup — the session-start edge auto-closes the
-    // sheet, so we need to re-open it to inspect the running-state controls.
-    const runningDuration = settingGroup('Duration')
-    expect(screen.queryByRole('group', { name: 'Extend duration' })).not.toBeInTheDocument()
-    expect(within(runningDuration).getByRole('button', { name: /decrease duration/i })).toBeDisabled()
-    expect(within(runningDuration).getByRole('button', { name: /increase duration/i })).toBeDisabled()
+    expect(screen.queryByRole('group', { name: 'Duration' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Edit HRV Breathing settings$/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /increase duration/i })).not.toBeInTheDocument()
   })
 
   it('automatically renders Session complete when a timed session reaches the end', async () => {

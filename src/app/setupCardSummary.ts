@@ -23,6 +23,11 @@ export function buildSetupCardSummary({
   const f = practice.settingsForm
 
   if (settings.kind === 'resonant') {
+    // Congruence with stretch + navi: nothing on screen during a running
+    // session. The extend-duration logic in the controller + viewmodel
+    // (settings.onExtendDuration) is intentionally retained but unwired
+    // from the practice surface — see PracticeSettingsView for the docs.
+    if (settings.isRunning) return null
     const s = settings.settings
     return [
       { label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
