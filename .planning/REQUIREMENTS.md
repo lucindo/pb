@@ -76,29 +76,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| KUTH-01 | Phase ? | Pending |
-| KUTH-02 | Phase ? | Pending |
-| KUTH-03 | Phase ? | Pending |
-| KUTH-04 | Phase ? | Pending |
-| PREFS-01 | Phase ? | Pending |
-| PREFS-02 | Phase ? | Pending |
-| PREFS-03 | Phase ? | Pending |
-| PREFS-04 | Phase ? | Pending |
-| APPEAR-01 | Phase ? | Pending |
-| APPEAR-02 | Phase ? | Pending |
-| APPEAR-03 | Phase ? | Pending |
-| APPEAR-04 | Phase ? | Pending |
-| APPEAR-05 | Phase ? | Pending |
-| APPEAR-06 | Phase ? | Pending |
-| I18N-01 | Phase ? | Pending |
-| I18N-02 | Phase ? | Pending |
-| I18N-03 | Phase ? | Pending |
+| KUTH-01 | Phase 46 | Pending |
+| KUTH-02 | Phase 46 | Pending |
+| KUTH-03 | Phase 46 | Pending |
+| KUTH-04 | Phase 46 | Pending |
+| PREFS-01 | Phase 47 | Pending |
+| PREFS-02 | Phase 47 | Pending |
+| PREFS-03 | Phase 47 | Pending |
+| PREFS-04 | Phase 47 | Pending |
+| APPEAR-01 | Phase 48 | Pending |
+| APPEAR-02 | Phase 48 | Pending |
+| APPEAR-03 | Phase 48 | Pending |
+| APPEAR-04 | Phase 48 | Pending |
+| APPEAR-05 | Phase 48 | Pending |
+| APPEAR-06 | Phase 48 | Pending |
+| I18N-01 | Phase 48 | Pending |
+| I18N-02 | Phase 48 | Pending |
+| I18N-03 | Phase 48 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 17 total
-- Mapped to phases: 0 (populated by roadmapper)
-- Unmapped: 17 ⚠️
+- Mapped to phases: 17, Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-25*
-*Last updated: 2026-05-25 after initial definition*
+*Last updated: 2026-05-25 after v2.1 roadmap creation (3 phases, 17/17 requirements mapped)*
