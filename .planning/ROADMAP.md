@@ -170,7 +170,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   4. `/gsd-secure-phase 44` runs against the full milestone surface and clears the new attack surfaces (preview audio path, new env vars, dev toggles); a readability pass leaves no leftover references to Square/Diamond/Moss/Slate/Dusk/Chime in code or copy (POLISH-05..07).
   5. `dependencies` in `package.json` remains `react` + `react-dom` (zero net-new runtime deps), and `tsc && lint && build && test` exits 0 on every commit on `main` through v2.0 (POLISH-08, POLISH-09).
 **Plans**: 7 plans
-- [ ] 44-01-PLAN.md — Code-review --all --fix mega-commit + 28 Info-finding dispositions (POLISH-01, POLISH-02)
+- [x] 44-01-PLAN.md — Code-review --all --fix mega-commit + 28 Info-finding dispositions (POLISH-01, POLISH-02)
 - [ ] 44-02-PLAN.md — Test cleanup: tight Vitest names + redundancy removal + no-design-locking sweep + flake check (POLISH-03)
 - [ ] 44-03-PLAN.md — Tiger Style WHY-only comment audit (broad sweep — Item I sibling-pattern lesson) (POLISH-04)
 - [ ] 44-04-PLAN.md — Refactor pass: reconcile obsolete .orb-layer rename + extract SettingsRow primitive (POLISH-05)
