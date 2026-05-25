@@ -205,10 +205,10 @@ Phases executed in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 44 (
 
 ### Phase 45: Ring progress-cue toggle
 
-**Goal:** Ship the alternative bidirectional progress-arc ring cue validated in
-spike 011 as a developer-only query-string toggle (`?ringCue=progress-arc`).
-Production default `outer-inner` remains unchanged — this is an opt-in
-alternative, not a replacement of the locked end-of-phase ring cue.
+**Goal:** Ship the bidirectional progress-arc ring cue validated in spike 011
+as the production default. The prior outer + inner ring rendering remains
+reachable via the `?ringCue=outer-inner` query-string opt-out. Default flipped
+to `progress-arc` post-UAT at operator request (2026-05-25).
 **Requirements**: TBD
 **Depends on:** Phase 44
 
@@ -223,7 +223,7 @@ Plans:
 
 Source of truth for the alternative rendering: `.planning/spikes/011-ring-progress-cue/index.html` (the `RingsB` component).
 
-**What this phase delivers.** A new feature flag `ringCue: 'outer-inner' | 'progress-arc'` selectable via `?ringCue=progress-arc` (with aliases), driving the ring layer inside `OrbShape::OrbContainer`. Default `'outer-inner'` preserves the current production rendering byte-for-byte: outer ring (1.5 px, accent, opacity 0.45, always visible) + inner ring (58 % size, fades in on exhale, suppressed under reduced-motion). With `?ringCue=progress-arc`, the ring layer instead renders the bidirectional progress arc.
+**What this phase delivers.** A new feature flag `ringCue: 'outer-inner' | 'progress-arc'` driving the ring layer inside `OrbShape::OrbContainer`. **Default `'progress-arc'`** (flipped post-UAT) renders the spike-011 bidirectional progress arc as the production rendering. The prior outer + inner ring rendering — outer ring (1.5 px, accent, opacity 0.45, always visible) + inner ring (58 % size, fades in on exhale, suppressed under reduced-motion) — remains reachable via `?ringCue=outer-inner` (with aliases).
 
 **Spike → code transcription (verbatim).**
 - viewBox `0 0 100 100`, r = 49.7 — places the stroke locus on the production faint-ring border center across `clamp(180px, 50vw, 280px)` + 320 px desktop (variation < 0.2 viewBox units / < 0.6 px).

@@ -85,7 +85,7 @@ const ORB_IDLE_FLAG = {
 
 const RING_CUE_FLAG = {
   queryParam: 'ringCue',
-  defaultValue: 'outer-inner' as RingCueStyle,
+  defaultValue: 'progress-arc' as RingCueStyle,
   parse(rawValue: string): RingCueStyle | null {
     const v = rawValue.trim().toLowerCase()
     if (v === 'outer-inner' || v === 'production' || v === 'rings' || v === 'default')

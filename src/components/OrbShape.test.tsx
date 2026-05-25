@@ -114,18 +114,17 @@ describe('OrbShape — cue prop (Phase 25 Plan 03)', () => {
   })
 })
 
-// ── Phase 45 Plan 02: ringCue prop ────────────────────────────────────────────
-// Locks three invariants from the plan: default-unchanged (no arc SVG),
-// progress-arc renders 2 path elements with spike-locked stroke values,
-// reduced-motion suppresses the arc layer. Bonus: t === 0 (phase boundary)
-// also suppresses the arc layer per `showArc = !reducedMotion && t > 0`.
+// ── Phase 45: ringCue prop ────────────────────────────────────────────────────
+// Locks four invariants: default (omitted) renders the progress-arc SVG layer,
+// explicit ringCue="outer-inner" preserves the legacy outer + inner ring DOM
+// (no arc SVG), progress-arc renders 2 path elements with spike-locked stroke
+// values, reduced-motion suppresses the arc layer. Bonus: t === 0 (phase
+// boundary) also suppresses the arc layer per `showArc = !reducedMotion && t > 0`.
 //
-// SVG selector uses viewBox="0 0 100 100" to disambiguate the new arc layer
-// from CueGlyph SVGs (which use a 24-viewBox per CheckmarkGlyph at OrbShape
-// line ~128). Reduced-motion case mocks `window.matchMedia` per the canonical
-// pattern in `src/hooks/usePrefersReducedMotion.test.ts` lines 19-28.
+// SVG selector uses viewBox="0 0 100 100" to disambiguate the arc layer from
+// other SVGs on the surface. Reduced-motion case mocks `window.matchMedia` per
+// the canonical pattern in `src/hooks/usePrefersReducedMotion.test.ts`.
 describe('OrbShape — ringCue prop (Phase 45)', () => {
-  // Scoped to this block — earlier describes do not touch matchMedia.
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -133,9 +132,23 @@ describe('OrbShape — ringCue prop (Phase 45)', () => {
   // phaseProgress > 0 + < 1 → showArc = true, both branches assign endpoints.
   const partialFrame: SessionFrame = { ...sampleFrame, phaseProgress: 0.5 }
 
-  it('default (ringCue omitted) renders no SVG arc layer — existing rings unchanged', () => {
+  it('default (ringCue omitted) renders the SVG arc layer — progress-arc is the default', () => {
     const { container } = render(
       <OrbShape frame={partialFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    const paths = container.querySelectorAll(
+      'svg[aria-hidden="true"][viewBox="0 0 100 100"] path',
+    )
+    expect(paths.length).toBe(2)
+  })
+
+  it('explicit ringCue="outer-inner" renders no SVG arc layer (legacy ring DOM preserved)', () => {
+    const { container } = render(
+      <OrbShape
+        frame={partialFrame}
+        ringCue="outer-inner"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
     )
     const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
     expect(arcSvg).toBeNull()

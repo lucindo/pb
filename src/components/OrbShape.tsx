@@ -33,11 +33,10 @@ export interface OrbShapeProps {
   // 'ambient'). showRings is hard-set to false on the idle path per spike
   // 010 IdleScreen line 1979 + CompleteScreen line 2026.
   idleMode?: OrbIdleBehavior | null
-  // Phase 45 Plan 02: query-string-gated ring-cue style. 'outer-inner'
-  // (default) preserves production rendering byte-identically — the existing
-  // outer + inner ring spans. 'progress-arc' renders the spike-011
-  // bidirectional progress arc (south-anchored, mirrors inner-ring
-  // suppression on reduced-motion; faint outer track always present).
+  // Phase 45: query-string-gated ring-cue style. Default 'progress-arc'
+  // renders the spike-011 bidirectional progress arc (south-anchored,
+  // suppressed under reduced-motion; faint outer track always present).
+  // 'outer-inner' preserves the prior outer + inner ring rendering.
   ringCue?: RingCueStyle
   // J16: completion state — static halo orb (showRings false, scale MID)
   // with a checkmark glyph centred on the accent disc. Spike 010 L2026 +
@@ -84,7 +83,7 @@ export function OrbShape({
   variant = 'orb-halo',
   idleMode,
   showCompletion = false,
-  ringCue = 'outer-inner',
+  ringCue = 'progress-arc',
   children,
 }: OrbShapeProps) {
   if (nkPhase != null) {
