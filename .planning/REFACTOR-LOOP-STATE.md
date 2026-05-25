@@ -35,17 +35,18 @@ State below is updated after every step transition.
 | F3 | Presentation-safe type re-exports (mechanical barrel cleanup) | ✓ done — commit `ac691e3` |
 | F4 | `shapeConstants.ts` single-source-of-truth (TS↔CSS sync) | ✓ done — commit `3926b77` |
 | F5 | `UiStrings` surface-vocabulary rename plan (top-level keys to match new surface structure) | ✓ done — commit `498545a` |
-| F6 | `UiStringsContext` provider replacing drilling of `uiStrings` through the view layer (vm stays as explicit prop — see proposal) | **implemented — awaiting operator approval** |
+| F6 | `UiStringsContext` provider replacing drilling of `uiStrings` through the view layer (vm stays as explicit prop — see proposal) | ✓ done — commit `fe14c47` |
 | G | Dead-code purge — delete `LearnDialog` + `SettingsDialog` + `SettingsPanel` (and their tests) after audit narrowed the original 8-file list to 3 confirmed orphans; other 5 are LIVE. | ✓ done — commit `0844ab9` |
 | H | Test pristineness pass — drop design-token-locking assertions in 7 primitive tests; rename `learnDialogModel` → `learnPanelModel` (LSP-unavailable → manual per-file Edit fallback per rule); fix 3 stale `LearnDialog` comment references + 1 inline style. First item executed using the new mandatory propose-step checklist ([[propose-step-checklist]] + [[no-design-locking]] memories). | ✓ done — commit `4457259` |
-| I | Sibling-pattern stale-comment cleanup — 3-agent re-audit confirmed READY-FOR-SPIKE, but my own grep found 9 stale `SettingsDialog` / `SettingsPanel` / "Phase 15" / "legacy modal" / "scheduled for removal" references that H missed because it only fixed the `LearnDialog` family. Same meta-pattern as before — the rule was applied narrowly, not broadly. 5 files touched, comments only. | **implemented — awaiting operator approval** |
+| I | Sibling-pattern stale-comment cleanup — 3-agent re-audit confirmed READY-FOR-SPIKE, but my own grep found 9 stale `SettingsDialog` / `SettingsPanel` / "Phase 15" / "legacy modal" / "scheduled for removal" references that H missed because it only fixed the `LearnDialog` family. Same meta-pattern as before — the rule was applied narrowly, not broadly. 5 files touched, comments only. | ✓ done — commit `80da948` |
 
 ---
 
 ## Current focus
 
-**Item:** I — Sibling-pattern stale-comment cleanup
-**Step:** 4 (implemented + committed, awaiting operator approval)
+**Refactor loop CLOSED.** All items A–I are done and approved. The v2.0 milestone close is pending after Phase 44 completion.
+
+_(Previously: Item I — Sibling-pattern stale-comment cleanup, Step 4 — now approved per Phase 44 D-12 bookkeeping closeout, commit `80da948`. F6 (UiStringsContext) also approved at commit `fe14c47`.)_
 
 ### Implementation summary (Item I)
 
