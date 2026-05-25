@@ -225,6 +225,10 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
 // from validateSettings. Receives a StretchSettings (not SessionSettings).
 export function validateStretchSettings(settings: StretchSettings): StretchSettings {
   if (!isValidRatio(settings.ratio)) {
+    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
+    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
+    // is preserved verbatim (D-09 byte-identical message format) so the runtime string
+    // ("Unsupported ratio: 99:1" for an upstream-cast offending value) remains correct.
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
   }

@@ -115,8 +115,10 @@ export function useWakeLock(): UseWakeLock {
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
-      // AH-WR-01: unmount-during-await orphans the in-flight sentinel; bump the
-      // generation counter so request() discards it post-await.
+      // Reason (AH-WR-01): unmount-during-await orphans the in-flight sentinel;
+      // bump the generation counter so request() discards it post-await.
+      // The ref is a monotonic counter that is only ever mutated, never captured
+      // for later reads — the stale-ref warning does not apply here.
       // eslint-disable-next-line react-hooks/exhaustive-deps
       ++requestGenerationRef.current
       // Pitfall 6: unmount-cleanup race against in-flight request(). Synchronously

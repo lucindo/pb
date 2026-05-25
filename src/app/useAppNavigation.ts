@@ -27,6 +27,8 @@ export function useAppNavigation({
 
   useEffect(() => {
     if (!closeOnSessionView) return
+    // Reason: force navigation back to the practice surface when a session starts;
+    // setState inside effect is intentional — the session-start signal owns this transition.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppScreen('practice')
   }, [closeOnSessionView])
