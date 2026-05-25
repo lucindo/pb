@@ -60,6 +60,10 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 - [Phase 41]: Cleanup orphan queue swept in J18 (commits `75af962` `ba12418` `f562ff1` `d9e66df` `3fb46c4` `ec77c67`). Decision A2 for `installDismissed` storage — keep storage + writers alive (still used by useBeforeInstallPrompt on appinstalled + triggerInstall success), only remove dead read in useAppViewModel. Decision B for THEME_OPTIONS — `'system'` option intentionally KEPT (operator validated 3-option theme picker during design); orphan-queue claim that 'system' should be pruned superseded.
 - [Phase 41]: J18.8 drift-guard test `src/content/content.no-removed-keys.test.ts` locks the deletion done-state structurally (10 forbidden-pattern matchers across components/+app/+content/). Canary-tested end-to-end.
 
+### Roadmap Evolution
+
+- Phase 45 added (2026-05-25): Ring progress-cue toggle — ships the spike-011 bidirectional progress arc as a query-string-gated alternative ring cue (`?ringCue=progress-arc`), production default `outer-inner` unchanged.
+
 ### Pending Todos
 
 - v1.x deferred (partially dispositioned): `.orb-layer--in/--out` → `.shape-layer--in/--out` rename — **obsolete-by-redesign** per D-05: CSS classes deleted in Phase 41 J4 commit `a742c0b`; only an archived comment at `src/styles/theme.contrast.test.ts:121` remained, updated in Phase 44 Plan 04 refactor commit `b84f936` (POLISH-05). The remaining items from this entry — per-variant token sets; live idle preview; additional shape variants — remain deferred (not yet obviated).

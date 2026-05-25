@@ -201,3 +201,69 @@ Phases executed in numeric order: 36 → 37 → 38 → 39 → 40 → 41 → 44 (
 | v2.0 New Design | 42. New orb implementation | 0/TBD | Not started | - |
 | v2.0 New Design | 43. Five-surface redesign | 0/TBD | Not started | - |
 | v2.0 New Design | 44. Final polish | 0/7 | Not started | - |
+| v2.0 New Design | 45. Ring progress-cue toggle | 0/3 | Not started | - |
+
+### Phase 45: Ring progress-cue toggle
+
+**Goal:** Ship the alternative bidirectional progress-arc ring cue validated in
+spike 011 as a developer-only query-string toggle (`?ringCue=progress-arc`).
+Production default `outer-inner` remains unchanged — this is an opt-in
+alternative, not a replacement of the locked end-of-phase ring cue.
+**Requirements**: TBD
+**Depends on:** Phase 44
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 45-01-PLAN.md — Add RingCueStyle type + RING_CUE_FLAG query-string spec + featureFlags.test.ts coverage (flag layer; mirrors BREATHING_SHAPE_FLAG)
+- [ ] 45-02-PLAN.md — Add ringCue prop to OrbShape + transcribe spike-011 RingsB into ProgressArcLayer; branch the inner-ring slot; lock the default-byte-identical + reduced-motion-suppression invariants in OrbShape.test.tsx
+- [ ] 45-03-PLAN.md — Thread vm.featureFlags.ringCue through PracticeScreen → PracticeSessionView → {Breathing,NaviKriya}SessionSurface → OrbShape (mechanical drop-in, mirrors variant/idleMode chain)
+
+#### Details
+
+Source of truth for the alternative rendering: `.planning/spikes/011-ring-progress-cue/index.html` (the `RingsB` component).
+
+**What this phase delivers.** A new feature flag `ringCue: 'outer-inner' | 'progress-arc'` selectable via `?ringCue=progress-arc` (with aliases), driving the ring layer inside `OrbShape::OrbContainer`. Default `'outer-inner'` preserves the current production rendering byte-for-byte: outer ring (1.5 px, accent, opacity 0.45, always visible) + inner ring (58 % size, fades in on exhale, suppressed under reduced-motion). With `?ringCue=progress-arc`, the ring layer instead renders the bidirectional progress arc.
+
+**Spike → code transcription (verbatim).**
+- viewBox `0 0 100 100`, r = 49.7 — places the stroke locus on the production faint-ring border center across `clamp(180px, 50vw, 280px)` + 320 px desktop (variation < 0.2 viewBox units / < 0.6 px).
+- Faint outer track (identical to the production outer ring) stays as the back layer.
+- Two SVG `<path>` arcs computed dynamically per frame. No `stroke-dasharray`, no `pathLength`, no `vector-effect="non-scaling-stroke"` interactions — these rendered as broken segments in Chrome during the spike; computed endpoints are required.
+- Parametrization (`t = phase === 'in' ? phaseProgress : 1 - phaseProgress`):
+  - Right arc: `angleR = π/2 − t·π`; endpoint `(50 + r·cos angleR, 50 + r·sin angleR)`; sweep-flag = **0**.
+  - Left arc:  `angleL = π/2 + t·π`; endpoint `(50 + r·cos angleL, 50 + r·sin angleL)`; sweep-flag = **1**.
+  - Sweep flags are inverted from SVG-CW intuition — verified empirically in the spike; right side hugs the outer ring through east, left through west.
+  - At `t = 1`: emit the explicit semicircle path to north `(50, 0.3)`.
+  - At `t = 0`: emit no arc paths.
+- Stroke: `var(--color-breathing-accent)`, `fill="none"`, `stroke-linecap="round"`, stroke-width **2.5 px** (spike-locked default), `vector-effect="non-scaling-stroke"` for pixel-stable width across orb sizes.
+- Reduced-motion: do not render the progress arc (mirrors production's inner-ring suppression). Faint outer track stays.
+
+**Integration touchpoints.**
+- `src/featureFlags.ts` — add `RingCueStyle` type + `RING_CUE_FLAG` spec. queryParam `'ringCue'`, default `'outer-inner'`. Parse accepts (case-insensitive): `outer-inner` / `production` / `rings` / `default` → `'outer-inner'`; `progress-arc` / `progress` / `arc` / `south` → `'progress-arc'`. Wire into `FeatureFlags` + `readFeatureFlags`.
+- `src/featureFlags.test.ts` — extend existing patterns (default, parse, case-insensitive, invalid fallback) for `ringCue`.
+- `src/components/OrbShape.tsx` — `OrbContainer` already takes `showRings` + `innerRingPhase`; add a `ringCue` prop and branch the ring layer between the current `outer-inner` implementation and the spike-011 transcription. New arc renderer is internal — no public API change to `OrbShape`.
+- Plumbing: `useAppViewModel` already exposes `featureFlags` to views. Thread `featureFlags.ringCue` into `OrbShape` at every Running-surface call site (`BreathingSessionSurface`, plus `NaviKriyaSessionSurface` if it routes through `OrbShape`).
+
+**Constraints.**
+- Default `outer-inner` must render byte-identically to today. No refactor of the existing ring code path — only branch around it.
+- No new dependencies. Pure React + inline SVG, same as the rest of the Orb code.
+- Reduced-motion mirror: progress arc suppressed exactly like the inner ring is today.
+- Theme parity: stroke uses `var(--color-breathing-accent)`; verify light (`#5d6877`) and dark (`#b4bac4`).
+- Idle (A) and Complete (C) surfaces continue to pass `showRings=false`. Progress-arc cue is Running-only — spike 011 did not audition idle/complete.
+- Rings stay hidden during the 3-2-1 lead-in (`OrbLeadIn` is already hard-set to `showRings: false`).
+
+**Tests.**
+- `featureFlags.test.ts` — coverage matching the `breathingShape` / `orbIdle` shape.
+- `OrbShape.test.tsx` — assert the ring DOM under `ringCue: 'outer-inner'` is unchanged; assert `ringCue: 'progress-arc'` renders the faint outer span + two SVG `<path>` elements (and that under reduced-motion the SVG is absent).
+- No new visual regression infrastructure required.
+
+**Out of scope.**
+- Replacing the production default. The locked Requirement in `.planning/spikes/MANIFEST.md` ("End-of-phase ring cue is preserved") still applies to the default.
+- Surfacing `ringCue` in user-facing App Settings — dev toggle only, same as `breathingShape` and `orbIdle`.
+- Idle / Complete surface changes.
+- Audio, copy, or layout changes.
+
+**Done means.**
+- `npm run dev` with a bare URL → identical to today's Running screen.
+- `npm run dev` with `?ringCue=progress-arc` → bidirectional arc grows from south to north during inhale, retracts during exhale, on all BPM (1-7) × ratio (50:50 / 40:60 / 30:70 / 20:80) combinations, in both themes, honouring reduced-motion.
+- Test suite green; no net-new deps; commits follow the existing per-task atomic pattern.
