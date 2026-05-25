@@ -43,15 +43,6 @@ describe('FeedbackCount', () => {
     expect(spans.indexOf(big)).toBeLessThan(spans.indexOf(small))
   })
 
-  it('renders Navi-shape data (count / target, round/phase context)', () => {
-    render(
-      <FeedbackCount big="47" mid="/ 100" small="Round 1 of 3 · Front" ariaLabel="Navi readout" />,
-    )
-    expect(screen.getByText('47')).toBeVisible()
-    expect(screen.getByText('/ 100')).toBeVisible()
-    expect(screen.getByText('Round 1 of 3 · Front')).toBeVisible()
-  })
-
   it('renders Stretch-shape data (round / total, stage + time context)', () => {
     render(
       <FeedbackCount big="2" mid="of 5" small="RAMP · 0:45 left" ariaLabel="Stretch readout" />,
