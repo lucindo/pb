@@ -60,7 +60,7 @@ export function NaviKriyaSessionSurface({
 
       {presentation.showCompletionHeadline && (
         <section aria-label={nkReadoutStrings.readoutAriaLabel} className="w-full">
-          <div role="status" aria-live="polite" aria-atomic="true" className="mt-7 text-center">
+          <div role="status" aria-live="polite" aria-atomic="true" className="mt-7 flex flex-col items-center">
             <p
               style={{
                 fontSize: 22,
@@ -70,6 +70,18 @@ export function NaviKriyaSessionSurface({
               }}
             >
               {readoutStrings.sessionComplete}
+            </p>
+            <p
+              className="uppercase"
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                fontWeight: 500,
+                letterSpacing: '0.16em',
+                color: 'var(--color-breathing-muted)',
+              }}
+            >
+              {readoutStrings.takeAMoment}
             </p>
           </div>
         </section>
