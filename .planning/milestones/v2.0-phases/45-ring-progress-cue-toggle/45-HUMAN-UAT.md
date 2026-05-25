@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: complete
 phase: 45-ring-progress-cue-toggle
 source: [45-VERIFICATION.md]
 started: 2026-05-25T12:32:00Z

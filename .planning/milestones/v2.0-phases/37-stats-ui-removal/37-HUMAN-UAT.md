@@ -1,5 +1,5 @@
 ---
-status: resolved
+status: complete
 phase: 37-stats-ui-removal
 source: [37-VERIFICATION.md]
 started: 2026-05-20T22:14:00Z

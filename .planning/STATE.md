@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
-status: milestone_complete
-stopped_at: Milestone complete (Phase 45 was final phase)
-last_updated: 2026-05-25T15:41:06.893Z
-last_activity: 2026-05-25 -- Phase 45 execution started
+status: Awaiting next milestone
+stopped_at: Phase 44 planned (7 plans, plan-check PASSED)
+last_updated: "2026-05-25T18:10:49.893Z"
+last_activity: 2026-05-25 — Milestone v2.0 completed and archived
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 35
-  completed_plans: 38
-  percent: 75
+  completed_plans: 36
+  percent: 88
 ---
 
 # Project State
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 ## Current Position
 
-Phase: 45
-Plan: Not started
-Next phase: 44 (final polish — awaiting plan)
-Last activity: 2026-05-25 - Completed quick task 260525-hzq: Version sync (package.json mirrors tag) and versioned GitHub Pages deploys with switchable official root pointer
-
-**Spike-loop note:** Phase 41 absorbed the originally-planned Phases 41 (palette+tokens), 42 (new orb), 43 (five-surface redesign) into a single tightly-coupled implementation using a per-item propose/go/implement/approve 4-step loop (items J1-J18). See `.planning/phases/41-spike-mono-zen/41-CONTEXT.md` for the framing and `41-SPIKE-LOOP-ARCHIVE.md` for the per-item history.
+Phase: Milestone v2.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-25 — Milestone v2.0 completed and archived
 
 ## Performance Metrics
 
@@ -132,4 +130,4 @@ Next command: /gsd-plan-phase 39
 
 ## Operator Next Steps
 
-- Plan Phase 39 (theme simplification) with /gsd-plan-phase 39
+- Start the next milestone with /gsd-new-milestone

@@ -346,6 +346,67 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v2.0 — New Design
+
+**Shipped:** 2026-05-25
+**Phases:** 8 (36, 37, 38, 39, 40, 41, 44, 45 — 42/43 absorbed into 41) | **Plans:** 35 + 18 spike-loop items + 1 quick-task closeout | **Timeline:** 2026-05-20 → 2026-05-25 (6 days, ~335 commits) | **Tests:** 1255 → 1166 (–89 net; redundancy removal in 44-02 + dead-test deletions partly offset by spike-loop drift-guards)
+
+### What Was Built
+
+- **Phase 36 — Housekeeping reset:** Closed the entire v1.x procedural backlog in one bookkeeping sweep — Phase 12 VALIDATION+SECURITY backfill, Phase 33/35 Nyquist VALIDATION, Phase 31 VERIFICATION re-flip, SUMMARY frontmatter backfill for Phases 32–35, legacy `human_needed` flips for Phases 02/03/05/15/18, 28-01/28-03 SUMMARY drift recovered from git history, v1→v2→v3 chained `migrateEnvelope` regression test, root `CLAUDE.md` + `.claude/skills/spike-findings-hrv/` (22 files) removed, `.claude/` gitignored. Pushed to `origin/main` so the reset was publicly visible before any v2.0 build work.
+- **Phase 37 — Anti-gamification stance:** Removed StatsFooter + ResetStatsDialog + Reset-stats Practice Settings affordance + dead formatters; preserved `recordSession()` computation + localStorage persistence; locked the deletion with `content.no-stats-ui.test.ts`.
+- **Phases 38 + 39 — Vocabulary collapse:** Dropped Square/Diamond variants and Moss/Slate/Dusk palettes from code, tokens, picker, FOUC IIFE, EN/PT-BR i18n; persisted prefs coerce to `orb`/`system` (no STATE_VERSION bump); two new forbidden-token drift-guards.
+- **Phase 40 — Audible timbre preview:** Singleton `previewContext.ts` AudioContext, resume-if-suspended dispatch, plays inhale cue once at A4 on every Timbre switch; preview cross-mute-irrelevance locked structurally by `previewContext.no-audioengine-import.test.ts` import-graph drift-guard.
+- **Phase 41 — Spike 010 Mono Zen end-to-end (spike-loop J1–J18):** Mono Zen palettes (cool slate light + dark) with new `borderSoft`/`textSoft`/`onAccent`/`orbHalo1/2/3` tokens; self-hosted Inter Variable typography; 3-halo + centre disc orb with V1/V2 variants behind query-string flags; redesigned Idle + Running + Complete + Learn + App Settings (4-section layout); SetupCard + SettingsSheet + FeedbackTime + FeedbackCount primitives; desktop centered column (520/600/320 px); J18 final audit + 8-item orphan cleanup + drift-guard `content.no-removed-keys.test.ts`. Closed at `d2b886b`.
+- **Phase 44 — Closeout polish:** `/gsd:code-review --all --fix` zeroed Warnings; 28 Info findings dispositioned; broad Tiger Style WHY-only comment audit; `SettingsRow` primitive extracted; 22-threat STRIDE security re-review; 9/9 POLISH verified; zero net-new runtime deps held.
+- **Phase 45 — Ring progress-cue toggle (post-Phase-44 add-on):** Spike-011-validated bidirectional progress arc transcribed verbatim into `ProgressArcLayer`; `featureFlags.ringCue` threaded end-to-end; **default flipped to `progress-arc` post-UAT at operator request**; `?ringCue=outer-inner` reaches the prior rendering.
+- **Versioned GitHub Pages deploy (quick-task 260525-hzq):** Tag-triggered multi-version deploy at `lucindo.github.io/hrv/` with `versions.json:official` as switchable root pointer; gotchas locked (short `vX.Y` tag form, explicit `v*` env tag policy, `[skip ci]` commit-back).
+
+### What Worked
+
+- **Spike-loop format absorbed Phases 41/42/43 into one.** The Mono Zen visual system is tightly coupled across all 5 surfaces; sequencing as 3 separate phases × N plans would have shipped surface-by-surface with broken intermediate states. The per-item propose/go/implement/approve 4-step loop kept operator-in-the-loop on every visual increment and absorbed mid-stream feedback dumps (J16 alone landed ~50 sub-commits this way). Per-commit green-gate held throughout.
+- **Drift-guard for every deletion sweep.** Phases 37, 38, 39, 41 each landed a forbidden-token regex scan as the deletion's contract (`content.no-stats-ui` / `no-variants` / `no-removed-themes` / `no-removed-keys`). Plus 2 helper structural drift-guards (`previewContext.no-audioengine-import`, `favicon.sync`). Deletion is the deletion; the test is the contract that the deletion stays deleted.
+- **Field deletion + coercer fallback beat STATE_VERSION migrations.** Persisted prefs with retired values (`variant: 'square'|'diamond'`, `theme: 'moss'|'slate'|'dusk'`) coerced to defaults on read via the existing Phase 8 D-01 envelope-tolerance contract — no STATE_VERSION bump, no migration ladder, no FOUC.
+- **Query-string dev toggles over `VITE_*` env vars.** `?breathingShape=` / `?orbIdle=` / `?ringCue=` allow per-tab toggling without a rebuild. Operator decision at J5+J6 propose and applied again at Phase 45. Aliases supported case-insensitively with default-on-junk parsing.
+- **Spike-locked values applied verbatim, no re-deciding.** The Phase 41 J1 palette hex, the Phase 45 ProgressArcLayer SVG math (viewBox 0 0 100 100, r = 49.7, sweep-flags 0/1, strokeWidth 2.5) — both transcribed byte-identically from the spike. Saved a class of mistake we'd made before (re-litigating spike-locked values as if they were OQ checkpoints).
+- **Operator architectural rules locked into memory.** Five new operator-architectural rules saved at v2.0 (Design must not touch logic, Spike is design NOT features, Spike implementation fidelity, Spike-locked values are not decisions, No design locking, Propose-step checklist mandatory). These compound: every future propose step starts from a tighter contract.
+- **Final POLISH as a real sweep, not a checkbox.** 7 plans, 9 POLISH requirements, 28 Info findings dispositioned, broad Tiger Style WHY-only comment audit, `SettingsRow` primitive extraction, 22-threat STRIDE re-review for new attack surfaces (preview audio, dev toggles, font asset). Zero open Warning findings at close.
+
+### What Was Inefficient
+
+- **Phase 41 SUMMARY frontmatter wasn't structured for `summary-extract`.** Most J-item SUMMARYs lack a clean `one_liner` field, so the milestone.complete CLI's auto-extracted accomplishments came back as garbage (`"One-liner:"` literals × ~16). Had to hand-curate the MILESTONES.md v2.0 entry. **Fix forward:** lock `one_liner: "..."` into the spike-loop SUMMARY template if the spike-loop format is reused.
+- **Pre-flight audit skipped.** No `v2.0-MILESTONE-AUDIT.md` was created before close. v1.0/v1.0.1/v1.4/v1.5 had milestone audits; v1.1/v1.2/v1.3 didn't. v2.0 also didn't — and operator chose proceed-without-audit at close. **Fix forward:** run `/gsd:audit-milestone` proactively at the start of the close sequence so the audit either confirms readiness or surfaces gaps before bookkeeping starts.
+- **Audit-open scanner mismatch on quick-task slugs and UAT statuses.** Operator finished 7 quick tasks via prefixed `<slug>-SUMMARY.md` files; the scanner needs a top-level literal `SUMMARY.md` with `status: complete` frontmatter to clear. Similarly, the UAT scanner only clears `status: complete` — `resolved` (the convention used by Phases 37/45) was reported as a gap. Both required a status-only file edit at milestone close. **Fix forward:** standardize on `status: complete` in the quick-task and UAT templates, OR widen the scanner's accepted statuses.
+- **Phase 45 added post-milestone-tag.** The `v2.0` git tag was already on `591df88` (release commit for the versioned-Pages deploy) when Phase 45 work landed. Phase 45 commits are 2 commits ahead of the tag. The release is what users got; Phase 45 will sit between tags until the next tag triggers a re-deploy. **Fix forward:** decide tag-vs-phase semantics earlier — either tag after all milestone phases close, or treat post-tag work as the next milestone's seed.
+- **`versions.json:official` still `v1.5` at v2.0 close.** Operator-deferred — v2.0 is reachable at `lucindo.github.io/hrv/v2.0/` but the root still defaults to v1.5. Worth promoting once v2.0 has live-user validation.
+
+### Patterns Established
+
+- **Spike-loop format** (per-item propose/go/implement/approve 4-step cycle, with state at `.planning/REFACTOR-LOOP-STATE.md`, resumes after `/clear` via stable prompt) — reusable for any tightly-coupled visual rewrite.
+- **Propose-step checklist** — every propose step starts with Downstream Constraints + Applicable Memory Rules BEFORE Goal/Scope/Risk. No exceptions for "small" changes.
+- **Field-deletion + coercer fallback** for retired prefs values — no STATE_VERSION bump needed when the envelope contract is already tolerant.
+- **Forbidden-token regex drift-guard** as the contract for any deletion sweep — paired with the deletion itself in the same atomic commit.
+- **Query-string dev toggles** with case-insensitive aliases + default-on-junk parsing in a central `featureFlags.ts` module — per-tab toggling without rebuild.
+- **Versioned GitHub Pages deploy** — tag (`vX.Y` short form) → versioned subdirectory → `versions.json:official` selects root.
+
+### Key Lessons
+
+1. **Spike is design, NOT features.** Spike locks visuals / controls / colors only. Do NOT add features, move features between surfaces, or change the data model based on spike screens. Cue-sound toggle + Timbre relocation were mistakes that were rolled back. Now codified in operator memory.
+2. **Design must not touch logic.** Design-only changes must not touch state machines, audio, persistence, business logic. Tests over a mixed monolith are NOT trustworthy as a design-isolation guarantee. Now an architectural rule.
+3. **Spike-locked values are not decisions.** When a spike already locked a hex / value / formula, apply verbatim and quietly relax downstream guards. Never re-surface as an OQ checkpoint. Phase 41 J1 palette and Phase 45 ProgressArcLayer math both followed this.
+4. **No design locking in tests/code/comments.** Tests must not anchor downstream-modifiable values (Tailwind classes, hex, design tokens, deleted-code refs, stale future-tense notes). Phase 44-02 explicitly removed these.
+5. **Per-item operator-in-the-loop scales better than per-plan for tightly-coupled work.** 18 J-items beat sequencing 3 phases × N plans for a visual system that needed coherent intermediate states. Choose format by coupling, not by phase count.
+6. **Pre-close audit catches what the scanner doesn't.** Even without the formal `/gsd:audit-milestone`, surfacing audit-open + the 85/85 actionable-requirement count to the operator at close start prevented silent gaps.
+
+### Cost Observations
+
+- Sessions: 8 phases discuss→plan→execute→verify, with Phase 41 running as a single 18-item spike-loop session, plus the post-Phase-44 add-on Phase 45 (3 plans), plus 7 quick tasks closed at close, plus a versioned Pages deploy quick-task, plus this milestone close.
+- Notable: Phase 41 alone landed ~100+ atomic commits across J1–J18; J16 (the feedback dump consolidation) accounted for ~50 of those.
+- Phase 44 polish across 7 plans was the largest closeout sweep yet — `/gsd:code-review --all --fix` mega-commit + 28 Info dispositions + broad WHY-only comment audit + primitive extraction + 22-threat security re-review.
+- Test count net reduction (1255 → 1166) is the first milestone where the test count went DOWN — driven by Phase 44-02's intra-file redundancy removal and dead-test deletions across the deletion-sweep phases. Net quality is higher despite lower count: 7 new drift-guards locked deletion contracts.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -359,6 +420,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.3 | 5 | 11 | Build-time-only dependency for tooling-driven capability (zero runtime deps held a 4th milestone); fs-scan drift-guard test locks cleanup done-states; full-codebase parallel review at milestone close; ROADMAP.md drift undercounted phases at close |
 | v1.4 | 2 | 6 | Gap-closure plan (`gap_closure: true`) for UAT-surfaced defects within the phase; shared presentational component as single source of truth (one fix covers both surfaces); VALIDATION/SECURITY docs left stale, reconciled by audit at close |
 | v1.5 | 6 | 27 | Spike-first blueprint packaged as a skill; chained `STATE_VERSION` migration ladder (v1→v2→v3); appended post-milestone peer phases (33/34/35); requirement amended at audit (NK-07 end-only); milestone re-audit after post-audit scope change; milestone outgrew its scoped name |
+| v2.0 | 8 | 35 + 18 spike-loop items | Spike-loop format (per-item propose/go/implement/approve) absorbed 3 phases into 1; field-deletion + coercer fallback beat STATE_VERSION migrations for retired prefs; forbidden-token drift-guards as deletion contracts; query-string dev toggles over `VITE_*` env vars; 5 operator architectural rules locked into memory (design-must-not-touch-logic, spike-is-design-NOT-features, spike-implementation-fidelity, spike-locked-values-are-not-decisions, no-design-locking, propose-step-checklist); versioned GitHub Pages deploy; post-tag phase added (Phase 45 lands after `v2.0` tag); first milestone with test count NET REDUCTION (1255 → 1166) driven by intra-file redundancy removal |
 
 ### Cumulative Quality
 
@@ -371,6 +433,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.3 | 959/959 pass | 65 | — |
 | v1.4 | 997/997 pass | 70 | — |
 | v1.5 | 1255/1255 pass | — | ~28,933 |
+| v2.0 | 1166/1166 pass | 108 | ~30,096 |
 
 ### Top Lessons (Verified Across Milestones)
 

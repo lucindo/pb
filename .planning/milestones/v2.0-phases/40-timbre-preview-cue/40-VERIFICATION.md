@@ -1,13 +1,17 @@
 ---
 phase: 40-timbre-preview-cue
 verified: 2026-05-21T20:30:00Z
-status: human_needed
-score: 13/13 must-haves verified (structural)
+status: passed
+score: 13/13 must-haves verified (structural); 4 empirical UAT items operator-approved 2026-05-25 (see 40-HUMAN-UAT.md). Closed at v2.0 milestone close.
 overrides_applied: 0
 re_verification:
-  previous_status: none
-  previous_score: n/a
-  gaps_closed: []
+  previous_status: human_needed
+  previous_score: 13/13 (structural)
+  gaps_closed:
+    - "PREV-01 cue correctness across four timbres — operator-confirmed audible (40-HUMAN-UAT.md test 1)"
+    - "PREV-03 mute irrelevance empirical cross-check — operator-confirmed (40-HUMAN-UAT.md test 2)"
+    - "D-08 rapid-tap overlap feel — operator-confirmed no glitches (40-HUMAN-UAT.md test 3)"
+    - "PREV-05 + D-01 + D-02 iOS Safari standalone-PWA cold-start latency — operator-confirmed imperceptible (40-HUMAN-UAT.md test 4)"
   gaps_remaining: []
   regressions: []
 human_verification:
