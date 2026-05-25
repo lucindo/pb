@@ -68,22 +68,22 @@ Operator says "next" or "approve" → mark item done, update Current Focus to th
 
 ---
 
-## Orphan cleanup queue (for J17 audit to pick up)
+## Orphan cleanup queue (CLOSED — J18 swept)
 
-Items deferred during the loop that J17's final-audit step should sweep up. Each line: WHAT (the orphan) · WHEN (which item left it) · WHY (operator decision or intentional deferral).
+All items in this queue have been swept during J18 except where explicitly preserved by operator decision. Status frozen for historical reference:
 
-- `vm.install.showBanner` viewmodel field — J13 deviation removed the practice-screen install banner; field is no longer consumed (PracticeScreen.tsx) but still derived in `appViewModel.ts:153`. Cleanup: delete the field + its derivation + the appViewModel.test.ts `showBanner` assertions.
-- `vm.install.onDismiss` viewmodel field + wiring path — same J13 deviation; no remaining consumer.
-- `installDismissed` storage field + persistence read/write — same J13 deviation; nothing writes it anymore (banner's dismiss button is gone). Touches sealed storage layer, so a domain task to sequence properly.
-- LOCKED_COPY entries `install.bannerText`, `install.regionLabel`, `install.dismiss` (EN + PT-BR) — same J13 deviation; no consumer after banner removal. Note: `install.installButton`, `install.iosStepsButton`, `install.settingsLabel`, `install.iosStep1/2/3` STAY (Settings still consumes them).
-- `SettingsInstallSection` chrome (still uses pre-J12 accent + accent-strong + shadow-sm pairing) — flagged during J12 propose as out-of-scope; J17 should decide whether to re-tokenize to the Mono Zen quieter pairing (border-soft + text-soft) for consistency with MuteToggle.
-- `THEME_OPTIONS = ['light', 'dark', 'system']` + `DEFAULT_THEME = 'system'` in `src/domain/settings.ts` — J1 v16-visual-locks said "light + dark only" but only updated tokens, not the picker option list. J14 surfaced this during the App Settings restructure; J17 should prune 'system' from `THEME_OPTIONS` + change `DEFAULT_THEME` to 'light' (or 'dark'), plus migrate any stored `theme: 'system'` user pref on read. Domain + storage change.
-- `vm.appHeader` viewmodel field + `getPracticeHeader()` helper + i18n `practice.header` / `switcher.stretchHeader` / `switcher.naviKriyaHeader` (EN + PT-BR) — J16 V4 dropped TopAppBar's `eyebrow` prop; no consumer remains. Cleanup: delete the viewmodel field + derivation + helper + 6 i18n entries + their strings.test.ts assertions.
-- `src/components/primitives/Card.tsx` + `Card.test.tsx` — J16 dump #3 "Learn restructure" commit `556463f` dropped the only consumer (LearnPage). Cleanup: delete the primitive + test, OR repurpose as the shared SectionCard chrome (SectionCard is currently inlined in both LearnPanel.tsx + SettingsPanelBody.tsx with identical styles).
-- `src/components/BooleanToggle.tsx` — J16 practice-settings restyle commit `7226b3e` switched NaviKriyaSettingsForm's OM Tick row from BooleanToggle (flanking labels + larger knob) to SettingsToggleRow (single label + Toggle). No consumer remains. Cleanup: delete BooleanToggle.tsx.
-- `src/components/StatusPanel.tsx` — J16 session-readout rewire commit `62d6693` dropped both consumers (SessionReadout + NaviKriyaSessionSurface) when FeedbackTime / FeedbackCount replaced the StatusPanel-wrapped chrome. Cleanup: delete StatusPanel.tsx.
+- ~~`vm.install.showBanner` viewmodel field~~ — **deleted J18.4** (commit `d9e66df`)
+- ~~`vm.install.onDismiss` viewmodel field~~ — **deleted J18.4** (commit `d9e66df`)
+- `installDismissed` storage field + persistence read/write — **partially kept (A2)** — operator decision: storage + writers stay alive (useBeforeInstallPrompt still persists on appinstalled + triggerInstall success); only the dead read in useAppViewModel was removed (commit `d9e66df`). Original orphan claim that "nothing writes it anymore" was wrong — live-code verification surfaced the 2 active writer paths.
+- ~~LOCKED_COPY `install.bannerText` / `regionLabel` / `dismiss`~~ — **deleted J18.3** (commit `f562ff1`). `installButton`/`iosStepsButton`/`settingsLabel`/`iosStep1-3` retained as planned.
+- ~~`SettingsInstallSection` chrome~~ — **re-tokenized J18.6** (commit `3fb46c4`) — border-soft + text-soft (no shadow), matching J12 MuteToggle pattern.
+- **`THEME_OPTIONS = ['light', 'dark', 'system']` + `DEFAULT_THEME = 'system'`** — **INTENTIONALLY KEPT** per operator J18-propose Decision B: "Don't touch, we kept system on previous step (design validation), we have the 3 options today, tested and working." This orphan claim is **superseded** — the design-validation step locked the 3-option picker as a real product decision, not just a leftover.
+- ~~`vm.appHeader` + `getPracticeHeader()` + header i18n keys~~ — **deleted J18.2** (commit `ba12418`).
+- ~~`src/components/primitives/Card.tsx` + test~~ — **deleted J18.1** (commit `75af962`).
+- ~~`src/components/BooleanToggle.tsx`~~ — **deleted J18.1** (commit `75af962`).
+- ~~`src/components/StatusPanel.tsx`~~ — **deleted J18.1** (commit `75af962`).
 
-J17's propose step must read this section and create a per-orphan cleanup plan before declaring the loop done.
+Going forward, the J18.8 drift-guard (`src/content/content.no-removed-keys.test.ts`) locks the deletion done-state structurally. Re-introducing any removed key fails the test with an explicit error naming the J18 sub-item that removed it.
 
 ---
 
@@ -119,19 +119,20 @@ State below is updated after every step transition. The state file commits with 
 | J15 | Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings | done (commit `c72d335`) |
 | J16 | Operator feedback pass — cross-cutting polish & fixes across the entire spike loop. | **done (commit `1bdc707`)** |
 | J17 | Locked-copy verification — disclaimer / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings (formerly J16; moved after the feedback pass so verification runs against what actually lands) | done (commits `7d7ca2a` + state-transition) |
-| **J18** | **Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces + orphan cleanup queue sweep** | **pending** |
+| J18 | Final audit — grep guards + spike-fidelity walkthrough across all 5 surfaces + orphan cleanup queue sweep | **done (commits `75af962` `ba12418` `f562ff1` `d9e66df` `3fb46c4` `ec77c67` + state-transition)** |
 | J19 | **(Gated)** Complete screen — operator decision: ship as distinct surface OR keep current inline "Session complete" headline | pending |
 
 ---
 
 ## Current focus
 
-**Item:** J18 — Final audit
-**Step:** ready to propose
+**Loop complete.** J1 → J18 all done; J7 skipped (false-positive). J19 (Complete-screen distinct-surface decision) remains gated on a separate operator call — no longer a spike-loop item.
 
-J17 closed at commit `7d7ca2a` (Navi takeAMoment subtitle fix). 7-surface visible-string walk produced 1 real-fix + 6 dispositions (4 keep-as-is, 2 operator-decisions deferred, 1 already on orphan queue for J18). Per-surface drift table archived below.
+J18 closed at the J18.9 state-transition commit (this one). The orphan cleanup queue has been swept; one item intentionally NOT touched per operator validation:
 
-Next: J18 runs the final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces, AND sweeps the orphan cleanup queue (state file lines 71-86: vm.install.* / installDismissed / install LOCKED_COPY leftovers; SettingsInstallSection chrome re-tokenize decision; THEME_OPTIONS / DEFAULT_THEME prune; vm.appHeader + getPracticeHeader + header strings; Card.tsx; BooleanToggle.tsx; StatusPanel.tsx).
+- **THEME_OPTIONS = ['light', 'dark', 'system']** stays — operator validated all 3 options during design and they remain tested and working. The orphan queue's claim that 'system' should be pruned is **superseded** by the operator's J18-propose decision B ("Don't touch, we kept system on previous step (design validation), we have the 3 options today, tested and working").
+
+Loop archives. Next: roll into the next milestone (v2.0 ship + whatever follows).
 
 **Mode:** operator is delivering cross-cutting feedback across the entire spike loop. Per [[ack-dont-fix-inline]]: ACKNOWLEDGE first, take notes, do NOT edit code until operator says "you can fix" (or equivalent). Per the J16 pinned rule: NO SCOPE PUSHBACK — every item is in scope by definition.
 
@@ -193,6 +194,46 @@ Annotated but not in bullet list (awaits operator confirmation):
 - **Wrap-up trio:** query-flag defaults + NK tick volume + Mono Zen app icons (`1bdc707`)
 
 **J16 APPROVED at `1bdc707`.** All feedback dumps landed; loop advances to J17.
+
+### Archived — Implementation summary (Item J18)
+
+Final audit + orphan cleanup queue sweep. 7 atomic sub-commits + this state-transition.
+
+**Sub-commits:**
+
+| Sub | Commit | What |
+|---|---|---|
+| J18.1 | `75af962` | Deleted dead components: Card.tsx + Card.test.tsx, BooleanToggle.tsx, StatusPanel.tsx. Also pruned Card re-exports from `primitives/index.ts`. -4 tests (Card.test.tsx). |
+| J18.2 | `ba12418` | Deleted appHeader / getPracticeHeader / 6 header i18n keys. Swept top-to-bottom: AppViewModel field, useAppViewModel derivation, practiceCopy helper, EN+PT-BR strings, UiStrings interface entries, related tests. -1 test (stretchHeader-specific). |
+| J18.3 | `f562ff1` | Trimmed install LOCKED_COPY orphan entries (bannerText / regionLabel / dismiss). Kept installButton / iosStepsButton / settingsLabel / iosStep1-3 — all still consumed by SettingsPanelBody + IosInstallSteps. 0 test count change. |
+| J18.4 + J18.5 | `d9e66df` | Trimmed install viewmodel + loadInstallDismissed read. **Folded into one commit** because tsc enforced the dependency — removing the showBanner derivation immediately surfaced installDismissed/isPhone/onInstallDismiss as ts6133 unused-binding errors. Per operator A2: storage + writers (useBeforeInstallPrompt) stay alive; only the dead read path was removed. Rewrote 3 install tests in-place to match the new viewmodel shape. |
+| J18.6 | `3fb46c4` | SettingsInstallSection chrome re-tokenized — Mono Zen quieter pairing (border-soft + text-soft, no shadow), matching J12 MuteToggle. Install row label / iOS steps button / install button all flipped. |
+| J18.7 | (dropped) | THEME_OPTIONS prune dropped per operator Decision B — 3-option picker is a real product decision, not an orphan. |
+| J18.8 | `ec77c67` | Drift-guard `src/content/content.no-removed-keys.test.ts` locking J13/J16/J17/J18 removed keys. Structural patterns avoid comment false positives. Sanity floor of >20 scanned files. Canary-tested end-to-end: introducing a `practice.header` literal made the guard fail with the expected error. +2 tests. |
+| J18.9 | (this commit) | State-file transition. Marks the loop done. |
+
+**Net codebase effect (vs J17 close at `7d7ca2a`):**
+- 4 component files deleted (Card.tsx, Card.test.tsx, BooleanToggle.tsx, StatusPanel.tsx)
+- 1 helper function deleted (`getPracticeHeader`)
+- 7 i18n keys deleted (`practice.header`, `switcher.stretchHeader`, `switcher.naviKriyaHeader`, `install.bannerText`, `install.regionLabel`, `install.dismiss`, both locales — though some keys exist only in one locale each)
+- 2 viewmodel fields deleted (`appHeader`, `showBanner`, `onDismiss`)
+- 1 React state hook + 1 callback deleted (`installDismissed` state, `onInstallDismiss`)
+- 1 drift-guard test file added (`content.no-removed-keys.test.ts`)
+- 1 visual change (SettingsInstallSection chrome)
+
+**Verification (final):**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean
+- Full suite: 107 files / 1155 tests pass (was 106/1153 at J17 close → -2 from deletions + +4 from J18.8 = +2 net; 107 = 106 - 1 deleted Card.test.tsx + 1 added drift-guard + 1 prior J17 baseline mismatch reconciliation... actually traced from baseline 1158 at J16 wrap → J17 added the Navi takeAMoment without test changes (1158) → J18.1 -4 (Card tests) = 1154 → J18.2 -1 (stretchHeader test) = 1153 → J18.4+5 0 (rewrote in place) = 1153 → J18.6 0 = 1153 → J18.8 +2 = 1155 final.)
+- `npm run build`: clean; PWA precache 19 / 514.18 KiB (was 517.51 at J16 wrap → -3.33 KiB from the deletions).
+
+**Manual verification needed (operator-side):**
+- Mobile + Idle (HRV/Stretch/Navi): no install banner anywhere on practice surface (it's been gone since J13 but the cleanup confirms no flash of the removed UI).
+- App Settings → About → Install row (mobile non-iOS): button now reads with the quieter Mono Zen chrome (border-soft outline, text-soft fill, no shadow) matching the spike's overall flat treatment + congruent with MuteToggle.
+- App Settings → Appearance → Theme picker: still shows Light + Dark + System options. All 3 work as before.
+- All other surfaces: zero visible change vs J17 close (deletions were code-only).
+
+**Loop closes here.** J1 → J18 all done; J7 skipped (false-positive item from stale memory); J19 (Complete-screen distinct-surface decision) remains gated on a separate operator call and is no longer a spike-loop item.
 
 ### Archived — Implementation summary (Item J17)
 
@@ -506,6 +547,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 | J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
+| J18 | `75af962` `ba12418` `f562ff1` `d9e66df` `3fb46c4` `ec77c67` + state | Final audit + orphan cleanup sweep across 7 atomic sub-commits. J18.1 deleted dead components (Card / BooleanToggle / StatusPanel) + Card re-exports from `primitives/index.ts`. J18.2 swept appHeader + getPracticeHeader + 6 header i18n keys top-to-bottom. J18.3 trimmed install LOCKED_COPY orphans (bannerText / regionLabel / dismiss); kept installButton / iosStepsButton / settingsLabel / iosStep1-3. J18.4+5 folded together (tsc-enforced dependency) — pruned showBanner + onDismiss viewmodel fields + the loadInstallDismissed read; per operator A2, storage + writers in useBeforeInstallPrompt stayed alive. J18.6 re-tokenized SettingsInstallSection chrome to Mono Zen quieter pairing matching J12 MuteToggle. J18.7 dropped per operator Decision B — 3-option theme picker stays as a real product decision. J18.8 added a structural drift-guard (`content.no-removed-keys.test.ts`) that locks the deletion done-state and was canary-tested end-to-end. Final: 107 files / 1155 tests pass; PWA precache 514.18 KiB (was 517.51 at J16 wrap → -3.33 KiB from deletions). Loop closes here — J1→J18 all done; J7 skipped; J19 remains a gated separate decision. |
 | J17 | `7d7ca2a` | Locked-copy verification — 7-surface visible-string walk produced 1 real-fix + 6 dispositions. Fix: Navi completion state was missing the "Take a moment" subtitle that HRV+Stretch render via SessionReadout; NaviKriyaSessionSurface now mirrors the same two-paragraph stack (`mt-7 flex flex-col items-center` + sessionComplete `<p>` + takeAMoment uppercase `<p>`). No new strings; `takeAMoment` was already in `practice.readout`. No test changes — existing NK completion assertions still pass. PWA precache 517.69 KiB (parity with J16 wrap at `1bdc707`). Dispositions for the other 6 drift items archived in the J17 implementation summary (above). |
 | J16 | `1bdc707` | Operator feedback pass — 4 dumps + many subsequent items landed across ~50 atomic commits. Final state: Mono Zen palette applied to every surface (top bar, switcher, start/end buttons, app settings pickers, practice settings sheet, learn page, end-session dialog, session-complete state, app icons). Extend-duration logic preserved in domain/viewmodel but intentionally unwired from any UI for congruence with stretch+navi running. Ambient idle orb breathes 40:60 at 5.5 BPM by default. NK tick volume bumped 0.08 → 0.13. About row shows `{version} · {sha} · {date}`. Arrow cue forced to remount on phase change to defeat Mobile Safari GPU compositor cache. PWA precache 626.18 KiB → 517.51 KiB (-108 KiB, mostly the new geometric flat PNG icons compressing better than the old photographic ones). |
 | J15 | `c72d335` | Desktop responsive layout per spike 010 eleventh pass (README lines 510-545). CSS (theme.css): `--orb-size` mobile clamp tightened to `clamp(180px, 50vw, 280px)` (was `35vw → 360px`); desktop (≥sm = 640px) locks to `320px` via `@media (min-width: 640px) :root { --orb-size }` override (OQ-1 + OQ-2 recommended). New `--page-bg-gradient` custom property: mobile keeps original `radial-gradient(circle at top, bg-soft, bg 48%, bg-edge)`; desktop overrides to spike's positioned variant `radial-gradient(50% 70% at 50% 25%, edge 0%, bg 50%, bg-soft 100%)` (OQ-3 b). PageShell: NEW `width?: 'practice' \| 'page'` prop (default 'page' = `sm:max-w-[600px]`; `'practice'` = `sm:max-w-[520px]`); mobile (<sm) full-width preserved. Drops the unconditional `max-w-3xl`. Background sourced from `var(--page-bg-gradient)`. PracticeScreen passes `width="practice"`; PracticeToggle + PracticeControlsView wrappers gain inner `mx-auto sm:max-w-[400px]` cap per spike line 528. AppSettingsPage + LearnPage default to 'page' (600px) — no explicit override. OrbShape / OrbContainer consume `var(--orb-size)` — auto-scale on media-query fire. PWA precache 626.18 KiB (+0.30). Tests unchanged (PageShell tests are behavioral; no class-string locking on widths). 3 files changed (76/-18). |
