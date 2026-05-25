@@ -318,7 +318,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       sections: {
         appearance: 'Appearance',
         language: 'Language',
-        audio: 'Audio',
+        audio: 'Feedback',
         about: 'About',
       },
       about: {
@@ -490,7 +490,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       sections: {
         appearance: 'Aparência',
         language: 'Idioma',
-        audio: 'Áudio',
+        audio: 'Feedback',
         about: 'Sobre',
       },
       about: {
