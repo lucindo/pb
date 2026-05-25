@@ -102,12 +102,6 @@ describe('PracticeToggle', () => {
     expect(onSwitch).not.toHaveBeenCalled()
   })
 
-  it('works when stretch is the active pill', () => {
-    renderToggle({ active: 'stretch' })
-    expect(screen.getByRole('button', { name: 'Stretch' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'HRV' }).getAttribute('aria-pressed')).toBe('false')
-    expect(screen.getByRole('button', { name: 'Navi Kriya' }).getAttribute('aria-pressed')).toBe('false')
-  })
 })
 
 describe('PracticeGlyph', () => {

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { Stepper } from './Stepper'
 
 describe('Stepper', () => {
-  it('renders the value', () => {
+  it('displays the numeric value as text', () => {
     render(
       <Stepper
         value={5.5}
@@ -18,7 +18,7 @@ describe('Stepper', () => {
     expect(screen.getByText('5.5')).toBeInTheDocument()
   })
 
-  it('uses formatValue when provided', () => {
+  it('formats the displayed value using the formatValue callback when provided', () => {
     render(
       <Stepper
         value={5}
