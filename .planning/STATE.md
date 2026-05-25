@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: New Design
-status: Awaiting next milestone
-stopped_at: Phase 44 planned (7 plans, plan-check PASSED)
-last_updated: "2026-05-25T18:10:49.893Z"
-last_activity: 2026-05-25 — Milestone v2.0 completed and archived
+milestone: v2.1
+milestone_name: Kuthasta and Settings Switches
+status: planning
+last_updated: "2026-05-25T22:59:44.438Z"
+last_activity: 2026-05-25
 progress:
-  total_phases: 8
-  completed_phases: 7
-  total_plans: 35
-  completed_plans: 36
-  percent: 88
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 ## Current Position
 
-Phase: Milestone v2.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-25 — Milestone v2.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-25 — Milestone v2.1 started
 
 ## Performance Metrics
 

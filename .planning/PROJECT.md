@@ -18,15 +18,19 @@ Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch,
 
 **v2.x carry-forward (next milestone):** iOS Safari mid-page audio recovery (OS-level session loss) — still pending after v2.0; S2 Android Chrome wake-lock real-device UAT — still pending (physical device unavailable); iOS Pitfall 6 phone-call interrupted state — still pending; iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision — still pending. (Firefox Desktop orb flicker dropped permanently in v2.0 — old `.orb` keyframes are gone after Phase 41 J4 rewrite. Phase 12 VALIDATION/SECURITY + v1.5 Nyquist VALIDATION + Phase 31 VERIFICATION re-flip + 28 Info-severity findings + WR-01 — all absorbed at v2.0 start by Phase 36 HOUSE-01..14 + Phase 44 POLISH-02.)
 
-## Next Milestone
+## Current Milestone: v2.1 Kuthasta and Settings Switches
 
-Not yet scoped. Run `/gsd:new-milestone` to question → research → define requirements → roadmap the next milestone.
+**Goal:** Ship the spike-012 Kuthasta orb as a third `breathingShape` variant, then surface the four existing dev-only toggles to users on a new Appearance page reached from the App Settings header.
 
-Likely seed areas (operator's call):
+**Target features:**
 
-- **Carry-forwards still pending after v2.0:** iOS Safari mid-page audio recovery (OS-level session loss); S2 Android Chrome wake-lock real-device UAT; iOS Pitfall 6 phone-call interrupted state; iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision.
-- **Backlog-style enhancements:** Calm, deliberate stats display (computation + persistence are intact — only the visible surface was removed in Phase 37 for the anti-gamification stance); Phase 40 D-08 polyphonic-overlap refinement; further ring-cue variants (spike 011 only audited two of several candidates).
-- **Versioned Pages workflow follow-ons:** Promote `versions.json:official` from `v1.5` → `v2.0` if/when the operator decides v2.0 is the production-default deploy.
+- **Kuthasta orb variant** — implement spike 012 V5 Halo Flame verbatim (warm-cool halo gradient + opalescent indigo disc + small white 5-point star) as a third value on `?breathingShape=` (joins `orb-halo` + `minimal-rings`). Operator visually UATs in real app before promoting to settings.
+- **Persistable feature-flag preferences** — extend the storage envelope so `breathingShape` / `ringCue` / `orbIdle` / `switcherIcon` (currently query-string-only, per-tab) carry as user preferences. Resolution rule: query-string > persisted > default (dev override still works). No `STATE_VERSION` bump per Phase 8 D-01 fallback contract.
+- **App Settings right-chevron** — add a `>` affordance to the App Settings header (`[ <  Settings  ]` → `[ <  Settings  > ]`) that navigates to a new Appearance page.
+- **Appearance page** (new full-page sibling to App Settings) with two sections — **Orb Style** (Orb segmented picker: minimal / halo / kuthasta; Cue segmented picker: progress arc / rings) and **Visual** (Breathing effect toggle; Switcher icons toggle).
+- **i18n EN + PT-BR** for the new page title, section headers, picker option labels, toggle labels.
+
+**Key context:** Reopens spike-010's anti-config stance for orb-family variants only — exposed on a dedicated Appearance page (NOT the Practice Settings sheet, which stays clean). Square/Diamond stay permanently gone. v2.x carry-forwards (iOS Safari audio recovery, Android wake-lock UAT, iOS Pitfall 6, iOS Wake Lock < 18.4 detect-and-warn) deferred to a separate v2.2 bug-fix milestone.
 
 For full v2.0 detail see `.planning/milestones/v2.0-ROADMAP.md` + `v2.0-REQUIREMENTS.md`.
 
@@ -108,7 +112,7 @@ For full v2.0 detail see `.planning/milestones/v2.0-ROADMAP.md` + `v2.0-REQUIREM
 
 ### Active
 
-No milestone is active. Run `/gsd:new-milestone` to scope the next milestone (questioning → research → requirements → roadmap).
+v2.1 Kuthasta and Settings Switches — see `.planning/REQUIREMENTS.md` and `.planning/ROADMAP.md` for scoped REQ-IDs and phase plan. Will be populated by the requirements + roadmap steps that follow this PROJECT.md update.
 
 ### v2.x Carry-Forwards (Known Bugs)
 
@@ -260,4 +264,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after v2.0 New Design milestone close — all 8 phases shipped, ROADMAP + REQUIREMENTS archived to `.planning/milestones/v2.0-*.md`, REQUIREMENTS.md reset for next milestone.*
+*Last updated: 2026-05-25 after starting v2.1 Kuthasta and Settings Switches milestone — Current Milestone section populated, Active requirements pointing at scoped REQ-IDs to be defined.*
