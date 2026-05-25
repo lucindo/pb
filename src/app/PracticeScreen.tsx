@@ -72,6 +72,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
           session={vm.practiceSession}
           variant={vm.featureFlags.breathingShape}
           idleMode={vm.featureFlags.orbIdle}
+          ringCue={vm.featureFlags.ringCue}
         />
         <PracticeSettingsView
           settings={vm.practiceSettings}
