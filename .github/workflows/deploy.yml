@@ -38,15 +38,20 @@ jobs:
       - name: Verify tag matches package.json version
         if: github.event_name == 'push'
         run: |
-          PKG_VERSION="${{ steps.read.outputs.pkg_version }}"
-          EXPECTED_TAG="v$PKG_VERSION"
+          # Compare the pushed tag (short form like `v2.0`) against the short
+          # form derived from package.json.version (`2.0.0` → `v2.0`). The
+          # short form is the project's tag + versioned-subpath convention
+          # (see versions.json schema regex). package.json stays full SemVer
+          # for npm compatibility.
+          EXPECTED_TAG="${{ steps.read.outputs.pkg_version_short }}"
           ACTUAL_TAG="${{ github.ref_name }}"
+          PKG_VERSION="${{ steps.read.outputs.pkg_version }}"
           if [ "$ACTUAL_TAG" != "$EXPECTED_TAG" ]; then
-            echo "ERROR: pushed tag '$ACTUAL_TAG' does not match expected 'v\${package.json.version}' = '$EXPECTED_TAG'" >&2
-            echo "Bump package.json.version to match the tag (or re-tag) before pushing." >&2
+            echo "ERROR: pushed tag '$ACTUAL_TAG' does not match short form '$EXPECTED_TAG' derived from package.json.version '$PKG_VERSION'" >&2
+            echo "Adjust package.json.version (its first two segments form the tag) or re-tag before pushing." >&2
             exit 1
           fi
-          echo "Tag match OK: $ACTUAL_TAG == $EXPECTED_TAG"
+          echo "Tag match OK: $ACTUAL_TAG == $EXPECTED_TAG (package.json.version: $PKG_VERSION)"
 
   read-manifest:
     runs-on: ubuntu-latest
