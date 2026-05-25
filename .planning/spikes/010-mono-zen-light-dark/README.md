@@ -10,6 +10,16 @@ tags: [ui, look-and-feel, palette, theme, mono-zen, controls, comparison]
 
 # Spike 010: Mono Zen · Light & Dark — with realistic controls
 
+> **Implemented in v2.0 Phase 41 (2026-05-24 → 2026-05-25).** Spike-loop items J1-J18 transcribed this spike's visual system into the codebase across all 5 surfaces. Commit range `d2c50ed` (refactor prep) → `d2b886b` (J18 closed; spike loop COMPLETE). See `.planning/phases/41-spike-mono-zen/` for the GSD artifacts (CONTEXT, SUMMARY, VERIFICATION, SPIKE-LOOP-ARCHIVE) and the per-item history with commit pins.
+>
+> **Implementation deviations from this spike** (operator decisions during the spike-loop):
+> - Dev toggles use **query-string** params (`?breathingShape=` + `?orbIdle=`) instead of `VITE_*` env vars — per-tab toggling without rebuild.
+> - **Install banner V3 dropped entirely** — install kept only in App Settings → About → Install row. Per `[[v2-carryforward-disposition]]`.
+> - Practice Settings sheet form fields sourced from real app domain (existing `settingsForm.*` + `nkControls.*` i18n keys), NOT the spike's illustrative `SETUP_SUMMARY` placeholder labels.
+> - "Audio" App Settings section renamed to "Feedback" (operator preference, J16 commit `4ab2776`).
+> - Cue picker option labels stayed as production "Text / Arrow / Nose" (spike's illustrative "Dot / Ring / Pulse / None" was visual reference only).
+> - Theme picker kept 3 options (Light / Dark / System) — operator validated all 3 during design, spike's Light + Dark only was display simplification.
+
 ## What This Validates
 
 > **Given** the practice screen in tightened Monochrome Zen (from spike 009's verdict),
