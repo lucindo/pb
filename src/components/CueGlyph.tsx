@@ -82,8 +82,15 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
     const pathD = phase === 'in' ? ARROW_IN_PATH : ARROW_OUT_PATH
     return (
       <span className={`relative z-10 ${colorClass}`}>
-        {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint */}
+        {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint.
+            `key={phase}` forces React to unmount + remount the SVG on
+            in/out flip — the alternative (same <path> with a mutated `d`
+            attribute) gets cached by Mobile Safari inside the orb's
+            translate3d GPU layer and never repaints. Nose works without
+            this because its inner <line>/<polyline> children have
+            coordinate-derived keys that already unmount per phase. */}
         <svg
+          key={phase}
           aria-hidden="true"
           focusable="false"
           viewBox="0 0 100 100"
