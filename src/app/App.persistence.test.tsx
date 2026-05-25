@@ -134,7 +134,6 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Advance an extra minute so the surrounding cycle finishes (Phase 3 fix).
     await advanceTime(6 * 60_000)
     const env = readRawEnvelope()
-    // Phase 30 Pitfall 3: the session records into practices.resonant.stats.
     const stats = resonantStatsOf(env)
     expect(stats?.['totalSessions']).toBe(1)
     // elapsed is at least 300s for a 5-min session
@@ -260,8 +259,6 @@ describe('PRACTICE-02 — resonant settings survive remount', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// Phase 34 — v2→v3 envelope upgrade shows migrated stretch config
 // ---------------------------------------------------------------------------
 describe('Phase 34 — v2 envelope migrates to v3 and Stretch practice shows config', () => {
   it('a v2 envelope user mounts with the Stretch practice showing migrated config', () => {

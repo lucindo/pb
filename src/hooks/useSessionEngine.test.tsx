@@ -412,7 +412,6 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
   })
 })
 
-// Phase 34: stretch session engine path (Plan 34-05).
 // When useSessionEngine is called with stretchSettings, start() calls
 // startStretchSession and the resulting state has stretchSegments (not null).
 describe('useSessionEngine — stretch session path (Phase 34)', () => {

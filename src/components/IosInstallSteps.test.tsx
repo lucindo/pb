@@ -1,4 +1,3 @@
-// Phase 29 Plan 01: IosInstallSteps component tests.
 // Covers 3 behaviors: all three step texts rendered, id prop propagated to
 // container div, and the iOS Share SVG (aria-hidden) is present.
 import '@testing-library/jest-dom/vitest'

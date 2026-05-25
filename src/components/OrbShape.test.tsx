@@ -6,8 +6,6 @@ import { OrbShape } from './OrbShape'
 import type { SessionFrame } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
-// Phase 25 Plan 03 — cue prop threading tests are at the bottom of this file.
-
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame for the existing-Phase-2-behavior tests. `remainingMs` is part of

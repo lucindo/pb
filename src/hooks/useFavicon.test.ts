@@ -1,6 +1,5 @@
 // src/hooks/useFavicon.test.ts
 //
-// Phase 21 Plan 02: Tests for the useFavicon orchestrator hook.
 // Mirrors useTheme.test.ts structure (seedPrefs, makeMqlMock, 8 test cases).
 // Analog: src/hooks/useTheme.test.ts (exact match — renderHook on an event-driven
 // orchestrator hook with localStorage + matchMedia + custom-event coverage).

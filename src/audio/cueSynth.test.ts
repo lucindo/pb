@@ -403,12 +403,6 @@ function createAcForTimbre(): AudioContext {
   return new AudioContext()
 }
 
-// Phase 18 Plan 03 Task 3: parameterized per-timbre coverage for the new
-// scheduleInCueForTimbre / scheduleOutCueForTimbre dispatch surface. The
-// existing Bowl tests above stay UNCHANGED — TIMBRE-02 byte-identical proof
-// at the synthesis layer. These blocks add 4 × it.each(TIMBRE_OPTIONS) tests
-// per dispatch direction (8 tests × 4 timbres = 32 per-timbre assertions).
-
 describe('scheduleInCueForTimbre (all timbres)', () => {
   it.each(TIMBRE_OPTIONS)('%s: oscillator count equals preset.partials.length', (timbre) => {
     const ac = createAcForTimbre()

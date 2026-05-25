@@ -132,8 +132,7 @@ describe('audioEngine', () => {
   })
 
   // 260510-tc9 Bug 2: engine forwards phaseDurationSec to scheduleIn/OutCueForTimbre.
-  // Phase 18 Plan 03: dispatch signature is (ac, when, dest, timbre, phaseDurationSec),
-  // so phaseDurationSec is now the 5th positional arg (index 4) — index 3 is timbre.
+  // phaseDurationSec is the 5th positional arg (index 4) — index 3 is timbre.
   it('scheduleNextCue forwards phaseDurationSec as the 5th arg to scheduleInCueForTimbre/scheduleOutCueForTimbre', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
@@ -400,10 +399,9 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // Phase 18 Plan 03 Task 4: timbre-propagation tests verifying that the
-  // construction-time `opts.timbre` flows through scheduleLeadIn (first In cue)
-  // and scheduleNextCue (in/out ternary). Captures D-08 capture-at-construction
-  // semantics: no setter, no re-read, immutable for engine lifetime.
+  // Timbre-propagation tests: construction-time `opts.timbre` flows through
+  // scheduleLeadIn (first In cue) and scheduleNextCue (in/out ternary).
+  // D-08 capture-at-construction semantics: no setter, no re-read, immutable for engine lifetime.
 
   it('createAudioEngine({ timbre: "bell" }) forwards "bell" to scheduleInCueForTimbre on the first In cue', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')

@@ -1,4 +1,3 @@
-// Phase 29 Plan 01: Shared iOS install steps component.
 // Extracted from InstallBanner.tsx per CONTEXT D-06 — one source of truth for
 // the iOS Share → Add to Home Screen step list used by both the banner and the
 // Settings install row. The `id` prop is required so each consumer can set a
