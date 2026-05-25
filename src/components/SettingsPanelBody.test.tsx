@@ -79,10 +79,15 @@ describe('SettingsPanelBody — J14 sectioning', () => {
 })
 
 describe('SettingsPanelBody — About section', () => {
-  it('renders the Version row with the injected __APP_VERSION__', () => {
+  it('renders the Version row with the injected version + build SHA + date', () => {
     renderBody()
     expect(screen.getByText(EN.about.versionLabel)).toBeVisible()
-    expect(screen.getByText(__APP_VERSION__)).toBeVisible()
+    // The version row combines `__APP_VERSION__ · __APP_BUILD_SHA__ ·
+    // __APP_BUILD_DATE__`. Use a regex anchored on the version so test stays
+    // resilient to per-build SHA / date changes.
+    expect(
+      screen.getByText((content) => content.startsWith(`${__APP_VERSION__} · `)),
+    ).toBeVisible()
   })
 
   it('renders the Source row with a GitHub link (external, rel=noopener)', () => {
