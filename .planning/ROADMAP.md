@@ -212,12 +212,12 @@ alternative, not a replacement of the locked end-of-phase ring cue.
 **Requirements**: TBD
 **Depends on:** Phase 44
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 45-01-PLAN.md — Add RingCueStyle type + RING_CUE_FLAG query-string spec + featureFlags.test.ts coverage (flag layer; mirrors BREATHING_SHAPE_FLAG)
 - [x] 45-02-PLAN.md — Add ringCue prop to OrbShape + transcribe spike-011 RingsB into ProgressArcLayer; branch the inner-ring slot; lock the default-byte-identical + reduced-motion-suppression invariants in OrbShape.test.tsx
-- [ ] 45-03-PLAN.md — Thread vm.featureFlags.ringCue through PracticeScreen → PracticeSessionView → {Breathing,NaviKriya}SessionSurface → OrbShape (mechanical drop-in, mirrors variant/idleMode chain)
+- [x] 45-03-PLAN.md — Thread vm.featureFlags.ringCue through PracticeScreen → PracticeSessionView → {Breathing,NaviKriya}SessionSurface → OrbShape (mechanical drop-in, mirrors variant/idleMode chain)
 
 #### Details
 
