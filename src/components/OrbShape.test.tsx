@@ -113,3 +113,21 @@ describe('OrbShape — cue prop (Phase 25 Plan 03)', () => {
     expect(screen.getByText('2')).toBeVisible()
   })
 })
+
+// ── Phase 45 Plan 02: ringCue RED smoke ──────────────────────────────────────
+// Minimal RED test for the new progress-arc renderer. Task 2 expands this into
+// the full assertion block; this single case drives RED for Task 1's branch site.
+describe('OrbShape — ringCue prop (Phase 45) RED', () => {
+  it('ringCue="progress-arc" with phaseProgress > 0 renders the SVG arc layer', () => {
+    const partialFrame: SessionFrame = { ...sampleFrame, phaseProgress: 0.5 }
+    const { container } = render(
+      <OrbShape
+        frame={partialFrame}
+        ringCue="progress-arc"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
+    expect(arcSvg).not.toBeNull()
+  })
+})
