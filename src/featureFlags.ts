@@ -55,7 +55,7 @@ export function readQueryFeatureFlag<T>(
 
 const SWITCHER_ICON_FLAG = {
   queryParam: 'switcherIcon',
-  defaultValue: true,
+  defaultValue: false,
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
@@ -72,7 +72,7 @@ const BREATHING_SHAPE_FLAG = {
 
 const ORB_IDLE_FLAG = {
   queryParam: 'orbIdle',
-  defaultValue: 'still' as OrbIdleBehavior,
+  defaultValue: 'ambient' as OrbIdleBehavior,
   parse(rawValue: string): OrbIdleBehavior | null {
     const v = rawValue.trim().toLowerCase()
     if (v === 'still') return 'still'

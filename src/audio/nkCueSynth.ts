@@ -33,7 +33,7 @@ const NEAR_SILENCE = 0.0001 // setTargetAtTime cannot ramp to true zero
 // constants needed.
 // D-07 per-OM tick: soft and short
 const NK_TICK_DURATION_SEC = 0.12
-const NK_TICK_PEAK_GAIN = 0.08 // quiet — peripheral hearing only
+const NK_TICK_PEAK_GAIN = 0.13 // J16: bumped from 0.08 — still peripheral, slightly more audible per operator UAT
 const NK_TICK_DECAY_TAU = 0.05
 // Countdown beep: the 3-2-1 lead-in tick, shared by the HRV and Navi
 // countdowns. Spike 004 ("Crisp ping" — operator audition) retuned this from

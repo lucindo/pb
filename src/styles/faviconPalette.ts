@@ -14,18 +14,19 @@ export const FAVICON_COLORS: Record<Exclude<ThemeId, 'system'>, string> = Object
   dark: '#ccd0d9',
 })
 
-// D-01: Recolor-only SVG template. Spike 006 ("Breathing rings") replaced the
-// flat circle with the breathing-rings mark — two concentric rings + a centre
-// dot, the small-size reduction of the installed app icon. Still single-colour:
-// __FILL__ is the only substituted value (every ring stroke + the dot), so the
-// favicon recolours per theme exactly as before. Every __FILL__ occurrence is
-// replaced — buildFaviconDataUri uses replaceAll, not replace.
+// D-01: Recolor-only SVG template. J16 Mono Zen update — the breathing-rings
+// mark from spike 006 (two strokes + dot) is replaced by the new orb halo
+// structure: three concentric filled circles at decreasing opacity (0.22 →
+// 0.32 → 0.50) topped by a fully-opaque centre disc, mirroring the in-app
+// orb's 3-halo + accent-disc layout. Still single-colour: __FILL__ is the
+// only substituted value, so per-theme recolouring keeps working.
 // SYNC WITH the inline favUri() SVG in index.html and public/favicon.svg.
 export const FAVICON_SVG_TEMPLATE =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-  + '<circle cx="16" cy="16" r="12.4" fill="none" stroke="__FILL__" stroke-width="2.4" stroke-opacity="0.5"/>'
-  + '<circle cx="16" cy="16" r="7.6" fill="none" stroke="__FILL__" stroke-width="2.4"/>'
-  + '<circle cx="16" cy="16" r="3.5" fill="__FILL__"/></svg>'
+  + '<circle cx="16" cy="16" r="14" fill="__FILL__" fill-opacity="0.22"/>'
+  + '<circle cx="16" cy="16" r="12" fill="__FILL__" fill-opacity="0.32"/>'
+  + '<circle cx="16" cy="16" r="10" fill="__FILL__" fill-opacity="0.50"/>'
+  + '<circle cx="16" cy="16" r="8" fill="__FILL__"/></svg>'
 
 // D-03: Produces a runtime-recolored SVG data-URI from the single template.
 // No new static per-theme files are created in public/.
