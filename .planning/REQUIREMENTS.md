@@ -136,7 +136,7 @@ Closeout sweep — code review, test cleanup, comment audit, refactoring, securi
 - [ ] **POLISH-02**: 28 Info-severity findings from the 2026-05-16 deep code review are dispositioned (each: fixed, deferred-with-reason, or marked obsolete by the redesign).
 - [ ] **POLISH-03**: Test cleanup — Vitest test names are tight; redundant tests removed; no flake. Final test count documented.
 - [ ] **POLISH-04**: Comment audit (Tiger Style) — no narration of WHAT; only WHY-comments survive (constraints, invariants, surprising behavior, workarounds).
-- [ ] **POLISH-05**: Refactoring pass — any duplication or boundary violations introduced by the redesign are resolved.
+- [x] **POLISH-05**: Refactoring pass — any duplication or boundary violations introduced by the redesign are resolved.
 - [ ] **POLISH-06**: Security re-review — `/gsd-secure-phase 44` on the full milestone surface; new attack surfaces (preview audio path, new env vars, dev toggles) reviewed.
 - [x] **POLISH-07** (partial — Phase 41 J18 sweep): Readability pass. J18.1 deleted 3 dead components (Card / BooleanToggle / StatusPanel); J18.2 deleted dead viewmodel field + 6 i18n keys + helper; J18.3 deleted 3 orphan i18n entries. No leftover references to dropped variants/themes. Drift-guard `content.no-removed-keys.test.ts` locks the deletion done-state. **Remaining for Phase 44:** broader readability pass against the redesigned codebase.
 - [x] **POLISH-08** (Phase 41): Zero net-new runtime code dependencies maintained. `@fontsource-variable/inter` is a font asset (woff2 in dist/), not a code dep — `dependencies` in package.json still `react` + `react-dom`.

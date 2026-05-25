@@ -4,13 +4,13 @@ milestone: v2.0
 milestone_name: New Design
 status: ready_to_plan
 stopped_at: Phase 44 planned (7 plans, plan-check PASSED)
-last_updated: "2026-05-25T04:25:59.361Z"
-last_activity: 2026-05-25 -- Phase 44 execution started
+last_updated: "2026-05-25T05:23:56.576Z"
+last_activity: 2026-05-25
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 32
-  completed_plans: 26
+  completed_plans: 30
   percent: 71
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 ## Current Position
 
 Phase: 44 (final-polish) — EXECUTING
-Plan: 1 of 7
+Plan: 2 of 7
 Next phase: 44 (final polish — awaiting plan)
-Last activity: 2026-05-25 -- Phase 44 execution started
+Last activity: 2026-05-25
 
 **Spike-loop note:** Phase 41 absorbed the originally-planned Phases 41 (palette+tokens), 42 (new orb), 43 (five-surface redesign) into a single tightly-coupled implementation using a per-item propose/go/implement/approve 4-step loop (items J1-J18). See `.planning/phases/41-spike-mono-zen/41-CONTEXT.md` for the framing and `41-SPIKE-LOOP-ARCHIVE.md` for the per-item history.
 
@@ -62,7 +62,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 
 ### Pending Todos
 
-- v1.x deferred (partially dispositioned): `.orb-layer--in/--out` → `.shape-layer--in/--out` rename — **obsolete-by-redesign** per D-05: CSS classes deleted in Phase 41 J4 commit `a742c0b`; only an archived comment at `src/styles/theme.contrast.test.ts:121` remained, updated in Phase 44 Plan 04 refactor commit (POLISH-05). The remaining items from this entry — per-variant token sets; live idle preview; additional shape variants — remain deferred (not yet obviated).
+- v1.x deferred (partially dispositioned): `.orb-layer--in/--out` → `.shape-layer--in/--out` rename — **obsolete-by-redesign** per D-05: CSS classes deleted in Phase 41 J4 commit `a742c0b`; only an archived comment at `src/styles/theme.contrast.test.ts:121` remained, updated in Phase 44 Plan 04 refactor commit `b84f936` (POLISH-05). The remaining items from this entry — per-variant token sets; live idle preview; additional shape variants — remain deferred (not yet obviated).
 - Phase 44 (POLISH) — full code review sweep across the redesigned codebase (POLISH-01..06); 28 Info-severity findings from 2026-05-16 disposition; test cleanup; Tiger Style WHY-only comment audit; refactoring + security re-review.
 - Phase 40 lint carry-forward: `src/audio/previewContext.test.ts` carries +2 errors / +1 warning vs pre-Phase-40 baseline (vi.mocked + non-null-assertion idioms). Fold into Phase 44 POLISH-02.
 - J19 (Complete-screen distinct-surface decision) — gated on a separate operator call; not a spike-loop or Phase 44 item.
@@ -120,9 +120,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-25T04:12:24.013Z
+Last session: 2026-05-25T05:23:56.570Z
 Stopped at: Phase 44 planned (7 plans, plan-check PASSED)
-Resume file: .planning/phases/44-final-polish/44-01-PLAN.md
+Resume file: None
 Next command: /gsd-plan-phase 39
 
 ## Operator Next Steps
