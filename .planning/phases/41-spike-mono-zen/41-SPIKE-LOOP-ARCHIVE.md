@@ -1,6 +1,13 @@
-# Spike application loop — live state
+# Spike application loop — ARCHIVED implementation log
 
-**What this is:** Applying spike 010 (Mono Zen · Light & Dark) + the v2.0 MANIFEST feature decisions to the codebase, item by item. Each item runs a 4-step propose/go/implement/approve cycle. Same shape as `REFACTOR-LOOP-STATE.md` (A→I, now archived as complete).
+> **Phase 41 archive (2026-05-25).** This is the spike-loop state file as-of phase close
+> (commit `d2b886b` — J18 closed; spike loop COMPLETE). Originally lived at
+> `.planning/SPIKE-LOOP-STATE.md`; moved here during GSD reconciliation when the
+> spike-loop work was retroactively framed as Phase 41 of the v2.0 milestone.
+> See `41-CONTEXT.md` for the framing and `41-SUMMARY.md` for the deliverable
+> summary; this file is the per-item history with commit pins for traceability.
+
+**What this was:** Applying spike 010 (Mono Zen · Light & Dark) + the v2.0 MANIFEST feature decisions to the codebase, item by item. Each item ran a 4-step propose/go/implement/approve cycle. Same shape as `REFACTOR-LOOP-STATE.md` (A→I, archived as complete at commit `a0d8452`).
 
 ---
 
