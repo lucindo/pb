@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
 status: ready_to_plan
-stopped_at: Phase 41 closed via spike-loop (J1-J18); awaiting Phase 44 POLISH decision
-last_updated: "2026-05-25T03:00:00.000Z"
-last_activity: 2026-05-25 -- Phase 41 closed at commit d2b886b; GSD reconciliation
+stopped_at: Phase 44 planned (7 plans, plan-check PASSED)
+last_updated: "2026-05-25T04:12:24.020Z"
+last_activity: 2026-05-25 — GSD reconciliation (created phase 41 dir + archived spike-loop state + updated ROADMAP/REQUIREMENTS/STATE/PROJECT)
 progress:
-  total_phases: 7   # 36-41 + 44 (42/43 absorbed into 41 — see ROADMAP reconciliation note)
-  completed_phases: 6
-  total_plans: 21   # 9 phase-36 + 3 phase-37 + 4 phase-38 + 5 phase-39 + 4 phase-40 + spike-loop-18 = treated as phase-41's "plans"; Phase 44 TBD
-  completed_plans: 21
-  percent: 86   # 6/7 phases done
+  total_phases: 7
+  completed_phases: 5
+  total_plans: 32
+  completed_plans: 26
+  percent: 71
 ---
 
 # Project State
@@ -119,9 +119,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-21T22:25:36.589Z
-Stopped at: Phase 40 context gathered
-Resume file: .planning/phases/40-timbre-preview-cue/40-CONTEXT.md
+Last session: 2026-05-25T04:12:24.013Z
+Stopped at: Phase 44 planned (7 plans, plan-check PASSED)
+Resume file: .planning/phases/44-final-polish/44-01-PLAN.md
 Next command: /gsd-plan-phase 39
 
 ## Operator Next Steps
