@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Kuthasta and Settings Switches
-status: planning
-last_updated: "2026-05-25T22:59:44.438Z"
-last_activity: 2026-05-25
+status: completed
+stopped_at: Phase 46 context gathered
+last_updated: "2026-05-25T23:21:55.097Z"
+last_activity: "2026-05-25 — v2.1 roadmap created (3 phases: 46 Kuthasta orb / 47 Persistable feature-flag preferences / 48 Appearance page + i18n; 17/17 requirements mapped)"
 progress:
   total_phases: 3
   completed_phases: 0
@@ -105,9 +106,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-25
-Stopped at: v2.1 roadmap created (Phases 46–48; 17/17 requirements mapped)
-Resume file: None
+Last session: 2026-05-25T23:21:55.090Z
+Stopped at: Phase 46 context gathered
+Resume file: .planning/phases/46-kuthasta-orb-variant/46-CONTEXT.md
 Next command: /gsd:plan-phase 46
 
 ## Operator Next Steps
