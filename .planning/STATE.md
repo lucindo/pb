@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: New Design
 status: milestone_complete
-stopped_at: Milestone complete (Phase 44 was final phase)
-last_updated: 2026-05-25T05:59:55.194Z
-last_activity: 2026-05-25
+stopped_at: Phase 44 planned (7 plans, plan-check PASSED)
+last_updated: "2026-05-25T14:34:48.182Z"
+last_activity: 2026-05-25 -- Phase 45 execution started
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 6
-  total_plans: 32
-  completed_plans: 35
-  percent: 86
+  total_plans: 35
+  completed_plans: 33
+  percent: 75
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** Milestone complete
+**Current focus:** Phase 45 — ring-progress-cue-toggle
 
 ## Current Position
 
-Phase: 44
-Plan: Not started
+Phase: 45 (ring-progress-cue-toggle) — EXECUTING
+Plan: 1 of 3
 Next phase: 44 (final polish — awaiting plan)
-Last activity: 2026-05-25
+Last activity: 2026-05-25 -- Phase 45 execution started
 
 **Spike-loop note:** Phase 41 absorbed the originally-planned Phases 41 (palette+tokens), 42 (new orb), 43 (five-surface redesign) into a single tightly-coupled implementation using a per-item propose/go/implement/approve 4-step loop (items J1-J18). See `.planning/phases/41-spike-mono-zen/41-CONTEXT.md` for the framing and `41-SPIKE-LOOP-ARCHIVE.md` for the per-item history.
 

@@ -38,6 +38,7 @@ describe('readFeatureFlags', () => {
       switcherIcon: false,
       breathingShape: 'orb-halo',
       orbIdle: 'ambient',
+      ringCue: 'outer-inner',
     })
   })
 
@@ -98,6 +99,33 @@ describe('readFeatureFlags', () => {
 
   it('falls back to default for invalid orbIdle values', () => {
     expect(readFeatureFlags('?orbIdle=junk').orbIdle).toBe('ambient')
+  })
+
+  it('defaults ringCue to outer-inner', () => {
+    expect(readFeatureFlags('').ringCue).toBe('outer-inner')
+  })
+
+  it('parses progress-arc and its aliases', () => {
+    expect(readFeatureFlags('?ringCue=progress-arc').ringCue).toBe('progress-arc')
+    expect(readFeatureFlags('?ringCue=progress').ringCue).toBe('progress-arc')
+    expect(readFeatureFlags('?ringCue=arc').ringCue).toBe('progress-arc')
+    expect(readFeatureFlags('?ringCue=south').ringCue).toBe('progress-arc')
+  })
+
+  it('parses outer-inner and its aliases', () => {
+    expect(readFeatureFlags('?ringCue=outer-inner').ringCue).toBe('outer-inner')
+    expect(readFeatureFlags('?ringCue=production').ringCue).toBe('outer-inner')
+    expect(readFeatureFlags('?ringCue=rings').ringCue).toBe('outer-inner')
+    expect(readFeatureFlags('?ringCue=default').ringCue).toBe('outer-inner')
+  })
+
+  it('ringCue is case-insensitive and trims whitespace', () => {
+    expect(readFeatureFlags('?ringCue=PROGRESS-ARC').ringCue).toBe('progress-arc')
+    expect(readFeatureFlags('?ringCue=%20Arc%20').ringCue).toBe('progress-arc')
+  })
+
+  it('falls back to default for invalid ringCue values', () => {
+    expect(readFeatureFlags('?ringCue=junk').ringCue).toBe('outer-inner')
   })
 })
 
