@@ -1,8 +1,8 @@
 ---
 phase: 45-ring-progress-cue-toggle
 verified: 2026-05-25T12:30:00Z
-status: human_needed
-score: 14/14 must-haves verified (programmatic); 2 visual UAT items pending
+status: passed
+score: 14/14 must-haves verified (programmatic); 2 visual UAT items operator-approved 2026-05-25 (see 45-HUMAN-UAT.md). Default flipped to `progress-arc` post-UAT at operator request.
 overrides_applied: 0
 human_verification:
   - test: "`npm run dev` with bare URL (no query string) on HRV Running surface"
