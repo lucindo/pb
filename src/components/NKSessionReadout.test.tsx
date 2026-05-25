@@ -20,31 +20,35 @@ function renderReadout(overrides: Partial<NKSessionReadoutProps> = {}) {
 }
 
 describe('NKSessionReadout', () => {
-  it('phase "front" shows strings.front value', () => {
-    renderReadout({ phase: 'front' })
-    expect(screen.getByText('Front')).toBeInTheDocument()
+  // J16: NKSessionReadout now renders FeedbackCount (big count + " / target"
+  // baseline-aligned, above an uppercase "ROUND X · PHASE" secondary). The
+  // Phase / Round / Count cell labels are gone; section chrome (border, bg,
+  // status legend) is dropped.
+
+  it('renders the live OM count as the primary number', () => {
+    renderReadout({ count: 47, target: 100 })
+    expect(screen.getByText('47')).toBeInTheDocument()
   })
 
-  it('phase "back" shows strings.back value', () => {
-    renderReadout({ phase: 'back' })
-    expect(screen.getByText('Back')).toBeInTheDocument()
-  })
-
-  it('round=2, totalRounds=3 renders strings.roundOf(2,3)', () => {
-    renderReadout({ round: 2, totalRounds: 3 })
-    // EN roundOf: (c, t) => `${c} / ${t}`
-    expect(screen.getByText('2 / 3')).toBeInTheDocument()
-  })
-
-  it('count=7, target=100 renders the live "7 / 100" in the Count cell', () => {
+  it('renders "/ target" as the baseline-aligned mid suffix', () => {
     renderReadout({ count: 7, target: 100 })
-    // EN countOf: (c, t) => `${c} / ${t}`
-    expect(screen.getByText('7 / 100')).toBeInTheDocument()
+    expect(screen.getByText('/ 100')).toBeInTheDocument()
   })
 
-  it('count=0 (lead-in window) renders "0 / target" in the Count cell', () => {
+  it('count=0 (lead-in window) renders 0 / target with the target unchanged', () => {
     renderReadout({ count: 0, target: 20 })
-    expect(screen.getByText('0 / 20')).toBeInTheDocument()
+    expect(screen.getByText('0')).toBeInTheDocument()
+    expect(screen.getByText('/ 20')).toBeInTheDocument()
+  })
+
+  it('phase "front" renders the secondary "{roundOf} · Front"', () => {
+    renderReadout({ phase: 'front', round: 1, totalRounds: 3 })
+    expect(screen.getByText('1 / 3 · Front')).toBeInTheDocument()
+  })
+
+  it('phase "back" renders the secondary "{roundOf} · Back"', () => {
+    renderReadout({ phase: 'back', round: 2, totalRounds: 3 })
+    expect(screen.getByText('2 / 3 · Back')).toBeInTheDocument()
   })
 
   it('container section carries aria-label = strings.readoutAriaLabel', () => {
@@ -54,35 +58,10 @@ describe('NKSessionReadout', () => {
     ).toBeInTheDocument()
   })
 
-  it('container section carries aria-live="polite"', () => {
-    const { container } = renderReadout()
-    const section = container.querySelector('section')
-    expect(section).not.toBeNull()
-    // Reason: section non-null asserted by expect().not.toBeNull() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(section!).toHaveAttribute('aria-live', 'polite')
-  })
-
-  it('renders phase label (strings.phaseLabel = "Phase")', () => {
-    renderReadout()
-    expect(screen.getByText('Phase')).toBeInTheDocument()
-  })
-
-  it('renders round label (strings.roundLabel = "Round")', () => {
-    renderReadout()
-    expect(screen.getByText('Round')).toBeInTheDocument()
-  })
-
-  it('renders count label (strings.countLabel = "Count")', () => {
-    renderReadout()
-    expect(screen.getByText('Count')).toBeInTheDocument()
-  })
-
   it('no hard-coded "Front" string — value comes from strings prop', () => {
-    // Use a custom strings object with different values to confirm no hardcoding
     const customStrings = { ...EN_STRINGS, front: 'Frente', back: 'Trás' }
     renderReadout({ phase: 'front', strings: customStrings })
-    expect(screen.getByText('Frente')).toBeInTheDocument()
-    expect(screen.queryByText('Front')).not.toBeInTheDocument()
+    expect(screen.getByText(/Frente/)).toBeInTheDocument()
+    expect(screen.queryByText(/· Front$/)).not.toBeInTheDocument()
   })
 })

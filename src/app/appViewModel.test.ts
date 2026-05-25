@@ -38,6 +38,7 @@ const breathingState: BreathingSessionViewState = {
   liveFrame: frame,
   status: 'running',
   inSessionView: true,
+  selectedSettings: DEFAULT_SETTINGS,
 }
 
 const naviState: NaviKriyaSessionViewState = {

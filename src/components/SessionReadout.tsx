@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react'
+
 import {
   formatDuration,
   type SessionFrame,
@@ -5,9 +7,15 @@ import {
   type StretchStage,
 } from '../domain'
 import type { UiStrings } from '../content/strings'
-import { StatusPanel } from './StatusPanel'
+import { FeedbackTime } from './FeedbackTime'
 
-// Exhaustive stage→label map — a new StretchStage without a case is a compile error.
+// Spike 010 FeedbackHRV (index.html L1060-1085) + FeedbackStretch — both
+// resolve to FeedbackTime: a big remaining-time number above an uppercase
+// tracked secondary line. HRV's secondary is "X BPM · ratio" (static), the
+// stretch path's secondary is "X BPM · STAGE" (currentBpm + stage from frame).
+// Completion shows just the "Session complete" headline; lead-in shows the
+// placeholder time the upcoming session will count down from.
+
 function stageText(stage: StretchStage, strings: UiStrings['practice']['readout']): string {
   switch (stage) {
     case 'hold-initial':
@@ -19,71 +27,15 @@ function stageText(stage: StretchStage, strings: UiStrings['practice']['readout'
   }
 }
 
-// Plain timer chip — standard (non-stretch) sessions.
-function TimerChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      aria-live="off"
-      className="mt-4 inline-flex items-baseline gap-3 rounded-full bg-[var(--color-breathing-surface)]/80 px-5 py-3 text-[var(--color-breathing-accent-strong)]"
-    >
-      <span className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-breathing-muted)]">
-        {label}
-      </span>
-      <span className="font-mono text-2xl font-semibold">{value}</span>
-    </div>
-  )
-}
-
-// Stretch readout — Stage · Remaining · BPM in three labeled cells. Shared by
-// the running stretch session AND the lead-in placeholder so the countdown
-// previews the same readout the session will show (D-13/D-14).
-function StretchRow({
-  frame,
-  timeLabel,
-  timeValue,
-  strings,
-}: {
-  frame: SessionFrame
-  timeLabel: string
-  timeValue: string
-  strings: UiStrings['practice']['readout']
-}) {
-  return (
-    <div
-      aria-live="off"
-      className="mt-4 flex items-stretch rounded-[1.25rem] bg-[var(--color-breathing-surface)]/80 px-2 py-3 text-[var(--color-breathing-accent-strong)]"
-    >
-      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
-          {strings.stageLabel}
-        </span>
-        <span className="text-lg font-semibold">
-          {frame.stage !== undefined ? stageText(frame.stage, strings) : ''}
-        </span>
-      </div>
-      <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
-      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
-          {timeLabel}
-        </span>
-        <span className="font-mono text-lg font-semibold">{timeValue}</span>
-      </div>
-      <span className="w-px self-stretch bg-[var(--color-breathing-muted)]/40" />
-      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[var(--color-breathing-muted)]">
-          {strings.currentBpmLabel}
-        </span>
-        <span className="font-mono text-lg font-semibold">
-          {frame.currentBpm !== undefined ? frame.currentBpm.toFixed(1) : ''}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   strings: UiStrings['practice']['readout']
+  /** Resonant pace context — drives the HRV secondary line. Always provided
+   *  for HRV; the stretch path uses frame.currentBpm + frame.stage instead. */
+  bpm: number
+  ratio: string
+  /** BPM unit token from settingsForm strings ("BPM" / "RPM" per locale). */
+  bpmUnit: string
 }
 
 export interface LeadInSessionReadoutProps extends SessionReadoutProps {
@@ -100,68 +52,61 @@ export type SessionReadoutModeProps =
   | LeadInSessionReadoutProps
   | ActiveSessionReadoutProps
 
-export function SessionReadout(props: SessionReadoutModeProps) {
-  const { frame, strings } = props
+export function SessionReadout(props: SessionReadoutModeProps): ReactElement | null {
+  const { frame, strings, bpm, ratio, bpmUnit } = props
 
-  if (props.mode === 'lead-in') {
-    const placeholderLabel = frame?.remainingMs === null ? strings.elapsed : strings.remaining
-    const placeholderValue = frame
-      ? formatDuration(frame.remainingMs ?? frame.elapsedMs)
-      : '0:00'
-    // A stretch session's lead-in preview shows the Stage/Remaining/BPM row —
-    // the same readout the running session shows — instead of a plain chip.
-    const isStretchPlaceholder = frame !== null && frame.currentBpm !== undefined
+  // Session complete: drop the FeedbackTime, surface a centered headline.
+  // Preserves the role=region wrapper so existing harness queries keep working.
+  if (props.mode === 'session' && props.showCompletionHeadline) {
     return (
-      <StatusPanel legend={strings.statusLabel} ariaLabel={strings.readoutAriaLabel}>
+      <section aria-label={strings.readoutAriaLabel} className="w-full">
         <div
           role="status"
           aria-label={strings.announcementAriaLabel}
           aria-live="polite"
           aria-atomic="true"
-        />
-        {isStretchPlaceholder ? (
-          <StretchRow frame={frame} timeLabel={placeholderLabel} timeValue={placeholderValue} strings={strings} />
-        ) : (
-          <TimerChip label={placeholderLabel} value={placeholderValue} />
-        )}
-      </StatusPanel>
+          className="mt-7 text-center"
+        >
+          <p
+            style={{
+              fontSize: 22,
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: 'var(--color-breathing-text)',
+            }}
+          >
+            {strings.sessionComplete}
+          </p>
+        </div>
+      </section>
     )
   }
 
-  if (props.status === 'idle' && frame === null && !props.showCompletionHeadline) {
+  // Running-complete: hide the FeedbackTime so the user doesn't see
+  // "0:00" forever after the session ends (J3 polish, preserved).
+  if (props.mode === 'session' && props.status === 'complete') {
     return null
   }
 
-  const timeLabel = frame?.remainingMs === null ? strings.elapsed : strings.remaining
-  const timeValue = frame ? formatDuration(frame.remainingMs ?? frame.elapsedMs) : '0:00'
-  // Phase 3 polish: when the session has completed, the "Session complete"
-  // headline is the only useful information — the timer chip would just read
-  // "Remaining 0:00" forever, which is noise. Hide it on the complete state.
-  const showTimeChip = props.status !== 'complete' && frame !== null
-  // A running stretch session shows Stage · Remaining · BPM on one line.
-  const isStretchRunning = showTimeChip && frame.currentBpm !== undefined
+  if (frame === null) return null
+
+  const primary = formatDuration(frame.remainingMs ?? frame.elapsedMs)
+
+  // Stretch path: currentBpm + stage are set on the frame. Format
+  // "{currentBpm} {bpmUnit} · {stage}" — stage label rendered uppercase by
+  // FeedbackTime's CSS.
+  // HRV path: format "{bpm} {bpmUnit} · {ratio}" using the static settings.
+  const secondary = frame.currentBpm !== undefined && frame.stage !== undefined
+    ? `${frame.currentBpm.toFixed(1)} ${bpmUnit} · ${stageText(frame.stage, strings)}`
+    : `${String(bpm)} ${bpmUnit} · ${ratio}`
 
   return (
-    <StatusPanel legend={strings.statusLabel} ariaLabel={strings.readoutAriaLabel}>
-      <div
-        role="status"
-        aria-label={strings.announcementAriaLabel}
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {props.showCompletionHeadline ? (
-          <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">{strings.sessionComplete}</p>
-        ) : null}
-      </div>
-      {/* D-13/D-14: a running stretch session shows Stage · Remaining · BPM as
-          three labeled cells in one row — fits mobile, each value distinct.
-          D-15: the Stretch→Settle transition is silent (no cue/marker).
-          Standard sessions keep the plain timer chip. */}
-      {isStretchRunning ? (
-        <StretchRow frame={frame} timeLabel={timeLabel} timeValue={timeValue} strings={strings} />
-      ) : showTimeChip ? (
-        <TimerChip label={timeLabel} value={timeValue} />
-      ) : null}
-    </StatusPanel>
+    <section aria-label={strings.readoutAriaLabel} className="w-full">
+      <FeedbackTime
+        primary={primary}
+        secondary={secondary}
+        ariaLabel={strings.announcementAriaLabel}
+      />
+    </section>
   )
 }

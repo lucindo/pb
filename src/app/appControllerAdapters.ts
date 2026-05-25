@@ -102,6 +102,7 @@ export function createPracticeSessionViewModelFromControllers({
       liveFrame: breathing.session.liveFrame,
       status: breathing.session.state.status,
       inSessionView: breathing.inSessionView,
+      selectedSettings: breathing.session.state.selectedSettings,
     },
     navi: {
       sessionActive: navi.sessionActive,

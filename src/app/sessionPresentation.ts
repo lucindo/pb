@@ -20,6 +20,11 @@ export interface BreathingPresentationInput {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
+  // Resonant pace context (always present — preserved across stretch sessions
+  // per WR-03 in sessionController). Drives the "X BPM · ratio" secondary line
+  // on HRV; the stretch path reads currentBpm + stage off the frame instead.
+  bpm: number
+  ratio: string
 }
 
 export interface BreathingPresentation {
@@ -33,6 +38,8 @@ export interface BreathingPresentation {
     status: SessionStatus
     isLeadInPlaceholder: boolean
     showCompletionHeadline: boolean
+    bpm: number
+    ratio: string
   }
 }
 
@@ -48,6 +55,8 @@ export function getBreathingPresentation(input: BreathingPresentationInput): Bre
       status: input.status,
       isLeadInPlaceholder: input.phase === 'lead-in',
       showCompletionHeadline: input.status === 'complete' && !input.inSessionView,
+      bpm: input.bpm,
+      ratio: input.ratio,
     },
   }
 }

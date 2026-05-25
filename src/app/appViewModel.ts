@@ -167,6 +167,9 @@ export interface BreathingSessionViewState {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
+  // Resonant selected settings — drives the HRV pace caption (X BPM · ratio).
+  // Preserved across stretch sessions per WR-03 in sessionController.
+  selectedSettings: SessionSettings
 }
 
 export interface NaviKriyaSessionViewState {
@@ -223,6 +226,8 @@ export function createPracticeSessionViewModel({
       liveFrame: breathing.liveFrame,
       status: breathing.status,
       inSessionView: breathing.inSessionView,
+      bpm: breathing.selectedSettings.bpm,
+      ratio: breathing.selectedSettings.ratio,
     }),
   }
 }

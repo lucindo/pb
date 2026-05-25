@@ -10,6 +10,7 @@ export interface BreathingSessionSurfaceProps {
   presentation: BreathingPresentation
   breathingStrings: UiStrings['practice']['breathing']
   readoutStrings: UiStrings['practice']['readout']
+  bpmUnit: string
   variant: BreathingShapeVariant
   idleMode: OrbIdleBehavior
 }
@@ -18,6 +19,7 @@ export function BreathingSessionSurface({
   presentation,
   breathingStrings,
   readoutStrings,
+  bpmUnit,
   variant,
   idleMode,
 }: BreathingSessionSurfaceProps): ReactElement {
@@ -36,6 +38,9 @@ export function BreathingSessionSurface({
           mode="lead-in"
           frame={presentation.readout.frame}
           strings={readoutStrings}
+          bpm={presentation.readout.bpm}
+          ratio={presentation.readout.ratio}
+          bpmUnit={bpmUnit}
         />
       ) : (
         <SessionReadout
@@ -44,6 +49,9 @@ export function BreathingSessionSurface({
           status={presentation.readout.status}
           showCompletionHeadline={presentation.readout.showCompletionHeadline}
           strings={readoutStrings}
+          bpm={presentation.readout.bpm}
+          ratio={presentation.readout.ratio}
+          bpmUnit={bpmUnit}
         />
       )}
     </>

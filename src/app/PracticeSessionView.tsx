@@ -39,6 +39,7 @@ export function PracticeSessionView({
       presentation={session.presentation}
       breathingStrings={practice.breathing}
       readoutStrings={practice.readout}
+      bpmUnit={practice.settingsForm.bpmUnit}
       variant={variant}
       idleMode={idleMode}
     />

@@ -8,6 +8,7 @@ import { UI_STRINGS } from '../content/strings'
 import type { UiStrings } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
+const EN_FORM_FIXTURE = EN_STRINGS_FIXTURE.practice.settingsForm
 
 // Sample frame with a non-null remainingMs for timed session scenarios.
 // 600_000 ms remaining → formatDuration renders "10:00".
@@ -44,11 +45,16 @@ interface RenderReadoutProps {
   status?: 'idle' | 'running' | 'complete'
   showCompletionHeadline?: boolean
   strings?: UiStrings['practice']['readout']
+  bpm?: number
+  ratio?: string
 }
 
 function renderReadout(props: RenderReadoutProps = {}) {
   const strings = props.strings ?? EN_STRINGS_FIXTURE.practice.readout
   const frame = props.frame ?? null
+  const bpm = props.bpm ?? 5.5
+  const ratio = props.ratio ?? '40:60'
+  const bpmUnit = EN_FORM_FIXTURE.bpmUnit
 
   if (props.mode === 'lead-in') {
     return render(
@@ -56,6 +62,9 @@ function renderReadout(props: RenderReadoutProps = {}) {
         mode="lead-in"
         frame={frame}
         strings={strings}
+        bpm={bpm}
+        ratio={ratio}
+        bpmUnit={bpmUnit}
       />,
     )
   }
@@ -67,32 +76,33 @@ function renderReadout(props: RenderReadoutProps = {}) {
       status={props.status ?? 'idle'}
       showCompletionHeadline={props.showCompletionHeadline ?? false}
       strings={strings}
+      bpm={bpm}
+      ratio={ratio}
+      bpmUnit={bpmUnit}
     />,
   )
 }
 
 describe('SessionReadout', () => {
-  it('lead-in mode with a non-null frame renders timer chip label and formatted duration', () => {
+  it('lead-in mode renders the time as primary and the pace as secondary', () => {
     renderReadout({ mode: 'lead-in', frame: sampleFrame })
-    expect(screen.getByText('Remaining')).toBeInTheDocument()
     expect(screen.getByText('10:00')).toBeInTheDocument()
+    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
   })
 
-  it('lead-in mode ignores completion headline state owned by session mode', () => {
+  it('lead-in mode does not show the completion headline (owned by session mode)', () => {
     renderReadout({ mode: 'lead-in', frame: sampleFrame })
-    expect(screen.getByText('Remaining')).toBeInTheDocument()
-    expect(screen.getByText('10:00')).toBeInTheDocument()
     expect(screen.queryByText(EN_STRINGS_FIXTURE.practice.readout.sessionComplete)).not.toBeInTheDocument()
   })
 
-  it('session mode with status "complete" and a non-null frame renders translated headline and hides chip', () => {
+  it('session mode with showCompletionHeadline renders the headline and hides the time', () => {
     renderReadout({
       frame: sampleFrame,
       status: 'complete',
       showCompletionHeadline: true,
     })
     expect(screen.getByText(EN_STRINGS_FIXTURE.practice.readout.sessionComplete)).toBeInTheDocument()
-    expect(screen.queryByText('Remaining')).not.toBeInTheDocument()
+    expect(screen.queryByText('10:00')).not.toBeInTheDocument()
   })
 
   it('session mode with status "idle", null frame, and no completion headline returns null', () => {
@@ -101,20 +111,18 @@ describe('SessionReadout', () => {
   })
 })
 
-describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
-  it('a standard frame (no currentBpm) renders no BPM chip and no stage label', () => {
-    renderReadout({ frame: sampleFrame, status: 'running' })
-    expect(screen.queryByText('BPM')).not.toBeInTheDocument()
-    expect(screen.queryByText('Stretch')).not.toBeInTheDocument()
+describe('SessionReadout — secondary content', () => {
+  it('HRV frame (no currentBpm) renders "{bpm} BPM · {ratio}" in the secondary', () => {
+    renderReadout({ frame: sampleFrame, status: 'running', bpm: 5.5, ratio: '40:60' })
+    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
   })
 
-  it('a running stretch frame renders the live BPM chip to one decimal + the unit label', () => {
+  it('stretch frame renders live currentBpm + stage in the secondary', () => {
     renderReadout({ frame: stretchFrame, status: 'running' })
-    expect(screen.getByText('5.5')).toBeInTheDocument()
-    expect(screen.getByText('BPM')).toBeInTheDocument()
+    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · Stretch`)).toBeInTheDocument()
   })
 
-  it('maps each stretch stage to its label', () => {
+  it('maps each stretch stage to its localized label in the secondary', () => {
     const cases: { stage: NonNullable<SessionFrame['stage']>; label: string }[] = [
       { stage: 'hold-initial', label: 'Warm-up' },
       { stage: 'ramp', label: 'Stretch' },
@@ -122,22 +130,19 @@ describe('SessionReadout — stretch live BPM + stage (Plan 22-04)', () => {
     ]
     for (const { stage, label } of cases) {
       const { unmount } = renderReadout({ frame: { ...stretchFrame, stage }, status: 'running' })
-      expect(screen.getByText(label)).toBeInTheDocument()
+      expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · ${label}`)).toBeInTheDocument()
       unmount()
     }
   })
 
-  it('a completed stretch session renders no BPM chip', () => {
+  it('a completed session renders only the headline, no time / secondary content', () => {
     renderReadout({ frame: stretchFrame, status: 'complete', showCompletionHeadline: true })
-    expect(screen.queryByText('5.5')).not.toBeInTheDocument()
+    expect(screen.queryByText('10:00')).not.toBeInTheDocument()
+    expect(screen.queryByText(/5\.5/)).not.toBeInTheDocument()
   })
 
-  it('the lead-in placeholder branch previews the stretch readout for a stretch frame', () => {
-    // The countdown must preview the same Stage/Remaining/BPM readout the
-    // running stretch session shows — not a plain timer chip.
+  it('the lead-in placeholder previews the stretch readout for a stretch frame', () => {
     renderReadout({ mode: 'lead-in', frame: stretchFrame })
-    expect(screen.getByText('5.5')).toBeInTheDocument()
-    expect(screen.getByText('BPM')).toBeInTheDocument()
-    expect(screen.getByText('Stretch')).toBeInTheDocument()
+    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · Stretch`)).toBeInTheDocument()
   })
 })

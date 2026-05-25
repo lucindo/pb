@@ -3,7 +3,6 @@ import type { ReactElement } from 'react'
 import { NKSessionReadout } from '../components/NKSessionReadout'
 import { NKShape } from '../components/NKShape'
 import { OrbShape } from '../components/OrbShape'
-import { StatusPanel } from '../components/StatusPanel'
 import type { UiStrings } from '../content/strings'
 import type { BreathingShapeVariant, OrbIdleBehavior } from '../featureFlags'
 import type { NaviKriyaPresentation } from './sessionPresentation'
@@ -60,16 +59,20 @@ export function NaviKriyaSessionSurface({
       )}
 
       {presentation.showCompletionHeadline && (
-        <StatusPanel
-          legend={nkReadoutStrings.statusLabel}
-          ariaLabel={nkReadoutStrings.readoutAriaLabel}
-        >
-          <div role="status" aria-live="polite" aria-atomic="true">
-            <p className="text-3xl font-semibold text-[var(--color-breathing-accent-strong)]">
+        <section aria-label={nkReadoutStrings.readoutAriaLabel} className="w-full">
+          <div role="status" aria-live="polite" aria-atomic="true" className="mt-7 text-center">
+            <p
+              style={{
+                fontSize: 22,
+                fontWeight: 600,
+                letterSpacing: '-0.01em',
+                color: 'var(--color-breathing-text)',
+              }}
+            >
               {readoutStrings.sessionComplete}
             </p>
           </div>
-        </StatusPanel>
+        </section>
       )}
     </>
   )

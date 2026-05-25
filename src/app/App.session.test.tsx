@@ -47,7 +47,8 @@ describe('running session display', () => {
     await startAndAdvancePastLeadIn()
 
     const readout = sessionReadout()
-    expect(within(readout).getByText('Remaining')).toBeVisible()
+    // J16: readout chrome dropped the "Remaining"/"Elapsed" labels — the time
+    // value alone is the primary content of FeedbackTime.
     expect(within(readout).getByText('10:00')).toBeVisible()
   })
 
@@ -62,7 +63,6 @@ describe('running session display', () => {
     await startAndAdvancePastLeadIn()
 
     const readout = sessionReadout()
-    expect(within(readout).getByText('Elapsed')).toBeVisible()
     expect(within(readout).getByText('0:00')).toBeVisible()
   })
 })
@@ -163,8 +163,8 @@ describe('running duration edits and completion', () => {
 
     expect(screen.queryByText('Session complete')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'End' })).toBeVisible()
-    const readout = sessionReadout()
-    expect(within(readout).getByText('Elapsed')).toBeVisible()
+    // Session is still running — readout is present (not yet completion-headline'd).
+    expect(sessionReadout()).toBeInTheDocument()
   })
 })
 

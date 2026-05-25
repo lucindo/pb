@@ -31,6 +31,8 @@ describe('breathing presentation model', () => {
       liveFrame: frame,
       status: 'running',
       inSessionView: true,
+      bpm: 5.5,
+      ratio: '40:60',
     })
 
     expect(model.shape).toEqual({ cue: 'arrow', frame, leadInDigit: null })
@@ -52,6 +54,8 @@ describe('breathing presentation model', () => {
       liveFrame: null,
       status: 'idle',
       inSessionView: true,
+      bpm: 5.5,
+      ratio: '40:60',
     })
 
     expect(model.shape).toEqual({ cue: 'nose', frame: null, leadInDigit: 3 })
