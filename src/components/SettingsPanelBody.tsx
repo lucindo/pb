@@ -69,7 +69,7 @@ function SettingsInstallSection({
 
   return (
     <div>
-      <p className="text-sm font-semibold text-[var(--color-breathing-accent-strong)]">
+      <p className="text-sm font-medium text-[var(--color-breathing-text-soft)]">
         {strings.settingsLabel}
       </p>
       <div className="mt-2">
@@ -81,7 +81,7 @@ function SettingsInstallSection({
               aria-controls="settings-ios-steps"
               disabled={inSessionView}
               onClick={() => { setIosExpanded(prev => !prev) }}
-              className="mx-auto block min-h-[44px] text-sm font-semibold text-[var(--color-breathing-accent-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+              className="mx-auto block min-h-[44px] text-sm font-medium text-[var(--color-breathing-text-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
             >
               {strings.iosStepsButton}
             </button>
@@ -92,7 +92,7 @@ function SettingsInstallSection({
             type="button"
             disabled={inSessionView}
             onClick={() => { void onInstall() }}
-            className="min-h-[44px] rounded-full border border-[var(--color-breathing-accent)] bg-[var(--color-breathing-surface)] px-5 py-2 text-sm font-semibold text-[var(--color-breathing-accent-strong)] shadow-sm transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+            className="min-h-[44px] rounded-full border border-[var(--color-border-soft)] bg-[var(--color-breathing-surface)] px-5 py-2 text-sm font-medium text-[var(--color-breathing-text-soft)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {strings.installButton}
           </button>
