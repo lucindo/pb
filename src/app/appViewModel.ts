@@ -91,6 +91,7 @@ export type AppPracticeSettingsViewModel =
       kind: 'resonant'
       settings: SessionSettings
       isRunning: boolean
+      isComplete: boolean
       onChange(this: void, settings: SessionSettings): void
       onExtendDuration(this: void, durationMinutes: number): void
     }
@@ -238,6 +239,7 @@ export interface PracticeSettingsSources {
   resonant: {
     settings: SessionSettings
     isRunning: boolean
+    isComplete: boolean
     onChange(this: void, settings: SessionSettings): void
     onExtendDuration(this: void, durationMinutes: number): void
   }
@@ -262,6 +264,7 @@ export function createPracticeSettingsViewModel(
       kind: 'resonant',
       settings: sources.resonant.settings,
       isRunning: sources.resonant.isRunning,
+      isComplete: sources.resonant.isComplete,
       onChange: sources.resonant.onChange,
       onExtendDuration: sources.resonant.onExtendDuration,
     }

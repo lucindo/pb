@@ -138,6 +138,7 @@ export function createPracticeSettingsViewModelFromControllers({
     resonant: {
       settings: breathing.session.state.selectedSettings,
       isRunning: breathing.inSessionView,
+      isComplete: breathing.session.state.status === 'complete' && !breathing.inSessionView,
       onChange: breathing.setSelectedSettings,
       onExtendDuration: breathing.session.extendDuration,
     },

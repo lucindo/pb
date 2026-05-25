@@ -115,8 +115,14 @@ export function useAppViewModel(): AppViewModel {
       breathingRequestEnd()
       return
     }
+    if (primaryActions.breathing === 'done') {
+      // Dismiss the completion state back to idle. resetSession invokes the
+      // domain endSession on CompleteSessionState which yields IdleSessionState.
+      breathingResetSession()
+      return
+    }
     void breathingStartOrCancel()
-  }, [primaryActions.breathing, breathingRequestEnd, breathingStartOrCancel])
+  }, [primaryActions.breathing, breathingRequestEnd, breathingResetSession, breathingStartOrCancel])
 
   const onNaviPrimaryClick = useCallback((): void => {
     if (primaryActions.naviKriya === 'cancel') {

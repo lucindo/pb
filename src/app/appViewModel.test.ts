@@ -66,6 +66,7 @@ function makeSettingsSources(
     resonant: {
       settings: DEFAULT_SETTINGS,
       isRunning: false,
+      isComplete: false,
       onChange: noop,
       onExtendDuration: noop,
     },

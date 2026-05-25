@@ -32,6 +32,7 @@ export function BreathingSessionSurface({
         strings={breathingStrings}
         variant={variant}
         idleMode={idleMode}
+        showCompletion={presentation.readout.showCompletionHeadline}
       />
       {presentation.readout.isLeadInPlaceholder ? (
         <SessionReadout

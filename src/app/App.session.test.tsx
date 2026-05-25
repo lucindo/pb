@@ -103,7 +103,9 @@ describe('running duration edits and completion', () => {
     })
 
     expect(screen.getByText('Session complete')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
+    // J16: completion state primary button is "Done" (dismiss to idle),
+    // not "Start" — "Start" returns after the user taps Done.
+    expect(screen.getByRole('button', { name: 'Done' })).toBeVisible()
   })
 
   it('keeps open-ended sessions running when mocked time advances', async () => {

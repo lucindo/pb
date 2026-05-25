@@ -159,13 +159,14 @@ export function getNaviKriyaPrimaryAction(input: {
   return input.sessionActive ? 'end' : 'start'
 }
 
-export type BreathingPrimaryAction = 'cancel' | 'end' | 'start'
+export type BreathingPrimaryAction = 'cancel' | 'end' | 'start' | 'done'
 
 export function getBreathingPrimaryAction(input: {
   status: SessionStatus
   inLeadIn: boolean
 }): BreathingPrimaryAction {
   if (input.status === 'running') return 'end'
+  if (input.status === 'complete') return 'done'
   return input.inLeadIn ? 'cancel' : 'start'
 }
 
@@ -182,5 +183,7 @@ export function getSessionPrimaryActionLabel(
       return strings.endSession
     case 'start':
       return strings.startSession
+    case 'done':
+      return strings.done
   }
 }

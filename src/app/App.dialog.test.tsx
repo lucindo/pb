@@ -134,11 +134,12 @@ describe('end-session confirmation modal (App integration)', () => {
         vi.advanceTimersByTime(6 * 60_000)
       })
 
-      // Modal must auto-close, and the app should be back at the idle/complete state.
+      // Modal must auto-close, and the app should land on the completion
+      // state with the "Done" dismiss button (Start returns after Done).
       expect(
         screen.queryByRole('dialog', { name: 'End this session?' }),
       ).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
+      expect(screen.getByRole('button', { name: 'Done' })).toBeVisible()
       expect(screen.getByText('Session complete')).toBeVisible()
     })
   })

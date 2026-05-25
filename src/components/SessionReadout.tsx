@@ -55,8 +55,9 @@ export type SessionReadoutModeProps =
 export function SessionReadout(props: SessionReadoutModeProps): ReactElement | null {
   const { frame, strings, bpm, ratio, bpmUnit } = props
 
-  // Session complete: drop the FeedbackTime, surface a centered headline.
-  // Preserves the role=region wrapper so existing harness queries keep working.
+  // Session complete: drop the FeedbackTime, surface a centered headline +
+  // "Take a moment" subtitle. Preserves the role=region wrapper so existing
+  // harness queries keep working.
   if (props.mode === 'session' && props.showCompletionHeadline) {
     return (
       <section aria-label={strings.readoutAriaLabel} className="w-full">
@@ -65,7 +66,7 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
           aria-label={strings.announcementAriaLabel}
           aria-live="polite"
           aria-atomic="true"
-          className="mt-7 text-center"
+          className="mt-7 flex flex-col items-center"
         >
           <p
             style={{
@@ -76,6 +77,18 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
             }}
           >
             {strings.sessionComplete}
+          </p>
+          <p
+            className="uppercase"
+            style={{
+              marginTop: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '0.16em',
+              color: 'var(--color-breathing-muted)',
+            }}
+          >
+            {strings.takeAMoment}
           </p>
         </div>
       </section>

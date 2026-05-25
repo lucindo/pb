@@ -44,6 +44,7 @@ export interface UiStrings {
       readonly startSession: string
       readonly endSession: string
       readonly cancel: string
+      readonly done: string
     }
     readonly breathing: {
       readonly inhale: string
@@ -58,6 +59,7 @@ export interface UiStrings {
       readonly readoutAriaLabel: string
       readonly announcementAriaLabel: string
       readonly sessionComplete: string
+      readonly takeAMoment: string
       readonly currentBpmLabel: string
       readonly stageLabel: string
       readonly stageHoldInitial: string
@@ -216,6 +218,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         startSession: 'Start',
         endSession: 'End',
         cancel: 'Cancel',
+        done: 'Done',
       },
       breathing: {
         inhale: 'In',
@@ -230,6 +233,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         readoutAriaLabel: 'Session readout',
         announcementAriaLabel: 'Session announcement',
         sessionComplete: 'Session complete',
+        takeAMoment: 'Take a moment',
         currentBpmLabel: 'BPM',
         stageLabel: 'Stage',
         stageHoldInitial: 'Warm-up',
@@ -386,6 +390,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         startSession: 'Iniciar',
         endSession: 'Encerrar',
         cancel: 'Cancelar',
+        done: 'Concluído',
       },
       breathing: {
         inhale: 'Puxa',
@@ -400,6 +405,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         readoutAriaLabel: 'Informações da sessão',
         announcementAriaLabel: 'Anúncio da sessão',
         sessionComplete: 'Sessão concluída',
+        takeAMoment: 'Respire fundo',
         currentBpmLabel: 'RPM',
         stageLabel: 'Fase',
         stageHoldInitial: 'Aquecimento',

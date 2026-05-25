@@ -33,6 +33,10 @@ export interface OrbShapeProps {
   // 'ambient'). showRings is hard-set to false on the idle path per spike
   // 010 IdleScreen line 1979 + CompleteScreen line 2026.
   idleMode?: OrbIdleBehavior | null
+  // J16: completion state — static halo orb (showRings false, scale MID)
+  // with a checkmark glyph centred on the accent disc. Spike 010 L2026 +
+  // CheckMarker L1006-1014. Takes priority over the frame === null idle path.
+  showCompletion?: boolean
   // Rendered inside the centre disc — currently only consumed by the nkPhase
   // branch, where NKShape passes the live OM count so it inherits the disc's
   // on-accent text color (instead of overlaying as a sibling with default
@@ -73,6 +77,7 @@ export function OrbShape({
   showRings = true,
   variant = 'orb-halo',
   idleMode,
+  showCompletion = false,
   children,
 }: OrbShapeProps) {
   if (nkPhase != null) {
@@ -85,6 +90,19 @@ export function OrbShape({
   if (leadInDigit != null) {
     return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} />
   }
+  if (showCompletion) {
+    return (
+      <OrbContainer
+        showRings={false}
+        reducedMotion={false}
+        orbScale={MID_SCALE}
+        discBg="var(--color-breathing-accent)"
+        variant={variant}
+      >
+        <CheckmarkGlyph />
+      </OrbContainer>
+    )
+  }
   if (frame === null) {
     if (idleMode != null) {
       return <OrbIdle idleMode={idleMode} variant={variant} />
@@ -92,6 +110,32 @@ export function OrbShape({
     return null
   }
   return <OrbBody frame={frame} strings={strings} cue={cue} showRings={showRings} variant={variant} />
+}
+
+// Spike 010 CheckMarker (index.html L1006-1014): 32x32 / 24-viewBox /
+// 2.4-stroke check polyline. Inherits on-accent text color from the centre
+// disc — renders as white on the accent slate.
+function CheckmarkGlyph() {
+  return (
+    <span
+      aria-hidden="true"
+      className="relative z-10"
+      style={{ color: 'var(--color-breathing-on-accent)' }}
+    >
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="5 13 10 18 19 7" />
+      </svg>
+    </span>
+  )
 }
 
 interface OrbBodyProps {

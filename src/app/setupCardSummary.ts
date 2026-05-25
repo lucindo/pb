@@ -27,7 +27,9 @@ export function buildSetupCardSummary({
     // session. The extend-duration logic in the controller + viewmodel
     // (settings.onExtendDuration) is intentionally retained but unwired
     // from the practice surface — see PracticeSettingsView for the docs.
-    if (settings.isRunning) return null
+    // Also hidden on Complete so the "Session complete" / "Take a moment"
+    // panel reads alone, matching the spike's complete state.
+    if (settings.isRunning || settings.isComplete) return null
     const s = settings.settings
     return [
       { label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
