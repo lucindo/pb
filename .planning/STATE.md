@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-20 after starting v2.0 New Design)
 Phase: 45
 Plan: Not started
 Next phase: 44 (final polish — awaiting plan)
-Last activity: 2026-05-25
+Last activity: 2026-05-25 - Completed quick task 260525-hzq: Version sync (package.json mirrors tag) and versioned GitHub Pages deploys with switchable official root pointer
 
 **Spike-loop note:** Phase 41 absorbed the originally-planned Phases 41 (palette+tokens), 42 (new orb), 43 (five-surface redesign) into a single tightly-coupled implementation using a per-item propose/go/implement/approve 4-step loop (items J1-J18). See `.planning/phases/41-spike-mono-zen/41-CONTEXT.md` for the framing and `41-SPIKE-LOOP-ARCHIVE.md` for the per-item history.
 
@@ -77,8 +77,8 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 
 ### Quick Tasks Completed
 
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
 | 260510-tc9 | Bug fixes: orb Out-phase visual cue parity + audio bowl-cue decay scaled to phase duration (low-BPM gong cutoff) | 2026-05-11 | 0db8f5d | [260510-tc9-bug-fixes-1-add-out-phase-visual-complet](./quick/260510-tc9-bug-fixes-1-add-out-phase-visual-complet/) |
 | 260519-63b | Change the Stretch practice heading to "HRV Stretch" (pt-BR "Alongar VFC") | 2026-05-19 | 6eb4d23 | [260519-63b-change-the-stretch-practice-heading-to-h](./quick/260519-63b-change-the-stretch-practice-heading-to-h/) |
 | 260519-68l | Learn screen tweaks: bigger section titles (text-xl), relocate Forrest teachings tagline above affiliation line | 2026-05-19 | a481f87 | [260519-68l-learn-screen-tweaks-bigger-section-title](./quick/260519-68l-learn-screen-tweaks-bigger-section-title/) |
@@ -98,6 +98,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 | Phase 36 P07 | 1m | 2 tasks | 0 files |
 | Phase 36 P08 | 1m | 3 tasks | 23 files |
 | Phase Phase 36 PP09 | 2m | 2 tasks | 1 files |
+| 260525-hzq | Version sync (package.json mirrors tag) and versioned GitHub Pages deploys with switchable official root pointer | 2026-05-25 | (pending) | Verified | [260525-hzq-version-sync-package-json-mirrors-tag-an](./quick/260525-hzq-version-sync-package-json-mirrors-tag-an/) |
 
 ## Deferred Items
 
