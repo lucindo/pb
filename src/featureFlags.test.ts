@@ -38,7 +38,12 @@ describe('readFeatureFlags', () => {
       switcherIcon: false,
       breathingShape: 'orb-halo',
       orbIdle: 'ambient',
+      ringCue: 'outer-inner',
     })
+  })
+
+  it('defaults ringCue to outer-inner', () => {
+    expect(readFeatureFlags('').ringCue).toBe('outer-inner')
   })
 
   it('enables switcher icons for on values', () => {
