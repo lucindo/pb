@@ -118,18 +118,20 @@ State below is updated after every step transition. The state file commits with 
 | J14 | App Settings restructure into Appearance / Language / Audio / About sections (verify current section grouping at propose-time) | done (commit `6988ccc`) |
 | J15 | Desktop responsive — centered column (520px practice, 600px Learn/AppSettings), orb scaled to 320px diameter, modal-vs-sheet for Settings | done (commit `c72d335`) |
 | J16 | Operator feedback pass — cross-cutting polish & fixes across the entire spike loop. | **done (commit `1bdc707`)** |
-| **J17** | **Locked-copy verification — disclaimer / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings (formerly J16; moved after the feedback pass so verification runs against what actually lands)** | **pending** |
-| J18 | Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces | pending |
+| J17 | Locked-copy verification — disclaimer / "Session complete · Take a moment" / 5 surface titles match `LOCKED_COPY` + spike-locked strings (formerly J16; moved after the feedback pass so verification runs against what actually lands) | done (commits `7d7ca2a` + state-transition) |
+| **J18** | **Final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces + orphan cleanup queue sweep** | **pending** |
 | J19 | **(Gated)** Complete screen — operator decision: ship as distinct surface OR keep current inline "Session complete" headline | pending |
 
 ---
 
 ## Current focus
 
-**Item:** J17 — Locked-copy verification
+**Item:** J18 — Final audit
 **Step:** ready to propose
 
-J16 wrapped at commit `1bdc707` — operator approved the entire feedback pass after the final wrap-up trio (query-flag defaults + NK tick volume + Mono Zen app icons). Next: J17 verifies that every locked-copy string the spike + operator dumps landed verbatim (the medical-advice disclaimer, "Session complete" / "Take a moment", the 5 surface titles, the practice toggle labels, etc.).
+J17 closed at commit `7d7ca2a` (Navi takeAMoment subtitle fix). 7-surface visible-string walk produced 1 real-fix + 6 dispositions (4 keep-as-is, 2 operator-decisions deferred, 1 already on orphan queue for J18). Per-surface drift table archived below.
+
+Next: J18 runs the final audit — 3-agent re-audit + grep guards + spike-fidelity walkthrough across all 5 surfaces, AND sweeps the orphan cleanup queue (state file lines 71-86: vm.install.* / installDismissed / install LOCKED_COPY leftovers; SettingsInstallSection chrome re-tokenize decision; THEME_OPTIONS / DEFAULT_THEME prune; vm.appHeader + getPracticeHeader + header strings; Card.tsx; BooleanToggle.tsx; StatusPanel.tsx).
 
 **Mode:** operator is delivering cross-cutting feedback across the entire spike loop. Per [[ack-dont-fix-inline]]: ACKNOWLEDGE first, take notes, do NOT edit code until operator says "you can fix" (or equivalent). Per the J16 pinned rule: NO SCOPE PUSHBACK — every item is in scope by definition.
 
@@ -191,6 +193,38 @@ Annotated but not in bullet list (awaits operator confirmation):
 - **Wrap-up trio:** query-flag defaults + NK tick volume + Mono Zen app icons (`1bdc707`)
 
 **J16 APPROVED at `1bdc707`.** All feedback dumps landed; loop advances to J17.
+
+### Archived — Implementation summary (Item J17)
+
+7-surface visible-string walk (Practice idle / running / complete · Settings sheet · End-session dialog · Learn · App Settings) cross-referenced against the spike + every operator dump in the J16 feedback log.
+
+**Drift table dispositions** (drift = production string differs from spike or operator-locked value):
+
+| # | Drift | Disposition | Reason |
+|---|---|---|---|
+| 1 | Settings icon aria "Settings" vs spike "App settings" | **Keep production** | Matches the page title; spike's longer label was internal disambiguation. |
+| 2 | Navi readout small "1 / 3 · Front" vs spike "Round 1 of 3 · Front" | **Keep production** | `nkReadout.roundOf` is the existing format; no J16 dump touched it. |
+| 3 | Navi complete subtitle (missing) vs spike "Take a moment" | **FIX → commit `7d7ca2a`** | Real drift — HRV+Stretch render both lines via SessionReadout; NK omitted the subtitle. |
+| 4 | End-session cancel "Keep going" (spike has no dialog) | **Keep production** | Legacy copy, not spike-touched. |
+| 5 | Learn page title "About this practice" vs spike "Learn" | **Operator deferred** | Production's richer copy may be intentional; the Learn icon aria stays "Learn". |
+| 6 | Back-button aria on Learn + AppSettings "Close" vs spike "Back" | **Operator deferred** | Both pages use `*.close`; "Back" matches the chevron-back icon but operator did not lock either way. |
+| 7 | Theme picker has "System" option (spike: Light/Dark only) | **Defer to J18** | Already on orphan cleanup queue with a more thorough plan (`THEME_OPTIONS` prune + stored-pref migration). |
+
+**No hardcoded user-facing literals** found in any practice / page / dialog component (recursive grep across `src/components` + `src/app` for JSX text-nodes returned empty — every visible string is sourced from `strings.ts` or `LOCKED_COPY`).
+
+**Fix `7d7ca2a` details:**
+- `src/app/NaviKriyaSessionSurface.tsx` L62-87: added the `<p>{readoutStrings.takeAMoment}</p>` sibling inside the role=status block; aligned wrapper centering to the HRV+Stretch pattern (`mt-7 flex flex-col items-center` instead of `mt-7 text-center`) so the two paragraphs stack identically.
+- No new strings, no new tests. `takeAMoment` was already in `strings.ts` (`practice.readout.takeAMoment` → "Take a moment" / "Respire fundo") — the NK surface just wasn't rendering it.
+
+**Verification:**
+- `tsc --noEmit -p tsconfig.app.json`: clean
+- `npm run lint`: clean
+- Full suite: 107 files / 1158 tests pass (no test deltas — existing NK readout assertions still pass)
+- `npm run build`: clean; PWA precache 19 / 517.69 KiB (parity with J16 wrap)
+
+**Manual verification needed (operator-side):**
+- Navi: run a short session → completion → centered "Session complete" + uppercase "Take a moment" subtitle below it (matching HRV+Stretch typographic stack).
+- Locale switch PT-BR → "Sessão concluída" + "Respire fundo".
 
 ### Archived — Implementation summary (Item J10)
 
@@ -472,6 +506,7 @@ Added idle orb rendering + a query-string `orbIdle` toggle (default `still`).
 | J7 | (skipped) | False-positive item seeded from the stale `[[orb-outer-ring-idle-only]]` memory. Memory deleted; no code change. The deviation never existed in the current codebase — J6's OrbIdle hard-sets `showRings={false}`, and OrbBody (Running) is the only consumer that defaults to `showRings={true}`. Audit grep confirmed every other path was already false-passing. Root cause: items list was seeded from MEMORY.md without live-code verification (the session-start protocol's Step 5 applies at items-list-seeding time too, not just at per-item-propose time). |
 | J8 | `5d6439b` | V1 Grid 2×3 SetupCard primitive. NEW: `src/components/SetupCard.tsx` (60 LOC) renders as whole-card `<button>` with 3-col grid of label/value cells + right-chevron. Values transcribed verbatim from spike index.html lines 1188-1244: rounded-3xl, 1px border-soft, 14×18 padding, grid gap 10×18, label 10px/500/0.16em/uppercase/muted, value 14px/600/text/tabular-nums, chevron 18×18 polyline. Pure presentation — caller supplies pre-formatted localized items + onTap + ariaLabel; data derivation is J10's job. NOT wired into PracticeScreen yet (existing per-practice forms keep rendering inline). 6 behavioral tests; 1127 → 1133. Files: SetupCard.tsx + SetupCard.test.tsx (both NEW). |
 | J9 | `7a2884d` | Responsive sheet/modal primitive. NEW: `src/components/SettingsSheet.tsx` (90 LOC) — native `<dialog>` via existing useModalDialog (focus trap/Esc/backdrop delegated), Tailwind `sm:` responsive: mobile bottom sheet (`m-0 mt-auto max-h-58vh w-full rounded-t-3xl shadow-up p-5/5/7` + drag handle) / desktop center modal (`m-auto max-h-82vh w-88% max-w-460 rounded-3xl shadow-down-large p-6/6/7`). Values verbatim from spike lines 1603-1645 (shadows, drag handle, title 22/600/-0.01em, close 12/500 with border-soft, subtitle 11/0.12em/muted, `overscroll-behavior:contain`). Uses existing `modal-fade` for cross-fade. Prop shape: open/onClose/title/subtitle/closeLabel/children; useId() auto-links title to aria-labelledby. NOT wired yet — J10 atomically swaps PracticeSettingsView's inline forms for the SetupCard + SettingsSheet wrapping the same forms. 9 behavioral tests (no class-string locking); 1133 → 1142. Files: SettingsSheet.tsx + SettingsSheet.test.tsx (both NEW). |
+| J17 | `7d7ca2a` | Locked-copy verification — 7-surface visible-string walk produced 1 real-fix + 6 dispositions. Fix: Navi completion state was missing the "Take a moment" subtitle that HRV+Stretch render via SessionReadout; NaviKriyaSessionSurface now mirrors the same two-paragraph stack (`mt-7 flex flex-col items-center` + sessionComplete `<p>` + takeAMoment uppercase `<p>`). No new strings; `takeAMoment` was already in `practice.readout`. No test changes — existing NK completion assertions still pass. PWA precache 517.69 KiB (parity with J16 wrap at `1bdc707`). Dispositions for the other 6 drift items archived in the J17 implementation summary (above). |
 | J16 | `1bdc707` | Operator feedback pass — 4 dumps + many subsequent items landed across ~50 atomic commits. Final state: Mono Zen palette applied to every surface (top bar, switcher, start/end buttons, app settings pickers, practice settings sheet, learn page, end-session dialog, session-complete state, app icons). Extend-duration logic preserved in domain/viewmodel but intentionally unwired from any UI for congruence with stretch+navi running. Ambient idle orb breathes 40:60 at 5.5 BPM by default. NK tick volume bumped 0.08 → 0.13. About row shows `{version} · {sha} · {date}`. Arrow cue forced to remount on phase change to defeat Mobile Safari GPU compositor cache. PWA precache 626.18 KiB → 517.51 KiB (-108 KiB, mostly the new geometric flat PNG icons compressing better than the old photographic ones). |
 | J15 | `c72d335` | Desktop responsive layout per spike 010 eleventh pass (README lines 510-545). CSS (theme.css): `--orb-size` mobile clamp tightened to `clamp(180px, 50vw, 280px)` (was `35vw → 360px`); desktop (≥sm = 640px) locks to `320px` via `@media (min-width: 640px) :root { --orb-size }` override (OQ-1 + OQ-2 recommended). New `--page-bg-gradient` custom property: mobile keeps original `radial-gradient(circle at top, bg-soft, bg 48%, bg-edge)`; desktop overrides to spike's positioned variant `radial-gradient(50% 70% at 50% 25%, edge 0%, bg 50%, bg-soft 100%)` (OQ-3 b). PageShell: NEW `width?: 'practice' \| 'page'` prop (default 'page' = `sm:max-w-[600px]`; `'practice'` = `sm:max-w-[520px]`); mobile (<sm) full-width preserved. Drops the unconditional `max-w-3xl`. Background sourced from `var(--page-bg-gradient)`. PracticeScreen passes `width="practice"`; PracticeToggle + PracticeControlsView wrappers gain inner `mx-auto sm:max-w-[400px]` cap per spike line 528. AppSettingsPage + LearnPage default to 'page' (600px) — no explicit override. OrbShape / OrbContainer consume `var(--orb-size)` — auto-scale on media-query fire. PWA precache 626.18 KiB (+0.30). Tests unchanged (PageShell tests are behavioral; no class-string locking on widths). 3 files changed (76/-18). |
 | J14 | `6988ccc` | App Settings restructured into 4 spike-locked sections per spike 010 sixth + seventh pass (index.html lines 1797-1894): Appearance (Theme) / Language (Language picker) / Audio (Cue + Timbre) / About (Version + GitHub + Install). NEW: `SettingsSectionHeader.tsx` (~30 LOC) — `<h2>` by default with spike values verbatim (fontSize 11, weight 500, letterSpacing 0.16em, uppercase, color muted, mt-24/mb-8); 3 behavioral tests. EXTENDED: `PickerCardGrid.tsx` adds optional `sectionLabelHidden` prop → applies `sr-only` to the `<p>` sublabel (visually hidden, accessibility-tree preserved for radiogroup's `aria-labelledby`); ThemePicker + LanguagePicker forward the new prop. OQ-1 (a) — Install moves into About, sits below GitHub link with `border-soft` 1px top border. OQ-3 (a) — Appearance + Language pickers hide their sublabels (single-picker sections); OQ-3 (b) — Audio keeps Cue + Timbre sublabels visible (multi-picker disambiguation). OQ-2 (a) — version surfaced via `__APP_VERSION__` (vite `define` reads from package.json at config-time, declared globally in new `src/vite-env.d.ts`); GitHub URL constant `https://github.com/lucindo/hrv` with `target=_blank rel=noopener noreferrer`. OQ-4 — SectionHeader values verbatim from spike. Outer `<Card padding="lg">` wrap dropped from AppSettingsPage — each section card is now self-contained per spike. Per `[[spike-is-design-not-features]]`: spike Audio's "Subtle haptics" toggle deliberately omitted (no haptics in app domain). `THEME_OPTIONS` includes 'system' unchanged — flagged for J17 (domain change, separate item). 1158 → 1166 tests (+8). 11 files changed (338/-36); 3 new (SettingsSectionHeader.tsx + test + vite-env.d.ts). PWA precache 625.88 KiB (+2.22). |
