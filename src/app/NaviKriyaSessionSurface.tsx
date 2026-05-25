@@ -4,7 +4,7 @@ import { NKSessionReadout } from '../components/NKSessionReadout'
 import { NKShape } from '../components/NKShape'
 import { OrbShape } from '../components/OrbShape'
 import type { UiStrings } from '../content/strings'
-import type { BreathingShapeVariant, OrbIdleBehavior } from '../featureFlags'
+import type { BreathingShapeVariant, OrbIdleBehavior, RingCueStyle } from '../featureFlags'
 import type { NaviKriyaPresentation } from './sessionPresentation'
 
 export interface NaviKriyaSessionSurfaceProps {
@@ -14,6 +14,7 @@ export interface NaviKriyaSessionSurfaceProps {
   nkReadoutStrings: UiStrings['practice']['nkReadout']
   variant: BreathingShapeVariant
   idleMode: OrbIdleBehavior
+  ringCue: RingCueStyle
 }
 
 export function NaviKriyaSessionSurface({
@@ -23,6 +24,7 @@ export function NaviKriyaSessionSurface({
   nkReadoutStrings,
   variant,
   idleMode,
+  ringCue,
 }: NaviKriyaSessionSurfaceProps): ReactElement {
   return (
     <>
@@ -34,6 +36,7 @@ export function NaviKriyaSessionSurface({
           strings={breathingStrings}
           variant={variant}
           idleMode={idleMode}
+          ringCue={ringCue}
         />
       ) : (
         <NKShape
