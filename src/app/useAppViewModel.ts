@@ -15,10 +15,8 @@ import { useVisualCue } from '../hooks/useVisualCue'
 import { useWakeLock } from '../hooks/useWakeLock'
 import {
   loadActivePractice,
-  loadInstallDismissed,
   loadPractices,
   saveActivePractice,
-  saveInstallDismissed,
   saveStretchSettings,
   type PracticeId,
   type PracticeMap,
@@ -45,13 +43,11 @@ export function useAppViewModel(): AppViewModel {
   const [stretchSettings, setStretchSettings] = useState<StretchSettings>(
     () => initialPractices.stretch.settings,
   )
-  const [installDismissed, setInstallDismissed] = useState<boolean>(() => loadInstallDismissed())
-
   const wakeLock = useWakeLock()
   useTheme()
   useFavicon()
 
-  const { isPhone, isStandalone, isIOS } = useIsStandaloneOrPhone()
+  const { isStandalone, isIOS } = useIsStandaloneOrPhone()
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt()
   const { cue: liveCue } = useVisualCue()
   const { locale, uiStrings } = useLocale()
@@ -164,19 +160,11 @@ export function useAppViewModel(): AppViewModel {
     saveActivePractice(next)
   }, [controlsDisabled, breathingResetSession, naviClearCompletion])
 
-  const onInstallDismiss = useCallback((): void => {
-    saveInstallDismissed()
-    setInstallDismissed(true)
-  }, [])
   const install = createInstallViewModel({
-    isPhone,
     isStandalone,
     isIOS,
-    installDismissed,
-    inSessionView: breathing.inSessionView,
     canPromptInstall: deferredPrompt !== null,
     onInstall: triggerInstall,
-    onDismiss: onInstallDismiss,
   })
 
   return {

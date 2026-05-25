@@ -120,53 +120,40 @@ describe('app practice session view model', () => {
 })
 
 describe('app install view model', () => {
-  it('shows the install banner on phone when installable, not dismissed, standalone, or in session', () => {
+  it('is installable when the browser fires beforeinstallprompt', () => {
     const install = createInstallViewModel({
-      isPhone: true,
       isStandalone: false,
       isIOS: false,
-      installDismissed: false,
-      inSessionView: false,
       canPromptInstall: true,
       onInstall: noopInstall,
-      onDismiss: noop,
     })
 
-    expect(install.showBanner).toBe(true)
     expect(install.installable).toBe(true)
+    expect(install.isIOS).toBe(false)
+    expect(install.isStandalone).toBe(false)
   })
 
   it('keeps iOS installable without a deferred install prompt', () => {
     const install = createInstallViewModel({
-      isPhone: true,
       isStandalone: false,
       isIOS: true,
-      installDismissed: false,
-      inSessionView: false,
       canPromptInstall: false,
       onInstall: noopInstall,
-      onDismiss: noop,
     })
 
     expect(install.installable).toBe(true)
-    expect(install.showBanner).toBe(true)
+    expect(install.isIOS).toBe(true)
   })
 
-  it('hides the install banner after dismissal, in standalone, or during a session', () => {
-    const base = {
-      isPhone: true,
+  it('is not installable when neither iOS nor a deferred prompt is available', () => {
+    const install = createInstallViewModel({
       isStandalone: false,
       isIOS: false,
-      installDismissed: false,
-      inSessionView: false,
-      canPromptInstall: true,
+      canPromptInstall: false,
       onInstall: noopInstall,
-      onDismiss: noop,
-    }
+    })
 
-    expect(createInstallViewModel({ ...base, installDismissed: true }).showBanner).toBe(false)
-    expect(createInstallViewModel({ ...base, isStandalone: true }).showBanner).toBe(false)
-    expect(createInstallViewModel({ ...base, inSessionView: true }).showBanner).toBe(false)
+    expect(install.installable).toBe(false)
   })
 })
 

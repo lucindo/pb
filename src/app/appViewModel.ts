@@ -30,12 +30,10 @@ type LearnContent = (typeof LEARN_CONTENT)[keyof typeof LEARN_CONTENT]
 type LockedCopy = (typeof LOCKED_COPY)[keyof typeof LOCKED_COPY]
 
 export interface AppInstallViewModel {
-  showBanner: boolean
   isIOS: boolean
   isStandalone: boolean
   installable: boolean
   onInstall(this: void): Promise<void>
-  onDismiss(this: void): void
 }
 
 export interface AppEndSessionDialogViewModel {
@@ -127,35 +125,25 @@ export interface AppViewModel {
 }
 
 export interface CreateInstallViewModelArgs {
-  isPhone: boolean
   isStandalone: boolean
   isIOS: boolean
-  installDismissed: boolean
-  inSessionView: boolean
   canPromptInstall: boolean
   onInstall(this: void): Promise<void>
-  onDismiss(this: void): void
 }
 
 export function createInstallViewModel({
-  isPhone,
   isStandalone,
   isIOS,
-  installDismissed,
-  inSessionView,
   canPromptInstall,
   onInstall,
-  onDismiss,
 }: CreateInstallViewModelArgs): AppInstallViewModel {
   const installable = isIOS || canPromptInstall
 
   return {
-    showBanner: isPhone && !isStandalone && !installDismissed && !inSessionView && installable,
     isIOS,
     isStandalone,
     installable,
     onInstall,
-    onDismiss,
   }
 }
 
