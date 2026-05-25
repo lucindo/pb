@@ -37,7 +37,7 @@ export function SettingsSheet({
       ref={dialogRef}
       aria-labelledby={titleId}
       onClick={onBackdropClick}
-      className="modal-fade m-0 mt-auto mb-0 max-h-[58vh] w-full max-w-full overflow-y-auto rounded-t-3xl rounded-b-none border-t bg-[var(--color-breathing-surface)] p-5 pb-7 text-[var(--color-breathing-text)] shadow-[0_-10px_30px_rgba(0,0,0,0.10)] backdrop:bg-[var(--color-modal-backdrop)] sm:m-auto sm:max-h-[82vh] sm:w-[88%] sm:max-w-[460px] sm:rounded-3xl sm:rounded-b-3xl sm:border sm:p-6 sm:pb-7 sm:shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
+      className="modal-fade m-0 mt-auto mb-0 max-h-[85vh] w-full max-w-full overflow-y-auto rounded-t-3xl rounded-b-none border-t bg-[var(--color-breathing-surface)] p-5 pb-7 text-[var(--color-breathing-text)] shadow-[0_-10px_30px_rgba(0,0,0,0.10)] backdrop:bg-[var(--color-modal-backdrop)] sm:m-auto sm:max-h-[82vh] sm:w-[88%] sm:max-w-[460px] sm:rounded-3xl sm:rounded-b-3xl sm:border sm:p-6 sm:pb-7 sm:shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
       style={{
         borderColor: 'var(--color-border-soft)',
         overscrollBehavior: 'contain',
