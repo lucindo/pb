@@ -108,7 +108,7 @@ metrics:
 
 ## Per-Cluster Commit
 
-**Commit SHA:** `<MAIN_COMMIT_SHA>` (recorded after commit lands)
+**Commit SHA:** `e6b2f24`
 **Commit message:**
 ```
 docs(44): security review for v2.0 milestone surface (POLISH-06)
