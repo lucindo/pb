@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { OrbShape } from './OrbShape'
 import type { SessionFrame } from '../domain'
@@ -114,12 +114,65 @@ describe('OrbShape — cue prop (Phase 25 Plan 03)', () => {
   })
 })
 
-// ── Phase 45 Plan 02: ringCue RED smoke ──────────────────────────────────────
-// Minimal RED test for the new progress-arc renderer. Task 2 expands this into
-// the full assertion block; this single case drives RED for Task 1's branch site.
-describe('OrbShape — ringCue prop (Phase 45) RED', () => {
-  it('ringCue="progress-arc" with phaseProgress > 0 renders the SVG arc layer', () => {
-    const partialFrame: SessionFrame = { ...sampleFrame, phaseProgress: 0.5 }
+// ── Phase 45 Plan 02: ringCue prop ────────────────────────────────────────────
+// Locks three invariants from the plan: default-unchanged (no arc SVG),
+// progress-arc renders 2 path elements with spike-locked stroke values,
+// reduced-motion suppresses the arc layer. Bonus: t === 0 (phase boundary)
+// also suppresses the arc layer per `showArc = !reducedMotion && t > 0`.
+//
+// SVG selector uses viewBox="0 0 100 100" to disambiguate the new arc layer
+// from CueGlyph SVGs (which use a 24-viewBox per CheckmarkGlyph at OrbShape
+// line ~128). Reduced-motion case mocks `window.matchMedia` per the canonical
+// pattern in `src/hooks/usePrefersReducedMotion.test.ts` lines 19-28.
+describe('OrbShape — ringCue prop (Phase 45)', () => {
+  // Scoped to this block — earlier describes do not touch matchMedia.
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // phaseProgress > 0 + < 1 → showArc = true, both branches assign endpoints.
+  const partialFrame: SessionFrame = { ...sampleFrame, phaseProgress: 0.5 }
+
+  it('default (ringCue omitted) renders no SVG arc layer — existing rings unchanged', () => {
+    const { container } = render(
+      <OrbShape frame={partialFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
+    expect(arcSvg).toBeNull()
+  })
+
+  it('ringCue="progress-arc" renders exactly 2 path elements with spike-locked stroke values', () => {
+    const { container } = render(
+      <OrbShape
+        frame={partialFrame}
+        ringCue="progress-arc"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    const paths = container.querySelectorAll(
+      'svg[aria-hidden="true"][viewBox="0 0 100 100"] path',
+    )
+    expect(paths.length).toBe(2)
+    paths.forEach((p) => {
+      expect(p.getAttribute('stroke')).toBe('var(--color-breathing-accent)')
+      expect(p.getAttribute('stroke-width')).toBe('2.5')
+    })
+  })
+
+  it('ringCue="progress-arc" + reduced-motion suppresses the arc layer (outer track still rendered)', () => {
+    // Reason: cast documents the intended stub shape; matchMedia returns a structurally-compatible mock.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    } as unknown as MediaQueryList)
+
     const { container } = render(
       <OrbShape
         frame={partialFrame}
@@ -128,6 +181,22 @@ describe('OrbShape — ringCue prop (Phase 45) RED', () => {
       />,
     )
     const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
-    expect(arcSvg).not.toBeNull()
+    expect(arcSvg).toBeNull()
+    // The faint outer track <span> survives reduced-motion + progress-arc.
+    const outerTrack = container.querySelector('span[aria-hidden="true"]')
+    expect(outerTrack).not.toBeNull()
+  })
+
+  it('ringCue="progress-arc" at t === 0 (phase boundary) suppresses the arc layer', () => {
+    // sampleFrame has phaseProgress: 0 → t = 0 → showArc = false.
+    const { container } = render(
+      <OrbShape
+        frame={sampleFrame}
+        ringCue="progress-arc"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
+    expect(arcSvg).toBeNull()
   })
 })
