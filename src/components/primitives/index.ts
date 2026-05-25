@@ -10,9 +10,6 @@
 export { ArrowLink } from './ArrowLink'
 export type { ArrowLinkProps } from './ArrowLink'
 
-export { Card } from './Card'
-export type { CardElevation, CardPadding, CardProps } from './Card'
-
 export { Eyebrow } from './Eyebrow'
 export type { EyebrowProps } from './Eyebrow'
 
