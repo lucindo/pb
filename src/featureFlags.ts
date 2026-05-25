@@ -6,11 +6,13 @@ export interface QueryFeatureFlagSpec<T> {
 
 export type BreathingShapeVariant = 'orb-halo' | 'minimal-rings'
 export type OrbIdleBehavior = 'still' | 'ambient'
+export type RingCueStyle = 'outer-inner' | 'progress-arc'
 
 export interface FeatureFlags {
   switcherIcon: boolean
   breathingShape: BreathingShapeVariant
   orbIdle: OrbIdleBehavior
+  ringCue: RingCueStyle
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
@@ -81,10 +83,24 @@ const ORB_IDLE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
 
+const RING_CUE_FLAG = {
+  queryParam: 'ringCue',
+  defaultValue: 'outer-inner' as RingCueStyle,
+  parse(rawValue: string): RingCueStyle | null {
+    const v = rawValue.trim().toLowerCase()
+    if (v === 'outer-inner' || v === 'production' || v === 'rings' || v === 'default')
+      return 'outer-inner'
+    if (v === 'progress-arc' || v === 'progress' || v === 'arc' || v === 'south')
+      return 'progress-arc'
+    return null
+  },
+} satisfies QueryFeatureFlagSpec<RingCueStyle>
+
 export function readFeatureFlags(search: string): FeatureFlags {
   return {
     switcherIcon: readQueryFeatureFlag(search, SWITCHER_ICON_FLAG),
     breathingShape: readQueryFeatureFlag(search, BREATHING_SHAPE_FLAG),
     orbIdle: readQueryFeatureFlag(search, ORB_IDLE_FLAG),
+    ringCue: readQueryFeatureFlag(search, RING_CUE_FLAG),
   }
 }
