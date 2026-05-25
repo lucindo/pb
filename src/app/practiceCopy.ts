@@ -1,17 +1,6 @@
 import type { UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage'
 
-export function getPracticeHeader(activePractice: PracticeId, strings: UiStrings): string {
-  switch (activePractice) {
-    case 'resonant':
-      return strings.practice.header
-    case 'stretch':
-      return strings.practice.switcher.stretchHeader
-    case 'naviKriya':
-      return strings.practice.switcher.naviKriyaHeader
-  }
-}
-
 export function getPracticeTitle(activePractice: PracticeId, strings: UiStrings): string {
   switch (activePractice) {
     case 'resonant':

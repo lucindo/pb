@@ -21,7 +21,6 @@ import type { LocaleId } from '../domain'
 
 export interface UiStrings {
   readonly practice: {
-    readonly header: string
     readonly title: string
     readonly topBar: {
       readonly settings: string
@@ -35,10 +34,8 @@ export interface UiStrings {
       readonly naviKriyaName: string
       readonly resonantHeading: string
       readonly naviKriyaHeading: string
-      readonly naviKriyaHeader: string
       readonly stretchName: string
       readonly stretchHeading: string
-      readonly stretchHeader: string
     }
     readonly controls: {
       readonly startSession: string
@@ -195,7 +192,6 @@ export interface UiStrings {
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
   en: {
     practice: {
-      header: 'HRV practice',
       title: 'HRV Breathing',
       topBar: {
         settings: 'Settings',
@@ -209,10 +205,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         naviKriyaName: 'Navi',
         resonantHeading: 'HRV Breathing',
         naviKriyaHeading: 'Navi Kriya',
-        naviKriyaHeader: 'Navi practice',
         stretchName: 'Stretch',
         stretchHeading: 'HRV Stretch',
-        stretchHeader: 'Stretch practice',
       },
       controls: {
         startSession: 'Start',
@@ -367,7 +361,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
   },
   'pt-BR': {
     practice: {
-      header: 'PRÁTICA VFC',
       title: 'Respiração VFC',
       topBar: {
         settings: 'Configurações',
@@ -381,10 +374,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         naviKriyaName: 'Navi',
         resonantHeading: 'Respiração VFC',
         naviKriyaHeading: 'Navi Kriya',
-        naviKriyaHeader: 'Prática Navi',
         stretchName: 'Alongar',
         stretchHeading: 'Alongar VFC',
-        stretchHeader: 'Prática de Alongar',
       },
       controls: {
         startSession: 'Iniciar',

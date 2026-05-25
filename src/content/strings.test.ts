@@ -165,7 +165,7 @@ describe('Phase 30 practice string keys', () => {
     expect(UI_STRINGS.en.practice.switcher.resonantName).toBe('HRV')
     expect(UI_STRINGS.en.practice.switcher.naviKriyaName).toBe('Navi')
     // pt-BR uses the localized abbreviation VFC to match the rest of the
-    // pt-BR UI (header "PRÁTICA VFC", title "Respiração VFC").
+    // pt-BR UI (title "Respiração VFC").
     expect(UI_STRINGS['pt-BR'].practice.switcher.resonantName).toBe('VFC')
     expect(UI_STRINGS['pt-BR'].practice.switcher.naviKriyaName).toBe('Navi')
   })
@@ -194,15 +194,8 @@ describe('Phase 34 stretch practice string keys (STRETCH-06)', () => {
     expect(UI_STRINGS['pt-BR'].practice.switcher.stretchHeading).toBe('Alongar VFC')
   })
 
-  it('stretchHeader is a non-empty string in both locales', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      expect(typeof UI_STRINGS[locale].practice.switcher.stretchHeader).toBe('string')
-      expect(UI_STRINGS[locale].practice.switcher.stretchHeader.length).toBeGreaterThan(0)
-    }
-  })
-
-  it('every locale has all three stretch fields present and non-empty (completeness)', () => {
-    const stretchFields = ['stretchName', 'stretchHeading', 'stretchHeader'] as const
+  it('every locale has both stretch fields present and non-empty (completeness)', () => {
+    const stretchFields = ['stretchName', 'stretchHeading'] as const
     for (const locale of LOCALE_OPTIONS) {
       for (const field of stretchFields) {
         const value = UI_STRINGS[locale].practice.switcher[field]

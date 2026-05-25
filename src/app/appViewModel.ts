@@ -109,7 +109,6 @@ export type AppPracticeSettingsViewModel =
 
 export interface AppViewModel {
   activePractice: PracticeId
-  appHeader: string
   appTitle: string
   workspaceCompact: boolean
   controlsDisabled: boolean

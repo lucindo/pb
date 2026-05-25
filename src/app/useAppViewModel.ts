@@ -37,11 +37,7 @@ import {
   getPracticePrimaryActionsFromControllers,
 } from './appControllerAdapters'
 import { useAppNavigation } from './useAppNavigation'
-import {
-  getPracticeHeader,
-  getPracticeTitle,
-  getPracticeToggleStrings,
-} from './practiceCopy'
+import { getPracticeTitle, getPracticeToggleStrings } from './practiceCopy'
 
 export function useAppViewModel(): AppViewModel {
   const initialPractices = useMemo<PracticeMap>(() => loadPractices(), [])
@@ -185,7 +181,6 @@ export function useAppViewModel(): AppViewModel {
 
   return {
     activePractice,
-    appHeader: getPracticeHeader(activePractice, uiStrings),
     appTitle: getPracticeTitle(activePractice, uiStrings),
     workspaceCompact: breathing.inSessionView,
     controlsDisabled,
