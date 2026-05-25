@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
-import type { BreathingShapeVariant, OrbIdleBehavior } from '../featureFlags'
+import type { BreathingShapeVariant, OrbIdleBehavior, RingCueStyle } from '../featureFlags'
 import { useAmbientScale } from '../hooks/useAmbientScale'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
@@ -33,6 +33,12 @@ export interface OrbShapeProps {
   // 'ambient'). showRings is hard-set to false on the idle path per spike
   // 010 IdleScreen line 1979 + CompleteScreen line 2026.
   idleMode?: OrbIdleBehavior | null
+  // Phase 45 Plan 02: query-string-gated ring-cue style. 'outer-inner'
+  // (default) preserves production rendering byte-identically — the existing
+  // outer + inner ring spans. 'progress-arc' renders the spike-011
+  // bidirectional progress arc (south-anchored, mirrors inner-ring
+  // suppression on reduced-motion; faint outer track always present).
+  ringCue?: RingCueStyle
   // J16: completion state — static halo orb (showRings false, scale MID)
   // with a checkmark glyph centred on the accent disc. Spike 010 L2026 +
   // CheckMarker L1006-1014. Takes priority over the frame === null idle path.
@@ -78,17 +84,18 @@ export function OrbShape({
   variant = 'orb-halo',
   idleMode,
   showCompletion = false,
+  ringCue = 'outer-inner',
   children,
 }: OrbShapeProps) {
   if (nkPhase != null) {
     return (
-      <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant}>
+      <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant} ringCue={ringCue}>
         {children}
       </OrbLeadIn>
     )
   }
   if (leadInDigit != null) {
-    return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} />
+    return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} ringCue={ringCue} />
   }
   if (showCompletion) {
     return (
@@ -98,6 +105,7 @@ export function OrbShape({
         orbScale={MID_SCALE}
         discBg="var(--color-breathing-accent)"
         variant={variant}
+        ringCue={ringCue}
       >
         <CheckmarkGlyph />
       </OrbContainer>
@@ -105,11 +113,20 @@ export function OrbShape({
   }
   if (frame === null) {
     if (idleMode != null) {
-      return <OrbIdle idleMode={idleMode} variant={variant} />
+      return <OrbIdle idleMode={idleMode} variant={variant} ringCue={ringCue} />
     }
     return null
   }
-  return <OrbBody frame={frame} strings={strings} cue={cue} showRings={showRings} variant={variant} />
+  return (
+    <OrbBody
+      frame={frame}
+      strings={strings}
+      cue={cue}
+      showRings={showRings}
+      variant={variant}
+      ringCue={ringCue}
+    />
+  )
 }
 
 // Spike 010 CheckMarker (index.html L1006-1014): 32x32 / 24-viewBox /
@@ -144,9 +161,10 @@ interface OrbBodyProps {
   cue: CueStyleId
   showRings: boolean
   variant: BreathingShapeVariant
+  ringCue: RingCueStyle
 }
 
-function OrbBody({ frame, strings, cue, showRings, variant }: OrbBodyProps) {
+function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -170,6 +188,8 @@ function OrbBody({ frame, strings, cue, showRings, variant }: OrbBodyProps) {
       orbScale={orbScale}
       discBg="var(--color-breathing-accent)"
       variant={variant}
+      ringCue={ringCue}
+      arcProgress={progress}
     >
       <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
     </OrbContainer>
@@ -184,9 +204,11 @@ function OrbBody({ frame, strings, cue, showRings, variant }: OrbBodyProps) {
 function OrbIdle({
   idleMode,
   variant,
+  ringCue,
 }: {
   idleMode: OrbIdleBehavior
   variant: BreathingShapeVariant
+  ringCue: RingCueStyle
 }) {
   const ambientScale = useAmbientScale(idleMode === 'ambient')
   return (
@@ -196,6 +218,7 @@ function OrbIdle({
       orbScale={ambientScale}
       discBg="var(--color-breathing-accent)"
       variant={variant}
+      ringCue={ringCue}
     />
   )
 }
@@ -212,12 +235,14 @@ function OrbLeadIn({
   strings,
   nkPhase,
   variant,
+  ringCue,
   children,
 }: {
   digit: 1 | 2 | 3 | null
   strings: UiStrings['practice']['breathing']
   nkPhase?: 'front' | 'back'
   variant: BreathingShapeVariant
+  ringCue: RingCueStyle
   children?: ReactNode
 }) {
   const labelProps =
@@ -238,6 +263,7 @@ function OrbLeadIn({
       orbScale={MID_SCALE}
       discBg={discBg}
       variant={variant}
+      ringCue={ringCue}
     >
       {digit != null && (
         <span className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl">
@@ -265,6 +291,15 @@ interface OrbContainerProps {
   orbScale: number
   discBg: string
   variant: BreathingShapeVariant
+  // Phase 45 Plan 02: ring-cue style threaded from OrbShape. Only the
+  // inner-ring slot in the showRings block branches on this value; the
+  // faint outer track stays byte-identical across both cues.
+  ringCue: RingCueStyle
+  // Phase 45 Plan 02: clamped phaseProgress (0..1) — only consumed when
+  // ringCue === 'progress-arc'. Defaults to 0 for non-Running call sites
+  // (Idle / LeadIn / Complete) that pass showRings={false} and therefore
+  // never reach the arc branch.
+  arcProgress?: number
   children?: React.ReactNode
 }
 
@@ -279,6 +314,8 @@ function OrbContainer({
   orbScale,
   discBg,
   variant,
+  ringCue,
+  arcProgress = 0,
   children,
 }: OrbContainerProps) {
   const rootProps = {
@@ -312,22 +349,30 @@ function OrbContainer({
               opacity: ringOpacity,
             }}
           />
-          {!reducedMotion && (
-            <span
-              aria-hidden="true"
-              className="absolute"
-              style={{
-                width: innerSizePct,
-                height: innerSizePct,
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                border: '1.5px solid var(--color-breathing-accent)',
-                borderRadius: '50%',
-                opacity: innerVisible * ringOpacity,
-                transition: RING_TRANSITION,
-              }}
+          {ringCue === 'progress-arc' ? (
+            <ProgressArcLayer
+              phase={innerRingPhase ?? 'in'}
+              progress={arcProgress}
+              reducedMotion={reducedMotion}
             />
+          ) : (
+            !reducedMotion && (
+              <span
+                aria-hidden="true"
+                className="absolute"
+                style={{
+                  width: innerSizePct,
+                  height: innerSizePct,
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  border: '1.5px solid var(--color-breathing-accent)',
+                  borderRadius: '50%',
+                  opacity: innerVisible * ringOpacity,
+                  transition: RING_TRANSITION,
+                }}
+              />
+            )
           )}
         </>
       )}
@@ -383,5 +428,82 @@ function OrbContainer({
         </div>
       </div>
     </div>
+  )
+}
+
+// Phase 45 Plan 02: bidirectional progress arc — verbatim TSX transcription
+// of spike-011 RingsB (index.html lines 179–229). Spike-locked values must
+// not be touched: viewBox="0 0 100 100", r = 49.7, sweep-flag 0 on the right
+// path / 1 on the left, dynamic-endpoint arc paths via .toFixed(4), no
+// stroke-dasharray + no pathLength (Chrome renders those as broken segments
+// per spike README Surprise #2). Stroke 2.5 is the spike-locked product
+// value (the spike's progressStrokeWidth runtime prop was a harness control).
+// Outer track is NOT duplicated here — OrbContainer already renders the
+// faint outer <span> above this branch (shared across both ring cues and
+// both reduced-motion states).
+function ProgressArcLayer({
+  phase,
+  progress,
+  reducedMotion,
+}: {
+  phase: 'in' | 'out'
+  progress: number
+  reducedMotion: boolean
+}) {
+  const r = 49.7
+  const south = 50 + r
+  const north = 50 - r
+  const t = phase === 'in' ? progress : 1 - progress
+  const showArc = !reducedMotion && t > 0
+
+  if (!showArc) return null
+
+  // Spike-011 RingsB used `let rightD = ''` + `let leftD = ''` as empty
+  // initializers, with the `t === 0` case implicitly skipping the if/else
+  // and emitting empty paths. Since the `showArc = !reducedMotion && t > 0`
+  // guard above now short-circuits t === 0, both branches always assign —
+  // we declare without the dead empty-string init to satisfy lint while
+  // preserving the spike's branch shape verbatim.
+  let rightD: string
+  let leftD: string
+  if (t >= 1) {
+    rightD = `M 50 ${String(south)} A ${String(r)} ${String(r)} 0 0 0 50 ${String(north)}`
+    leftD = `M 50 ${String(south)} A ${String(r)} ${String(r)} 0 0 1 50 ${String(north)}`
+  } else {
+    const angleR = Math.PI / 2 - t * Math.PI
+    const angleL = Math.PI / 2 + t * Math.PI
+    const endXR = 50 + r * Math.cos(angleR)
+    const endYR = 50 + r * Math.sin(angleR)
+    const endXL = 50 + r * Math.cos(angleL)
+    const endYL = 50 + r * Math.sin(angleL)
+    rightD = `M 50 ${String(south)} A ${String(r)} ${String(r)} 0 0 0 ${endXR.toFixed(4)} ${endYR.toFixed(4)}`
+    leftD = `M 50 ${String(south)} A ${String(r)} ${String(r)} 0 0 1 ${endXL.toFixed(4)} ${endYL.toFixed(4)}`
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="absolute pointer-events-none"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid meet"
+      style={{ inset: 0, width: '100%', height: '100%' }}
+    >
+      <path
+        d={rightD}
+        stroke="var(--color-breathing-accent)"
+        fill="none"
+        strokeLinecap="round"
+        strokeWidth={2.5}
+        vectorEffect="non-scaling-stroke"
+      />
+      <path
+        d={leftD}
+        stroke="var(--color-breathing-accent)"
+        fill="none"
+        strokeLinecap="round"
+        strokeWidth={2.5}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   )
 }
