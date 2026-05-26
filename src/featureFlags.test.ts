@@ -83,6 +83,18 @@ describe('readFeatureFlags', () => {
     expect(readFeatureFlags('?breathingShape=junk').breathingShape).toBe('orb-halo')
   })
 
+  it('parses spiritual-eye and its aliases', () => {
+    expect(readFeatureFlags('?breathingShape=spiritual-eye').breathingShape).toBe('spiritual-eye')
+    expect(readFeatureFlags('?breathingShape=kuthasta').breathingShape).toBe('spiritual-eye')
+    expect(readFeatureFlags('?breathingShape=star').breathingShape).toBe('spiritual-eye')
+  })
+
+  it('spiritual-eye is case-insensitive and trims whitespace', () => {
+    expect(readFeatureFlags('?breathingShape=KUTHASTA').breathingShape).toBe('spiritual-eye')
+    expect(readFeatureFlags('?breathingShape=Spiritual-Eye').breathingShape).toBe('spiritual-eye')
+    expect(readFeatureFlags('?breathingShape=%20Star%20').breathingShape).toBe('spiritual-eye')
+  })
+
   it('defaults orbIdle to ambient', () => {
     expect(readFeatureFlags('').orbIdle).toBe('ambient')
   })

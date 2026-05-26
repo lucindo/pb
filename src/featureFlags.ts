@@ -4,7 +4,7 @@ export interface QueryFeatureFlagSpec<T> {
   parse(this: void, rawValue: string): T | null
 }
 
-export type BreathingShapeVariant = 'orb-halo' | 'minimal-rings'
+export type BreathingShapeVariant = 'orb-halo' | 'minimal-rings' | 'spiritual-eye'
 export type OrbIdleBehavior = 'still' | 'ambient'
 export type RingCueStyle = 'outer-inner' | 'progress-arc'
 
@@ -68,6 +68,7 @@ const BREATHING_SHAPE_FLAG = {
     const v = rawValue.trim().toLowerCase()
     if (v === 'orb-halo' || v === 'orb' || v === 'halo') return 'orb-halo'
     if (v === 'minimal-rings' || v === 'minimal' || v === 'rings') return 'minimal-rings'
+    if (v === 'spiritual-eye' || v === 'kuthasta' || v === 'star') return 'spiritual-eye'
     return null
   },
 } satisfies QueryFeatureFlagSpec<BreathingShapeVariant>
