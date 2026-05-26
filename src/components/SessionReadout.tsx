@@ -8,6 +8,7 @@ import {
 } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
+import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 
 // Spike 010 FeedbackHRV (index.html L1060-1085) + FeedbackStretch — both
 // resolve to FeedbackTime: a big remaining-time number above an uppercase
@@ -60,38 +61,12 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
   // harness queries keep working.
   if (props.mode === 'session' && props.showCompletionHeadline) {
     return (
-      <section aria-label={strings.readoutAriaLabel} className="w-full">
-        <div
-          role="status"
-          aria-label={strings.announcementAriaLabel}
-          aria-live="polite"
-          aria-atomic="true"
-          className="mt-7 flex flex-col items-center"
-        >
-          <p
-            style={{
-              fontSize: 22,
-              fontWeight: 600,
-              letterSpacing: '-0.01em',
-              color: 'var(--color-breathing-text)',
-            }}
-          >
-            {strings.sessionComplete}
-          </p>
-          <p
-            className="uppercase"
-            style={{
-              marginTop: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              letterSpacing: '0.16em',
-              color: 'var(--color-breathing-muted)',
-            }}
-          >
-            {strings.takeAMoment}
-          </p>
-        </div>
-      </section>
+      <SessionCompletionHeadline
+        ariaLabel={strings.readoutAriaLabel}
+        announcementAriaLabel={strings.announcementAriaLabel}
+        headline={strings.sessionComplete}
+        subhead={strings.takeAMoment}
+      />
     )
   }
 

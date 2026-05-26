@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 import { NKSessionReadout } from '../components/NKSessionReadout'
 import { NKShape } from '../components/NKShape'
 import { OrbShape } from '../components/OrbShape'
+import { SessionCompletionHeadline } from '../components/SessionCompletionHeadline'
 import type { UiStrings } from '../content/strings'
 import type { BreathingShapeVariant, OrbIdleBehavior, RingCueStyle } from '../featureFlags'
 import type { NaviKriyaPresentation } from './sessionPresentation'
@@ -63,32 +64,11 @@ export function NaviKriyaSessionSurface({
       )}
 
       {presentation.showCompletionHeadline && (
-        <section aria-label={nkReadoutStrings.readoutAriaLabel} className="w-full">
-          <div role="status" aria-live="polite" aria-atomic="true" className="mt-7 flex flex-col items-center">
-            <p
-              style={{
-                fontSize: 22,
-                fontWeight: 600,
-                letterSpacing: '-0.01em',
-                color: 'var(--color-breathing-text)',
-              }}
-            >
-              {readoutStrings.sessionComplete}
-            </p>
-            <p
-              className="uppercase"
-              style={{
-                marginTop: 6,
-                fontSize: 12,
-                fontWeight: 500,
-                letterSpacing: '0.16em',
-                color: 'var(--color-breathing-muted)',
-              }}
-            >
-              {readoutStrings.takeAMoment}
-            </p>
-          </div>
-        </section>
+        <SessionCompletionHeadline
+          ariaLabel={nkReadoutStrings.readoutAriaLabel}
+          headline={readoutStrings.sessionComplete}
+          subhead={readoutStrings.takeAMoment}
+        />
       )}
     </>
   )
