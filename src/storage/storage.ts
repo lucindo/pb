@@ -213,6 +213,15 @@ export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
     // require BroadcastChannel-coordinated locking or the Web Locks API
     // (deferred). The guard is best-effort, not transactional.
     //
+    // User-facing failure mode: an older build loaded after a newer build
+    // has written a future-version envelope (browser cache, stale SW, bfcache)
+    // short-circuits at the currentVersion > STATE_VERSION check below — every
+    // user action that calls a save*/record* function is silently discarded.
+    // QA/UAT should clear localStorage between builds when downgrading. A
+    // DEV-only console.warn at the short-circuit site (gated on
+    // import.meta.env.DEV) signals the situation to developers; production
+    // stays silent per D-03/D-17.
+    //
     // Pitfall 1: the inner re-read MUST live in its OWN nested try/catch.
     // If the inner getItem throws (Safari ITP / private mode) and we let
     // the outer D-16 catch swallow it, the entire write is silently skipped
@@ -231,7 +240,21 @@ export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
     } catch {
       // D-17 posture: treat throw/corrupt as "no version info"; proceed.
     }
-    if (currentVersion > STATE_VERSION) return
+    if (currentVersion > STATE_VERSION) {
+      // DEV-only signal so developers can spot a downgrade-after-upgrade in
+      // the console. Open Question 1 at the top of this file invited this
+      // DEV warn; production stays silent per D-03/D-17 (RAM state
+      // authoritative).
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[storage] refusing to overwrite on-disk envelope v${currentVersion} ` +
+          `(this build is v${STATE_VERSION}). Writes are silently discarded — ` +
+          `reload the newer build or clear localStorage.`,
+        )
+      }
+      return
+    }
     // D-04: this build stamps STATE_VERSION on every successful write.
     // Caller-passed `env.version` is structurally ignored (the spread is
     // overridden by the explicit `version: STATE_VERSION` key).
