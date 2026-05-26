@@ -28,7 +28,7 @@ export function FeedbackTime({
   return (
     <div
       role="status"
-      aria-live="polite"
+      aria-live="off"
       aria-label={ariaLabel}
       className="flex flex-col items-center"
       style={{ marginTop: 28 }}

@@ -15,11 +15,11 @@ describe('FeedbackTime', () => {
     expect(screen.getByText('5.5 BPM · 1:1')).toBeVisible()
   })
 
-  it('exposes a live readout region named by ariaLabel', () => {
+  it('exposes a readout region named by ariaLabel with aria-live disabled (timer ticks would flood SR)', () => {
     render(<FeedbackTime primary="00:00" secondary="—" ariaLabel="Live HRV time" />)
     const status = screen.getByRole('status', { name: 'Live HRV time' })
     expect(status).toBeVisible()
-    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveAttribute('aria-live', 'off')
   })
 
   it('places the primary value above the secondary caption (DOM order)', () => {
