@@ -162,7 +162,9 @@ export function SettingsPanelBody({
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {`${__APP_VERSION__} · ${__APP_BUILD_SHA__} · ${__APP_BUILD_DATE__}`}
+              {[__APP_VERSION__, __APP_BUILD_SHA__, __APP_BUILD_DATE__]
+                .filter((v) => typeof v === 'string' && v.length > 0)
+                .join(' · ') || 'unknown'}
             </span>
           </AboutRow>
           <AboutRow label={strings.appSettings.about.sourceLabel}>
