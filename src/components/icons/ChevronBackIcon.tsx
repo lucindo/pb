@@ -1,6 +1,10 @@
 import type { SVGProps } from 'react'
 
-export function ChevronBackIcon(props: SVGProps<SVGSVGElement>) {
+export function ChevronBackIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+  // The glyph points left so the back affordance reads correctly in LTR.
+  // In RTL locales the affordance points the other way; mirror via Tailwind's
+  // `rtl:` direction variant so locale flips it automatically.
+  const mirrored = `rtl:rotate-180 ${className ?? ''}`.trim()
   return (
     <svg
       aria-hidden="true"
@@ -12,6 +16,7 @@ export function ChevronBackIcon(props: SVGProps<SVGSVGElement>) {
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={mirrored}
       {...props}
     >
       <polyline points="15 6 9 12 15 18" />
