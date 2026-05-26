@@ -22,6 +22,13 @@ function detectIsIOS(): boolean {
   )
 }
 
+// Reason: standalone resolution is needed at three call sites (lazy state
+// initializer, mount re-seed, MQL change listener). Extracting the OR-chain
+// keeps the iOS `navigator.standalone` fallback in one place.
+function resolveStandalone(mqlMatches: boolean): boolean {
+  return mqlMatches || (navigator as SafariNavigator).standalone === true
+}
+
 export interface UseIsStandaloneOrPhone {
   isStandalone: boolean
   isPhone: boolean
@@ -51,10 +58,7 @@ export function useIsStandaloneOrPhone(): UseIsStandaloneOrPhone {
     if (!window.matchMedia) {
       return false
     }
-    return (
-      window.matchMedia(STANDALONE_QUERY).matches ||
-      (navigator as SafariNavigator).standalone === true
-    )
+    return resolveStandalone(window.matchMedia(STANDALONE_QUERY).matches)
   })
 
   const [isPhone, setIsPhone] = useState<boolean>(() => {
@@ -79,16 +83,12 @@ export function useIsStandaloneOrPhone(): UseIsStandaloneOrPhone {
     // subsequent updates come from the change listeners (MDN canonical pattern).
     // Reason: re-seed from live MediaQueryList on mount to close the stale-initial-state window.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsStandalone(
-      mqlStandalone.matches || (navigator as SafariNavigator).standalone === true,
-    )
+    setIsStandalone(resolveStandalone(mqlStandalone.matches))
     // Reason: re-seed from live MediaQueryList on mount to close the stale-initial-state window.
     setIsPhone(mqlPhone.matches)
 
     const onStandaloneChange = (event: MediaQueryListEvent): void => {
-      setIsStandalone(
-        event.matches || (navigator as SafariNavigator).standalone === true,
-      )
+      setIsStandalone(resolveStandalone(event.matches))
     }
     const onPhoneChange = (event: MediaQueryListEvent): void => {
       setIsPhone(event.matches)
