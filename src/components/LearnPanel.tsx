@@ -88,8 +88,8 @@ export function LearnPanel({
 
       <SettingsSectionHeader label={explainer.forrest.title} />
       <SectionCard>
-        {explainer.forrest.body.split('\n\n').map((paragraph) => (
-          <p key={paragraph} className={`${BODY_CLASSES} [&:not(:first-of-type)]:mt-2`}>{paragraph}</p>
+        {explainer.forrest.body.split('\n\n').map((paragraph, i) => (
+          <p key={i} className={`${BODY_CLASSES} [&:not(:first-of-type)]:mt-2`}>{paragraph}</p>
         ))}
       </SectionCard>
 
