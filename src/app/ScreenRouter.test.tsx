@@ -14,6 +14,9 @@ vi.mock('./pages/LearnPage', () => ({
 vi.mock('./pages/AppSettingsPage', () => ({
   AppSettingsPage: () => <div data-testid="app-settings-page" />,
 }))
+vi.mock('./pages/AppearancePage', () => ({
+  AppearancePage: () => <div data-testid="appearance-page" />,
+}))
 
 import { ScreenRouter } from './ScreenRouter'
 
@@ -27,9 +30,12 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
       endSessionDialogs: [],
       onLearnOpen: () => {},
       onSettingsOpen: () => {},
+      onAppearanceOpen: () => {},
       onBackToPractice: () => {},
+      onBackToAppSettings: () => {},
+      returningFromAppearance: false,
     },
-    install: { isIOS: false, isStandalone: false, installable: false, showBanner: false, onInstall: async () => {}, onDismiss: () => {} },
+    install: { isIOS: false, isStandalone: false, installable: false, onInstall: async () => {} },
     learnContent: {} as AppViewModel['learnContent'],
     lockedCopy: {} as AppViewModel['lockedCopy'],
     uiStrings: {} as AppViewModel['uiStrings'],
@@ -57,5 +63,13 @@ describe('ScreenRouter', () => {
     expect(screen.getByTestId('app-settings-page')).toBeInTheDocument()
     expect(screen.queryByTestId('practice-screen')).not.toBeInTheDocument()
     expect(screen.queryByTestId('learn-page')).not.toBeInTheDocument()
+  })
+
+  it('renders AppearancePage when appScreen=appearance', () => {
+    render(<ScreenRouter vm={makeVmForScreen('appearance')} />)
+    expect(screen.getByTestId('appearance-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('practice-screen')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('learn-page')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('app-settings-page')).not.toBeInTheDocument()
   })
 })
