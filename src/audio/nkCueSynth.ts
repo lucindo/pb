@@ -119,13 +119,22 @@ function buildNKToneNodes(
     envelope.gain.setTargetAtTime(NEAR_SILENCE, when + STRIKE_RAMP_OFFSET, envelopeSpec)
   } else {
     // Pad: linear fade in → hold → linear fade out (Spike 005 "Warm pad fade").
-    const attackEnd = when + envelopeSpec.attackSec
-    // Clamp the fade-out start so it never precedes the fade-in end on a short tone.
-    const releaseStart = Math.max(attackEnd, when + durationSec - envelopeSpec.releaseSec)
+    // For short tones where attack + release ≥ durationSec there is no hold
+    // window: cap the ramp peak at the fade-out start so the up-ramp and
+    // down-ramp meet at a single time. Also guard against attack alone
+    // exceeding durationSec (the up-ramp would otherwise run past osc.stop).
+    // Skipping the redundant setValueAtTime(peak, releaseStart) avoids
+    // same-instant automation events whose ordering is implementation-defined
+    // across Chrome / Safari.
+    const stopAt = when + durationSec
+    const releaseStart = Math.max(when, stopAt - envelopeSpec.releaseSec)
+    const attackEnd = Math.min(when + envelopeSpec.attackSec, releaseStart, stopAt)
     envelope.gain.setValueAtTime(NEAR_SILENCE, when)
     envelope.gain.linearRampToValueAtTime(peakGain, attackEnd)
-    envelope.gain.setValueAtTime(peakGain, releaseStart)
-    envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, when + durationSec)
+    if (releaseStart > attackEnd) {
+      envelope.gain.setValueAtTime(peakGain, releaseStart)
+    }
+    envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, stopAt)
   }
 
   const stopAt = when + durationSec
