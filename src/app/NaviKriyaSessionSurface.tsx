@@ -37,6 +37,7 @@ export function NaviKriyaSessionSurface({
           variant={variant}
           idleMode={idleMode}
           ringCue={ringCue}
+          showCompletion={presentation.showCompletionHeadline}
         />
       ) : (
         <NKShape

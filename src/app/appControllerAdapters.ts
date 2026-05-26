@@ -77,6 +77,7 @@ export function getPracticePrimaryActionsFromControllers({
     naviKriya: getNaviKriyaPrimaryAction({
       starting: navi.starting,
       sessionActive: navi.sessionActive,
+      justCompleted: navi.justCompleted,
     }),
   }
 }
@@ -149,6 +150,7 @@ export function createPracticeSettingsViewModelFromControllers({
     },
     naviKriya: {
       settings: navi.settings,
+      isComplete: navi.justCompleted,
       onChange: navi.setSettings,
     },
   })

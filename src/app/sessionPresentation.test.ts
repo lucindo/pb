@@ -138,9 +138,21 @@ describe('Navi Kriya presentation model', () => {
 
 describe('Navi Kriya primary action model', () => {
   it('prioritizes cancel during countdown, then end while active, then start while idle', () => {
-    expect(getNaviKriyaPrimaryAction({ starting: true, sessionActive: true })).toBe('cancel')
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: true })).toBe('end')
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false })).toBe('start')
+    expect(getNaviKriyaPrimaryAction({ starting: true, sessionActive: true, justCompleted: false })).toBe('cancel')
+    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: true, justCompleted: false })).toBe('end')
+    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false, justCompleted: false })).toBe('start')
+  })
+
+  it('returns done when justCompleted is true and session is inactive', () => {
+    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false, justCompleted: true })).toBe('done')
+  })
+
+  it('returns start when justCompleted is false and session is inactive (explicit signal)', () => {
+    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false, justCompleted: false })).toBe('start')
+  })
+
+  it('returns end when sessionActive is true even if justCompleted is true (sessionActive wins)', () => {
+    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: true, justCompleted: true })).toBe('end')
   })
 })
 

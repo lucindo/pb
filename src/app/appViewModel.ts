@@ -105,6 +105,7 @@ export type AppPracticeSettingsViewModel =
   | {
       kind: 'naviKriya'
       settings: NaviKriyaSettings
+      isComplete: boolean
       onChange(this: void, settings: NaviKriyaSettings): void
     }
 
@@ -240,6 +241,7 @@ export interface PracticeSettingsSources {
   }
   naviKriya: {
     settings: NaviKriyaSettings
+    isComplete: boolean
     onChange(this: void, settings: NaviKriyaSettings): void
   }
 }
@@ -272,6 +274,7 @@ export function createPracticeSettingsViewModel(
   return {
     kind: 'naviKriya',
     settings: sources.naviKriya.settings,
+    isComplete: sources.naviKriya.isComplete,
     onChange: sources.naviKriya.onChange,
   }
 }

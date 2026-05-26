@@ -149,14 +149,17 @@ export function getNaviKriyaPresentation(
   }
 }
 
-export type NaviKriyaPrimaryAction = 'cancel' | 'end' | 'start'
+export type NaviKriyaPrimaryAction = 'cancel' | 'end' | 'start' | 'done'
 
 export function getNaviKriyaPrimaryAction(input: {
   starting: boolean
   sessionActive: boolean
+  justCompleted: boolean
 }): NaviKriyaPrimaryAction {
   if (input.starting) return 'cancel'
-  return input.sessionActive ? 'end' : 'start'
+  if (input.sessionActive) return 'end'
+  if (input.justCompleted) return 'done'
+  return 'start'
 }
 
 export type BreathingPrimaryAction = 'cancel' | 'end' | 'start' | 'done'
