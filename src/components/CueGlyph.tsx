@@ -20,11 +20,15 @@ export interface CueGlyphProps {
   phase: 'in' | 'out'
   phaseLabel: string
   // preview: picker-swatch rendering. Uses --color-breathing-accent so the glyph
-  // stays visible on the picker's surface bg, and renders the first character of
-  // phaseLabel for labels mode instead of the full phase word (which overflows
-  // the swatch). Preview glyphs are purely decorative — the arrow/nose branches
-  // skip the sr-only span entirely so the picker swatch emits no a11y node.
+  // stays visible on the picker's surface bg, and renders previewLabel in labels
+  // mode (defaults to phaseLabel.charAt(0)). Preview glyphs are purely
+  // decorative — arrow/nose skip the sr-only span entirely so the picker swatch
+  // emits no a11y node.
   preview?: boolean
+  // Optional override for the labels-mode preview character / short string.
+  // CuePicker uses this to pass the category label's first character ("T"/"A"/"N")
+  // instead of conflating phaseLabel with a generic glyph-fallback string.
+  previewLabel?: string
 }
 
 // ── Arrow SVG path data (candidate F — soft solid chevron) ───────────────────
@@ -62,7 +66,7 @@ const NOSE_OUT_ARROWS = {
   arrowheads: ['31,84 37,91 43,84', '57,84 63,91 69,84'],
 }
 
-export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphProps): React.ReactElement {
+export function CueGlyph({ cue, phase, phaseLabel, preview = false, previewLabel }: CueGlyphProps): React.ReactElement {
   // J4: in-orb glyph inherits currentColor from the centre disc (which sets
   // color: var(--color-breathing-on-accent)). Picker swatch uses the accent
   // token directly so the glyph reads against the surface bg.
@@ -70,9 +74,10 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false }: CueGlyphPr
 
   // ── labels mode ─────────────────────────────────────────────────────────────
   if (cue === 'labels') {
+    const labelsContent = preview ? (previewLabel ?? phaseLabel.charAt(0)) : phaseLabel
     return (
       <span className={`relative z-10 text-5xl font-semibold tracking-tight sm:text-6xl ${colorClass}`}>
-        {preview ? phaseLabel.charAt(0) : phaseLabel}
+        {labelsContent}
       </span>
     )
   }

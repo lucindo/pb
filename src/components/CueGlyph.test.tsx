@@ -140,10 +140,15 @@ describe('CueGlyph — nose mode (candidate D2)', () => {
 // ── preview mode (picker swatch) ─────────────────────────────────────────────
 
 describe('CueGlyph — preview mode', () => {
-  it('labels preview renders a single "T", not the phase word', () => {
+  it('labels preview defaults to phaseLabel.charAt(0) when previewLabel not supplied', () => {
     render(<CueGlyph cue="labels" phase="in" phaseLabel="Text" preview />)
     expect(screen.getByText('T')).toBeInTheDocument()
     expect(screen.queryByText('Text')).not.toBeInTheDocument()
+  })
+
+  it('IN-05: labels preview honours an explicit previewLabel override', () => {
+    render(<CueGlyph cue="labels" phase="in" phaseLabel="In" previewLabel="A" preview />)
+    expect(screen.getByText('A')).toBeInTheDocument()
   })
 
   it('non-preview labels mode still renders the full phase word (in-orb unchanged)', () => {

@@ -28,7 +28,7 @@ export function CuePicker({ disabled, strings, sectionLabel }: CuePickerProps) {
           <>
             <span className="block w-8 h-8 overflow-hidden flex items-center justify-center" aria-hidden="true">
               <span className="scale-50 origin-center block">
-                <CueGlyph cue={id} phase="in" phaseLabel={label} preview />
+                <CueGlyph cue={id} phase="in" phaseLabel={label} previewLabel={label.charAt(0)} preview />
               </span>
             </span>
             <span>{label}</span>
