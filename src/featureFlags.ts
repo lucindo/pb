@@ -57,9 +57,7 @@ export function readQueryFeatureFlag<T>(
 
 // Phase 47 D-07: returns `null` for absent OR unparseable query values so the
 // resolver's `??` chain falls through to the persisted snapshot (not to the
-// production default). Private helper — only `readFeatureFlags` consumes it
-// (wired up in Task 2 of Plan 47-01).
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reason: consumed by readFeatureFlags after the 2-arg signature change in Task 2 of this plan; landed here first so the resolver can compose it without a forward-reference.
+// production default). Private helper — only `readFeatureFlags` consumes it.
 function readQueryFeatureFlagOrNull<T>(
   search: string,
   spec: QueryFeatureFlagSpec<T>,
@@ -111,11 +109,22 @@ export const RING_CUE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<RingCueStyle>
 
-export function readFeatureFlags(search: string): FeatureFlags {
+// Phase 47 D-05/D-06/D-07: per-field 4-way resolver. Resolution order for each
+// field is query > persisted > default, evaluated independently per field.
+// `readQueryFeatureFlagOrNull` returns `null` for absent OR unparseable values,
+// so the `??` chain falls through to `persisted.<field>` (D-07: invalid query
+// is not silently masked into the production default). The boolean case
+// (switcherIcon) is safe because the helper returns `null`, not `false`.
+// The function stays pure (no I/O) so the App-side hook (useFeatureFlags) owns
+// the storage read and supplies `persisted` from loadPrefs().
+export function readFeatureFlags(
+  search: string,
+  persisted: FeatureFlags,
+): FeatureFlags {
   return {
-    switcherIcon: readQueryFeatureFlag(search, SWITCHER_ICON_FLAG),
-    breathingShape: readQueryFeatureFlag(search, BREATHING_SHAPE_FLAG),
-    orbIdle: readQueryFeatureFlag(search, ORB_IDLE_FLAG),
-    ringCue: readQueryFeatureFlag(search, RING_CUE_FLAG),
+    switcherIcon:   readQueryFeatureFlagOrNull(search, SWITCHER_ICON_FLAG)   ?? persisted.switcherIcon,
+    breathingShape: readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG) ?? persisted.breathingShape,
+    orbIdle:        readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)        ?? persisted.orbIdle,
+    ringCue:        readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)        ?? persisted.ringCue,
   }
 }
