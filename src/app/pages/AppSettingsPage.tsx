@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, type ReactElement } from 'react'
 
 import { ChevronBackIcon, ChevronRightIcon } from '../../components/icons'
 import { SettingsPanelBody } from '../../components/SettingsPanelBody'
@@ -33,11 +33,16 @@ export function AppSettingsPage({
   returningFromAppearance,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
-  const strings = {
-    appSettings: allStrings.appSettings,
-    install: allStrings.install,
-    appearance: allStrings.appearance,
-  }
+  // Memoize the subset wrapper so SettingsPanelBody and any future React.memo
+  // wrappers see a stable reference until the locale changes.
+  const strings = useMemo(
+    () => ({
+      appSettings: allStrings.appSettings,
+      install: allStrings.install,
+      appearance: allStrings.appearance,
+    }),
+    [allStrings],
+  )
   const backButtonRef = useRef<HTMLButtonElement>(null)
   const chevronButtonRef = useRef<HTMLButtonElement>(null)
 
