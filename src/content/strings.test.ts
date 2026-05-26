@@ -250,6 +250,67 @@ describe('Phase 32 new learn.* heading keys', () => {
   })
 })
 
+describe('Phase 48 appearance.* and theme rename', () => {
+  it('renames appSettings.sections.appearance to appSettings.sections.theme in EN and PT-BR', () => {
+    expect(UI_STRINGS.en.appSettings.sections.theme).toBe('Theme')
+    expect(UI_STRINGS['pt-BR'].appSettings.sections.theme).toBe('Tema')
+    // The old key must be fully gone from the EN catalog
+    expect(
+      (UI_STRINGS.en.appSettings.sections as Record<string, unknown>).appearance,
+    ).toBeUndefined()
+  })
+
+  it('declares EN appearance.* copy locked by D-03..D-08', () => {
+    const en = UI_STRINGS.en.appearance
+    expect(en.title).toBe('Appearance')
+    expect(en.backChevron).toBe('Back to Settings')
+    expect(en.rightChevronAriaOnSettings).toBe('Appearance settings')
+    expect(en.sections.orbStyle).toBe('Orb Style')
+    expect(en.sections.visual).toBe('Visual')
+    expect(en.orb.label).toBe('Orb')
+    expect(en.orb.options.halo).toBe('Halo')
+    expect(en.orb.options.minimal).toBe('Minimal')
+    expect(en.orb.options.kuthasta).toBe('Kuthasta')
+    expect(en.ringCue.label).toBe('Ring cue')
+    expect(en.ringCue.options.arc).toBe('Arc')
+    expect(en.ringCue.options.rings).toBe('Rings')
+    expect(en.breathingEffect.label).toBe('Breathing effect')
+    expect(en.switcherIcons.label).toBe('Switcher icons')
+  })
+
+  it('declares PT-BR appearance.* draft values as non-empty strings (I18N-02)', () => {
+    const ptBR = UI_STRINGS['pt-BR'].appearance
+    expect(typeof ptBR.title).toBe('string')
+    expect(ptBR.title.length).toBeGreaterThan(0)
+    expect(typeof ptBR.backChevron).toBe('string')
+    expect(ptBR.backChevron.length).toBeGreaterThan(0)
+    expect(typeof ptBR.rightChevronAriaOnSettings).toBe('string')
+    expect(ptBR.rightChevronAriaOnSettings.length).toBeGreaterThan(0)
+    expect(typeof ptBR.sections.orbStyle).toBe('string')
+    expect(ptBR.sections.orbStyle.length).toBeGreaterThan(0)
+    expect(typeof ptBR.sections.visual).toBe('string')
+    expect(ptBR.sections.visual.length).toBeGreaterThan(0)
+    expect(typeof ptBR.orb.label).toBe('string')
+    expect(ptBR.orb.label.length).toBeGreaterThan(0)
+    expect(typeof ptBR.orb.options.halo).toBe('string')
+    expect(ptBR.orb.options.halo.length).toBeGreaterThan(0)
+    expect(typeof ptBR.orb.options.minimal).toBe('string')
+    expect(ptBR.orb.options.minimal.length).toBeGreaterThan(0)
+    expect(typeof ptBR.orb.options.kuthasta).toBe('string')
+    expect(ptBR.orb.options.kuthasta.length).toBeGreaterThan(0)
+    expect(typeof ptBR.ringCue.label).toBe('string')
+    expect(ptBR.ringCue.label.length).toBeGreaterThan(0)
+    expect(typeof ptBR.ringCue.options.arc).toBe('string')
+    expect(ptBR.ringCue.options.arc.length).toBeGreaterThan(0)
+    expect(typeof ptBR.ringCue.options.rings).toBe('string')
+    expect(ptBR.ringCue.options.rings.length).toBeGreaterThan(0)
+    expect(typeof ptBR.breathingEffect.label).toBe('string')
+    expect(ptBR.breathingEffect.label.length).toBeGreaterThan(0)
+    expect(typeof ptBR.switcherIcons.label).toBe('string')
+    expect(ptBR.switcherIcons.label.length).toBeGreaterThan(0)
+  })
+})
+
 describe('Phase 32 nkReadout + nkControls explicit PT-BR non-empty checks', () => {
   const nkReadoutKeys = [
     'statusLabel',
