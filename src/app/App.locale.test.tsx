@@ -22,6 +22,10 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   timbre: 'bowl',
   cue: 'labels',
   locale: 'en',
+  breathingShape: 'orb-halo',
+  ringCue: 'progress-arc',
+  orbIdle: 'ambient',
+  switcherIcon: false,
 }
 
 // Global setup / teardown — localStorage is cleared by vitest.setup.ts beforeEach

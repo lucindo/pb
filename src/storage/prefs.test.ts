@@ -6,6 +6,10 @@ import {
   coerceTimbre,
   coerceCue,
   coerceLocale,
+  coerceBreathingShape,
+  coerceRingCue,
+  coerceOrbIdle,
+  coerceSwitcherIcon,
   loadPrefs,
   savePrefs,
   DEFAULT_PREFS,
@@ -46,52 +50,53 @@ describe('coercePrefs (D-10 / D-17)', () => {
   })
 
   it('preserves all valid fields verbatim (including cue)', () => {
-    const valid: UserPrefs = { theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
+    const valid: UserPrefs = { ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
     expect(coercePrefs(valid)).toEqual(valid)
   })
 
   it('falls back PER FIELD when theme is invalid (D-17) — keeps timbre + cue + locale', () => {
     expect(coercePrefs({ theme: 'neon', timbre: 'bowl', cue: 'arrow', locale: 'en' }))
-      .toEqual({ theme: DEFAULT_THEME, timbre: 'bowl', cue: 'arrow', locale: 'en' })
+      .toEqual({ ...DEFAULT_PREFS, theme: DEFAULT_THEME, timbre: 'bowl', cue: 'arrow', locale: 'en' })
   })
 
   it('falls back PER FIELD when timbre is invalid (D-17) — keeps theme + cue + locale', () => {
     expect(coercePrefs({ theme: 'dark', timbre: 'trumpet', cue: 'labels', locale: 'en' }))
-      .toEqual({ theme: 'dark', timbre: DEFAULT_TIMBRE, cue: 'labels', locale: 'en' })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: DEFAULT_TIMBRE, cue: 'labels', locale: 'en' })
   })
 
   it('falls back PER FIELD when cue is invalid — keeps theme + timbre + locale', () => {
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'bogus', locale: 'en' }))
-      .toEqual({ theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'en' })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'en' })
   })
 
   it('falls back PER FIELD when locale is invalid (D-17) — keeps theme + timbre + cue', () => {
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt_BR' }))
-      .toEqual({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: DEFAULT_LOCALE })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'arrow', locale: DEFAULT_LOCALE })
   })
 
   it('pre-Phase-25 envelope (no cue key) coerces cue to default preserving three other valid fields (D-13)', () => {
     // A stored pre-Phase-25 envelope has no cue key — this IS the migration, no STATE_VERSION bump.
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', locale: 'pt-BR' }))
-      .toEqual({ theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'pt-BR' })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'pt-BR' })
   })
 
   it('tolerates legacy variant key on persisted envelope — VAR-05 forward-compat (Phase 38 D-01)', () => {
     // VAR-05 / CONTEXT D-01: a returning user with a pre-Phase-38 persisted envelope carrying
-    // `variant: 'square' | 'diamond' | 'orb'` must read through coercePrefs as a clean 4-field
-    // UserPrefs with NO `variant` property surviving — the unknown key is silently dropped on
-    // read (Phase 8 D-01 envelope tolerance). No STATE_VERSION bump needed; the render path is
-    // always OrbShape (Plan 01), so the dropped key is harmless. This is the literal-envelope
-    // adversarial test the structural per-field + proto-pollution coverage does not assert.
+    // `variant: 'square' | 'diamond' | 'orb'` must read through coercePrefs as a clean 8-field
+    // UserPrefs (Phase 47 extends from 4 to 8) with NO `variant` property surviving — the unknown
+    // key is silently dropped on read (Phase 8 D-01 envelope tolerance). No STATE_VERSION bump
+    // needed; the render path is always OrbShape (Plan 01), so the dropped key is harmless. This
+    // is the literal-envelope adversarial test the structural per-field + proto-pollution coverage
+    // does not assert.
     const legacySquareEnvelope: unknown = { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en', variant: 'square' }
     const coercedSquare = coercePrefs(legacySquareEnvelope)
-    expect(coercedSquare).toEqual({ theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' })
+    expect(coercedSquare).toEqual({ ...DEFAULT_PREFS, theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' })
     expect(Object.prototype.hasOwnProperty.call(coercedSquare, 'variant')).toBe(false)
     expect((coercedSquare as unknown as Record<string, unknown>).variant).toBeUndefined()
 
     const legacyDiamondEnvelope: unknown = { theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR', variant: 'diamond' }
     const coercedDiamond = coercePrefs(legacyDiamondEnvelope)
-    expect(coercedDiamond).toEqual({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
+    expect(coercedDiamond).toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
     expect(Object.prototype.hasOwnProperty.call(coercedDiamond, 'variant')).toBe(false)
   })
 
@@ -179,15 +184,226 @@ describe('coerceTheme / coerceTimbre / coerceCue / coerceLocale (D-10 per-field)
   })
 })
 
+describe('coerceBreathingShape (Phase 47 D-03 — alias reuse)', () => {
+  // Proves alias-table single-source-of-truth: the persisted coercer delegates
+  // to BREATHING_SHAPE_FLAG.parse from featureFlags.ts. Adding an alias there
+  // automatically extends coverage to persisted envelopes.
+  it("accepts all canonical BreathingShapeVariant values verbatim", () => {
+    expect(coerceBreathingShape('orb-halo')).toBe('orb-halo')
+    expect(coerceBreathingShape('minimal-rings')).toBe('minimal-rings')
+    expect(coerceBreathingShape('spiritual-eye')).toBe('spiritual-eye')
+  })
+
+  it("coerces orb-halo aliases ('orb' / 'halo') to canonical", () => {
+    expect(coerceBreathingShape('orb')).toBe('orb-halo')
+    expect(coerceBreathingShape('halo')).toBe('orb-halo')
+  })
+
+  it("coerces minimal-rings aliases ('minimal' / 'rings') to canonical", () => {
+    expect(coerceBreathingShape('minimal')).toBe('minimal-rings')
+    expect(coerceBreathingShape('rings')).toBe('minimal-rings')
+  })
+
+  it("coerces spiritual-eye aliases ('kuthasta' / 'star') to canonical — D-03 proof", () => {
+    expect(coerceBreathingShape('kuthasta')).toBe('spiritual-eye')
+    expect(coerceBreathingShape('star')).toBe('spiritual-eye')
+  })
+
+  it("normalizes case + trim via the shared parser ('  KUTHASTA  ' → 'spiritual-eye')", () => {
+    expect(coerceBreathingShape('  KUTHASTA  ')).toBe('spiritual-eye')
+  })
+
+  it("falls back to BREATHING_SHAPE_FLAG.defaultValue for garbage / null / numbers / objects", () => {
+    expect(coerceBreathingShape('junk')).toBe('orb-halo')
+    expect(coerceBreathingShape(null)).toBe('orb-halo')
+    expect(coerceBreathingShape(undefined)).toBe('orb-halo')
+    expect(coerceBreathingShape(0)).toBe('orb-halo')
+    expect(coerceBreathingShape({})).toBe('orb-halo')
+    expect(coerceBreathingShape([])).toBe('orb-halo')
+  })
+})
+
+describe('coerceRingCue (Phase 47 D-03 — alias reuse)', () => {
+  it("accepts both canonical RingCueStyle values verbatim", () => {
+    expect(coerceRingCue('outer-inner')).toBe('outer-inner')
+    expect(coerceRingCue('progress-arc')).toBe('progress-arc')
+  })
+
+  it("coerces outer-inner aliases ('production' / 'rings' / 'default') to canonical", () => {
+    expect(coerceRingCue('production')).toBe('outer-inner')
+    expect(coerceRingCue('rings')).toBe('outer-inner')
+    expect(coerceRingCue('default')).toBe('outer-inner')
+  })
+
+  it("coerces progress-arc aliases ('progress' / 'arc' / 'south') to canonical", () => {
+    expect(coerceRingCue('progress')).toBe('progress-arc')
+    expect(coerceRingCue('arc')).toBe('progress-arc')
+    expect(coerceRingCue('south')).toBe('progress-arc')
+  })
+
+  it("falls back to RING_CUE_FLAG.defaultValue for garbage / null / numbers", () => {
+    expect(coerceRingCue('junk')).toBe('progress-arc')
+    expect(coerceRingCue(null)).toBe('progress-arc')
+    expect(coerceRingCue(undefined)).toBe('progress-arc')
+    expect(coerceRingCue(42)).toBe('progress-arc')
+    expect(coerceRingCue({})).toBe('progress-arc')
+  })
+})
+
+describe('coerceOrbIdle', () => {
+  it('accepts both canonical OrbIdleBehavior values verbatim', () => {
+    expect(coerceOrbIdle('still')).toBe('still')
+    expect(coerceOrbIdle('ambient')).toBe('ambient')
+  })
+
+  it("falls back to ORB_IDLE_FLAG.defaultValue for garbage / null / numbers", () => {
+    expect(coerceOrbIdle('junk')).toBe('ambient')
+    expect(coerceOrbIdle(null)).toBe('ambient')
+    expect(coerceOrbIdle(undefined)).toBe('ambient')
+    expect(coerceOrbIdle(0)).toBe('ambient')
+    expect(coerceOrbIdle({})).toBe('ambient')
+  })
+})
+
+describe('coerceSwitcherIcon (Phase 47 — boolean coercer)', () => {
+  // Boolean coercer has THREE paths:
+  //  (1) raw boolean: persisted JSON re-hydrates true/false verbatim — fast path
+  //  (2) legacy string (parseQueryBoolean): tolerates hand-edited '"true"' / '"off"' envelopes
+  //  (3) anything else: SWITCHER_ICON_FLAG.defaultValue (false)
+  it('returns raw booleans verbatim (raw-boolean fast path)', () => {
+    expect(coerceSwitcherIcon(true)).toBe(true)
+    expect(coerceSwitcherIcon(false)).toBe(false)
+  })
+
+  it("parses legacy true-strings via parseQueryBoolean ('true' / 'on' / '1' / '')", () => {
+    expect(coerceSwitcherIcon('true')).toBe(true)
+    expect(coerceSwitcherIcon('on')).toBe(true)
+    expect(coerceSwitcherIcon('1')).toBe(true)
+    expect(coerceSwitcherIcon('')).toBe(true)
+  })
+
+  it("parses legacy false-strings via parseQueryBoolean ('false' / 'off' / '0')", () => {
+    expect(coerceSwitcherIcon('false')).toBe(false)
+    expect(coerceSwitcherIcon('off')).toBe(false)
+    expect(coerceSwitcherIcon('0')).toBe(false)
+  })
+
+  it("falls back to SWITCHER_ICON_FLAG.defaultValue (false) for unparseable strings", () => {
+    expect(coerceSwitcherIcon('bogus')).toBe(false)
+  })
+
+  it("falls back to false for non-string, non-boolean inputs (null / undefined / numbers / objects)", () => {
+    expect(coerceSwitcherIcon(null)).toBe(false)
+    expect(coerceSwitcherIcon(undefined)).toBe(false)
+    expect(coerceSwitcherIcon(0)).toBe(false)
+    expect(coerceSwitcherIcon(1)).toBe(false)
+    expect(coerceSwitcherIcon({})).toBe(false)
+    expect(coerceSwitcherIcon([])).toBe(false)
+  })
+})
+
+describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
+  // Per-field non-throwing coerce-and-fallback: a single corrupt new-flag field
+  // falls back to the per-flag default; the other 7 fields are preserved.
+  it("breathingShape: 'junk' → 'orb-halo' default; other fields preserved", () => {
+    const out = coercePrefs({
+      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
+      breathingShape: 'junk',
+      ringCue: 'outer-inner', orbIdle: 'still', switcherIcon: true,
+    })
+    expect(out.breathingShape).toBe('orb-halo')
+    expect(out.theme).toBe('dark')
+    expect(out.ringCue).toBe('outer-inner')
+    expect(out.orbIdle).toBe('still')
+    expect(out.switcherIcon).toBe(true)
+  })
+
+  it("ringCue: 'junk' → 'progress-arc' default; other fields preserved", () => {
+    const out = coercePrefs({
+      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
+      breathingShape: 'spiritual-eye', ringCue: 'junk',
+      orbIdle: 'still', switcherIcon: true,
+    })
+    expect(out.ringCue).toBe('progress-arc')
+    expect(out.breathingShape).toBe('spiritual-eye')
+  })
+
+  it("orbIdle: 'junk' → 'ambient' default; other fields preserved", () => {
+    const out = coercePrefs({
+      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
+      breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
+      orbIdle: 'junk', switcherIcon: true,
+    })
+    expect(out.orbIdle).toBe('ambient')
+    expect(out.switcherIcon).toBe(true)
+  })
+
+  it("switcherIcon: garbage number → false default; other fields preserved", () => {
+    const out = coercePrefs({
+      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
+      breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
+      orbIdle: 'still', switcherIcon: 42,
+    })
+    expect(out.switcherIcon).toBe(false)
+    expect(out.orbIdle).toBe('still')
+  })
+
+  it("pre-Phase-47 envelope (4 keys only) coerces the 4 new keys to per-flag defaults (PREFS-03)", () => {
+    // A returning user from a pre-Phase-47 build has 4 prefs keys — the 4 new
+    // keys are read as undefined from `r` and each coercer's non-string branch
+    // falls back to the per-flag default. This is the PREFS-03 returning-users
+    // contract: returning users see the production defaults, byte-identical to
+    // the v2.0 hardcoded flags.
+    const out = coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
+    expect(out).toEqual({
+      ...DEFAULT_PREFS,
+      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
+    })
+    expect(out.breathingShape).toBe('orb-halo')
+    expect(out.ringCue).toBe('progress-arc')
+    expect(out.orbIdle).toBe('ambient')
+    expect(out.switcherIcon).toBe(false)
+  })
+})
+
+describe('coercePrefs alias-reuse — persisted kuthasta round-trips to spiritual-eye (Phase 47 D-03)', () => {
+  it("envelope { breathingShape: 'kuthasta' } coerces to UserPrefs.breathingShape === 'spiritual-eye'", () => {
+    // Integration assertion that catches alias-table drift between BREATHING_SHAPE_FLAG.parse
+    // and the persisted coercer. If a future refactor duplicates the alias table in
+    // coerceBreathingShape, this test stays green; if it duplicates the alias table OUT OF SYNC
+    // (e.g., drops 'kuthasta'), this test goes red.
+    const envelope = {
+      theme: 'system', timbre: 'bowl', cue: 'arrow', locale: 'en',
+      breathingShape: 'kuthasta',
+    }
+    expect(coercePrefs(envelope).breathingShape).toBe('spiritual-eye')
+  })
+})
+
 describe('loadPrefs / savePrefs round-trip', () => {
   it('returns DEFAULT_PREFS when nothing is stored (LOCL-01)', () => {
     expect(loadPrefs()).toEqual(DEFAULT_PREFS)
   })
 
   it('round-trips a valid UserPrefs object (including cue field)', () => {
-    const next: UserPrefs = { theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
+    const next: UserPrefs = { ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
     savePrefs(next)
     expect(loadPrefs()).toEqual(next)
+  })
+
+  it('round-trips an 8-field UserPrefs with the 4 new flags set to non-default values (Phase 47)', () => {
+    // Full-fidelity round-trip: every new field carries a non-default value so the
+    // assertion fails if any of the 4 new coercers, the JSON re-hydration, or the
+    // envelope-merge contract drops or rewrites a value.
+    const fullPrefs: UserPrefs = {
+      theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR',
+      breathingShape: 'spiritual-eye',
+      ringCue: 'outer-inner',
+      orbIdle: 'still',
+      switcherIcon: true,
+    }
+    savePrefs(fullPrefs)
+    expect(loadPrefs()).toEqual(fullPrefs)
   })
 
   it('DEFAULT_PREFS.cue === "arrow" (quick task 260519-9mi)', () => {
@@ -201,7 +417,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
       mute: true,
       stats: { totalSessions: 3, totalElapsedSeconds: 120, lastSessionAtMs: 1000, lastSessionDurationSeconds: 60 },
     }))
-    savePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
+    savePrefs({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
     // Reason: STATE_KEY is always present after savePrefs; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
@@ -212,12 +428,39 @@ describe('loadPrefs / savePrefs round-trip', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })
-    expect(() => { savePrefs({ theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' }) }).not.toThrow()
+    expect(() => { savePrefs({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' }) }).not.toThrow()
   })
 
   it('falls back to defaults when stored JSON is corrupt (D-17)', () => {
     window.localStorage.setItem(STATE_KEY, '{not-json')
     expect(loadPrefs()).toEqual(DEFAULT_PREFS)
+  })
+})
+
+describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
+  // RED gate for Task 1: this block exists before src/storage/prefs.ts is extended.
+  // It will fail compile (missing exports) and assertion (UserPrefs is still 4-field)
+  // until Task 1's GREEN edit lands.
+  it('exports the 4 new coercers and they have the contracted defaults', () => {
+    expect(coerceBreathingShape('junk')).toBe('orb-halo')
+    expect(coerceRingCue('junk')).toBe('progress-arc')
+    expect(coerceOrbIdle('junk')).toBe('ambient')
+    expect(coerceSwitcherIcon('junk')).toBe(false)
+  })
+
+  it('DEFAULT_PREFS includes the 4 new flag defaults sourced from featureFlags.ts', () => {
+    expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
+    expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
+    expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
+    expect(DEFAULT_PREFS.switcherIcon).toBe(false)
+  })
+
+  it('coercePrefs returns 8-field UserPrefs and uses the alias table (D-03)', () => {
+    const out = coercePrefs({ breathingShape: 'kuthasta' })
+    expect(out.breathingShape).toBe('spiritual-eye')
+    expect(out.ringCue).toBe('progress-arc')
+    expect(out.orbIdle).toBe('ambient')
+    expect(out.switcherIcon).toBe(false)
   })
 })
 
