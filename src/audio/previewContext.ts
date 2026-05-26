@@ -18,20 +18,35 @@ import { scheduleInCueForTimbre } from './cueSynth'
 import type { TimbreId } from '../domain/settings'
 
 let ctx: AudioContext | null = null
+// iOS Safari's autoplay policy can reject `new AudioContext()` outside a
+// user-gesture chain. Cache the failure so subsequent preview taps don't
+// retry-and-throw on every click; the picker silently falls back to
+// visuals-only audition for the rest of the page lifetime.
+let ctxFailed = false
 
-function ensurePreviewContext(): AudioContext {
+function ensurePreviewContext(): AudioContext | null {
+  if (ctxFailed) return null
   if (ctx === null) {
     // First tap — gesture-attached creation (every entry point is onClick, D-01).
-    ctx = new AudioContext()
+    try {
+      ctx = new AudioContext()
+    } catch {
+      ctxFailed = true
+      return null
+    }
   }
   return ctx
 }
 
 export function playInhalePreview(timbre: TimbreId): void {
   const previewCtx = ensurePreviewContext()
+  if (previewCtx === null) return
   if (previewCtx.state === 'suspended') {
     // D-02: fire-and-forget — no await (synchronous-call-path contract, D-12 / PREV-05).
-    void previewCtx.resume()
+    // Catch the rejection so an unhandled promise rejection does not bubble to
+    // the page if iOS Safari vetoes resume between visibility changes; the
+    // preview is non-essential and silently dropping it is acceptable.
+    previewCtx.resume().catch(() => { /* silent — preview is non-essential */ })
   }
   scheduleInCueForTimbre(previewCtx, previewCtx.currentTime, previewCtx.destination, timbre)
 }
