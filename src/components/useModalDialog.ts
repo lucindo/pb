@@ -23,6 +23,10 @@ export function useModalDialog({
   onAfterOpen,
 }: UseModalDialogArgs): ModalDialogBindings {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const onAfterOpenRef = useRef(onAfterOpen)
+  useEffect(() => {
+    onAfterOpenRef.current = onAfterOpen
+  }, [onAfterOpen])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -35,14 +39,14 @@ export function useModalDialog({
         // A force-closed dialog can leave browser modal state out of sync with
         // React's open prop; keep rendering and let the next prop change reconcile.
       }
-      onAfterOpen?.(dialog)
+      onAfterOpenRef.current?.(dialog)
       return
     }
 
     if (!open && dialog.open) {
       dialog.close()
     }
-  }, [open, onAfterOpen])
+  }, [open])
 
   useEffect(() => {
     const dialog = dialogRef.current
