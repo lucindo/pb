@@ -34,7 +34,7 @@ export function NKSessionReadout({
         big={String(count)}
         mid={`/ ${String(target)}`}
         small={small}
-        ariaLabel={strings.readoutAriaLabel}
+        ariaLabel={strings.announcementAriaLabel}
       />
     </section>
   )

@@ -58,6 +58,13 @@ describe('NKSessionReadout', () => {
     ).toBeInTheDocument()
   })
 
+  it('WR-01: inner live region uses strings.announcementAriaLabel (distinct from readout)', () => {
+    renderReadout()
+    expect(
+      screen.getByRole('status', { name: EN_STRINGS.announcementAriaLabel }),
+    ).toBeInTheDocument()
+  })
+
   it('no hard-coded "Front" string — value comes from strings prop', () => {
     const customStrings = { ...EN_STRINGS, front: 'Frente', back: 'Trás' }
     renderReadout({ phase: 'front', strings: customStrings })
