@@ -50,52 +50,53 @@ describe('coercePrefs (D-10 / D-17)', () => {
   })
 
   it('preserves all valid fields verbatim (including cue)', () => {
-    const valid: UserPrefs = { theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
+    const valid: UserPrefs = { ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
     expect(coercePrefs(valid)).toEqual(valid)
   })
 
   it('falls back PER FIELD when theme is invalid (D-17) — keeps timbre + cue + locale', () => {
     expect(coercePrefs({ theme: 'neon', timbre: 'bowl', cue: 'arrow', locale: 'en' }))
-      .toEqual({ theme: DEFAULT_THEME, timbre: 'bowl', cue: 'arrow', locale: 'en' })
+      .toEqual({ ...DEFAULT_PREFS, theme: DEFAULT_THEME, timbre: 'bowl', cue: 'arrow', locale: 'en' })
   })
 
   it('falls back PER FIELD when timbre is invalid (D-17) — keeps theme + cue + locale', () => {
     expect(coercePrefs({ theme: 'dark', timbre: 'trumpet', cue: 'labels', locale: 'en' }))
-      .toEqual({ theme: 'dark', timbre: DEFAULT_TIMBRE, cue: 'labels', locale: 'en' })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: DEFAULT_TIMBRE, cue: 'labels', locale: 'en' })
   })
 
   it('falls back PER FIELD when cue is invalid — keeps theme + timbre + locale', () => {
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'bogus', locale: 'en' }))
-      .toEqual({ theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'en' })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'en' })
   })
 
   it('falls back PER FIELD when locale is invalid (D-17) — keeps theme + timbre + cue', () => {
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt_BR' }))
-      .toEqual({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: DEFAULT_LOCALE })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'arrow', locale: DEFAULT_LOCALE })
   })
 
   it('pre-Phase-25 envelope (no cue key) coerces cue to default preserving three other valid fields (D-13)', () => {
     // A stored pre-Phase-25 envelope has no cue key — this IS the migration, no STATE_VERSION bump.
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', locale: 'pt-BR' }))
-      .toEqual({ theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'pt-BR' })
+      .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'pt-BR' })
   })
 
   it('tolerates legacy variant key on persisted envelope — VAR-05 forward-compat (Phase 38 D-01)', () => {
     // VAR-05 / CONTEXT D-01: a returning user with a pre-Phase-38 persisted envelope carrying
-    // `variant: 'square' | 'diamond' | 'orb'` must read through coercePrefs as a clean 4-field
-    // UserPrefs with NO `variant` property surviving — the unknown key is silently dropped on
-    // read (Phase 8 D-01 envelope tolerance). No STATE_VERSION bump needed; the render path is
-    // always OrbShape (Plan 01), so the dropped key is harmless. This is the literal-envelope
-    // adversarial test the structural per-field + proto-pollution coverage does not assert.
+    // `variant: 'square' | 'diamond' | 'orb'` must read through coercePrefs as a clean 8-field
+    // UserPrefs (Phase 47 extends from 4 to 8) with NO `variant` property surviving — the unknown
+    // key is silently dropped on read (Phase 8 D-01 envelope tolerance). No STATE_VERSION bump
+    // needed; the render path is always OrbShape (Plan 01), so the dropped key is harmless. This
+    // is the literal-envelope adversarial test the structural per-field + proto-pollution coverage
+    // does not assert.
     const legacySquareEnvelope: unknown = { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en', variant: 'square' }
     const coercedSquare = coercePrefs(legacySquareEnvelope)
-    expect(coercedSquare).toEqual({ theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' })
+    expect(coercedSquare).toEqual({ ...DEFAULT_PREFS, theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' })
     expect(Object.prototype.hasOwnProperty.call(coercedSquare, 'variant')).toBe(false)
     expect((coercedSquare as unknown as Record<string, unknown>).variant).toBeUndefined()
 
     const legacyDiamondEnvelope: unknown = { theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR', variant: 'diamond' }
     const coercedDiamond = coercePrefs(legacyDiamondEnvelope)
-    expect(coercedDiamond).toEqual({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
+    expect(coercedDiamond).toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
     expect(Object.prototype.hasOwnProperty.call(coercedDiamond, 'variant')).toBe(false)
   })
 
@@ -189,7 +190,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
   })
 
   it('round-trips a valid UserPrefs object (including cue field)', () => {
-    const next: UserPrefs = { theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
+    const next: UserPrefs = { ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR' }
     savePrefs(next)
     expect(loadPrefs()).toEqual(next)
   })
@@ -205,7 +206,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
       mute: true,
       stats: { totalSessions: 3, totalElapsedSeconds: 120, lastSessionAtMs: 1000, lastSessionDurationSeconds: 60 },
     }))
-    savePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
+    savePrefs({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
     // Reason: STATE_KEY is always present after savePrefs; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
@@ -216,7 +217,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota')
     })
-    expect(() => { savePrefs({ theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' }) }).not.toThrow()
+    expect(() => { savePrefs({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' }) }).not.toThrow()
   })
 
   it('falls back to defaults when stored JSON is corrupt (D-17)', () => {

@@ -16,6 +16,10 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   timbre: 'bowl',
   cue: 'labels',
   locale: 'en',
+  breathingShape: 'orb-halo',
+  ringCue: 'progress-arc',
+  orbIdle: 'ambient',
+  switcherIcon: false,
 }
 
 beforeEach(() => {
@@ -61,7 +65,7 @@ describe('useThemeChoice', () => {
   })
 
   it('setTheme("system") preserves other prefs fields — envelope merge contract', () => {
-    seedPrefs({ theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' })
+    seedPrefs({ ...DEFAULT_FULL_PREFS, theme: 'dark', timbre: 'bell', cue: 'labels', locale: 'pt-BR' })
     const { result } = renderHook(() => useThemeChoice())
 
     act(() => {
