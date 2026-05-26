@@ -14,10 +14,14 @@ function renderPage(
     isStandalone: boolean
     installable: boolean
     onInstall: () => Promise<void>
+    onAppearanceOpen: () => void
+    returningFromAppearance: boolean
   }> = {},
 ) {
   const onBack = props.onBack ?? vi.fn()
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
+  const onAppearanceOpen = props.onAppearanceOpen ?? vi.fn()
+  const returningFromAppearance = props.returningFromAppearance ?? false
   const utils = render(
     <UiStringsProvider value={UI_STRINGS.en}>
       <AppSettingsPage
@@ -26,10 +30,12 @@ function renderPage(
         installable={props.installable ?? false}
         onInstall={onInstall}
         onBack={onBack}
+        onAppearanceOpen={onAppearanceOpen}
+        returningFromAppearance={returningFromAppearance}
       />
     </UiStringsProvider>,
   )
-  return { ...utils, onBack, onInstall }
+  return { ...utils, onBack, onInstall, onAppearanceOpen }
 }
 
 describe('AppSettingsPage', () => {
@@ -74,8 +80,26 @@ describe('AppSettingsPage', () => {
     expect(screen.getByText(UI_STRINGS.en.install.settingsLabel)).toBeInTheDocument()
   })
 
-  it('focuses the back button on mount', () => {
-    renderPage()
+  it('focuses the back button on mount when returningFromAppearance=false', () => {
+    renderPage({ returningFromAppearance: false })
     expect(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close })).toHaveFocus()
+  })
+
+  it('focuses the right-chevron on mount when returningFromAppearance=true', () => {
+    renderPage({ returningFromAppearance: true })
+    expect(
+      screen.getByRole('button', { name: UI_STRINGS.en.appearance.rightChevronAriaOnSettings }),
+    ).toHaveFocus()
+  })
+
+  it('renders the right-chevron and invokes onAppearanceOpen when clicked', async () => {
+    const user = userEvent.setup()
+    const { onAppearanceOpen } = renderPage()
+    const chevron = screen.getByRole('button', {
+      name: UI_STRINGS.en.appearance.rightChevronAriaOnSettings,
+    })
+    expect(chevron).toBeInTheDocument()
+    await user.click(chevron)
+    expect(onAppearanceOpen).toHaveBeenCalledTimes(1)
   })
 })

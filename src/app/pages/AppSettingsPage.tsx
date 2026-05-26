@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactElement } from 'react'
 
-import { ChevronBackIcon } from '../../components/icons'
+import { ChevronBackIcon, ChevronRightIcon } from '../../components/icons'
 import { SettingsPanelBody } from '../../components/SettingsPanelBody'
 import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
@@ -13,27 +13,41 @@ export interface AppSettingsPageProps {
   installable: boolean
   onInstall(this: void): Promise<void>
   onBack(this: void): void
+  onAppearanceOpen(this: void): void
+  returningFromAppearance: boolean
 }
 
 /** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron
- *  in the leading slot) + Card-wrapped SettingsPanelBody. `inSessionView` is
- *  hard-coded false: navigation to this page is gated by `controlsDisabled`
- *  in useAppNavigation, so the user can only be here when no session is
- *  active. Focuses the back button on mount. */
+ *  in the leading slot, right-chevron in the trailing slot) + Card-wrapped
+ *  SettingsPanelBody. `inSessionView` is hard-coded false: navigation to this
+ *  page is gated by `controlsDisabled` in useAppNavigation, so the user can
+ *  only be here when no session is active. Focuses the back button on mount
+ *  (fresh entry) or the right-chevron (returningFromAppearance=true, D-13). */
 export function AppSettingsPage({
   isIOS,
   isStandalone,
   installable,
   onInstall,
   onBack,
+  onAppearanceOpen,
+  returningFromAppearance,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
-  const strings = { appSettings: allStrings.appSettings, install: allStrings.install }
+  const strings = {
+    appSettings: allStrings.appSettings,
+    install: allStrings.install,
+    appearance: allStrings.appearance,
+  }
   const backButtonRef = useRef<HTMLButtonElement>(null)
+  const chevronButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    backButtonRef.current?.focus({ preventScroll: true })
-  }, [])
+    if (returningFromAppearance) {
+      chevronButtonRef.current?.focus({ preventScroll: true })
+    } else {
+      backButtonRef.current?.focus({ preventScroll: true })
+    }
+  }, [returningFromAppearance])
 
   return (
     <PageShell>
@@ -45,6 +59,14 @@ export function AppSettingsPage({
             label={strings.appSettings.close}
             onClick={onBack}
             buttonRef={backButtonRef}
+          />
+        }
+        trailing={
+          <IconButton
+            icon={<ChevronRightIcon />}
+            label={strings.appearance.rightChevronAriaOnSettings}
+            onClick={onAppearanceOpen}
+            buttonRef={chevronButtonRef}
           />
         }
       />
