@@ -40,21 +40,25 @@ function makeResonantVM(overrides: {
 function makeStretchVM(overrides: {
   settings?: StretchSettings
   isRunning?: boolean
+  isComplete?: boolean
 } = {}): AppPracticeSettingsViewModel {
   return {
     kind: 'stretch',
     settings: overrides.settings ?? DEFAULT_STRETCH_SETTINGS,
     isRunning: overrides.isRunning ?? false,
+    isComplete: overrides.isComplete ?? false,
     onChange: noopChange,
   }
 }
 
 function makeNaviVM(overrides: {
   settings?: NaviKriyaSettings
+  isComplete?: boolean
 } = {}): AppPracticeSettingsViewModel {
   return {
     kind: 'naviKriya',
     settings: overrides.settings ?? DEFAULT_NK_SETTINGS,
+    isComplete: overrides.isComplete ?? false,
     onChange: noopChange,
   }
 }

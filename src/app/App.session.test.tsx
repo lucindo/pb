@@ -373,15 +373,48 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     })
 
     // HRV parity: a naturally completed session shows the inline completion
-    // headline (no popup) and returns to the config screen. Same "Session
-    // complete" copy as the resonant practice.
+    // headline (no popup). Primary CTA must be "Done" (not "Start") per the fix.
     expect(screen.getByText('Session complete')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
 
     // NK-08: the session is recorded into the naviKriya stats slice.
     const env = readStoredEnvelope()
     expect(practiceStatsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
     expect(practiceStatsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
+  })
+
+  it('session-complete trifecta: orb checkmark + Done CTA + no SetupCard, Done returns to idle (260526-dse)', async () => {
+    // Regression test for the three plumbing gaps closed in 260526-dse:
+    // (a) OrbShape gets showCompletion, (b) getNaviKriyaPrimaryAction returns 'done',
+    // (c) setupCardSummary hides the naviKriya card on isComplete.
+    seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
+    const { container } = render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + 2_000)
+      await Promise.resolve()
+    })
+
+    // (a) OrbShape rendered the CheckmarkGlyph (showCompletion forwarded).
+    // Selector matches the specific check polyline points to avoid false matches
+    // from other 24×24 SVG icons (chevrons, etc.) in the UI.
+    expect(container.querySelector('polyline[points="5 13 10 18 19 7"]')).not.toBeNull()
+    // (b) Primary CTA is "Done" — 'start' CTA must NOT appear.
+    expect(screen.getByRole('button', { name: 'Done' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
+    // (c) Navi SetupCard edit affordance is NOT rendered at completion.
+    expect(screen.queryByRole('button', { name: /Edit.*Navi/i })).not.toBeInTheDocument()
+
+    // Clicking Done dismisses completion — Start reappears, checkmark gone.
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    await act(async () => { await Promise.resolve() })
+
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
+    expect(screen.queryByText('Session complete')).not.toBeInTheDocument()
+    expect(container.querySelector('polyline[points="5 13 10 18 19 7"]')).toBeNull()
   })
 
   it('does not touch Resonant stats when a Navi Kriya session completes (NK-08 isolation)', async () => {

@@ -73,10 +73,12 @@ function makeSettingsSources(
     stretch: {
       settings: DEFAULT_STRETCH_SETTINGS,
       isRunning: false,
+      isComplete: false,
       onChange: noop,
     },
     naviKriya: {
       settings: DEFAULT_NK_SETTINGS,
+      isComplete: false,
       onChange: noop,
     },
   }

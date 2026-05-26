@@ -125,8 +125,14 @@ export function useAppViewModel(): AppViewModel {
       naviRequestEnd()
       return
     }
+    if (primaryActions.naviKriya === 'done') {
+      // Dismiss the completion state back to idle. clearCompletion resets
+      // justCompleted → false, causing the primary action to return to 'start'.
+      naviClearCompletion()
+      return
+    }
     naviStart()
-  }, [primaryActions.naviKriya, naviCancelStart, naviRequestEnd, naviStart])
+  }, [primaryActions.naviKriya, naviCancelStart, naviRequestEnd, naviClearCompletion, naviStart])
 
   const practiceControls = createPracticeControlsViewModelFromControllers({
     activePractice,

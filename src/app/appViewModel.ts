@@ -100,11 +100,13 @@ export type AppPracticeSettingsViewModel =
       kind: 'stretch'
       settings: StretchSettings
       isRunning: boolean
+      isComplete: boolean
       onChange(this: void, settings: StretchSettings): void
     }
   | {
       kind: 'naviKriya'
       settings: NaviKriyaSettings
+      isComplete: boolean
       onChange(this: void, settings: NaviKriyaSettings): void
     }
 
@@ -236,10 +238,12 @@ export interface PracticeSettingsSources {
   stretch: {
     settings: StretchSettings
     isRunning: boolean
+    isComplete: boolean
     onChange(this: void, settings: StretchSettings): void
   }
   naviKriya: {
     settings: NaviKriyaSettings
+    isComplete: boolean
     onChange(this: void, settings: NaviKriyaSettings): void
   }
 }
@@ -265,6 +269,7 @@ export function createPracticeSettingsViewModel(
       kind: 'stretch',
       settings: sources.stretch.settings,
       isRunning: sources.stretch.isRunning,
+      isComplete: sources.stretch.isComplete,
       onChange: sources.stretch.onChange,
     }
   }
@@ -272,6 +277,7 @@ export function createPracticeSettingsViewModel(
   return {
     kind: 'naviKriya',
     settings: sources.naviKriya.settings,
+    isComplete: sources.naviKriya.isComplete,
     onChange: sources.naviKriya.onChange,
   }
 }
