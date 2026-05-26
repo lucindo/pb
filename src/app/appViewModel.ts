@@ -48,7 +48,10 @@ export interface AppDialogsViewModel {
   endSessionDialogs: readonly AppEndSessionDialogViewModel[]
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
+  onAppearanceOpen(this: void): void
   onBackToPractice(this: void): void
+  onBackToAppSettings(this: void): void
+  returningFromAppearance: boolean
 }
 
 export const AUDIO_RESUME_HINT_ID = 'mute-toggle-resume-hint'

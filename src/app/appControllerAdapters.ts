@@ -218,6 +218,9 @@ export function createAppDialogsViewModel({
     endSessionDialogs,
     onLearnOpen: navigation.onLearnOpen,
     onSettingsOpen: navigation.onSettingsOpen,
+    onAppearanceOpen: navigation.onAppearanceOpen,
     onBackToPractice: navigation.onBackToPractice,
+    onBackToAppSettings: navigation.onBackToAppSettings,
+    returningFromAppearance: navigation.returningFromAppearance,
   }
 }

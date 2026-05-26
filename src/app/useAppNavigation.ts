@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type AppScreen = 'practice' | 'learn' | 'appSettings'
+export type AppScreen = 'practice' | 'learn' | 'appSettings' | 'appearance'
 
 export interface AppNavigation {
   appScreen: AppScreen
+  returningFromAppearance: boolean
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
+  onAppearanceOpen(this: void): void
   onBackToPractice(this: void): void
+  onBackToAppSettings(this: void): void
 }
 
 export interface UseAppNavigationArgs {
@@ -24,6 +27,7 @@ export function useAppNavigation({
   closeOnSessionView,
 }: UseAppNavigationArgs): AppNavigation {
   const [appScreen, setAppScreen] = useState<AppScreen>('practice')
+  const [returningFromAppearance, setReturningFromAppearance] = useState<boolean>(false)
 
   useEffect(() => {
     if (!closeOnSessionView) return
@@ -31,26 +35,45 @@ export function useAppNavigation({
     // setState inside effect is intentional — the session-start signal owns this transition.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppScreen('practice')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReturningFromAppearance(false)
   }, [closeOnSessionView])
 
   const onLearnOpen = useCallback((): void => {
     if (controlsDisabled) return
     setAppScreen('learn')
+    setReturningFromAppearance(false)
   }, [controlsDisabled])
 
   const onSettingsOpen = useCallback((): void => {
     if (controlsDisabled) return
     setAppScreen('appSettings')
+    setReturningFromAppearance(false)
+  }, [controlsDisabled])
+
+  const onAppearanceOpen = useCallback((): void => {
+    if (controlsDisabled) return
+    setAppScreen('appearance')
+    setReturningFromAppearance(false)
   }, [controlsDisabled])
 
   const onBackToPractice = useCallback((): void => {
     setAppScreen('practice')
+    setReturningFromAppearance(false)
+  }, [])
+
+  const onBackToAppSettings = useCallback((): void => {
+    setAppScreen('appSettings')
+    setReturningFromAppearance(true)
   }, [])
 
   return {
     appScreen,
+    returningFromAppearance,
     onLearnOpen,
     onSettingsOpen,
+    onAppearanceOpen,
     onBackToPractice,
+    onBackToAppSettings,
   }
 }

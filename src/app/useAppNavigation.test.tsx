@@ -84,4 +84,78 @@ describe('useAppNavigation', () => {
 
     expect(result.current.appScreen).toBe('practice')
   })
+
+  it('navigates from appSettings to appearance via onAppearanceOpen', () => {
+    const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
+
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    act(() => {
+      result.current.onAppearanceOpen()
+    })
+
+    expect(result.current.appScreen).toBe('appearance')
+  })
+
+  it('onBackToAppSettings returns to appSettings with returningFromAppearance=true', () => {
+    const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
+
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    act(() => {
+      result.current.onAppearanceOpen()
+    })
+    act(() => {
+      result.current.onBackToAppSettings()
+    })
+
+    expect(result.current.appScreen).toBe('appSettings')
+    expect(result.current.returningFromAppearance).toBe(true)
+  })
+
+  it('subsequent navigation clears returningFromAppearance', () => {
+    const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
+
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    act(() => {
+      result.current.onAppearanceOpen()
+    })
+    act(() => {
+      result.current.onBackToAppSettings()
+    })
+    expect(result.current.returningFromAppearance).toBe(true)
+
+    act(() => {
+      result.current.onBackToPractice()
+    })
+
+    expect(result.current.returningFromAppearance).toBe(false)
+  })
+
+  it('closeOnSessionView forces appearance → practice and clears sentinel', () => {
+    const { result, rerender } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    act(() => {
+      result.current.onAppearanceOpen()
+    })
+    expect(result.current.appScreen).toBe('appearance')
+
+    rerender({
+      controlsDisabled: false,
+      closeOnSessionView: true,
+    })
+
+    expect(result.current.appScreen).toBe('practice')
+    expect(result.current.returningFromAppearance).toBe(false)
+  })
 })

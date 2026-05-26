@@ -222,9 +222,12 @@ describe('app controller adapters', () => {
   it('combines surface navigation state with session dialog models', () => {
     const navigation: AppNavigation = {
       appScreen: 'learn',
+      returningFromAppearance: false,
       onLearnOpen: noop,
       onSettingsOpen: noop,
+      onAppearanceOpen: noop,
       onBackToPractice: noop,
+      onBackToAppSettings: noop,
     }
     const endSessionDialogs = createEndSessionDialogViewModelsFromControllers({
       breathing: makeBreathingController(),
