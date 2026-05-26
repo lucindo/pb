@@ -18,7 +18,7 @@ export interface IconButtonProps {
   buttonRef?: Ref<HTMLButtonElement>
 }
 
-/** Round white icon button. Used for top-bar slots (info / gear / back) and
+/** Round surface-colored icon button. Used for top-bar slots (info / gear / back) and
  *  modal-close affordances. Size sm = 32px, md = 40px (default). The icon
  *  prop is any ReactNode — typically one of the icons exported from
  *  src/components/icons/. `buttonRef` lets a parent imperatively focus the
