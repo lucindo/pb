@@ -12,6 +12,14 @@ export const NK_LAST_OM_HOLD_MULTIPLIER = 1.5
 export type NaviKriyaPhase = 'front' | 'back'
 
 export function getNaviKriyaBackCount(frontCount: number): number {
+  if (
+    !Number.isFinite(frontCount)
+    || !Number.isInteger(frontCount)
+    || frontCount <= 0
+    || frontCount % 4 !== 0
+  ) {
+    throw new RangeError('frontCount must be a positive integer multiple of 4')
+  }
   return frontCount / 4
 }
 
