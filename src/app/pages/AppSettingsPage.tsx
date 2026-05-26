@@ -45,7 +45,8 @@ export function AppSettingsPage({
   // this effect only fires on fresh mount with a stable `returningFromAppearance`
   // value — it does not steal focus mid-session. If the router is ever changed to
   // keep this page mounted across the appearance ↔ appSettings transition, this
-  // effect needs a one-shot ref guard (see IN-01 in 48-REVIEW.md).
+  // effect needs a one-shot ref guard (track whether the focus call has already
+  // fired this mount, and skip subsequent re-runs).
   useEffect(() => {
     if (returningFromAppearance) {
       chevronButtonRef.current?.focus({ preventScroll: true })
