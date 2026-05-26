@@ -18,7 +18,6 @@ export function RingCuePicker({ disabled, sectionLabel, sectionLabelHidden, stri
   return (
     <div>
       <p
-        id="ring-cue-picker-label"
         className={
           sectionLabelHidden
             ? 'sr-only'

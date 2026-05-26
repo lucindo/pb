@@ -19,7 +19,6 @@ export function OrbPicker({ disabled, sectionLabel, sectionLabelHidden, strings 
   return (
     <div>
       <p
-        id="orb-picker-label"
         className={
           sectionLabelHidden
             ? 'sr-only'
