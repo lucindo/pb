@@ -37,6 +37,10 @@ export function PracticeSessionView({
     )
   }
 
+  // Resonant + stretch render through the same surface — stretch frames
+  // piggyback on the breathing controller. The kind discriminator is kept
+  // explicit so a future split (or a new practice that does not share the
+  // breathing controller) becomes a missing-arm type error.
   return (
     <BreathingSessionSurface
       presentation={session.presentation}

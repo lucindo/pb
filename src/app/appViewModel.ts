@@ -76,7 +76,11 @@ export interface AppPracticeControlsViewModel {
 
 export type AppPracticeSessionViewModel =
   | {
-      kind: 'breathing'
+      kind: 'resonant'
+      presentation: BreathingPresentation
+    }
+  | {
+      kind: 'stretch'
       presentation: BreathingPresentation
     }
   | {
@@ -208,21 +212,29 @@ export function createPracticeSessionViewModel({
     }
   }
 
-  return {
-    kind: 'breathing',
-    presentation: getBreathingPresentation({
-      phase: breathing.phase,
-      sessionCue: breathing.sessionCue,
-      liveCue,
-      leadInDigit: breathing.leadInDigit,
-      leadInPlaceholderFrame: breathing.leadInPlaceholderFrame,
-      liveFrame: breathing.liveFrame,
-      status: breathing.status,
-      inSessionView: breathing.inSessionView,
-      bpm: breathing.selectedSettings.bpm,
-      ratio: breathing.selectedSettings.ratio,
-    }),
+  // Resonant + stretch both render through BreathingSessionSurface today
+  // (stretch frames piggyback on useBreathingSessionController with currentBpm
+  // + stage). Keep the kind aligned with PracticeId so a future practice that
+  // does NOT share the breathing controller — or a stretch split — surfaces
+  // as a missing arm at the type level instead of falling through silently.
+  const presentation = getBreathingPresentation({
+    phase: breathing.phase,
+    sessionCue: breathing.sessionCue,
+    liveCue,
+    leadInDigit: breathing.leadInDigit,
+    leadInPlaceholderFrame: breathing.leadInPlaceholderFrame,
+    liveFrame: breathing.liveFrame,
+    status: breathing.status,
+    inSessionView: breathing.inSessionView,
+    bpm: breathing.selectedSettings.bpm,
+    ratio: breathing.selectedSettings.ratio,
+  })
+
+  if (activePractice === 'stretch') {
+    return { kind: 'stretch', presentation }
   }
+
+  return { kind: 'resonant', presentation }
 }
 
 export interface PracticeSettingsSources {
