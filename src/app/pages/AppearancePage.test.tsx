@@ -1,0 +1,123 @@
+import '@testing-library/jest-dom/vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { UI_STRINGS } from '../../content/strings'
+import { UiStringsProvider } from '../../hooks/useUiStringsContext'
+import { STATE_KEY } from '../../storage'
+import { DEFAULT_PREFS } from '../../storage/prefs'
+import { AppearancePage } from './AppearancePage'
+
+function renderPage(props: Partial<{ onBack: () => void }> = {}) {
+  const onBack = props.onBack ?? vi.fn()
+  const utils = render(
+    <UiStringsProvider value={UI_STRINGS.en}>
+      <AppearancePage onBack={onBack} />
+    </UiStringsProvider>,
+  )
+  return { ...utils, onBack }
+}
+
+beforeEach(() => {
+  window.localStorage.clear()
+})
+
+afterEach(() => {
+  window.localStorage.clear()
+  vi.restoreAllMocks()
+})
+
+describe('AppearancePage', () => {
+  it('renders the locked page title Appearance', () => {
+    renderPage()
+    expect(
+      screen.getByRole('heading', { level: 1, name: UI_STRINGS.en.appearance.title }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders a back-chevron with the locked aria-label', () => {
+    renderPage()
+    expect(
+      screen.getByRole('button', { name: UI_STRINGS.en.appearance.backChevron }),
+    ).toBeInTheDocument()
+  })
+
+  it('invokes onBack when back-chevron is clicked', async () => {
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    renderPage({ onBack })
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appearance.backChevron }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders two radiogroups for Orb and Ring cue', () => {
+    renderPage()
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
+  })
+
+  it('renders two switches for Breathing effect and Switcher icons', () => {
+    renderPage()
+    const switches = screen.getAllByRole('switch')
+    expect(switches).toHaveLength(2)
+    expect(
+      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.breathingEffect.label }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.switcherIcons.label }),
+    ).toBeInTheDocument()
+  })
+
+  it('focuses the back-chevron on mount', () => {
+    renderPage()
+    expect(
+      screen.getByRole('button', { name: UI_STRINGS.en.appearance.backChevron }),
+    ).toHaveFocus()
+  })
+
+  it('writes breathingShape to the prefs envelope when an orb option is clicked', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      screen.getByRole('radio', { name: UI_STRINGS.en.appearance.orb.options.kuthasta }),
+    )
+    const raw = window.localStorage.getItem(STATE_KEY)
+    expect(raw).not.toBeNull()
+    const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
+    expect(envelope.prefs.breathingShape).toBe('spiritual-eye')
+  })
+
+  it('writes orbIdle=ambient to the prefs envelope when Breathing effect is toggled on', async () => {
+    // Seed with default prefs so orbIdle starts as 'still'
+    window.localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({ version: 1, prefs: { ...DEFAULT_PREFS, orbIdle: 'still' } }),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.breathingEffect.label }),
+    )
+    const raw = window.localStorage.getItem(STATE_KEY)
+    expect(raw).not.toBeNull()
+    const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
+    expect(envelope.prefs.orbIdle).toBe('ambient')
+  })
+
+  it('writes switcherIcon=true to the prefs envelope when Switcher icons is toggled on', async () => {
+    // Seed with switcherIcon=false
+    window.localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({ version: 1, prefs: { ...DEFAULT_PREFS, switcherIcon: false } }),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.switcherIcons.label }),
+    )
+    const raw = window.localStorage.getItem(STATE_KEY)
+    expect(raw).not.toBeNull()
+    const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
+    expect(envelope.prefs.switcherIcon).toBe(true)
+  })
+})
