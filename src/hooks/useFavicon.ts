@@ -82,8 +82,11 @@ export function useFavicon(): void {
   const [theme, setTheme] = useState<ThemeId>(() => loadPrefs().theme)
 
   // Effect A: Apply favicon on mount and when theme state changes (dep [theme]).
-  // For 'system' mode, Effect B (matchMedia listener) re-applies after this effect runs.
+  // Reason: in 'system' mode Effect B owns the apply (it re-seeds from the
+  // live MediaQueryList), so skipping here avoids a double DOM swap and the
+  // brief favicon flicker that follows from removing the <link> twice.
   useEffect(() => {
+    if (theme === 'system') return
     applyFavicon(theme)
   }, [theme])
 
