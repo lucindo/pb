@@ -1,7 +1,8 @@
 // Phase 19 I18N-06 — D-01 physical separation of locked claim-safe copy from
 // translatable catalog (src/content/learnContent.ts + src/content/strings.ts).
-// D-02: Frozen-EN snapshot test in lockedCopy.test.ts asserts byte-equality of all
-// 3 EN values via .toBe() — never .toMatchInlineSnapshot() (auto-update defeats the lock).
+// D-02: Frozen-snapshot test in lockedCopy.test.ts asserts byte-equality of all
+// 3 EN values AND all 3 PT-BR values via .toBe() — never .toMatchInlineSnapshot()
+// (auto-update defeats the lock).
 // D-03: Lock scope = 3 D-12 minimum entries: inspiredByForrest + medicalAdviceLine +
 // affiliationLine. Matches Phase 6 D-12 literally. Smallest blast radius.
 // D-04: Composition — these locked strings are composed at render time by the

@@ -18,15 +18,21 @@ describe('LOCKED_COPY frozen-EN snapshot (D-02)', () => {
   })
 })
 
-describe('LOCKED_COPY PT-BR non-empty', () => {
-  it('every PT-BR locked entry is non-empty', () => {
-    expect(LOCKED_COPY['pt-BR'].inspiredByForrest.length).toBeGreaterThan(0)
-    expect(LOCKED_COPY['pt-BR'].medicalAdviceLine.length).toBeGreaterThan(0)
-    expect(LOCKED_COPY['pt-BR'].affiliationLine.length).toBeGreaterThan(0)
+describe('LOCKED_COPY frozen-PT-BR snapshot (D-02 parity)', () => {
+  it('inspiredByForrest matches PT-BR baseline byte-exact', () => {
+    expect(LOCKED_COPY['pt-BR'].inspiredByForrest).toBe('inspirado nos ensinamentos do Forrest')
   })
 
-  it('PT-BR medicalAdviceLine contains em-dash U+2014', () => {
-    expect(LOCKED_COPY['pt-BR'].medicalAdviceLine.includes('—')).toBe(true)
+  it('medicalAdviceLine matches PT-BR baseline byte-exact (em-dash U+2014)', () => {
+    expect(LOCKED_COPY['pt-BR'].medicalAdviceLine).toBe(
+      'Prática de respiração guiada — não é conselho médico.',
+    )
+  })
+
+  it('affiliationLine matches PT-BR baseline byte-exact', () => {
+    expect(LOCKED_COPY['pt-BR'].affiliationLine).toBe(
+      'Projeto independente. Não afiliado ao Forrest Knutson.',
+    )
   })
 })
 
