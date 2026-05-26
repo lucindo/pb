@@ -283,6 +283,16 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // the chord mid-ring. Skipped entirely when no end chord was scheduled
       // (endChordTailUntil = 0), so the manual-end / open-ended paths close
       // immediately as before.
+      //
+      // setTimeout(wallclock) is used here even though endChordTailUntil is on
+      // the audio clock: when the tab is foregrounded the two clocks advance in
+      // lockstep within human-perceptual tolerance, and when the tab is
+      // backgrounded both throttle together (Chrome throttles setTimeout AND
+      // auto-suspends the AC, Safari pauses both). The wait drifting longer in
+      // a hidden tab is acceptable because the user is not listening; the wait
+      // ending early is what we cannot tolerate, and that mode requires
+      // setTimeout to fire while currentTime is paused, which no current
+      // browser does.
       const tailRemainingSec = endChordTailUntil - audioCtx.currentTime
       if (tailRemainingSec > 0) {
         await new Promise<void>((resolve) => {
