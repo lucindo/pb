@@ -10,7 +10,7 @@ export interface PickerCardGridProps<T extends string> {
   onChange(this: void, next: T): void
   renderOption(this: void, option: T): ReactNode
   columns: 2 | 3 | 4
-  disabled: boolean
+  disabled?: boolean
   optionLayout?: PickerCardLayout
   // J14: when true, the `<p>` sublabel is rendered sr-only — visible label
   // duty has moved to an enclosing SettingsSectionHeader, but the radiogroup's
@@ -62,7 +62,7 @@ export function PickerCardGrid<T extends string>({
   onChange,
   renderOption,
   columns,
-  disabled,
+  disabled = false,
   optionLayout = 'inline',
   sectionLabelHidden = false,
 }: PickerCardGridProps<T>): ReactElement {
