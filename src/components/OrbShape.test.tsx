@@ -213,3 +213,97 @@ describe('OrbShape — ringCue prop (Phase 45)', () => {
     expect(arcSvg).toBeNull()
   })
 })
+
+// ── Phase 46: variant="spiritual-eye" (Kuthasta / Star) ──────────────────────
+// Locks the spike-012 V5 render dispatch: StarGlyph polygon during Running +
+// Idle; production accent (no star) during LeadIn + Completion (D-02);
+// CueGlyph replaced by StarGlyph during Running (open item #1 resolution);
+// per-call-site discBg references spiritual-eye token NAMES (no hex
+// assertions per [[feedback_no_design_locking]]).
+describe('OrbShape — variant="spiritual-eye" (Phase 46)', () => {
+  // Star polygon selector — discriminates the StarGlyph SVG from sibling
+  // SVGs (CueGlyph, ProgressArcLayer, CheckmarkGlyph) by its 0..100 viewBox
+  // + presence of a <polygon> child. SVGs in jsdom expose `viewBox` as a
+  // matchable attribute on the element itself.
+  const starPolygonSelector = 'svg[viewBox="0 0 100 100"] polygon'
+
+  it('Test A — Running renders StarGlyph polygon with exactly 10 vertices', () => {
+    const { container } = render(
+      <OrbShape
+        frame={sampleFrame}
+        variant="spiritual-eye"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    const polygon = container.querySelector(starPolygonSelector)
+    expect(polygon).not.toBeNull()
+    const points = polygon?.getAttribute('points') ?? ''
+    // 10 alternating outer/inner vertices, comma-separated "x,y" pairs.
+    expect(points.trim().split(/\s+/).length).toBe(10)
+  })
+
+  it('Test B — Running with spiritual-eye does NOT render the CueGlyph phaseLabel text', () => {
+    render(
+      <OrbShape
+        cue="labels"
+        frame={sampleFrame}
+        variant="spiritual-eye"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    // CueGlyph "labels" mode prints the localized phaseLabel ("In") as visible
+    // text. When StarGlyph replaces CueGlyph (open item #1), the visible text
+    // disappears — only the aria-label on the root carries the phase info.
+    expect(screen.queryByText('In')).toBeNull()
+    // Screen-reader parity: root aria-label still reads the phase.
+    expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
+  })
+
+  it('Test C — Idle (frame=null, idleMode=ambient) renders StarGlyph polygon', () => {
+    const { container } = render(
+      <OrbShape
+        frame={null}
+        idleMode="ambient"
+        variant="spiritual-eye"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    expect(container.querySelector(starPolygonSelector)).not.toBeNull()
+  })
+
+  it('Test D — LeadIn digit does NOT render StarGlyph; digit visible and aria-label unchanged (D-02)', () => {
+    const { container } = render(
+      <OrbShape
+        frame={null}
+        leadInDigit={2}
+        variant="spiritual-eye"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    expect(container.querySelector(starPolygonSelector)).toBeNull()
+    expect(screen.getByText('2')).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
+  })
+
+  it('Test E — Completion does NOT render StarGlyph; CheckmarkGlyph polyline still present (D-02)', () => {
+    const { container } = render(
+      <OrbShape
+        frame={null}
+        showCompletion
+        variant="spiritual-eye"
+        strings={EN_STRINGS_FIXTURE.practice.breathing}
+      />,
+    )
+    expect(container.querySelector(starPolygonSelector)).toBeNull()
+    expect(container.querySelector('svg[viewBox="0 0 24 24"] polyline')).not.toBeNull()
+  })
+
+  it('Test F — default variant (orb-halo) renders no polygon; legacy CueGlyph behaviour intact (zero regression)', () => {
+    const { container } = render(
+      <OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    expect(container.querySelector(starPolygonSelector)).toBeNull()
+    expect(screen.getByText('In')).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
+  })
+})

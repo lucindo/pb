@@ -216,6 +216,11 @@ function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyPr
 
   const phaseLabel = frame.phase === 'in' ? strings.inhale : strings.exhale
 
+  const discBg =
+    variant === 'spiritual-eye'
+      ? 'var(--color-orb-disc-spiritual-eye)'
+      : 'var(--color-breathing-accent)'
+
   return (
     <OrbContainer
       role="img"
@@ -226,12 +231,16 @@ function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyPr
       innerRingPhase={frame.phase}
       reducedMotion={reducedMotion}
       orbScale={orbScale}
-      discBg="var(--color-breathing-accent)"
+      discBg={discBg}
       variant={variant}
       ringCue={ringCue}
       arcProgress={progress}
     >
-      <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
+      {variant === 'spiritual-eye' ? (
+        <StarGlyph />
+      ) : (
+        <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
+      )}
     </OrbContainer>
   )
 }
@@ -251,15 +260,21 @@ function OrbIdle({
   ringCue: RingCueStyle
 }) {
   const ambientScale = useAmbientScale(idleMode === 'ambient')
+  const discBg =
+    variant === 'spiritual-eye'
+      ? 'var(--color-orb-disc-spiritual-eye)'
+      : 'var(--color-breathing-accent)'
   return (
     <OrbContainer
       showRings={false}
       reducedMotion={false}
       orbScale={ambientScale}
-      discBg="var(--color-breathing-accent)"
+      discBg={discBg}
       variant={variant}
       ringCue={ringCue}
-    />
+    >
+      {variant === 'spiritual-eye' ? <StarGlyph /> : null}
+    </OrbContainer>
   )
 }
 
@@ -290,8 +305,12 @@ function OrbLeadIn({
   const dataPhase = nkPhase != null ? (nkPhase === 'back' ? 'out' : 'in') : undefined
   const discBg =
     nkPhase === 'back'
-      ? 'var(--color-breathing-accent-strong)'
-      : 'var(--color-breathing-accent)'
+      ? variant === 'spiritual-eye'
+        ? 'var(--color-orb-disc-spiritual-eye-strong)'
+        : 'var(--color-breathing-accent-strong)'
+      : nkPhase === 'front' && variant === 'spiritual-eye'
+        ? 'var(--color-orb-disc-spiritual-eye)'
+        : 'var(--color-breathing-accent)'
 
   return (
     <OrbContainer
