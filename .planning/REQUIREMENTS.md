@@ -18,10 +18,10 @@ Implements spike 012 V5 Halo Flame as a third `breathingShape` variant.
 
 Promotes the four query-string-only dev toggles to persisted user preferences.
 
-- [ ] **PREFS-01**: User-selectable values for `breathingShape`, `ringCue`, `orbIdle`, and `switcherIcon` persist across browser sessions via the existing localStorage envelope.
-- [ ] **PREFS-02**: Query-string values for any of the four flags override persisted preferences for that tab — the existing dev-override workflow continues to work without rebuild.
-- [ ] **PREFS-03**: Resolution order on first paint is query-string > persisted preference > production default (`orb-halo` / `progress-arc` / `ambient` / `switcherIcon=false`); persisted defaults match current production behavior so returning users see no change unless they opt in.
-- [ ] **PREFS-04**: Persisted preferences are added via the per-field `coerceSettings` fallback pattern (Phase 8 D-01) — no `STATE_VERSION` bump; missing fields coerce to defaults on read; corrupted values fall back without throwing.
+- [x] **PREFS-01**: User-selectable values for `breathingShape`, `ringCue`, `orbIdle`, and `switcherIcon` persist across browser sessions via the existing localStorage envelope.
+- [x] **PREFS-02**: Query-string values for any of the four flags override persisted preferences for that tab — the existing dev-override workflow continues to work without rebuild.
+- [x] **PREFS-03**: Resolution order on first paint is query-string > persisted preference > production default (`orb-halo` / `progress-arc` / `ambient` / `switcherIcon=false`); persisted defaults match current production behavior so returning users see no change unless they opt in.
+- [x] **PREFS-04**: Persisted preferences are added via the per-field `coerceSettings` fallback pattern (Phase 8 D-01) — no `STATE_VERSION` bump; missing fields coerce to defaults on read; corrupted values fall back without throwing.
 
 ### Appearance Page (APPEAR)
 
@@ -80,10 +80,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | KUTH-02 | Phase 46 | Complete |
 | KUTH-03 | Phase 46 | Complete |
 | KUTH-04 | Phase 46 | Complete |
-| PREFS-01 | Phase 47 | Pending |
-| PREFS-02 | Phase 47 | Pending |
-| PREFS-03 | Phase 47 | Pending |
-| PREFS-04 | Phase 47 | Pending |
+| PREFS-01 | Phase 47 | Complete |
+| PREFS-02 | Phase 47 | Complete |
+| PREFS-03 | Phase 47 | Complete |
+| PREFS-04 | Phase 47 | Complete |
 | APPEAR-01 | Phase 48 | Pending |
 | APPEAR-02 | Phase 48 | Pending |
 | APPEAR-03 | Phase 48 | Pending |
