@@ -6,18 +6,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { SetupCard, type SetupCardItem } from './SetupCard'
 
 const HRV_ITEMS: readonly SetupCardItem[] = [
-  { label: 'PACE', value: '5.5 bpm' },
-  { label: 'RATIO', value: '1 : 1' },
-  { label: 'DURATION', value: '5 min' },
+  { id: 'pace', label: 'PACE', value: '5.5 bpm' },
+  { id: 'ratio', label: 'RATIO', value: '1 : 1' },
+  { id: 'duration', label: 'DURATION', value: '5 min' },
 ]
 
 const STRETCH_ITEMS: readonly SetupCardItem[] = [
-  { label: 'PACE', value: '5.5 bpm' },
-  { label: 'RATIO', value: '1 : 1' },
-  { label: 'STRETCHES', value: '5' },
-  { label: 'BREATHS', value: '4 each' },
-  { label: 'ROUNDS', value: '3' },
-  { label: 'DURATION', value: '10 min' },
+  { id: 'pace', label: 'PACE', value: '5.5 bpm' },
+  { id: 'ratio', label: 'RATIO', value: '1 : 1' },
+  { id: 'stretches', label: 'STRETCHES', value: '5' },
+  { id: 'breaths', label: 'BREATHS', value: '4 each' },
+  { id: 'rounds', label: 'ROUNDS', value: '3' },
+  { id: 'duration', label: 'DURATION', value: '10 min' },
 ]
 
 describe('SetupCard', () => {

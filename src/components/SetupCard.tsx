@@ -7,6 +7,8 @@ import type { ReactElement } from 'react'
 // settings → summary items) lives at the J10 wiring site, not here.
 
 export interface SetupCardItem {
+  // Stable identifier used as the React key (independent of locale/label).
+  id: string
   // Short uppercase label, e.g. "PACE". Caller passes already-localized strings.
   label: string
   // Pre-formatted value, e.g. "5.5 bpm" / "1 : 1" / "5 min".
@@ -48,7 +50,7 @@ export function SetupCard({
         }}
       >
         {items.map((it) => (
-          <SettingCell key={it.label} label={it.label} value={it.value} />
+          <SettingCell key={it.id} label={it.label} value={it.value} />
         ))}
       </div>
       <ChevronRight />
@@ -56,7 +58,7 @@ export function SetupCard({
   )
 }
 
-function SettingCell({ label, value }: SetupCardItem): ReactElement {
+function SettingCell({ label, value }: Pick<SetupCardItem, 'label' | 'value'>): ReactElement {
   return (
     <div className="flex flex-col">
       <span

@@ -32,9 +32,10 @@ export function buildSetupCardSummary({
     if (settings.isRunning || settings.isComplete) return null
     const s = settings.settings
     return [
-      { label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
-      { label: f.ratioLabel, value: s.ratio },
+      { id: 'bpm', label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
+      { id: 'ratio', label: f.ratioLabel, value: s.ratio },
       {
+        id: 'duration',
         label: f.durationLabel,
         value:
           s.durationMinutes === 'open-ended'
@@ -56,9 +57,9 @@ export function buildSetupCardSummary({
         ? f.openEndedLabel
         : `${String(s.warmUpMinutes + s.rampDurationMinutes + s.coolDownMinutes)} ${f.minutesUnit}`
     return [
-      { label: f.initialBpmShortLabel, value: `${String(s.initialBpm)} ${f.bpmUnit}` },
-      { label: f.targetBpmShortLabel, value: `${String(s.targetBpm)} ${f.bpmUnit}` },
-      { label: f.durationLabel, value: durationValue },
+      { id: 'initialBpm', label: f.initialBpmShortLabel, value: `${String(s.initialBpm)} ${f.bpmUnit}` },
+      { id: 'targetBpm', label: f.targetBpmShortLabel, value: `${String(s.targetBpm)} ${f.bpmUnit}` },
+      { id: 'duration', label: f.durationLabel, value: durationValue },
     ]
   }
 
@@ -68,9 +69,9 @@ export function buildSetupCardSummary({
   const nk = practice.nkControls
   const omLengthLabel = formatOmLength(n.omLength, nk)
   return [
-    { label: nk.roundsLabel, value: String(n.rounds) },
-    { label: nk.frontCountShortLabel, value: String(n.frontCount) },
-    { label: nk.omLengthShortLabel, value: omLengthLabel },
+    { id: 'rounds', label: nk.roundsLabel, value: String(n.rounds) },
+    { id: 'frontCount', label: nk.frontCountShortLabel, value: String(n.frontCount) },
+    { id: 'omLength', label: nk.omLengthShortLabel, value: omLengthLabel },
   ]
 }
 
