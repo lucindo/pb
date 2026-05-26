@@ -35,9 +35,9 @@ describe('NaviKriyaSessionSurface completion branch', () => {
       />,
     )
 
-    // OrbShape.showCompletion renders the CheckmarkGlyph SVG (viewBox="0 0 24 24")
-    // with a polyline child. This is the load-bearing behavioral selector per the plan.
-    expect(container.querySelector('svg[viewBox="0 0 24 24"] polyline')).not.toBeNull()
+    // OrbShape.showCompletion renders the CheckmarkGlyph with specific points.
+    // Matching on polyline points avoids false matches from other 24×24 SVG icons.
+    expect(container.querySelector('polyline[points="5 13 10 18 19 7"]')).not.toBeNull()
     // Regression guard: the "Session complete" headline is also rendered.
     expect(screen.getByText('Session complete')).toBeVisible()
   })
@@ -57,6 +57,6 @@ describe('NaviKriyaSessionSurface completion branch', () => {
 
     // When showCompletionHeadline is false the checkmark must NOT appear —
     // proves the prop drives the glyph, not a global side effect.
-    expect(container.querySelector('svg[viewBox="0 0 24 24"] polyline')).toBeNull()
+    expect(container.querySelector('polyline[points="5 13 10 18 19 7"]')).toBeNull()
   })
 })

@@ -146,6 +146,7 @@ export function createPracticeSettingsViewModelFromControllers({
     stretch: {
       settings: stretchSettings,
       isRunning: breathing.inSessionView,
+      isComplete: breathing.session.state.status === 'complete' && !breathing.inSessionView,
       onChange: onStretchSettingsChange,
     },
     naviKriya: {

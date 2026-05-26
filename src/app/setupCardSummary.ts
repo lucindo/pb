@@ -45,7 +45,7 @@ export function buildSetupCardSummary({
   }
 
   if (settings.kind === 'stretch') {
-    if (settings.isRunning) return null
+    if (settings.isRunning || settings.isComplete) return null
     const s = settings.settings
     // Visual summary only: 3 cells matching the HRV card shape. The actual
     // configuration (warm-up / ramp / cool-down / ratio) stays in the
@@ -61,6 +61,8 @@ export function buildSetupCardSummary({
       { label: f.durationLabel, value: durationValue },
     ]
   }
+
+  if (settings.isComplete) return null
 
   const n = settings.settings
   const nk = practice.nkControls
