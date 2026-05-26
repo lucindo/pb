@@ -9,10 +9,10 @@
 
 Implements spike 012 V5 Halo Flame as a third `breathingShape` variant.
 
-- [ ] **KUTH-01**: User can request the Kuthasta orb via `?breathingShape=spiritual-eye` (with aliases `kuthasta` / `star`); unrecognized values fall back to the existing `orb-halo` default per the established `featureFlags.ts` parser pattern.
-- [ ] **KUTH-02**: The Kuthasta orb renders the spike-012 V5 locked design verbatim — warm-cool halo gradient (gold outer / tan mid / slate inner), opalescent indigo radial-gradient disc, small white 5-point star (20% of disc, sharp outer:inner ratio 2.5, point up).
-- [ ] **KUTH-03**: Kuthasta variant honors all existing orb affordances unchanged — geometry (3-layer halo + 62% disc + outer ring), breath scale animation, ring cues (outer + progress-arc OR outer-inner), idle states (still / ambient), reduced-motion, lead-in countdown, completion checkmark.
-- [ ] **KUTH-04**: Light and dark themes each render with their spike-012-locked per-theme palettes (light: `#4a5a96 → #34406f → #2a356a` disc + gold halos `rgba(202,166,98,0.48)` etc.; dark: `#6c7cb6 → #4a5a96 → #38477e` disc + gold halos `rgba(206,168,100,0.45)` etc.).
+- [x] **KUTH-01**: User can request the Kuthasta orb via `?breathingShape=spiritual-eye` (with aliases `kuthasta` / `star`); unrecognized values fall back to the existing `orb-halo` default per the established `featureFlags.ts` parser pattern.
+- [x] **KUTH-02**: The Kuthasta orb renders the spike-012 V5 locked design verbatim — warm-cool halo gradient (gold outer / tan mid / slate inner), opalescent indigo radial-gradient disc, small white 5-point star (20% of disc, sharp outer:inner ratio 2.5, point up).
+- [x] **KUTH-03**: Kuthasta variant honors all existing orb affordances unchanged — geometry (3-layer halo + 62% disc + outer ring), breath scale animation, ring cues (outer + progress-arc OR outer-inner), idle states (still / ambient), reduced-motion, lead-in countdown, completion checkmark.
+- [x] **KUTH-04**: Light and dark themes each render with their spike-012-locked per-theme palettes (light: `#4a5a96 → #34406f → #2a356a` disc + gold halos `rgba(202,166,98,0.48)` etc.; dark: `#6c7cb6 → #4a5a96 → #38477e` disc + gold halos `rgba(206,168,100,0.45)` etc.).
 
 ### Persistable Feature-Flag Preferences (PREFS)
 
@@ -76,10 +76,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| KUTH-01 | Phase 46 | Pending |
-| KUTH-02 | Phase 46 | Pending |
-| KUTH-03 | Phase 46 | Pending |
-| KUTH-04 | Phase 46 | Pending |
+| KUTH-01 | Phase 46 | Complete |
+| KUTH-02 | Phase 46 | Complete |
+| KUTH-03 | Phase 46 | Complete |
+| KUTH-04 | Phase 46 | Complete |
 | PREFS-01 | Phase 47 | Pending |
 | PREFS-02 | Phase 47 | Pending |
 | PREFS-03 | Phase 47 | Pending |
