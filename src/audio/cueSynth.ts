@@ -267,6 +267,16 @@ export function scheduleTick(
   osc.start(when)
   osc.stop(when + TICK_TOTAL_DURATION_SEC)
 
+  // AUDIO-04: every schedule* primitive must disconnect its chain on 'ended'.
+  // Without this, Safari is known to retain references to disconnected-but-not-
+  // explicitly-disconnected nodes, slowly leaking osc + filter + envelope per
+  // tick over a long session.
+  osc.addEventListener('ended', () => {
+    try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { filter.disconnect() } catch { /* silent */ }
+    try { envelope.disconnect() } catch { /* silent */ }
+  }, { once: true })
+
   return {
     envelope,
     scheduledAt: when,
