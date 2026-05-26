@@ -1,6 +1,28 @@
-import { useSyncExternalStore } from 'react'
+// src/hooks/useFeatureFlags.ts
+//
+// Phase 47 Plan 03: App-side orchestrator hook with persisted-prefs snapshot.
+//
+// Architecture (mirrors useTheme.ts):
+//   - popstate subscription via useSyncExternalStore — URL navigation triggers a
+//     re-read of `search` (preserved byte-identical from Plan 01).
+//   - useState<UserPrefs> seeded from loadPrefs() at mount (PREFS-01 first-paint).
+//   - Cross-tab 'storage' listener (empty deps) — re-reads loadPrefs() on
+//     STATE_KEY writes (Phase 8 D-04a contract; event payload discarded).
+//   - Same-tab 'hrv:prefs-changed' listener (empty deps) — re-reads loadPrefs()
+//     when detail.key is one of breathingShape/ringCue/orbIdle/switcherIcon or
+//     undefined (D-11 4-key filter + forward-compat undefined branch).
+//   - Per-field 4-way merge via readFeatureFlags(search, slim-projection) —
+//     query > persisted > default (Plan 01 D-05/D-06/D-07 resolver).
+//
+// D-08 invariant: this hook is the only non-test caller of readFeatureFlags.
+// Hook return type stays FeatureFlags — no breaking change for useAppViewModel
+// or PracticeScreen.
+
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 import { readFeatureFlags, type FeatureFlags } from '../featureFlags'
+import { loadPrefs, type UserPrefs } from '../storage/prefs'
+import { STATE_KEY } from '../storage'
 
 function subscribeToLocationSearch(onStoreChange: () => void): () => void {
   window.addEventListener('popstate', onStoreChange)
@@ -17,18 +39,6 @@ function getServerLocationSearchSnapshot(): string {
   return ''
 }
 
-// Phase 47 Plan 01 transitional bridge — readFeatureFlags now takes a second
-// `persisted` argument (D-05/D-06/D-07). Plan 03 wires this to loadPrefs() so
-// persisted user preferences participate in the resolver. Until then we pass a
-// literal equal to the v2.0 production defaults, which preserves byte-identical
-// runtime behaviour vs. the prior 1-arg form (D-06 default-wins half).
-const PRODUCTION_DEFAULTS: FeatureFlags = {
-  switcherIcon: false,
-  breathingShape: 'orb-halo',
-  orbIdle: 'ambient',
-  ringCue: 'progress-arc',
-}
-
 export function useFeatureFlags(): FeatureFlags {
   const search = useSyncExternalStore(
     subscribeToLocationSearch,
@@ -36,5 +46,59 @@ export function useFeatureFlags(): FeatureFlags {
     getServerLocationSearchSnapshot,
   )
 
-  return readFeatureFlags(search, PRODUCTION_DEFAULTS)
+  // Persisted snapshot from disk. Seeded at mount; refreshed on 'storage'
+  // (cross-tab) and 'hrv:prefs-changed' (same-tab) events. popstate is handled
+  // by useSyncExternalStore above.
+  const [persisted, setPersisted] = useState<UserPrefs>(() => loadPrefs())
+
+  // Cross-tab 'storage' listener — re-read persisted snapshot on STATE_KEY
+  // writes (Phase 8 D-04a). Event payload is discarded (signal only) — disk is
+  // the source of truth; loadPrefs() goes through coercePrefs for the
+  // prototype-pollution mitigation T-14-01 / T-25-01.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent): void => {
+      if (e.key === STATE_KEY) {
+        setPersisted(loadPrefs())
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
+
+  // Same-tab 'hrv:prefs-changed' listener — filter on Phase 47 4-key set plus
+  // undefined forward-compat per D-11. Unrelated keys (theme / timbre / cue /
+  // locale) are ignored to avoid spurious re-renders when those pickers fire.
+  useEffect(() => {
+    const onPrefsChanged = (e: Event): void => {
+      if (!(e instanceof CustomEvent)) return
+      const detail = e.detail as { key?: string } | null
+      if (
+        !detail ||
+        detail.key === undefined ||
+        detail.key === 'breathingShape' ||
+        detail.key === 'ringCue' ||
+        detail.key === 'orbIdle' ||
+        detail.key === 'switcherIcon'
+      ) {
+        setPersisted(loadPrefs())
+      }
+    }
+    window.addEventListener('hrv:prefs-changed', onPrefsChanged)
+    return () => {
+      window.removeEventListener('hrv:prefs-changed', onPrefsChanged)
+    }
+  }, [])
+
+  // Per-field 4-way merge: query > persisted > default. The slim projection
+  // strips UserPrefs (8 fields) to the 4 FeatureFlags fields — matches the
+  // FeatureFlags interface field order exactly. D-09: inline projection
+  // chosen over Pick-typed pass-through for clarity at the single call site.
+  return readFeatureFlags(search, {
+    switcherIcon: persisted.switcherIcon,
+    breathingShape: persisted.breathingShape,
+    orbIdle: persisted.orbIdle,
+    ringCue: persisted.ringCue,
+  })
 }
