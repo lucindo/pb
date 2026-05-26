@@ -50,3 +50,18 @@ export function playInhalePreview(timbre: TimbreId): void {
   }
   scheduleInCueForTimbre(previewCtx, previewCtx.currentTime, previewCtx.destination, timbre)
 }
+
+/**
+ * Tear down the preview AudioContext if one exists. Idempotent — safe to call
+ * when no preview has ever been triggered. Mainly useful for tests that need
+ * to reset the module-level singleton between cases; production callers can
+ * rely on browser-driven cleanup at page unload.
+ */
+export function closePreviewContext(): void {
+  const current = ctx
+  if (current !== null) {
+    ctx = null
+    ctxFailed = false
+    current.close().catch(() => { /* silent — already closed or unrecoverable */ })
+  }
+}
