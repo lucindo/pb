@@ -62,6 +62,14 @@ export interface SessionEngine {
   setSelectedSettings(this: void, settings: SessionSettings): void
   start(this: void): void
   end(this: void): void
+  /**
+   * Extends the running timed session by `durationMinutes`. No-op if the
+   * session is not in `running`. Rejections from the underlying domain
+   * (e.g., `RangeError` when the new duration violates invariants) are
+   * silently absorbed — state is left unchanged. Callers cannot distinguish
+   * "applied" from "declined"; if a user-facing affordance needs that
+   * distinction, surface it from this hook before consumers are wired.
+   */
   extendDuration(this: void, durationMinutes: number): void
 }
 
