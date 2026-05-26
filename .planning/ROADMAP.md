@@ -142,4 +142,4 @@ Earlier milestones (v1.0 â†’ v1.2) are archived under `.planning/milestones/` â€
 |-------|----------------|--------|-----------|
 | 46. Kuthasta orb variant | 3/3 | Complete    | 2026-05-26 |
 | 47. Persistable feature-flag preferences | 4/4 | Complete    | 2026-05-26 |
-| 48. Appearance page + i18n | 4/4 | Complete   | 2026-05-26 |
+| 48. Appearance page + i18n | 4/4 | Complete    | 2026-05-26 |

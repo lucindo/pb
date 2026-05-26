@@ -27,20 +27,20 @@ Promotes the four query-string-only dev toggles to persisted user preferences.
 
 New full-page surface reached from the App Settings header right-chevron.
 
-- [ ] **APPEAR-01**: User can tap a `>` chevron in the right slot of the App Settings header (`[ <  Settings  ]` → `[ <  Settings  > ]`) to navigate to the new Appearance page; the chevron is always visible on App Settings and behaves as `IconButton` per the existing primitive pattern.
-- [ ] **APPEAR-02**: Appearance page renders as a sibling full-page surface (`PageShell` + `TopAppBar`) with header `[ <  Appearance  ]`; left-chevron returns to App Settings with focus restored to the right-chevron source.
-- [ ] **APPEAR-03**: Appearance page **Orb Style** section contains two segmented pickers — **Orb** (minimal / halo / kuthasta) and **Cue** (progress arc / rings) — using the same `SegmentedControl` primitive as `LanguagePicker`.
-- [ ] **APPEAR-04**: Appearance page **Visual** section contains two toggles — **Breathing effect** (off=still, on=ambient) and **Switcher icons** (off=text-only, on=icon+label) — using the same `SettingsToggleRow` primitive used elsewhere.
-- [ ] **APPEAR-05**: Selecting a picker option or toggling a switch immediately updates the persisted preference and applies live across the app on the next render (no reload / no nav-back required).
-- [ ] **APPEAR-06**: Appearance page visual chrome matches the locked Mono Zen visual system — same tokens (`bg-soft` surface, `borderSoft` borders, `accent-strong` section labels), spacing, typography, and the mobile-bottom-sheet-vs-desktop-modal pattern used by App Settings.
+- [x] **APPEAR-01**: User can tap a `>` chevron in the right slot of the App Settings header (`[ <  Settings  ]` → `[ <  Settings  > ]`) to navigate to the new Appearance page; the chevron is always visible on App Settings and behaves as `IconButton` per the existing primitive pattern.
+- [x] **APPEAR-02**: Appearance page renders as a sibling full-page surface (`PageShell` + `TopAppBar`) with header `[ <  Appearance  ]`; left-chevron returns to App Settings with focus restored to the right-chevron source.
+- [x] **APPEAR-03**: Appearance page **Orb Style** section contains two segmented pickers — **Orb** (minimal / halo / kuthasta) and **Cue** (progress arc / rings) — using the same `SegmentedControl` primitive as `LanguagePicker`.
+- [x] **APPEAR-04**: Appearance page **Visual** section contains two toggles — **Breathing effect** (off=still, on=ambient) and **Switcher icons** (off=text-only, on=icon+label) — using the same `SettingsToggleRow` primitive used elsewhere.
+- [x] **APPEAR-05**: Selecting a picker option or toggling a switch immediately updates the persisted preference and applies live across the app on the next render (no reload / no nav-back required).
+- [x] **APPEAR-06**: Appearance page visual chrome matches the locked Mono Zen visual system — same tokens (`bg-soft` surface, `borderSoft` borders, `accent-strong` section labels), spacing, typography, and the mobile-bottom-sheet-vs-desktop-modal pattern used by App Settings.
 
 ### Internationalization (I18N)
 
 EN + PT-BR copy for the new surface.
 
-- [ ] **I18N-01**: New page title, section headers, picker option labels, and toggle labels are added to the EN string catalog (`src/content/strings.ts`) with appropriate keys grouped under `appearance.*`.
-- [ ] **I18N-02**: PT-BR catalog has parallel entries for every new EN key; new strings carry the `// TODO: native-speaker review` marker per the v1.3 / Phase 26 review workflow until the operator does the native-speaker pass.
-- [ ] **I18N-03**: Frozen-EN `LOCKED_COPY` byte-equality guard (Phase 12 D-04) and `Record<LocaleId, UiStrings>` type-completeness guard remain intact; new copy is added outside the LOCKED_COPY surface (operator may relocate any specific string into LOCKED_COPY after review).
+- [x] **I18N-01**: New page title, section headers, picker option labels, and toggle labels are added to the EN string catalog (`src/content/strings.ts`) with appropriate keys grouped under `appearance.*`.
+- [x] **I18N-02**: PT-BR catalog has parallel entries for every new EN key; new strings carry the `// TODO: native-speaker review` marker per the v1.3 / Phase 26 review workflow until the operator does the native-speaker pass.
+- [x] **I18N-03**: Frozen-EN `LOCKED_COPY` byte-equality guard (Phase 12 D-04) and `Record<LocaleId, UiStrings>` type-completeness guard remain intact; new copy is added outside the LOCKED_COPY surface (operator may relocate any specific string into LOCKED_COPY after review).
 
 ## Future Requirements
 
@@ -84,15 +84,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PREFS-02 | Phase 47 | Complete |
 | PREFS-03 | Phase 47 | Complete |
 | PREFS-04 | Phase 47 | Complete |
-| APPEAR-01 | Phase 48 | Pending |
-| APPEAR-02 | Phase 48 | Pending |
-| APPEAR-03 | Phase 48 | Pending |
-| APPEAR-04 | Phase 48 | Pending |
-| APPEAR-05 | Phase 48 | Pending |
-| APPEAR-06 | Phase 48 | Pending |
-| I18N-01 | Phase 48 | Pending |
-| I18N-02 | Phase 48 | Pending |
-| I18N-03 | Phase 48 | Pending |
+| APPEAR-01 | Phase 48 | Complete |
+| APPEAR-02 | Phase 48 | Complete |
+| APPEAR-03 | Phase 48 | Complete |
+| APPEAR-04 | Phase 48 | Complete |
+| APPEAR-05 | Phase 48 | Complete |
+| APPEAR-06 | Phase 48 | Complete |
+| I18N-01 | Phase 48 | Complete |
+| I18N-02 | Phase 48 | Complete |
+| I18N-03 | Phase 48 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 17 total
