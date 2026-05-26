@@ -115,7 +115,11 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. User selecting any picker option or toggling either switch sees the persisted preference update immediately and the change applied live across every surface that consumes the flag (practice orb, ring cue, idle behaviour, switcher labels) on the next render — no reload, no nav-back required.
   4. User loads the Appearance page in either Light or Dark theme and on either mobile or desktop and sees the same Mono Zen chrome as App Settings — `bg-soft` surface, `borderSoft` borders, `accent-strong` section labels, locked spacing/typography, mobile-bottom-sheet-vs-desktop-modal pattern preserved.
   5. User switching the locale picker to PT-BR sees every new Appearance string (page title, section headers, picker option labels, toggle labels) rendered in PT-BR with native-quality strings carrying the `// TODO: native-speaker review` marker per the Phase 26 workflow; the frozen-EN `LOCKED_COPY` byte-equality guard and `Record<LocaleId, UiStrings>` type-completeness guard both still pass.
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 48-01-PLAN.md — i18n catalog: extend UiStrings with appearance.*, rename appSettings.sections.appearance → theme (D-01), add EN copy (D-03..D-08) + PT-BR drafts (D-09), adapt content.no-review-markers.test.ts drift-guard (D-18 path a), update SettingsPanelBody.tsx consumer. [I18N-01, I18N-02, I18N-03]
+  - [ ] 48-02-PLAN.md — Navigation extension: AppScreen += 'appearance', add onAppearanceOpen + onBackToAppSettings callbacks + returningFromAppearance sentinel; propagate through AppDialogsViewModel + createAppDialogsViewModel; D-16 transition tests. [APPEAR-01, APPEAR-02]
+  - [ ] 48-03-PLAN.md — Picker components: create OrbPicker.tsx + RingCuePicker.tsx (paste-and-rename of LanguagePicker; D-10/D-11) + per-picker tests (D-14). [APPEAR-03]
+  - [ ] 48-04-PLAN.md — Appearance page + chevron + router: new AppearancePage with 2 sections / 2 pickers / 2 toggles (D-15), add trailing chevron + conditional focus-restoration to AppSettingsPage (D-17), 4th ScreenRouter case + Pitfall-5 fixture cleanup, blocking operator visual UAT (Light/Dark + mobile/desktop + locale-switch). [APPEAR-01, APPEAR-02, APPEAR-04, APPEAR-05, APPEAR-06]
 **UI hint**: yes
 
 ## Progress
@@ -138,4 +142,4 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 |-------|----------------|--------|-----------|
 | 46. Kuthasta orb variant | 3/3 | Complete    | 2026-05-26 |
 | 47. Persistable feature-flag preferences | 4/4 | Complete    | 2026-05-26 |
-| 48. Appearance page + i18n | 0/TBD | Not started | — |
+| 48. Appearance page + i18n | 0/4 | Not started | — |
