@@ -204,6 +204,15 @@ export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
     // same tab) remains documented v1.x debt — STORAGE-03 handles only the
     // UI consistency half of cross-tab sync.
     //
+    // Residual TOCTOU window: the inner re-read narrows but does NOT close
+    // the cross-tab race. Between the inner storage.getItem (below) and the
+    // outer storage.setItem, another tab running a newer build can still
+    // commit a future-schema envelope; this tab's stale currentVersion read
+    // returns the older number, the guard does not fire, and the older
+    // payload overwrites the newer envelope. Closing this fully would
+    // require BroadcastChannel-coordinated locking or the Web Locks API
+    // (deferred). The guard is best-effort, not transactional.
+    //
     // Pitfall 1: the inner re-read MUST live in its OWN nested try/catch.
     // If the inner getItem throws (Safari ITP / private mode) and we let
     // the outer D-16 catch swallow it, the entire write is silently skipped
