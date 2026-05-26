@@ -33,9 +33,10 @@ export function useAppNavigation({
     if (!closeOnSessionView) return
     // Reason: force navigation back to the practice surface when a session starts;
     // setState inside effect is intentional — the session-start signal owns this transition.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    /* eslint-disable react-hooks/set-state-in-effect */
     setAppScreen('practice')
     setReturningFromAppearance(false)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [closeOnSessionView])
 
   const onLearnOpen = useCallback((): void => {
