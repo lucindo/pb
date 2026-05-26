@@ -245,4 +245,33 @@ describe('app controller adapters', () => {
     expect(dialogs.onSettingsOpen).toBe(noop)
     expect(dialogs.onBackToPractice).toBe(noop)
   })
+
+  it('propagates onAppearanceOpen, onBackToAppSettings, and returningFromAppearance from navigation', () => {
+    // Distinct fn identities so each assertion proves the *specific* field
+    // is forwarded, not merely that some callback equal to `noop` is present.
+    const onAppearanceOpen = (): void => undefined
+    const onBackToAppSettings = (): void => undefined
+    const navigation: AppNavigation = {
+      appScreen: 'appearance',
+      returningFromAppearance: true,
+      onLearnOpen: noop,
+      onSettingsOpen: noop,
+      onAppearanceOpen,
+      onBackToPractice: noop,
+      onBackToAppSettings,
+    }
+    const endSessionDialogs = createEndSessionDialogViewModelsFromControllers({
+      breathing: makeBreathingController(),
+      navi: makeNaviController(),
+    })
+
+    const dialogs = createAppDialogsViewModel({
+      navigation,
+      endSessionDialogs,
+    })
+
+    expect(dialogs.onAppearanceOpen).toBe(onAppearanceOpen)
+    expect(dialogs.onBackToAppSettings).toBe(onBackToAppSettings)
+    expect(dialogs.returningFromAppearance).toBe(true)
+  })
 })
