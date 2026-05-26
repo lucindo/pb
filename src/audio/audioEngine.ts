@@ -240,7 +240,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       const cue = scheduleEndChord(audioCtx, when, audioCtx.destination, sessionTimbre)
       activeCues.add(cue)
       // Record the tail end so close() can defer teardown until it rings out.
-      endChordTailUntil = cue.cleanupAt
+      // Take the max in case the caller double-dispatches: the second call's
+      // tail must not retreat below an earlier-scheduled chord still ringing.
+      endChordTailUntil = Math.max(endChordTailUntil, cue.cleanupAt)
     },
 
     setMuted(next: boolean): void {
