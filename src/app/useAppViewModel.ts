@@ -71,7 +71,7 @@ export function useAppViewModel(): AppViewModel {
   const controlsDisabled = breathing.inSessionView || navi.sessionActive
   const appNavigation = useAppNavigation({
     controlsDisabled,
-    closeOnSessionView: breathing.inSessionView,
+    closeOnSessionView: controlsDisabled,
   })
   const breathingResetSession = breathing.resetSession
   const naviClearCompletion = navi.clearCompletion
