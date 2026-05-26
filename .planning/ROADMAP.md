@@ -86,7 +86,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 3 plans
   - [x] 46-01-PLAN.md — Extend `BreathingShapeVariant` union + add spiritual-eye alias clause to `BREATHING_SHAPE_FLAG.parse` (+ vitest cases). [KUTH-01]
   - [x] 46-02-PLAN.md — Add 10 spike-012 V5 `--color-*-spiritual-eye` tokens to `theme.css` (5 per theme: halo-1/2, disc, disc-strong, star fill/stroke; halo-3 reused). [KUTH-04]
-  - [ ] 46-03-PLAN.md — Wire `StarGlyph` + `SPIRITUAL_EYE_HALOS` + three-way halo branch in `OrbContainer`; per-call-site `discBg` + child dispatch (Star replaces Cue for Running); operator visual UAT checkpoint. [KUTH-02, KUTH-03]
+  - [x] 46-03-PLAN.md — Wire `StarGlyph` + `SPIRITUAL_EYE_HALOS` + three-way halo branch in `OrbContainer`; per-call-site `discBg` + child dispatch (Star replaces Cue for Running); operator visual UAT checkpoint. [KUTH-02, KUTH-03]
 **UI hint**: yes
 
 ### Phase 47: Persistable feature-flag preferences
@@ -132,6 +132,6 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 46. Kuthasta orb variant | 2/3 | In Progress|  |
+| 46. Kuthasta orb variant | 3/3 | Complete   | 2026-05-26 |
 | 47. Persistable feature-flag preferences | 0/TBD | Not started | — |
 | 48. Appearance page + i18n | 0/TBD | Not started | — |
