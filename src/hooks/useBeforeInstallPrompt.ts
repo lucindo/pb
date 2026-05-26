@@ -66,12 +66,19 @@ export function useBeforeInstallPrompt(): UseBeforeInstallPrompt {
   const triggerInstall = useCallback(async (): Promise<void> => {
     // D-08: no-op until the browser fires beforeinstallprompt (no banner with dead button)
     if (deferredPrompt === null) return
-    const { outcome } = await deferredPrompt.prompt()
-    // prompt() is one-shot — null it immediately after use so it cannot be called twice
-    setDeferredPrompt(null)
-    if (outcome === 'accepted') {
-      // Persist dismissal: user accepted the install, banner should never re-appear
-      saveInstallDismissed()
+    try {
+      const { outcome } = await deferredPrompt.prompt()
+      // prompt() is one-shot — null it immediately after use so it cannot be called twice
+      setDeferredPrompt(null)
+      if (outcome === 'accepted') {
+        // Persist dismissal: user accepted the install, banner should never re-appear
+        saveInstallDismissed()
+      }
+    } catch {
+      // Reason: spec-allowed rejection paths (InvalidStateError if already shown,
+      // AbortError if UA dismisses via non-outcome path). The prompt is one-shot
+      // either way — clear the stale ref so a retry click does not re-reject.
+      setDeferredPrompt(null)
     }
   }, [deferredPrompt])
 
