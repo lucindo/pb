@@ -5,7 +5,7 @@ milestone_name: Kuthasta and Settings Switches
 status: milestone_complete
 stopped_at: Milestone complete (Phase 48 was final phase)
 last_updated: 2026-05-26T12:13:03.178Z
-last_activity: 2026-05-26 -- Phase 48 execution started
+last_activity: 2026-05-26 -- Completed quick task 260526-dse: Fix Navi session-complete state
 progress:
   total_phases: 3
   completed_phases: 6
@@ -78,6 +78,7 @@ Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for
 | fast | Make VITE_SWITCHER_TREATMENT=B the default in vite.config.ts (explicit 'A' opts out) | 2026-05-19 | f0f941f | — |
 | 260519-bee | Remove orphaned NK pause/resume code and strings — dead after the v1.5-audit NK-07 end-only amendment (useNKEngine pause()/resume() + interface members, controls.pause/controls.resume EN+PT-BR, stale tests) | 2026-05-19 | f285e58 | [260519-bee-remove-orphaned-nk-pause-resume-code-and](./quick/260519-bee-remove-orphaned-nk-pause-resume-code-and/) |
 | 260525-hzq | Version sync (package.json mirrors tag) and versioned GitHub Pages deploys with switchable official root pointer | 2026-05-25 | 060edda | Verified | [260525-hzq-version-sync-package-json-mirrors-tag-an](./quick/260525-hzq-version-sync-package-json-mirrors-tag-an/) |
+| 260526-dse | Fix Navi session-complete state — wire showCompletion checkmark, swap Start→Done CTA, hide SetupCard config row on Navi + Stretch completion (3 view-layer plumbing gaps closed; +14 tests) | 2026-05-26 | 1afef72 | — | [260526-dse-fix-navi-session-complete-state-missing-](./quick/260526-dse-fix-navi-session-complete-state-missing-/) |
 
 ## Deferred Items
 
