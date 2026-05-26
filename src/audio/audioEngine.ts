@@ -150,6 +150,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     opts.onStateChange?.(audioCtx.state as AudioContextState | 'interrupted')
   }
+  // Ordering invariant: addEventListener runs AFTER the await audioCtx.resume()
+  // above, so the initial suspended → running transition fires before the
+  // listener is wired and is intentionally not reported. The hook initializes
+  // its audioStatus to 'ok' and never expects a 'running' notification, so
+  // dropping that first transition is correct. If this order is ever flipped,
+  // add a lastReportedState guard inside onStateChange to dedupe.
   audioCtx.addEventListener('statechange', onStateChange)
 
   // WR-08: track ALL in-flight cues (lead-in ticks + In/Out bowls), not just the
