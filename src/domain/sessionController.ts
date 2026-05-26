@@ -119,8 +119,14 @@ export function extendTimedSession(
     throw new RangeError('durationMinutes must be one of DURATION_OPTIONS')
   }
 
-  if (!Number.isFinite(durationMinutes) || durationMinutes <= state.lockedSettings.durationMinutes) {
-    throw new RangeError('Timed sessions can only be extended to a greater finite duration')
+  // The DURATION_OPTIONS membership check above already excludes Infinity and NaN
+  // (DURATION_OPTIONS is a finite-number-only allowlist plus the 'open-ended' string,
+  // and the open-ended case is rejected earlier when state.lockedSettings.durationMinutes
+  // is 'open-ended'). Only the monotonic-increase invariant remains to enforce here.
+  if (durationMinutes <= state.lockedSettings.durationMinutes) {
+    throw new RangeError(
+      `Cannot extend to ${String(durationMinutes)} (current is ${String(state.lockedSettings.durationMinutes)}); new duration must be strictly greater`,
+    )
   }
 
   const selectedSettings = {
