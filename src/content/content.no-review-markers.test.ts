@@ -88,7 +88,8 @@ describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
       const text = readFileSync(file, 'utf-8')
       const lines = text.split('\n')
       for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes(REVIEW_MARKER)) {
+        const currentLine = lines[i] ?? ''
+        if (currentLine.includes(REVIEW_MARKER)) {
           // Check whether the next line matches one of the allowed appearance.* key patterns.
           const nextLine = lines[i + 1] ?? ''
           const isAllowed = ALLOWED_KEY_PATTERNS.some((pattern) => pattern.test(nextLine))
