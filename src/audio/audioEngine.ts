@@ -176,6 +176,14 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
   // Drop cues whose tails have already finished (cleanupAt < now). Keeps the Set
   // bounded over a long session and avoids re-fading already-silent envelopes.
+  //
+  // The 100 ms slack between actual 'ended' fire time (stopAt = when + 5τ + 0.1s)
+  // and cleanupAt (stopAt + 0.1s) is intentional. During that window the cue is
+  // still in activeCues but its 'ended' listener has already disconnected the
+  // envelope from upstream + destination. setMuted ramps on these phantom
+  // envelopes are harmless dead work; close() disconnects are wrapped in
+  // try/catch for the same reason. Pruning strictly on cleanupAt < now lets us
+  // avoid threading a per-handle 'done' flag through every schedule* primitive.
   function pruneExpiredCues(): void {
     const now = audioCtx.currentTime
     // AH-WR-07: iterate a snapshot, not the live Set. Deleting from a Set during
