@@ -33,9 +33,14 @@ const MQL_QUERY = '(prefers-color-scheme: dark)'
  * mutated in place. The canonical fix is to remove the old element and append a new one.
  * - null-guarded: if no <link rel="icon"> exists and document.head is present, we still append.
  * - jsdom test host: document.head always exists; the beforeEach injects the link element.
+ * - Idempotent: if the existing link already points at the target dataUri (e.g. the inline
+ *   pre-paint script in index.html already wrote it, or React StrictMode double-mounted us
+ *   in dev), skip the remove/append cycle entirely. Rapid link swaps can debounce in some
+ *   Chrome versions and leave the tab icon stale; a no-op when nothing changed avoids it.
  */
 function replaceFaviconLink(dataUri: string): void {
   const oldLink = document.querySelector('link[rel="icon"]')
+  if (oldLink && oldLink.getAttribute('href') === dataUri) return
   const newLink = document.createElement('link')
   newLink.rel = 'icon'
   newLink.type = 'image/svg+xml'
