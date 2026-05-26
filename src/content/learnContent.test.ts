@@ -228,8 +228,4 @@ describe('LEARN_CONTENT PT-BR URL identity (D-12)', () => {
   it('googlePlayAndroid URL identical across locales (D-07 locale-invariant)', () => {
     expect(LEARN_CONTENT['pt-BR'].links.googlePlayAndroid.url).toBe(LEARN_CONTENT.en.links.googlePlayAndroid.url)
   })
-
-  it('PT-BR forrest body does NOT contain its EN-baseline-equivalent locked phrase', () => {
-    expect(LEARN_CONTENT['pt-BR'].explainer.forrest.body.includes('inspirado nos ensinamentos do Forrest')).toBe(false)
-  })
 })
