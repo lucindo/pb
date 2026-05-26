@@ -83,7 +83,10 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. User running an HRV / Stretch / Navi session on the Kuthasta orb sees every existing orb affordance unchanged — breath scale animation, outer ring + progress-arc OR outer-inner cue, idle still/ambient, lead-in countdown, completion checkmark, reduced-motion freeze.
   4. User passing an unrecognized `?breathingShape=` value continues to see the production `orb-halo` default (no broken state).
   5. Operator can switch live between `?breathingShape=orb-halo` / `minimal-rings` / `spiritual-eye` per-tab without rebuild and decide whether to promote Kuthasta to a persisted preference in Phase 48.
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 46-01-PLAN.md — Extend `BreathingShapeVariant` union + add spiritual-eye alias clause to `BREATHING_SHAPE_FLAG.parse` (+ vitest cases). [KUTH-01]
+  - [ ] 46-02-PLAN.md — Add 10 spike-012 V5 `--color-*-spiritual-eye` tokens to `theme.css` (5 per theme: halo-1/2, disc, disc-strong, star fill/stroke; halo-3 reused). [KUTH-04]
+  - [ ] 46-03-PLAN.md — Wire `StarGlyph` + `SPIRITUAL_EYE_HALOS` + three-way halo branch in `OrbContainer`; per-call-site `discBg` + child dispatch (Star replaces Cue for Running); operator visual UAT checkpoint. [KUTH-02, KUTH-03]
 **UI hint**: yes
 
 ### Phase 47: Persistable feature-flag preferences
@@ -123,12 +126,12 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | v1.4 Install Helper | 28–29 | 6 | Complete | 2026-05-16 |
 | v1.5 Multi-Practice | 30–35 | 27 | Complete | 2026-05-19 |
 | v2.0 New Design | 36–41, 44, 45 | 35 + 18 spike-loop items | Complete | 2026-05-25 |
-| v2.1 Kuthasta and Settings Switches | 46–48 | 0/TBD | Not started | — |
+| v2.1 Kuthasta and Settings Switches | 46–48 | 0/3+TBD | In progress | — |
 
 ### v2.1 Phase Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 46. Kuthasta orb variant | 0/TBD | Not started | — |
+| 46. Kuthasta orb variant | 0/3 | Planned | — |
 | 47. Persistable feature-flag preferences | 0/TBD | Not started | — |
 | 48. Appearance page + i18n | 0/TBD | Not started | — |
