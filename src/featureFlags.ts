@@ -16,6 +16,9 @@ export interface FeatureFlags {
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
+  // Bare flag (e.g. `?switcherIcon` or `?switcherIcon=`) — common CLI convention
+  // for boolean toggles. URLSearchParams.get returns '' for both forms, so they
+  // are indistinguishable here by design.
   '',
   '1',
   'on',
