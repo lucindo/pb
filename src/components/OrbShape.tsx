@@ -58,6 +58,16 @@ const V1_HALOS = [
   { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1, 3] },
 ] as const
 
+// Spike 012 V5 Halo Flame: same geometry as V1_HALOS — only the halo-1
+// and halo-2 tokens differ (gold rgba per spike lock); halo-3 reuses the
+// existing --color-orb-halo-3 (cool slate, intentionally unchanged per
+// spike README L168-169).
+const SPIRITUAL_EYE_HALOS = [
+  { token: '--color-orb-halo-1-spiritual-eye', pct: 1.0, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4, 2] },
+  { token: '--color-orb-halo-2-spiritual-eye', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [3, -2] },
+  { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1, 3] },
+] as const
+
 const DISC_PCT = 0.62
 // J5: 600 ms ease per spike V1 line 635 + V2 line 746 (corrected from J4's
 // erroneous 400 ms ease-in-out, which was copied from the deleted
@@ -149,6 +159,37 @@ function CheckmarkGlyph() {
         strokeLinejoin="round"
       >
         <polyline points="5 13 10 18 19 7" />
+      </svg>
+    </span>
+  )
+}
+
+// Spike 012 V5 Halo Flame: 5-point polygon, outer:inner ratio 2.5, point
+// straight up. Geometry locked at spike README L172-176; fill / stroke
+// tokens defined in theme.css per-theme. Reads tokens directly via inline
+// style (NOT currentColor) — the on-accent token would give #1a1d24 in
+// dark, which the spike explicitly rejects (Locked V5 values row "Star
+// fill" is #fafafe in dark). Star size = 20% of the centre disc per
+// spike L175; sized via width/height "20%" relative to the disc.
+function StarGlyph() {
+  return (
+    <span
+      aria-hidden="true"
+      className="relative z-10 flex items-center justify-center"
+      style={{ width: '20%', height: '20%' }}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        width="100%"
+        height="100%"
+        style={{
+          fill: 'var(--color-orb-star-fill-spiritual-eye)',
+          stroke: 'var(--color-orb-star-stroke-spiritual-eye)',
+          strokeWidth: 0.5,
+          strokeLinejoin: 'round',
+        }}
+      >
+        <polygon points="50,10 57.05,33.78 81.02,33.78 61.99,48.22 69.04,72.00 50,57.55 30.96,72.00 38.01,48.22 18.98,33.78 42.95,33.78" />
       </svg>
     </span>
   )
@@ -395,6 +436,21 @@ function OrbContainer({
               opacity: V2_HALO_OPACITY,
             }}
           />
+        ) : variant === 'spiritual-eye' ? (
+          SPIRITUAL_EYE_HALOS.map((h, i) => (
+            <div
+              key={i}
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                width: `${String(h.pct * 100)}%`,
+                height: `${String(h.pct * 100)}%`,
+                borderRadius: h.radius,
+                background: `var(${h.token})`,
+                transform: `translate(${String(h.shift[0])}px, ${String(h.shift[1])}px)`,
+              }}
+            />
+          ))
         ) : (
           V1_HALOS.map((h, i) => (
             <div
