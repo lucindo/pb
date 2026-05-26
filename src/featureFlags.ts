@@ -55,13 +55,25 @@ export function readQueryFeatureFlag<T>(
   return spec.parse(rawValue) ?? spec.defaultValue
 }
 
-const SWITCHER_ICON_FLAG = {
+// Phase 47 D-07: returns `null` for absent OR unparseable query values so the
+// resolver's `??` chain falls through to the persisted snapshot (not to the
+// production default). Private helper — only `readFeatureFlags` consumes it.
+function readQueryFeatureFlagOrNull<T>(
+  search: string,
+  spec: QueryFeatureFlagSpec<T>,
+): T | null {
+  const rawValue = new URLSearchParams(search).get(spec.queryParam)
+  if (rawValue === null) return null
+  return spec.parse(rawValue)
+}
+
+export const SWITCHER_ICON_FLAG = {
   queryParam: 'switcherIcon',
   defaultValue: false,
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
-const BREATHING_SHAPE_FLAG = {
+export const BREATHING_SHAPE_FLAG = {
   queryParam: 'breathingShape',
   defaultValue: 'orb-halo' as BreathingShapeVariant,
   parse(rawValue: string): BreathingShapeVariant | null {
@@ -73,7 +85,7 @@ const BREATHING_SHAPE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<BreathingShapeVariant>
 
-const ORB_IDLE_FLAG = {
+export const ORB_IDLE_FLAG = {
   queryParam: 'orbIdle',
   defaultValue: 'ambient' as OrbIdleBehavior,
   parse(rawValue: string): OrbIdleBehavior | null {
@@ -84,7 +96,7 @@ const ORB_IDLE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
 
-const RING_CUE_FLAG = {
+export const RING_CUE_FLAG = {
   queryParam: 'ringCue',
   defaultValue: 'progress-arc' as RingCueStyle,
   parse(rawValue: string): RingCueStyle | null {
@@ -97,11 +109,22 @@ const RING_CUE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<RingCueStyle>
 
-export function readFeatureFlags(search: string): FeatureFlags {
+// Phase 47 D-05/D-06/D-07: per-field 4-way resolver. Resolution order for each
+// field is query > persisted > default, evaluated independently per field.
+// `readQueryFeatureFlagOrNull` returns `null` for absent OR unparseable values,
+// so the `??` chain falls through to `persisted.<field>` (D-07: invalid query
+// is not silently masked into the production default). The boolean case
+// (switcherIcon) is safe because the helper returns `null`, not `false`.
+// The function stays pure (no I/O) so the App-side hook (useFeatureFlags) owns
+// the storage read and supplies `persisted` from loadPrefs().
+export function readFeatureFlags(
+  search: string,
+  persisted: FeatureFlags,
+): FeatureFlags {
   return {
-    switcherIcon: readQueryFeatureFlag(search, SWITCHER_ICON_FLAG),
-    breathingShape: readQueryFeatureFlag(search, BREATHING_SHAPE_FLAG),
-    orbIdle: readQueryFeatureFlag(search, ORB_IDLE_FLAG),
-    ringCue: readQueryFeatureFlag(search, RING_CUE_FLAG),
+    switcherIcon:   readQueryFeatureFlagOrNull(search, SWITCHER_ICON_FLAG)   ?? persisted.switcherIcon,
+    breathingShape: readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG) ?? persisted.breathingShape,
+    orbIdle:        readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)        ?? persisted.orbIdle,
+    ringCue:        readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)        ?? persisted.ringCue,
   }
 }
