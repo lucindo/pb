@@ -178,7 +178,7 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
           },
           section2: {
             title: 'Como este app guia sua respiração',
-            body: 'Este app guia uma inspiração e expiração contínuas, sem pausa entre elas. Escolha uma frequência lenta de menos de sete respirações por minuto; nos padrões assimétricos, a expiração é sempre a parte mais longa. O orbe na tela e os tons suaves de tigela marcam apenas onde você está em cada respiração.',
+            body: 'Este app guia uma inspiração e expiração contínuas, sem pausa entre elas. Escolha uma frequência lenta de menos de sete respirações por minuto; nos padrões assimétricos, a expiração é sempre a parte mais longa. O orbe na tela e os tons opcionais de tigela marcam apenas onde você está em cada respiração.',
           },
         },
         videos: [
