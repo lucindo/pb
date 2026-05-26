@@ -86,6 +86,20 @@ export function loadStats(deps: StorageDeps = {}): PersistedStats {
   return coerceStats(readEnvelope(deps).stats)
 }
 
+/**
+ * Records a session and returns the IN-MEMORY projection of stats.
+ *
+ * The returned value is what stats SHOULD BE after the write, not proof that
+ * the write succeeded. writeEnvelope is fire-and-forget per D-16/D-17 (quota
+ * / ITP / private mode / future-version short-circuit all silently swallow
+ * the write). The WR-08 posture is that callers treat the return as
+ * RAM-authoritative — UI updates immediately, and a subsequent loadStats may
+ * return a different value if the disk write failed.
+ *
+ * If a caller needs to know whether disk reflects RAM, it must re-read via
+ * loadStats and compare; that pattern is not currently required anywhere in
+ * the app.
+ */
 export function recordSession(
   elapsedMs: number,
   isComplete: boolean,

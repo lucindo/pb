@@ -271,6 +271,11 @@ export function saveStretchSettings(settings: StretchSettings, deps: StorageDeps
 // COUNT_THRESHOLD_MS / Number.isFinite guard logic, but reads from and writes to
 // practices.resonant.stats instead of the flat env.stats — so a completed
 // session is attributed to the correct practice subtree (T-30-08).
+//
+// Return value is the IN-MEMORY projection. writeEnvelope is fire-and-forget
+// per D-16/D-17; the caller must treat the returned PersistedStats as
+// RAM-authoritative (see recordSession docstring in stats.ts for the full
+// posture).
 export function recordResonantSession(
   elapsedMs: number,
   isComplete: boolean,
@@ -317,6 +322,9 @@ export function recordResonantSession(
 // Reads from / writes to practices.stretch.stats ONLY — resonant and naviKriya
 // slices are passed through untouched (T-34-02 isolation guarantee).
 // No `roundsCompleted` arg — Stretch does not count rounds (unlike NaviKriya).
+//
+// Return value is the IN-MEMORY projection per the same fire-and-forget
+// posture documented on recordResonantSession.
 export function recordStretchSession(
   elapsedMs: number,
   isComplete: boolean,
@@ -364,6 +372,9 @@ export function recordStretchSession(
 // only the fully-completed rounds and elapsedMs the partial elapsed time — both are
 // recorded the same way, so an early-ended session still adds its completed rounds
 // and minutes to the NK history.
+//
+// Return value is the IN-MEMORY projection per the same fire-and-forget
+// posture documented on recordResonantSession.
 export function recordNaviKriyaSession(
   elapsedMs: number,
   roundsCompleted: number,
