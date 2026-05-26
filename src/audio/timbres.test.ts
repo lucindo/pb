@@ -94,4 +94,14 @@ describe('timbres', () => {
     expect(Object.keys(TIMBRE_PRESETS)).toContain('flute')
     expect(Object.keys(TIMBRE_PRESETS)).not.toContain('chime')
   })
+
+  // scheduleBowlCue iterates preset.partials and attaches 'ended' listeners to
+  // each oscillator. An empty partials array would create no oscillators, leave
+  // filter + envelope connected to destination forever, and silently emit no
+  // audio. The DSP code has no runtime guard, so this assertion is the lock.
+  it('every preset declares at least one partial', () => {
+    for (const preset of Object.values(TIMBRE_PRESETS)) {
+      expect(preset.partials.length).toBeGreaterThan(0)
+    }
+  })
 })
