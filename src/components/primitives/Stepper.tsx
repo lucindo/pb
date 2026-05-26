@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
 
+import { MinusIcon } from '../icons/MinusIcon'
+import { PlusIcon } from '../icons/PlusIcon'
+
 export interface StepperProps {
   value: number
   onDecrement(this: void): void
@@ -41,7 +44,7 @@ export function Stepper({
         disabled={decrementDisabled}
         className={buttonClass}
       >
-        <MinusGlyph />
+        <MinusIcon width={16} height={16} />
       </button>
       <span className="min-w-12 text-center text-base font-medium tabular-nums text-[var(--color-breathing-accent-strong)]">
         {formatValue ? formatValue(value) : value}
@@ -53,43 +56,8 @@ export function Stepper({
         disabled={incrementDisabled}
         className={buttonClass}
       >
-        <PlusGlyph />
+        <PlusIcon width={16} height={16} />
       </button>
     </div>
-  )
-}
-
-function MinusGlyph() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    >
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  )
-}
-
-function PlusGlyph() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    >
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <line x1="12" y1="5" x2="12" y2="19" />
-    </svg>
   )
 }
