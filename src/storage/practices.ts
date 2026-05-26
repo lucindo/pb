@@ -70,6 +70,10 @@ export function coerceActivePractice(raw: unknown): PracticeId {
 function snapToNearestOption(value: number): number {
   const firstOption = NK_FRONT_COUNT_OPTIONS[0]
   if (firstOption === undefined) {
+    // Strict-mode artifact: NK_FRONT_COUNT_OPTIONS is non-empty by construction
+    // (domain literal in src/domain/naviKriyaSettings.ts). The guard satisfies
+    // noUncheckedIndexedAccess; the branch is unreachable at runtime unless the
+    // domain literal is emptied (a deliberate refactor).
     return DEFAULT_NK_SETTINGS.frontCount
   }
   let best = firstOption
