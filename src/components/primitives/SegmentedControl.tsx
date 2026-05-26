@@ -49,7 +49,7 @@ export function SegmentedControl<T extends string>({
             onClick={() => {
               onChange(option.id)
             }}
-            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 ${
               isActive
                 ? 'bg-[var(--color-breathing-accent)] font-semibold text-[var(--color-breathing-on-accent)]'
                 : 'font-medium text-[var(--color-breathing-text-soft)]'
