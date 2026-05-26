@@ -254,10 +254,16 @@ export function useAudioCues(
         setStatus('lead-in')
         setAudioAvailable(true)
         return firstInCueTime
-      } catch {
+      } catch (error) {
         // D-10: visuals-only fallback. App.tsx (Plan 04) still drives the visual countdown
         // via setTimeout/RAF chain. The error is intentionally swallowed (T-03-06: no raw
         // stack to user-facing surfaces).
+        if (import.meta.env.DEV) {
+          // Reason: dev-only breadcrumb for triage of iOS-Safari construction
+          // failures from real-device logs; never surfaces to production users.
+          // eslint-disable-next-line no-console
+          console.warn('[useAudioCues] start failed; falling back to visuals-only', error)
+        }
         setAudioAvailable(false)
         setStatus('failed')
         return null
