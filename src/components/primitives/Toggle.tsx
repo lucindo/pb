@@ -1,7 +1,13 @@
 export interface ToggleProps {
   checked: boolean
   onChange(this: void, next: boolean): void
+  /** Drives aria-label by default. When a consumer renders a visible adjacent
+   *  label, prefer setting `id` here and pointing the visible label at it via
+   *  `<label htmlFor={id}>` so the click target widens to the label text. */
   label: string
+  /** Optional DOM id. Use when a visible label needs to associate with this
+   *  switch via `<label htmlFor>` (the common settings-row pattern). */
+  id?: string
   disabled?: boolean
   className?: string
 }
@@ -14,12 +20,14 @@ export function Toggle({
   checked,
   onChange,
   label,
+  id,
   disabled = false,
   className = '',
 }: ToggleProps) {
   return (
     <button
       type="button"
+      id={id}
       role="switch"
       aria-checked={checked}
       aria-label={label}
