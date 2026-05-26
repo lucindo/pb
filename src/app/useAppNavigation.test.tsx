@@ -136,7 +136,7 @@ describe('useAppNavigation', () => {
     expect(result.current.returningFromAppearance).toBe(false)
   })
 
-  it('closeOnSessionView forces appearance → practice and clears sentinel', () => {
+  it('closeOnSessionView forces appearance → practice', () => {
     const { result, rerender } = renderNavigation({
       controlsDisabled: false,
       closeOnSessionView: false,
@@ -150,6 +150,38 @@ describe('useAppNavigation', () => {
     })
     expect(result.current.appScreen).toBe('appearance')
 
+    rerender({
+      controlsDisabled: false,
+      closeOnSessionView: true,
+    })
+
+    expect(result.current.appScreen).toBe('practice')
+  })
+
+  it('closeOnSessionView clears returningFromAppearance sentinel when previously set', () => {
+    const { result, rerender } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    // Drive the sentinel to true via the real flow: open appSettings →
+    // appearance → back-to-appSettings sets returningFromAppearance=true.
+    // This is the only state in which the sentinel is observable as `true`.
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    act(() => {
+      result.current.onAppearanceOpen()
+    })
+    act(() => {
+      result.current.onBackToAppSettings()
+    })
+    expect(result.current.returningFromAppearance).toBe(true)
+    expect(result.current.appScreen).toBe('appSettings')
+
+    // Now closeOnSessionView=true must both route to practice AND
+    // clear the sentinel. Without the setReturningFromAppearance(false)
+    // line in the effect, this assertion would fail.
     rerender({
       controlsDisabled: false,
       closeOnSessionView: true,
