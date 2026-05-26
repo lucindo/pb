@@ -39,7 +39,7 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
         />
       )
     case 'appearance':
-      return <AppearancePage onBack={vm.navigation.onBackToAppSettings} />
+      return <AppearancePage onBack={vm.navigation.onBackFromAppearance} />
     case 'practice':
     default:
       return <PracticeScreen vm={vm} />

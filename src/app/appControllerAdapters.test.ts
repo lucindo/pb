@@ -228,7 +228,7 @@ describe('app controller adapters', () => {
       onSettingsOpen: noop,
       onAppearanceOpen: noop,
       onBackToPractice: noop,
-      onBackToAppSettings: noop,
+      onBackFromAppearance: noop,
     }
 
     const navVm = createAppNavigationViewModel({ navigation })
@@ -250,11 +250,11 @@ describe('app controller adapters', () => {
     expect(dialogsVm.endSessionDialogs).toBe(endSessionDialogs)
   })
 
-  it('propagates onAppearanceOpen, onBackToAppSettings, and returningFromAppearance through the navigation view model', () => {
+  it('propagates onAppearanceOpen, onBackFromAppearance, and returningFromAppearance through the navigation view model', () => {
     // Distinct fn identities so each assertion proves the *specific* field
     // is forwarded, not merely that some callback equal to `noop` is present.
     const onAppearanceOpen = (): void => undefined
-    const onBackToAppSettings = (): void => undefined
+    const onBackFromAppearance = (): void => undefined
     const navigation: AppNavigation = {
       appScreen: 'appearance',
       returningFromAppearance: true,
@@ -262,13 +262,13 @@ describe('app controller adapters', () => {
       onSettingsOpen: noop,
       onAppearanceOpen,
       onBackToPractice: noop,
-      onBackToAppSettings,
+      onBackFromAppearance,
     }
 
     const navVm = createAppNavigationViewModel({ navigation })
 
     expect(navVm.onAppearanceOpen).toBe(onAppearanceOpen)
-    expect(navVm.onBackToAppSettings).toBe(onBackToAppSettings)
+    expect(navVm.onBackFromAppearance).toBe(onBackFromAppearance)
     expect(navVm.returningFromAppearance).toBe(true)
   })
 })

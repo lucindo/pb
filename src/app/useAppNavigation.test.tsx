@@ -98,7 +98,7 @@ describe('useAppNavigation', () => {
     expect(result.current.appScreen).toBe('appearance')
   })
 
-  it('onBackToAppSettings returns to appSettings with returningFromAppearance=true', () => {
+  it('onBackFromAppearance returns to appSettings with returningFromAppearance=true', () => {
     const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
 
     act(() => {
@@ -108,7 +108,7 @@ describe('useAppNavigation', () => {
       result.current.onAppearanceOpen()
     })
     act(() => {
-      result.current.onBackToAppSettings()
+      result.current.onBackFromAppearance()
     })
 
     expect(result.current.appScreen).toBe('appSettings')
@@ -125,7 +125,7 @@ describe('useAppNavigation', () => {
       result.current.onAppearanceOpen()
     })
     act(() => {
-      result.current.onBackToAppSettings()
+      result.current.onBackFromAppearance()
     })
     expect(result.current.returningFromAppearance).toBe(true)
 
@@ -174,7 +174,7 @@ describe('useAppNavigation', () => {
       result.current.onAppearanceOpen()
     })
     act(() => {
-      result.current.onBackToAppSettings()
+      result.current.onBackFromAppearance()
     })
     expect(result.current.returningFromAppearance).toBe(true)
     expect(result.current.appScreen).toBe('appSettings')

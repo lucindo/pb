@@ -222,7 +222,7 @@ export function createAppNavigationViewModel({
     onSettingsOpen: navigation.onSettingsOpen,
     onAppearanceOpen: navigation.onAppearanceOpen,
     onBackToPractice: navigation.onBackToPractice,
-    onBackToAppSettings: navigation.onBackToAppSettings,
+    onBackFromAppearance: navigation.onBackFromAppearance,
   }
 }
 

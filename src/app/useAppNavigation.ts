@@ -9,7 +9,7 @@ export interface AppNavigation {
   onSettingsOpen(this: void): void
   onAppearanceOpen(this: void): void
   onBackToPractice(this: void): void
-  onBackToAppSettings(this: void): void
+  onBackFromAppearance(this: void): void
 }
 
 export interface UseAppNavigationArgs {
@@ -62,7 +62,7 @@ export function useAppNavigation({
     setReturningFromAppearance(false)
   }, [])
 
-  const onBackToAppSettings = useCallback((): void => {
+  const onBackFromAppearance = useCallback((): void => {
     setAppScreen('appSettings')
     setReturningFromAppearance(true)
   }, [])
@@ -74,6 +74,6 @@ export function useAppNavigation({
     onSettingsOpen,
     onAppearanceOpen,
     onBackToPractice,
-    onBackToAppSettings,
+    onBackFromAppearance,
   }
 }

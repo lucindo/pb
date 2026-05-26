@@ -50,7 +50,7 @@ export interface AppNavigationViewModel {
   onSettingsOpen(this: void): void
   onAppearanceOpen(this: void): void
   onBackToPractice(this: void): void
-  onBackToAppSettings(this: void): void
+  onBackFromAppearance(this: void): void
 }
 
 export interface AppDialogsViewModel {

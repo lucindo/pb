@@ -32,7 +32,7 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
       onSettingsOpen: () => {},
       onAppearanceOpen: () => {},
       onBackToPractice: () => {},
-      onBackToAppSettings: () => {},
+      onBackFromAppearance: () => {},
     },
     dialogs: {
       endSessionDialogs: [],
