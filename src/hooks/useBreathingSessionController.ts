@@ -211,9 +211,12 @@ export function useBreathingSessionController({
     clearCapturedSession,
   ])
 
-  const runningNeedsConfirmation =
-    state.status === 'running' &&
-    (state.lockedSettings.durationMinutes !== 'open-ended' || state.stretchSegments !== null)
+  const runningNeedsConfirmation = useMemo(
+    (): boolean =>
+      state.status === 'running' &&
+      (state.lockedSettings.durationMinutes !== 'open-ended' || state.stretchSegments !== null),
+    [state.status, state.lockedSettings.durationMinutes, state.stretchSegments],
+  )
 
   const requestEnd = useCallback((): void => {
     if (runningNeedsConfirmation) {
