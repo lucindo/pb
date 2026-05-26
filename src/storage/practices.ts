@@ -176,6 +176,22 @@ export function coercePractices(raw: unknown): PracticeMap {
   }
 }
 
+// Cross-practice preservation helper: returns the raw on-disk practices map
+// (NOT coerced) so a save*/record* that mutates only one slice can spread the
+// other two slices back to disk unchanged. Without this, the previous
+// `coercePractices(...)` -> spread pattern fully normalized every slice on
+// every write — meaning a write to practices.resonant would silently rewrite
+// practices.stretch and practices.naviKriya's on-disk shape (stripping
+// forward-compatible unknown sub-keys and normalizing any partial corruption).
+//
+// The contract: callers must coerce their TARGET slice (the one they update)
+// before writing, but pass other slices through as raw `unknown`. The on-disk
+// envelope is "self-healing on read" via coercePractices at load time, so a
+// drifted sibling slice remains a load-time concern, not a write-time one.
+function rawPracticesMap(raw: unknown): Record<string, unknown> {
+  return asRecord(raw)
+}
+
 export function loadPractices(deps: StorageDeps = {}): PracticeMap {
   return coercePractices(readEnvelope(deps).practices)
 }
@@ -195,29 +211,54 @@ export function saveActivePractice(id: PracticeId, deps: StorageDeps = {}): void
 
 export function saveResonantSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
   const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
+  // Spread the RAW on-disk practices map so the stretch and naviKriya slices
+  // (and any forward-compatible unknown sub-keys in them) survive untouched.
+  // Only the resonant slice is coerced + rewritten.
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawResonant = asRecord(rawPractices.resonant)
   writeEnvelope(
-    { ...env, practices: { ...practices, resonant: { ...practices.resonant, settings } } },
+    {
+      ...env,
+      practices: {
+        ...rawPractices,
+        resonant: { ...rawResonant, settings },
+      },
+    },
     deps,
   )
 }
 
 export function saveNaviKriyaSettings(settings: NaviKriyaSettings, deps: StorageDeps = {}): void {
   const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawNaviKriya = asRecord(rawPractices.naviKriya)
   writeEnvelope(
-    { ...env, practices: { ...practices, naviKriya: { ...practices.naviKriya, settings } } },
+    {
+      ...env,
+      practices: {
+        ...rawPractices,
+        naviKriya: { ...rawNaviKriya, settings },
+      },
+    },
     deps,
   )
 }
 
-// Phase 34 STRETCH-04: modeled exactly on saveResonantSettings (lines above).
-// Spreads ...practices then overrides only the stretch slice — other slices untouched.
+// Phase 34 STRETCH-04: modeled on saveResonantSettings (above).
+// Spreads the raw practices map then overrides only the stretch slice — the
+// resonant and naviKriya slices are passed through as their raw on-disk shape.
 export function saveStretchSettings(settings: StretchSettings, deps: StorageDeps = {}): void {
   const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawStretch = asRecord(rawPractices.stretch)
   writeEnvelope(
-    { ...env, practices: { ...practices, stretch: { ...practices.stretch, settings } } },
+    {
+      ...env,
+      practices: {
+        ...rawPractices,
+        stretch: { ...rawStretch, settings },
+      },
+    },
     deps,
   )
 }
@@ -232,8 +273,12 @@ export function recordResonantSession(
   deps: StorageDeps = {},
 ): PersistedStats {
   const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
-  const stats = practices.resonant.stats
+  // Read the target slice's stats through the coercer (the arithmetic below
+  // needs a guaranteed-numeric stats object). The OTHER slices stay as their
+  // raw on-disk shape — see rawPracticesMap helper for the rationale.
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawResonant = asRecord(rawPractices.resonant)
+  const stats = coerceStats(rawResonant.stats)
   // DS-WR-06 parity: reject NaN/Infinity/negative elapsedMs up front so a bad
   // frame cannot poison totalElapsedSeconds.
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
@@ -252,7 +297,13 @@ export function recordResonantSession(
     lastSessionDurationSeconds: elapsedSeconds,
   }
   writeEnvelope(
-    { ...env, practices: { ...practices, resonant: { ...practices.resonant, stats: next } } },
+    {
+      ...env,
+      practices: {
+        ...rawPractices,
+        resonant: { ...rawResonant, stats: next },
+      },
+    },
     deps,
   )
   return next
@@ -268,8 +319,9 @@ export function recordStretchSession(
   deps: StorageDeps = {},
 ): PersistedStats {
   const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
-  const stats = practices.stretch.stats
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawStretch = asRecord(rawPractices.stretch)
+  const stats = coerceStats(rawStretch.stats)
   // DS-WR-06 parity: reject NaN/Infinity/negative elapsedMs up front.
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
     return stats
@@ -287,7 +339,13 @@ export function recordStretchSession(
     lastSessionDurationSeconds: elapsedSeconds,
   }
   writeEnvelope(
-    { ...env, practices: { ...practices, stretch: { ...practices.stretch, stats: next } } },
+    {
+      ...env,
+      practices: {
+        ...rawPractices,
+        stretch: { ...rawStretch, stats: next },
+      },
+    },
     deps,
   )
   return next
@@ -309,8 +367,9 @@ export function recordNaviKriyaSession(
   deps: StorageDeps = {},
 ): PersistedStats {
   const env = readEnvelope(deps)
-  const practices = coercePractices(env.practices)
-  const stats = practices.naviKriya.stats
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawNaviKriya = asRecord(rawPractices.naviKriya)
+  const stats = coerceStats(rawNaviKriya.stats)
   // T-31-08: reject NaN/Infinity/negative elapsedMs so a bad frame cannot
   // poison totalElapsedSeconds (DS-WR-06 parity).
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
@@ -332,9 +391,17 @@ export function recordNaviKriyaSession(
     // pre-existing fields; this line explicitly updates roundsCompleted.
     roundsCompleted: (stats.roundsCompleted ?? 0) + roundsCompleted,
   }
-  // T-31-07: write ONLY the naviKriya slice — resonant is passed through unchanged.
+  // T-31-07: write ONLY the naviKriya slice — resonant and stretch are passed
+  // through as their raw on-disk shape (rawPractices spread) so unknown
+  // forward-compatible sub-keys and partial-corruption fields are preserved.
   writeEnvelope(
-    { ...env, practices: { ...practices, naviKriya: { ...practices.naviKriya, stats: next } } },
+    {
+      ...env,
+      practices: {
+        ...rawPractices,
+        naviKriya: { ...rawNaviKriya, stats: next },
+      },
+    },
     deps,
   )
   return next
