@@ -113,6 +113,12 @@ export function useAppViewModel(): AppViewModel {
       breathingResetSession()
       return
     }
+    if (primaryActions.breathing === 'cancel') {
+      // startOrCancel handles the cancel path internally when phase === 'lead-in'.
+      void breathingStartOrCancel()
+      return
+    }
+    // 'start': startOrCancel transitions idle → lead-in → running.
     void breathingStartOrCancel()
   }, [primaryActions.breathing, breathingRequestEnd, breathingResetSession, breathingStartOrCancel])
 
