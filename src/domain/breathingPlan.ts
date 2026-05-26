@@ -1,5 +1,5 @@
 import type { RatioLabel, SessionSettings } from './settings'
-import { validateSettings } from './settings'
+import { RATIO_PARTS, validateSettings } from './settings'
 
 export interface BreathingPlan {
   readonly bpm: number
@@ -11,13 +11,6 @@ export interface BreathingPlan {
 }
 
 const MS_PER_MINUTE = 60_000
-
-const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
-  '50:50': { inhale: 50, exhale: 50 },
-  '40:60': { inhale: 40, exhale: 60 },
-  '30:70': { inhale: 30, exhale: 70 },
-  '20:80': { inhale: 20, exhale: 80 },
-}
 
 export function createBreathingPlan(settings: SessionSettings): BreathingPlan {
   const validSettings = validateSettings(settings)

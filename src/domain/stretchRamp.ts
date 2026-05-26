@@ -8,6 +8,7 @@
 // active segment by elapsedMs and computes the frame within that segment.
 
 import type { StretchSettings } from './settings'
+import { RATIO_PARTS } from './settings'
 import type { BreathPhase, SessionFrame } from './sessionMath'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,17 +43,6 @@ export interface StretchSessionFrame extends SessionFrame {
   readonly currentCycleMs: number    // this cycle's duration
   readonly currentInhaleMs: number   // this cycle's inhale duration
   readonly currentExhaleMs: number   // this cycle's exhale duration
-}
-
-// ─── Ratio table (mirroring breathingPlan.ts) ──────────────────────────────
-
-import type { RatioLabel } from './settings'
-
-const RATIO_PARTS: Record<RatioLabel, { inhale: number; exhale: number }> = {
-  '50:50': { inhale: 50, exhale: 50 },
-  '40:60': { inhale: 40, exhale: 60 },
-  '30:70': { inhale: 30, exhale: 70 },
-  '20:80': { inhale: 20, exhale: 80 },
 }
 
 // ─── buildStretchSegments ─────────────────────────────────────────────────────

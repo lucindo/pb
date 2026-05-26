@@ -57,6 +57,15 @@ export const STRETCH_INITIAL_BPM_OPTIONS: readonly number[] = (BPM_OPTIONS as re
 
 export const RATIO_OPTIONS = ['50:50', '40:60', '30:70', '20:80'] as const satisfies readonly RatioLabel[]
 
+// Inhale/exhale split (percent of cycle) for each ratio. Single source of truth —
+// consumed by createBreathingPlan and buildStretchSegments.
+export const RATIO_PARTS: Record<RatioLabel, { readonly inhale: number; readonly exhale: number }> = {
+  '50:50': { inhale: 50, exhale: 50 },
+  '40:60': { inhale: 40, exhale: 60 },
+  '30:70': { inhale: 30, exhale: 70 },
+  '20:80': { inhale: 20, exhale: 80 },
+}
+
 export const DURATION_OPTIONS = [
   5,
   10,
