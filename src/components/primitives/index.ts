@@ -25,6 +25,9 @@ export type { PickerCardGridProps, PickerCardLayout } from './PickerCardGrid'
 export { Pill } from './Pill'
 export type { PillProps, PillVariant } from './Pill'
 
+export { SectionCard } from './SectionCard'
+export type { SectionCardProps } from './SectionCard'
+
 export { SegmentedControl } from './SegmentedControl'
 export type { SegmentedControlOption, SegmentedControlProps } from './SegmentedControl'
 

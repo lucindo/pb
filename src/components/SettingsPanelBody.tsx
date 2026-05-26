@@ -4,6 +4,7 @@ import type { UiStrings } from '../content/strings'
 import { CuePicker } from './CuePicker'
 import { IosInstallSteps } from './IosInstallSteps'
 import { LanguagePicker } from './LanguagePicker'
+import { SectionCard } from './primitives/SectionCard'
 import { SettingsSectionHeader } from './SettingsSectionHeader'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
@@ -28,30 +29,6 @@ export interface SettingsPanelBodyProps {
   isStandalone: boolean
   installable: boolean
   onInstall(this: void): Promise<void>
-}
-
-// Spike-locked card chrome — border-soft 1px + surface bg + 20px radius
-// (spike index.html lines 1809-1814). Padding varies per section content;
-// callers supply via the `padding` prop.
-function SectionCard({
-  padding,
-  children,
-}: {
-  padding: string
-  children: ReactNode
-}): ReactElement {
-  return (
-    <div
-      style={{
-        background: 'var(--color-breathing-surface)',
-        border: '1px solid var(--color-border-soft)',
-        borderRadius: 20,
-        padding,
-      }}
-    >
-      {children}
-    </div>
-  )
 }
 
 function SettingsInstallSection({

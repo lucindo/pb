@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactElement } from 'react'
 
 import { ChevronBackIcon } from '../../components/icons'
 import { OrbPicker } from '../../components/OrbPicker'
@@ -7,6 +7,7 @@ import { SettingsSectionHeader } from '../../components/SettingsSectionHeader'
 import { SettingsToggleRow } from '../../components/SettingsToggleRow'
 import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
+import { SectionCard } from '../../components/primitives/SectionCard'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
 import { useOrbIdleChoice } from '../../hooks/useOrbIdleChoice'
 import { useSwitcherIconChoice } from '../../hooks/useSwitcherIconChoice'
@@ -14,30 +15,6 @@ import { useUiStrings } from '../../hooks/useUiStringsContext'
 
 export interface AppearancePageProps {
   onBack(this: void): void
-}
-
-// Spike-locked card chrome — border-soft 1px + surface bg + 20px radius
-// (spike index.html lines 1809-1814). Duplicated inline per RESEARCH OQ#4;
-// do NOT export — private to this file.
-function SectionCard({
-  padding,
-  children,
-}: {
-  padding: string
-  children: ReactNode
-}): ReactElement {
-  return (
-    <div
-      style={{
-        background: 'var(--color-breathing-surface)',
-        border: '1px solid var(--color-border-soft)',
-        borderRadius: 20,
-        padding,
-      }}
-    >
-      {children}
-    </div>
-  )
 }
 
 /** Full-page Appearance surface. Composes PageShell + TopAppBar (back
