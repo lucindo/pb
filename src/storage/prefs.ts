@@ -3,6 +3,16 @@
 // Phase 14 D-10/D-17: per-field coerce-and-fallback for user prefs.
 // Coercers are NON-THROWING (mirrors coerceSettings in src/storage/settings.ts).
 // Per-field policy: a single drifted dimension does NOT discard the other three.
+//
+// Legacy migration policy (per AUDIO-02 precedent):
+//   - DELETED enum value -> explicit remap in the coercer's legacy table
+//     (e.g. LEGACY_TIMBRE_REMAP below: chime -> flute). The remap is
+//     load-bearing forever for v1.x envelopes.
+//   - RENAMED default only (enum value still valid) -> no migration; an
+//     existing user's explicit choice is preserved. The default change only
+//     affects users who have not yet made an explicit choice.
+//   - STRUCTURAL field move (rename, nest, split) -> STATE_VERSION bump +
+//     migrateEnvelope ladder step in storage.ts.
 
 import {
   DEFAULT_THEME,
