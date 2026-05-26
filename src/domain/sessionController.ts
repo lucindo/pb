@@ -36,6 +36,9 @@ export interface CompleteSessionState {
 
 export type SessionState = IdleSessionState | RunningSessionState | CompleteSessionState
 
+// SessionSettings contains only primitives — a shallow copy is intentionally sufficient.
+// If any field becomes an object/array, change this to a deep clone so callers cannot
+// reach into the locked/idle state through a shared reference.
 function cloneSettings(settings: SessionSettings): SessionSettings {
   return { ...settings }
 }
