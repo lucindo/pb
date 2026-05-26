@@ -18,11 +18,11 @@ export interface MuteToggleProps {
    *  outranks; muted is ignored in label and aria-pressed is undefined. */
   needsResume?: boolean
   /** A11Y-01: id of the App-level aria-live resume-hint region. When needsResume
-   *  is true, aria-describedby is set to this id so screen readers announce the
-   *  hint text. When needsResume is false, aria-describedby is omitted to avoid
-   *  empty-content announcements (the live region text is the empty string when
-   *  not in needs-resume mode). */
-  resumeHintId: string
+   *  is true AND this id is provided, aria-describedby is set so screen readers
+   *  announce the hint text. When needsResume is false (or the id is omitted —
+   *  e.g. the navi audio VM has no resume flow), aria-describedby is omitted
+   *  to avoid empty-content announcements. */
+  resumeHintId?: string
   strings: UiStrings['practice']['mute']
   onToggle(this: void): void
 }
@@ -45,7 +45,7 @@ export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, s
     <button
       type="button"
       aria-pressed={needsResume ? undefined : muted}
-      aria-describedby={needsResume ? resumeHintId : undefined}
+      aria-describedby={needsResume && resumeHintId !== undefined ? resumeHintId : undefined}
       aria-label={label}
       title={label}
       disabled={!audioAvailable}

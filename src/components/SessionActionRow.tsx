@@ -7,7 +7,9 @@ export interface SessionAudioToggleProps {
   muted: boolean
   audioAvailable: boolean
   needsResume: boolean
-  resumeHintId: string
+  /** Required when needsResume can become true; omitted by the navi audio VM
+   *  which has no resume flow. Forwarded as-is to MuteToggle. */
+  resumeHintId?: string
   onMuteToggle(this: void): void
 }
 

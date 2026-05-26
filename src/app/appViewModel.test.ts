@@ -273,7 +273,9 @@ describe('app audio view models', () => {
       muted: true,
       audioAvailable: false,
       needsResume: false,
-      resumeHintId: '',
     })
+    // Navi has no resume flow — resumeHintId is left undefined so consumers
+    // (MuteToggle) gate aria-describedby on both needsResume AND resumeHintId.
+    expect(audio.resumeHintId).toBeUndefined()
   })
 })

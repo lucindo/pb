@@ -63,7 +63,10 @@ export interface AppAudioToggleViewModel {
   muted: boolean
   audioAvailable: boolean
   needsResume: boolean
-  resumeHintId: string
+  /** Id of the App-level aria-live resume-hint region. Required when
+   *  needsResume can become true (breathing audio VM); omitted when
+   *  needsResume is structurally false (navi audio VM has no resume flow). */
+  resumeHintId?: string
   onMuteToggle(this: void): void
 }
 
@@ -351,11 +354,12 @@ export function createNaviAudioToggleViewModel(input: {
   audioAvailable: boolean
   onMuteToggle(this: void): void
 }): AppAudioToggleViewModel {
+  // Navi has no resume flow — leaving resumeHintId undefined keeps consumers
+  // honest. MuteToggle gates aria-describedby on needsResume && resumeHintId.
   return {
     muted: input.muted,
     audioAvailable: input.audioAvailable,
     needsResume: false,
-    resumeHintId: '',
     onMuteToggle: input.onMuteToggle,
   }
 }
