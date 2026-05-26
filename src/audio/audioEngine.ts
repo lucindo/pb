@@ -142,13 +142,19 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     }
   }
 
+  // AudioContextState widened to include WebKit's 'interrupted' extension
+  // (D-37 / Phase 5.1). The cast documents intent even if the TS DOM lib does
+  // not require it; centralising it here keeps the eslint-disable in one place
+  // instead of repeated at every read site.
+  type ExtendedAudioContextState = AudioContextState | 'interrupted'
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+  const readState = (): ExtendedAudioContextState => audioCtx.state as ExtendedAudioContextState
+
   // Plan 06 D-36: single statechange listener — drives the hook's state machine.
-  // Cast accepts WebKit's 'interrupted' superset (D-37). The listener is REMOVED inside
-  // close() BEFORE audioCtx.close() to prevent a 'closed' event firing after unmount.
+  // The listener is REMOVED inside close() BEFORE audioCtx.close() to prevent
+  // a 'closed' event firing after unmount.
   const onStateChange = (): void => {
-    // Reason: AudioContextState widened to include WebKit 'interrupted' extension (D-37 / Phase 5.1); cast documents intent even if TS DOM lib does not require it.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    opts.onStateChange?.(audioCtx.state as AudioContextState | 'interrupted')
+    opts.onStateChange?.(readState())
   }
   // Ordering invariant: addEventListener runs AFTER the await audioCtx.resume()
   // above, so the initial suspended → running transition fires before the
@@ -334,9 +340,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         // Reason: defensive optional chain — onStateChange is typed optional in CreateAudioEngineOptions; the chain documents that intent even where the call site happens to always supply it.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if ((err as DOMException)?.name === 'InvalidStateError') {
-          // Reason: AudioContextState widened to include WebKit 'interrupted' extension (D-37 / Phase 5.1); cast documents intent even if TS DOM lib does not require it.
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-          opts.onStateChange?.(audioCtx.state as AudioContextState | 'interrupted')
+          opts.onStateChange?.(readState())
         }
         // Else: silent. No console.debug (discretion #4). The session continues on visuals
         // only — same posture as Phase 3 D-10 and Phase 5 D-09.
@@ -344,9 +348,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     },
 
     get state(): AudioContextState | 'interrupted' {
-      // Reason: AudioContextState widened to include WebKit 'interrupted' extension (D-37 / Phase 5.1); cast documents intent even if TS DOM lib does not require it.
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      return audioCtx.state as AudioContextState | 'interrupted'
+      return readState()
     },
   }
 
