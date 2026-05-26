@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 
 // Spike-locked card chrome — border-soft 1px + surface bg + 20px radius
 // (spike index.html lines 1809-1814). Padding varies per section content;
@@ -15,7 +15,7 @@ import type { ReactElement, ReactNode } from 'react'
 // here per code-reviewer note that the variants serve distinct surfaces.
 
 export interface SectionCardProps {
-  padding: string
+  padding: CSSProperties['padding']
   children: ReactNode
 }
 
