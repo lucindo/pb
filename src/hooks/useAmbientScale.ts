@@ -34,7 +34,9 @@ export function useAmbientScale(active: boolean): number {
     let phase: 'in' | 'out' = 'in'
     let start = performance.now()
     let raf = 0
+    let cancelled = false
     const tick = (now: number) => {
+      if (cancelled) return
       const phaseMs = phase === 'in' ? INHALE_MS : EXHALE_MS
       const elapsed = now - start
       if (elapsed >= phaseMs) {
@@ -52,6 +54,7 @@ export function useAmbientScale(active: boolean): number {
     }
     raf = requestAnimationFrame(tick)
     return () => {
+      cancelled = true
       cancelAnimationFrame(raf)
     }
   }, [animated])
