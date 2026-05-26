@@ -119,7 +119,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   - [x] 48-01-PLAN.md — i18n catalog: extend UiStrings with appearance.*, rename appSettings.sections.appearance → theme (D-01), add EN copy (D-03..D-08) + PT-BR drafts (D-09), adapt content.no-review-markers.test.ts drift-guard (D-18 path a), update SettingsPanelBody.tsx consumer. [I18N-01, I18N-02, I18N-03]
   - [x] 48-02-PLAN.md — Navigation extension: AppScreen += 'appearance', add onAppearanceOpen + onBackToAppSettings callbacks + returningFromAppearance sentinel; propagate through AppDialogsViewModel + createAppDialogsViewModel; D-16 transition tests. [APPEAR-01, APPEAR-02]
   - [x] 48-03-PLAN.md — Picker components: create OrbPicker.tsx + RingCuePicker.tsx (paste-and-rename of LanguagePicker; D-10/D-11) + per-picker tests (D-14). [APPEAR-03]
-  - [ ] 48-04-PLAN.md — Appearance page + chevron + router: new AppearancePage with 2 sections / 2 pickers / 2 toggles (D-15), add trailing chevron + conditional focus-restoration to AppSettingsPage (D-17), 4th ScreenRouter case + Pitfall-5 fixture cleanup, blocking operator visual UAT (Light/Dark + mobile/desktop + locale-switch). [APPEAR-01, APPEAR-02, APPEAR-04, APPEAR-05, APPEAR-06]
+  - [x] 48-04-PLAN.md — Appearance page + chevron + router: new AppearancePage with 2 sections / 2 pickers / 2 toggles (D-15), add trailing chevron + conditional focus-restoration to AppSettingsPage (D-17), 4th ScreenRouter case + Pitfall-5 fixture cleanup, blocking operator visual UAT (Light/Dark + mobile/desktop + locale-switch). [APPEAR-01, APPEAR-02, APPEAR-04, APPEAR-05, APPEAR-06]
 **UI hint**: yes
 
 ## Progress
@@ -142,4 +142,4 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 |-------|----------------|--------|-----------|
 | 46. Kuthasta orb variant | 3/3 | Complete    | 2026-05-26 |
 | 47. Persistable feature-flag preferences | 4/4 | Complete    | 2026-05-26 |
-| 48. Appearance page + i18n | 3/4 | In Progress|  |
+| 48. Appearance page + i18n | 4/4 | Complete   | 2026-05-26 |
