@@ -55,13 +55,27 @@ export function readQueryFeatureFlag<T>(
   return spec.parse(rawValue) ?? spec.defaultValue
 }
 
-const SWITCHER_ICON_FLAG = {
+// Phase 47 D-07: returns `null` for absent OR unparseable query values so the
+// resolver's `??` chain falls through to the persisted snapshot (not to the
+// production default). Private helper — only `readFeatureFlags` consumes it
+// (wired up in Task 2 of Plan 47-01).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Reason: consumed by readFeatureFlags after the 2-arg signature change in Task 2 of this plan; landed here first so the resolver can compose it without a forward-reference.
+function readQueryFeatureFlagOrNull<T>(
+  search: string,
+  spec: QueryFeatureFlagSpec<T>,
+): T | null {
+  const rawValue = new URLSearchParams(search).get(spec.queryParam)
+  if (rawValue === null) return null
+  return spec.parse(rawValue)
+}
+
+export const SWITCHER_ICON_FLAG = {
   queryParam: 'switcherIcon',
   defaultValue: false,
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
-const BREATHING_SHAPE_FLAG = {
+export const BREATHING_SHAPE_FLAG = {
   queryParam: 'breathingShape',
   defaultValue: 'orb-halo' as BreathingShapeVariant,
   parse(rawValue: string): BreathingShapeVariant | null {
@@ -73,7 +87,7 @@ const BREATHING_SHAPE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<BreathingShapeVariant>
 
-const ORB_IDLE_FLAG = {
+export const ORB_IDLE_FLAG = {
   queryParam: 'orbIdle',
   defaultValue: 'ambient' as OrbIdleBehavior,
   parse(rawValue: string): OrbIdleBehavior | null {
@@ -84,7 +98,7 @@ const ORB_IDLE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
 
-const RING_CUE_FLAG = {
+export const RING_CUE_FLAG = {
   queryParam: 'ringCue',
   defaultValue: 'progress-arc' as RingCueStyle,
   parse(rawValue: string): RingCueStyle | null {
