@@ -3,11 +3,17 @@
 // Phase 26 D-12: marker-guard. Originally failed if "// TODO: native-speaker review" appeared
 // anywhere in src/content/. Locks the I18N-07 done-state against future regressions.
 //
-// Phase 48 D-18 (path a): Extended with a structural line-above-value allowlist for the new
-// appearance.* namespace introduced in Phase 48. The allowlist is a fixed list of key-shape
-// patterns — not a file-name wildcard or namespace-string match — so it is tight: only markers
-// placed on the line immediately above one of the listed appearance.* key value lines are allowed.
-// Any marker above an unlisted key (e.g., above `language: 'Idioma'`) still fails.
+// Phase 48 D-18 (path a): extended with a structural allowlist for the new appearance.*
+// namespace introduced in Phase 48.
+//
+// Phase 48 REVIEW WR-03 follow-up: the original allowlist matched line-shape regexes (e.g.
+// `/^\s*label:\s*'/`) that fired anywhere in a content file. Any future `label:` / `theme:`
+// key introduced outside the appearance.* / appSettings.sections.theme block would be silently
+// allowlisted. Replaced with block-scope tracking: a marker is allowed iff the value line
+// immediately below it lives inside one of two structural contexts:
+//
+//   1. Any descendant of an `appearance: {` block (covers all appearance.* PT-BR keys); or
+//   2. The `theme: ...` value line directly under `appSettings.sections` (D-01 renamed key).
 //
 // Close-out gate: when I18N-04 (native-speaker review pass) removes the markers, this guard
 // stays green without further code changes — the allowlist is a relaxation, not a requirement.
@@ -16,6 +22,7 @@
 //   CONTEXT.md D-18 — adaptation rationale and path selection
 //   REQUIREMENTS.md I18N-02 — PT-BR completeness requirement (marker workflow)
 //   REQUIREMENTS.md I18N-04 (future) — native-speaker review pass that closes the markers
+//   REVIEW.md WR-03 — block-scope tightening rationale
 //
 // Analog: src/styles/theme.no-hardcoded-classes.test.ts (banned-pattern fs-scan guard)
 
@@ -49,59 +56,148 @@ const CONTENT_FILES = collectFiles(CONTENT_DIR)
 
 const REVIEW_MARKER = 'TODO: native-speaker review'
 
-// Phase 48 D-18 path (a): structural allowlist of appearance.* value-line shapes.
+// Block-open line: `<key>: {` at end of (trimmed) line. Captures the key name.
 //
-// When a REVIEW_MARKER appears on line N, this guard checks whether line N+1 matches
-// one of these patterns. If yes, the marker is allowlisted (it precedes a known
-// appearance.* key value). If no, the marker is a violation.
-//
-// Pattern design: each regex matches the structural shape of an appearance.* value line
-// (leading whitespace + key name + colon + single-quote). This is tight enough to avoid
-// false-positives in unrelated sections while not requiring brace-balance tracking.
-//
-// The `theme:` pattern covers the D-01 renamed key (appSettings.sections.theme 'Tema')
-// which also carries a // TODO: native-speaker review marker per D-09.
-//
-// D-18 + I18N-02 reference: these patterns correspond 1:1 to the Phase 48 PT-BR entries
-// in UI_STRINGS['pt-BR'].appearance.* and UI_STRINGS['pt-BR'].appSettings.sections.theme.
-// I18N-04 future requirement: when the native-speaker pass removes all markers, this
-// allowlist becomes vacuously unexercised — no code change needed.
-const ALLOWED_KEY_PATTERNS: RegExp[] = [
-  /^\s*title:\s*'/,
-  /^\s*backChevron:\s*'/,
-  /^\s*rightChevronAriaOnSettings:\s*'/,
-  /^\s*orbStyle:\s*'/,
-  /^\s*visual:\s*'/,
-  /^\s*label:\s*'/,
-  /^\s*halo:\s*'/,
-  /^\s*minimal:\s*'/,
-  /^\s*kuthasta:\s*'/,
-  /^\s*arc:\s*'/,
-  /^\s*rings:\s*'/,
-  /^\s*theme:\s*'/, // D-01 renamed key: appSettings.sections.theme (PT-BR 'Tema')
-]
+// Pattern intentionally rejects same-line block closes (e.g. `foo: {}`) — those
+// don't open a persistent scope and shouldn't be pushed onto the stack.
+const BLOCK_OPEN_RE = /^([a-zA-Z_$][\w$]*)\s*:\s*\{$/
+// Block-close line: optional `)`/`,` decoration after the `}`.
+const BLOCK_CLOSE_RE = /^\}\)?,?$/
+// Value-line (any indented `<key>: <something>`). Captures the key name.
+const VALUE_KEY_RE = /^\s*([a-zA-Z_$][\w$]*)\s*:/
+
+/**
+ * Walk through `text` line-by-line. For each REVIEW_MARKER on line N, check
+ * whether the value line below it (line N+1) lives inside one of the two
+ * structural allowlist contexts:
+ *
+ *   - Stack contains `'appearance'` (any descendant of `appearance: {`); or
+ *   - Stack ends with `['appSettings', 'sections']` AND the next-line key is `theme`.
+ *
+ * Returns `${file}:${1-based-line-number}` entries for any marker that fails
+ * both rules. A `null` `file` argument is permitted for synthetic test input.
+ */
+export function findUnreviewedMarkers(text: string, file: string | null): string[] {
+  const lines = text.split('\n')
+  const hits: string[] = []
+  // Stack of currently-open block keys (root → leaf order).
+  const stack: string[] = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i] ?? ''
+    const trimmed = raw.trim()
+
+    // Marker detection happens BEFORE we mutate the stack for this line so
+    // the stack reflects the parent context of the value line below.
+    if (raw.includes(REVIEW_MARKER)) {
+      const nextLine = lines[i + 1] ?? ''
+      const nextMatch = VALUE_KEY_RE.exec(nextLine)
+      const nextKey = nextMatch?.[1] ?? null
+
+      const inAppearance = stack.includes('appearance')
+      const inAppSettingsSectionsTheme =
+        stack.length >= 2 &&
+        stack[stack.length - 2] === 'appSettings' &&
+        stack[stack.length - 1] === 'sections' &&
+        nextKey === 'theme'
+
+      if (!inAppearance && !inAppSettingsSectionsTheme) {
+        const where = file !== null ? `${file}:${String(i + 1)}` : `<input>:${String(i + 1)}`
+        hits.push(where)
+      }
+    }
+
+    // Update stack based on this line. We only handle the canonical
+    // "block open on its own line" and "block close on its own line"
+    // patterns — strings.ts follows these conventions consistently
+    // (verified by Phase 26 / Phase 48 fixtures).
+    const openMatch = BLOCK_OPEN_RE.exec(trimmed)
+    if (openMatch?.[1]) {
+      stack.push(openMatch[1])
+    } else if (BLOCK_CLOSE_RE.test(trimmed) && stack.length > 0) {
+      stack.pop()
+    }
+  }
+
+  return hits
+}
 
 describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
-  it('no "// TODO: native-speaker review" marker remains outside the appearance.* allowlist in src/content/', () => {
+  it('no "// TODO: native-speaker review" marker remains outside the appearance.* / appSettings.sections.theme block context in src/content/', () => {
     const hits: string[] = []
     for (const file of CONTENT_FILES) {
       const text = readFileSync(file, 'utf-8')
-      const lines = text.split('\n')
-      for (let i = 0; i < lines.length; i++) {
-        const currentLine = lines[i] ?? ''
-        if (currentLine.includes(REVIEW_MARKER)) {
-          // Check whether the next line matches one of the allowed appearance.* key patterns.
-          const nextLine = lines[i + 1] ?? ''
-          const isAllowed = ALLOWED_KEY_PATTERNS.some((pattern) => pattern.test(nextLine))
-          if (!isAllowed) {
-            hits.push(`${file}:${String(i + 1)}`)
-          }
-        }
-      }
+      hits.push(...findUnreviewedMarkers(text, file))
     }
     expect(
       hits,
-      `Unresolved native-speaker review markers outside appearance.* allowlist in:\n${hits.join('\n')}`,
+      `Unresolved native-speaker review markers outside the appearance.* block context in:\n${hits.join('\n')}`,
     ).toEqual([])
+  })
+
+  // WR-03 regression test: a `label:` key with a marker OUTSIDE the appearance.* block
+  // must still fail the guard. The original shape-based allowlist would have allowed
+  // this; the block-scope tracker correctly rejects it.
+  it('flags a non-appearance label: key with a marker (WR-03 regression)', () => {
+    const text = [
+      `export const STUFF = {`,
+      `  marketing: {`,
+      `    // TODO: native-speaker review`,
+      `    label: 'Compre agora',`,
+      `  },`,
+      `}`,
+    ].join('\n')
+    const hits = findUnreviewedMarkers(text, null)
+    expect(hits).toEqual(['<input>:3'])
+  })
+
+  // WR-03 regression test: a `theme:` key with a marker OUTSIDE `appSettings.sections`
+  // must still fail the guard. Locks the second half of the original shape-based
+  // allowlist hole closed.
+  it('flags a non-appSettings.sections theme: key with a marker (WR-03 regression)', () => {
+    const text = [
+      `export const STUFF = {`,
+      `  someOtherBlock: {`,
+      `    // TODO: native-speaker review`,
+      `    theme: 'Tema',`,
+      `  },`,
+      `}`,
+    ].join('\n')
+    const hits = findUnreviewedMarkers(text, null)
+    expect(hits).toEqual(['<input>:3'])
+  })
+
+  // Positive case: a marker INSIDE appearance.* must be allowlisted.
+  it('allows a marker inside appearance.* (any descendant)', () => {
+    const text = [
+      `export const STUFF = {`,
+      `  appearance: {`,
+      `    orb: {`,
+      `      options: {`,
+      `        // TODO: native-speaker review`,
+      `        halo: 'Halo',`,
+      `      },`,
+      `    },`,
+      `  },`,
+      `}`,
+    ].join('\n')
+    const hits = findUnreviewedMarkers(text, null)
+    expect(hits).toEqual([])
+  })
+
+  // Positive case: a marker above `theme:` inside `appSettings.sections` must be allowlisted.
+  it('allows a marker above theme: inside appSettings.sections', () => {
+    const text = [
+      `export const STUFF = {`,
+      `  appSettings: {`,
+      `    sections: {`,
+      `      // TODO: native-speaker review`,
+      `      theme: 'Tema',`,
+      `    },`,
+      `  },`,
+      `}`,
+    ].join('\n')
+    const hits = findUnreviewedMarkers(text, null)
+    expect(hits).toEqual([])
   })
 })
