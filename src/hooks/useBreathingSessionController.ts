@@ -306,6 +306,10 @@ export function useBreathingSessionController({
       lastBoundaryKeyRef.current = null
       return
     }
+    // Reason: plan === null only on idle/post-end (clearCapturedSession ran);
+    // phase === 'running' guard above + the phase !== 'running' branch that
+    // clears the key both make this case unreachable in practice. Preserving
+    // the key here is a no-op rather than a hazard.
     if (audioAnchor === null || plan === null) return
 
     const { boundaryStartMs, phaseDurationSec } = computeBoundaryAudioOffsets(frame, plan)
