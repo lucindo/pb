@@ -79,6 +79,15 @@
   --color-orb-halo-1: rgba(74, 78, 88, 0.30);
   --color-orb-halo-2: rgba(108, 113, 124, 0.38);
   --color-orb-halo-3: rgba(150, 156, 168, 0.52);
+  /* Spike 012 V5 spiritual-eye tokens (dark).
+     Source: .planning/spikes/012-spiritual-eye-orb/README.md "Locked V5 values".
+     Halo-3 reuses the existing --color-orb-halo-3 above (unchanged per spike). */
+  --color-orb-halo-1-spiritual-eye: rgba(206, 168, 100, 0.45);
+  --color-orb-halo-2-spiritual-eye: rgba(170, 156, 122, 0.46);
+  --color-orb-disc-spiritual-eye: radial-gradient(circle at 50% 42%, #6c7cb6 0%, #4a5a96 60%, #38477e 100%);
+  --color-orb-disc-spiritual-eye-strong: radial-gradient(circle at 50% 42%, #4c5d99 0%, #36416d 60%, #252f54 100%);
+  --color-orb-star-fill-spiritual-eye: #fafafe;
+  --color-orb-star-stroke-spiritual-eye: rgba(255, 255, 255, 0.12);
   --color-modal-backdrop: rgba(0, 0, 0, 0.65);
 
   /* v2.0 surface elevation + scrim tokens (dark). Pure-black channels for
