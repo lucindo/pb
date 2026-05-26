@@ -1,10 +1,11 @@
 ---
 phase: 48
 slug: appearance-page-i18n
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-26
+reviewed_at: 2026-05-26
 ---
 
 # Phase 48 — UI Design Contract
