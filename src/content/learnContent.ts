@@ -7,7 +7,7 @@
 // src/content/lockedCopy.ts (LOCKED_COPY.*.inspiredByForrest) and is composed at
 // render time by the LearnPanel surface.
 
-import type { LocaleId } from '../domain/settings'
+import type { LocaleId } from '../domain'
 
 export interface ExplainerSection {
   readonly title: string

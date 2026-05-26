@@ -9,7 +9,7 @@
 // surfaces that need them (LearnPanel for inspiredByForrest + affiliationLine;
 // PracticeScreen for medicalAdviceLine).
 
-import type { LocaleId } from '../domain/settings'
+import type { LocaleId } from '../domain'
 
 export interface LockedCopy {
   readonly inspiredByForrest: string
