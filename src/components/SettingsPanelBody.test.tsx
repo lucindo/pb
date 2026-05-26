@@ -34,9 +34,9 @@ function renderBody(
 const EN = UI_STRINGS.en.appSettings
 
 describe('SettingsPanelBody — J14 sectioning', () => {
-  it('renders the 4 section headings (Appearance / Language / Audio / About)', () => {
+  it('renders the 4 section headings (Theme / Language / Audio / About)', () => {
     renderBody()
-    expect(screen.getByRole('heading', { level: 2, name: EN.sections.appearance })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.theme })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: EN.sections.language })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: EN.sections.audio })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: EN.sections.about })).toBeInTheDocument()
