@@ -218,10 +218,15 @@ export function getStretchFrame(
   segments: StretchSegment[],
   elapsedMs: number,
 ): StretchSessionFrame {
+  const finalSegment = segments.at(-1)
+  if (finalSegment === undefined) {
+    throw new RangeError('getStretchFrame requires a non-empty segments array')
+  }
   const safeElapsedMs = Math.max(0, elapsedMs)
 
-  // Find the active segment (linear walk; open-ended last segment catches all remaining)
-  let activeSeg = segments[segments.length - 1] as StretchSegment
+  // Find the active segment (linear walk; open-ended last segment catches all remaining).
+  // finalSegment is the fallback when safeElapsedMs lands at or past every segment's endMs.
+  let activeSeg: StretchSegment = finalSegment
   for (const seg of segments) {
     if (safeElapsedMs < seg.endMs) {
       activeSeg = seg
@@ -272,7 +277,7 @@ export function getStretchFrame(
 
   // Remaining and completion derive from the segment table's true end —
   // the last segment's endMs (already cycle-aligned; Infinity → open-ended).
-  const sessionEndMs = (segments[segments.length - 1] as StretchSegment).endMs
+  const sessionEndMs = finalSegment.endMs
   const remainingMs = sessionEndMs === Infinity ? null : Math.max(0, sessionEndMs - safeElapsedMs)
   const isComplete = sessionEndMs !== Infinity && safeElapsedMs >= sessionEndMs
 
