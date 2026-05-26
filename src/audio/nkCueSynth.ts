@@ -256,13 +256,22 @@ export function scheduleEndChord(
   timbre: TimbreId,
 ): CueHandle {
   const preset = TIMBRE_PRESETS[timbre]
-  let lastEnvelope: GainNode | null = null
+  // Route every chord voice through a single master GainNode so the returned
+  // CueHandle.envelope controls all three voices. Without this, a mid-chord
+  // mute (audioEngine.setMuted(true) → applyMuteFadeOut on cue.envelope) would
+  // only fade the last voice's envelope and the other two would ring out at
+  // peak through their independent fade-out ramps.
+  const masterEnvelope = audioCtx.createGain()
+  masterEnvelope.gain.value = 1.0
+  masterEnvelope.connect(destination)
+
   let lastCleanupAt = 0
+  let lastOsc: OscillatorNode | null = null
 
   for (const ratio of END_CHORD_RATIOS) {
     const t = buildNKToneNodes(
       audioCtx, preset.fundamentalHzOut * ratio, END_CHORD_DURATION_SEC, when,
-      destination, preset, END_CHORD_PEAK_GAIN,
+      masterEnvelope, preset, END_CHORD_PEAK_GAIN,
       { attackSec: END_CHORD_ATTACK_SEC, releaseSec: END_CHORD_RELEASE_SEC },
     )
     // T-31-04: disconnect each chord tone's nodes on 'ended'
@@ -272,12 +281,17 @@ export function scheduleEndChord(
       try { t.filter.disconnect() } catch { /* silent */ }
       try { t.envelope.disconnect() } catch { /* silent */ }
     }, { once: true })
-    lastEnvelope = t.envelope
     lastCleanupAt = t.cleanupAt
+    lastOsc = t.osc
   }
 
-  // END_CHORD_RATIOS is a non-empty const tuple; loop always executes 3 iterations.
-  // Reason: END_CHORD_RATIOS always has 3 elements — lastEnvelope is guaranteed non-null.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return { envelope: lastEnvelope!, scheduledAt: when, cleanupAt: lastCleanupAt }
+  // All three voices share the same stopAt (when + END_CHORD_DURATION_SEC), so
+  // any voice's 'ended' is safe for tearing down the shared master bus.
+  if (lastOsc !== null) {
+    lastOsc.addEventListener('ended', () => {
+      try { masterEnvelope.disconnect() } catch { /* silent */ }
+    }, { once: true })
+  }
+
+  return { envelope: masterEnvelope, scheduledAt: when, cleanupAt: lastCleanupAt }
 }
