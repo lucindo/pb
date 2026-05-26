@@ -103,7 +103,14 @@ export interface NaviKriyaPresentation {
 }
 
 function getVisibleNaviPhase(phase: NaviKriyaPresentationInput['phase']): NaviKriyaPhase {
-  return phase === 'back' ? 'back' : 'front'
+  if (phase === 'front' || phase === 'back') return phase
+  // 'done' is transient: useNKEngine sets nkPhase='done' before onComplete
+  // calls nkEnd() to drop back to 'idle'. The engine reaches 'done' only after
+  // the final back phase, so reflect the last real phase ('back') rather than
+  // silently coercing to 'front'. 'idle' should never reach here per the
+  // sessionActive invariant — surface the violation explicitly.
+  if (phase === 'done') return 'back'
+  throw new Error(`getVisibleNaviPhase: unexpected phase ${String(phase)}`)
 }
 
 export function getNaviKriyaPresentation(
