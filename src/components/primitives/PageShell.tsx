@@ -24,7 +24,11 @@ const WIDTH_CLASS: Record<PageShellWidth, string> = {
  *  (defined in theme.css with a desktop media-query override per spike 010
  *  eleventh pass). Page-level overlays (dialogs) render as siblings of the
  *  section via the `overlays` slot — kept inside `<main>` to preserve page
- *  semantics. */
+ *  semantics.
+ *
+ *  Heading contract: callers must provide a `<TopAppBar>` (or equivalent
+ *  `<h1>`-bearing header) as the first child so the page satisfies the
+ *  document-outline requirement. */
 export function PageShell({ children, overlays, width = 'page' }: PageShellProps) {
   return (
     <main
