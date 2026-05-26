@@ -67,6 +67,10 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
       }
     }
 
+    // Reason (D-08, mirrors useAudioCues timbreRef posture): timbre is read
+    // once and captured into the four returned closures. A cross-tab timbre
+    // change mid-session must NOT mutate this session's cues — do not refactor
+    // these closures to re-read getTimbre() each call without revisiting D-08.
     const timbre = getTimbre()
     const cueWhen = (): number => audioCtx.currentTime + SAFE_LEAD_SEC
     const countdownTick = (): void => {
