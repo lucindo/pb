@@ -13,6 +13,7 @@ import {
   type AppAudioViewModel,
   type AppDialogsViewModel,
   type AppEndSessionDialogViewModel,
+  type AppNavigationViewModel,
   type AppPracticeControlsViewModel,
   type AppPracticeSessionViewModel,
   type AppPracticeSettingsViewModel,
@@ -209,21 +210,28 @@ export function createEndSessionDialogViewModelsFromControllers({
   ]
 }
 
-export function createAppDialogsViewModel({
+export function createAppNavigationViewModel({
   navigation,
-  endSessionDialogs,
 }: {
   navigation: AppNavigation
-  endSessionDialogs: readonly AppEndSessionDialogViewModel[]
-}): AppDialogsViewModel {
+}): AppNavigationViewModel {
   return {
     appScreen: navigation.appScreen,
-    endSessionDialogs,
+    returningFromAppearance: navigation.returningFromAppearance,
     onLearnOpen: navigation.onLearnOpen,
     onSettingsOpen: navigation.onSettingsOpen,
     onAppearanceOpen: navigation.onAppearanceOpen,
     onBackToPractice: navigation.onBackToPractice,
     onBackToAppSettings: navigation.onBackToAppSettings,
-    returningFromAppearance: navigation.returningFromAppearance,
+  }
+}
+
+export function createAppDialogsViewModel({
+  endSessionDialogs,
+}: {
+  endSessionDialogs: readonly AppEndSessionDialogViewModel[]
+}): AppDialogsViewModel {
+  return {
+    endSessionDialogs,
   }
 }

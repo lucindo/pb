@@ -21,19 +21,21 @@ vi.mock('./pages/AppearancePage', () => ({
 import { ScreenRouter } from './ScreenRouter'
 
 function makeVmForScreen(appScreen: AppScreen): AppViewModel {
-  // ScreenRouter only reads vm.dialogs.appScreen (plus the slices the page
+  // ScreenRouter only reads vm.navigation.appScreen (plus the slices the page
   // components consume — but those are mocked here). Cast through unknown to
   // avoid constructing a real AppViewModel for a switch-only test.
   return {
-    dialogs: {
+    navigation: {
       appScreen,
-      endSessionDialogs: [],
+      returningFromAppearance: false,
       onLearnOpen: () => {},
       onSettingsOpen: () => {},
       onAppearanceOpen: () => {},
       onBackToPractice: () => {},
       onBackToAppSettings: () => {},
-      returningFromAppearance: false,
+    },
+    dialogs: {
+      endSessionDialogs: [],
     },
     install: { isIOS: false, isStandalone: false, installable: false, onInstall: async () => {} },
     learnContent: {} as AppViewModel['learnContent'],

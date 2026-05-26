@@ -43,15 +43,18 @@ export interface AppEndSessionDialogViewModel {
   onCancel(this: void): void
 }
 
-export interface AppDialogsViewModel {
+export interface AppNavigationViewModel {
   appScreen: AppScreen
-  endSessionDialogs: readonly AppEndSessionDialogViewModel[]
+  returningFromAppearance: boolean
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
   onAppearanceOpen(this: void): void
   onBackToPractice(this: void): void
   onBackToAppSettings(this: void): void
-  returningFromAppearance: boolean
+}
+
+export interface AppDialogsViewModel {
+  endSessionDialogs: readonly AppEndSessionDialogViewModel[]
 }
 
 export const AUDIO_RESUME_HINT_ID = 'mute-toggle-resume-hint'
@@ -129,6 +132,7 @@ export interface AppViewModel {
   practiceToggleStrings: ReturnType<typeof getPracticeToggleStrings>
   featureFlags: FeatureFlags
   install: AppInstallViewModel
+  navigation: AppNavigationViewModel
   dialogs: AppDialogsViewModel
   onSwitchPractice(this: void, next: PracticeId): void
 }

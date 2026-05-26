@@ -27,6 +27,7 @@ import {
 } from './appViewModel'
 import {
   createAppDialogsViewModel,
+  createAppNavigationViewModel,
   createAudioViewModelsFromBreathingController,
   createEndSessionDialogViewModelsFromControllers,
   createPracticeControlsViewModelFromControllers,
@@ -194,10 +195,8 @@ export function useAppViewModel(): AppViewModel {
     practiceToggleStrings: getPracticeToggleStrings(uiStrings),
     featureFlags,
     install,
-    dialogs: createAppDialogsViewModel({
-      navigation: appNavigation,
-      endSessionDialogs,
-    }),
+    navigation: createAppNavigationViewModel({ navigation: appNavigation }),
+    dialogs: createAppDialogsViewModel({ endSessionDialogs }),
     onSwitchPractice,
   }
 }

@@ -10,21 +10,20 @@ export interface ScreenRouterProps {
   vm: AppViewModel
 }
 
-/** Top-level surface router. Dispatches on `vm.dialogs.appScreen` (named
- *  `dialogs` for backwards compatibility — see AppDialogsViewModel — but
- *  it carries navigation state too). End-session modals are rendered from
- *  PracticeScreen only; they never appear over Learn/AppSettings because
- *  the closeOnSessionView effect in useAppNavigation forces appScreen back
- *  to 'practice' whenever a session starts. */
+/** Top-level surface router. Dispatches on `vm.navigation.appScreen`.
+ *  End-session modals are rendered from PracticeScreen only; they never
+ *  appear over Learn/AppSettings because the closeOnSessionView effect in
+ *  useAppNavigation forces appScreen back to 'practice' whenever a session
+ *  starts. */
 export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
-  switch (vm.dialogs.appScreen) {
+  switch (vm.navigation.appScreen) {
     case 'learn':
       return (
         <LearnPage
           learnContent={vm.learnContent}
           lockedCopy={vm.lockedCopy}
           activePractice={vm.activePractice}
-          onBack={vm.dialogs.onBackToPractice}
+          onBack={vm.navigation.onBackToPractice}
         />
       )
     case 'appSettings':
@@ -34,13 +33,13 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           isStandalone={vm.install.isStandalone}
           installable={vm.install.installable}
           onInstall={vm.install.onInstall}
-          onBack={vm.dialogs.onBackToPractice}
-          onAppearanceOpen={vm.dialogs.onAppearanceOpen}
-          returningFromAppearance={vm.dialogs.returningFromAppearance}
+          onBack={vm.navigation.onBackToPractice}
+          onAppearanceOpen={vm.navigation.onAppearanceOpen}
+          returningFromAppearance={vm.navigation.returningFromAppearance}
         />
       )
     case 'appearance':
-      return <AppearancePage onBack={vm.dialogs.onBackToAppSettings} />
+      return <AppearancePage onBack={vm.navigation.onBackToAppSettings} />
     case 'practice':
     default:
       return <PracticeScreen vm={vm} />

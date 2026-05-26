@@ -44,14 +44,14 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
         leading={
           <SettingsAnchor
             disabled={vm.controlsDisabled}
-            onClick={vm.dialogs.onSettingsOpen}
+            onClick={vm.navigation.onSettingsOpen}
             strings={vm.uiStrings.practice.topBar}
           />
         }
         trailing={
           <LearnAnchor
             disabled={vm.controlsDisabled}
-            onClick={vm.dialogs.onLearnOpen}
+            onClick={vm.navigation.onLearnOpen}
             strings={vm.uiStrings.practice.topBar}
           />
         }

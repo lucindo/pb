@@ -13,6 +13,7 @@ import type { NaviKriyaSessionController } from '../hooks/useNaviKriyaSessionCon
 import type { SessionEngine } from '../hooks/useSessionEngine'
 import {
   createAppDialogsViewModel,
+  createAppNavigationViewModel,
   createAudioViewModelsFromBreathingController,
   createEndSessionDialogViewModelsFromControllers,
   createPracticeControlsViewModelFromControllers,
@@ -219,7 +220,7 @@ describe('app controller adapters', () => {
     expect(dialogs[1]?.onCancel).toBe(naviCancel)
   })
 
-  it('combines surface navigation state with session dialog models', () => {
+  it('exposes surface navigation state via the navigation view model', () => {
     const navigation: AppNavigation = {
       appScreen: 'learn',
       returningFromAppearance: false,
@@ -229,24 +230,27 @@ describe('app controller adapters', () => {
       onBackToPractice: noop,
       onBackToAppSettings: noop,
     }
+
+    const navVm = createAppNavigationViewModel({ navigation })
+
+    expect(navVm.appScreen).toBe('learn')
+    expect(navVm.onLearnOpen).toBe(noop)
+    expect(navVm.onSettingsOpen).toBe(noop)
+    expect(navVm.onBackToPractice).toBe(noop)
+  })
+
+  it('exposes only end-session dialog models via the dialogs view model', () => {
     const endSessionDialogs = createEndSessionDialogViewModelsFromControllers({
       breathing: makeBreathingController(),
       navi: makeNaviController(),
     })
 
-    const dialogs = createAppDialogsViewModel({
-      navigation,
-      endSessionDialogs,
-    })
+    const dialogsVm = createAppDialogsViewModel({ endSessionDialogs })
 
-    expect(dialogs.appScreen).toBe('learn')
-    expect(dialogs.endSessionDialogs).toBe(endSessionDialogs)
-    expect(dialogs.onLearnOpen).toBe(noop)
-    expect(dialogs.onSettingsOpen).toBe(noop)
-    expect(dialogs.onBackToPractice).toBe(noop)
+    expect(dialogsVm.endSessionDialogs).toBe(endSessionDialogs)
   })
 
-  it('propagates onAppearanceOpen, onBackToAppSettings, and returningFromAppearance from navigation', () => {
+  it('propagates onAppearanceOpen, onBackToAppSettings, and returningFromAppearance through the navigation view model', () => {
     // Distinct fn identities so each assertion proves the *specific* field
     // is forwarded, not merely that some callback equal to `noop` is present.
     const onAppearanceOpen = (): void => undefined
@@ -260,18 +264,11 @@ describe('app controller adapters', () => {
       onBackToPractice: noop,
       onBackToAppSettings,
     }
-    const endSessionDialogs = createEndSessionDialogViewModelsFromControllers({
-      breathing: makeBreathingController(),
-      navi: makeNaviController(),
-    })
 
-    const dialogs = createAppDialogsViewModel({
-      navigation,
-      endSessionDialogs,
-    })
+    const navVm = createAppNavigationViewModel({ navigation })
 
-    expect(dialogs.onAppearanceOpen).toBe(onAppearanceOpen)
-    expect(dialogs.onBackToAppSettings).toBe(onBackToAppSettings)
-    expect(dialogs.returningFromAppearance).toBe(true)
+    expect(navVm.onAppearanceOpen).toBe(onAppearanceOpen)
+    expect(navVm.onBackToAppSettings).toBe(onBackToAppSettings)
+    expect(navVm.returningFromAppearance).toBe(true)
   })
 })
