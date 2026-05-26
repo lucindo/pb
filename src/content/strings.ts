@@ -139,7 +139,7 @@ export interface UiStrings {
     readonly timbreLabel: string
     readonly languageLabel: string
     readonly sections: {
-      readonly appearance: string
+      readonly theme: string
       readonly language: string
       readonly audio: string
       readonly about: string
@@ -164,6 +164,36 @@ export interface UiStrings {
       readonly bell: string
       readonly sine: string
       readonly flute: string
+    }
+  }
+  readonly appearance: {
+    readonly title: string
+    readonly backChevron: string
+    readonly rightChevronAriaOnSettings: string
+    readonly sections: {
+      readonly orbStyle: string
+      readonly visual: string
+    }
+    readonly orb: {
+      readonly label: string
+      readonly options: {
+        readonly halo: string
+        readonly minimal: string
+        readonly kuthasta: string
+      }
+    }
+    readonly ringCue: {
+      readonly label: string
+      readonly options: {
+        readonly arc: string
+        readonly rings: string
+      }
+    }
+    readonly breathingEffect: {
+      readonly label: string
+    }
+    readonly switcherIcons: {
+      readonly label: string
     }
   }
   readonly learn: {
@@ -307,7 +337,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
       sections: {
-        appearance: 'Appearance',
+        theme: 'Theme',
         language: 'Language',
         audio: 'Feedback',
         about: 'About',
@@ -333,6 +363,16 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         sine: 'Sine',
         flute: 'Flute',
       },
+    },
+    appearance: {
+      title: 'Appearance',
+      backChevron: 'Back to Settings',
+      rightChevronAriaOnSettings: 'Appearance settings',
+      sections: { orbStyle: 'Orb Style', visual: 'Visual' },
+      orb: { label: 'Orb', options: { halo: 'Halo', minimal: 'Minimal', kuthasta: 'Kuthasta' } },
+      ringCue: { label: 'Ring cue', options: { arc: 'Arc', rings: 'Rings' } },
+      breathingEffect: { label: 'Breathing effect' },
+      switcherIcons: { label: 'Switcher icons' },
     },
     learn: {
       title: 'About this practice',
@@ -473,7 +513,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       timbreLabel: 'Timbre',
       languageLabel: 'Idioma',
       sections: {
-        appearance: 'Aparência',
+        // TODO: native-speaker review
+        theme: 'Tema',
         language: 'Idioma',
         audio: 'Feedback',
         about: 'Sobre',
@@ -498,6 +539,50 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         bell: 'Sino',
         sine: 'Senoidal',
         flute: 'Flauta',
+      },
+    },
+    appearance: {
+      // TODO: native-speaker review
+      title: 'Aparência',
+      // TODO: native-speaker review
+      backChevron: 'Voltar para Configurações',
+      // TODO: native-speaker review
+      rightChevronAriaOnSettings: 'Configurações de aparência',
+      sections: {
+        // TODO: native-speaker review
+        orbStyle: 'Estilo do orbe',
+        // TODO: native-speaker review
+        visual: 'Visual',
+      },
+      orb: {
+        // TODO: native-speaker review
+        label: 'Orbe',
+        options: {
+          // TODO: native-speaker review
+          halo: 'Halo',
+          // TODO: native-speaker review
+          minimal: 'Mínimo',
+          // TODO: native-speaker review
+          kuthasta: 'Kuthasta',
+        },
+      },
+      ringCue: {
+        // TODO: native-speaker review
+        label: 'Sinal do anel',
+        options: {
+          // TODO: native-speaker review
+          arc: 'Arco',
+          // TODO: native-speaker review
+          rings: 'Anéis',
+        },
+      },
+      breathingEffect: {
+        // TODO: native-speaker review
+        label: 'Efeito de respiração',
+      },
+      switcherIcons: {
+        // TODO: native-speaker review
+        label: 'Ícones do alternador',
       },
     },
     learn: {

@@ -136,7 +136,7 @@ export function SettingsPanelBody({
   return (
     <div>
       {/* Appearance */}
-      <SettingsSectionHeader label={strings.appSettings.sections.appearance} />
+      <SettingsSectionHeader label={strings.appSettings.sections.theme} />
       <SectionCard padding="16px">
         <ThemePicker
           disabled={inSessionView}
