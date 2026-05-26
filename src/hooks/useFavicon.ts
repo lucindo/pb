@@ -84,6 +84,10 @@ function applyFavicon(theme: ThemeId): void {
 }
 
 export function useFavicon(): void {
+  // No try/catch around loadPrefs: coercePrefs is non-throwing by contract,
+  // so loadPrefs cannot reject. The index.html inline pre-paint script has
+  // its own catch block (different mechanism, same spirit — 'light' is the
+  // safe default for both paths).
   const [theme, setTheme] = useState<ThemeId>(() => loadPrefs().theme)
 
   // Effect A: Apply favicon on mount and when theme state changes (dep [theme]).
