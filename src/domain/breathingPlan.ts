@@ -2,12 +2,12 @@ import type { RatioLabel, SessionSettings } from './settings'
 import { validateSettings } from './settings'
 
 export interface BreathingPlan {
-  bpm: number
-  ratio: RatioLabel
-  cycleMs: number
-  inhaleMs: number
-  exhaleMs: number
-  totalMs: number | null
+  readonly bpm: number
+  readonly ratio: RatioLabel
+  readonly cycleMs: number
+  readonly inhaleMs: number
+  readonly exhaleMs: number
+  readonly totalMs: number | null
 }
 
 const MS_PER_MINUTE = 60_000

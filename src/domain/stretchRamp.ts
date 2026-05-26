@@ -20,14 +20,14 @@ export type StretchStage = 'hold-initial' | 'ramp' | 'hold-target'
  * ensures absolute monotonic cycleIndex across the full session).
  */
 export interface StretchSegment {
-  startMs: number
-  endMs: number           // Infinity for the open-ended hold-target segment
-  bpm: number
-  cycleMs: number
-  inhaleMs: number
-  exhaleMs: number
-  stage: StretchStage
-  cycleBaseIndex: number  // cumulative cycles from all prior segments
+  readonly startMs: number
+  readonly endMs: number           // Infinity for the open-ended hold-target segment
+  readonly bpm: number
+  readonly cycleMs: number
+  readonly inhaleMs: number
+  readonly exhaleMs: number
+  readonly stage: StretchStage
+  readonly cycleBaseIndex: number  // cumulative cycles from all prior segments
 }
 
 /**
@@ -36,12 +36,12 @@ export interface StretchSegment {
  * as optional via sessionMath.ts extension).
  */
 export interface StretchSessionFrame extends SessionFrame {
-  currentBpm: number
-  stage: StretchStage
-  cycleStartMs: number      // actual session-elapsed ms when this cycle started
-  currentCycleMs: number    // this cycle's duration
-  currentInhaleMs: number   // this cycle's inhale duration
-  currentExhaleMs: number   // this cycle's exhale duration
+  readonly currentBpm: number
+  readonly stage: StretchStage
+  readonly cycleStartMs: number      // actual session-elapsed ms when this cycle started
+  readonly currentCycleMs: number    // this cycle's duration
+  readonly currentInhaleMs: number   // this cycle's inhale duration
+  readonly currentExhaleMs: number   // this cycle's exhale duration
 }
 
 // ─── Ratio table (mirroring breathingPlan.ts) ──────────────────────────────

@@ -2,8 +2,8 @@ import type { BreathingPlan } from './breathingPlan'
 import type { SessionFrame } from './sessionMath'
 
 export interface BoundaryAudioOffsets {
-  boundaryStartMs: number
-  phaseDurationSec: number
+  readonly boundaryStartMs: number
+  readonly phaseDurationSec: number
 }
 
 export function computeBoundaryAudioOffsets(
