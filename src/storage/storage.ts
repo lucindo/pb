@@ -34,6 +34,11 @@
 // expected to migrate together with the constant if it changes.
 // SYNC WITH index.html FOUC SCRIPT — when bumping the :v1 suffix, update the
 // hardcoded 'hrv:state:v1' string in index.html's <head> theme-resolve script.
+// The FOUC script also hardcodes the `prefs.theme` JSON path; if the prefs
+// subtree ever moves (e.g. under `practices.appearance.prefs`), update the
+// FOUC script's `JSON.parse(raw).prefs` lookup too — otherwise every returning
+// user gets a data-theme="light" flash on every load (silent fallback per
+// D-17). Nothing in the build catches this desync; the link is hand-maintained.
 export const STATE_KEY = 'hrv:state:v1'
 // Phase 34 STRETCH-03: bumped 2→3. The v2→v3 ladder in migrateEnvelope seeds the
 // practices.stretch slice from the resonant blob and zeroes stretch stats.
