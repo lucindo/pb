@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  BREATHING_SHAPE_FLAG,
+  ORB_IDLE_FLAG,
+  RING_CUE_FLAG,
+  SWITCHER_ICON_FLAG,
   parseQueryBoolean,
   readFeatureFlags,
   readQueryFeatureFlag,
@@ -138,6 +142,33 @@ describe('readFeatureFlags', () => {
 
   it('falls back to default for invalid ringCue values', () => {
     expect(readFeatureFlags('?ringCue=junk').ringCue).toBe('progress-arc')
+  })
+})
+
+describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
+  it('SWITCHER_ICON_FLAG is exported with the production default and queryParam', () => {
+    expect(SWITCHER_ICON_FLAG.queryParam).toBe('switcherIcon')
+    expect(SWITCHER_ICON_FLAG.defaultValue).toBe(false)
+  })
+
+  it('BREATHING_SHAPE_FLAG is exported with the production default + alias parser', () => {
+    expect(BREATHING_SHAPE_FLAG.queryParam).toBe('breathingShape')
+    expect(BREATHING_SHAPE_FLAG.defaultValue).toBe('orb-halo')
+    // Alias-table reuse contract — Plan 02 coercer will rely on this.
+    expect(BREATHING_SHAPE_FLAG.parse('kuthasta')).toBe('spiritual-eye')
+    expect(BREATHING_SHAPE_FLAG.parse('junk')).toBeNull()
+  })
+
+  it('ORB_IDLE_FLAG is exported with the production default and parser', () => {
+    expect(ORB_IDLE_FLAG.queryParam).toBe('orbIdle')
+    expect(ORB_IDLE_FLAG.defaultValue).toBe('ambient')
+    expect(ORB_IDLE_FLAG.parse('still')).toBe('still')
+  })
+
+  it('RING_CUE_FLAG is exported with the production default and parser', () => {
+    expect(RING_CUE_FLAG.queryParam).toBe('ringCue')
+    expect(RING_CUE_FLAG.defaultValue).toBe('progress-arc')
+    expect(RING_CUE_FLAG.parse('south')).toBe('progress-arc')
   })
 })
 
