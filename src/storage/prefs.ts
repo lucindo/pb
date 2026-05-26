@@ -58,12 +58,29 @@ export function coerceTheme(raw: unknown): ThemeId {
   return isValidTheme(raw) ? raw : DEFAULT_THEME
 }
 
+// AUDIO-02 legacy-value migration table: deleted enum values that must remap to
+// a current TimbreId on read. The remap is load-bearing for every returning user
+// whose on-disk envelope still carries a deleted value — see the policy comment
+// at the top of this file for the deletion/rename distinction.
+//
+// Contract: this table MUST NOT be deleted (and entries MUST NOT be removed)
+// without a STATE_VERSION bump + an explicit migrateEnvelope ladder step that
+// rewrites the deleted values on every existing envelope. The remap is treated
+// as transient (re-run on every read) because coercers are non-throwing per
+// field, but it is structurally a permanent contract for the lifetime of v1.x
+// data. Tests in prefs.test.ts exercise each entry; do not silently shrink it.
+//
+// Entries:
+//   - 'chime' → 'flute' — Phase 35 renamed the fourth timbre slot.
+export const LEGACY_TIMBRE_REMAP: Readonly<Record<string, TimbreId>> = Object.freeze({
+  chime: 'flute',
+})
+
 export function coerceTimbre(raw: unknown): TimbreId {
-  // AUDIO-02 legacy-value migration: 'chime' was the fourth timbre slot before Phase 35
-  // renamed it to 'flute'. Explicit remap preserves the user's fourth-slot preference.
-  // No STATE_VERSION bump needed — coercers are non-throwing per-field; 'chime' is a
-  // stale value, not a structural envelope change.
-  if (raw === 'chime') return 'flute'
+  if (typeof raw === 'string') {
+    const remapped = LEGACY_TIMBRE_REMAP[raw]
+    if (remapped !== undefined) return remapped
+  }
   return isValidTimbre(raw) ? raw : DEFAULT_TIMBRE
 }
 
