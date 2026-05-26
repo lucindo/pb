@@ -104,7 +104,13 @@ export function getStretchTargetBpmOptions(initialBpm: number): readonly number[
 
 export function getClosestLowerStretchTargetBpm(initialBpm: number): number {
   const options = getStretchTargetBpmOptions(initialBpm)
-  return options[options.length - 1] ?? DEFAULT_STRETCH_SETTINGS.targetBpm
+  const closest = options[options.length - 1]
+  if (closest === undefined) {
+    throw new RangeError(
+      `No BPM option is strictly below initialBpm=${String(initialBpm)}`,
+    )
+  }
+  return closest
 }
 
 export function getStretchSettingsWithInitialBpm(
