@@ -217,11 +217,7 @@ describe('LOCALE_DISPLAY_NAMES (D-14 native endonyms)', () => {
 })
 
 describe('Phase 32 new learn.* heading keys', () => {
-  const newLearnKeys = [
-    'naviKriyaVideosHeading',
-    'naviKriyaDescriptionSection1Title',
-    'naviKriyaDescriptionSection2Title',
-  ] as const
+  const newLearnKeys = ['naviKriyaVideosHeading'] as const
 
   it('every new learn.* key is non-empty in both EN and PT-BR', () => {
     for (const locale of LOCALE_OPTIONS) {
@@ -237,16 +233,8 @@ describe('Phase 32 new learn.* heading keys', () => {
     expect(UI_STRINGS.en.learn.naviKriyaVideosHeading).toBe('Selected Navi Kriya Videos')
   })
 
-  it('EN naviKriyaDescriptionSection1Title equals "What is Navi Kriya"', () => {
-    expect(UI_STRINGS.en.learn.naviKriyaDescriptionSection1Title).toBe('What is Navi Kriya')
-  })
-
-  it('EN naviKriyaDescriptionSection2Title equals "How this app paces it"', () => {
-    expect(UI_STRINGS.en.learn.naviKriyaDescriptionSection2Title).toBe('How this app paces it')
-  })
-
   it('"Navi Kriya" stays untranslated in pt-BR (Sanskrit proper noun — Phase 30 D-05)', () => {
-    expect(UI_STRINGS['pt-BR'].learn.naviKriyaDescriptionSection1Title).toContain('Navi Kriya')
+    expect(UI_STRINGS['pt-BR'].learn.naviKriyaVideosHeading).toContain('Navi Kriya')
   })
 })
 

@@ -205,8 +205,6 @@ export interface UiStrings {
     readonly videosHeading: string
     readonly nativeAppsHeading: string
     readonly naviKriyaVideosHeading: string
-    readonly naviKriyaDescriptionSection1Title: string
-    readonly naviKriyaDescriptionSection2Title: string
   }
   readonly install: {
     readonly installButton: string
@@ -385,8 +383,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       videosHeading: 'Selected HRV Breathing Videos',
       nativeAppsHeading: 'Resonant Breathing app',
       naviKriyaVideosHeading: 'Selected Navi Kriya Videos',
-      naviKriyaDescriptionSection1Title: 'What is Navi Kriya',
-      naviKriyaDescriptionSection2Title: 'How this app paces it',
     },
     install: {
       installButton: 'Install',
@@ -598,8 +594,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
       naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya',
-      naviKriyaDescriptionSection1Title: 'O que é Navi Kriya',
-      naviKriyaDescriptionSection2Title: 'Como este app guia a prática',
     },
     install: {
       installButton: 'Instalar',
