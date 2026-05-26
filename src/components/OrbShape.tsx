@@ -459,9 +459,9 @@ function OrbContainer({
             }}
           />
         ) : variant === 'spiritual-eye' ? (
-          SPIRITUAL_EYE_HALOS.map((h, i) => (
+          SPIRITUAL_EYE_HALOS.map((h) => (
             <div
-              key={i}
+              key={h.token}
               aria-hidden="true"
               className="absolute"
               style={{
@@ -474,9 +474,9 @@ function OrbContainer({
             />
           ))
         ) : (
-          V1_HALOS.map((h, i) => (
+          V1_HALOS.map((h) => (
             <div
-              key={i}
+              key={h.token}
               aria-hidden="true"
               className="absolute"
               style={{
