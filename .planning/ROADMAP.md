@@ -99,7 +99,11 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. User landing on the app for the first time (no persisted prefs) sees the production defaults — `orb-halo` / `progress-arc` / `ambient` / `switcherIcon=false` — byte-identical to v2.0 behaviour; returning users with an empty/missing prefs slice see the same defaults with no FOUC.
   4. User whose persisted envelope contains a corrupted or unknown value for any of the four fields (e.g., a future `breathingShape` value rolled back to today's build) sees the field coerce to its default on read without throwing, with the v2.0 forward-compat envelope contract (Phase 8 D-01 spread-then-override + refuse-downgrade write) intact — no `STATE_VERSION` bump.
   5. Developer query-string workflow (`?breathingShape=` / `?orbIdle=` / `?ringCue=` / `?switcherIcon=`) keeps the existing alias + case-insensitive parsing behaviour for all four flags; per-tab override never persists to the envelope.
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 47-01-PLAN.md — Extend `featureFlags.ts` resolver to 2-arg `readFeatureFlags(search, persisted)` + invalid-query-falls-through helper; export `*_FLAG` consts for prefs DRY. [PREFS-01, PREFS-02]
+  - [ ] 47-02-PLAN.md — Extend `UserPrefs` to 8 fields + 4 new non-throwing coercers reusing `*_FLAG.parse` alias tables; preserve prototype-pollution mitigation, no `STATE_VERSION` bump. [PREFS-03, PREFS-04]
+  - [ ] 47-03-PLAN.md — Extend `useFeatureFlags.ts` with persisted snapshot + cross-tab `storage` listener + same-tab `hrv:prefs-changed` 4-key filter; call the new 2-arg resolver. [PREFS-01, PREFS-02, PREFS-03]
+  - [ ] 47-04-PLAN.md — Add 4 new paired choice hooks (`useBreathingShapeChoice` / `useRingCueChoice` / `useOrbIdleChoice` / `useSwitcherIconChoice`) mirroring `useTimbreChoice` verbatim. [PREFS-03]
 
 ### Phase 48: Appearance page + i18n
 **Goal**: User can navigate from App Settings to a new Appearance page via a right-chevron in the header, change orb / cue / breathing-effect / switcher-icon settings on that page using familiar primitives, and see the changes apply live across the app and persist across sessions — with EN and PT-BR copy for every new string.
@@ -133,5 +137,5 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 46. Kuthasta orb variant | 3/3 | Complete    | 2026-05-26 |
-| 47. Persistable feature-flag preferences | 0/TBD | Not started | — |
+| 47. Persistable feature-flag preferences | 0/4 | Not started | — |
 | 48. Appearance page + i18n | 0/TBD | Not started | — |
