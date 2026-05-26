@@ -186,7 +186,11 @@ export function loadActivePractice(deps: StorageDeps = {}): PracticeId {
 
 export function saveActivePractice(id: PracticeId, deps: StorageDeps = {}): void {
   const env = readEnvelope(deps)
-  writeEnvelope({ ...env, activePractice: id }, deps)
+  // Defensive: coerce at the write boundary so a type-unsafe caller (a cast
+  // from unknown, a `// @ts-expect-error` test fixture, a hand-rolled storage
+  // event handler) cannot land an arbitrary string on disk. coerceActivePractice
+  // is a no-op for type-correct callers and a corruption guard otherwise.
+  writeEnvelope({ ...env, activePractice: coerceActivePractice(id) }, deps)
 }
 
 export function saveResonantSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
