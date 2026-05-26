@@ -9,10 +9,13 @@ import type { ThemeId } from '../domain/settings'
 // SYNC WITH src/styles/theme.css --color-breathing-accent-strong AND index.html FAVICON SCRIPT
 // These 2 hex values mirror the --color-breathing-accent-strong token per [data-theme] block.
 // If any token drifts, the favicon.sync.test.ts automated guard will fail the build.
-export const FAVICON_COLORS: Record<Exclude<ThemeId, 'system'>, string> = Object.freeze({
+// `as const satisfies` provides compile-time readonly + key-set conformance to
+// `Record<Exclude<ThemeId,'system'>, string>` — stronger than runtime
+// `Object.freeze` because TypeScript catches assignment attempts at build time.
+export const FAVICON_COLORS = {
   light: '#414957',
   dark: '#ccd0d9',
-})
+} as const satisfies Record<Exclude<ThemeId, 'system'>, string>
 
 // D-01: Recolor-only SVG template. J16 Mono Zen update — the breathing-rings
 // mark from spike 006 (two strokes + dot) is replaced by the new orb halo
