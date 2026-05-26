@@ -105,6 +105,7 @@ export interface UiStrings {
     readonly nkReadout: {
       readonly statusLabel: string
       readonly readoutAriaLabel: string
+      readonly announcementAriaLabel: string
       readonly phaseLabel: string
       readonly front: string
       readonly back: string
@@ -112,6 +113,7 @@ export interface UiStrings {
       readonly countLabel: string
       readonly roundOf: (current: number, total: number) => string
       readonly countOf: (current: number, total: number) => string
+      readonly orbAriaLabel: (count: number, phaseLabel: string) => string
     }
     readonly mute: {
       readonly mute: string
@@ -303,6 +305,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nkReadout: {
         statusLabel: 'Status',
         readoutAriaLabel: 'Navi Kriya session readout',
+        announcementAriaLabel: 'Navi Kriya session announcement',
         phaseLabel: 'Phase',
         front: 'Front',
         back: 'Back',
@@ -310,6 +313,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         countLabel: 'Count',
         roundOf: (c, t) => `${String(c)} / ${String(t)}`,
         countOf: (c, t) => `${String(c)} / ${String(t)}`,
+        orbAriaLabel: (c, p) => `Navi Kriya session: OM ${String(c)}, phase ${p}`,
       },
       mute: {
         mute: 'Mute audio cues',
@@ -479,6 +483,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nkReadout: {
         statusLabel: 'Status',
         readoutAriaLabel: 'Resumo da sessão de Navi Kriya',
+        announcementAriaLabel: 'Anúncio da sessão de Navi Kriya',
         phaseLabel: 'Fase',
         front: 'Frente',
         back: 'Costas',
@@ -486,6 +491,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         countLabel: 'Contagem',
         roundOf: (c, t) => `${String(c)} / ${String(t)}`,
         countOf: (c, t) => `${String(c)} / ${String(t)}`,
+        orbAriaLabel: (c, p) => `Sessão Navi Kriya: OM ${String(c)}, fase ${p}`,
       },
       mute: {
         mute: 'Silenciar sons',

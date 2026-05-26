@@ -33,7 +33,7 @@ describe('NKShape', () => {
     const { container } = renderShape({ count: 12, phase: 'front' })
     const root = container.querySelector('[role="img"]')
     expect(root?.getAttribute('aria-label')).toBe(
-      `Navi Kriya session: OM 12, phase ${UI_STRINGS.en.practice.nkReadout.front}`,
+      UI_STRINGS.en.practice.nkReadout.orbAriaLabel(12, UI_STRINGS.en.practice.nkReadout.front),
     )
   })
 
@@ -41,7 +41,19 @@ describe('NKShape', () => {
     const { container } = renderShape({ count: 3, phase: 'back' })
     const root = container.querySelector('[role="img"]')
     expect(root?.getAttribute('aria-label')).toBe(
-      `Navi Kriya session: OM 3, phase ${UI_STRINGS.en.practice.nkReadout.back}`,
+      UI_STRINGS.en.practice.nkReadout.orbAriaLabel(3, UI_STRINGS.en.practice.nkReadout.back),
+    )
+  })
+
+  it('CR-01: aria-label uses the localized template (pt-BR)', () => {
+    const { container } = renderShape({
+      count: 7,
+      phase: 'back',
+      nkReadoutStrings: UI_STRINGS['pt-BR'].practice.nkReadout,
+    })
+    const root = container.querySelector('[role="img"]')
+    expect(root?.getAttribute('aria-label')).toBe(
+      `Sessão Navi Kriya: OM 7, fase ${UI_STRINGS['pt-BR'].practice.nkReadout.back}`,
     )
   })
 })

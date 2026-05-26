@@ -60,7 +60,7 @@ export function NKShape({
   // WR-01: the phase label is the REAL NK phase (Front/Back) sourced from
   // nkReadoutStrings — a blind user must hear the practice move Front → Back.
   const phaseLabel = phase === 'back' ? nkReadoutStrings.back : nkReadoutStrings.front
-  const ariaLabel = `Navi Kriya session: OM ${String(count)}, phase ${phaseLabel}`
+  const ariaLabel = nkReadoutStrings.orbAriaLabel(count, phaseLabel)
 
   // Architecture: OrbShape's nkPhase branch renders the OrbLeadIn structure
   // (MID_SCALE host + halos + centre disc + outer ring, no inner ring) and
