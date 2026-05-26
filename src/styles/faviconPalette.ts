@@ -28,6 +28,23 @@ export const FAVICON_SVG_TEMPLATE =
   + '<circle cx="16" cy="16" r="10" fill="__FILL__" fill-opacity="0.50"/>'
   + '<circle cx="16" cy="16" r="8" fill="__FILL__"/></svg>'
 
+// Module-load drift guard: the recolour pipeline relies on at least one
+// `__FILL__` placeholder. The stale comment "three places" (already
+// outdated when the J16 update bumped to four) showed this template can
+// drift undetected — a future edit that hardcodes a hex and forgets to
+// revert would silently emit a fixed-colour favicon. Failing at import
+// time is loud and unmistakable; runtime checks after replaceAll cannot
+// distinguish "no placeholders left, all replaced" from "no placeholders
+// to begin with".
+const FAVICON_FILL_PLACEHOLDER_COUNT =
+  (FAVICON_SVG_TEMPLATE.match(/__FILL__/g) ?? []).length
+if (FAVICON_FILL_PLACEHOLDER_COUNT === 0) {
+  throw new Error(
+    'faviconPalette: FAVICON_SVG_TEMPLATE contains no __FILL__ placeholders — '
+    + 'per-theme recolouring is broken.',
+  )
+}
+
 // D-03: Produces a runtime-recolored SVG data-URI from the single template.
 // No new static per-theme files are created in public/.
 // CS-WR-01: The whole SVG payload is percent-encoded via encodeURIComponent so the
@@ -35,8 +52,8 @@ export const FAVICON_SVG_TEMPLATE =
 // not just the `#` in the hex color.
 export function buildFaviconDataUri(theme: Exclude<ThemeId, 'system'>): string {
   const hex = FAVICON_COLORS[theme]
-  // replaceAll — the Breathing-rings template (Spike 006) has __FILL__ in three
-  // places (two ring strokes + the centre dot); replace() would recolour only one.
+  // replaceAll — the template has multiple `__FILL__` placeholders (current
+  // count guarded at module load above); replace() would recolour only one.
   const svg = FAVICON_SVG_TEMPLATE.replaceAll('__FILL__', hex)
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
