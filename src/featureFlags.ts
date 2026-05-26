@@ -73,6 +73,14 @@ export const SWITCHER_ICON_FLAG = {
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
+// Alias provenance — each non-canonical token is intentional and retained
+// for documented call sites; do NOT drop without auditing first.
+//   - 'orb', 'halo'        → 'orb-halo'      : UI-label tokens; share strings.ts options.orb / options.halo entries.
+//   - 'minimal', 'rings'   → 'minimal-rings' : UI-label tokens; 'rings' is dual-meaning (see RING_CUE_FLAG below).
+//   - 'kuthasta', 'star'   → 'spiritual-eye' : design-spec heritage (kuthasta = Sanskrit, star = layperson).
+// Same input string can resolve differently per query parameter — lookup is
+// per-parameter, so the dual-meaning of 'rings' across breathingShape and
+// ringCue is by design, not collision.
 export const BREATHING_SHAPE_FLAG = {
   queryParam: 'breathingShape',
   defaultValue: 'orb-halo' as BreathingShapeVariant,
@@ -96,6 +104,22 @@ export const ORB_IDLE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
 
+// Alias provenance — every non-canonical token has a recorded origin; the
+// per-parameter scope means 'rings' here (→ outer-inner) does not conflict
+// with 'rings' on breathingShape (→ minimal-rings). Cross-file: the EN
+// strings.ts options.rings label is the UI surface for the 'outer-inner'
+// variant, which is why 'rings' is accepted here as a UI-label alias.
+//   outer-inner aliases:
+//     - 'rings'      : UI-label token (strings.ts options.rings = 'Rings').
+//     - 'production' : Phase 21/47 spike-branch alias (was the production default before Phase 47 flipped to progress-arc).
+//     - 'default'    : convenience alias for spike branches that wrote `?ringCue=default`.
+//   progress-arc aliases:
+//     - 'arc'        : UI-label token (strings.ts options.arc = 'Arc').
+//     - 'progress'   : shorthand introduced during the progress-arc spike.
+//     - 'south'      : spike-branch label ('south arc' from the early visual studies); retained because there is no cost and a removal would be observable to any bookmarked debug URL.
+// If any of the above aliases is genuinely unused at the next cleanup, drop
+// it together with its test row in featureFlags.test.ts — do not orphan one
+// side of the pair.
 export const RING_CUE_FLAG = {
   queryParam: 'ringCue',
   defaultValue: 'progress-arc' as RingCueStyle,
