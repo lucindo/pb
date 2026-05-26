@@ -136,9 +136,17 @@ function scheduleBowlCue(
     cleanupAt = when + defaultDecayTau * TAIL_MULTIPLIER + CLEANUP_PADDING_SEC
   }
 
-  const oscillators: OscillatorNode[] = []
-  const partialGains: GainNode[] = []
+  filter.connect(envelope)
+  envelope.connect(destination)
 
+  // AUDIO-04: explicit disconnect on osc.onended. { once: true } makes the listener self-removing.
+  // Pre-condition: osc.stop(stopAt) with stopAt > when — ensures 'ended' fires.
+  // If a future change makes stopAt < when, ended may not fire and the chain leaks.
+  //
+  // Build + wire each partial in a single loop so osc and partialGain stay as
+  // local references for the 'ended' listener — avoids parallel-array indexing
+  // and the noUncheckedIndexedAccess guard that came with it.
+  let lastOsc: OscillatorNode | null = null
   for (const partial of preset.partials) {
     const osc = audioCtx.createOscillator()
     osc.type = preset.oscillatorType
@@ -153,31 +161,16 @@ function scheduleBowlCue(
     osc.start(when)
     osc.stop(stopAt)
 
-    oscillators.push(osc)
-    partialGains.push(partialGain)
-  }
-
-  filter.connect(envelope)
-  envelope.connect(destination)
-
-  // AUDIO-04: explicit disconnect on osc.onended. { once: true } makes the listener self-removing.
-  // Pre-condition: osc.stop(stopAt) with stopAt > when — ensures 'ended' fires.
-  // If a future change makes stopAt < when, ended may not fire and the chain leaks.
-  for (let i = 0; i < oscillators.length; i++) {
-    const osc = oscillators[i]
-    const partialGain = partialGains[i]
-    // Reason: AUDIO-04 per-partial index invariant — oscillators and partialGains are parallel arrays
-    // of equal length, both populated in the same loop above (same iteration count, same push order).
-    if (osc === undefined || partialGain === undefined) continue
     osc.addEventListener('ended', () => {
       try { osc.disconnect() } catch { /* silent — some browsers throw InvalidAccessError on already-disconnected nodes */ }
       try { partialGain.disconnect() } catch { /* silent */ }
     }, { once: true })
+
+    lastOsc = osc
   }
   // Disconnect shared filter + envelope after the last partial ends (all partials share stopAt,
   // so any single 'ended' event is safe for shared-chain cleanup — RESEARCH Assumption A3).
-  const lastOsc = oscillators[oscillators.length - 1]
-  if (lastOsc !== undefined) {
+  if (lastOsc !== null) {
     lastOsc.addEventListener('ended', () => {
       try { filter.disconnect() } catch { /* silent */ }
       try { envelope.disconnect() } catch { /* silent */ }
