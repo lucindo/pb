@@ -15,7 +15,6 @@ export function LanguagePicker({ disabled, sectionLabel, sectionLabelHidden }: L
   return (
     <div>
       <p
-        id="language-picker-label"
         className={
           sectionLabelHidden
             ? 'sr-only'

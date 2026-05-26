@@ -65,8 +65,12 @@ describe('SettingsPanelBody — J14 sectioning', () => {
   it('hides Theme/Language sublabels visually (Appearance/Language are single-picker sections)', () => {
     const { container } = renderBody()
     const themeLabel = container.querySelector('#theme-picker-label')
-    const languageLabel = container.querySelector('#language-picker-label')
     expect(themeLabel).toHaveClass('sr-only')
+    // LanguagePicker no longer carries an id (IN-01) — locate its sublabel
+    // via the radiogroup's accessible name + DOM proximity.
+    const languageGroup = screen.getByRole('radiogroup', { name: EN.languageLabel })
+    const languageLabel = languageGroup.parentElement?.querySelector('p')
+    expect(languageLabel).not.toBeNull()
     expect(languageLabel).toHaveClass('sr-only')
   })
 
