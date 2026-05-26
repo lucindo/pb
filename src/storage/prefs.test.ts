@@ -6,6 +6,10 @@ import {
   coerceTimbre,
   coerceCue,
   coerceLocale,
+  coerceBreathingShape,
+  coerceRingCue,
+  coerceOrbIdle,
+  coerceSwitcherIcon,
   loadPrefs,
   savePrefs,
   DEFAULT_PREFS,
@@ -218,6 +222,33 @@ describe('loadPrefs / savePrefs round-trip', () => {
   it('falls back to defaults when stored JSON is corrupt (D-17)', () => {
     window.localStorage.setItem(STATE_KEY, '{not-json')
     expect(loadPrefs()).toEqual(DEFAULT_PREFS)
+  })
+})
+
+describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
+  // RED gate for Task 1: this block exists before src/storage/prefs.ts is extended.
+  // It will fail compile (missing exports) and assertion (UserPrefs is still 4-field)
+  // until Task 1's GREEN edit lands.
+  it('exports the 4 new coercers and they have the contracted defaults', () => {
+    expect(coerceBreathingShape('junk')).toBe('orb-halo')
+    expect(coerceRingCue('junk')).toBe('progress-arc')
+    expect(coerceOrbIdle('junk')).toBe('ambient')
+    expect(coerceSwitcherIcon('junk')).toBe(false)
+  })
+
+  it('DEFAULT_PREFS includes the 4 new flag defaults sourced from featureFlags.ts', () => {
+    expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
+    expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
+    expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
+    expect(DEFAULT_PREFS.switcherIcon).toBe(false)
+  })
+
+  it('coercePrefs returns 8-field UserPrefs and uses the alias table (D-03)', () => {
+    const out = coercePrefs({ breathingShape: 'kuthasta' })
+    expect(out.breathingShape).toBe('spiritual-eye')
+    expect(out.ringCue).toBe('progress-arc')
+    expect(out.orbIdle).toBe('ambient')
+    expect(out.switcherIcon).toBe(false)
   })
 })
 
