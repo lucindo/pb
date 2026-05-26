@@ -87,7 +87,7 @@ export function useWakeLock(): UseWakeLock {
     // its sentinel post-await. Always bumped (not gated on requestInFlightRef) so
     // a request() that starts and resolves entirely between two release() calls
     // still observes a stamp mismatch.
-    ++requestGenerationRef.current
+    requestGenerationRef.current += 1
     // Synchronous-null-then-async-close mirrors useAudioCues.stop() (useAudioCues.ts:123-135).
     // wasAcquiredRef cleared synchronously to halt visibility re-acquires (D-04 inverse).
     wasAcquiredRef.current = false
@@ -120,7 +120,7 @@ export function useWakeLock(): UseWakeLock {
       // The ref is a monotonic counter that is only ever mutated, never captured
       // for later reads — the stale-ref warning does not apply here.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      ++requestGenerationRef.current
+      requestGenerationRef.current += 1
       // Pitfall 6: unmount-cleanup race against in-flight request(). Synchronously
       // null the sentinel ref BEFORE the await on release() so a fast new request()
       // arriving during the unmount window doesn't see a half-released sentinel.

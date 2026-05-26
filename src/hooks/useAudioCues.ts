@@ -176,7 +176,7 @@ export function useAudioCues(
       // the latest counter value at cleanup time; the rule's warning about stale .current
       // does not apply to a monotonic counter that is only ever mutated, never captured for later reads.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      ++reconstructGenerationRef.current
+      reconstructGenerationRef.current += 1
       const engine = engineRef.current
       if (engine !== null) {
         void engine.close()
@@ -268,7 +268,7 @@ export function useAudioCues(
 
   const stop = useCallback(async (): Promise<void> => {
     // AUDIO-01: invalidate any in-flight reconstruct.
-    ++reconstructGenerationRef.current
+    reconstructGenerationRef.current += 1
     // Null engineRef synchronously BEFORE awaiting close — otherwise a fast
     // start() arriving during the close window hits the defensive guard in
     // start() and returns from a closing AudioContext, leaving engineRef
@@ -303,7 +303,8 @@ export function useAudioCues(
   // close needs no gesture).
   const reconstructEngine = useCallback(async (): Promise<void> => {
     // AUDIO-01: stamp this reconstruct's generation token.
-    const gen = ++reconstructGenerationRef.current
+    reconstructGenerationRef.current += 1
+    const gen = reconstructGenerationRef.current
     const oldEngine = engineRef.current
     // HOOKS-01 / D-11: capture mute synchronously from the ref BEFORE any await.
     // Same posture as the original `const currentMuted = muted` capture — the
