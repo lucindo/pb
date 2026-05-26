@@ -35,7 +35,6 @@ export function useAppNavigation({
     // setState inside effect is intentional — the session-start signal owns this transition.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppScreen('practice')
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReturningFromAppearance(false)
   }, [closeOnSessionView])
 

@@ -94,7 +94,7 @@ describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
           const nextLine = lines[i + 1] ?? ''
           const isAllowed = ALLOWED_KEY_PATTERNS.some((pattern) => pattern.test(nextLine))
           if (!isAllowed) {
-            hits.push(`${file}:${i + 1}`)
+            hits.push(`${file}:${String(i + 1)}`)
           }
         }
       }

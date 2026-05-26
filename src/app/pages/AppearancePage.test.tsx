@@ -83,6 +83,7 @@ describe('AppearancePage', () => {
     )
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
     expect(envelope.prefs.breathingShape).toBe('spiritual-eye')
   })
@@ -100,6 +101,7 @@ describe('AppearancePage', () => {
     )
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
     expect(envelope.prefs.orbIdle).toBe('ambient')
   })
@@ -117,6 +119,7 @@ describe('AppearancePage', () => {
     )
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
     expect(envelope.prefs.switcherIcon).toBe(true)
   })
