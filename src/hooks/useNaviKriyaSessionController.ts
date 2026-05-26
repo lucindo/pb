@@ -69,6 +69,11 @@ export function useNaviKriyaSessionController({
 
   const leadInTimeoutsRef = useRef<number[]>([])
   const recordedRef = useRef<boolean>(false)
+  const settingsRef = useRef<NaviKriyaSettings>(settings)
+
+  useEffect(() => {
+    settingsRef.current = settings
+  }, [settings])
 
   const wakeLockRequest = wakeLock.request
   const wakeLockRelease = wakeLock.release
@@ -125,10 +130,10 @@ export function useNaviKriyaSessionController({
       onComplete: () => {
         setLeadInDigit(null)
         setStarting(false)
-        nkStart(settings, audioSession.callbacks, onComplete)
+        nkStart(settingsRef.current, audioSession.callbacks, onComplete)
       },
     })
-  }, [sessionActive, naviAudioBegin, wakeLockRequest, settings, nkStart, onComplete])
+  }, [sessionActive, naviAudioBegin, wakeLockRequest, nkStart, onComplete])
 
   const cancelStart = useCallback((): void => {
     clearLeadInTimeouts()
