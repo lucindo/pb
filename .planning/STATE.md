@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Audio Sync
-status: ready_to_plan
-stopped_at: Phase 49.1 complete (3/3) — ready to discuss Phase 50
-last_updated: 2026-05-27T22:38:05.839Z
+status: planning
+stopped_at: Phase 50 context gathered
+last_updated: "2026-05-27T22:55:07.884Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 6
-  completed_phases: 7
+  completed_phases: 2
   total_plans: 5
   completed_plans: 5
-  percent: 117
+  percent: 33
 ---
 
 # Project State
@@ -118,9 +118,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-27T21:29:33.146Z
-Stopped at: Phase 49 context gathered
-Resume file: None
+Last session: 2026-05-27T22:55:07.877Z
+Stopped at: Phase 50 context gathered
+Resume file: .planning/phases/50-sessionclock-scheduler-abstraction/50-CONTEXT.md
 Next command: /gsd:plan-phase 49 (iOS speaker route fix — fast-shipping opener; independent of Phases 50–53)
 
 ## Operator Next Steps
