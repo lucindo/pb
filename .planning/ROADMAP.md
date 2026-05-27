@@ -117,7 +117,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: 3 plans
 - [x] 49.1-01-PLAN.md — Persistence + flag registry + boolean choice hook foundations (Wave 1, autonomous; ADV-03 persistence + ADV-05 query-string)
 - [x] 49.1-02-PLAN.md — Audio engine bypassSilentMode gate + useAudioCues/useBreathingSessionController threading (Wave 1, autonomous; ADV-04)
-- [ ] 49.1-03-PLAN.md — Atomic D-11 Appearance→Advanced rename + Bypass-silent-mode toggle UI binding + useAppViewModel end-to-end wire-up (Wave 2, autonomous; ADV-01 + ADV-02 + ADV-03 UI)
+- [x] 49.1-03-PLAN.md — Atomic D-11 Appearance→Advanced rename + Bypass-silent-mode toggle UI binding + useAppViewModel end-to-end wire-up (Wave 2, autonomous; ADV-01 + ADV-02 + ADV-03 UI)
 **UI hint**: yes (page rename, section rename, new toggle, EN + PT-BR strings)
 
 ### Phase 50: SessionClock / scheduler abstraction
@@ -193,7 +193,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 49. iOS speaker route fix | 2/2 | Complete    | 2026-05-27 |
-| 49.1. Advanced Settings + Bypass silent mode toggle | 2/3 | In Progress|  |
+| 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete   | 2026-05-27 |
 | 50. SessionClock / scheduler abstraction | 0/TBD | Not started | — |
 | 51. Master clock unification | 0/TBD | Not started | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
