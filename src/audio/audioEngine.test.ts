@@ -449,4 +449,159 @@ describe('audioEngine', () => {
     await engineBell.close()
     await engineFlute.close()
   })
+
+  // Phase 49: iOS silent-loop element
+  // Tests covering D-04 (sync-construct order), D-05 (attribute wiring), D-08 (close()
+  // teardown + idempotency), and D-09 (silent-absorb on .play() reject). Element is
+  // invisible at the hook seam (D-04) — these are engine-level tests only.
+
+  it('createAudioEngine constructs a silent-loop <audio> element with locked attributes (D-05)', async () => {
+    const instances: SpyAudio[] = []
+    class SpyAudio {
+      playsInline = false
+      loop = false
+      muted = true
+      volume = 1
+      pause = vi.fn()
+      removeAttribute = vi.fn()
+      play = vi.fn(async () => {})
+      // Reason: constructor mirrors HTMLAudioElement(src?) signature; the body
+      // captures the instance for assertion (so the constructor is NOT useless).
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      constructor(_src?: string) {
+        instances.push(this)
+      }
+    }
+    vi.stubGlobal('Audio', SpyAudio)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    expect(instances).toHaveLength(1)
+    const [el] = instances
+    if (el === undefined) throw new Error('expected a stubbed Audio instance')
+    expect(el.playsInline).toBe(true)
+    expect(el.loop).toBe(true)
+    expect(el.muted).toBe(false)
+    expect(el.volume).toBe(0.0001)
+
+    await engine.close()
+  })
+
+  it('engine.close() pauses the silent-loop element and clears its src (D-08 teardown)', async () => {
+    const instances: SpyAudio[] = []
+    class SpyAudio {
+      playsInline = false
+      loop = false
+      muted = true
+      volume = 1
+      pause = vi.fn()
+      removeAttribute = vi.fn()
+      play = vi.fn(async () => {})
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      constructor(_src?: string) {
+        instances.push(this)
+      }
+    }
+    vi.stubGlobal('Audio', SpyAudio)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    await engine.close()
+
+    expect(instances).toHaveLength(1)
+    const [el] = instances
+    if (el === undefined) throw new Error('expected a stubbed Audio instance')
+    expect(el.pause).toHaveBeenCalledTimes(1)
+    expect(el.removeAttribute).toHaveBeenCalledWith('src')
+  })
+
+  it('engine.close() is idempotent for silent-loop teardown — pause and removeAttribute called at most once across two close() calls', async () => {
+    const instances: SpyAudio[] = []
+    class SpyAudio {
+      playsInline = false
+      loop = false
+      muted = true
+      volume = 1
+      pause = vi.fn()
+      removeAttribute = vi.fn()
+      play = vi.fn(async () => {})
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      constructor(_src?: string) {
+        instances.push(this)
+      }
+    }
+    vi.stubGlobal('Audio', SpyAudio)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    await engine.close()
+    await engine.close()
+
+    expect(instances).toHaveLength(1)
+    const [el] = instances
+    if (el === undefined) throw new Error('expected a stubbed Audio instance')
+    expect(el.pause).toHaveBeenCalledTimes(1)
+    expect(el.removeAttribute).toHaveBeenCalledTimes(1)
+  })
+
+  it('createAudioEngine resolves even when silent-loop element.play() rejects (D-09 silent-absorb)', async () => {
+    class RejectingAudio {
+      playsInline = false
+      loop = false
+      muted = true
+      volume = 1
+      pause = vi.fn()
+      removeAttribute = vi.fn()
+      play = vi.fn(() => Promise.reject(new DOMException('autoplay denied', 'NotAllowedError')))
+      // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
+      constructor(_src?: string) {}
+    }
+    vi.stubGlobal('Audio', RejectingAudio)
+
+    // Engine MUST resolve — silent-loop failure is non-fatal (D-09 lock).
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    expect(engine).toBeDefined()
+    expect(typeof engine.close).toBe('function')
+
+    await engine.close()
+  })
+
+  it('sync-construct order: new AudioContext() precedes new Audio() in createAudioEngine (D-04)', async () => {
+    const callOrder: string[] = []
+    class OrderedAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+      constructor() {
+        callOrder.push('AudioContext')
+      }
+    }
+    class OrderedAudio {
+      playsInline = false
+      loop = false
+      muted = true
+      volume = 1
+      pause = vi.fn()
+      removeAttribute = vi.fn()
+      play = vi.fn(async () => {})
+      // Reason: constructor mirrors HTMLAudioElement(src?); body pushes to callOrder so NOT useless.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      constructor(_src?: string) {
+        callOrder.push('Audio')
+      }
+    }
+    vi.stubGlobal('AudioContext', OrderedAC)
+    vi.stubGlobal('Audio', OrderedAudio)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    expect(callOrder).toEqual(['AudioContext', 'Audio'])
+
+    await engine.close()
+  })
 })
