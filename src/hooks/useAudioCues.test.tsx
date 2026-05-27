@@ -1240,6 +1240,86 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     unmount()
   })
 
+  // Phase 49.1 D-07/D-08/D-09: bypassSilentMode threading through useAudioCues.start
+  // (3rd arg) and bypassSilentModeRef capture-and-replay in reconstructEngine.
+  // Tests mirror the existing timbre D-08/D-11 tests above — same pattern, new field.
+
+  it('start(plan, "bowl", false) forwards bypassSilentMode: false to createAudioEngine (D-07)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const createSpy = vi.spyOn(audioEngineModule, 'createAudioEngine')
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl', false)
+    })
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ bypassSilentMode: false }),
+    )
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('start(plan, "bowl", true) forwards bypassSilentMode: true to createAudioEngine (D-07)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const createSpy = vi.spyOn(audioEngineModule, 'createAudioEngine')
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl', true)
+    })
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ bypassSilentMode: true }),
+    )
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('start(plan, "bowl") without 3rd arg forwards bypassSilentMode: undefined (D-07 default backward-compat)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const createSpy = vi.spyOn(audioEngineModule, 'createAudioEngine')
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl')
+    })
+    // Per D-07: undefined coerces to "construct" at the engine layer.
+    // The hook must forward undefined (not elide the key) so the caller chain is explicit.
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ bypassSilentMode: undefined }),
+    )
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('reconstructEngine reuses bypassSilentModeRef.current — does not reset to undefined on reconstruct (D-09)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const createSpy = vi.spyOn(audioEngineModule, 'createAudioEngine')
+    const { result, unmount } = renderHook(() => useAudioCues(false, vi.fn()))
+
+    // 1. Session starts with bypassSilentMode=false — ref captured synchronously.
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl', false)
+    })
+    expect(createSpy.mock.calls[0]?.[0]).toMatchObject({ bypassSilentMode: false })
+    const callsAfterStart = createSpy.mock.calls.length
+
+    // 2. Trigger reconstruction via public resume().
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    // 3. Reconstruction must call createAudioEngine again with bypassSilentMode: false
+    //    (the captured ref value), NOT undefined (the default) — D-09 no-mid-session-rebuild.
+    expect(createSpy.mock.calls.length).toBeGreaterThan(callsAfterStart)
+    const reconstructCall = createSpy.mock.calls[createSpy.mock.calls.length - 1]
+    expect(reconstructCall?.[0]).toMatchObject({ bypassSilentMode: false })
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
   it('start(samplePlan, "bowl") preserves v1.0.1 byte-identical behavior (TIMBRE-02 sanity)', async () => {
     // Sanity check that passing 'bowl' explicitly does not perturb the v1.0.1 flow —
     // firstInCueTime is still the deterministic engine.now() + 3 lead-in anchor.

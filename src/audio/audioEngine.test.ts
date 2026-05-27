@@ -605,6 +605,97 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
+  // Phase 49.1 D-07 — bypassSilentMode option gating (ADV-04)
+  // Three tests: skip construction when false (ADV-04 success gate), construct when
+  // true (parity with Phase 49 baseline), construct when undefined (D-07 default
+  // undefined → coerces to true, backward compat).
+
+  describe('Phase 49.1 D-07 — bypassSilentMode option gating (ADV-04)', () => {
+    it('createAudioEngine does NOT construct the silent-loop element when bypassSilentMode=false (ADV-04 success gate)', async () => {
+      const instances: SpyAudio[] = []
+      class SpyAudio {
+        playsInline = false
+        loop = false
+        muted = true
+        volume = 1
+        pause = vi.fn()
+        removeAttribute = vi.fn()
+        play = vi.fn(async () => {})
+        // Reason: constructor mirrors HTMLAudioElement(src?) signature; body captures instance for assertion — NOT useless.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        constructor(_src?: string) {
+          instances.push(this)
+        }
+      }
+      vi.stubGlobal('Audio', SpyAudio)
+
+      const engine = await createAudioEngine({ timbre: 'bowl', bypassSilentMode: false })
+
+      // ADV-04: Audio constructor must NOT be called when bypassSilentMode is false.
+      expect(instances).toHaveLength(0)
+      // close() null-guards must short-circuit cleanly when construction was skipped.
+      await engine.close()
+    })
+
+    it('createAudioEngine constructs the silent-loop element when bypassSilentMode=true (parity with Phase 49 baseline)', async () => {
+      const instances: SpyAudio[] = []
+      class SpyAudio {
+        playsInline = false
+        loop = false
+        muted = true
+        volume = 1
+        pause = vi.fn()
+        removeAttribute = vi.fn()
+        play = vi.fn(async () => {})
+        // Reason: constructor mirrors HTMLAudioElement(src?) signature; body captures instance for assertion — NOT useless.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        constructor(_src?: string) {
+          instances.push(this)
+        }
+      }
+      vi.stubGlobal('Audio', SpyAudio)
+
+      const engine = await createAudioEngine({ timbre: 'bowl', bypassSilentMode: true })
+
+      expect(instances).toHaveLength(1)
+      const [el] = instances
+      if (el === undefined) throw new Error('expected a stubbed Audio instance')
+      // Attributes must match the Phase 49 v3 baseline (parity test).
+      expect(el.playsInline).toBe(true)
+      expect(el.loop).toBe(true)
+      expect(el.muted).toBe(false)
+      expect(el.volume).toBe(0.0001)
+      await engine.close()
+    })
+
+    it('createAudioEngine constructs the silent-loop element when bypassSilentMode is undefined (D-07 default undefined → true)', async () => {
+      const instances: SpyAudio[] = []
+      class SpyAudio {
+        playsInline = false
+        loop = false
+        muted = true
+        volume = 1
+        pause = vi.fn()
+        removeAttribute = vi.fn()
+        play = vi.fn(async () => {})
+        // Reason: constructor mirrors HTMLAudioElement(src?) signature; body captures instance for assertion — NOT useless.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        constructor(_src?: string) {
+          instances.push(this)
+        }
+      }
+      vi.stubGlobal('Audio', SpyAudio)
+
+      // No bypassSilentMode key in opts — undefined must coerce to "construct".
+      // Backward-compat: any pre-49.1 caller that omits the field must still
+      // get the silent-loop element (Phase 49 v3 behavior preserved).
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+
+      expect(instances).toHaveLength(1)
+      await engine.close()
+    })
+  })
+
   // CR-01 (Phase 49 REVIEW): when AudioContext.resume() rejects, the silent-loop
   // element is unreachable through engine.close() (no engine handle is returned),
   // so the ad-hoc teardown inside the resume() catch block is the only path that

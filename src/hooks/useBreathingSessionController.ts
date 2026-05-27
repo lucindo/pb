@@ -55,6 +55,12 @@ export interface UseBreathingSessionControllerArgs {
   stretchSettings: StretchSettings
   liveCue: CueStyleId
   wakeLock: UseWakeLock
+  /** Phase 49.1 D-08: optional bypass-silent-mode flag threaded from
+   *  featureFlags.bypassSilentMode (wired in Plan 03 via useAppViewModel).
+   *  Until Plan 03 supplies the value, undefined passes through to
+   *  useAudioCues.start → audioEngine → D-07 undefined-coerces-to-true
+   *  → Phase 49 v3 behavior preserved (acceptable wave-1 → wave-2 gap state). */
+  bypassSilentMode?: boolean
 }
 
 export function useBreathingSessionController({
@@ -63,6 +69,7 @@ export function useBreathingSessionController({
   stretchSettings,
   liveCue,
   wakeLock,
+  bypassSilentMode,
 }: UseBreathingSessionControllerArgs): BreathingSessionController {
   const initialMute = useMemo<boolean>(() => loadMute(), [])
   const activeStretchSettings = activePractice === 'stretch' ? stretchSettings : null
@@ -182,7 +189,9 @@ export function useBreathingSessionController({
     const plan = createBreathingPlan(state.selectedSettings)
     planRef.current = plan
     const capturedTimbre = loadPrefs().timbre
-    const firstInAudioTime = await audioStart(plan, capturedTimbre)
+    // Phase 49.1 D-08: pass bypassSilentMode as the 3rd arg to useAudioCues.start.
+    // It flows into createAudioEngine via bypassSilentModeRef (Task 2 of Plan 02).
+    const firstInAudioTime = await audioStart(plan, capturedTimbre, bypassSilentMode)
 
     if (generation !== startGenerationRef.current) {
       await audioStop()
@@ -209,6 +218,7 @@ export function useBreathingSessionController({
     sessionStart,
     clearLeadInTimeouts,
     clearCapturedSession,
+    bypassSilentMode,
   ])
 
   const runningNeedsConfirmation =

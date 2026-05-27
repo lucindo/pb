@@ -73,6 +73,14 @@ export interface AudioEngineOptions {
    *  Caller passes the snapshot from useAudioCues.start(plan, timbre). No setter
    *  is exposed — capture-at-construction is the only mutation path. */
   timbre: TimbreId
+  /** Phase 49.1 D-07: when false, skip silent-loop <audio> element construction
+   *  entirely — no `new Audio(...)`, no `.play()` call, no teardown branch needed
+   *  (existing null-guards in close() and the resume-reject catch already short-circuit
+   *  when construction was skipped).
+   *  When true or undefined, behavior is identical to Phase 49 v3 (silent-loop active).
+   *  Undefined coerces to true — keeps any pre-Phase-49.1 caller working unchanged
+   *  (gate predicate is `!== false`, NOT `=== true`). */
+  bypassSilentMode?: boolean
 }
 
 // D-08: soft fade-out tail when muting mid-cue.
@@ -170,27 +178,36 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
   // Phase 49 D-01/D-04/D-06: silent looping <audio> element constructed inside the engine,
   // on the sync gesture head, BEFORE any asynchronous suspension. Coerces iOS audio session
-  // from 'ambient' to 'playback'. Always-on per D-02 (no UA gating). See 49-CONTEXT.md.
-  let silentLoopElement: HTMLAudioElement | null = new Audio(SILENT_WAV_DATA_URL)
-  // Reason: `playsInline` is typed only on HTMLVideoElement in lib.dom.d.ts, but
-  // iOS Safari honors the property on HTMLMediaElement (the trick lifted from
-  // Howler.js). The runtime assignment is correct; the cast documents the
-  // type-vs-runtime gap.
-  ;(silentLoopElement as HTMLMediaElement & { playsInline: boolean }).playsInline = true
-  silentLoopElement.loop = true
-  silentLoopElement.muted = false
-  silentLoopElement.volume = SILENT_LOOP_VOLUME
-  // D-09 silent-absorb: a .play() rejection (autoplay policy regression, codec issue) does NOT
-  // propagate. Session continues; iOS silent-switch users simply do not get speaker routing —
-  // no worse than pre-Phase-49. Critically different from the AC resume() reject below at
-  // L139-143, which DOES re-throw — the silent loop is sub-essential infrastructure
-  // (49-PATTERNS.md "Silent-absorb on resource-acquisition failures").
+  // from 'ambient' to 'playback'. See 49-CONTEXT.md.
   //
-  // Optional chain: per HTMLMediaElement spec play() returns a Promise<void>, but very old
-  // browsers (Safari < 11) and the jsdom test environment return undefined. The chain absorbs
-  // that variant under the same silent-absorb posture.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  void silentLoopElement.play()?.catch(() => undefined)
+  // Phase 49.1 D-07: gate on opts.bypassSilentMode. The predicate is `!== false` (NOT `=== true`)
+  // so undefined coerces to "construct" — any pre-49.1 caller that omits the field gets Phase 49
+  // v3 behavior unchanged. When bypassSilentMode === false, silentLoopElement stays null and the
+  // existing null-guards in close() and the resume-reject catch both short-circuit cleanly —
+  // no new teardown branches needed per D-07 + PATTERNS.md Pattern C.
+  let silentLoopElement: HTMLAudioElement | null = null
+  if (opts.bypassSilentMode !== false) {
+    silentLoopElement = new Audio(SILENT_WAV_DATA_URL)
+    // Reason: `playsInline` is typed only on HTMLVideoElement in lib.dom.d.ts, but
+    // iOS Safari honors the property on HTMLMediaElement (the trick lifted from
+    // Howler.js). The runtime assignment is correct; the cast documents the
+    // type-vs-runtime gap.
+    ;(silentLoopElement as HTMLMediaElement & { playsInline: boolean }).playsInline = true
+    silentLoopElement.loop = true
+    silentLoopElement.muted = false
+    silentLoopElement.volume = SILENT_LOOP_VOLUME
+    // D-09 silent-absorb: a .play() rejection (autoplay policy regression, codec issue) does NOT
+    // propagate. Session continues; iOS silent-switch users simply do not get speaker routing —
+    // no worse than pre-Phase-49. Critically different from the AC resume() reject below at
+    // L139-143, which DOES re-throw — the silent loop is sub-essential infrastructure
+    // (49-PATTERNS.md "Silent-absorb on resource-acquisition failures").
+    //
+    // Optional chain: per HTMLMediaElement spec play() returns a Promise<void>, but very old
+    // browsers (Safari < 11) and the jsdom test environment return undefined. The chain absorbs
+    // that variant under the same silent-absorb posture.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    void silentLoopElement.play()?.catch(() => undefined)
+  }
 
   // Chrome can occasionally hand back an AC in 'suspended' even from a gesture chain
   // (race conditions during page bootstrap); resume immediately so currentTime advances.

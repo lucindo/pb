@@ -44,8 +44,15 @@ export interface UseAudioCues {
    *  cue in the session including reconstruction (D-11) — App.tsx passes prefs.timbre
    *  snapshot. The hook freezes the value into `timbreRef` BEFORE any await; a cross-tab
    *  prefs mutation during the gesture chain or during a later iOS visibility-suspend
-   *  recovery NEVER leaks into the active session. */
-  start(this: void, plan: BreathingPlan, timbre: TimbreId): Promise<number | null>
+   *  recovery NEVER leaks into the active session.
+   *
+   *  `bypassSilentMode` (Phase 49.1 D-07/D-09): optional 3rd arg threaded to
+   *  `createAudioEngine({ bypassSilentMode })`. Captured into `bypassSilentModeRef`
+   *  synchronously BEFORE the await (mirrors the `timbreRef` posture). Replayed from
+   *  that ref inside `reconstructEngine` — a mid-session toggle does NOT live-update
+   *  (D-09); the flag is read at engine-construction time only. Undefined passes through
+   *  to the engine, where it coerces to "construct" (D-07 backward-compat). */
+  start(this: void, plan: BreathingPlan, timbre: TimbreId, bypassSilentMode?: boolean): Promise<number | null>
   /** Called when session ends. Closes AC (D-11). Resets status to 'idle'. */
   stop(this: void): Promise<void>
   /** Toggle mute. Pass true to mute, false to unmute. */
@@ -116,6 +123,11 @@ export function useAudioCues(
   // snapshot directly to start(). D-11: reconstruction NEVER re-reads user prefs —
   // the session's first-Start choice is preserved across iOS visibility-suspend recovery.
   const timbreRef = useRef<TimbreId>(DEFAULT_TIMBRE)
+  // Phase 49.1 D-07/D-09: bypassSilentMode captured at engine-construction time (start) and
+  // replayed during reconstruction — mirrors the timbreRef posture exactly. Initial value is
+  // undefined (D-07: undefined → engine coerces to "construct" → Phase 49 v3 behavior).
+  // NO useEffect mirror: only ever set synchronously in start() and read in reconstructEngine().
+  const bypassSilentModeRef = useRef<boolean | undefined>(undefined)
   const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
 
   // Plan 06 D-34: high-level audio-path health surface.
@@ -217,7 +229,7 @@ export function useAudioCues(
   }, [])
 
   const start = useCallback(
-    async (plan: BreathingPlan, timbre: TimbreId): Promise<number | null> => {
+    async (plan: BreathingPlan, timbre: TimbreId, bypassSilentMode?: boolean): Promise<number | null> => {
       // Defensive: if the hook user accidentally calls start() twice without stop(),
       // return the cached firstInCueTime from the ORIGINAL schedule (WR-05), not a
       // freshly-projected "now + 3" — those two values drift apart by the time
@@ -235,7 +247,11 @@ export function useAudioCues(
         // cross-tab prefs mutation during the gesture chain or during the engine
         // construction cannot leak into the active session (D-11 invariant).
         timbreRef.current = timbre
-        const engine = await createAudioEngine({ timbre, onStateChange: handleStateChange })
+        // Phase 49.1 D-07/D-09: capture bypassSilentMode synchronously BEFORE the await
+        // (mirrors timbreRef posture). The value is frozen at start() call time;
+        // mid-session preference toggles do NOT live-update (D-09 invariant).
+        bypassSilentModeRef.current = bypassSilentMode
+        const engine = await createAudioEngine({ timbre, onStateChange: handleStateChange, bypassSilentMode })
         engineRef.current = engine
         // HOOKS-01 / D-11: read mute from mutedRef so `start` does NOT depend on
         // the React `muted` state. The ref-mirror effect above keeps the ref in
@@ -327,6 +343,11 @@ export function useAudioCues(
     // fresh prefs value. (D-11 invariant — asserted by the
     // "reconstructEngine reuses timbreRef.current" test below.)
     const currentTimbre = timbreRef.current
+    // Phase 49.1 D-09: replay bypassSilentMode from the ref captured in start() —
+    // mirror of the currentTimbre capture above. Mid-session preference toggle
+    // does NOT live-update (D-09): the engine is rebuilt with the same flag value
+    // that was active at the original start() call.
+    const currentBypassSilentMode = bypassSilentModeRef.current
     // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting —
     // mirrors stop()'s posture so a fast call into setMuted() during the window
     // does not deref a closing AC.
@@ -339,7 +360,8 @@ export function useAudioCues(
     try {
       // Phase 18 D-11: passes the session-captured timbre (NOT a fresh prefs read)
       // to the new engine. The session's first-Start choice flows through reconstruction.
-      newEngine = await createAudioEngine({ timbre: currentTimbre, onStateChange: handleStateChange })
+      // Phase 49.1 D-09: passes the captured bypassSilentMode ref value.
+      newEngine = await createAudioEngine({ timbre: currentTimbre, onStateChange: handleStateChange, bypassSilentMode: currentBypassSilentMode })
     } catch {
       // D-10 terminal fallback: createAudioEngine threw. Fire-and-forget close
       // the old engine (gesture already consumed by the failed construction).
