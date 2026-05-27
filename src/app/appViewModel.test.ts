@@ -85,7 +85,7 @@ function makeSettingsSources(
 }
 
 describe('app practice session view model', () => {
-  it('maps resonant and stretch to the breathing presentation contract', () => {
+  it('maps stretch to its presentation contract with the stretch discriminator', () => {
     const model = createPracticeSessionViewModel({
       activePractice: 'stretch',
       breathing: breathingState,
@@ -93,7 +93,7 @@ describe('app practice session view model', () => {
       liveCue: 'labels',
     })
 
-    expect(model.kind).toBe('breathing')
+    expect(model.kind).toBe('stretch')
     expect(model.presentation.shape).toEqual({
       cue: 'arrow',
       frame,
