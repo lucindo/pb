@@ -2,13 +2,14 @@
 created: 2026-05-27T00:00:00.000Z
 title: iOS speaker route — silent <audio> element to coerce playback session
 area: audio
-status: scoped-into-v2.2-phase-a
+status: scoped-into-v2.2-phase-49
+resolves_phase: 49
 files:
   - src/audio/audioEngine.ts
   - src/hooks/useAudioCues.ts
 ---
 
-> **Status:** Scoped as Phase A of the v2.2 Audio Sync milestone — see `.planning/notes/audio-clock-milestone-proposal.md`. This document remains the canonical spec for that phase.
+> **Status:** Scoped as Phase 49 of the v2.2 Audio Sync milestone — see `.planning/notes/audio-clock-milestone-proposal.md`. This document remains the canonical spec for that phase.
 
 ## Problem
 
