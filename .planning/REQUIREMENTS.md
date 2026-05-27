@@ -11,7 +11,7 @@
 
 ## v2.2 Requirements
 
-Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (Phases 49–53 — continuing v2.1's last phase 48). Cross-cutting requirements (DEPS-01, QUAL-01) are verified per-phase.
+Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (Phases 49, 49.1, 50–53 — continuing v2.1's last phase 48). Cross-cutting requirements (DEPS-01, QUAL-01) are verified per-phase.
 
 ### iOS Audio Routing (Phase 49 — iOS speaker route fix)
 
@@ -20,6 +20,14 @@ Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (P
 - [x] **IOS-03**: User on iOS Safari with silent switch OFF hears audio normally (no regression).
 - [x] **IOS-04**: User on non-iOS platforms experiences no audible regression and no measurable performance regression from the silent-loop element.
 - [x] **IOS-05**: The silent `<audio playsInline>` element starts only via the same user-gesture chain that constructs the `AudioContext` (no autoplay on page load) and is torn down on `AudioContext` close.
+
+### Advanced Settings + Bypass Silent Mode (Phase 49.1 — user toggle on Phase 49 silent-loop)
+
+- [ ] **ADV-01**: App Settings → trailing chevron navigates to a page titled "Advanced" (EN) / "Avançado" (PT-BR). The strings "Appearance" / "Aparência" no longer appear anywhere in `src/content/strings.ts`.
+- [ ] **ADV-02**: The Behavior section on the Advanced page has the header "Behavior" (EN) / "Comportamento" (PT-BR). The strings-tree key is `advanced.sections.behavior`; the old `appearance.sections.visual` key is absent.
+- [ ] **ADV-03**: A "Bypass silent mode" / "Ignorar modo silencioso" toggle is visible below the two existing Behavior toggles; defaults ON for a fresh storage state; persists across reloads via the Phase 48 `featureFlags` persistence path (no `STATE_VERSION` bump).
+- [ ] **ADV-04**: When the toggle is OFF and the user starts a session, `createAudioEngine()` does NOT construct a silent-loop `<audio>` element (the global `Audio` constructor is never called for the silent loop). When ON or unset, the silent-loop wiring is identical to Phase 49 v3.
+- [ ] **ADV-05**: `?bypassSilentMode=false` overrides persisted storage for the current page-load lifecycle via the Phase 48 2-arg `readFeatureFlags(search, persisted)` precedence chain (query > persisted > default).
 
 ### Audio Abstraction (Phase 50 — SessionClock / scheduler interface)
 
@@ -89,6 +97,11 @@ Which phases cover which requirements. Roadmapper will populate the Phase column
 | IOS-03 | Phase 49 | Complete |
 | IOS-04 | Phase 49 | Complete |
 | IOS-05 | Phase 49 | Complete |
+| ADV-01 | Phase 49.1 | Pending |
+| ADV-02 | Phase 49.1 | Pending |
+| ADV-03 | Phase 49.1 | Pending |
+| ADV-04 | Phase 49.1 | Pending |
+| ADV-05 | Phase 49.1 | Pending |
 | ABSTR-01 | Phase 50 | Pending |
 | ABSTR-02 | Phase 50 | Pending |
 | ABSTR-03 | Phase 50 | Pending |
