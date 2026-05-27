@@ -117,7 +117,9 @@ For full v2.1 detail see `.planning/milestones/v2.1-ROADMAP.md` + `v2.1-REQUIREM
 
 ### Active
 
-v2.2 Audio Sync — defining requirements (2026-05-27). Fix every audio-stack bug currently on file via a 5-phase plan: iOS speaker route fix (#6, fast-shipping opener), `SessionClock` / scheduler abstraction (pure refactor, zero behavior change), master clock unification onto `audioCtx.currentTime` (fixes #1, #2), visibility-resume delta clamp + lookahead scheduling (fixes #4, #5), master-gain mute (fixes #3a). Continues phase numbering from v2.1 (last phase: 48). See `## Current Milestone` above for full scope, `## Constraints` for the no-new-runtime-deps invariant, and the milestone proposal at `.planning/notes/audio-clock-milestone-proposal.md` for per-phase deliverables, success criteria, and risks.
+v2.2 Audio Sync — in flight (2026-05-27). Fix every audio-stack bug currently on file via a 5-phase plan: iOS speaker route fix (#6, fast-shipping opener — **shipped in Phase 49** ✓), `SessionClock` / scheduler abstraction (pure refactor, zero behavior change), master clock unification onto `audioCtx.currentTime` (fixes #1, #2), visibility-resume delta clamp + lookahead scheduling (fixes #4, #5), master-gain mute (fixes #3a). Continues phase numbering from v2.1 (last phase: 48). See `## Current Milestone` above for full scope, `## Constraints` for the no-new-runtime-deps invariant, and the milestone proposal at `.planning/notes/audio-clock-milestone-proposal.md` for per-phase deliverables, success criteria, and risks.
+
+**Phase 49 (iOS speaker route fix) — complete 2026-05-27.** Silent-loop `HTMLAudioElement` (16-bit / 22050 Hz / 200 samples / ±1 LSB amplitude / -90 dBFS PCM, 444 bytes) wired into `createAudioEngine()` on the sync gesture head; torn down inside `engine.close()` (D-08) and also on the `AudioContext.resume()` reject path (CR-01 fix from 49-REVIEW.md). Device-validated on iPhone Safari A/B/C/D + macOS desktop F (E Android deferred — no device). IOS-01/02/03 verified, IOS-04 partially verified (F pass, E deferred). Root cause uncovered during validation: iOS Safari ignores `HTMLMediaElement.volume`, so attenuation is now encoded into PCM samples directly (the `SILENT_LOOP_VOLUME = 0.0001` line is retained as defense-in-depth for Android Chrome and desktop). 5 Phase 49 tests + 1 CR-01 regression in `audioEngine.test.ts`; full suite 1283 → 1289 passing.
 
 ### v2.x Carry-Forwards (Known Bugs)
 
@@ -278,4 +280,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 after v2.2 Audio Sync milestone init (5-phase scope locked from `.planning/notes/audio-clock-milestone-proposal.md`; awaiting requirements + roadmap).*
+*Last updated: 2026-05-27 after Phase 49 (iOS speaker route fix) shipped — silent-loop element coerces iOS Safari to "playback" session category; root cause iOS-ignores-`.volume` uncovered during device validation; IOS-04 Android arm deferred — no device.*
