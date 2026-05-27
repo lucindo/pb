@@ -92,17 +92,29 @@ const MIN_GAIN_VALUE = 0.0001
 // at .planning/todos/2026-05-27-ios-speaker-route-audio-element-fix.md.
 // Constant is file-local (D-03 + 49-PATTERNS.md Pattern A — Task 2 stubs
 // `Audio` globally and does not need to import this).
-// Device-validation revision (Phase 49 Plan 02, 2026-05-27): the initial Plan 01
-// PCM (alternating 127/128 — a full-amplitude 4 kHz square wave looping every 25 ms)
-// was audible on iOS Safari as a continuous low buzz even at volume 0.0001. Replaced
-// with a single low-amplitude sine cycle centered at 128 (±1 LSB) — loop-continuous
-// (sample 0 == sample 199 == 128, no boundary clicks), still decodable, still not
-// pure silence so iOS Safari treats it as a "real" track per D-05, sub-audible on
-// real hardware at master volume 0.0001. WAV header is byte-identical to the
-// original (same 8 kHz / 8-bit / 200 samples / 244-byte total); only the 200 PCM
-// bytes changed. See .planning/phases/49-ios-speaker-route-fix/49-02-DEVICE-VALIDATION.md.
+// Device-validation revision (Phase 49 Plan 02, 2026-05-27):
+//   v1 (Plan 01 initial): 8-bit / 8 kHz / 200 samples, alternating 127/128 — a
+//     full-amplitude 4 kHz square wave looping every 25 ms. Audible on iOS as a
+//     continuous loud buzz.
+//   v2 (Plan 02 first revision): 8-bit / 8 kHz / 200 samples, single ±1 LSB sine
+//     cycle centered at 128. Bundle footprint preserved. Less harsh, but still
+//     audible on iOS at master volume 0.0001 — different sound, not absent.
+//   v3 (this revision): the root cause is that iOS Safari ignores the
+//     HTMLMediaElement.volume attribute entirely (long-standing iOS WebKit
+//     behavior — volume is hardware-controlled). The v1/v2 element was playing
+//     at full system volume on iPhone the whole time. Attenuation must therefore
+//     be encoded into the PCM samples themselves, not via .volume. Switched to
+//     16-bit signed / 22050 Hz / 200 samples (~9 ms), single ±1 LSB sine cycle
+//     (peak amplitude 1/32768 ≈ -90 dBFS — 42 dB quieter than v2's -48 dBFS
+//     8-bit floor). Loop-continuous (sample 0 == sample 199 == 0, no boundary
+//     clicks). Not pure silence (contains 1 and -1 samples), so iOS Safari still
+//     treats it as a "real" track per D-05. File is 444 bytes / 592 base64 chars
+//     (vs v1/v2's 244 / 480) — negligible bundle increase.
+//   SILENT_LOOP_VOLUME stays at 0.0001 — it's a no-op on iOS but still attenuates
+//   on Android Chrome and desktop browsers (defense in depth).
+//   See .planning/phases/49-ios-speaker-route-fix/49-02-DEVICE-VALIDATION.md.
 const SILENT_WAV_DATA_URL =
-  'data:audio/wav;base64,UklGRuwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YcgAAACAgICAgICAgICAgICAgICAgIGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgA=='
+  'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YZABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 // Phase 49 D-05: near-zero non-zero. NOT coupled to MIN_GAIN_VALUE — separate invariants (49-PATTERNS.md Pattern A).
 const SILENT_LOOP_VOLUME = 0.0001
 
