@@ -10,6 +10,7 @@ import {
   coerceRingCue,
   coerceOrbIdle,
   coerceSwitcherIcon,
+  coerceBypassSilentMode,
   loadPrefs,
   savePrefs,
   DEFAULT_PREFS,
@@ -302,54 +303,106 @@ describe('coerceSwitcherIcon (Phase 47 — boolean coercer)', () => {
   })
 })
 
+describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default true)', () => {
+  // Boolean coercer has THREE paths:
+  //  (1) raw boolean: persisted JSON re-hydrates true/false verbatim — fast path
+  //  (2) legacy string (parseQueryBoolean): tolerates hand-edited '"true"' / '"off"' envelopes
+  //  (3) anything else: BYPASS_SILENT_MODE_FLAG.defaultValue (true)
+  it('returns raw booleans verbatim (raw-boolean fast path)', () => {
+    expect(coerceBypassSilentMode(true)).toBe(true)
+    expect(coerceBypassSilentMode(false)).toBe(false)
+  })
+
+  it("parses legacy true-strings via parseQueryBoolean ('true' / 'on' / '1' / '')", () => {
+    expect(coerceBypassSilentMode('true')).toBe(true)
+    expect(coerceBypassSilentMode('on')).toBe(true)
+    expect(coerceBypassSilentMode('1')).toBe(true)
+    expect(coerceBypassSilentMode('')).toBe(true)
+  })
+
+  it("parses legacy false-strings via parseQueryBoolean ('false' / 'off' / '0')", () => {
+    expect(coerceBypassSilentMode('false')).toBe(false)
+    expect(coerceBypassSilentMode('off')).toBe(false)
+    expect(coerceBypassSilentMode('0')).toBe(false)
+  })
+
+  it("falls back to BYPASS_SILENT_MODE_FLAG.defaultValue (true) for unparseable strings", () => {
+    expect(coerceBypassSilentMode('bogus')).toBe(true) // D-05: default true (flip from switcherIcon's false)
+  })
+
+  it("falls back to true for non-string, non-boolean inputs (null / undefined / numbers / objects)", () => {
+    expect(coerceBypassSilentMode(null)).toBe(true)
+    expect(coerceBypassSilentMode(undefined)).toBe(true)
+    expect(coerceBypassSilentMode(0)).toBe(true)
+    expect(coerceBypassSilentMode(1)).toBe(true)
+    expect(coerceBypassSilentMode({})).toBe(true)
+    expect(coerceBypassSilentMode([])).toBe(true)
+  })
+})
+
 describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
   // Per-field non-throwing coerce-and-fallback: a single corrupt new-flag field
-  // falls back to the per-flag default; the other 7 fields are preserved.
+  // falls back to the per-flag default; the other 8 fields are preserved.
   it("breathingShape: 'junk' → 'orb-halo' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'junk',
-      ringCue: 'outer-inner', orbIdle: 'still', switcherIcon: true,
+      ringCue: 'outer-inner', orbIdle: 'still', switcherIcon: true, bypassSilentMode: true,
     })
     expect(out.breathingShape).toBe('orb-halo')
     expect(out.theme).toBe('dark')
     expect(out.ringCue).toBe('outer-inner')
     expect(out.orbIdle).toBe('still')
     expect(out.switcherIcon).toBe(true)
+    expect(out.bypassSilentMode).toBe(true)
   })
 
   it("ringCue: 'junk' → 'progress-arc' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'spiritual-eye', ringCue: 'junk',
-      orbIdle: 'still', switcherIcon: true,
+      orbIdle: 'still', switcherIcon: true, bypassSilentMode: true,
     })
     expect(out.ringCue).toBe('progress-arc')
     expect(out.breathingShape).toBe('spiritual-eye')
+    expect(out.bypassSilentMode).toBe(true)
   })
 
   it("orbIdle: 'junk' → 'ambient' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
-      orbIdle: 'junk', switcherIcon: true,
+      orbIdle: 'junk', switcherIcon: true, bypassSilentMode: true,
     })
     expect(out.orbIdle).toBe('ambient')
     expect(out.switcherIcon).toBe(true)
+    expect(out.bypassSilentMode).toBe(true)
   })
 
   it("switcherIcon: garbage number → false default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
-      orbIdle: 'still', switcherIcon: 42,
+      orbIdle: 'still', switcherIcon: 42, bypassSilentMode: true,
     })
     expect(out.switcherIcon).toBe(false)
     expect(out.orbIdle).toBe('still')
+    expect(out.bypassSilentMode).toBe(true)
   })
 
-  it("pre-Phase-47 envelope (4 keys only) coerces the 4 new keys to per-flag defaults (PREFS-03)", () => {
-    // A returning user from a pre-Phase-47 build has 4 prefs keys — the 4 new
+  it("bypassSilentMode: 'junk' → true default (D-05); other fields preserved", () => {
+    const out = coercePrefs({
+      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
+      breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
+      orbIdle: 'still', switcherIcon: true, bypassSilentMode: 'junk',
+    })
+    expect(out.bypassSilentMode).toBe(true) // D-05: corrupt-field falls back to true
+    expect(out.orbIdle).toBe('still')
+    expect(out.switcherIcon).toBe(true)
+  })
+
+  it("pre-Phase-47 envelope (4 keys only) coerces the 5 new keys to per-flag defaults (PREFS-03)", () => {
+    // A returning user from a pre-Phase-47 build has 4 prefs keys — the 5 new
     // keys are read as undefined from `r` and each coercer's non-string branch
     // falls back to the per-flag default. This is the PREFS-03 returning-users
     // contract: returning users see the production defaults, byte-identical to
@@ -363,6 +416,7 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
     expect(out.ringCue).toBe('progress-arc')
     expect(out.orbIdle).toBe('ambient')
     expect(out.switcherIcon).toBe(false)
+    expect(out.bypassSilentMode).toBe(true)
   })
 })
 
@@ -391,9 +445,9 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('round-trips an 8-field UserPrefs with the 4 new flags set to non-default values (Phase 47)', () => {
+  it('round-trips a 9-field UserPrefs with the 5 new flags set to non-default values (Phase 47 + 49.1)', () => {
     // Full-fidelity round-trip: every new field carries a non-default value so the
-    // assertion fails if any of the 4 new coercers, the JSON re-hydration, or the
+    // assertion fails if any of the 5 new coercers, the JSON re-hydration, or the
     // envelope-merge contract drops or rewrites a value.
     const fullPrefs: UserPrefs = {
       theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR',
@@ -401,6 +455,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
       ringCue: 'outer-inner',
       orbIdle: 'still',
       switcherIcon: true,
+      bypassSilentMode: false, // non-default (default is true)
     }
     savePrefs(fullPrefs)
     expect(loadPrefs()).toEqual(fullPrefs)
@@ -448,19 +503,22 @@ describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
     expect(coerceSwitcherIcon('junk')).toBe(false)
   })
 
-  it('DEFAULT_PREFS includes the 4 new flag defaults sourced from featureFlags.ts', () => {
+  it('DEFAULT_PREFS includes the 5 new flag defaults sourced from featureFlags.ts', () => {
     expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
     expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
     expect(DEFAULT_PREFS.switcherIcon).toBe(false)
+    expect(DEFAULT_PREFS.bypassSilentMode).toBe(true) // Phase 49.1 D-05
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(9) // Phase 49.1: 9-field UserPrefs
   })
 
-  it('coercePrefs returns 8-field UserPrefs and uses the alias table (D-03)', () => {
+  it('coercePrefs returns 9-field UserPrefs and uses the alias table (D-03)', () => {
     const out = coercePrefs({ breathingShape: 'kuthasta' })
     expect(out.breathingShape).toBe('spiritual-eye')
     expect(out.ringCue).toBe('progress-arc')
     expect(out.orbIdle).toBe('ambient')
     expect(out.switcherIcon).toBe(false)
+    expect(out.bypassSilentMode).toBe(true) // Phase 49.1 D-05 default
   })
 })
 
