@@ -14,14 +14,14 @@ function renderPage(
     isStandalone: boolean
     installable: boolean
     onInstall: () => Promise<void>
-    onAppearanceOpen: () => void
-    returningFromAppearance: boolean
+    onAdvancedOpen: () => void
+    returningFromAdvanced: boolean
   }> = {},
 ) {
   const onBack = props.onBack ?? vi.fn()
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
-  const onAppearanceOpen = props.onAppearanceOpen ?? vi.fn()
-  const returningFromAppearance = props.returningFromAppearance ?? false
+  const onAdvancedOpen = props.onAdvancedOpen ?? vi.fn()
+  const returningFromAdvanced = props.returningFromAdvanced ?? false
   const utils = render(
     <UiStringsProvider value={UI_STRINGS.en}>
       <AppSettingsPage
@@ -30,12 +30,12 @@ function renderPage(
         installable={props.installable ?? false}
         onInstall={onInstall}
         onBack={onBack}
-        onAppearanceOpen={onAppearanceOpen}
-        returningFromAppearance={returningFromAppearance}
+        onAdvancedOpen={onAdvancedOpen}
+        returningFromAdvanced={returningFromAdvanced}
       />
     </UiStringsProvider>,
   )
-  return { ...utils, onBack, onInstall, onAppearanceOpen }
+  return { ...utils, onBack, onInstall, onAdvancedOpen }
 }
 
 describe('AppSettingsPage', () => {
@@ -80,26 +80,26 @@ describe('AppSettingsPage', () => {
     expect(screen.getByText(UI_STRINGS.en.install.settingsLabel)).toBeInTheDocument()
   })
 
-  it('focuses the back button on mount when returningFromAppearance=false', () => {
-    renderPage({ returningFromAppearance: false })
+  it('focuses the back button on mount when returningFromAdvanced=false', () => {
+    renderPage({ returningFromAdvanced: false })
     expect(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close })).toHaveFocus()
   })
 
-  it('focuses the right-chevron on mount when returningFromAppearance=true', () => {
-    renderPage({ returningFromAppearance: true })
+  it('focuses the right-chevron on mount when returningFromAdvanced=true', () => {
+    renderPage({ returningFromAdvanced: true })
     expect(
-      screen.getByRole('button', { name: UI_STRINGS.en.appearance.rightChevronAriaOnSettings }),
+      screen.getByRole('button', { name: UI_STRINGS.en.advanced.rightChevronAriaOnSettings }),
     ).toHaveFocus()
   })
 
-  it('renders the right-chevron and invokes onAppearanceOpen when clicked', async () => {
+  it('renders the right-chevron and invokes onAdvancedOpen when clicked', async () => {
     const user = userEvent.setup()
-    const { onAppearanceOpen } = renderPage()
+    const { onAdvancedOpen } = renderPage()
     const chevron = screen.getByRole('button', {
-      name: UI_STRINGS.en.appearance.rightChevronAriaOnSettings,
+      name: UI_STRINGS.en.advanced.rightChevronAriaOnSettings,
     })
     expect(chevron).toBeInTheDocument()
     await user.click(chevron)
-    expect(onAppearanceOpen).toHaveBeenCalledTimes(1)
+    expect(onAdvancedOpen).toHaveBeenCalledTimes(1)
   })
 })

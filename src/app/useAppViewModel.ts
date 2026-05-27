@@ -60,6 +60,7 @@ export function useAppViewModel(): AppViewModel {
     stretchSettings,
     liveCue,
     wakeLock,
+    bypassSilentMode: featureFlags.bypassSilentMode,
   })
 
   const navi = useNaviKriyaSessionController({

@@ -5,7 +5,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 // callers supply via the `padding` prop.
 //
 // Phase 48 WR-01 follow-up: previously duplicated as private functions in
-// SettingsPanelBody.tsx and AppearancePage.tsx (RESEARCH OQ#4). Two private
+// SettingsPanelBody.tsx and AdvancedPage.tsx (Phase 49.1 D-10 rename). Two private
 // copies meant a future spike-locked update to one would silently desync
 // from the other. Extracted here to keep chrome consistent across surfaces.
 // Visual output is byte-identical to the prior inline copies.

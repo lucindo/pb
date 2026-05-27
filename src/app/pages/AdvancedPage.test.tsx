@@ -7,13 +7,13 @@ import { UI_STRINGS } from '../../content/strings'
 import { UiStringsProvider } from '../../hooks/useUiStringsContext'
 import { STATE_KEY } from '../../storage'
 import { DEFAULT_PREFS } from '../../storage/prefs'
-import { AppearancePage } from './AppearancePage'
+import { AdvancedPage } from './AdvancedPage'
 
 function renderPage(props: Partial<{ onBack: () => void }> = {}) {
   const onBack = props.onBack ?? vi.fn()
   const utils = render(
     <UiStringsProvider value={UI_STRINGS.en}>
-      <AppearancePage onBack={onBack} />
+      <AdvancedPage onBack={onBack} />
     </UiStringsProvider>,
   )
   return { ...utils, onBack }
@@ -28,18 +28,18 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('AppearancePage', () => {
-  it('renders the locked page title Appearance', () => {
+describe('AdvancedPage', () => {
+  it('renders the locked page title Advanced', () => {
     renderPage()
     expect(
-      screen.getByRole('heading', { level: 1, name: UI_STRINGS.en.appearance.title }),
+      screen.getByRole('heading', { level: 1, name: UI_STRINGS.en.advanced.title }),
     ).toBeInTheDocument()
   })
 
   it('renders a back-chevron with the locked aria-label', () => {
     renderPage()
     expect(
-      screen.getByRole('button', { name: UI_STRINGS.en.appearance.backChevron }),
+      screen.getByRole('button', { name: UI_STRINGS.en.advanced.backChevron }),
     ).toBeInTheDocument()
   })
 
@@ -47,7 +47,7 @@ describe('AppearancePage', () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
     renderPage({ onBack })
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appearance.backChevron }))
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.advanced.backChevron }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
@@ -56,22 +56,25 @@ describe('AppearancePage', () => {
     expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
   })
 
-  it('renders two switches for Breathing effect and Switcher icons', () => {
+  it('renders three switches for Breathing effect, Switcher icons, and Bypass silent mode', () => {
     renderPage()
     const switches = screen.getAllByRole('switch')
-    expect(switches).toHaveLength(2)
+    expect(switches).toHaveLength(3)
     expect(
-      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.breathingEffect.label }),
+      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.breathingEffect.label }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.switcherIcons.label }),
+      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.switcherIcons.label }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.bypassSilentMode.label }),
     ).toBeInTheDocument()
   })
 
   it('focuses the back-chevron on mount', () => {
     renderPage()
     expect(
-      screen.getByRole('button', { name: UI_STRINGS.en.appearance.backChevron }),
+      screen.getByRole('button', { name: UI_STRINGS.en.advanced.backChevron }),
     ).toHaveFocus()
   })
 
@@ -79,7 +82,7 @@ describe('AppearancePage', () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(
-      screen.getByRole('radio', { name: UI_STRINGS.en.appearance.orb.options.kuthasta }),
+      screen.getByRole('radio', { name: UI_STRINGS.en.advanced.orb.options.kuthasta }),
     )
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
@@ -97,7 +100,7 @@ describe('AppearancePage', () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(
-      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.breathingEffect.label }),
+      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.breathingEffect.label }),
     )
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
@@ -115,12 +118,44 @@ describe('AppearancePage', () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(
-      screen.getByRole('switch', { name: UI_STRINGS.en.appearance.switcherIcons.label }),
+      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.switcherIcons.label }),
     )
     const raw = window.localStorage.getItem(STATE_KEY)
     expect(raw).not.toBeNull()
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
     expect(envelope.prefs.switcherIcon).toBe(true)
+  })
+
+  describe('Phase 49.1 D-03 — Bypass silent mode toggle (ADV-03)', () => {
+    it('renders Bypass silent mode toggle below the other two Behavior toggles (ADV-03 order)', () => {
+      renderPage()
+      const switches = screen.getAllByRole('switch')
+      expect(switches).toHaveLength(3)
+      // ADV-03: bypass toggle is the THIRD (below breathingEffect + switcherIcons)
+      // Reason: switches[2] non-null asserted by toHaveLength(3) above.
+      expect(switches[2]).toHaveAccessibleName(UI_STRINGS.en.advanced.bypassSilentMode.label)
+    })
+
+    it('Bypass silent mode defaults to ON (checked) for a fresh storage state (ADV-03)', () => {
+      renderPage()
+      expect(
+        screen.getByRole('switch', { name: UI_STRINGS.en.advanced.bypassSilentMode.label }),
+      ).toBeChecked()
+    })
+
+    it('writes bypassSilentMode=false to the prefs envelope when toggled off', async () => {
+      // Default is bypassSilentMode=true (D-05), toggle OFF writes false.
+      const user = userEvent.setup()
+      renderPage()
+      await user.click(
+        screen.getByRole('switch', { name: UI_STRINGS.en.advanced.bypassSilentMode.label }),
+      )
+      const raw = window.localStorage.getItem(STATE_KEY)
+      expect(raw).not.toBeNull()
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
+      expect(envelope.prefs.bypassSilentMode).toBe(false)
+    })
   })
 })

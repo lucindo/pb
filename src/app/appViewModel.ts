@@ -45,12 +45,12 @@ export interface AppEndSessionDialogViewModel {
 
 export interface AppNavigationViewModel {
   appScreen: AppScreen
-  returningFromAppearance: boolean
+  returningFromAdvanced: boolean
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
-  onAppearanceOpen(this: void): void
+  onAdvancedOpen(this: void): void
   onBackToPractice(this: void): void
-  onBackFromAppearance(this: void): void
+  onBackFromAdvanced(this: void): void
 }
 
 export interface AppDialogsViewModel {

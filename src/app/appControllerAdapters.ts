@@ -217,12 +217,12 @@ export function createAppNavigationViewModel({
 }): AppNavigationViewModel {
   return {
     appScreen: navigation.appScreen,
-    returningFromAppearance: navigation.returningFromAppearance,
+    returningFromAdvanced: navigation.returningFromAdvanced,
     onLearnOpen: navigation.onLearnOpen,
     onSettingsOpen: navigation.onSettingsOpen,
-    onAppearanceOpen: navigation.onAppearanceOpen,
+    onAdvancedOpen: navigation.onAdvancedOpen,
     onBackToPractice: navigation.onBackToPractice,
-    onBackFromAppearance: navigation.onBackFromAppearance,
+    onBackFromAdvanced: navigation.onBackFromAdvanced,
   }
 }
 

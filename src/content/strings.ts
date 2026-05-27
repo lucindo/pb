@@ -168,13 +168,13 @@ export interface UiStrings {
       readonly flute: string
     }
   }
-  readonly appearance: {
+  readonly advanced: {
     readonly title: string
     readonly backChevron: string
     readonly rightChevronAriaOnSettings: string
     readonly sections: {
       readonly orbStyle: string
-      readonly visual: string
+      readonly behavior: string
     }
     readonly orb: {
       readonly label: string
@@ -195,6 +195,9 @@ export interface UiStrings {
       readonly label: string
     }
     readonly switcherIcons: {
+      readonly label: string
+    }
+    readonly bypassSilentMode: {
       readonly label: string
     }
   }
@@ -366,15 +369,16 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         flute: 'Flute',
       },
     },
-    appearance: {
-      title: 'Appearance',
+    advanced: {
+      title: 'Advanced',
       backChevron: 'Back to Settings',
-      rightChevronAriaOnSettings: 'Appearance settings',
-      sections: { orbStyle: 'Orb Style', visual: 'Visual' },
+      rightChevronAriaOnSettings: 'Advanced settings',
+      sections: { orbStyle: 'Orb Style', behavior: 'Behavior' },
       orb: { label: 'Orb', options: { halo: 'Halo', minimal: 'Minimal', kuthasta: 'Kuthasta' } },
       ringCue: { label: 'Ring cue', options: { arc: 'Arc', rings: 'Rings' } },
       breathingEffect: { label: 'Breathing effect' },
       switcherIcons: { label: 'Switcher icons' },
+      bypassSilentMode: { label: 'Bypass silent mode' },
     },
     learn: {
       title: 'About this practice',
@@ -543,18 +547,15 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         flute: 'Flauta',
       },
     },
-    appearance: {
-      // TODO: native-speaker review
-      title: 'Aparência',
+    advanced: {
+      title: 'Avançado',
       // TODO: native-speaker review
       backChevron: 'Voltar para Configurações',
-      // TODO: native-speaker review
-      rightChevronAriaOnSettings: 'Configurações de aparência',
+      rightChevronAriaOnSettings: 'Configurações avançadas',
       sections: {
         // TODO: native-speaker review
         orbStyle: 'Estilo do orbe',
-        // TODO: native-speaker review
-        visual: 'Visual',
+        behavior: 'Comportamento',
       },
       orb: {
         // TODO: native-speaker review
@@ -586,6 +587,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         // TODO: native-speaker review
         label: 'Ícones do alternador',
       },
+      bypassSilentMode: { label: 'Ignorar modo silencioso' },
     },
     learn: {
       title: 'Sobre esta prática',

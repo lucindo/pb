@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type AppScreen = 'practice' | 'learn' | 'appSettings' | 'appearance'
+export type AppScreen = 'practice' | 'learn' | 'appSettings' | 'advanced'
 
 export interface AppNavigation {
   appScreen: AppScreen
-  returningFromAppearance: boolean
+  returningFromAdvanced: boolean
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
-  onAppearanceOpen(this: void): void
+  onAdvancedOpen(this: void): void
   onBackToPractice(this: void): void
-  onBackFromAppearance(this: void): void
+  onBackFromAdvanced(this: void): void
 }
 
 export interface UseAppNavigationArgs {
@@ -27,7 +27,7 @@ export function useAppNavigation({
   closeOnSessionView,
 }: UseAppNavigationArgs): AppNavigation {
   const [appScreen, setAppScreen] = useState<AppScreen>('practice')
-  const [returningFromAppearance, setReturningFromAppearance] = useState<boolean>(false)
+  const [returningFromAdvanced, setReturningFromAdvanced] = useState<boolean>(false)
 
   useEffect(() => {
     if (!closeOnSessionView) return
@@ -35,45 +35,45 @@ export function useAppNavigation({
     // setState inside effect is intentional — the session-start signal owns this transition.
     /* eslint-disable react-hooks/set-state-in-effect */
     setAppScreen('practice')
-    setReturningFromAppearance(false)
+    setReturningFromAdvanced(false)
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [closeOnSessionView])
 
   const onLearnOpen = useCallback((): void => {
     if (controlsDisabled) return
     setAppScreen('learn')
-    setReturningFromAppearance(false)
+    setReturningFromAdvanced(false)
   }, [controlsDisabled])
 
   const onSettingsOpen = useCallback((): void => {
     if (controlsDisabled) return
     setAppScreen('appSettings')
-    setReturningFromAppearance(false)
+    setReturningFromAdvanced(false)
   }, [controlsDisabled])
 
-  const onAppearanceOpen = useCallback((): void => {
+  const onAdvancedOpen = useCallback((): void => {
     if (controlsDisabled) return
-    setAppScreen('appearance')
-    setReturningFromAppearance(false)
+    setAppScreen('advanced')
+    setReturningFromAdvanced(false)
   }, [controlsDisabled])
 
   const onBackToPractice = useCallback((): void => {
     setAppScreen('practice')
-    setReturningFromAppearance(false)
+    setReturningFromAdvanced(false)
   }, [])
 
-  const onBackFromAppearance = useCallback((): void => {
+  const onBackFromAdvanced = useCallback((): void => {
     setAppScreen('appSettings')
-    setReturningFromAppearance(true)
+    setReturningFromAdvanced(true)
   }, [])
 
   return {
     appScreen,
-    returningFromAppearance,
+    returningFromAdvanced,
     onLearnOpen,
     onSettingsOpen,
-    onAppearanceOpen,
+    onAdvancedOpen,
     onBackToPractice,
-    onBackFromAppearance,
+    onBackFromAdvanced,
   }
 }

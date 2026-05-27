@@ -248,13 +248,13 @@ describe('Phase 48 appearance.* and theme rename', () => {
     ).toBeUndefined()
   })
 
-  it('declares EN appearance.* copy locked by D-03..D-08', () => {
-    const en = UI_STRINGS.en.appearance
-    expect(en.title).toBe('Appearance')
+  it('declares EN advanced.* copy locked by D-01..D-03 (Phase 49.1)', () => {
+    const en = UI_STRINGS.en.advanced
+    expect(en.title).toBe('Advanced')
     expect(en.backChevron).toBe('Back to Settings')
-    expect(en.rightChevronAriaOnSettings).toBe('Appearance settings')
+    expect(en.rightChevronAriaOnSettings).toBe('Advanced settings')
     expect(en.sections.orbStyle).toBe('Orb Style')
-    expect(en.sections.visual).toBe('Visual')
+    expect(en.sections.behavior).toBe('Behavior')
     expect(en.orb.label).toBe('Orb')
     expect(en.orb.options.halo).toBe('Halo')
     expect(en.orb.options.minimal).toBe('Minimal')
@@ -264,10 +264,11 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(en.ringCue.options.rings).toBe('Rings')
     expect(en.breathingEffect.label).toBe('Breathing effect')
     expect(en.switcherIcons.label).toBe('Switcher icons')
+    expect(en.bypassSilentMode.label).toBe('Bypass silent mode')
   })
 
-  it('declares PT-BR appearance.* draft values as non-empty strings (I18N-02)', () => {
-    const ptBR = UI_STRINGS['pt-BR'].appearance
+  it('declares PT-BR advanced.* draft values as non-empty strings (I18N-02)', () => {
+    const ptBR = UI_STRINGS['pt-BR'].advanced
     expect(typeof ptBR.title).toBe('string')
     expect(ptBR.title.length).toBeGreaterThan(0)
     expect(typeof ptBR.backChevron).toBe('string')
@@ -276,8 +277,8 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(ptBR.rightChevronAriaOnSettings.length).toBeGreaterThan(0)
     expect(typeof ptBR.sections.orbStyle).toBe('string')
     expect(ptBR.sections.orbStyle.length).toBeGreaterThan(0)
-    expect(typeof ptBR.sections.visual).toBe('string')
-    expect(ptBR.sections.visual.length).toBeGreaterThan(0)
+    expect(typeof ptBR.sections.behavior).toBe('string')
+    expect(ptBR.sections.behavior.length).toBeGreaterThan(0)
     expect(typeof ptBR.orb.label).toBe('string')
     expect(ptBR.orb.label.length).toBeGreaterThan(0)
     expect(typeof ptBR.orb.options.halo).toBe('string')
@@ -296,6 +297,8 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(ptBR.breathingEffect.label.length).toBeGreaterThan(0)
     expect(typeof ptBR.switcherIcons.label).toBe('string')
     expect(ptBR.switcherIcons.label.length).toBeGreaterThan(0)
+    expect(typeof ptBR.bypassSilentMode.label).toBe('string')
+    expect(ptBR.bypassSilentMode.label.length).toBeGreaterThan(0)
   })
 })
 

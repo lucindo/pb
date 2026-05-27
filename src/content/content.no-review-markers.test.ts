@@ -3,16 +3,16 @@
 // Phase 26 D-12: marker-guard. Originally failed if "// TODO: native-speaker review" appeared
 // anywhere in src/content/. Locks the I18N-07 done-state against future regressions.
 //
-// Phase 48 D-18 (path a): extended with a structural allowlist for the new appearance.*
-// namespace introduced in Phase 48.
+// Phase 48 D-18 (path a): extended with a structural allowlist for the new advanced.*
+// namespace (renamed from appearance.* in Phase 49.1 Plan 03).
 //
 // Phase 48 REVIEW WR-03 follow-up: the original allowlist matched line-shape regexes (e.g.
 // `/^\s*label:\s*'/`) that fired anywhere in a content file. Any future `label:` / `theme:`
-// key introduced outside the appearance.* / appSettings.sections.theme block would be silently
+// key introduced outside the advanced.* / appSettings.sections.theme block would be silently
 // allowlisted. Replaced with block-scope tracking: a marker is allowed iff the value line
 // immediately below it lives inside one of two structural contexts:
 //
-//   1. Any descendant of an `appearance: {` block (covers all appearance.* PT-BR keys); or
+//   1. Any descendant of an `advanced: {` block (covers all advanced.* PT-BR keys); or
 //   2. The `theme: ...` value line directly under `appSettings.sections` (D-01 renamed key).
 //
 // Close-out gate: when I18N-04 (native-speaker review pass) removes the markers, this guard
@@ -23,6 +23,7 @@
 //   REQUIREMENTS.md I18N-02 — PT-BR completeness requirement (marker workflow)
 //   REQUIREMENTS.md I18N-04 (future) — native-speaker review pass that closes the markers
 //   REVIEW.md WR-03 — block-scope tightening rationale
+//   Phase 49.1 Plan 03 — renamed appearance.* → advanced.* (D-10 / D-11)
 //
 // Analog: src/styles/theme.no-hardcoded-classes.test.ts (banned-pattern fs-scan guard)
 
@@ -71,7 +72,7 @@ const VALUE_KEY_RE = /^\s*([a-zA-Z_$][\w$]*)\s*:/
  * whether the value line below it (line N+1) lives inside one of the two
  * structural allowlist contexts:
  *
- *   - Stack contains `'appearance'` (any descendant of `appearance: {`); or
+ *   - Stack contains `'advanced'` (any descendant of `advanced: {`); or
  *   - Stack ends with `['appSettings', 'sections']` AND the next-line key is `theme`.
  *
  * Returns `${file}:${1-based-line-number}` entries for any marker that fails
@@ -94,14 +95,14 @@ export function findUnreviewedMarkers(text: string, file: string | null): string
       const nextMatch = VALUE_KEY_RE.exec(nextLine)
       const nextKey = nextMatch?.[1] ?? null
 
-      const inAppearance = stack.includes('appearance')
+      const inAdvanced = stack.includes('advanced')
       const inAppSettingsSectionsTheme =
         stack.length >= 2 &&
         stack[stack.length - 2] === 'appSettings' &&
         stack[stack.length - 1] === 'sections' &&
         nextKey === 'theme'
 
-      if (!inAppearance && !inAppSettingsSectionsTheme) {
+      if (!inAdvanced && !inAppSettingsSectionsTheme) {
         const where = file !== null ? `${file}:${String(i + 1)}` : `<input>:${String(i + 1)}`
         hits.push(where)
       }
@@ -123,7 +124,7 @@ export function findUnreviewedMarkers(text: string, file: string | null): string
 }
 
 describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
-  it('no "// TODO: native-speaker review" marker remains outside the appearance.* / appSettings.sections.theme block context in src/content/', () => {
+  it('no "// TODO: native-speaker review" marker remains outside the advanced.* / appSettings.sections.theme block context in src/content/', () => {
     const hits: string[] = []
     for (const file of CONTENT_FILES) {
       const text = readFileSync(file, 'utf-8')
@@ -131,7 +132,7 @@ describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
     }
     expect(
       hits,
-      `Unresolved native-speaker review markers outside the appearance.* block context in:\n${hits.join('\n')}`,
+      `Unresolved native-speaker review markers outside the advanced.* block context in:\n${hits.join('\n')}`,
     ).toEqual([])
   })
 
@@ -167,11 +168,11 @@ describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
     expect(hits).toEqual(['<input>:3'])
   })
 
-  // Positive case: a marker INSIDE appearance.* must be allowlisted.
-  it('allows a marker inside appearance.* (any descendant)', () => {
+  // Positive case: a marker INSIDE advanced.* must be allowlisted.
+  it('allows a marker inside advanced.* (any descendant)', () => {
     const text = [
       `export const STUFF = {`,
-      `  appearance: {`,
+      `  advanced: {`,
       `    orb: {`,
       `      options: {`,
       `        // TODO: native-speaker review`,

@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
 import type { AppViewModel } from './appViewModel'
-import { AppearancePage } from './pages/AppearancePage'
+import { AdvancedPage } from './pages/AdvancedPage'
 import { AppSettingsPage } from './pages/AppSettingsPage'
 import { LearnPage } from './pages/LearnPage'
 import { PracticeScreen } from './PracticeScreen'
@@ -34,12 +34,12 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           installable={vm.install.installable}
           onInstall={vm.install.onInstall}
           onBack={vm.navigation.onBackToPractice}
-          onAppearanceOpen={vm.navigation.onAppearanceOpen}
-          returningFromAppearance={vm.navigation.returningFromAppearance}
+          onAdvancedOpen={vm.navigation.onAdvancedOpen}
+          returningFromAdvanced={vm.navigation.returningFromAdvanced}
         />
       )
-    case 'appearance':
-      return <AppearancePage onBack={vm.navigation.onBackFromAppearance} />
+    case 'advanced':
+      return <AdvancedPage onBack={vm.navigation.onBackFromAdvanced} />
     case 'practice':
     default:
       return <PracticeScreen vm={vm} />

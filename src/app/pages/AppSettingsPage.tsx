@@ -13,8 +13,8 @@ export interface AppSettingsPageProps {
   installable: boolean
   onInstall(this: void): Promise<void>
   onBack(this: void): void
-  onAppearanceOpen(this: void): void
-  returningFromAppearance: boolean
+  onAdvancedOpen(this: void): void
+  returningFromAdvanced: boolean
 }
 
 /** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron
@@ -22,15 +22,15 @@ export interface AppSettingsPageProps {
  *  SettingsPanelBody. `inSessionView` is hard-coded false: navigation to this
  *  page is gated by `controlsDisabled` in useAppNavigation, so the user can
  *  only be here when no session is active. Focuses the back button on mount
- *  (fresh entry) or the right-chevron (returningFromAppearance=true, D-13). */
+ *  (fresh entry) or the right-chevron (returningFromAdvanced=true, D-13). */
 export function AppSettingsPage({
   isIOS,
   isStandalone,
   installable,
   onInstall,
   onBack,
-  onAppearanceOpen,
-  returningFromAppearance,
+  onAdvancedOpen,
+  returningFromAdvanced,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
   // Memoize the subset wrapper so SettingsPanelBody and any future React.memo
@@ -39,7 +39,7 @@ export function AppSettingsPage({
     () => ({
       appSettings: allStrings.appSettings,
       install: allStrings.install,
-      appearance: allStrings.appearance,
+      advanced: allStrings.advanced,
     }),
     [allStrings],
   )
@@ -47,18 +47,18 @@ export function AppSettingsPage({
   const chevronButtonRef = useRef<HTMLButtonElement>(null)
 
   // Assumption: ScreenRouter unmounts/remounts this page on every navigation, so
-  // this effect only fires on fresh mount with a stable `returningFromAppearance`
+  // this effect only fires on fresh mount with a stable `returningFromAdvanced`
   // value — it does not steal focus mid-session. If the router is ever changed to
   // keep this page mounted across the appearance ↔ appSettings transition, this
   // effect needs a one-shot ref guard (track whether the focus call has already
   // fired this mount, and skip subsequent re-runs).
   useEffect(() => {
-    if (returningFromAppearance) {
+    if (returningFromAdvanced) {
       chevronButtonRef.current?.focus({ preventScroll: true })
     } else {
       backButtonRef.current?.focus({ preventScroll: true })
     }
-  }, [returningFromAppearance])
+  }, [returningFromAdvanced])
 
   return (
     <PageShell>
@@ -75,8 +75,8 @@ export function AppSettingsPage({
         trailing={
           <IconButton
             icon={<ChevronRightIcon />}
-            label={strings.appearance.rightChevronAriaOnSettings}
-            onClick={onAppearanceOpen}
+            label={strings.advanced.rightChevronAriaOnSettings}
+            onClick={onAdvancedOpen}
             buttonRef={chevronButtonRef}
           />
         }

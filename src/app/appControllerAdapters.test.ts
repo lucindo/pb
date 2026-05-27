@@ -223,12 +223,12 @@ describe('app controller adapters', () => {
   it('exposes surface navigation state via the navigation view model', () => {
     const navigation: AppNavigation = {
       appScreen: 'learn',
-      returningFromAppearance: false,
+      returningFromAdvanced: false,
       onLearnOpen: noop,
       onSettingsOpen: noop,
-      onAppearanceOpen: noop,
+      onAdvancedOpen: noop,
       onBackToPractice: noop,
-      onBackFromAppearance: noop,
+      onBackFromAdvanced: noop,
     }
 
     const navVm = createAppNavigationViewModel({ navigation })
@@ -250,25 +250,25 @@ describe('app controller adapters', () => {
     expect(dialogsVm.endSessionDialogs).toBe(endSessionDialogs)
   })
 
-  it('propagates onAppearanceOpen, onBackFromAppearance, and returningFromAppearance through the navigation view model', () => {
+  it('propagates onAdvancedOpen, onBackFromAdvanced, and returningFromAdvanced through the navigation view model', () => {
     // Distinct fn identities so each assertion proves the *specific* field
     // is forwarded, not merely that some callback equal to `noop` is present.
-    const onAppearanceOpen = (): void => undefined
-    const onBackFromAppearance = (): void => undefined
+    const onAdvancedOpen = (): void => undefined
+    const onBackFromAdvanced = (): void => undefined
     const navigation: AppNavigation = {
-      appScreen: 'appearance',
-      returningFromAppearance: true,
+      appScreen: 'advanced',
+      returningFromAdvanced: true,
       onLearnOpen: noop,
       onSettingsOpen: noop,
-      onAppearanceOpen,
+      onAdvancedOpen,
       onBackToPractice: noop,
-      onBackFromAppearance,
+      onBackFromAdvanced,
     }
 
     const navVm = createAppNavigationViewModel({ navigation })
 
-    expect(navVm.onAppearanceOpen).toBe(onAppearanceOpen)
-    expect(navVm.onBackFromAppearance).toBe(onBackFromAppearance)
-    expect(navVm.returningFromAppearance).toBe(true)
+    expect(navVm.onAdvancedOpen).toBe(onAdvancedOpen)
+    expect(navVm.onBackFromAdvanced).toBe(onBackFromAdvanced)
+    expect(navVm.returningFromAdvanced).toBe(true)
   })
 })

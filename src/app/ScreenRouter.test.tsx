@@ -14,8 +14,8 @@ vi.mock('./pages/LearnPage', () => ({
 vi.mock('./pages/AppSettingsPage', () => ({
   AppSettingsPage: () => <div data-testid="app-settings-page" />,
 }))
-vi.mock('./pages/AppearancePage', () => ({
-  AppearancePage: () => <div data-testid="appearance-page" />,
+vi.mock('./pages/AdvancedPage', () => ({
+  AdvancedPage: () => <div data-testid="advanced-page" />,
 }))
 
 import { ScreenRouter } from './ScreenRouter'
@@ -27,12 +27,12 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
   return {
     navigation: {
       appScreen,
-      returningFromAppearance: false,
+      returningFromAdvanced: false,
       onLearnOpen: () => {},
       onSettingsOpen: () => {},
-      onAppearanceOpen: () => {},
+      onAdvancedOpen: () => {},
       onBackToPractice: () => {},
-      onBackFromAppearance: () => {},
+      onBackFromAdvanced: () => {},
     },
     dialogs: {
       endSessionDialogs: [],
@@ -67,9 +67,9 @@ describe('ScreenRouter', () => {
     expect(screen.queryByTestId('learn-page')).not.toBeInTheDocument()
   })
 
-  it('renders AppearancePage when appScreen=appearance', () => {
-    render(<ScreenRouter vm={makeVmForScreen('appearance')} />)
-    expect(screen.getByTestId('appearance-page')).toBeInTheDocument()
+  it('renders AdvancedPage when appScreen=advanced', () => {
+    render(<ScreenRouter vm={makeVmForScreen('advanced')} />)
+    expect(screen.getByTestId('advanced-page')).toBeInTheDocument()
     expect(screen.queryByTestId('practice-screen')).not.toBeInTheDocument()
     expect(screen.queryByTestId('learn-page')).not.toBeInTheDocument()
     expect(screen.queryByTestId('app-settings-page')).not.toBeInTheDocument()

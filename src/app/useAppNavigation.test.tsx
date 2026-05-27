@@ -85,58 +85,58 @@ describe('useAppNavigation', () => {
     expect(result.current.appScreen).toBe('practice')
   })
 
-  it('navigates from appSettings to appearance via onAppearanceOpen', () => {
+  it('navigates from appSettings to advanced via onAdvancedOpen', () => {
     const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
 
     act(() => {
       result.current.onSettingsOpen()
     })
     act(() => {
-      result.current.onAppearanceOpen()
+      result.current.onAdvancedOpen()
     })
 
-    expect(result.current.appScreen).toBe('appearance')
+    expect(result.current.appScreen).toBe('advanced')
   })
 
-  it('onBackFromAppearance returns to appSettings with returningFromAppearance=true', () => {
+  it('onBackFromAdvanced returns to appSettings with returningFromAdvanced=true', () => {
     const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
 
     act(() => {
       result.current.onSettingsOpen()
     })
     act(() => {
-      result.current.onAppearanceOpen()
+      result.current.onAdvancedOpen()
     })
     act(() => {
-      result.current.onBackFromAppearance()
+      result.current.onBackFromAdvanced()
     })
 
     expect(result.current.appScreen).toBe('appSettings')
-    expect(result.current.returningFromAppearance).toBe(true)
+    expect(result.current.returningFromAdvanced).toBe(true)
   })
 
-  it('subsequent navigation clears returningFromAppearance', () => {
+  it('subsequent navigation clears returningFromAdvanced', () => {
     const { result } = renderNavigation({ controlsDisabled: false, closeOnSessionView: false })
 
     act(() => {
       result.current.onSettingsOpen()
     })
     act(() => {
-      result.current.onAppearanceOpen()
+      result.current.onAdvancedOpen()
     })
     act(() => {
-      result.current.onBackFromAppearance()
+      result.current.onBackFromAdvanced()
     })
-    expect(result.current.returningFromAppearance).toBe(true)
+    expect(result.current.returningFromAdvanced).toBe(true)
 
     act(() => {
       result.current.onBackToPractice()
     })
 
-    expect(result.current.returningFromAppearance).toBe(false)
+    expect(result.current.returningFromAdvanced).toBe(false)
   })
 
-  it('closeOnSessionView forces appearance → practice', () => {
+  it('closeOnSessionView forces advanced → practice', () => {
     const { result, rerender } = renderNavigation({
       controlsDisabled: false,
       closeOnSessionView: false,
@@ -146,9 +146,9 @@ describe('useAppNavigation', () => {
       result.current.onSettingsOpen()
     })
     act(() => {
-      result.current.onAppearanceOpen()
+      result.current.onAdvancedOpen()
     })
-    expect(result.current.appScreen).toBe('appearance')
+    expect(result.current.appScreen).toBe('advanced')
 
     rerender({
       controlsDisabled: false,
@@ -158,29 +158,29 @@ describe('useAppNavigation', () => {
     expect(result.current.appScreen).toBe('practice')
   })
 
-  it('closeOnSessionView clears returningFromAppearance sentinel when previously set', () => {
+  it('closeOnSessionView clears returningFromAdvanced sentinel when previously set', () => {
     const { result, rerender } = renderNavigation({
       controlsDisabled: false,
       closeOnSessionView: false,
     })
 
     // Drive the sentinel to true via the real flow: open appSettings →
-    // appearance → back-to-appSettings sets returningFromAppearance=true.
+    // advanced → back-to-appSettings sets returningFromAdvanced=true.
     // This is the only state in which the sentinel is observable as `true`.
     act(() => {
       result.current.onSettingsOpen()
     })
     act(() => {
-      result.current.onAppearanceOpen()
+      result.current.onAdvancedOpen()
     })
     act(() => {
-      result.current.onBackFromAppearance()
+      result.current.onBackFromAdvanced()
     })
-    expect(result.current.returningFromAppearance).toBe(true)
+    expect(result.current.returningFromAdvanced).toBe(true)
     expect(result.current.appScreen).toBe('appSettings')
 
     // Now closeOnSessionView=true must both route to practice AND
-    // clear the sentinel. Without the setReturningFromAppearance(false)
+    // clear the sentinel. Without the setReturningFromAdvanced(false)
     // line in the effect, this assertion would fail.
     rerender({
       controlsDisabled: false,
@@ -188,6 +188,6 @@ describe('useAppNavigation', () => {
     })
 
     expect(result.current.appScreen).toBe('practice')
-    expect(result.current.returningFromAppearance).toBe(false)
+    expect(result.current.returningFromAdvanced).toBe(false)
   })
 })

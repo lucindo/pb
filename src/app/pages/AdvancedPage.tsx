@@ -9,22 +9,24 @@ import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { SectionCard } from '../../components/primitives/SectionCard'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
+import { useBypassSilentModeChoice } from '../../hooks/useBypassSilentModeChoice'
 import { useOrbIdleChoice } from '../../hooks/useOrbIdleChoice'
 import { useSwitcherIconChoice } from '../../hooks/useSwitcherIconChoice'
 import { useUiStrings } from '../../hooks/useUiStringsContext'
 
-export interface AppearancePageProps {
+export interface AdvancedPageProps {
   onBack(this: void): void
 }
 
-/** Full-page Appearance surface. Composes PageShell + TopAppBar (back
+/** Full-page Advanced surface. Composes PageShell + TopAppBar (back
  *  chevron in the leading slot) + two SectionCards. Focuses the back
  *  chevron on mount. Changes apply live across the app via the Phase 47
  *  choice-hook setters. */
-export function AppearancePage({ onBack }: AppearancePageProps): ReactElement {
-  const strings = useUiStrings().appearance
+export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
+  const strings = useUiStrings().advanced
   const { orbIdle, setOrbIdle } = useOrbIdleChoice()
   const { switcherIcon, setSwitcherIcon } = useSwitcherIconChoice()
+  const { bypassSilentMode, setBypassSilentMode } = useBypassSilentModeChoice()
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function AppearancePage({ onBack }: AppearancePageProps): ReactElement {
           </div>
         </SectionCard>
 
-        <SettingsSectionHeader label={strings.sections.visual} />
+        <SettingsSectionHeader label={strings.sections.behavior} />
         <SectionCard padding="16px">
           <SettingsToggleRow
             label={strings.breathingEffect.label}
@@ -78,6 +80,16 @@ export function AppearancePage({ onBack }: AppearancePageProps): ReactElement {
             ariaLabel={strings.switcherIcons.label}
             checked={switcherIcon}
             onChange={setSwitcherIcon}
+          />
+          {/* D-09: changing this toggle mid-session does NOT rebuild the audio engine.
+              The flag is read at engine construction time (Start click / reconstruct);
+              a toggle change applies on the NEXT engine construction via the captured
+              bypassSilentModeRef in useAudioCues (Plan 02). */}
+          <SettingsToggleRow
+            label={strings.bypassSilentMode.label}
+            ariaLabel={strings.bypassSilentMode.label}
+            checked={bypassSilentMode}
+            onChange={setBypassSilentMode}
           />
         </SectionCard>
       </div>
