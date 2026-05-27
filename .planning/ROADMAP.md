@@ -99,7 +99,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   5. iOS background + lock-screen behavior remains unchanged after the fix — the existing `'interrupted'` / `needs-resume` flow is not regressed by the new element.
 **Plans**: 2 plans
 - [x] 49-01-PLAN.md — Wire silent-loop <audio> element + tests inside createAudioEngine() (autonomous, single-file surgery on audioEngine.ts + audioEngine.test.ts)
-- [ ] 49-02-PLAN.md — Device validation checkpoint covering IOS-01..IOS-04 + ROADMAP criterion #5 (manual, autonomous: false)
+- [x] 49-02-PLAN.md — Device validation checkpoint covering IOS-01..IOS-04 + ROADMAP criterion #5 (manual, autonomous: false)
 **UI hint**: no
 
 ### Phase 50: SessionClock / scheduler abstraction
@@ -174,7 +174,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 49. iOS speaker route fix | 1/2 | In Progress|  |
+| 49. iOS speaker route fix | 2/2 | Complete   | 2026-05-27 |
 | 50. SessionClock / scheduler abstraction | 0/TBD | Not started | — |
 | 51. Master clock unification | 0/TBD | Not started | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
