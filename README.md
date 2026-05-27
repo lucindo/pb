@@ -83,7 +83,7 @@ A pill switcher at the top of the page moves between three practices; each keeps
 
 - React 19 + TypeScript, built with Vite.
 - Tailwind CSS v4 via `@tailwindcss/vite`.
-- Vitest + Testing Library for unit + behavior tests (1166 tests across the codebase).
+- Vitest + Testing Library for unit + behavior tests (1283 tests across the codebase).
 - ESLint (TypeScript + React Hooks + React Refresh rule packs).
 - Web APIs: `<dialog>` (top-layer modals), `AudioContext` (generated cues), Page Visibility / Wake Lock (resume / screen-on), `localStorage` (settings + stats).
 - Installable PWA via `vite-plugin-pwa` (Workbox `generateSW`, auto-update) — offline-capable once cached.
