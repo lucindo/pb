@@ -26,8 +26,8 @@ Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (P
 - [x] **ADV-01**: App Settings → trailing chevron navigates to a page titled "Advanced" (EN) / "Avançado" (PT-BR). The strings "Appearance" / "Aparência" no longer appear anywhere in `src/content/strings.ts`.
 - [x] **ADV-02**: The Behavior section on the Advanced page has the header "Behavior" (EN) / "Comportamento" (PT-BR). The strings-tree key is `advanced.sections.behavior`; the old `appearance.sections.visual` key is absent.
 - [x] **ADV-03**: A "Bypass silent mode" / "Ignorar modo silencioso" toggle is visible below the two existing Behavior toggles; defaults ON for a fresh storage state; persists across reloads via the Phase 48 `featureFlags` persistence path (no `STATE_VERSION` bump).
-- [ ] **ADV-04**: When the toggle is OFF and the user starts a session, `createAudioEngine()` does NOT construct a silent-loop `<audio>` element (the global `Audio` constructor is never called for the silent loop). When ON or unset, the silent-loop wiring is identical to Phase 49 v3.
-- [ ] **ADV-05**: `?bypassSilentMode=false` overrides persisted storage for the current page-load lifecycle via the Phase 48 2-arg `readFeatureFlags(search, persisted)` precedence chain (query > persisted > default).
+- [x] **ADV-04**: When the toggle is OFF and the user starts a session, `createAudioEngine()` does NOT construct a silent-loop `<audio>` element (the global `Audio` constructor is never called for the silent loop). When ON or unset, the silent-loop wiring is identical to Phase 49 v3.
+- [x] **ADV-05**: `?bypassSilentMode=false` overrides persisted storage for the current page-load lifecycle via the Phase 48 2-arg `readFeatureFlags(search, persisted)` precedence chain (query > persisted > default).
 
 ### Audio Abstraction (Phase 50 — SessionClock / scheduler interface)
 
@@ -100,8 +100,8 @@ Which phases cover which requirements. Roadmapper will populate the Phase column
 | ADV-01 | Phase 49.1 | Complete |
 | ADV-02 | Phase 49.1 | Complete |
 | ADV-03 | Phase 49.1 | Complete |
-| ADV-04 | Phase 49.1 | Pending |
-| ADV-05 | Phase 49.1 | Pending |
+| ADV-04 | Phase 49.1 | Complete |
+| ADV-05 | Phase 49.1 | Complete |
 | ABSTR-01 | Phase 50 | Pending |
 | ABSTR-02 | Phase 50 | Pending |
 | ABSTR-03 | Phase 50 | Pending |
