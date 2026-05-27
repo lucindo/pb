@@ -3,65 +3,59 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Kuthasta and Settings Switches
 status: milestone_complete
-stopped_at: Milestone complete (Phase 48 was final phase)
-last_updated: 2026-05-26T12:13:03.178Z
-last_activity: 2026-05-26 -- Completed quick task 260526-dse: Fix Navi session-complete state
+stopped_at: v2.1 milestone shipped (Phases 46–48)
+last_updated: 2026-05-26T00:00:00.000Z
+last_activity: 2026-05-26 — v2.1 milestone closed; awaiting next milestone via /gsd:new-milestone
 progress:
   total_phases: 3
-  completed_phases: 6
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 13
-  percent: 200
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-25 after starting v2.1 Kuthasta and Settings Switches)
+See: .planning/PROJECT.md (updated 2026-05-26 after v2.1 Kuthasta and Settings Switches milestone close)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** Milestone complete
+**Current focus:** Awaiting next milestone — run `/gsd:new-milestone` (or continue with quick tasks / refactor loop)
 
 ## Current Position
 
-Phase: 48
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-26
+Phase: — (between milestones)
+Plan: —
+Status: v2.1 milestone complete
+Last activity: 2026-05-26 — v2.1 Kuthasta and Settings Switches archived (3 phases / 11 plans / 1283 tests / git tag v2.1)
 
 ## Performance Metrics
 
 **Velocity (plans completed per milestone):**
 
-- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6 · v1.5: 27 · v2.0: 35 + 18 spike-loop items
+- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6 · v1.5: 27 · v2.0: 35 + 18 spike-loop items · v2.1: 11
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and PROJECT.md Key Decisions.
-
-**v2.1 operator-locked decisions:**
-
-- [v2.1 roadmap]: Phase order is **Kuthasta → PREFS → APPEAR+i18n**, NOT collapsed. Operator wants the spike-012 V5 Halo Flame to ship and be visually UAT'd in the real app as a query-string-only addition before any persistence or UI work begins. This is an explicit operator sequencing decision, not a granularity choice — do not re-collapse Phase 46 into Phase 47/48 in future planning.
-- [v2.1 roadmap]: PREFS uses the **per-field `coerceSettings` fallback pattern** established by Phase 8 D-01 (forward-compat read + refuse-downgrade write + missing-fields-default-on-read) — explicitly NO `STATE_VERSION` bump. Same shape as Phase 22 (Stretch settings), Phase 25 (cue style), Phase 38 (variant retirement), Phase 39 (theme retirement), Phase 35 (chime→flute coercion).
-- [v2.1 roadmap]: I18N (3 reqs) is co-located with APPEAR (6 reqs) in Phase 48 rather than split into its own phase — the new strings only exist to serve the new Appearance surface; shipping them apart would mean either placeholder strings landing without a consuming view or a view landing without strings. Both anti-patterns.
-- [v2.1 roadmap]: APPEAR composes the **existing primitives** (`SegmentedControl` from `LanguagePicker` + `SettingsToggleRow` + `PageShell` + `TopAppBar` with its existing `trailing` slot + `IconButton`). No new design-system work. The `TopAppBar` `trailing` prop already exists — Phase 48 simply passes a chevron `IconButton` into it.
-- [v2.1 roadmap]: Kuthasta `KUTH-02` / `KUTH-04` colour values are **spike-locked** per `.planning/spikes/012-spiritual-eye-orb/README.md` "Locked V5 values" + "Implementation Mapping" — applied verbatim per `[[feedback_spike_implementation_fidelity]]` + `[[feedback_spike_is_design_not_features]]` + `[[feedback_spike_locked_values]]`. No re-tuning, no OQ checkpoint on hex values.
+Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and PROJECT.md Key Decisions. v2.1 decisions (spike-012 verbatim tokens, per-field `coerceSettings` for 4 flags with no `STATE_VERSION` bump, paste-and-rename picker hooks, existing-primitives-only Appearance composition, `returningFromAppearance` sentinel-based focus restoration, `appSettings.sections.appearance` → `sections.theme` rename, drift-guard `ALLOWED_KEY_PATTERNS` allowlist) are captured in PROJECT.md Key Decisions.
 
 ### Roadmap Evolution
 
-- v2.1 roadmap created (2026-05-25): 3 phases (46, 47, 48) continuing the v2.0 numbering (no `--reset-phase-numbers`). 17/17 requirements mapped: KUTH-01..04 → Phase 46; PREFS-01..04 → Phase 47; APPEAR-01..06 + I18N-01..03 → Phase 48.
+- v2.1 closed (2026-05-26): 3 phases (46, 47, 48), 11 plans, 17/17 requirements complete; tagged `v2.1`; archives at `.planning/milestones/v2.1-ROADMAP.md` + `v2.1-REQUIREMENTS.md`.
+- v2.1 roadmap created (2026-05-25): 3 phases continuing the v2.0 numbering (no `--reset-phase-numbers`). 17/17 requirements mapped: KUTH-01..04 → Phase 46; PREFS-01..04 → Phase 47; APPEAR-01..06 + I18N-01..03 → Phase 48.
 
 ### Pending Todos
 
-- v2.x carry-forwards (CARRY-01..04 in REQUIREMENTS.md Future Requirements) — deferred to a separate v2.2 bug-fix milestone per the operator's milestone-scoping note in PROJECT.md "Current Milestone".
+- PT-BR native-speaker review of v2.1 `appearance.*` strings (I18N-04, listed as Future Requirement in archived v2.1 REQUIREMENTS) — removes the 15 `// TODO: native-speaker review` markers added in Phase 48 per Phase 26 D-01 pattern. Operator pass; not blocking.
+- v2.x carry-forwards (CARRY-01..04 — see PROJECT.md "v2.x carry-forward") — deferred to a separate v2.2 bug-fix milestone.
 - v1.x deferred (partially dispositioned): `.orb-layer--in/--out` → `.shape-layer--in/--out` rename — **obsolete-by-redesign** (closed in v2.0 Phase 44). Remaining items from this entry (per-variant token sets; live idle preview; additional shape variants) remain deferred (not yet obviated).
 
 ### Blockers/Concerns
 
-- None blocking. v2.0 closed cleanly at `5b48c73` (HEAD post-tag at `v2.0` on `591df88`). v2.1 Phase 46 ready to plan when operator runs `/gsd:plan-phase 46`.
+- None blocking. v2.1 closed cleanly at HEAD `478100f` (pre-tag) with 1283/1283 tests green; tag `v2.1` to be cut at milestone close. Next-milestone scope undecided — operator runs `/gsd:new-milestone` when ready.
 
 ### Quick Tasks Completed
 
@@ -104,14 +98,16 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 - `.planning/milestones/v1.4-MILESTONE-AUDIT.md` — PASSED (7/7 requirements, 12/12 integration, 7/7 E2E flows). Two coverage-doc gaps (29-VALIDATION.md stale, 29-SECURITY.md missing) closed at audit time.
 - `.planning/milestones/v1.5-MILESTONE-AUDIT.md` — PASSED (re-audit 2026-05-19; 26/26 requirements, 6/6 phases, 0 integration blockers, 6/6 E2E flows).
 - v2.0 close 2026-05-25 — all 8 phases (36, 37, 38, 39, 40, 41, 44, 45) verified; 9/9 POLISH satisfied at 44-VERIFICATION.md `passed`; 22/22 STRIDE threats verified at 44-SECURITY.md; 1166/1166 tests pass.
+- v2.1 close 2026-05-26 — all 3 phases (46, 47, 48) verified; 14/14 (P46) + 5/5 (P47) + 9/9 (P48) must-haves satisfied; 17/17 requirements complete in archived `v2.1-REQUIREMENTS.md` traceability table; 1283/1283 tests pass. Operator proceeded without standalone `/gsd:audit-milestone` (matching v2.0 close pattern).
 
 ## Session Continuity
 
-Last session: 2026-05-26T05:17:47.245Z
-Stopped at: Phase 48 UI-SPEC approved
-Resume file: .planning/phases/48-appearance-page-i18n/48-UI-SPEC.md
-Next command: /gsd:plan-phase 46
+Last session: 2026-05-26 — v2.1 milestone close
+Stopped at: v2.1 milestone shipped (3 phases / 11 plans / 1283 tests / git tag v2.1)
+Resume file: — (between milestones)
+Next command: /gsd:new-milestone (when ready to start next milestone)
 
 ## Operator Next Steps
 
-- Plan Phase 46 (Kuthasta orb variant) with `/gsd:plan-phase 46`
+- Start the next milestone with `/gsd:new-milestone` (clears state first via `/clear`).
+- Continue with quick tasks (e.g., I18N-04 PT-BR native-speaker review of `appearance.*` strings) or the refactor loop via `/gsd:resume-work` if the REFACTOR-LOOP-STATE.md is still active.

@@ -407,6 +407,70 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v2.1 — Kuthasta and Settings Switches
+
+**Shipped:** 2026-05-26
+**Phases:** 3 (46, 47, 48) | **Plans:** 11 | **Timeline:** 2 days (2026-05-25 → 2026-05-26) | **Commits in range:** 197 (21 phase feat + quick tasks + docs)
+
+### What Was Built
+
+- Spike-012 V5 Halo Flame Kuthasta orb shipped as the third `BreathingShapeVariant` literal `'spiritual-eye'` (aliases `kuthasta` / `star`) behind `?breathingShape=`. Verbatim from spike-locked tokens: warm-cool halo gradient (gold outer / tan mid / slate inner), opalescent indigo radial-gradient disc, small white 5-point star (20% of disc, outer:inner ratio 2.5, point up). 10 per-theme `--color-orb-*-spiritual-eye` tokens in `theme.css` light + dark blocks. Outer ring, progress arc, ring cue, reduced-motion freeze, lead-in countdown, completion checkmark, idle still/ambient all byte-identical across the 3 variants.
+- 4 query-string-only feature flags (`breathingShape` / `ringCue` / `orbIdle` / `switcherIcon`) promoted to persisted user preferences. 2-arg `readFeatureFlags(search, persisted)` resolver with per-field query > persisted > default merge. `UserPrefs` extended from 4 to 8 flat fields; 4 new non-throwing coercers reusing `*_FLAG.parse` + `*_FLAG.defaultValue` so alias tables + prod defaults live in exactly one place. No `STATE_VERSION` bump — backward-compatible via per-field corrupt-field fallback (Phase 8 D-01).
+- `useFeatureFlags` seeds persisted snapshot from `loadPrefs()` at mount, refreshes on cross-tab `storage` events filtered on `STATE_KEY` and same-tab `hrv:prefs-changed` events filtered on the 4 keys + `undefined` (forward-compat).
+- 4 picker-side companion hooks (`useBreathingShapeChoice` / `useRingCueChoice` / `useOrbIdleChoice` / `useSwitcherIconChoice`) — 20-line paste-and-renames of `useTimbreChoice`.
+- New full-page `AppearancePage.tsx` composing existing primitives (`PageShell` + `TopAppBar` + `SegmentedControl` via `OrbPicker`/`RingCuePicker` paste-and-renames of `LanguagePicker` + `SettingsToggleRow`). Two sections: **Orb Style** (Orb picker — minimal/halo/kuthasta; Ring cue picker — arc/rings) and **Visual** (Breathing effect toggle: off=still / on=ambient via boolean adapter; Switcher icons toggle: direct boolean).
+- App Settings header right-chevron via `IconButton` in the existing `TopAppBar trailing` slot; navigates to Appearance page. Returning via left-chevron lands focus on the trigger chevron via the `returningFromAppearance` sentinel.
+- `ScreenRouter` extended with a fourth case. `useAppNavigation.AppScreen` union extended with `'appearance'` + 2 new callbacks (`onAppearanceOpen` controlsDisabled-gated, `onBackToAppSettings` ungated/sets sentinel) + sentinel-clear in every other transition + `closeOnSessionView`. Propagated through `AppDialogsViewModel` + `createAppDialogsViewModel`.
+- i18n: `appSettings.sections.appearance` → `sections.theme` rename total (single consumer in `SettingsPanelBody.tsx`); 14 locked EN `appearance.*` strings; 14 PT-BR drafts with 15 `// TODO: native-speaker review` markers; `content.no-review-markers.test.ts` drift-guard adapted with `ALLOWED_KEY_PATTERNS: RegExp[]` allowlist scoped to `appearance.*`.
+- Post-phase quick-task `260526-dse` closed three view-layer plumbing gaps on the Navi practice (showCompletion checkmark wiring, Start → Done CTA swap, SetupCard config row hide on Navi + Stretch completion). +14 tests; two atomic commits.
+
+### What Worked
+
+- **Spike-locked values applied verbatim.** Phase 46 took the spike-012 README's "Locked V5 values" table and applied each hex to a CSS custom property without re-tuning or OQ checkpoint. `[[feedback_spike_locked_values]]` + `[[feedback_spike_implementation_fidelity]]` saved a round-trip; operator visual UAT confirmed pixel-identical to spike screens.
+- **Pure paste-and-rename for the 4-element picker/hook expansion.** No abstraction extraction. Each picker hook ~20 lines, each picker component ~50 lines. Cheaper to read than a generic factory; primitive composition kept the design system intact.
+- **No `STATE_VERSION` bump for 4 new fields.** The per-field `coerceSettings` fallback pattern (Phase 8 D-01) has now absorbed 5 distinct schema additions (Phase 22 Stretch settings, Phase 25 cue style, Phase 38 variant retirement, Phase 39 theme retirement, Phase 47 four feature flags) — and 2 value migrations (Phase 35 chime→flute, Phase 41 J18 install-LOCKED_COPY). The chained `migrateEnvelope` ladder only fires when shape changes, not when fields are added.
+- **Existing-primitives-only composition.** Phase 48 introduced zero new design-system code. `PageShell` + `TopAppBar` (with `trailing` slot pre-existing) + `SegmentedControl` + `SettingsToggleRow` + `IconButton` were all already there. Net new components: `AppearancePage.tsx` + 2 picker paste-and-renames. The design lock from v2.0 spike-010 stayed intact.
+- **`StarGlyph` dedicated tokens (NOT `currentColor`).** The `on-accent` token resolves to dark text in dark theme; using `currentColor` would have produced an invisible star. The fix — dedicated `--color-star-*-spiritual-eye` tokens read via inline `style.fill`/`style.stroke` — sidestepped the theme-collapse failure entirely. Same family of issue as `[[project_dark_theme_token_collapse]]`.
+- **`returningFromAppearance` sentinel for conditional focus restoration.** Global "always focus trigger" would have mis-focused when entering App Settings from elsewhere. The sentinel scopes the behaviour to back-navigation only, and gets cleared in every other transition (and on `closeOnSessionView`) so it can't leak.
+- **Drift-guard allowlist over drift-guard relaxation.** `content.no-review-markers.test.ts` needed to accept the new PT-BR `appearance.*` drafts. Adding `ALLOWED_KEY_PATTERNS: RegExp[]` scoped to `appearance.*` kept the drift-guard active for every OTHER section (the Phase 26 review remains locked) while letting Phase 48 land its markers.
+- **Phase ordering Kuthasta → PREFS → APPEAR was the right call.** Operator deliberately wanted spike-012 V5 shipped as a query-string-only addition first, visually UAT'd in the real app before any persistence or UI work began. Collapsing into Phase 47/48 would have meant changing the persistence layer for an unproven design — the wrong dependency direction.
+- **Memory rules paid off on first use.** `[[feedback_propose_step_checklist]]` was already in place from v2.0; Phase 46-03 (the only inline-on-main plan after a Bash-permission halt) used the Downstream Constraints + Applicable Memory Rules checklist verbatim. No mid-implementation pivots.
+
+### What Was Inefficient
+
+- **Plan 46-03 fell back to inline-on-main after a Bash-permission halt.** Plans 46-01 and 46-02 ran cleanly in parallel worktrees; 46-03 hit a subagent dispatch permission halt and was completed sequentially. Not a wasted cycle (the plan still landed atomically) but the parallel-worktree pattern doesn't survive permission interruptions cleanly. Lesson for future planning: a permission-halt fallback path that doesn't require restarting from the original worktree state would close this gap.
+- **`appSettings.sections.appearance` → `sections.theme` rename was discovered mid-Phase-48.** The pre-existing key collided with the new Appearance PAGE name. Cheap to fix (single consumer in `SettingsPanelBody.tsx`) but the collision wasn't surfaced in research — it would have shown up immediately if i18n key namespacing were part of the propose-step checklist.
+- **Code review surfaced 3 Warning + 5 Info findings in Phase 48** (top: duplicated `SectionCard` chrome between AppearancePage and SettingsPanelBody, dead `id` attribute on the new pickers from LanguagePicker inheritance, `label:` allowlist regex broader than `appearance.*` keys). Not blocking, but these are paste-and-rename ergonomics costs — a generic `useChoice<K>` factory would have prevented the dead `id` attribute. Operator chose the paste-and-rename trade-off knowingly; the lesson is that paste-and-rename leaves small drift artifacts.
+- **Post-phase quick-task `260526-dse` exposed three Navi view-layer plumbing gaps that should have been caught in v1.5 Phase 31 or v2.0 Phase 41 UAT.** showCompletion checkmark, Done CTA swap, SetupCard config row hide — all single-line plumbing. The Navi practice had not been UAT'd through a full session-to-complete flow before. Lesson: practice surfaces (HRV / Stretch / Navi) need full-flow UAT including the completion screen at every milestone close, not just on first ship.
+- **Phase 48 PT-BR drafts shipped with 15 `// TODO: native-speaker review` markers.** Per Phase 26 D-01 the operator does the native-speaker pass as a separate workflow item; not a defect. But this is the second milestone (after v1.5) that has shipped with markers — I18N-04 is now a recurring closing item. Could be batched into a single annual native-speaker review pass rather than per-milestone.
+
+### Patterns Established
+
+- **Per-field `coerceSettings` fallback as the universal extension mechanism.** Five schema additions and two value migrations have now ridden this pattern; `STATE_VERSION` is reserved for actual SHAPE changes (slice additions, key renames at the envelope level).
+- **2-arg resolver `(search, persisted) => Flags` with `readQueryFeatureFlagOrNull<T>` helper.** Returns `null` for absent AND unparseable values so the `??` chain falls through uniformly across string-union and boolean fields. Now the standard pattern for any future feature flag with both dev-override and persisted modes.
+- **Sentinel-based mount focus.** `returningFromAppearance` joins the existing `controlsDisabled` and `installDismissed` sentinels as the third app-shell sentinel. Pattern is: set on the specific transition, clear in EVERY other transition + `closeOnSessionView`. Prevents leaks.
+- **i18n drift-guard with `ALLOWED_KEY_PATTERNS` allowlist.** New section can carry markers without disabling the global Phase 26 lock. Future PT-BR additions to new sections should follow the same allowlist-extension pattern.
+- **Paste-and-rename for picker/hook expansion of fixed-cardinality enums.** Holds at 3–4 picker hooks; would tip into abstraction beyond 6.
+- **Spike-locked CSS tokens applied verbatim with NO downstream guard.** No spec/test/comment anchors the hex values — they live in `theme.css` and the spike README. Operator can re-spec without test churn.
+
+### Key Lessons
+
+1. **Memory rules compound.** `[[feedback_spike_locked_values]]` + `[[feedback_spike_implementation_fidelity]]` + `[[feedback_spike_is_design_not_features]]` + `[[feedback_design_logic_separation]]` were all locked in v2.0. v2.1 was the first milestone where they were applied as a system, not individually — Phase 46 followed all four without explicit re-derivation, and the propose-step checklist surfaced them automatically. The memory system is now load-bearing for planning, not just retrospective.
+2. **Phase ordering matters more than phase count.** Three phases with one-way dependency (Kuthasta → PREFS → APPEAR) ran cleaner than a hypothetical two-phase merge would have. Each phase had a single concern: variant + tokens, then storage + resolver, then UI + i18n. The boundary between Phase 47 (pure data plumbing, zero production UI consumers) and Phase 48 (UI consumes Phase 47 hooks) was the strongest line — `[[feedback_design_logic_separation]]` made explicit.
+3. **Paste-and-rename is a real architectural choice.** Not a fallback when abstraction is "too hard"; an explicit decision that 4 × 20 lines reads more clearly than 80 lines of generic code + 4 × 5 lines of usage. Operator validated this twice (D-09 for hooks, D-10/D-11/D-14 for picker components).
+4. **Practice-specific UAT must be full-flow, including completion.** The `260526-dse` Navi gaps lived through v1.5 + v2.0 close because the Navi completion screen was never UAT'd end-to-end. Each milestone close should validate every practice's full Start → Lead-in → Running → Complete flow, not just the practice that changed.
+5. **Operator visual UAT at milestone close > per-plan UAT for paint changes.** Phase 46 deferred all visual UAT to a single milestone-end checkpoint covering light + dark + idle + running + lead-in + NK front/back + completion + unrecognized fallback + reduced-motion. Faster than per-plan UAT and caught one cross-axis interaction (Kuthasta + NK front phase Star→Cue swap) that would have been missed.
+6. **Drift-guard allowlists beat drift-guard relaxation.** Per-section allowlists keep the global lock active. Any future "make the guard accept this case" should be an allowlist entry, not a guard weakening.
+
+### Cost Observations
+
+- Sessions: 3 phases discuss→plan→execute→verify, with Phase 46 hitting one parallel-worktree halt that re-routed Plan 46-03 to inline-on-main. Phase 47 ran 4 plans across 3 waves (47-01 → 47-02 → {47-03 ∥ 47-04}). Phase 48 ran 4 plans across 2 waves ({48-01 ∥ 48-02 ∥ 48-03} → 48-04 sequential-on-main for the UAT checkpoint). Plus 1 post-phase quick task (`260526-dse`).
+- Notable: 197 commits in range over 27 hours of wall-clock time — high commit density driven by 21 phase feat commits + ~80 doc/review/fix commits + the quick-task commits + 11 docs commits (the `docs(48): add per-chunk REVIEW-FIX reports for full-codebase code review` and `docs(content): trim app-description paragraph from Forrest sections` runs).
+- First milestone with **zero standalone milestone audit** at close (v2.0 also closed without one, but for a v2.0-scale milestone). Operator explicitly chose to skip `/gsd:audit-milestone` because REQUIREMENTS.md already showed 17/17 complete with operator-validated VERIFICATION across all 3 phases. The close was paperwork-only.
+- Net test count: +117 (1166 → 1283). New tests by phase: Phase 46 +62, Phase 47 +37, Phase 48 +29, quick-task `260526-dse` +14, minus ~4 obsolete after the section-key rename + dead-OPTIONS removal. First milestone since v1.5 with a clean positive delta in tests (v2.0 had a net reduction).
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -421,6 +485,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.4 | 2 | 6 | Gap-closure plan (`gap_closure: true`) for UAT-surfaced defects within the phase; shared presentational component as single source of truth (one fix covers both surfaces); VALIDATION/SECURITY docs left stale, reconciled by audit at close |
 | v1.5 | 6 | 27 | Spike-first blueprint packaged as a skill; chained `STATE_VERSION` migration ladder (v1→v2→v3); appended post-milestone peer phases (33/34/35); requirement amended at audit (NK-07 end-only); milestone re-audit after post-audit scope change; milestone outgrew its scoped name |
 | v2.0 | 8 | 35 + 18 spike-loop items | Spike-loop format (per-item propose/go/implement/approve) absorbed 3 phases into 1; field-deletion + coercer fallback beat STATE_VERSION migrations for retired prefs; forbidden-token drift-guards as deletion contracts; query-string dev toggles over `VITE_*` env vars; 5 operator architectural rules locked into memory (design-must-not-touch-logic, spike-is-design-NOT-features, spike-implementation-fidelity, spike-locked-values-are-not-decisions, no-design-locking, propose-step-checklist); versioned GitHub Pages deploy; post-tag phase added (Phase 45 lands after `v2.0` tag); first milestone with test count NET REDUCTION (1255 → 1166) driven by intra-file redundancy removal |
+| v2.1 | 3 | 11 | Memory rules applied as a system (4 rules surfaced via propose-step checklist without explicit re-derivation); per-field `coerceSettings` fallback absorbed 4-field schema addition with no `STATE_VERSION` bump (5th such use; pattern is now universal for non-shape changes); 2-arg `readFeatureFlags(search, persisted)` resolver pattern for dev-override + persistence; paste-and-rename as explicit architectural choice for fixed-cardinality picker/hook expansion (4 hooks + 2 pickers); sentinel-based conditional mount focus (`returningFromAppearance`); i18n drift-guard `ALLOWED_KEY_PATTERNS` allowlist beats guard relaxation; zero standalone milestone audit (operator paperwork-only close pattern from v2.0 carried forward); first milestone with all 17/17 requirements complete at close with zero deferred-to-next-milestone scope items beyond pre-existing v2.x carry-forwards |
 
 ### Cumulative Quality
 
@@ -434,6 +499,7 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 | v1.4 | 997/997 pass | 70 | — |
 | v1.5 | 1255/1255 pass | — | ~28,933 |
 | v2.0 | 1166/1166 pass | 108 | ~30,096 |
+| v2.1 | 1283/1283 pass | 115 | ~33,000 |
 
 ### Top Lessons (Verified Across Milestones)
 
