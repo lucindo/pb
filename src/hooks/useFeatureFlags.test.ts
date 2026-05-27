@@ -225,6 +225,30 @@ describe('useFeatureFlags', () => {
     expect(result.current.breathingShape).toBe('orb-halo')
   })
 
+  // Phase 49.1 — 5th key: bypassSilentMode event triggers re-read
+  it('same-tab hrv:prefs-changed with detail.key === "bypassSilentMode" re-reads persisted', async () => {
+    const { result } = renderHook(() => useFeatureFlags())
+    expect(result.current.bypassSilentMode).toBe(true) // default
+
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent('hrv:prefs-changed', { detail: { key: 'bypassSilentMode', value: false } }),
+      )
+    })
+
+    expect(result.current.bypassSilentMode).toBe(false)
+  })
+
+  // Phase 49.1 — slim projection includes bypassSilentMode field
+  it('seeds bypassSilentMode from loadPrefs() at mount', () => {
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
+    const { result } = renderHook(() => useFeatureFlags())
+    expect(result.current.bypassSilentMode).toBe(false)
+  })
+
   // D-11 forward-compat — `detail.key === undefined` (no key property) means
   // "re-read all prefs". Future dimensions can dispatch the same event name
   // with no key and useFeatureFlags will pick up persisted changes too.
