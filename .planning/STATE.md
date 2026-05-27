@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: Kuthasta and Settings Switches
-status: milestone_complete
-stopped_at: v2.1 milestone shipped (Phases 46–48)
-last_updated: 2026-05-26T00:00:00.000Z
-last_activity: 2026-05-26 — v2.1 milestone closed; awaiting next milestone via /gsd:new-milestone
+milestone: v2.2
+milestone_name: Audio Sync
+status: planning
+last_updated: "2026-05-27T14:55:48.671Z"
+last_activity: 2026-05-27
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-26 after v2.1 Kuthasta and Settings S
 
 ## Current Position
 
-Phase: — (between milestones)
+Phase: Not started (defining requirements)
 Plan: —
-Status: v2.1 milestone complete
-Last activity: 2026-05-26 — v2.1 Kuthasta and Settings Switches archived (3 phases / 11 plans / 1283 tests / git tag v2.1)
+Status: Defining requirements
+Last activity: 2026-05-27 — Milestone v2.2 started
 
 ## Performance Metrics
 

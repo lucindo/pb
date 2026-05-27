@@ -20,6 +20,19 @@ Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch,
 
 For full v2.1 detail see `.planning/milestones/v2.1-ROADMAP.md` + `v2.1-REQUIREMENTS.md`; for v2.0 see `.planning/milestones/v2.0-ROADMAP.md` + `v2.0-REQUIREMENTS.md`.
 
+## Current Milestone: v2.2 Audio Sync
+
+**Goal:** Fix every audio-stack bug currently on file (iOS speaker route, three-clocks drift, background-tab audio death, mute-as-teardown), and land a `SessionClock` / scheduler abstraction so a future library swap (Tone.js etc.) becomes a single-implementation change.
+
+**Target features:**
+- iOS speaker route fix — silent looping `<audio playsInline>` on the user-gesture chain to coerce iOS Safari from "ambient" to "playback" session category (#6).
+- `SessionClock` / scheduler abstraction layer — `now()` / `schedule(when, cue)` / `setMasterGain(value, rampSec)` / `onSuspend`+`onResume`; consumers (`useSessionEngine`, `useAudioCues`, `useNaviKriyaAudio`, `useNKEngine`) stop touching `AudioContext` and `performance.now()` directly.
+- Master clock unification — session timing rebased onto `audioCtx.currentTime`; animation derived from the audio clock each rAF (#1, #2).
+- Visibility-resume delta clamp + lookahead scheduling — per-tick elapsed-delta clamp + 5–10s lookahead window queuing N cues ahead in WebAudio so backgrounded tabs keep playing (#4, #5).
+- Master-gain mute — master `GainNode` between cue chains and `destination`; `linearRampToValueAtTime(0|1, now+0.05)` replaces engine teardown/rebuild (#3a).
+
+**Key context:** Architectural diagnosis at `.planning/notes/audio-animation-three-clocks-diagnosis.md` (three independent clocks: `performance.now()` for session elapsed, `requestAnimationFrame` for tick, `audioCtx.currentTime` for audio scheduling — they diverge on iOS lock/tab hide). Phase A is the canonical iOS speaker spec at `.planning/todos/2026-05-27-ios-speaker-route-audio-element-fix.md`. Continuous ambient layer and library migration (Tone.js / Howler) are explicitly OUT of scope — the seed at `.planning/seeds/continuous-ambient-layer.md` is preserved for a future aesthetic / sample-content trigger; the `SessionClock` abstraction keeps the library swap available as a single-implementation change later. Picks up the four v2.x carry-forwards (iOS audio recovery, iOS phone-call interrupted state, S2 Android Chrome wake-lock real-device UAT — to the extent the real device is available — and the iOS standalone-PWA Wake Lock < 18.4 product decision).
+
 ## Requirements
 
 ### Validated
@@ -104,7 +117,7 @@ For full v2.1 detail see `.planning/milestones/v2.1-ROADMAP.md` + `v2.1-REQUIREM
 
 ### Active
 
-v2.1 Kuthasta and Settings Switches complete (Phases 46-48, 2026-05-26) — Halo Flame Kuthasta orb shipped, 4 feature flags persist across sessions, Appearance settings page with EN + PT-BR i18n shipped. Awaiting next milestone via `/gsd:complete-milestone` then `/gsd:new-milestone`.
+v2.2 Audio Sync — defining requirements (2026-05-27). Fix every audio-stack bug currently on file via a 5-phase plan: iOS speaker route fix (#6, fast-shipping opener), `SessionClock` / scheduler abstraction (pure refactor, zero behavior change), master clock unification onto `audioCtx.currentTime` (fixes #1, #2), visibility-resume delta clamp + lookahead scheduling (fixes #4, #5), master-gain mute (fixes #3a). Continues phase numbering from v2.1 (last phase: 48). See `## Current Milestone` above for full scope, `## Constraints` for the no-new-runtime-deps invariant, and the milestone proposal at `.planning/notes/audio-clock-milestone-proposal.md` for per-phase deliverables, success criteria, and risks.
 
 ### v2.x Carry-Forwards (Known Bugs)
 
@@ -265,4 +278,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after v2.1 Kuthasta and Settings Switches milestone close (3 phases / 11 plans / 1283 tests; Kuthasta orb + persistable feature flags + Appearance page + EN/PT-BR draft i18n shipped; 17/17 requirements validated; archived to `.planning/milestones/v2.1-*` and tagged `v2.1`).*
+*Last updated: 2026-05-27 after v2.2 Audio Sync milestone init (5-phase scope locked from `.planning/notes/audio-clock-milestone-proposal.md`; awaiting requirements + roadmap).*
