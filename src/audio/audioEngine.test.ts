@@ -604,4 +604,51 @@ describe('audioEngine', () => {
 
     await engine.close()
   })
+
+  // CR-01 (Phase 49 REVIEW): when AudioContext.resume() rejects, the silent-loop
+  // element is unreachable through engine.close() (no engine handle is returned),
+  // so the ad-hoc teardown inside the resume() catch block is the only path that
+  // can release the element. Regression-guards the leak found in code review.
+  it('createAudioEngine tears down silent-loop element when AudioContext.resume() rejects (CR-01)', async () => {
+    const audioInstances: SuspendedRejectAudio[] = []
+    class SuspendedRejectAC {
+      state: AudioContextState = 'suspended'
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      resume = vi.fn(() => Promise.reject(new DOMException('autoplay vetoed', 'NotAllowedError')))
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    class SuspendedRejectAudio {
+      playsInline = false
+      loop = false
+      muted = true
+      volume = 1
+      pause = vi.fn()
+      removeAttribute = vi.fn()
+      play = vi.fn(async () => {})
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      constructor(_src?: string) {
+        audioInstances.push(this)
+      }
+    }
+    vi.stubGlobal('AudioContext', SuspendedRejectAC)
+    vi.stubGlobal('Audio', SuspendedRejectAudio)
+
+    // resume() rejection MUST propagate — caller handles AC-construction failure
+    // (D-10 caller branch). The silent-loop element is the leaking-resource side
+    // effect this test guards.
+    await expect(createAudioEngine({ timbre: 'bowl' })).rejects.toThrow('autoplay vetoed')
+
+    expect(audioInstances).toHaveLength(1)
+    const [el] = audioInstances
+    if (el === undefined) throw new Error('expected a stubbed Audio instance')
+    expect(el.pause).toHaveBeenCalledTimes(1)
+    expect(el.removeAttribute).toHaveBeenCalledWith('src')
+  })
 })

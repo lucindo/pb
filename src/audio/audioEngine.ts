@@ -104,12 +104,16 @@ const MIN_GAIN_VALUE = 0.0001
 //     behavior — volume is hardware-controlled). The v1/v2 element was playing
 //     at full system volume on iPhone the whole time. Attenuation must therefore
 //     be encoded into the PCM samples themselves, not via .volume. Switched to
-//     16-bit signed / 22050 Hz / 200 samples (~9 ms), single ±1 LSB sine cycle
-//     (peak amplitude 1/32768 ≈ -90 dBFS — 42 dB quieter than v2's -48 dBFS
-//     8-bit floor). Loop-continuous (sample 0 == sample 199 == 0, no boundary
-//     clicks). Not pure silence (contains 1 and -1 samples), so iOS Safari still
-//     treats it as a "real" track per D-05. File is 444 bytes / 592 base64 chars
-//     (vs v1/v2's 244 / 480) — negligible bundle increase.
+//     16-bit signed / 22050 Hz / 200 samples (~9 ms), generated from a single
+//     low-amplitude sine cycle that — once rounded to integer LSBs at ±1
+//     amplitude — collapses to a near-DC stepped pulse pair (~17 leading zeros,
+//     ~67 samples of +1, ~33 zero-crossing samples, ~66 samples of -1, ~17
+//     trailing zeros). Peak amplitude is 1/32768 ≈ -90 dBFS — 42 dB quieter
+//     than v2's -48 dBFS 8-bit floor — and inaudible on iPhone speakers at
+//     full system volume. Loop-continuous (sample 0 == sample 199 == 0, no
+//     boundary clicks). Not pure silence (contains 1 and -1 samples), so iOS
+//     Safari still treats it as a "real" track per D-05. File is 444 bytes /
+//     592 base64 chars (vs v1/v2's 244 / 480) — negligible bundle increase.
 //   SILENT_LOOP_VOLUME stays at 0.0001 — it's a no-op on iOS but still attenuates
 //   on Android Chrome and desktop browsers (defense in depth).
 //   See .planning/phases/49-ios-speaker-route-fix/49-02-DEVICE-VALIDATION.md.
@@ -193,10 +197,21 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // WR-06: if resume() rejects (e.g., the user agent vetoed autoplay between
   // construction and the resume attempt), close the AC before re-throwing — otherwise
   // the AC leaks (browsers cap concurrent ACs ~6 in Chrome).
+  // CR-01 (Phase 49 REVIEW): the silent-loop element was constructed above on the
+  // gesture head (D-04/D-06 invariant — cannot move it past the await), so this catch
+  // is ALSO the only reachable teardown path for the element when resume() rejects —
+  // engine.close() is never reached because we never return an engine handle. Tear
+  // down the element symmetrically with engine.close()'s D-08 sequence (pause →
+  // removeAttribute('src') → drop reference) BEFORE closing the AC.
   if (audioCtx.state === 'suspended') {
     try {
       await audioCtx.resume()
     } catch (err) {
+      if (silentLoopElement !== null) {
+        silentLoopElement.pause()
+        silentLoopElement.removeAttribute('src')
+        silentLoopElement = null
+      }
       await audioCtx.close().catch(() => undefined)
       throw err
     }
