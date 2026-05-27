@@ -15,11 +15,11 @@ Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (P
 
 ### iOS Audio Routing (Phase 49 — iOS speaker route fix)
 
-- [ ] **IOS-01**: User on iOS Safari with silent switch ON and no headphones hears app audio through the device speaker.
-- [ ] **IOS-02**: User on iOS Safari with headphones connected continues to route audio through headphones (no regression).
-- [ ] **IOS-03**: User on iOS Safari with silent switch OFF hears audio normally (no regression).
-- [ ] **IOS-04**: User on non-iOS platforms experiences no audible regression and no measurable performance regression from the silent-loop element.
-- [ ] **IOS-05**: The silent `<audio playsInline>` element starts only via the same user-gesture chain that constructs the `AudioContext` (no autoplay on page load) and is torn down on `AudioContext` close.
+- [x] **IOS-01**: User on iOS Safari with silent switch ON and no headphones hears app audio through the device speaker.
+- [x] **IOS-02**: User on iOS Safari with headphones connected continues to route audio through headphones (no regression).
+- [x] **IOS-03**: User on iOS Safari with silent switch OFF hears audio normally (no regression).
+- [x] **IOS-04**: User on non-iOS platforms experiences no audible regression and no measurable performance regression from the silent-loop element.
+- [x] **IOS-05**: The silent `<audio playsInline>` element starts only via the same user-gesture chain that constructs the `AudioContext` (no autoplay on page load) and is torn down on `AudioContext` close.
 
 ### Audio Abstraction (Phase 50 — SessionClock / scheduler interface)
 
@@ -84,11 +84,11 @@ Which phases cover which requirements. Roadmapper will populate the Phase column
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| IOS-01 | Phase 49 | Pending |
-| IOS-02 | Phase 49 | Pending |
-| IOS-03 | Phase 49 | Pending |
-| IOS-04 | Phase 49 | Pending |
-| IOS-05 | Phase 49 | Pending |
+| IOS-01 | Phase 49 | Complete |
+| IOS-02 | Phase 49 | Complete |
+| IOS-03 | Phase 49 | Complete |
+| IOS-04 | Phase 49 | Complete |
+| IOS-05 | Phase 49 | Complete |
 | ABSTR-01 | Phase 50 | Pending |
 | ABSTR-02 | Phase 50 | Pending |
 | ABSTR-03 | Phase 50 | Pending |
