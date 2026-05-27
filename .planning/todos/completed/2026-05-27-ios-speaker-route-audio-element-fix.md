@@ -2,7 +2,7 @@
 created: 2026-05-27T00:00:00.000Z
 title: iOS speaker route — silent <audio> element to coerce playback session
 area: audio
-status: scoped-into-v2.2-phase-49
+status: resolved-by-phase-49
 resolves_phase: 49
 files:
   - src/audio/audioEngine.ts
