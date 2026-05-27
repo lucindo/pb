@@ -52,7 +52,7 @@ describe('useOrbIdleChoice', () => {
     expect(raw.prefs.orbIdle).toBe('still')
   })
 
-  it('setOrbIdle preserves all other 7 prefs fields — envelope merge contract (8-field UserPrefs)', () => {
+  it('setOrbIdle preserves all other 8 prefs fields — envelope merge contract (9-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
@@ -62,6 +62,7 @@ describe('useOrbIdleChoice', () => {
       ringCue: 'outer-inner',
       orbIdle: 'ambient',
       switcherIcon: true,
+      bypassSilentMode: true,
     })
     const { result } = renderHook(() => useOrbIdleChoice())
 

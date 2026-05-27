@@ -52,7 +52,7 @@ describe('useBreathingShapeChoice', () => {
     expect(raw.prefs.breathingShape).toBe('minimal-rings')
   })
 
-  it('setBreathingShape preserves all other 7 prefs fields — envelope merge contract (8-field UserPrefs)', () => {
+  it('setBreathingShape preserves all other 8 prefs fields — envelope merge contract (9-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
@@ -62,6 +62,7 @@ describe('useBreathingShapeChoice', () => {
       ringCue: 'outer-inner',
       orbIdle: 'still',
       switcherIcon: true,
+      bypassSilentMode: true,
     })
     const { result } = renderHook(() => useBreathingShapeChoice())
 

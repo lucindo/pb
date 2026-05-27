@@ -26,6 +26,7 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   ringCue: 'progress-arc',
   orbIdle: 'ambient',
   switcherIcon: false,
+  bypassSilentMode: true,
 }
 
 // Global setup / teardown — localStorage is cleared by vitest.setup.ts beforeEach

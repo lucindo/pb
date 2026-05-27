@@ -52,7 +52,7 @@ describe('useSwitcherIconChoice', () => {
     expect(raw.prefs.switcherIcon).toBe(true)
   })
 
-  it('setSwitcherIcon preserves all other 7 prefs fields — envelope merge contract (8-field UserPrefs)', () => {
+  it('setSwitcherIcon preserves all other 8 prefs fields — envelope merge contract (9-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
@@ -62,6 +62,7 @@ describe('useSwitcherIconChoice', () => {
       ringCue: 'outer-inner',
       orbIdle: 'still',
       switcherIcon: false,
+      bypassSilentMode: true,
     })
     const { result } = renderHook(() => useSwitcherIconChoice())
 

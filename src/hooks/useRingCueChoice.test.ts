@@ -52,7 +52,7 @@ describe('useRingCueChoice', () => {
     expect(raw.prefs.ringCue).toBe('outer-inner')
   })
 
-  it('setRingCue preserves all other 7 prefs fields — envelope merge contract (8-field UserPrefs)', () => {
+  it('setRingCue preserves all other 8 prefs fields — envelope merge contract (9-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
@@ -62,6 +62,7 @@ describe('useRingCueChoice', () => {
       ringCue: 'progress-arc',
       orbIdle: 'still',
       switcherIcon: true,
+      bypassSilentMode: true,
     })
     const { result } = renderHook(() => useRingCueChoice())
 
