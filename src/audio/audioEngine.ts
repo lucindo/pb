@@ -82,6 +82,21 @@ const MUTE_FADE_TIME_CONSTANT = 0.05
 // setTargetAtTime is more numerically stable with a nonzero target.
 const MIN_GAIN_VALUE = 0.0001
 
+// Phase 49 D-03: silent-loop WAV data URL used to coerce iOS Safari's audio
+// session category from "ambient" to "playback" so cue audio routes through
+// the device speaker even when the silent switch is ON and no headphones are
+// connected. Format: 8 kHz mono 8-bit PCM, ~25 ms duration, ~200 samples
+// alternating between 127 and 128 — near-zero amplitude but a REAL decodable
+// track (NOT digital silence — some iOS Safari versions reject empty/silent
+// tracks for session coercion). See 49-CONTEXT.md D-03 and the canonical spec
+// at .planning/todos/2026-05-27-ios-speaker-route-audio-element-fix.md.
+// Constant is file-local (D-03 + 49-PATTERNS.md Pattern A — Task 2 stubs
+// `Audio` globally and does not need to import this).
+const SILENT_WAV_DATA_URL =
+  'data:audio/wav;base64,UklGRuwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YcgAAAB/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gA=='
+// Phase 49 D-05: near-zero non-zero. NOT coupled to MIN_GAIN_VALUE — separate invariants (49-PATTERNS.md Pattern A).
+const SILENT_LOOP_VOLUME = 0.0001
+
 // Lead-in: 3 ticks one second apart, then the first In cue at the start of the breath cycle.
 // WR-04: exported as the single source of truth — App.tsx and useAudioCues.ts import these
 // instead of redefining the same numbers locally (which silently drifted before).
@@ -127,6 +142,30 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // Start session click handler in App.tsx (Plan 04). The browser autoplay policy MUST
   // see a fresh user-gesture chain or AC will start in 'suspended'.
   const audioCtx = new AudioContext()
+
+  // Phase 49 D-01/D-04/D-06: silent looping <audio> element constructed inside the engine,
+  // on the sync gesture head, BEFORE any asynchronous suspension. Coerces iOS audio session
+  // from 'ambient' to 'playback'. Always-on per D-02 (no UA gating). See 49-CONTEXT.md.
+  let silentLoopElement: HTMLAudioElement | null = new Audio(SILENT_WAV_DATA_URL)
+  // Reason: `playsInline` is typed only on HTMLVideoElement in lib.dom.d.ts, but
+  // iOS Safari honors the property on HTMLMediaElement (the trick lifted from
+  // Howler.js). The runtime assignment is correct; the cast documents the
+  // type-vs-runtime gap.
+  ;(silentLoopElement as HTMLMediaElement & { playsInline: boolean }).playsInline = true
+  silentLoopElement.loop = true
+  silentLoopElement.muted = false
+  silentLoopElement.volume = SILENT_LOOP_VOLUME
+  // D-09 silent-absorb: a .play() rejection (autoplay policy regression, codec issue) does NOT
+  // propagate. Session continues; iOS silent-switch users simply do not get speaker routing —
+  // no worse than pre-Phase-49. Critically different from the AC resume() reject below at
+  // L139-143, which DOES re-throw — the silent loop is sub-essential infrastructure
+  // (49-PATTERNS.md "Silent-absorb on resource-acquisition failures").
+  //
+  // Optional chain: per HTMLMediaElement spec play() returns a Promise<void>, but very old
+  // browsers (Safari < 11) and the jsdom test environment return undefined. The chain absorbs
+  // that variant under the same silent-absorb posture.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  void silentLoopElement.play()?.catch(() => undefined)
 
   // Chrome can occasionally hand back an AC in 'suspended' even from a gesture chain
   // (race conditions during page bootstrap); resume immediately so currentTime advances.
@@ -304,6 +343,16 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         await new Promise<void>((resolve) => {
           setTimeout(resolve, tailRemainingSec * 1000)
         })
+      }
+      // Phase 49 D-08: silent-loop element teardown. pause() + clear src releases the
+      // decoded buffer; null reference drops the closure handle for GC. Sync, no await,
+      // no try/catch — the engine owns the element exclusively (Pattern D). Inside the
+      // existing `if (closed) return` guard at the top of close() — second close()
+      // short-circuits before this runs.
+      if (silentLoopElement !== null) {
+        silentLoopElement.pause()
+        silentLoopElement.removeAttribute('src')
+        silentLoopElement = null
       }
       // AH-WR-03: node cleanup is otherwise driven entirely by the oscillator
       // 'ended' event (AUDIO-04 explicit-disconnect contract in cueSynth). The
