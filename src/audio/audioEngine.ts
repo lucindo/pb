@@ -92,8 +92,17 @@ const MIN_GAIN_VALUE = 0.0001
 // at .planning/todos/2026-05-27-ios-speaker-route-audio-element-fix.md.
 // Constant is file-local (D-03 + 49-PATTERNS.md Pattern A — Task 2 stubs
 // `Audio` globally and does not need to import this).
+// Device-validation revision (Phase 49 Plan 02, 2026-05-27): the initial Plan 01
+// PCM (alternating 127/128 — a full-amplitude 4 kHz square wave looping every 25 ms)
+// was audible on iOS Safari as a continuous low buzz even at volume 0.0001. Replaced
+// with a single low-amplitude sine cycle centered at 128 (±1 LSB) — loop-continuous
+// (sample 0 == sample 199 == 128, no boundary clicks), still decodable, still not
+// pure silence so iOS Safari treats it as a "real" track per D-05, sub-audible on
+// real hardware at master volume 0.0001. WAV header is byte-identical to the
+// original (same 8 kHz / 8-bit / 200 samples / 244-byte total); only the 200 PCM
+// bytes changed. See .planning/phases/49-ios-speaker-route-fix/49-02-DEVICE-VALIDATION.md.
 const SILENT_WAV_DATA_URL =
-  'data:audio/wav;base64,UklGRuwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YcgAAAB/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gA=='
+  'data:audio/wav;base64,UklGRuwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YcgAAACAgICAgICAgICAgICAgICAgIGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgA=='
 // Phase 49 D-05: near-zero non-zero. NOT coupled to MIN_GAIN_VALUE — separate invariants (49-PATTERNS.md Pattern A).
 const SILENT_LOOP_VOLUME = 0.0001
 
