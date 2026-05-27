@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Audio Sync
-status: planning
-last_updated: "2026-05-27T14:55:48.671Z"
-last_activity: 2026-05-27
+status: "Roadmap drafted (5 phases mapped, 24/24 requirements covered); awaiting `/gsd:plan-phase 49`"
+stopped_at: Phase 49 context gathered
+last_updated: "2026-05-27T15:30:47.214Z"
+last_activity: 2026-05-27 — v2.2 roadmap created
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
-current_phase: 49
 ---
 
 # Project State
@@ -118,9 +118,9 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 ## Session Continuity
 
-Last session: 2026-05-27 — v2.2 roadmap creation
-Stopped at: ROADMAP.md drafted (5 phases / 49–53 / 24 requirements mapped / 100% coverage); STATE.md updated to current_phase 49; REQUIREMENTS.md traceability verified.
-Resume file: .planning/ROADMAP.md (Phase 49 detail section)
+Last session: 2026-05-27T15:30:47.207Z
+Stopped at: Phase 49 context gathered
+Resume file: .planning/phases/49-ios-speaker-route-fix/49-CONTEXT.md
 Next command: /gsd:plan-phase 49 (iOS speaker route fix — fast-shipping opener; independent of Phases 50–53)
 
 ## Operator Next Steps
