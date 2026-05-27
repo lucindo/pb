@@ -36,6 +36,7 @@ import {
   RING_CUE_FLAG,
   ORB_IDLE_FLAG,
   SWITCHER_ICON_FLAG,
+  BYPASS_SILENT_MODE_FLAG,
   parseQueryBoolean,
   type BreathingShapeVariant,
   type RingCueStyle,
@@ -51,6 +52,7 @@ export interface UserPrefs {
   ringCue: RingCueStyle
   orbIdle: OrbIdleBehavior
   switcherIcon: boolean
+  bypassSilentMode: boolean  // Phase 49.1 D-05: default true preserves Phase 49 shipped posture
 }
 
 export const DEFAULT_PREFS: UserPrefs = {
@@ -62,6 +64,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   ringCue: RING_CUE_FLAG.defaultValue,
   orbIdle: ORB_IDLE_FLAG.defaultValue,
   switcherIcon: SWITCHER_ICON_FLAG.defaultValue,
+  bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // Phase 49.1 D-05: = true
 }
 
 export function coerceTheme(raw: unknown): ThemeId {
@@ -132,21 +135,35 @@ export function coerceSwitcherIcon(raw: unknown): boolean {
   return SWITCHER_ICON_FLAG.defaultValue
 }
 
+// Phase 49.1 D-03 — parser reused from featureFlags.ts so the alias table stays in one place.
+// Boolean coercer: persisted JSON re-hydrates true/false as actual booleans (fast path),
+// then falls through to parseQueryBoolean for legacy/hand-edited string envelopes.
+// Default is true (BYPASS_SILENT_MODE_FLAG.defaultValue) — D-05 preserves Phase 49 shipped posture.
+export function coerceBypassSilentMode(raw: unknown): boolean {
+  if (typeof raw === 'boolean') return raw
+  if (typeof raw === 'string') {
+    const parsed = parseQueryBoolean(raw)
+    if (parsed !== null) return parsed
+  }
+  return BYPASS_SILENT_MODE_FLAG.defaultValue
+}
+
 export function coercePrefs(raw: unknown): UserPrefs {
-  // Prototype-pollution mitigation (T-14-01 / T-25-01 / D-12): we only read eight known keys
+  // Prototype-pollution mitigation (T-14-01 / T-25-01 / D-12): we only read nine known keys
   // from `r`; `raw` is never spread into a prototype-accessible object.
   const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
     ? raw as Record<string, unknown>
     : {}
   return {
-    theme:          coerceTheme(r.theme),
-    timbre:         coerceTimbre(r.timbre),
-    cue:            coerceCue(r.cue),
-    locale:         coerceLocale(r.locale),
-    breathingShape: coerceBreathingShape(r.breathingShape),
-    ringCue:        coerceRingCue(r.ringCue),
-    orbIdle:        coerceOrbIdle(r.orbIdle),
-    switcherIcon:   coerceSwitcherIcon(r.switcherIcon),
+    theme:            coerceTheme(r.theme),
+    timbre:           coerceTimbre(r.timbre),
+    cue:              coerceCue(r.cue),
+    locale:           coerceLocale(r.locale),
+    breathingShape:   coerceBreathingShape(r.breathingShape),
+    ringCue:          coerceRingCue(r.ringCue),
+    orbIdle:          coerceOrbIdle(r.orbIdle),
+    switcherIcon:     coerceSwitcherIcon(r.switcherIcon),
+    bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode), // Phase 49.1 D-05
   }
 }
 

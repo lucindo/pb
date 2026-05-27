@@ -13,6 +13,7 @@ export interface FeatureFlags {
   breathingShape: BreathingShapeVariant
   orbIdle: OrbIdleBehavior
   ringCue: RingCueStyle
+  bypassSilentMode: boolean  // Phase 49.1 D-05: default true preserves Phase 49 shipped posture
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
@@ -146,12 +147,18 @@ export const RING_CUE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<RingCueStyle>
 
-// Phase 47 D-05/D-06/D-07: per-field 4-way resolver. Resolution order for each
-// field is query > persisted > default, evaluated independently per field.
-// `readQueryFeatureFlagOrNull` returns `null` for absent OR unparseable values,
-// so the `??` chain falls through to `persisted.<field>` (D-07: invalid query
-// is not silently masked into the production default). The boolean case
-// (switcherIcon) is safe because the helper returns `null`, not `false`.
+export const BYPASS_SILENT_MODE_FLAG = {
+  queryParam: 'bypassSilentMode',
+  defaultValue: true, // D-05: default true preserves Phase 49 shipped bypass posture
+  parse: parseQueryBoolean,
+} satisfies QueryFeatureFlagSpec<boolean>
+
+// Phase 47 D-05/D-06/D-07: per-field 5-way resolver (Phase 49.1 extends from 4 to 5 fields).
+// Resolution order for each field is query > persisted > default, evaluated independently
+// per field. `readQueryFeatureFlagOrNull` returns `null` for absent OR unparseable values,
+// so the `??` chain falls through to `persisted.<field>` (D-07: invalid query is not
+// silently masked into the production default). The boolean cases (switcherIcon,
+// bypassSilentMode) are safe because the helper returns `null`, not `false`.
 // The function stays pure (no I/O) so the App-side hook (useFeatureFlags) owns
 // the storage read and supplies `persisted` from loadPrefs().
 export function readFeatureFlags(
@@ -159,9 +166,10 @@ export function readFeatureFlags(
   persisted: FeatureFlags,
 ): FeatureFlags {
   return {
-    switcherIcon:   readQueryFeatureFlagOrNull(search, SWITCHER_ICON_FLAG)   ?? persisted.switcherIcon,
-    breathingShape: readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG) ?? persisted.breathingShape,
-    orbIdle:        readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)        ?? persisted.orbIdle,
-    ringCue:        readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)        ?? persisted.ringCue,
+    switcherIcon:     readQueryFeatureFlagOrNull(search, SWITCHER_ICON_FLAG)      ?? persisted.switcherIcon,
+    breathingShape:   readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG)    ?? persisted.breathingShape,
+    orbIdle:          readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)           ?? persisted.orbIdle,
+    ringCue:          readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)           ?? persisted.ringCue,
+    bypassSilentMode: readQueryFeatureFlagOrNull(search, BYPASS_SILENT_MODE_FLAG) ?? persisted.bypassSilentMode, // Phase 49.1 D-05/D-06
   }
 }

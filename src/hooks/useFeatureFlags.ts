@@ -1,6 +1,6 @@
 // src/hooks/useFeatureFlags.ts
 //
-// Phase 47 Plan 03: App-side orchestrator hook with persisted-prefs snapshot.
+// Phase 47 Plan 03 + Phase 49.1 Plan 01: App-side orchestrator hook with persisted-prefs snapshot.
 //
 // Architecture (mirrors useTheme.ts):
 //   - popstate subscription via useSyncExternalStore — URL navigation triggers a
@@ -9,9 +9,9 @@
 //   - Cross-tab 'storage' listener (empty deps) — re-reads loadPrefs() on
 //     STATE_KEY writes (Phase 8 D-04a contract; event payload discarded).
 //   - Same-tab 'hrv:prefs-changed' listener (empty deps) — re-reads loadPrefs()
-//     when detail.key is one of breathingShape/ringCue/orbIdle/switcherIcon or
-//     undefined (D-11 4-key filter + forward-compat undefined branch).
-//   - Per-field 4-way merge via readFeatureFlags(search, slim-projection) —
+//     when detail.key is one of breathingShape/ringCue/orbIdle/switcherIcon/bypassSilentMode or
+//     undefined (D-11 5-key filter + forward-compat undefined branch; Phase 47 + Phase 49.1 5-key set).
+//   - Per-field 5-way merge via readFeatureFlags(search, slim-projection) —
 //     query > persisted > default (Plan 01 D-05/D-06/D-07 resolver).
 //
 // D-08 invariant: this hook is the only non-test caller of readFeatureFlags.
@@ -67,7 +67,7 @@ export function useFeatureFlags(): FeatureFlags {
     }
   }, [])
 
-  // Same-tab 'hrv:prefs-changed' listener — filter on Phase 47 4-key set plus
+  // Same-tab 'hrv:prefs-changed' listener — filter on Phase 47 + Phase 49.1 5-key set plus
   // undefined forward-compat per D-11. Unrelated keys (theme / timbre / cue /
   // locale) are ignored to avoid spurious re-renders when those pickers fire.
   useEffect(() => {
@@ -80,7 +80,8 @@ export function useFeatureFlags(): FeatureFlags {
         detail.key === 'breathingShape' ||
         detail.key === 'ringCue' ||
         detail.key === 'orbIdle' ||
-        detail.key === 'switcherIcon'
+        detail.key === 'switcherIcon' ||
+        detail.key === 'bypassSilentMode' // Phase 49.1 D-08: 5th key
       ) {
         setPersisted(loadPrefs())
       }
@@ -91,14 +92,15 @@ export function useFeatureFlags(): FeatureFlags {
     }
   }, [])
 
-  // Per-field 4-way merge: query > persisted > default. The slim projection
-  // strips UserPrefs (8 fields) to the 4 FeatureFlags fields — matches the
+  // Per-field 5-way merge: query > persisted > default. The slim projection
+  // strips UserPrefs (9 fields) to the 5 FeatureFlags fields — matches the
   // FeatureFlags interface field order exactly. D-09: inline projection
   // chosen over Pick-typed pass-through for clarity at the single call site.
   return readFeatureFlags(search, {
-    switcherIcon: persisted.switcherIcon,
-    breathingShape: persisted.breathingShape,
-    orbIdle: persisted.orbIdle,
-    ringCue: persisted.ringCue,
+    switcherIcon:     persisted.switcherIcon,
+    breathingShape:   persisted.breathingShape,
+    orbIdle:          persisted.orbIdle,
+    ringCue:          persisted.ringCue,
+    bypassSilentMode: persisted.bypassSilentMode, // Phase 49.1 D-05/D-06
   })
 }
