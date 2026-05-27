@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BREATHING_SHAPE_FLAG,
+  BYPASS_SILENT_MODE_FLAG,
   ORB_IDLE_FLAG,
   RING_CUE_FLAG,
   SWITCHER_ICON_FLAG,
@@ -21,6 +22,7 @@ const DEFAULT_PERSISTED: FeatureFlags = {
   breathingShape: 'orb-halo',
   orbIdle: 'ambient',
   ringCue: 'progress-arc',
+  bypassSilentMode: true,
 }
 
 describe('parseQueryBoolean', () => {
@@ -55,6 +57,7 @@ describe('readFeatureFlags', () => {
       breathingShape: 'orb-halo',
       orbIdle: 'ambient',
       ringCue: 'progress-arc',
+      bypassSilentMode: true,
     })
   })
 
@@ -155,6 +158,22 @@ describe('readFeatureFlags', () => {
   it('falls back to default for invalid ringCue values', () => {
     expect(readFeatureFlags('?ringCue=junk', DEFAULT_PERSISTED).ringCue).toBe('progress-arc')
   })
+
+  it('defaults bypassSilentMode to true when query absent (D-05)', () => {
+    expect(readFeatureFlags('', DEFAULT_PERSISTED).bypassSilentMode).toBe(true)
+  })
+
+  it('overrides bypassSilentMode when query is ?bypassSilentMode=false (D-06)', () => {
+    expect(readFeatureFlags('?bypassSilentMode=false', { ...DEFAULT_PERSISTED, bypassSilentMode: true }).bypassSilentMode).toBe(false)
+  })
+
+  it('persisted false wins when bypassSilentMode query absent', () => {
+    expect(readFeatureFlags('', { ...DEFAULT_PERSISTED, bypassSilentMode: false }).bypassSilentMode).toBe(false)
+  })
+
+  it('unparseable bypassSilentMode query falls through to persisted (D-07)', () => {
+    expect(readFeatureFlags('?bypassSilentMode=garbage', { ...DEFAULT_PERSISTED, bypassSilentMode: false }).bypassSilentMode).toBe(false)
+  })
 })
 
 describe('readFeatureFlags 4-way resolver (Phase 47 D-05/D-06/D-07)', () => {
@@ -194,6 +213,11 @@ describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
   it('SWITCHER_ICON_FLAG is exported with the production default and queryParam', () => {
     expect(SWITCHER_ICON_FLAG.queryParam).toBe('switcherIcon')
     expect(SWITCHER_ICON_FLAG.defaultValue).toBe(false)
+  })
+
+  it('BYPASS_SILENT_MODE_FLAG is exported with the production default and queryParam', () => {
+    expect(BYPASS_SILENT_MODE_FLAG.queryParam).toBe('bypassSilentMode')
+    expect(BYPASS_SILENT_MODE_FLAG.defaultValue).toBe(true) // D-05: default true
   })
 
   it('BREATHING_SHAPE_FLAG is exported with the production default + alias parser', () => {
