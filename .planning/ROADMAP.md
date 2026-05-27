@@ -97,7 +97,9 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. User on non-iOS platforms (Android Chrome, desktop Chrome / Firefox / Safari) hears no audible regression and the silent-loop element adds no measurable performance regression.
   4. User loading the page does not trigger any audio playback before the first user gesture — the silent `<audio playsInline>` element starts only via the same user-gesture chain that constructs the `AudioContext`, and is torn down on `AudioContext` close.
   5. iOS background + lock-screen behavior remains unchanged after the fix — the existing `'interrupted'` / `needs-resume` flow is not regressed by the new element.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 49-01-PLAN.md — Wire silent-loop <audio> element + tests inside createAudioEngine() (autonomous, single-file surgery on audioEngine.ts + audioEngine.test.ts)
+- [ ] 49-02-PLAN.md — Device validation checkpoint covering IOS-01..IOS-04 + ROADMAP criterion #5 (manual, autonomous: false)
 **UI hint**: no
 
 ### Phase 50: SessionClock / scheduler abstraction
@@ -172,7 +174,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 49. iOS speaker route fix | 0/TBD | Not started | — |
+| 49. iOS speaker route fix | 0/2 | Plans drafted | — |
 | 50. SessionClock / scheduler abstraction | 0/TBD | Not started | — |
 | 51. Master clock unification | 0/TBD | Not started | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
