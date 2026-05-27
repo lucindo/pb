@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Audio Sync
-status: "Roadmap drafted (5 phases mapped, 24/24 requirements covered); awaiting `/gsd:plan-phase 49`"
+status: executing
 stopped_at: Phase 49 context gathered
-last_updated: "2026-05-27T15:30:47.214Z"
-last_activity: 2026-05-27 — v2.2 roadmap created
+last_updated: "2026-05-27T16:01:02.480Z"
+last_activity: 2026-05-27 -- Phase 49 execution started
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-27 after v2.2 Audio Sync milestone init)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** v2.2 Audio Sync — fix every audio-stack bug currently on file (iOS speaker route, three-clocks drift, background-tab audio death, mute-as-teardown) and land a `SessionClock` / scheduler abstraction so a future library swap stays a single-implementation change. Roadmap drafted; awaiting plan-phase on Phase 49.
+**Current focus:** Phase 49 — ios-speaker-route-fix
 
 ## Current Position
 
-Phase: 49 — iOS speaker route fix (next to plan)
-Plan: —
-Status: Roadmap drafted (5 phases mapped, 24/24 requirements covered); awaiting `/gsd:plan-phase 49`
-Last activity: 2026-05-27 — v2.2 roadmap created
+Phase: 49 (ios-speaker-route-fix) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 49
+Last activity: 2026-05-27 -- Phase 49 execution started
 
 ## Performance Metrics
 
