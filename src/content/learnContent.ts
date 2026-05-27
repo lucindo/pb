@@ -51,7 +51,7 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
       forrest: {
         title: 'Who is Forrest Knutson',
         // STRIPPED: locked Forrest phrase removed — lives in lockedCopy.ts as inspiredByForrest (Phase 19 D-04)
-        body: "Forrest Knutson is a Kriya Yoga guru, meditation teacher, author, and online educator best known for simplifying ancient yogic and contemplative practices for modern audiences. Through his videos and teachings, he explains techniques related to breathwork, meditation, nervous system regulation, and spiritual development. His work is appreciated for combining practical instruction with clear, science-informed explanations that make complex spiritual concepts more accessible.\n\nThis is an independent web app made so anyone can follow a calm paced breath from a browser. The links below point to his channel, his site, and hand-picked starting videos.",
+        body: "Forrest Knutson is a Kriya Yoga guru, meditation teacher, author, and online educator best known for simplifying ancient yogic and contemplative practices for modern audiences. Through his videos and teachings, he explains techniques related to breathwork, meditation, nervous system regulation, and spiritual development. His work is appreciated for combining practical instruction with clear, science-informed explanations that make complex spiritual concepts more accessible.",
       },
     },
     links: {
@@ -140,7 +140,7 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
       forrest: {
         title: 'Quem é Forrest Knutson',
         // NOTE: "inspirado nos ensinamentos do Forrest" MUST NOT appear here — lives in lockedCopy.ts (Phase 19 D-04)
-        body: "Forrest Knutson é um guru de Kriya Yoga, professor de meditação, autor e educador online, reconhecido por tornar práticas yóguicas e contemplativas milenares acessíveis ao público moderno. Por meio de seus vídeos e ensinamentos, ele explica técnicas de respiração, meditação, regulação do sistema nervoso e desenvolvimento espiritual. Seu trabalho é valorizado pela combinação de instrução prática com explicações claras e embasadas na ciência, tornando conceitos espirituais complexos mais compreensíveis.\n\nEste é um aplicativo web independente criado para que qualquer pessoa possa seguir um ritmo de respiração calmo pelo navegador. Os links abaixo apontam para o canal, o site e vídeos de introdução selecionados.",
+        body: "Forrest Knutson é um guru de Kriya Yoga, professor de meditação, autor e educador online, reconhecido por tornar práticas yóguicas e contemplativas milenares acessíveis ao público moderno. Por meio de seus vídeos e ensinamentos, ele explica técnicas de respiração, meditação, regulação do sistema nervoso e desenvolvimento espiritual. Seu trabalho é valorizado pela combinação de instrução prática com explicações claras e embasadas na ciência, tornando conceitos espirituais complexos mais compreensíveis.",
       },
     },
     links: {
