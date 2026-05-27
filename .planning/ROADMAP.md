@@ -115,8 +115,8 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   4. When the toggle is OFF and the user starts a new session, `createAudioEngine()` does NOT construct a silent-loop `<audio>` element (verifiable by stubbing global `Audio` and asserting the constructor is never called). When ON or unset, the silent-loop wiring is identical to Phase 49 v3.
   5. `?bypassSilentMode=false` query-string overrides persisted storage for the current page load via the existing Phase 48 2-arg `readFeatureFlags(search, persisted)` precedence chain.
 **Plans**: 3 plans
-- [ ] 49.1-01-PLAN.md — Persistence + flag registry + boolean choice hook foundations (Wave 1, autonomous; ADV-03 persistence + ADV-05 query-string)
-- [ ] 49.1-02-PLAN.md — Audio engine bypassSilentMode gate + useAudioCues/useBreathingSessionController threading (Wave 1, autonomous; ADV-04)
+- [x] 49.1-01-PLAN.md — Persistence + flag registry + boolean choice hook foundations (Wave 1, autonomous; ADV-03 persistence + ADV-05 query-string)
+- [x] 49.1-02-PLAN.md — Audio engine bypassSilentMode gate + useAudioCues/useBreathingSessionController threading (Wave 1, autonomous; ADV-04)
 - [ ] 49.1-03-PLAN.md — Atomic D-11 Appearance→Advanced rename + Bypass-silent-mode toggle UI binding + useAppViewModel end-to-end wire-up (Wave 2, autonomous; ADV-01 + ADV-02 + ADV-03 UI)
 **UI hint**: yes (page rename, section rename, new toggle, EN + PT-BR strings)
 
@@ -193,7 +193,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 49. iOS speaker route fix | 2/2 | Complete    | 2026-05-27 |
-| 49.1. Advanced Settings + Bypass silent mode toggle | 0/3 | Planned | — |
+| 49.1. Advanced Settings + Bypass silent mode toggle | 2/3 | In Progress|  |
 | 50. SessionClock / scheduler abstraction | 0/TBD | Not started | — |
 | 51. Master clock unification | 0/TBD | Not started | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
