@@ -154,8 +154,8 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 51-01-PLAN.md — Swappable SessionClock proxy primitive + unit tests (Wave 1, autonomous; D-03/D-04 — `createSwappableSessionClock` factory with stable proxy identity + subscription-survival semantics)
 - [x] 51-02-PLAN.md — HRV/Stretch wiring: useAudioCues proxy + onSessionClockReanchored callback + useSessionEngine.reanchorSessionClock + useBreathingSessionController hook-order flip (Wave 2, autonomous; CLOCK-01 + CLOCK-02 + CLOCK-03 + D-05/D-10/D-11)
 - [x] 51-03-PLAN.md — Navi Kriya wiring: useNaviKriyaAudio proxy + useNaviKriyaSessionController hook-order flip (stats-only rebase per D-01) (Wave 2, autonomous; CLOCK-01 + D-02/D-06/D-12)
-- [ ] 51-04-PLAN.md — Behavioral tests for D-07 (AC-suspend freezes elapsed) + D-08 (stats on AC-time) + D-09 (stretch ramp continuity) + CLOCK-05 (foreground long-run smoke) + reanchor invariants (Wave 3, autonomous)
-- [ ] 51-05-PLAN.md — iOS device UAT documentation + checkpoint covering CLOCK-04 (lock/unlock sync) + ROADMAP success criteria #1-#4 against a real iOS device (Wave 3, autonomous: false)
+- [x] 51-04-PLAN.md — Behavioral tests for D-07 (AC-suspend freezes elapsed) + D-08 (stats on AC-time) + D-09 (stretch ramp continuity) + CLOCK-05 (foreground long-run smoke) + reanchor invariants (Wave 3, autonomous)
+- [x] 51-05-PLAN.md — iOS device UAT documentation + checkpoint covering CLOCK-04 (lock/unlock sync) + ROADMAP success criteria #1-#4 against a real iOS device (Wave 3, autonomous: false)
 **UI hint**: no
 
 ### Phase 52: Visibility-resume clamp + lookahead scheduling
@@ -207,6 +207,6 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | 49. iOS speaker route fix | 2/2 | Complete    | 2026-05-27 |
 | 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete    | 2026-05-27 |
 | 50. SessionClock / scheduler abstraction | 7/7 | Complete    | 2026-05-28 |
-| 51. Master clock unification | 3/5 | In Progress|  |
+| 51. Master clock unification | 5/5 | Complete   | 2026-05-28 |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
 | 53. Master-gain mute | 0/TBD | Not started | — |
