@@ -88,7 +88,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
     // AudioTimes must be monotonically increasing
     for (let i = 1; i < cues.length; i++) {
-      expect(cues[i]!.audioTime).toBeGreaterThan(cues[i - 1]!.audioTime)
+      expect(cues[i]?.audioTime).toBeGreaterThan(cues[i - 1]?.audioTime)
     }
   })
 
@@ -114,8 +114,8 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     // D-01/D-03 floor: even though the window (6s) doesn't reach the next cycle (60s),
     // the floor kicks in and returns LOOKAHEAD_MIN_CUES cues
     expect(cues.length).toBe(LOOKAHEAD_MIN_CUES)
-    expect(cues[0]!.kind).toBe('in')
-    expect(cues[1]!.kind).toBe('out')
+    expect(cues[0]?.kind).toBe('in')
+    expect(cues[1]?.kind).toBe('out')
   })
 
   // Test 3: HRV high-BPM window-wins — at 7 BPM (cycleSec≈8.57), no duplicates, monotonic times
@@ -144,7 +144,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     expect(uniqueTimes.size).toBe(audioTimes.length)
     // Monotonically increasing
     for (let i = 1; i < cues.length; i++) {
-      expect(cues[i]!.audioTime).toBeGreaterThan(cues[i - 1]!.audioTime)
+      expect(cues[i]?.audioTime).toBeGreaterThan(cues[i - 1]?.audioTime)
     }
   })
 
