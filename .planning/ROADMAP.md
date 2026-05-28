@@ -171,7 +171,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   5. Foreground session behavior across all three practices (HRV / Stretch / Navi) remains accurate — BPM cadence, ratio splits, and timed-completion all match v2.1 baseline; the dual-anchor scheduling invariant established in Phase 3 D-13/D-14 is preserved through the lookahead model.
 **Plans**: 4 plans
 - [ ] 52-01-PLAN.md — Engine foundation: LOOKAHEAD_WINDOW_SEC / LOOKAHEAD_MIN_CUES / MAX_TICK_DELTA_SEC constants + CueHandle.cancel extension (D-09) + engine.topUpLookahead facade + engine.cancelFutureCues helper (Wave 1, autonomous; SCHED-02 + SCHED-05)
-- [ ] 52-02-PLAN.md — Per-tick clamp + sessionStartCtxTime rebase + reanchor lastClockNow reset in useSessionEngine rAF tick (Wave 1, autonomous; SCHED-01; D-05/D-06/D-07/D-08)
+- [ ] 52-02-PLAN.md — Per-tick clamp + sessionStartCtxTime rebase + reanchor lastClockNow reset in useSessionEngine rAF tick (Wave 2, autonomous; SCHED-01; D-05/D-06/D-07/D-08; depends on 52-01 for MAX_TICK_DELTA_SEC import)
 - [ ] 52-03-PLAN.md — walkFutureCues pure domain helper (HRV + Stretch + targetSec trim) + audio.topUpLookahead facade in useAudioCues + boundary-effect replacement in useBreathingSessionController (Wave 2, autonomous; SCHED-02/03/04; D-01/D-04/D-11/D-12/D-14)
 - [ ] 52-04-PLAN.md — Mute future-cue cancel via cancelFutureCues (D-10) + clock.onResume → handleForceTopUp re-dispatch of cached cues (D-04 force-top-up half) (Wave 3, autonomous; SCHED-05/SCHED-03)
 **UI hint**: no
