@@ -64,8 +64,11 @@ export interface UseAudioCues {
    *  bowl-cue decay envelope stretches with the phase length at low BPM
    *  (260510-tc9 Bug 2). */
   notifyPhaseBoundary(this: void, args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
-  /** Returns audioCtx.currentTime, or null if AC unavailable. App.tsx uses this for
-   *  the dual-anchor (Pitfall 2). */
+  /** Returns engine.clock.now() (= AC currentTime per D-03 Option A), or null if
+   *  AC unavailable. App.tsx uses this for the dual-anchor (Pitfall 2). Revision 2
+   *  Warning #5: comment updated post Phase 50 — audioNow reads through the SessionClock
+   *  seam (engine.clock.now()); the underlying source is still the AC clock per D-03
+   *  Option A. */
   audioNow(this: void): number | null
   /** Play the shared session-ending chord — App.tsx calls this on a natural
    *  HRV completion (parity with the Navi Kriya end cue). No-op if the AC is
@@ -148,36 +151,59 @@ export function useAudioCues(
     onReanchorRequiredRef.current = onReanchorRequired
   }, [onReanchorRequired])
 
-  // Plan 06 D-36 / D-37: statechange listener — single source of truth for audioStatus
-  // transitions. Wired by passing this as { onStateChange } to createAudioEngine().
-  // The cast accepts WebKit's 'interrupted' superset (D-37).
-  const handleStateChange = useCallback(
-    (state: AudioContextState | 'interrupted'): void => {
-      // AUDIO-05 D-04 / D-06: defensive single gate at top — protects ANY future branch
-      // that reads engineRef.current. Deferred reshape (D-05 → v1.x).
-      const engine = engineRef.current
-      if (engine === null) return
-      // engine is available for future branches that need the non-null value.
-      void engine
-      if (state === 'running') {
-        visibilityResumeAttemptedRef.current = false
-        setAudioStatus('ok')
-      } else if (state === 'closed') {
-        setAudioStatus('unavailable')
-      } else if (
-        // Reason: explicit state check documents the WebKit-specific 'interrupted' state-machine branch (D-37); TS narrowing here is incidental to the documentation purpose.
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        (state === 'suspended' || state === 'interrupted') &&
-        visibilityResumeAttemptedRef.current
-      ) {
-        // Pitfall 5: gated on a prior resume attempt to suppress startup-time flicker.
-        setAudioStatus('needs-resume')
-      }
-      // Other transitions (e.g., 'suspended' BEFORE any visibility resume) are
-      // ignored — the next visibility-handler call will arm the gate.
-    },
-    [],
-  )
+  // Phase 50 D-11 + revision 1 Blocker #1: clock subscriptions (suspend/resume/close) live
+  // alongside engineRef. Must be torn down before engineRef is nulled (stop()) or reassigned
+  // (reconstructEngine). Revision 2 Blocker #1: engine.resume() rejection with InvalidStateError
+  // fires the suspend channel via clock.notifySuspended() (engine-internal), so handleSuspend
+  // MUST be subscribed before any resume() call that might reject — confirmed by start()
+  // ordering (subscriptions added immediately after engineRef.current = engine, before any
+  // external code can call engine.resume()).
+  const clockUnsubsRef = useRef<Array<() => void>>([])
+
+  // Plan 06 D-36 / D-37 + Phase 50 D-11 + revision 1 Blocker #1: the unified
+  // handleStateChange callback (which the engine fired via the removed callback option) is
+  // replaced by THREE clock subscribers — one per channel (suspend / resume / close). Per
+  // revision 2 Warning #4 the AudioStatusFlag enum is exactly `'ok' | 'needs-resume' |
+  // 'unavailable'` (3 values, no `'failed'`). Each handler keeps its previous semantics:
+  //   - handleResume: the prior `state === 'running'` branch.
+  //   - handleSuspend: the prior `(state === 'suspended' || state === 'interrupted') &&
+  //     visibilityResumeAttemptedRef.current` branch (Pitfall 5 gate preserved).
+  //   - handleClose: the prior `state === 'closed'` branch — revision 1 Blocker #1 preserves
+  //     the byte-identical setAudioStatus('unavailable') setter formerly at L164-165.
+  const handleResume = useCallback((): void => {
+    // AUDIO-05 D-04 / D-06: defensive single gate at top — protects future branches that
+    // read engineRef.current (currently none in this handler, but preserves the prior
+    // handleStateChange null-gate posture).
+    const engine = engineRef.current
+    if (engine === null) return
+    void engine
+    visibilityResumeAttemptedRef.current = false
+    setAudioStatus('ok')
+  }, [])
+
+  const handleSuspend = useCallback((): void => {
+    const engine = engineRef.current
+    if (engine === null) return
+    void engine
+    // Pitfall 5 gate preserved: only flip to 'needs-resume' when a prior visibility-driven
+    // resume attempt is in flight for this suspend cycle. Startup-time transient
+    // suspended → running transitions (Phase 3 WR-06 path) are intentionally ignored.
+    if (visibilityResumeAttemptedRef.current) {
+      setAudioStatus('needs-resume')
+    }
+  }, [])
+
+  const handleClose = useCallback((): void => {
+    // Revision 1 Blocker #1: preserves the byte-identical setAudioStatus('unavailable')
+    // setter (formerly at L164-165 in the unified handleStateChange). engine.clock.onClose
+    // fires this when the AC transitions to 'closed' — whether via stop()/reconstructEngine
+    // paths OR an unexpected browser-side AC kill. Phase 50 success criterion #3
+    // (byte-identical behavior) satisfied.
+    const engine = engineRef.current
+    if (engine === null) return
+    void engine
+    setAudioStatus('unavailable')
+  }, [])
 
   // Cleanup-on-unmount: close the engine if a session is still alive.
   // Pitfall 3 leak guard: rapid mount/unmount during dev/strict-mode would otherwise
@@ -185,11 +211,16 @@ export function useAudioCues(
   useEffect(() => {
     return () => {
       // AUDIO-01: invalidate any in-flight reconstruct.
-      // Reason: reading .current inside cleanup is intentional — the ref always holds
-      // the latest counter value at cleanup time; the rule's warning about stale .current
-      // does not apply to a monotonic counter that is only ever mutated, never captured for later reads.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // Reading .current inside cleanup is intentional — the ref always holds the latest
+      // counter value at cleanup time; the exhaustive-deps rule's warning about stale
+      // .current does not apply to a monotonic counter that is only ever mutated, never
+      // captured for later reads.
       reconstructGenerationRef.current += 1
+      // Phase 50 D-11 + revision 1 Blocker #1: tear down clock subscriptions on unmount —
+      // mirrors stop()'s posture. Pitfall 3 leak guard extends to the subscriber Sets
+      // (T-50.04-02 in the threat model — no unbounded growth across mount/unmount cycles).
+      for (const off of clockUnsubsRef.current) off()
+      clockUnsubsRef.current = []
       const engine = engineRef.current
       if (engine !== null) {
         void engine.close()
@@ -205,15 +236,16 @@ export function useAudioCues(
   // its own DOM listener (D-02 keeps audioEngine free of document.* / window.*
   // access). The single gate is engineRef.current !== null (D-03 / D-04). Plan 06
   // adds: visibilityResumeAttemptedRef.current = true BEFORE the void-call. This
-  // arms the Pitfall 5 gate inside handleStateChange so a subsequent
+  // arms the Pitfall 5 gate inside handleSuspend so a subsequent
   // 'suspended'/'interrupted' transition (from the engine's narrowed catch — D-38)
   // can flip audioStatus = 'needs-resume'. Plan 01 D-09 silent absorption is
   // preserved — the engine's resume() still catches the rejection internally; what
-  // CHANGED is that InvalidStateError is now surfaced via the onStateChange callback
-  // (D-38) instead of being fully swallowed. D-39: the optimistic resume call is
-  // PRESERVED — sometimes it works without a gesture (headphone in, brief lock,
-  // certain iOS versions). When it rejects, the affordance becomes the user's
-  // recovery path.
+  // CHANGED in Phase 50 (revision 2 Blocker #1) is that InvalidStateError is now
+  // surfaced via clock.notifySuspended() (the engine-only synthetic-suspend escape
+  // hatch) → handleSuspend (D-38) instead of being fully swallowed. D-39: the
+  // optimistic resume call is PRESERVED — sometimes it works without a gesture
+  // (headphone in, brief lock, certain iOS versions). When it rejects, the
+  // affordance becomes the user's recovery path.
   useEffect(() => {
     const onVisibility = (): void => {
       if (document.visibilityState !== 'visible') return
@@ -252,18 +284,33 @@ export function useAudioCues(
         // (mirrors timbreRef posture). The value is frozen at start() call time;
         // mid-session preference toggles do NOT live-update (D-09 invariant).
         bypassSilentModeRef.current = bypassSilentMode
-        const engine = await createAudioEngine({ timbre, onStateChange: handleStateChange, bypassSilentMode })
+        const engine = await createAudioEngine({ timbre, bypassSilentMode })
         engineRef.current = engine
+        // Phase 50 D-11 + revision 1 Blocker #1: subscribe to the three clock channels.
+        // Subscriptions live alongside engineRef and are torn down in stop() and at the top
+        // of reconstructEngine() before engineRef is nulled. Revision 2 Blocker #1: handleSuspend
+        // catches both natural statechange transitions AND the synthetic clock.notifySuspended()
+        // fired by engine.resume()'s InvalidStateError catch block (iOS Safari recovery — Plan 06
+        // D-38). The subscriptions are attached BEFORE any external code can call engine.resume()
+        // (the next external entry point), preserving byte-identical end-user behavior.
+        const unsubResume = engine.clock.onResume(handleResume)
+        const unsubSuspend = engine.clock.onSuspend(handleSuspend)
+        const unsubClose = engine.clock.onClose(handleClose)
+        clockUnsubsRef.current = [unsubResume, unsubSuspend, unsubClose]
         // HOOKS-01 / D-11: read mute from mutedRef so `start` does NOT depend on
         // the React `muted` state. The ref-mirror effect above keeps the ref in
         // sync with the React state before any subsequent callback observation;
         // this drops `muted` from `start`'s useCallback dep array and keeps the
         // callback identity stable across setMuted toggles.
         engine.setMuted(mutedRef.current)
-        // D-09 + D-13 + D-14: schedule the lead-in. Anchor at engine.now() — the
-        // audioCtx.currentTime instant of lead-in start, which App.tsx co-anchors with
-        // session.start(performance.now()) for the dual-clock alignment.
-        const startAudioTime = engine.now()
+        // D-09 + D-13 + D-14: schedule the lead-in. Anchor at engine.clock.now() — the
+        // AC's currentTime instant of lead-in start (per D-03 Option A, the clock returns
+        // the AC's currentTime). The session-engine co-anchors via clock.now() for the
+        // dual-clock alignment (Phase 50: useSessionEngine consumes a createWallSessionClock()
+        // per Plan 50-02; Phase 51 will swap to the engine's audio clock via the same
+        // SessionClock seam). Revision 1 Warning #11: comment updated post Phase 50 migration
+        // — session capture uses clock.now(), not the wall clock.
+        const startAudioTime = engine.clock.now()
         const firstInCueTime = engine.scheduleLeadIn(startAudioTime, plan)
         // AUDIO-03: closed engine — defense-in-depth, fall through to failure.
         if (firstInCueTime === null) { setAudioAvailable(false); setStatus('failed'); return null }
@@ -286,12 +333,21 @@ export function useAudioCues(
         return null
       }
     },
-    [handleStateChange],
+    [handleResume, handleSuspend, handleClose],
   )
 
   const stop = useCallback(async (): Promise<void> => {
     // AUDIO-01: invalidate any in-flight reconstruct.
     reconstructGenerationRef.current += 1
+    // Phase 50 D-11 + revision 1 Blocker #1: tear down clock subscriptions BEFORE nulling
+    // engineRef. After this loop runs, clockUnsubsRef is empty — a stray statechange event
+    // on the closing AC will fire the clock's internal fan-out into the (now-empty) Set,
+    // a no-op. Without this teardown the engineRef-null gate at the top of each handler
+    // would short-circuit, but the unsub paths would still hold references to closed-over
+    // setAudioStatus callbacks, leaking the subscription Sets across mount/unmount cycles
+    // (T-50.04-02 threat model — unbounded subscriber Set growth).
+    for (const off of clockUnsubsRef.current) off()
+    clockUnsubsRef.current = []
     // Null engineRef synchronously BEFORE awaiting close — otherwise a fast
     // start() arriving during the close window hits the defensive guard in
     // start() and returns from a closing AudioContext, leaving engineRef
@@ -349,6 +405,10 @@ export function useAudioCues(
     // does NOT live-update (D-09): the engine is rebuilt with the same flag value
     // that was active at the original start() call.
     const currentBypassSilentMode = bypassSilentModeRef.current
+    // Phase 50 D-11 + revision 1 Blocker #1: tear down OLD clock subscriptions BEFORE nulling
+    // engineRef — mirror of stop()'s posture. Subscriptions never leak across reconstruction.
+    for (const off of clockUnsubsRef.current) off()
+    clockUnsubsRef.current = []
     // Pattern B (Pitfall 3): synchronously null engineRef BEFORE awaiting —
     // mirrors stop()'s posture so a fast call into setMuted() during the window
     // does not deref a closing AC.
@@ -362,7 +422,8 @@ export function useAudioCues(
       // Phase 18 D-11: passes the session-captured timbre (NOT a fresh prefs read)
       // to the new engine. The session's first-Start choice flows through reconstruction.
       // Phase 49.1 D-09: passes the captured bypassSilentMode ref value.
-      newEngine = await createAudioEngine({ timbre: currentTimbre, onStateChange: handleStateChange, bypassSilentMode: currentBypassSilentMode })
+      // Phase 50 D-11: external subscribers are wired AFTER construction via engine.clock.on*.
+      newEngine = await createAudioEngine({ timbre: currentTimbre, bypassSilentMode: currentBypassSilentMode })
     } catch {
       // D-10 terminal fallback: createAudioEngine threw. Fire-and-forget close
       // the old engine (gesture already consumed by the failed construction).
@@ -385,6 +446,14 @@ export function useAudioCues(
     if (oldEngine !== null) void oldEngine.close()
 
     engineRef.current = newEngine
+    // Phase 50 D-11 + revision 1 Blocker #1: re-subscribe the three handlers against the
+    // new engine's clock. The old engine's subscriptions were torn down at the top of this
+    // callback (before nulling engineRef). The new Set never inherits state from the old
+    // (each createAudioSessionClock owns its own subscriber Sets — Plan 50-01).
+    const unsubResume = newEngine.clock.onResume(handleResume)
+    const unsubSuspend = newEngine.clock.onSuspend(handleSuspend)
+    const unsubClose = newEngine.clock.onClose(handleClose)
+    clockUnsubsRef.current = [unsubResume, unsubSuspend, unsubClose]
     // D-35b: replay mute state synchronously so the new engine starts with the
     // user's chosen muted-ness — the React `muted` state was not reset by the
     // close + new-create cycle.
@@ -401,18 +470,20 @@ export function useAudioCues(
     // setMuted()/start() racing the await would not deref a stale anchor. Left
     // null, a post-reconstruction defensive start() call would return raw null,
     // which App.tsx aliases as "AC failed" (D-10) — misreporting a healthy
-    // reconstructed engine as broken. newEngine.now() is the live anchor for the
-    // reconstructed AC (same value handed to the re-anchor callback below).
-    const reanchorAudioTime = newEngine.now()
+    // reconstructed engine as broken. newEngine.clock.now() is the live anchor for the
+    // reconstructed AC (same value handed to the re-anchor callback below). Phase 50:
+    // reads through the SessionClock seam per D-11; byte-identical to the prior
+    // newEngine.now() per D-03 Option A (clock.now() returns the AC's currentTime).
+    const reanchorAudioTime = newEngine.clock.now()
     firstInCueTimeRef.current = reanchorAudioTime
     onReanchorRequiredRef.current?.(reanchorAudioTime)
     // The new AC starts in 'running' via the WR-06 constructor path. Set
-    // audioStatus = 'ok' synchronously — the statechange listener will also
+    // audioStatus = 'ok' synchronously — the clock's resume subscriber will also
     // fire but may race with the React render.
     visibilityResumeAttemptedRef.current = false
     setAudioStatus('ok')
     setAudioAvailable(true)
-  }, [handleStateChange])
+  }, [handleResume, handleSuspend, handleClose])
 
   // Plan 06 D-34: public resume() — invoked from the App.tsx mute-button click
   // handler when audioStatus === 'needs-resume'. The click IS a user gesture
@@ -457,7 +528,9 @@ export function useAudioCues(
   )
 
   const audioNow = useCallback((): number | null => {
-    return engineRef.current?.now() ?? null
+    // Phase 50 D-11: read through the SessionClock seam (engine.clock.now()) per D-03
+    // Option A — byte-identical to the prior engineRef.current?.now() (the AC's currentTime).
+    return engineRef.current?.clock.now() ?? null
   }, [])
 
   const playEndChord = useCallback((): void => {
