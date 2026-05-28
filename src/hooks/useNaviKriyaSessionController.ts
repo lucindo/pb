@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { createWallSessionClock } from '../audio/sessionClock'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import type { NaviLeadInDigit } from '../domain/sessionLifecycle'
 import {
@@ -51,7 +52,15 @@ export function useNaviKriyaSessionController({
   muted,
   wakeLock,
 }: UseNaviKriyaSessionControllerArgs): NaviKriyaSessionController {
-  const nkEngine = useNKEngine()
+  // Phase 50 D-07: wall clock for useNKEngine elapsed-stats math (not for audio
+  // scheduling — NK audio clock is constructed per-session inside
+  // useNaviKriyaAudio.begin() and is independent of this). D-09 — only
+  // legitimate performance.now() use is inside the factory. Revision 1 Warning
+  // #12: this wall clock is for NK engine stats only; the NK AUDIO clock is a
+  // SEPARATE createAudioSessionClock invocation inside useNaviKriyaAudio.begin()
+  // — they MUST NOT be conflated.
+  const nkClock = useMemo(() => createWallSessionClock(), [])
+  const nkEngine = useNKEngine(nkClock)
   const { nkPhase, nkRound, nkCount, nkRunning } = nkEngine
   const nkStart = nkEngine.start
   const nkEnd = nkEngine.end
@@ -88,7 +97,13 @@ export function useNaviKriyaSessionController({
     if (recordedRef.current) return
     recordedRef.current = true
 
-    recordNaviKriyaSession(result.elapsedMs, result.completedRounds, result.isComplete)
+    // Phase 50 D-02 storage-boundary conversion: result.elapsedSec is seconds-
+    // shaped end-to-end through the NK engine; recordNaviKriyaSession's API
+    // takes ms (storage layer untouched per Plan 50-02 invariant). Multiply
+    // at this single consumer-to-storage edge; the in-memory chain stays
+    // seconds-shaped.
+    const elapsedMsForStorage = result.elapsedSec * 1000
+    recordNaviKriyaSession(elapsedMsForStorage, result.completedRounds, result.isComplete)
     void wakeLockRelease()
 
     if (result.isComplete) {

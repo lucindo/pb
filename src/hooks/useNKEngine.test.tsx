@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createWallSessionClock } from '../audio/sessionClock'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import { NK_LEAD_SEC, NK_OM_SECONDS, useNKEngine } from './useNKEngine'
 
@@ -8,6 +9,11 @@ import { NK_LEAD_SEC, NK_OM_SECONDS, useNKEngine } from './useNKEngine'
 // ms. Convert once at this single test-file boundary so the rest of the math
 // reads ms-shaped consistently with the existing omMs literals.
 const NK_LEAD_MS_FOR_TIMERS = NK_LEAD_SEC * 1000
+
+// Plan 50-03 Task 3 fixture: wall clock identity-piped under vitest fake
+// timers (performance.now() is fake-timer-controlled). Each test gets a fresh
+// instance via the factory so closure-captured state doesn't leak across tests.
+const makeClock = () => createWallSessionClock()
 
 // Default small settings so tests finish quickly under fake timers
 const defaultSettings: NaviKriyaSettings = {
@@ -37,7 +43,7 @@ describe('useNKEngine', () => {
   it('NK-01: auto-advances front->back->done; front->back transition resets count to 0', () => {
     const onComplete = vi.fn()
     const cbs = makeCallbacks()
-    const { result, unmount } = renderHook(() => useNKEngine())
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
 
     act(() => {
       result.current.start(defaultSettings, cbs, onComplete)
@@ -91,7 +97,7 @@ describe('useNKEngine', () => {
       perOmCue: false,
     }
     const omMs = NK_OM_SECONDS['fast'] * 1000
-    const { result, unmount } = renderHook(() => useNKEngine())
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
 
     act(() => {
       result.current.start(settings, cbs, onComplete)
@@ -118,7 +124,7 @@ describe('useNKEngine', () => {
   it('NK-03: scheduled OM delay equals NK_OM_SECONDS[omLength]*1000 for medium', () => {
     const cbs = makeCallbacks()
     const onComplete = vi.fn()
-    const { result, unmount } = renderHook(() => useNKEngine())
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
 
     act(() => {
       result.current.start(defaultSettings, cbs, onComplete)
@@ -175,7 +181,7 @@ describe('useNKEngine', () => {
         rounds: 1,
         perOmCue: false,
       }
-      const { result, unmount } = renderHook(() => useNKEngine())
+      const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
       act(() => { result.current.start(settings, cbs, vi.fn()) })
       act(() => {
         vi.advanceTimersByTime(NK_LEAD_MS_FOR_TIMERS + omMs * 4 + 100)
@@ -196,7 +202,7 @@ describe('useNKEngine', () => {
         rounds: 1,
         perOmCue: true,
       }
-      const { result, unmount } = renderHook(() => useNKEngine())
+      const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
       act(() => { result.current.start(settings, cbs, vi.fn()) })
       // Advance through just front phase (4 OMs)
       act(() => {
@@ -212,7 +218,7 @@ describe('useNKEngine', () => {
   it('NK-07: end() resets to idle and fires onComplete with isComplete:false', () => {
     const cbs = makeCallbacks()
     const onComplete = vi.fn()
-    const { result, unmount } = renderHook(() => useNKEngine())
+    const { result, unmount } = renderHook(() => useNKEngine(makeClock()))
 
     act(() => {
       result.current.start(defaultSettings, cbs, onComplete)
