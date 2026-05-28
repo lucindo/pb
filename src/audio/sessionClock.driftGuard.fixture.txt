@@ -1,0 +1,19 @@
+// Fixture for revision 1 Warning #10: string-literal false-positive testing.
+//
+// This file is consumed only by src/audio/sessionClock.driftGuard.test.ts. It
+// is NOT a TypeScript source file (extension .txt) — Vitest's file-include
+// glob ignores it, no consumer in src/ imports it, and the production build
+// excludes it (it lives under src/audio but is not .ts/.tsx).
+//
+// Purpose: contain string literals that include the three banned tokens. The
+// drift-guard test reads this fixture and demonstrates the regex behavior
+// around string literals (a known limitation of the regex-based comment
+// stripper — string literals are NOT stripped, so banned tokens embedded in
+// them would match as bare tokens). The 5 production caller files have been
+// audited (Plans 50-02, 50-03, 50-04, 50-05) to contain NO such literals.
+//
+// Banned-token literals (intentional; do not remove):
+const example1 = 'performance.now('
+const example2 = "new AudioContext("
+const example3 = "audioCtx.currentTime"
+const example4 = `template with performance.now( inside`
