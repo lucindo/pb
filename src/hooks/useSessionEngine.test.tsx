@@ -1368,3 +1368,249 @@ describe('useSessionEngine — Phase 52 D-05/D-06/D-07 per-tick clamp', () => {
     unmount()
   })
 })
+
+// Phase 52 D-08: synchronous lastClockNow reset inside reanchorSessionClock.
+//
+// reanchorSessionClock(newClockNow) must reset lastClockNowRef.current = newClockNow
+// synchronously so the next rAF tick computes rawDelta = clock.now() - newClockNow (≈ 0
+// for an immediate tick) and the clamp does NOT fire spuriously. Without the reset,
+// lastClockNowRef holds the old clock anchor, and the first tick after reanchor sees
+// rawDelta = newClockNow - oldAnchor, which may be large enough to trigger the clamp
+// and incorrectly rebase startedAtSec.
+//
+// These tests are RED until Task 2 GREEN adds the reset to reanchorSessionClock.
+describe('useSessionEngine — Phase 52 D-08 reanchorSessionClock lastClockNow reset', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // D-08 Test 1: elapsed is preserved after reanchor when newClockNow > lastClockNow.
+  //
+  // Scenario: old AC ran for 10s (clock=10, lastClockNow=10). AC reconstructs at 20.
+  // Without reset: rawDelta = 20.016 - 10 = 10.016 → clamp fires → elapsed≈0.1.
+  // With reset (D-08): rawDelta = 20.016 - 20 = 0.016 → no clamp → elapsed≈10.
+  it('D-08 T1: elapsed preserved on first tick after reanchor when newClockNow > old anchor', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Accumulate 10s of elapsed via sub-threshold steps (clock 0 → 10).
+    advanceForeground(mock, 10)
+
+    // Simulate AC reconstruction at newClockNow = 20.
+    // reanchorSessionClock rewrites startedAtSec = 20 - 10 = 10.
+    act(() => {
+      result.current.reanchorSessionClock(20)
+    })
+    // Align the mock clock with the new AC starting point.
+    mock.set(20)
+
+    // Fire one foreground tick (16ms) on the new AC clock.
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    // With D-08 reset: rawDelta = 20.016 - 20 = 0.016 → no clamp →
+    //   elapsed = 20.016 - 10 = 10.016 ≈ 10 ✓
+    // Without reset: rawDelta = 20.016 - 10 = 10.016 → clamp fires →
+    //   startedAtSec rebased → elapsed ≈ 0.1 ✗
+    const elapsed = result.current.liveFrame?.elapsedSec ?? -1
+    expect(elapsed).toBeGreaterThanOrEqual(9.9)
+    expect(elapsed).toBeLessThanOrEqual(10.2)
+
+    unmount()
+  })
+
+  // D-08 Test 2: startedAtSec is NOT re-rebased after reanchor+tick.
+  //
+  // The post-reanchor startedAtSec = newClockNow - preReanchorElapsed.
+  // Without D-08 reset: clamp fires spuriously → startedAtSec gets an extra shift.
+  // With D-08 reset: clamp does not fire → startedAtSec equals reanchor-computed value.
+  it('D-08 T2: startedAtSec equals reanchor-computed value after tick (clamp did not fire)', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Accumulate 5s of elapsed (clock 0 → 5).
+    advanceForeground(mock, 5)
+
+    // Reanchor at newClockNow = 42 (AC reconstructed far ahead of old lastClockNow=5).
+    // Expected post-reanchor startedAtSec = 42 - 5 = 37.
+    act(() => {
+      result.current.reanchorSessionClock(42)
+    })
+    mock.set(42)
+
+    // Fire one tick.
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    // With D-08 reset: rawDelta = 42.016 - 42 = 0.016 → no clamp →
+    //   startedAtSec remains 37 ✓
+    // Without reset: rawDelta = 42.016 - 5 = 37.016 → clamp fires →
+    //   startedAtSec rebased by ≈ 36.916 to ≈ 73.916 ✗
+    const startedAtSec = result.current.state.startedAtSec
+    expect(startedAtSec).toBeGreaterThanOrEqual(36.9)  // ≈ 37
+    expect(startedAtSec).toBeLessThanOrEqual(37.1)
+
+    unmount()
+  })
+
+  // D-08 Test 3: next tick uses newClockNow as delta base (not old anchor).
+  //
+  // Old lastClockNow = 8 (session ran 8s). Reanchor at 100. Fire tick with 16ms advance.
+  // rawDelta must be ≈ 0.016 (= 100.016 - 100), NOT ≈ 92.016 (= 100.016 - 8).
+  it('D-08 T3: first tick delta computed from newClockNow not old anchor (reanchor with 100)', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Run 8s (clock 0 → 8).
+    advanceForeground(mock, 8)
+
+    // Reanchor at 100 (new AC started at 100, well above old lastClockNow=8).
+    act(() => {
+      result.current.reanchorSessionClock(100)
+    })
+    // startedAtSec = 100 - 8 = 92.
+    mock.set(100)
+
+    // Fire one foreground tick (16ms on the new AC clock).
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    // With D-08 reset: lastClockNow=100; rawDelta=0.016 → no clamp →
+    //   elapsed = 100.016 - 92 = 8.016 ≈ 8 ✓
+    // Without reset: lastClockNow=8; rawDelta=92.016 → clamp fires → elapsed ≈ 0.1 ✗
+    const elapsed = result.current.liveFrame?.elapsedSec ?? -1
+    expect(elapsed).toBeGreaterThanOrEqual(7.9)
+    expect(elapsed).toBeLessThanOrEqual(8.2)
+
+    unmount()
+  })
+
+  // D-08 Test 4: post-reanchor hidden-window clamp uses new startedAtSec anchor.
+  //
+  // Run 5s → reanchor(20) → run 3s on new AC (elapsed→8) → hidden 5s → tick.
+  // The tick-after-hide sees rawDelta=5s → clamp fires → elapsed ≈ 8.1.
+  // Test verifies clamp uses the post-reanchor anchor, not the pre-reanchor one.
+  it('D-08 T4: post-reanchor hidden-window clamp rebases against new startedAtSec anchor', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Run 5s pre-reanchor (clock 0 → 5).
+    advanceForeground(mock, 5)
+
+    // Reanchor: new AC at 20.
+    act(() => {
+      result.current.reanchorSessionClock(20)
+    })
+    mock.set(20)
+
+    // Run 3s on the new AC via sub-threshold steps (clock 20 → 23).
+    advanceForeground(mock, 3)
+    // elapsed ≈ 8.
+
+    // Simulate hidden window of 5s: advance clock without firing rAF.
+    mock.advance(5)  // clock = 28
+    // Fire one tick — rawDelta = 5s → clamp fires.
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    // Clamp fires on the 5s hidden window: elapsed = 8 + MAX_TICK_DELTA_SEC ≈ 8.1.
+    const elapsed = result.current.liveFrame?.elapsedSec ?? -1
+    expect(elapsed).toBeGreaterThanOrEqual(7.9)
+    expect(elapsed).toBeLessThanOrEqual(8 + MAX_TICK_DELTA_SEC + 0.15)
+
+    unmount()
+  })
+
+  // D-08 Test 5: reanchorSessionClock while NOT running does not disrupt the
+  // next session start. The rAF effect init (lastClockNowRef.current = clock.now())
+  // at session start overwrites any idle-time reanchor write.
+  it('D-08 T5: reanchor while idle does not disrupt next session start', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    // Reanchor while idle — state must stay idle (no-op for setState).
+    act(() => {
+      result.current.reanchorSessionClock(999)
+    })
+    expect(result.current.state.status).toBe('idle')
+
+    // Advance clock to 50s.
+    mock.set(50)
+
+    act(() => {
+      result.current.start()
+    })
+
+    // First foreground tick — rAF effect init runs at start and sets
+    // lastClockNow = 50, so the tick sees rawDelta ≈ 0.016 (foreground frame).
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    // elapsed ≈ 0.016 (first foreground tick; no spurious clamp from idle reanchor).
+    const elapsed = result.current.liveFrame?.elapsedSec ?? -1
+    expect(elapsed).toBeGreaterThanOrEqual(0.0)
+    expect(elapsed).toBeLessThanOrEqual(0.05)
+
+    unmount()
+  })
+})
