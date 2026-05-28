@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 
+import { createWallSessionClock } from '../audio/sessionClock'
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
 import type { BreathingShapeVariant, OrbIdleBehavior, RingCueStyle } from '../featureFlags'
@@ -262,7 +264,13 @@ function OrbIdle({
   variant: BreathingShapeVariant
   ringCue: RingCueStyle
 }) {
-  const ambientScale = useAmbientScale(idleMode === 'ambient')
+  // Phase 50 D-07: stable WallSessionClock for useAmbientScale's rAF loop
+  // initial start capture. Constructed once per component instance via useMemo
+  // so the hook's dep array sees a stable identity. Per revision 1 Warning #8:
+  // useAmbientScale's per-tick time comes from the rAF DOMHighResTimeStamp,
+  // not from this clock — this clock is for the initial start anchor only.
+  const ambientWallClock = useMemo(() => createWallSessionClock(), [])
+  const ambientScale = useAmbientScale(idleMode === 'ambient', ambientWallClock)
   const discBg =
     variant === 'spiritual-eye'
       ? 'var(--color-orb-disc-spiritual-eye)'
