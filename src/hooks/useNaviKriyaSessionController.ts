@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { createWallSessionClock } from '../audio/sessionClock'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import type { NaviLeadInDigit } from '../domain/sessionLifecycle'
 import {
@@ -52,23 +51,26 @@ export function useNaviKriyaSessionController({
   muted,
   wakeLock,
 }: UseNaviKriyaSessionControllerArgs): NaviKriyaSessionController {
-  // Phase 50 D-07: wall clock for useNKEngine elapsed-stats math (not for audio
-  // scheduling — NK audio clock is constructed per-session inside
-  // useNaviKriyaAudio.begin() and is independent of this). D-09 — only
-  // legitimate performance.now() use is inside the factory. Revision 1 Warning
-  // #12: this wall clock is for NK engine stats only; the NK AUDIO clock is a
-  // SEPARATE createAudioSessionClock invocation inside useNaviKriyaAudio.begin()
-  // — they MUST NOT be conflated.
-  const nkClock = useMemo(() => createWallSessionClock(), [])
-  const nkEngine = useNKEngine(nkClock)
-  const { nkPhase, nkRound, nkCount, nkRunning } = nkEngine
-  const nkStart = nkEngine.start
-  const nkEnd = nkEngine.end
-  const nkToggleCue = nkEngine.toggleCue
+  // Phase 51 D-02: naviAudio MUST be called BEFORE nkEngine because nkEngine
+  // consumes naviAudio.clock. The previous order (nkEngine → naviAudio) is
+  // flipped here per Plan 51-03 Task 2 action.
+  // Phase 51 D-01/D-02: nkClock useMemo deleted — useNKEngine now receives the
+  // audio-backed proxy clock from useNaviKriyaAudio.clock directly (D-02).
+  // Stats elapsedSec is AC-time-based when the AC constructed cleanly; wall-clock
+  // fallback when AC construction failed (D-08 mirror of HRV/Stretch).
   const naviAudio = useNaviKriyaAudio(muted)
   const naviAudioBegin = naviAudio.begin
   const naviAudioClose = naviAudio.close
   const naviAudioCloseAfterEndCue = naviAudio.closeAfterEndCue
+  // D-02: naviAudio.clock is the stable proxy (wall-clock pre-begin; AC-backed
+  // during session; reverts to wall on close). useNKEngine holds this reference
+  // for clock.now() reads at start/stepOm/end — only the SOURCE changes, not
+  // the identity (D-03 proxy invariant holds).
+  const nkEngine = useNKEngine(naviAudio.clock)
+  const { nkPhase, nkRound, nkCount, nkRunning } = nkEngine
+  const nkStart = nkEngine.start
+  const nkEnd = nkEngine.end
+  const nkToggleCue = nkEngine.toggleCue
 
   const [settings, setSettingsState] = useState<NaviKriyaSettings>(() => initialSettings)
   const [starting, setStarting] = useState<boolean>(false)
