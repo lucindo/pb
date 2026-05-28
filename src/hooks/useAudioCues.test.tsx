@@ -1006,26 +1006,42 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     unmount()
   })
 
-  // AUDIO-03: hook-side null propagation when engine.scheduleLeadIn returns null
+  // AUDIO-03 (tightened by Phase 52 CR-02-FIX + WR-01-FIX):
+  // hook-side null propagation when engine.scheduleLeadIn returns null.
+  // Additionally asserts: engine.close was called; all 4 clock unsubs fired once each;
+  // audioStatus is 'unavailable' (not 'ok') after the failed start().
   it("AUDIO-03: start() returns null and sets status to failed when engine.scheduleLeadIn returns null", async () => {
     // Stub createAudioEngine to return a fake engine whose scheduleLeadIn returns null.
     // Phase 50 D-11 + revision 1 Blocker #1: start() subscribes to engine.clock.on*
     // immediately after createAudioEngine resolves, so the fake must expose a `clock`
-    // member returning no-op unsubscribes for all three channels.
+    // member returning tracked unsubscribes for all channels (4 in total — Plan 04
+    // added the 4th onResume subscription for handleForceTopUp).
+    // CR-02-FIX: each onXxx mock returns a tracked vi.fn() unsub so we can assert
+    // each was invoked exactly once when the null-leadIn branch tears down subscriptions.
+    const unsubResume1 = vi.fn()
+    const unsubResume2 = vi.fn()
+    const unsubSuspend = vi.fn()
+    const unsubClose = vi.fn()
+    let onResumeCallCount = 0
     const fakeEngine = {
       now: vi.fn(() => 0),
       setMuted: vi.fn(),
       scheduleLeadIn: vi.fn(() => null),
       scheduleNextCue: vi.fn(),
+      topUpLookahead: vi.fn(),
+      cancelFutureCues: vi.fn(),
       close: vi.fn(async () => {}),
       resume: vi.fn(async () => {}),
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
         setMasterGain: vi.fn(),
-        onResume: vi.fn(() => () => undefined),
-        onSuspend: vi.fn(() => () => undefined),
-        onClose: vi.fn(() => () => undefined),
+        onResume: vi.fn(() => {
+          onResumeCallCount++
+          return onResumeCallCount === 1 ? unsubResume1 : unsubResume2
+        }),
+        onSuspend: vi.fn(() => unsubSuspend),
+        onClose: vi.fn(() => unsubClose),
       },
     }
     // Reason: test double providing the minimum AudioEngine surface; no-unsafe-argument is expected here for the mock type.
@@ -1045,6 +1061,39 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     expect(result.current.status).toBe('failed')
     // audioAvailable must be false.
     expect(result.current.audioAvailable).toBe(false)
+    // CR-02-FIX: engine.close must have been called (no AC leak on null-leadIn path).
+    expect(fakeEngine.close).toHaveBeenCalledTimes(1)
+    // CR-02-FIX: all 4 clock unsubscribes must have been invoked (clockUnsubsRef loop).
+    expect(unsubResume1).toHaveBeenCalledTimes(1)
+    expect(unsubResume2).toHaveBeenCalledTimes(1)
+    expect(unsubSuspend).toHaveBeenCalledTimes(1)
+    expect(unsubClose).toHaveBeenCalledTimes(1)
+    // WR-01-FIX: audioStatus must be 'unavailable' (not the default 'ok') on failed start.
+    expect(result.current.audioStatus).toBe('unavailable')
+
+    unmount()
+  })
+
+  // AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws)
+  // also sets audioStatus='unavailable' (WR-01-FIX).
+  it("AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws) also sets audioStatus='unavailable'", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockRejectedValueOnce(
+      new Error('iOS construction failed'),
+    )
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    let res: number | null = 42
+    await act(async () => {
+      res = await result.current.start(samplePlan, 'bowl')
+    })
+
+    expect(res).toBeNull()
+    expect(result.current.status).toBe('failed')
+    expect(result.current.audioAvailable).toBe(false)
+    // WR-01-FIX: audioStatus must be 'unavailable' on the construction-catch branch too.
+    expect(result.current.audioStatus).toBe('unavailable')
 
     unmount()
   })
