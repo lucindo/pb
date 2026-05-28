@@ -425,6 +425,143 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
   })
 })
 
+// Phase 51 Plan 02: reanchorSessionClock rewrites startedAtSec to preserve
+// elapsed across an AudioContext reconstruction (D-10 invariant).
+describe('useSessionEngine — reanchorSessionClock (Phase 51 D-10/D-11)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('reanchorSessionClock rewrites startedAtSec = newClockNow - lastFrame.elapsedSec when running (D-10)', () => {
+    // Use a wall clock starting at t=100s by setting fake system time.
+    // performance.now() / 1000 is the wall clock source via createWallSessionClock.
+    // We need startedAtSec = clock.now() at start. To control this, we advance
+    // fake timers so performance.now() is predictable.
+    // Start at t=0 (performance.now()=0 via fake timers reset at beforeEach).
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Advance 30s so elapsedSec ≈ 30.
+    act(() => {
+      vi.advanceTimersByTime(30_000)
+    })
+
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    const elapsedSecBeforeReanchor = result.current.state.lastFrame.elapsedSec
+    expect(elapsedSecBeforeReanchor).toBeGreaterThanOrEqual(29.9) // ~30s
+
+    // Simulate the new AC's currentTime ≈ 0.5 (post-reconstruction).
+    const newClockNow = 0.5
+    act(() => {
+      result.current.reanchorSessionClock(newClockNow)
+    })
+
+    expect(result.current.state.status).toBe('running')
+    // Reason: TypeScript cannot model that act() + reanchorSessionClock may change status;
+    // the runtime guard here is needed to narrow the union for the property access below.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running after reanchor')
+
+    // D-10 reanchor math: newStartedAtSec = newClockNow - lastFrame.elapsedSec
+    // The elapsed at reanchor time was captured just before the call.
+    const expectedStartedAtSec = newClockNow - elapsedSecBeforeReanchor
+    expect(result.current.state.startedAtSec).toBeCloseTo(expectedStartedAtSec, 5)
+
+    unmount()
+  })
+
+  it('reanchorSessionClock is a no-op when status !== running (D-10)', () => {
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
+
+    // state.status is 'idle' initially.
+    expect(result.current.state.status).toBe('idle')
+    const stateBeforeReanchor = result.current.state
+
+    act(() => {
+      result.current.reanchorSessionClock(0.5)
+    })
+
+    // State reference must be unchanged — no setState fired.
+    expect(result.current.state).toBe(stateBeforeReanchor)
+    expect(result.current.state.status).toBe('idle')
+
+    unmount()
+  })
+
+  it('post-reanchor rAF tick computes elapsedSec from the new startedAtSec consistently (D-10)', () => {
+    // Verify that after reanchorSessionClock, the next rAF tick recomputes
+    // elapsedSec = clock.now() - newStartedAtSec and sees the same elapsed as before.
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Advance 20s to build up elapsed.
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+
+    const elapsedBeforeReanchor = result.current.state.lastFrame.elapsedSec
+    expect(elapsedBeforeReanchor).toBeGreaterThanOrEqual(19.9)
+
+    // The wall clock is currently at ~20s (performance.now()/1000 ≈ 20).
+    // Call reanchorSessionClock with a "new AC" currentTime of 1.0s.
+    // After reanchor: startedAtSec = 1.0 - 20 = -19.
+    // The wall clock now reads ~20s, so next tick computes elapsed = 20 - (-19) = 39?
+    // That is NOT what we want — the clock source changes too (the real proxy swap
+    // would change the clock source). In this test, the fakeClock (wall clock) is still
+    // the injected clock. What reanchorSessionClock does is re-anchor the startedAtSec
+    // so that on the NEXT tick, elapsed = clock.now() - newStartedAtSec matches the
+    // pre-reanchor elapsed.
+    // Since the clock source doesn't change in this test (still wall clock at ~20s),
+    // we need newClockNow to be the CURRENT clock value so elapsed is preserved.
+    const currentClockNow = fakeClock.now()
+    const newClockNow = currentClockNow // simulating newEngine.clock.now() = same instant
+    act(() => {
+      result.current.reanchorSessionClock(newClockNow)
+    })
+
+    // Reason: TypeScript cannot model that act() + reanchorSessionClock may change status;
+    // the runtime guard is needed to narrow the union for the property access below.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running after reanchor')
+
+    // After reanchor with same clock value: startedAtSec should be (currentClockNow - elapsedBeforeReanchor).
+    // On the next rAF tick, clock.now() ≈ currentClockNow, so elapsed = currentClockNow - (currentClockNow - elapsedBeforeReanchor) = elapsedBeforeReanchor.
+    const newStartedAtSec = result.current.state.startedAtSec
+    expect(newStartedAtSec).toBeCloseTo(currentClockNow - elapsedBeforeReanchor, 5)
+
+    // Advance one rAF tick to verify the tick computes without discontinuity.
+    act(() => {
+      vi.advanceTimersByTime(16) // one ~16ms rAF frame
+    })
+
+    expect(result.current.state.status).toBe('running')
+    // Reason: TypeScript cannot model that advanceTimersByTime may change status;
+    // the runtime guard is needed to narrow the union for the property access below.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running after tick')
+    // elapsed should still be approximately the same as before reanchor (no jump).
+    expect(result.current.state.lastFrame.elapsedSec).toBeGreaterThanOrEqual(elapsedBeforeReanchor - 0.1)
+
+    unmount()
+  })
+})
+
 // When useSessionEngine is called with stretchSettings, start() calls
 // startStretchSession and the resulting state has stretchSegments (not null).
 describe('useSessionEngine — stretch session path (Phase 34)', () => {

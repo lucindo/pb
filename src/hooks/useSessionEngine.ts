@@ -75,6 +75,34 @@ export interface SessionEngine {
    * distinction, surface it from this hook before consumers are wired.
    */
   extendDuration(this: void, durationMinutes: number): void
+  /**
+   * Phase 51 Plan 02 (D-10 / D-11): Reanchor `startedAtSec` after an
+   * AudioContext reconstruction (Phase 5.1 iOS recovery path).
+   *
+   * When `useAudioCues.reconstructEngine` builds a new AudioContext, the new
+   * AC's `currentTime` starts near 0. The proxy's source swaps to the new
+   * clock via `setSource(newEngine.clock)` — at the next rAF tick
+   * `clock.now()` returns the new AC's currentTime. Without reanchor,
+   * `elapsed = clock.now() - startedAtSec` would compute a negative or
+   * wildly wrong value.
+   *
+   * Reanchor math (D-10):
+   *   `newStartedAtSec = newClockNow - lastFrame.elapsedSec`
+   *
+   * After reanchor, `elapsed = clock.now() - newStartedAtSec` is:
+   *   `≈ newClockNow - (newClockNow - preReanchorElapsed) = preReanchorElapsed`
+   * — the elapsed is preserved across the swap.
+   *
+   * D-11 ordering: this method fires BEFORE `onReanchorRequired` (the
+   * audio-anchor reanchor). The caller (`useBreathingSessionController` via
+   * `onSessionClockReanchored`) guarantees the ordering.
+   *
+   * No-op when `status !== 'running'` — reanchor on idle/complete is
+   * meaningless (no elapsed to preserve).
+   *
+   * Phase 50 D-02: `startedAtSec` is seconds-shaped.
+   */
+  reanchorSessionClock(this: void, newClockNow: number): void
 }
 
 /**
@@ -287,6 +315,29 @@ export function useSessionEngine(
     })
   }, [clock])
 
+  // Phase 51 Plan 02 (D-10 / D-11): Reanchor startedAtSec after a proxy source
+  // swap (AudioContext reconstruction on iOS). The setState updater narrows on
+  // 'running' and rewrites startedAtSec = newClockNow - lastFrame.elapsedSec.
+  // Deps are `[]` — the updater reads currentState, no closure over `state`.
+  const reanchorSessionClock = useCallback((newClockNow: number) => {
+    setState((currentState) => {
+      if (currentState.status !== 'running') {
+        // No-op: reanchor on idle/complete is meaningless.
+        return currentState
+      }
+      // D-10 reanchor math: preserve pre-reanchor elapsed across the AC swap.
+      // newStartedAtSec = newClockNow - elapsedSec
+      // Next tick: elapsed = clock.now() - newStartedAtSec
+      //          = newClockNow - (newClockNow - preReanchorElapsed)
+      //          = preReanchorElapsed  (invariant preserved)
+      const newStartedAtSec = newClockNow - currentState.lastFrame.elapsedSec
+      return {
+        ...currentState,
+        startedAtSec: newStartedAtSec,
+      }
+    })
+  }, [])
+
   return {
     state,
     currentFrame,
@@ -296,5 +347,6 @@ export function useSessionEngine(
     start,
     end,
     extendDuration,
+    reanchorSessionClock,
   }
 }
