@@ -575,9 +575,9 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       await Promise.resolve()
       await Promise.resolve() // settle the rejection
     })
-    // visibilityResumeAttemptedRef is armed; engine swallowed the reject and fired
-    // onStateChange via the D-38 InvalidStateError branch; handleStateChange flipped
-    // audioStatus to 'needs-resume'.
+    // visibilityResumeAttemptedRef is armed; engine swallowed the reject and fired the
+    // synthetic suspend event via clock.notifySuspended() (revision 2 Blocker #1 / Plan 06
+    // D-38 InvalidStateError branch); handleSuspend flipped audioStatus to 'needs-resume'.
     expect(result.current.audioStatus).toBe('needs-resume')
     await act(async () => { await result.current.stop() })
     unmount()
@@ -810,6 +810,19 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // on a controllable promise. The start() call (#1) completes synchronously with a
     // fake engine. The reconstruct call parks until we resolve it.
     const newEngineClose = vi.fn(async () => {})
+    // Phase 50 D-11 + revision 1 Blocker #1: every fake engine MUST expose a `clock`
+    // member with onResume/onSuspend/onClose returning no-op unsubscribes, because
+    // useAudioCues.start() / reconstructEngine() subscribe to all three channels right
+    // after createAudioEngine resolves. Returning a no-op unsub keeps the orphaned-engine
+    // bail path quiet without simulating statechange fan-out (irrelevant to this test).
+    const makeFakeClock = (): unknown => ({
+      now: vi.fn(() => 0),
+      schedule: vi.fn(),
+      setMasterGain: vi.fn(),
+      onResume: vi.fn(() => () => undefined),
+      onSuspend: vi.fn(() => () => undefined),
+      onClose: vi.fn(() => () => undefined),
+    })
     // Reason: partial AudioEngine implementation for test purposes; only the surface used by reconstructEngine's bail path.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fakeFirstEngine: any = {
@@ -819,6 +832,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       scheduleNextCue: vi.fn(),
       resume: vi.fn(async () => {}),
       close: vi.fn(async () => {}),
+      clock: makeFakeClock(),
     }
     // Reason: partial AudioEngine for the orphaned new engine in the bail path.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -829,6 +843,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       scheduleNextCue: vi.fn(),
       resume: vi.fn(async () => {}),
       close: newEngineClose,
+      clock: makeFakeClock(),
     }
 
     let resolveReconstruct: ((eng: typeof fakeNewEngine) => void) | null = null
@@ -919,19 +934,22 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     expect(result.current.audioStatus).toBe('ok')
 
     // Dispatch a synthetic 'closed' statechange on the last AC instance AFTER stop().
-    // The handleStateChange null gate (AUDIO-05) must short-circuit and not flip audioStatus.
+    // Phase 50 D-11 + revision 1 Blocker #1: stop() tore down the clock subscriptions
+    // before nulling engineRef, so the clock's fan-out reaches an EMPTY subscriber Set —
+    // handleClose is never invoked. The handler's internal engineRef-null gate is layered
+    // defense; the primary mechanism is unsubscribe-before-null.
     await act(async () => {
       const live = SpyableAC.lastInstance as SpyableAC
-      // dispatchStateChange fires every registered 'statechange' listener.
-      // Since the engine's listener is still attached (registered at createAudioEngine time),
-      // handleStateChange will be called — but engineRef.current is null post-stop.
+      // dispatchStateChange fires every registered 'statechange' listener on the AC.
+      // The clock's listener is still attached (it owns the AC's statechange listener per
+      // Plan 50-01), but its subscriber Sets are empty post-stop().
       live.dispatchStateChange()
       await Promise.resolve()
       await Promise.resolve()
     })
 
-    // audioStatus must remain 'ok' — the null gate must have returned early
-    // without calling setAudioStatus('unavailable').
+    // audioStatus must remain 'ok' — the subscriber teardown means handleClose is never
+    // called; even if it were, the engineRef-null gate would short-circuit.
     expect(result.current.audioStatus).toBe('ok')
 
     unmount()
@@ -991,6 +1009,9 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
   // AUDIO-03: hook-side null propagation when engine.scheduleLeadIn returns null
   it("AUDIO-03: start() returns null and sets status to failed when engine.scheduleLeadIn returns null", async () => {
     // Stub createAudioEngine to return a fake engine whose scheduleLeadIn returns null.
+    // Phase 50 D-11 + revision 1 Blocker #1: start() subscribes to engine.clock.on*
+    // immediately after createAudioEngine resolves, so the fake must expose a `clock`
+    // member returning no-op unsubscribes for all three channels.
     const fakeEngine = {
       now: vi.fn(() => 0),
       setMuted: vi.fn(),
@@ -998,6 +1019,14 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
       scheduleNextCue: vi.fn(),
       close: vi.fn(async () => {}),
       resume: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn(() => () => undefined),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
     }
     // Reason: test double providing the minimum AudioEngine surface; no-unsafe-argument is expected here for the mock type.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
@@ -1107,13 +1136,14 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
     unmount()
   })
 
-  it('baseline: handleStateChange identity unchanged across setMuted (regression guard)', () => {
+  it('baseline: handleResume/handleSuspend/handleClose identity unchanged across setMuted (regression guard)', () => {
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
 
-    // `start` depends ONLY on `handleStateChange` after D-11. If
-    // `handleStateChange` identity ever churns across setMuted (it should not
-    // — its useCallback deps are `[]`), this proxy assertion would fail.
+    // Phase 50 D-11 + revision 1 Blocker #1: the unified `handleStateChange` split into
+    // three handlers. `start` now depends on `[handleResume, handleSuspend, handleClose]`
+    // — all three useCallback deps are `[]`. If any of the three identities churns across
+    // setMuted (they should not), this proxy assertion would fail.
     const startBefore = result.current.start
 
     act(() => {
@@ -1192,8 +1222,10 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
       await result.current.start(samplePlan, 'bell')
     })
     // D-08: the engine is constructed with exactly the caller-passed timbre.
+    // Phase 50 D-11: `onStateChange` removed from AudioEngineOptions — external subscribers
+    // now consume engine.clock.on*; the timbre-capture assertion stays focused on `timbre`.
     expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ timbre: 'bell', onStateChange: expect.any(Function) as unknown }),
+      expect.objectContaining({ timbre: 'bell' }),
     )
     await act(async () => { await result.current.stop() })
     unmount()

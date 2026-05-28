@@ -22,6 +22,7 @@
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
 import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
+import { createAudioSessionClock, type SessionClock } from './sessionClock'
 import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
@@ -64,15 +65,27 @@ export interface AudioEngine {
    *  is closed-over by useCallback and may be stale within the same invocation. Reading
    *  audioCtx.state directly is the live truth. */
   readonly state: AudioContextState | 'interrupted'
+  /** Phase 50 D-11 + revision 1 Blocker #1 / ABSTR-01: SessionClock surface for external
+   *  subscribers (onSuspend / onResume / onClose) and time reads (now / schedule). The
+   *  clock is constructed once at engine construction time (see createAudioEngine).
+   *
+   *  Revision 2 Blocker #1: the engine's internal reference is typed as the AUGMENTED factory
+   *  return type `SessionClock & { notifySuspended(): void }` so the engine can invoke the
+   *  synthetic-suspend escape hatch from the resume() InvalidStateError catch block —
+   *  preserving the iOS Safari recovery path (Plan 06 D-38) byte-identically. The public
+   *  `engine.clock` member is widened to `SessionClock` so external consumers cannot see
+   *  `notifySuspended`. The escape hatch stays scoped to createAudioEngine's internal closure. */
+  readonly clock: SessionClock
 }
 
 export interface AudioEngineOptions {
-  /** Plan 06 D-36: receives every audioCtx.state transition. The hook listens
-   *  and pushes the value into React state. Engine stays React-free per D-02.
-   *  Cast accepts WebKit's 'interrupted' superset (D-37). Fires from:
-   *  (a) the wired addEventListener('statechange') — every transition;
-   *  (b) the resume() catch when err.name === 'InvalidStateError' (D-38). */
-  onStateChange?: (state: AudioContextState | 'interrupted') => void
+  // Phase 50 D-11 + revision 1 Blocker #1: the prior state-change callback option is
+  // removed. External subscribers now consume `engine.clock.onSuspend(cb)` /
+  // `engine.clock.onResume(cb)` / `engine.clock.onClose(cb)`. The clock owns the single AC
+  // statechange listener (added inside createAudioSessionClock per Plan 50-01) and fans
+  // suspend/resume/close to subscribers. The iOS Safari InvalidStateError synthetic-suspend
+  // path (Plan 06 D-38) is preserved via the engine-only escape hatch on the augmented
+  // factory return type — see resume()'s catch block below and revision 2 Blocker #1.
   /** Phase 18 D-08: timbre captured at session start; engine never re-reads prefs.
    *  Caller passes the snapshot from useAudioCues.start(plan, timbre). No setter
    *  is exposed — capture-at-construction is the only mutation path. */
@@ -180,6 +193,31 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // see a fresh user-gesture chain or AC will start in 'suspended'.
   const audioCtx = new AudioContext()
 
+  // Phase 50 D-07: wrap the AC immediately after construction. D-11 + revision 1 Blocker #1:
+  // the clock owns the audioCtx 'statechange' listener and fans suspend/resume/close to
+  // subscribers via the SessionClock interface.
+  //
+  // Revision 1 Blocker #2: no scheduleImpl supplied at this plan — Plan 50-06 will reconstruct
+  // as createAudioSessionClock(audioCtx, engineScheduleFn) when the engine-internal dispatch
+  // lands. The intermediate `clock.schedule()` is a no-op for now.
+  //
+  // Revision 2 Blocker #1: the local clock reference is typed as the AUGMENTED factory return
+  // type `SessionClock & { notifySuspended(): void }` so the engine can invoke the synthetic-
+  // suspend escape hatch at the resume() InvalidStateError catch (preserving the iOS Safari
+  // recovery path byte-identically — Plan 06 D-38). The `engine.clock` public member is
+  // widened to `SessionClock` — external consumers cannot see `notifySuspended`. The escape
+  // hatch is engine-only.
+  //
+  // Revision 1 Warning #12: this is THE engine clock (HRV AC); useNaviKriyaAudio constructs its
+  // own SEPARATE clock for the NK AC — they MUST NOT be conflated.
+  //
+  // Revision 2 Warning #6: construction site is here (immediately after `new AudioContext()`).
+  // Plan 50-06 will MOVE this construction to after the schedule-function definition so the
+  // engine's internal schedule can be plumbed as scheduleImpl. The move does NOT change
+  // observable behavior — the clock's listener attachment, subscribers Set lifecycle, and
+  // notifySuspended() escape hatch are independent of the construction-site line number.
+  const clock: SessionClock & { notifySuspended(): void } = createAudioSessionClock(audioCtx)
+
   // Phase 49 D-01/D-04/D-06: silent looping <audio> element constructed inside the engine,
   // on the sync gesture head, BEFORE any asynchronous suspension. Coerces iOS audio session
   // from 'ambient' to 'playback'. See 49-CONTEXT.md.
@@ -246,19 +284,13 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const readState = (): ExtendedAudioContextState => audioCtx.state as ExtendedAudioContextState
 
-  // Plan 06 D-36: single statechange listener — drives the hook's state machine.
-  // The listener is REMOVED inside close() BEFORE audioCtx.close() to prevent
-  // a 'closed' event firing after unmount.
-  const onStateChange = (): void => {
-    opts.onStateChange?.(readState())
-  }
-  // Ordering invariant: addEventListener runs AFTER the await audioCtx.resume()
-  // above, so the initial suspended → running transition fires before the
-  // listener is wired and is intentionally not reported. The hook initializes
-  // its audioStatus to 'ok' and never expects a 'running' notification, so
-  // dropping that first transition is correct. If this order is ever flipped,
-  // add a lastReportedState guard inside onStateChange to dedupe.
-  audioCtx.addEventListener('statechange', onStateChange)
+  // Revision 1 Blocker #3 (committed path): the prior local statechange listener was DELETED.
+  // The clock owns the single AC statechange listener (added by createAudioSessionClock per
+  // Plan 50-01) and fans suspend/resume/close to external subscribers (useAudioCues consumes
+  // them via engine.clock.on*). Engine internals do not observe statechange events directly;
+  // they act in their own synchronous lifecycle methods (close(), resume()). The
+  // InvalidStateError synthetic-suspend path inside resume()'s catch uses the engine-only
+  // escape hatch (revision 2 Blocker #1) — it does NOT need its own listener.
 
   // WR-08: track ALL in-flight cues (lead-in ticks + In/Out bowls), not just the
   // most recent one. Mute mid-lead-in must silence the remaining ticks too —
@@ -378,9 +410,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     async close(): Promise<void> {
       if (closed) return
       closed = true
-      // Plan 06 D-36: remove the statechange listener BEFORE close() so a final
-      // 'closed' transition does not fire after the hook has nulled engineRef.
-      audioCtx.removeEventListener('statechange', onStateChange)
+      // Revision 1 Blocker #3: prior removeEventListener removed — the local listener was
+      // deleted at the construction site (no engine-side statechange listener exists).
+      // The clock's listener is owned by the clock; its lifecycle is independent (the AC's
+      // close will fire 'closed' on the clock's listener which fans to closeSubscribers per
+      // Plan 50-01, then handleClose in useAudioCues sets audioStatus to 'unavailable' per
+      // revision 1 Blocker #1).
       // If playEndChord scheduled a session-ending chord, defer teardown until
       // its tail rings out — otherwise the disconnect loop below would sever
       // the chord mid-ring. Skipped entirely when no end chord was scheduled
@@ -441,13 +476,22 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         // raised when resume() is invoked from a non-gesture context (the
         // visibilitychange listener qualifies as non-gesture on iOS Safari per device
         // diagnostic 05.1-UAT.md Task 2). Surface THIS error class via the state-change
-        // callback so the hook can transition to 'needs-resume' and surface the
+        // path so the hook can transition to 'needs-resume' and surface the
         // user-tappable affordance (D-29). All other errors continue silent-absorb
         // (Plan 01 D-09 preserved for unknown failure modes).
-        // Reason: defensive optional chain — onStateChange is typed optional in CreateAudioEngineOptions; the chain documents that intent even where the call site happens to always supply it.
+        //
+        // Revision 2 Blocker #1: the prior fan-out call (the removed callback option) was a
+        // SYNCHRONOUS state report — the AC was already 'suspended' before resume() was called, stays
+        // 'suspended' after the rejection, and no natural statechange event fires. We replace
+        // the prior call with the engine-only synthetic-suspend escape hatch on the augmented
+        // factory return type from Plan 50-01 revision 2; it synchronously fans the suspended
+        // event to suspendSubscribers via the same fanSuspend() helper used by the natural
+        // statechange listener. iOS Safari recovery flow preserved byte-identically:
+        // useAudioCues' handleSuspend subscriber sets audioStatus to 'needs-resume' when
+        // visibilityResumeAttemptedRef.current is true, exactly as it did pre-refactor.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if ((err as DOMException)?.name === 'InvalidStateError') {
-          opts.onStateChange?.(readState())
+          clock.notifySuspended()
         }
         // Else: silent. No console.debug (discretion #4). The session continues on visuals
         // only — same posture as Phase 3 D-10 and Phase 5 D-09.
@@ -457,6 +501,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     get state(): AudioContextState | 'interrupted' {
       return readState()
     },
+
+    // D-11 + revision 1 Blocker #1 / ABSTR-01: expose the SessionClock surface. The
+    // assignment widens the augmented factory return type to `SessionClock` — external
+    // consumers reading `engine.clock` cannot call `notifySuspended` (revision 2 Blocker #1
+    // encapsulation boundary).
+    clock,
   }
 
   return engine
