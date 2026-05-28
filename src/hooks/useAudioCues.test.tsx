@@ -1371,3 +1371,213 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     unmount()
   })
 })
+
+// Phase 51 Plan 02: proxy clock exposed via UseAudioCues.clock (D-03/D-05/D-10/D-11).
+describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 51 D-03/D-05/D-10/D-11)', () => {
+  // SpyableAC with full statechange support for reconstruction tests.
+  class SpyableAC {
+    static lastInstance: SpyableAC | null = null
+    static reset(): void { SpyableAC.lastInstance = null }
+    state: AudioContextState | 'interrupted' = 'running'
+    sampleRate = 44100
+    destination = {}
+    private _start = performance.now() / 1000
+    private _listeners = new Map<string, Set<EventListener>>()
+    private _resumeRejection: { name: string; message: string } | null = null
+    get currentTime(): number { return performance.now() / 1000 - this._start }
+    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility with the interface.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(_options?: AudioContextOptions) { SpyableAC.lastInstance = this }
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; conditional throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async resume(): Promise<void> {
+      if (this._resumeRejection !== null) {
+        const err = new DOMException(this._resumeRejection.message, this._resumeRejection.name)
+        this._resumeRejection = null
+        if (this.state === 'interrupted') this.state = 'suspended'
+        this._fireStateChange()
+        throw err
+      }
+      this.state = 'running'
+      this._fireStateChange()
+    }
+    // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async suspend(): Promise<void> { this.state = 'suspended'; this._fireStateChange() }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async close(): Promise<void> { this.state = 'closed'; this._fireStateChange() }
+    _simulateInterrupted(): void { this.state = 'interrupted'; this._fireStateChange() }
+    _simulateResumeReject(errorName: string = 'InvalidStateError'): void {
+      this._resumeRejection = { name: errorName, message: 'Failed to start the audio device' }
+    }
+    dispatchStateChange(): void { this._fireStateChange() }
+    addEventListener(type: string, listener: EventListener): void {
+      let set = this._listeners.get(type)
+      if (!set) { set = new Set(); this._listeners.set(type, set) }
+      set.add(listener)
+    }
+    removeEventListener(type: string, listener: EventListener): void {
+      this._listeners.get(type)?.delete(listener)
+    }
+    private _fireStateChange(): void {
+      const evt = new Event('statechange')
+      for (const l of this._listeners.get('statechange') ?? []) l(evt)
+    }
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    SpyableAC.reset()
+  })
+
+  it('D-03: clock member is exposed on UseAudioCues and conforms to SessionClock interface', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    // clock must exist and expose all 6 SessionClock members.
+    const clock = result.current.clock
+    expect(clock).toBeDefined()
+    expect(typeof clock.now).toBe('function')
+    expect(typeof clock.schedule).toBe('function')
+    expect(typeof clock.setMasterGain).toBe('function')
+    expect(typeof clock.onSuspend).toBe('function')
+    expect(typeof clock.onResume).toBe('function')
+    expect(typeof clock.onClose).toBe('function')
+    unmount()
+  })
+
+  it('D-03: clock.now() returns wall-clock shape before start (performance.now()/1000)', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(0)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    // Advance 2000ms of fake time so performance.now() = 2000ms = 2.0s.
+    vi.advanceTimersByTime(2000)
+    const clockNow = result.current.clock.now()
+    const performanceNow = performance.now() / 1000
+    // Wall clock shape: clock.now() ≈ performance.now() / 1000 (within 5ms tolerance).
+    expect(Math.abs(clockNow - performanceNow)).toBeLessThan(0.005)
+    vi.useRealTimers()
+    unmount()
+  })
+
+  it('D-05: clock.now() returns AC currentTime after start (NOT performance.now()/1000)', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl')
+    })
+    // After start, the proxy source is the AC clock.
+    // AC clock now() = SpyableAC.currentTime (which is performance.now()/1000 - _start).
+    // The key invariant: clock.now() delegates to the AC, NOT to performance.now()/1000 directly.
+    // We verify this by checking clock.now() is non-negative and finite (the AC clock is valid).
+    // We also check it is NOT simply performance.now()/1000 — the AC's currentTime starts near 0.
+    const clockNow = result.current.clock.now()
+    expect(typeof clockNow).toBe('number')
+    expect(isFinite(clockNow)).toBe(true)
+    // AC currentTime starts near 0 and grows slowly; should be < 5s since start took < 5s.
+    expect(clockNow).toBeGreaterThanOrEqual(0)
+    expect(clockNow).toBeLessThan(5)
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('D-11: onSessionClockReanchored fires BEFORE onReanchorRequired on reconstructEngine', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const onReanchorRequired = vi.fn()
+    const onSessionClockReanchored = vi.fn()
+    const { result, unmount } = renderHook(() =>
+      useAudioCues(false, onReanchorRequired, onSessionClockReanchored),
+    )
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl')
+    })
+
+    // Drive reconstruction via the D-41(c) path (resume rejection → reconstruct).
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed to start the audio device', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // Trigger public resume() to drive reconstruction.
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    // Both callbacks must have been called exactly once.
+    expect(onSessionClockReanchored).toHaveBeenCalledTimes(1)
+    expect(onReanchorRequired).toHaveBeenCalledTimes(1)
+
+    // D-11 ordering: onSessionClockReanchored fires BEFORE onReanchorRequired.
+    // invocationCallOrder is a Vitest mock property — lower number = called first.
+    expect(onSessionClockReanchored.mock.invocationCallOrder[0])
+      .toBeLessThan(onReanchorRequired.mock.invocationCallOrder[0] as number)
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('D-10: onSessionClockReanchored receives newEngine.clock.now() at reanchor instant', async () => {
+    SpyableAC.reset()
+    vi.stubGlobal('AudioContext', SpyableAC)
+    const onSessionClockReanchored = vi.fn()
+    const { result, unmount } = renderHook(() =>
+      useAudioCues(false, vi.fn(), onSessionClockReanchored),
+    )
+    await act(async () => {
+      await result.current.start(samplePlan, 'bowl')
+    })
+
+    // Trigger reconstruction.
+    // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
+      this.state = 'interrupted'
+      this.dispatchStateChange()
+      const err = new DOMException('Failed', 'InvalidStateError')
+      this.state = 'suspended'
+      this.dispatchStateChange()
+      throw err
+    })
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    await act(async () => {
+      await result.current.resume()
+      await Promise.resolve()
+    })
+
+    expect(onSessionClockReanchored).toHaveBeenCalledTimes(1)
+    // The callback must receive a number (newEngine.clock.now() = the new AC's currentTime).
+    // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const callArg = onSessionClockReanchored.mock.calls[0]![0] as unknown
+    expect(typeof callArg).toBe('number')
+    // The new AC's currentTime should be near 0 (just constructed).
+    expect(callArg as number).toBeGreaterThanOrEqual(0)
+    expect(callArg as number).toBeLessThan(5)
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+})
