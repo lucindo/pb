@@ -131,7 +131,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. End-user behavior is byte-identical to the pre-refactor state at Phase 50 close — a returning user cannot observe the refactor in any practice surface, audio cue, animation, mute behavior, or storage round-trip.
   4. The existing test suite passes at full parity at Phase 50 close (the 1283-test baseline from v2.1 close is maintained — no regressions, no skipped tests, no behavior-change-disguised-as-test-update).
 **Plans**: 7 plans
-- [ ] 50-01-PLAN.md — SessionClock interface + Cue union + two factory functions (Wave 1, autonomous; ABSTR-01 + ABSTR-02; Option A — createAudioSessionClock.now() returns audioCtx.currentTime)
+- [x] 50-01-PLAN.md — SessionClock interface + Cue union + two factory functions (Wave 1, autonomous; ABSTR-01 + ABSTR-02; Option A — createAudioSessionClock.now() returns audioCtx.currentTime)
 - [ ] 50-02-PLAN.md — useSessionEngine + sessionController/sessionMath/stretchRamp domain helpers ms→sec rename + clock.now() (Wave 2, autonomous; ABSTR-03 + ABSTR-04)
 - [ ] 50-03-PLAN.md — useNaviKriyaAudio + useNKEngine migration + NK_LEAD_SEC rename cascade (Wave 2, autonomous; ABSTR-03 + ABSTR-04; D-08 NK AC construction preserved)
 - [ ] 50-04-PLAN.md — useAudioCues migration: onStateChange → clock.onSuspend/onResume; AudioEngine gains readonly clock member (Wave 2, autonomous; ABSTR-01 + ABSTR-03 + ABSTR-04)
@@ -201,7 +201,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 |-------|----------------|--------|-----------|
 | 49. iOS speaker route fix | 2/2 | Complete    | 2026-05-27 |
 | 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete    | 2026-05-27 |
-| 50. SessionClock / scheduler abstraction | 0/TBD | Not started | — |
+| 50. SessionClock / scheduler abstraction | 1/7 | In Progress|  |
 | 51. Master clock unification | 0/TBD | Not started | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
 | 53. Master-gain mute | 0/TBD | Not started | — |
