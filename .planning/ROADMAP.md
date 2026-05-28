@@ -201,7 +201,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 |-------|----------------|--------|-----------|
 | 49. iOS speaker route fix | 2/2 | Complete    | 2026-05-27 |
 | 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete    | 2026-05-27 |
-| 50. SessionClock / scheduler abstraction | 7/7 | Complete   | 2026-05-28 |
+| 50. SessionClock / scheduler abstraction | 7/7 | Complete    | 2026-05-28 |
 | 51. Master clock unification | 0/TBD | Not started | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
 | 53. Master-gain mute | 0/TBD | Not started | — |

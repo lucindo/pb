@@ -31,10 +31,10 @@ Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (P
 
 ### Audio Abstraction (Phase 50 — SessionClock / scheduler interface)
 
-- [ ] **ABSTR-01**: A `SessionClock` interface exists with `now()`, `schedule(when, cue)`, `setMasterGain(value, rampSec)`, `onSuspend`, and `onResume` members.
-- [ ] **ABSTR-02**: `audioEngine.ts` exports the `SessionClock` interface and delegates to its existing internals — zero end-user behavior change at Phase 50 close.
-- [ ] **ABSTR-03**: All session/audio/animation callers (`useSessionEngine`, `useAudioCues`, `useNaviKriyaAudio`, `useNKEngine`, `useAmbientScale`) consume the `SessionClock` interface; none import `AudioContext` or call `performance.now()` directly (locked by an import-graph drift-guard).
-- [ ] **ABSTR-04**: All existing audio/session/animation tests pass at full parity after the refactor (1283 → 1283 baseline maintained on Phase 50 close).
+- [x] **ABSTR-01**: A `SessionClock` interface exists with `now()`, `schedule(when, cue)`, `setMasterGain(value, rampSec)`, `onSuspend`, and `onResume` members.
+- [x] **ABSTR-02**: `audioEngine.ts` exports the `SessionClock` interface and delegates to its existing internals — zero end-user behavior change at Phase 50 close.
+- [x] **ABSTR-03**: All session/audio/animation callers (`useSessionEngine`, `useAudioCues`, `useNaviKriyaAudio`, `useNKEngine`, `useAmbientScale`) consume the `SessionClock` interface; none import `AudioContext` or call `performance.now()` directly (locked by an import-graph drift-guard).
+- [x] **ABSTR-04**: All existing audio/session/animation tests pass at full parity after the refactor (1283 → 1283 baseline maintained on Phase 50 close).
 
 ### Master Clock (Phase 51 — clock unification onto audioCtx.currentTime)
 
@@ -102,10 +102,10 @@ Which phases cover which requirements. Roadmapper will populate the Phase column
 | ADV-03 | Phase 49.1 | Complete |
 | ADV-04 | Phase 49.1 | Complete |
 | ADV-05 | Phase 49.1 | Complete |
-| ABSTR-01 | Phase 50 | Pending |
-| ABSTR-02 | Phase 50 | Pending |
-| ABSTR-03 | Phase 50 | Pending |
-| ABSTR-04 | Phase 50 | Pending |
+| ABSTR-01 | Phase 50 | Complete |
+| ABSTR-02 | Phase 50 | Complete |
+| ABSTR-03 | Phase 50 | Complete |
+| ABSTR-04 | Phase 50 | Complete |
 | CLOCK-01 | Phase 51 | Pending |
 | CLOCK-02 | Phase 51 | Pending |
 | CLOCK-03 | Phase 51 | Pending |
