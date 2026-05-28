@@ -150,7 +150,12 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   2. User runs a foreground mid-session session without lock or background events and observes no audio/animation sync drift — the two-clock divergence path is eliminated because both surfaces now derive elapsed time from a single source (closes diagnosis #2).
   3. Session elapsed time in `useSessionEngine` is derived from `SessionClock.now() − sessionStartCtxTime` (not `performance.now() − startedAtMs`); the ambient scale in `useAmbientScale` reads from the same source; the animation tick computes phase progress *from* the audio clock each rAF rather than from any independent time source.
   4. No regression in foreground session accuracy — BPM cadence, ratio splits (50:50 / 40:60 / 30:70 / 20:80), and total-duration completion all match v2.1 baseline behavior across all three practices (HRV / Stretch / Navi).
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 51-01-PLAN.md — Swappable SessionClock proxy primitive + unit tests (Wave 1, autonomous; D-03/D-04 — `createSwappableSessionClock` factory with stable proxy identity + subscription-survival semantics)
+- [ ] 51-02-PLAN.md — HRV/Stretch wiring: useAudioCues proxy + onSessionClockReanchored callback + useSessionEngine.reanchorSessionClock + useBreathingSessionController hook-order flip (Wave 2, autonomous; CLOCK-01 + CLOCK-02 + CLOCK-03 + D-05/D-10/D-11)
+- [ ] 51-03-PLAN.md — Navi Kriya wiring: useNaviKriyaAudio proxy + useNaviKriyaSessionController hook-order flip (stats-only rebase per D-01) (Wave 2, autonomous; CLOCK-01 + D-02/D-06/D-12)
+- [ ] 51-04-PLAN.md — Behavioral tests for D-07 (AC-suspend freezes elapsed) + D-08 (stats on AC-time) + D-09 (stretch ramp continuity) + CLOCK-05 (foreground long-run smoke) + reanchor invariants (Wave 3, autonomous)
+- [ ] 51-05-PLAN.md — iOS device UAT documentation + checkpoint covering CLOCK-04 (lock/unlock sync) + ROADMAP success criteria #1-#4 against a real iOS device (Wave 3, autonomous: false)
 **UI hint**: no
 
 ### Phase 52: Visibility-resume clamp + lookahead scheduling
@@ -202,6 +207,6 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | 49. iOS speaker route fix | 2/2 | Complete    | 2026-05-27 |
 | 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete    | 2026-05-27 |
 | 50. SessionClock / scheduler abstraction | 7/7 | Complete    | 2026-05-28 |
-| 51. Master clock unification | 0/TBD | Not started | — |
+| 51. Master clock unification | 0/5 | Planned     | — |
 | 52. Visibility-resume clamp + lookahead scheduling | 0/TBD | Not started | — |
 | 53. Master-gain mute | 0/TBD | Not started | — |
