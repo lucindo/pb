@@ -10,11 +10,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import {
   NK_LAST_OM_HOLD_MULTIPLIER,
-  NK_LEAD_MS,
+  NK_LEAD_SEC,
   NK_OM_SECONDS,
 } from '../domain/naviKriyaSession'
 
-export { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../domain/naviKriyaSession'
+export { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_SEC, NK_OM_SECONDS } from '../domain/naviKriyaSession'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,7 +31,7 @@ interface NKEngineRecord {
   startedAtMs: number      // performance.now() at start — for elapsed stats
   completedRounds: number  // fully-completed rounds (for early-end stats)
   // Delay (ms) of the currently-pending step timer. Phase markers schedule
-  // the next step with NK_LEAD_MS; per-OM steps use omMs. Recorded so
+  // the next step with NK_LEAD_SEC * 1000; per-OM steps use omMs. Recorded so
   // schedule() always has the current pending delay for reference.
   pendingDelayMs: number
   // D-11 fix: armed when an OM reaches the phase target. The phase transition
@@ -110,7 +110,7 @@ export function useNKEngine(): NKEngineApi {
         setNkPhase('back')
         setNkCount(0)
         if (cbs) cbs.backMarker()
-        schedule(NK_LEAD_MS)
+        schedule(NK_LEAD_SEC * 1000)
       } else if (e.round < e.rounds) {
         // Back phase complete — advance to next round
         e.completedRounds += 1
@@ -121,7 +121,7 @@ export function useNKEngine(): NKEngineApi {
         setNkPhase('front')
         setNkCount(0)
         if (cbs) cbs.frontMarker()
-        schedule(NK_LEAD_MS)
+        schedule(NK_LEAD_SEC * 1000)
       } else {
         // Final back phase complete — session done
         e.completedRounds += 1
@@ -186,8 +186,8 @@ export function useNKEngine(): NKEngineApi {
       cueOn: settings.perOmCue,
       startedAtMs: performance.now(),
       completedRounds: 0,
-      // start() schedules the first step with NK_LEAD_MS below.
-      pendingDelayMs: NK_LEAD_MS,
+      // start() schedules the first step with NK_LEAD_SEC * 1000 below.
+      pendingDelayMs: NK_LEAD_SEC * 1000,
       pendingTransition: false,
     }
 
@@ -201,7 +201,7 @@ export function useNKEngine(): NKEngineApi {
     setNkRunning(true)
 
     callbacks.frontMarker()
-    schedule(NK_LEAD_MS)
+    schedule(NK_LEAD_SEC * 1000)
   }, [schedule])
 
   const end = useCallback(() => {
