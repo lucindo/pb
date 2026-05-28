@@ -11,7 +11,7 @@ import {
   DEFAULT_NK_SETTINGS,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
-  computeStretchTotalMs,
+  computeStretchTotalSec,
   type NaviKriyaSettings,
   type SessionSettings,
   type StretchSettings,
@@ -124,9 +124,9 @@ describe('StretchSettingsForm', () => {
     // DEFAULT_STRETCH_SETTINGS (5.5→4.5 BPM) produces cycle-aligned drift — the
     // displayed value may differ from '15 min' depending on the snapped total.
     // GAP 1: the value is now rounded to the nearest whole minute (Math.round).
-    const expectedTotalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)
-    if (expectedTotalMs === null) throw new Error('Expected finite default stretch duration')
-    const expectedText = `${String(Math.round(expectedTotalMs / 60_000))} min`
+    const expectedTotalSec = computeStretchTotalSec(DEFAULT_STRETCH_SETTINGS)
+    if (expectedTotalSec === null) throw new Error('Expected finite default stretch duration')
+    const expectedText = `${String(Math.round(expectedTotalSec / 60))} min`
     const duration = screen.getByRole('group', { name: 'Duration' })
     expect(within(duration).getByText(expectedText)).toBeInTheDocument()
   })
@@ -143,14 +143,20 @@ describe('StretchSettingsForm', () => {
   // UAT GAP 1: Duration readout shows a rounded whole-minute value (not an unrounded float)
   it('GAP 1: Duration readout shows a rounded whole-minute string, not a fractional float', () => {
     renderForm({ activePractice: 'stretch' })
-    const totalMs = computeStretchTotalMs(DEFAULT_STRETCH_SETTINGS)
-    if (totalMs === null) throw new Error('Expected finite default stretch duration')
-    const roundedMinutes = Math.round(totalMs / 60_000)
+    // Phase 50-02 (D-02 ms→sec cascade): computeStretchTotalSec returns seconds;
+    // divide by 60 (not 60_000) to convert to minutes.
+    const totalSec = computeStretchTotalSec(DEFAULT_STRETCH_SETTINGS)
+    if (totalSec === null) throw new Error('Expected finite default stretch duration')
+    const roundedMinutes = Math.round(totalSec / 60)
     const duration = screen.getByRole('group', { name: 'Duration' })
     // The text must use the rounded integer, not the raw quotient (which may be a float)
     expect(within(duration).getByText(`${String(roundedMinutes)} min`)).toBeInTheDocument()
-    // The unrounded float must NOT appear if it differs from the rounded value
-    const rawFloat = totalMs / 60_000
+    // The unrounded float must NOT appear if it differs from the rounded value.
+    // Note (Phase 50-02): after the GAP-1 fix the realized total is whole-minute
+    // exact, so sec/60 is integer-clean for DEFAULT_STRETCH_SETTINGS. The
+    // structural assertion below is preserved — it remains correct, but in
+    // practice the rawFloat === roundedMinutes branch is the common path.
+    const rawFloat = totalSec / 60
     if (rawFloat !== roundedMinutes) {
       expect(within(duration).queryByText(`${String(rawFloat)} min`)).not.toBeInTheDocument()
     }

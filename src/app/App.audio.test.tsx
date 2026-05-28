@@ -97,9 +97,11 @@ describe('App — audio cues (Phase 3)', () => {
     // We are now in running (the In phase label is visible — the lead-in is gone).
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
 
-    // The first Out boundary occurs at t = inhaleMs from session start. With default
-    // settings BPM 5.5, ratio 40:60 → cycleMs = 60_000 / 5.5 ≈ 10_909 ms;
-    // inhaleMs = cycleMs * 0.4 ≈ 4_363 ms. Advance past the first Out boundary.
+    // The first Out boundary occurs at t = inhaleSec from session start. With default
+    // settings BPM 5.5, ratio 40:60 → cycleSec = 60 / 5.5 ≈ 10.909 sec;
+    // inhaleSec = cycleSec * 0.4 ≈ 4.363 sec. Advance 5 sec (5000 ms) past the
+    // first Out boundary. (Phase 50-02 ms→sec cascade — vi.advanceTimersByTime
+    // still takes ms; multiply by 1000 at this boundary only.)
     await act(async () => {
       vi.advanceTimersByTime(5000)
       await Promise.resolve()
@@ -337,7 +339,7 @@ describe('App — audio cues (Phase 3)', () => {
     await startAndAdvancePastLeadIn()
 
     // We are now in running. Override the AC's currentTime to a large value
-    // so that audioAnchor + boundaryStartMs/1000 yields a PAST value relative to
+    // so that audioAnchor + boundaryStartSec yields a PAST value relative to
     // the fake currentTime. The clamp must lift it to currentTime + SAFE_LEAD_SEC.
     // Set currentTime to a large value (100 s) so any computed audioTime is in the past.
     const FAKE_CURRENT_TIME = 100
@@ -348,7 +350,7 @@ describe('App — audio cues (Phase 3)', () => {
 
     scheduleOutSpy.mockClear()
 
-    // Advance to the first Out boundary (inhaleMs ≈ 4363 ms at default BPM 5.5).
+    // Advance to the first Out boundary (inhaleSec ≈ 4.363 sec at default BPM 5.5).
     await act(async () => {
       vi.advanceTimersByTime(5000)
       await Promise.resolve()
@@ -607,26 +609,26 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
 
   it("CR-01 (Phase 10 gap closure): reconstruction at mid-phase re-anchors using LIVE session-elapsed, not phase-start-frozen elapsed", async () => {
     // Plan 10-02 CR-01 regression lock. With sessionFrameRef sourced from
-    // session.liveFrame (per-rAF, fresh elapsedMs), the audio-anchor offset
+    // session.liveFrame (per-rAF, fresh elapsedSec), the audio-anchor offset
     // computed in onAudioReanchorRequired uses the LIVE session-elapsed value.
-    // The math at the next Out boundary then yields:
+    // The math at the next Out boundary then yields (Phase 50-02 ms→sec cascade):
     //
-    //   audioAnchor       = newAC.currentTime_at_reconstruction - elapsed_at_reconstruction/1000
-    //   audioTime         = audioAnchor + inhaleMs/1000
-    //                     = newAC.currentTime_at_reconstruction + (inhaleMs - elapsed_at_reconstruction)/1000
-    //                     = capturedAcNow + expectedRemainingMs/1000
+    //   audioAnchor       = newAC.currentTime_at_reconstruction - elapsed_at_reconstruction (sec)
+    //   audioTime         = audioAnchor + inhaleSec
+    //                     = newAC.currentTime_at_reconstruction + (inhaleSec - elapsed_at_reconstruction)
+    //                     = capturedAcNow + expectedRemainingSec
     //
     // If sessionFrameRef regresses to session.currentFrame (per-phase-stable,
-    // elapsedMs frozen at phase start = 0), then audioAnchor = newAC.currentTime
-    // and audioTime = capturedAcNow + inhaleMs/1000 — off by
-    // elapsedMs_at_reconstruction/1000 (~1.96s at the 45%-of-inhale derivation
-    // point). The 0.05s epsilon comfortably rejects that regression shape.
+    // elapsedSec frozen at phase start = 0), then audioAnchor = newAC.currentTime
+    // and audioTime = capturedAcNow + inhaleSec — off by elapsed_at_reconstruction
+    // sec (~1.96s at the 45%-of-inhale derivation point). The 0.05s epsilon
+    // comfortably rejects that regression shape.
     //
     // expectedRemainingMs is measured directly from the audio clock
     // (capturedAcNowAtBoundary - capturedAcNowAtReconstruction) instead of
-    // derived from `plan.inhaleMs - elapsedAtReconstructionMs` literals.
+    // derived from `plan.inhaleSec - elapsedAtReconstructionSec` literals.
     // This sidesteps the jsdom-fake-timer-rAF aliasing where the actual
-    // session.liveFrame.elapsedMs captured into sessionFrameRef at the last
+    // session.liveFrame.elapsedSec captured into sessionFrameRef at the last
     // rAF tick before reconstruction can differ from the target advance by
     // up to ~100ms — measuring the elapsed via the same audio clock that
     // sources newAC.currentTime keeps the epsilon math invariant of that
@@ -653,9 +655,11 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
 
     // Derive the mid-phase reconstruction target from the production
     // breathing-plan helper (not hardcoded literals) so the test stays
-    // robust to BPM/ratio defaults.
+    // robust to BPM/ratio defaults. Phase 50-02 (ms→sec cascade):
+    // plan.inhaleSec is seconds-shaped at the source; multiply by 1000 at
+    // this boundary to feed vi.advanceTimersByTime (which takes ms).
     const plan = createBreathingPlan(DEFAULT_SETTINGS)
-    const elapsedAtReconstructionMs = Math.round(plan.inhaleMs * 0.45)
+    const elapsedAtReconstructionMs = Math.round(plan.inhaleSec * 1000 * 0.45)
 
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -719,12 +723,14 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     acNowAtBoundary = null
 
     // Advance past the inhale boundary so the boundary effect fires and
-    // schedules the Out cue at audioTime = audioAnchor + inhaleMs/1000.
+    // schedules the Out cue at audioTime = audioAnchor + inhaleSec.
     // Use a generous margin so the boundary tick is observed even if the
     // session-elapsed-at-reconstruction differs slightly from the target
     // (rAF aliasing under fake timers — see header comment).
     await act(async () => {
-      vi.advanceTimersByTime(plan.inhaleMs - elapsedAtReconstructionMs + 200)
+      // Phase 50-02 (ms→sec cascade): plan.inhaleSec is seconds-shaped;
+      // multiply by 1000 at this boundary for vi.advanceTimersByTime (ms).
+      vi.advanceTimersByTime(plan.inhaleSec * 1000 - elapsedAtReconstructionMs + 200)
       await Promise.resolve()
     })
 

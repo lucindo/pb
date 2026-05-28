@@ -8,17 +8,17 @@ import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
-// Sample frame for the existing-Phase-2-behavior tests. `remainingMs` is part of
+// Sample frame for the existing-Phase-2-behavior tests. `remainingSec` is part of
 // the SessionFrame contract (src/domain/sessionMath.ts) — null for open-ended,
 // a number for timed; either is fine here since OrbBody only reads
-// phase/phaseLabel/phaseProgress.
+// phase/phaseLabel/phaseProgress. Phase 50-02 (D-02 ms→sec cascade).
 const sampleFrame: SessionFrame = {
   phase: 'in',
   phaseLabel: 'In',
   phaseProgress: 0,
   cycleIndex: 0,
-  elapsedMs: 0,
-  remainingMs: null,
+  elapsedSec: 0,
+  remainingSec: null,
   isComplete: false,
 }
 

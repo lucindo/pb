@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   SAFE_LEAD_SEC,
 } from '../audio/audioEngine'
+import { createWallSessionClock } from '../audio/sessionClock'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { computeBoundaryAudioOffsets } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
@@ -73,7 +74,14 @@ export function useBreathingSessionController({
 }: UseBreathingSessionControllerArgs): BreathingSessionController {
   const initialMute = useMemo<boolean>(() => loadMute(), [])
   const activeStretchSettings = activePractice === 'stretch' ? stretchSettings : null
-  const session = useSessionEngine(initialSettings, activeStretchSettings)
+  // Phase 50-02 / D-07: wall-clock injection for useSessionEngine. The audio
+  // engine's own clock is NOT yet exposed via useAudioCues (Plan 50.04 introduces
+  // it). At Phase 50, useSessionEngine reads from this wall clock — Phase 51
+  // will swap the source to audioCtx.currentTime via the seam this clock
+  // provides. Behavior is byte-identical to the pre-Phase-50 state because
+  // createWallSessionClock.now() = performance.now() / 1000 (D-09).
+  const sessionClock = useMemo(() => createWallSessionClock(), [])
+  const session = useSessionEngine(initialSettings, activeStretchSettings, sessionClock)
   const { state } = session
 
   const [phase, setPhase] = useState<BreathingSessionPhase>('idle')
@@ -95,8 +103,10 @@ export function useBreathingSessionController({
   }, [session.liveFrame])
 
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number): void => {
-    const elapsedMs = sessionFrameRef.current?.elapsedMs ?? 0
-    audioAnchorRef.current = newAudioAnchor - elapsedMs / 1000
+    // Phase 50-02 (D-02 ms→sec cascade): liveFrame.elapsedSec is seconds-shaped at
+    // the source — subtract it directly from the new audio anchor (no `/1000`).
+    const elapsedSec = sessionFrameRef.current?.elapsedSec ?? 0
+    audioAnchorRef.current = newAudioAnchor - elapsedSec
   }, [])
 
   const audio = useAudioCues(initialMute, onAudioReanchorRequired)
@@ -248,7 +258,14 @@ export function useBreathingSessionController({
     sessionEnd()
   }, [sessionEnd])
 
-  const completedAtMs = state.status === 'complete' ? state.completedAtMs : null
+  // Phase 50-02 (D-02 ms→sec cascade): CompleteSessionState.completedAtSec is
+  // seconds-shaped; storage's recordResonantSession / recordStretchSession still
+  // accept ms-shaped values (out of scope for this rename — see Plan 50-02
+  // `<acceptance_criteria>`: "Storage layer untouched"). The boundary conversion
+  // (× 1000) lives here, at the consumer-to-storage edge. This is the ONLY
+  // ms-shaped value emitted from this hook; everywhere else in the running-
+  // session chain is seconds-shaped end-to-end.
+  const completedAtSec = state.status === 'complete' ? state.completedAtSec : null
   const runningSnapshotRefStable = session.runningSnapshotRef
   useEffect(() => {
     if (state.status === 'running') return
@@ -268,10 +285,14 @@ export function useBreathingSessionController({
     const snap = runningSnapshotRefStable.current
     if (snap !== null && recordedSessionKeyRef.current !== snap.key) {
       const isComplete = state.status === 'complete'
-      const elapsedMs =
-        isComplete && completedAtMs !== null
-          ? completedAtMs - snap.startedAtMs
-          : snap.lastElapsedMs
+      const elapsedSec =
+        isComplete && completedAtSec !== null
+          ? completedAtSec - snap.startedAtSec
+          : snap.lastElapsedSec
+      // Storage layer expects ms-shaped values (recordResonantSession /
+      // recordStretchSession bodies do `Math.floor(elapsedMs / 1000)` internally).
+      // Convert at this boundary only — the in-memory chain stays seconds-shaped.
+      const elapsedMs = elapsedSec * 1000
 
       if (activePractice === 'stretch') {
         recordStretchSession(elapsedMs, isComplete)
@@ -282,7 +303,7 @@ export function useBreathingSessionController({
     }
   }, [
     state.status,
-    completedAtMs,
+    completedAtSec,
     runningSnapshotRefStable,
     activePractice,
     audioStop,
@@ -319,11 +340,13 @@ export function useBreathingSessionController({
     // the key here is a no-op rather than a hazard.
     if (audioAnchor === null || plan === null) return
 
-    const { boundaryStartMs, phaseDurationSec } = computeBoundaryAudioOffsets(frame, plan)
+    const { boundaryStartSec, phaseDurationSec } = computeBoundaryAudioOffsets(frame, plan)
     const liveAudioNow = audioAudioNow()
     if (liveAudioNow === null) return
 
-    const audioTime = audioAnchor + boundaryStartMs / 1000
+    // Phase 50-02 (D-02 ms→sec cascade): boundaryStartSec is seconds-shaped at the
+    // source — add it directly to the audioAnchor (no `/1000` runtime conversion).
+    const audioTime = audioAnchor + boundaryStartSec
     audioNotifyPhaseBoundary({
       newPhase: frame.phase,
       audioTime: Math.max(audioTime, liveAudioNow + SAFE_LEAD_SEC),

@@ -60,17 +60,25 @@ describe('supported breathing settings', () => {
 
 describe('breathing plan math', () => {
   it('converts BPM, ratio, and duration into continuous inhale/exhale timing', () => {
-    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })).toEqual({
-      bpm: 5,
-      ratio: '40:60',
-      cycleMs: 12_000,
-      inhaleMs: 4_800,
-      exhaleMs: 7_200,
-      totalMs: 600_000,
-    })
+    // Phase 50-02 (D-02 ms→sec cascade): BreathingPlan fields are seconds-shaped
+    // at the source. The seconds-shaped construction `12 * (40/100)` produces
+    // 4.800000000000001 due to IEEE-754 representation of 0.4 (the prior
+    // ms-shaped form `12_000 * 0.4` = 4800 was integer-clean by coincidence).
+    // This FP-residue is benign: downstream consumers either compare with
+    // toBeCloseTo, or feed the value into Math.floor / threshold tests where
+    // a 1e-15 difference is invisible. Switch the deep-equal to per-field
+    // toBeCloseTo to assert structural equivalence without anchoring on the
+    // exact ms→sec arithmetic byte representation.
+    const plan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })
+    expect(plan.bpm).toBe(5)
+    expect(plan.ratio).toBe('40:60')
+    expect(plan.cycleSec).toBeCloseTo(12, 9)
+    expect(plan.inhaleSec).toBeCloseTo(4.8, 9)
+    expect(plan.exhaleSec).toBeCloseTo(7.2, 9)
+    expect(plan.totalSec).toBe(600)
   })
 
   it('uses null total duration for open-ended sessions', () => {
-    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '50:50', durationMinutes: 'open-ended' }).totalMs).toBeNull()
+    expect(createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '50:50', durationMinutes: 'open-ended' }).totalSec).toBeNull()
   })
 })

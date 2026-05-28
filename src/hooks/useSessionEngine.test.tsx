@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createWallSessionClock } from '../audio/sessionClock'
 import type { SessionSettings } from '../domain/settings'
 import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS } from '../domain/settings'
 import { useSessionEngine } from './useSessionEngine'
@@ -11,6 +12,14 @@ const defaultSettings: SessionSettings = {
   ratio: '40:60',
   durationMinutes: 10,
 }
+
+// Phase 50-02 (D-09): useSessionEngine accepts a SessionClock as its 3rd arg.
+// Tests use createWallSessionClock() which reads `performance.now() / 1000` —
+// under vi.useFakeTimers() this advances with vi.advanceTimersByTime, so
+// `clock.now()` matches the fake-timer clock divided by 1000. Per-render
+// captured into a closure-stable instance so dep arrays containing `clock`
+// do not churn across renders.
+const fakeClock = createWallSessionClock()
 
 describe('useSessionEngine', () => {
   beforeEach(() => {
@@ -23,7 +32,7 @@ describe('useSessionEngine', () => {
   })
 
   it('starts from idle and immediately exposes an In frame', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -36,7 +45,7 @@ describe('useSessionEngine', () => {
   })
 
   it('advances from In to Out from one monotonic elapsed-time source', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -46,13 +55,16 @@ describe('useSessionEngine', () => {
     })
 
     expect(result.current.currentFrame?.phaseLabel).toBe('Out')
-    expect(result.current.currentFrame?.elapsedMs).toBeGreaterThanOrEqual(5_000)
+    // Phase 50-02 (D-02 ms→sec cascade): elapsedSec is seconds-shaped.
+    // 5_000 ms advanced via fake timers → ~5 sec elapsed (the wall clock
+    // returns performance.now() / 1000).
+    expect(result.current.currentFrame?.elapsedSec).toBeGreaterThanOrEqual(5)
 
     unmount()
   })
 
   it('ends a running session by returning idle and clearing the current frame while preserving settings', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -72,7 +84,7 @@ describe('useSessionEngine', () => {
 
   it('transitions a timed session to complete with the required message', () => {
     const { result, unmount } = renderHook(() =>
-      useSessionEngine({ ...defaultSettings, durationMinutes: 5 }),
+      useSessionEngine({ ...defaultSettings, durationMinutes: 5 }, null, fakeClock),
     )
 
     act(() => {
@@ -97,7 +109,7 @@ describe('useSessionEngine', () => {
   })
 
   it('extends only timed running sessions to greater finite durations', () => {
-    const timed = renderHook(() => useSessionEngine({ ...defaultSettings, durationMinutes: 10 }))
+    const timed = renderHook(() => useSessionEngine({ ...defaultSettings, durationMinutes: 10 }, null, fakeClock))
 
     act(() => {
       timed.result.current.start()
@@ -111,7 +123,8 @@ describe('useSessionEngine', () => {
       throw new Error('Expected timed running state')
     }
     expect(timed.result.current.state.selectedSettings.durationMinutes).toBe(15)
-    expect(timed.result.current.state.plan.totalMs).toBe(15 * 60_000)
+    // Phase 50-02: BreathingPlan.totalSec is seconds-shaped.
+    expect(timed.result.current.state.plan.totalSec).toBe(15 * 60)
 
     act(() => {
       timed.result.current.extendDuration(15)
@@ -121,7 +134,7 @@ describe('useSessionEngine', () => {
     timed.unmount()
 
     const openEnded = renderHook(() =>
-      useSessionEngine({ ...defaultSettings, durationMinutes: 'open-ended' }),
+      useSessionEngine({ ...defaultSettings, durationMinutes: 'open-ended' }, null, fakeClock),
     )
     act(() => {
       openEnded.result.current.start()
@@ -156,7 +169,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 
   it('currentFrame identity is stable across renders within the same phase (HOOKS-03 D-03)', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -181,7 +194,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 
   it('currentFrame identity changes at a phase boundary (HOOKS-03 D-03)', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -204,7 +217,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 
   it('liveFrame identity changes per rAF while currentFrame stays stable (HOOKS-03 D-04)', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -231,7 +244,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 
   it('liveFrame.phaseProgress advances within a phase (HOOKS-03 D-04)', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     act(() => {
       result.current.start()
@@ -253,7 +266,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 
   it('rAF cancel-guard: tick after teardown is a no-op (HOOKS-04 D-10)', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     // WR-01 (Plan 10-02): turn the implicit negative-by-absence assertion
     // into an explicit positive one. Vitest does NOT fail tests on uncaught
@@ -308,7 +321,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 
   it('runningSnapshotRef.current is populated while running and persists across the transition out (HOOKS-02 D-06/D-07/D-08)', () => {
-    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings))
+    const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
     // Idle baseline — the hook hasn't written to the ref yet.
     expect(result.current.runningSnapshotRef.current).toBeNull()
@@ -322,13 +335,13 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
 
     const snap = result.current.runningSnapshotRef.current
     expect(snap).not.toBeNull()
-    // The key derives from startedAtMs per D-07.
-    expect(snap?.key).toBe(String(snap?.startedAtMs))
-    // lastElapsedMs reflects the rAF tick value (allow some jitter — fake
+    // The key derives from startedAtSec per D-07 (Phase 50-02 ms→sec cascade).
+    expect(snap?.key).toBe(String(snap?.startedAtSec))
+    // lastElapsedSec reflects the rAF tick value (allow some jitter — fake
     // timers advance setState across multiple rAF callbacks so the snapshot
     // captures the latest known elapsed inside the setState updater per D-08;
-    // ≥ 900 keeps the assertion robust against the ~16ms per-frame quantum).
-    expect(snap?.lastElapsedMs).toBeGreaterThanOrEqual(900)
+    // ≥ 0.9 sec keeps the assertion robust against the ~16ms per-frame quantum).
+    expect(snap?.lastElapsedSec).toBeGreaterThanOrEqual(0.9)
     const snapKey = snap?.key
 
     // End the session — the hook does NOT null the ref on transition out
@@ -352,7 +365,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     })
     const snapAfterRestart = result.current.runningSnapshotRef.current
     expect(snapAfterRestart).not.toBeNull()
-    // New session = new startedAtMs = new key. The stale snapshot from the
+    // New session = new startedAtSec = new key. The stale snapshot from the
     // first session has been overwritten.
     expect(snapAfterRestart?.key).not.toBe(snapKey)
 
@@ -383,7 +396,7 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
     }
 
     const { result, unmount } = renderHook(() =>
-      useSessionEngine(resonantSettings, DEFAULT_STRETCH_SETTINGS),
+      useSessionEngine(resonantSettings, DEFAULT_STRETCH_SETTINGS, fakeClock),
     )
 
     // Confirm idle state starts with resonant settings
@@ -426,7 +439,7 @@ describe('useSessionEngine — stretch session path (Phase 34)', () => {
 
   it('start() with stretchSettings produces a running stretch session (stretchSegments not null)', () => {
     const { result, unmount } = renderHook(() =>
-      useSessionEngine(DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS),
+      useSessionEngine(DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, fakeClock),
     )
 
     act(() => {
@@ -443,7 +456,7 @@ describe('useSessionEngine — stretch session path (Phase 34)', () => {
 
   it('start() without stretchSettings (null) produces a standard session (stretchSegments null)', () => {
     const { result, unmount } = renderHook(() =>
-      useSessionEngine(DEFAULT_SETTINGS, null),
+      useSessionEngine(DEFAULT_SETTINGS, null, fakeClock),
     )
 
     act(() => {
@@ -460,7 +473,7 @@ describe('useSessionEngine — stretch session path (Phase 34)', () => {
 
   it('stretch session advances through phases from the In frame', () => {
     const { result, unmount } = renderHook(() =>
-      useSessionEngine(DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS),
+      useSessionEngine(DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS, fakeClock),
     )
 
     act(() => {

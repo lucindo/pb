@@ -40,7 +40,7 @@ export interface AudioEngine {
    *  UPCOMING phase (in / out) in seconds; cueSynth uses it to stretch the bowl
    *  decay envelope so the cue stays audible through the entire phase at low BPM
    *  (260510-tc9 Bug 2). The boundary scheduler in App.tsx derives this from
-   *  plan.inhaleMs / plan.exhaleMs. */
+   *  plan.inhaleSec / plan.exhaleSec (Phase 50-02 ms→sec cascade). */
   scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
   /** Schedule the shared session-ending chord on this engine's AudioContext —
    *  the same sound the Navi Kriya completion plays. No-op when closed or
@@ -313,8 +313,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // First In cue at +3 (numerals replaced by the In phase label at t=0; bowl strikes).
       // 260510-tc9 Bug 2: pass the upcoming In-phase duration so the decay envelope
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does
-      // the same for every subsequent cue).
-      const firstInPhaseDurationSec = plan.inhaleMs / 1000
+      // the same for every subsequent cue). Phase 50-02 (ms→sec cascade): plan.inhaleSec
+      // is already seconds-shaped at the source — no runtime `/1000` conversion.
+      const firstInPhaseDurationSec = plan.inhaleSec
       activeCues.add(scheduleInCueForTimbre(audioCtx, firstInCueTime, audioCtx.destination, sessionTimbre, firstInPhaseDurationSec))
 
       return firstInCueTime

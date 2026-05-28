@@ -11,13 +11,14 @@ import * as audioEngineModule from '../audio/audioEngine'
 import * as cueSynth from '../audio/cueSynth'
 import { useAudioCues } from './useAudioCues'
 
+// Phase 50-02 (D-02 ms→sec cascade): BreathingPlan fixture is seconds-shaped.
 const samplePlan: BreathingPlan = {
   bpm: 5.5,
   ratio: '40:60',
-  cycleMs: 60_000 / 5.5,
-  inhaleMs: (60_000 / 5.5) * 0.4,
-  exhaleMs: (60_000 / 5.5) * 0.6,
-  totalMs: 600_000,
+  cycleSec: 60 / 5.5,
+  inhaleSec: (60 / 5.5) * 0.4,
+  exhaleSec: (60 / 5.5) * 0.6,
+  totalSec: 600,
 }
 
 describe('useAudioCues', () => {
@@ -166,7 +167,7 @@ describe('useAudioCues', () => {
       result.current.notifyPhaseBoundary({
         newPhase: 'out',
         audioTime: 8,
-        phaseDurationSec: samplePlan.exhaleMs / 1000,
+        phaseDurationSec: samplePlan.exhaleSec,
       })
     })
 

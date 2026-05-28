@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 
+// Phase 50-02: SessionClock is the D-09 substitute for direct wall-clock
+// reads. The audioEngine re-export (ABSTR-02) is the preferred entry point so
+// downstream callers don't reach into the audio subdirectory's internal layout.
+import type { SessionClock } from '../audio/audioEngine'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { SessionSettings, StretchSettings } from '../domain/settings'
 import { DEFAULT_SETTINGS } from '../domain/settings'
@@ -27,12 +31,12 @@ import {
  * out of running (the hook does NOT null on transition because consumer
  * effects fire AFTER hook effects and need to read the snapshot). The
  * snapshot is overwritten on the next session's first rAF tick. Consumers
- * idempotently dedupe via the `key` field (= startedAtMs).
+ * idempotently dedupe via the `key` field (= startedAtSec, post-Phase-50 sec-shaped).
  */
 export interface RunningSnapshot {
   key: string
-  startedAtMs: number
-  lastElapsedMs: number
+  startedAtSec: number
+  lastElapsedSec: number
 }
 
 export interface SessionEngine {
@@ -73,9 +77,17 @@ export interface SessionEngine {
   extendDuration(this: void, durationMinutes: number): void
 }
 
+/**
+ * Phase 50-02 (D-01/D-09): the `clock` arg is the new substitute for direct
+ * wall-clock reads. Callers MUST supply either an `AudioSessionClock`
+ * (when an AudioEngine exists) or a `WallSessionClock` (visuals-only fallback).
+ * Phase 51 will swap the source to audioCtx.currentTime via this same SessionClock
+ * seam without any further caller change.
+ */
 export function useSessionEngine(
   initialSettings: SessionSettings = DEFAULT_SETTINGS,
   stretchSettings: StretchSettings | null = null,
+  clock: SessionClock,
 ): SessionEngine {
   const [state, setState] = useState<SessionState>(() => ({
     status: 'idle',
@@ -89,16 +101,19 @@ export function useSessionEngine(
   const runningSnapshotRef = useRef<RunningSnapshot | null>(null)
 
   // AH-WR-05 INVARIANT — STALE-CLOSURE TRAP: the dep array below is
-  // intentionally `[state.status]` only, so this effect (and its rAF loop) is
-  // created ONCE per session and NOT re-created on every per-frame state
-  // update. Consequently the `state` value captured in this effect's closure
-  // is FROZEN at the value it had when the session entered `running`. Every
-  // per-frame value (elapsedMs, lastFrame, cycleIndex, phaseProgress, ...) MUST
-  // be read inside the `setState((currentState) => ...)` updater via
-  // `currentState` — NEVER from the outer-closure `state`. Reading `state`
-  // (or anything derived from it) from inside `tick` would silently observe
-  // first-frame-stale data for the entire session. Any future value the loop
-  // needs must be threaded through `currentState`, not the closure.
+  // intentionally `[state.status, clock]` only, so this effect (and its rAF loop)
+  // is created ONCE per session (when status transitions to running) and NOT
+  // re-created on every per-frame state update. Consequently the `state` value
+  // captured in this effect's closure is FROZEN at the value it had when the
+  // session entered `running`. Every per-frame value (elapsedSec, lastFrame,
+  // cycleIndex, phaseProgress, ...) MUST be read inside the
+  // `setState((currentState) => ...)` updater via `currentState` — NEVER from
+  // the outer-closure `state`. Reading `state` (or anything derived from it)
+  // from inside `tick` would silently observe first-frame-stale data for the
+  // entire session. Any future value the loop needs must be threaded through
+  // `currentState`, not the closure. `clock` is included in the dep array per
+  // exhaustive-deps; callers thread a stable memoized instance (Phase 50-02
+  // Task 4), so the rAF loop is not re-created mid-session in practice.
   useEffect(() => {
     if (state.status !== 'running') {
       // HOOKS-02 / D-06: DO NOT null the snapshot here. Hook effects (custom-
@@ -109,7 +124,7 @@ export function useSessionEngine(
       // out of running and is overwritten on the next session's first rAF
       // tick (the inside-updater write in `tick` below). App.tsx's
       // `recordedSessionKeyRef` dedupes idempotently via the snapshot's
-      // `key` (= startedAtMs), so reading a stale snapshot on a subsequent
+      // `key` (= startedAtSec), so reading a stale snapshot on a subsequent
       // idle render is safe — the stats write only fires on a fresh key.
       return undefined
     }
@@ -136,12 +151,12 @@ export function useSessionEngine(
         // completeIfNeeded(...) so the snapshot reflects the LAST known
         // elapsed values just before completion math runs.
         runningSnapshotRef.current = {
-          key: String(currentState.startedAtMs),
-          startedAtMs: currentState.startedAtMs,
-          lastElapsedMs: currentState.lastFrame.elapsedMs,
+          key: String(currentState.startedAtSec),
+          startedAtSec: currentState.startedAtSec,
+          lastElapsedSec: currentState.lastFrame.elapsedSec,
         }
 
-        return completeIfNeeded(currentState, performance.now())
+        return completeIfNeeded(currentState, clock.now())
       })
 
       // Re-check cancelled BEFORE scheduling the next rAF. The top-of-tick
@@ -168,7 +183,7 @@ export function useSessionEngine(
       cancelled = true
       cancelAnimationFrame(animationFrameId)
     }
-  }, [state.status])
+  }, [state.status, clock])
 
   // HOOKS-03 / D-03: primitives-only useMemo deps. `currentFrame` identity
   // recomputes only when `state.status`, `cycleIndex`, or `phase` change — i.e.
@@ -232,12 +247,12 @@ export function useSessionEngine(
       // lockedSettings carries the synthetic lead-in).
       const sSettings = stretchSettingsRef.current
       if (sSettings !== null) {
-        return startStretchSession(sSettings, currentState.selectedSettings, performance.now())
+        return startStretchSession(sSettings, currentState.selectedSettings, clock.now())
       }
 
-      return startSession(currentState.selectedSettings, performance.now())
+      return startSession(currentState.selectedSettings, clock.now())
     })
-  }, [])
+  }, [clock])
 
   const end = useCallback(() => {
     setState((currentState) => {
@@ -257,9 +272,11 @@ export function useSessionEngine(
 
       try {
         // DS-WR-01: pass a fresh clock reading so `extendTimedSession` recomputes
-        // `lastFrame` from `nowMs - startedAtMs`, mirroring how `startSession` is
-        // called above (`startSession(..., performance.now())`).
-        return extendTimedSession(currentState, durationMinutes, performance.now())
+        // `lastFrame` from `nowSec - startedAtSec`, mirroring how `startSession` is
+        // called above (`startSession(..., clock.now())`). Phase 50-02 Warning #11:
+        // comment updated post-SessionClock migration — session capture flows
+        // through the injected `clock.now()` only.
+        return extendTimedSession(currentState, durationMinutes, clock.now())
       } catch (error) {
         if (error instanceof RangeError) {
           return currentState
@@ -268,7 +285,7 @@ export function useSessionEngine(
         throw error
       }
     })
-  }, [])
+  }, [clock])
 
   return {
     state,
