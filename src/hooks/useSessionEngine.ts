@@ -4,6 +4,9 @@ import type { RefObject } from 'react'
 // Phase 50-02: SessionClock is the D-09 substitute for direct wall-clock
 // reads. The audioEngine re-export (ABSTR-02) is the preferred entry point so
 // downstream callers don't reach into the audio subdirectory's internal layout.
+// Phase 52 D-06: MAX_TICK_DELTA_SEC = 0.1 imported as a typed literal constant
+// (single source of truth in audioEngine.ts — no duplicated literal here).
+import { MAX_TICK_DELTA_SEC } from '../audio/audioEngine'
 import type { SessionClock } from '../audio/audioEngine'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { SessionSettings, StretchSettings } from '../domain/settings'
@@ -128,6 +131,15 @@ export function useSessionEngine(
   // DELETED in Task 3; the hook is now the single writer.
   const runningSnapshotRef = useRef<RunningSnapshot | null>(null)
 
+  // Phase 52 D-05 / D-08: monotonic last-clock-now anchor for per-tick delta
+  // computation (D-05) and for the synchronous reset inside reanchorSessionClock
+  // (D-08 — "reset synchronously inside reanchorSessionClock so the next rAF
+  // tick computes delta against the new clock base"). Initial value 0; overwritten
+  // at the START of the rAF effect when status transitions to 'running' — NOT at
+  // hook construction time (clock may not yet be backed by the AC at construction).
+  // Stable ref — NOT a dep array entry anywhere (mirrors runningSnapshotRef posture).
+  const lastClockNowRef = useRef<number>(0)
+
   // AH-WR-05 INVARIANT — STALE-CLOSURE TRAP: the dep array below is
   // intentionally `[state.status, clock]` only, so this effect (and its rAF loop)
   // is created ONCE per session (when status transitions to running) and NOT
@@ -142,6 +154,9 @@ export function useSessionEngine(
   // `currentState`, not the closure. `clock` is included in the dep array per
   // exhaustive-deps; callers thread a stable memoized instance (Phase 50-02
   // Task 4), so the rAF loop is not re-created mid-session in practice.
+  // Phase 52 D-07: the clamp-rebase block inside the updater follows the same
+  // constraint — startedAtSec is rewritten via the rebasedState shadow variable,
+  // NEVER via state.startedAtSec from the outer closure.
   useEffect(() => {
     if (state.status !== 'running') {
       // HOOKS-02 / D-06: DO NOT null the snapshot here. Hook effects (custom-
@@ -157,6 +172,14 @@ export function useSessionEngine(
       return undefined
     }
 
+    // Phase 52 D-05/D-08 (Pattern note from PATTERNS.md §"Pattern note on the
+    // new lastClockNow ref"): initialize at the START of the rAF effect — NOT
+    // at hook construction. The clock may not yet be backed by the AudioContext
+    // at construction time; initializing here ensures the first tick sees a
+    // near-zero rawDelta rather than a large delta from the gap between hook
+    // construction and session start.
+    lastClockNowRef.current = clock.now()
+
     let animationFrameId = 0
     let cancelled = false
 
@@ -167,24 +190,56 @@ export function useSessionEngine(
       // torn-down state owner.
       if (cancelled) return
 
+      // Phase 52 D-05/D-06: per-tick delta computation + always-cap clamp.
+      // Single read of clock.now() per tick — shared by the clamp math and
+      // the completeIfNeeded call inside the updater (consistent clockNowSec).
+      const clockNowSec = clock.now()
+      const lastClockNow = lastClockNowRef.current
+      const rawDelta = clockNowSec - lastClockNow
+      // D-05: clamp applies on every tick via Math.min(rawDelta, MAX_TICK_DELTA_SEC).
+      // Foreground frames (~16ms) pass through unchanged; only post-hidden-window
+      // first-frame is affected (rawDelta >> MAX_TICK_DELTA_SEC).
+      // D-06: MAX_TICK_DELTA_SEC = 0.1 imported from audioEngine.ts (no literal).
+      // The clamp condition `rawDelta > MAX_TICK_DELTA_SEC` is evaluated inside
+      // the setState updater where the rebase math lives (AH-WR-05).
+      // Update anchor for the NEXT tick — outside the setState updater because
+      // refs are mutable and this read happens once per tick, not per invocation.
+      lastClockNowRef.current = clockNowSec
+
       setState((currentState) => {
         if (currentState.status !== 'running') {
           return currentState
         }
 
+        // Phase 52 D-07: clamp-rebase block. If rawDelta > MAX_TICK_DELTA_SEC
+        // (hidden window resumed), push sessionStartCtxTime forward by the overage
+        // so elapsed = clock.now() - startedAtSec stays consistent across the
+        // clamp boundary. Hidden time is NOT counted toward session duration.
+        // "Practice-time semantics" extends Phase 51 D-07 (iOS lock) to desktop
+        // tab-hide. AH-WR-05: startedAtSec is read via currentState (NOT outer-
+        // closure state) — rebase uses the rebasedState shadow variable.
+        const rebasedState =
+          rawDelta > MAX_TICK_DELTA_SEC
+            ? {
+                ...currentState,
+                startedAtSec: currentState.startedAtSec + (rawDelta - MAX_TICK_DELTA_SEC),
+              }
+            : currentState
+
         // HOOKS-02 / D-06 / D-08: write the running-snapshot from
-        // `currentState` (NOT outer-closure `state` — RESEARCH §Pitfall 1
+        // `rebasedState` (NOT outer-closure `state` — RESEARCH §Pitfall 1
         // closure staleness). Placement: AFTER the early-return narrowed
-        // `currentState` to `RunningSessionState`, BEFORE
-        // completeIfNeeded(...) so the snapshot reflects the LAST known
-        // elapsed values just before completion math runs.
+        // `currentState` to `RunningSessionState` and AFTER the rebase so
+        // the snapshot reflects the corrected startedAtSec anchor.
         runningSnapshotRef.current = {
-          key: String(currentState.startedAtSec),
-          startedAtSec: currentState.startedAtSec,
-          lastElapsedSec: currentState.lastFrame.elapsedSec,
+          key: String(rebasedState.startedAtSec),
+          startedAtSec: rebasedState.startedAtSec,
+          lastElapsedSec: rebasedState.lastFrame.elapsedSec,
         }
 
-        return completeIfNeeded(currentState, clock.now())
+        // Pass rebasedState and the captured clockNowSec (NOT a fresh clock.now()
+        // call) — the rebase math depends on a single consistent clockNowSec value.
+        return completeIfNeeded(rebasedState, clockNowSec)
       })
 
       // Re-check cancelled BEFORE scheduling the next rAF. The top-of-tick
@@ -320,6 +375,22 @@ export function useSessionEngine(
   // 'running' and rewrites startedAtSec = newClockNow - lastFrame.elapsedSec.
   // Deps are `[]` — the updater reads currentState, no closure over `state`.
   const reanchorSessionClock = useCallback((newClockNow: number) => {
+    // Phase 52 D-08: reset lastClockNowRef synchronously so the next rAF tick
+    // computes rawDelta = clock.now() - newClockNow (≈ 0 for an immediate tick)
+    // and the clamp does NOT fire spuriously. Without this reset, the first tick
+    // after the proxy source swap would see rawDelta = newClockNow - oldAnchor,
+    // which may be large enough to rebase startedAtSec incorrectly.
+    //
+    // Shape A (D-08): unconditional write before setState. If the session is NOT
+    // running, the rAF effect is not active, so the ref value is irrelevant until
+    // the next session's start (which re-initializes it via the rAF effect body).
+    //
+    // Phase 51 D-10/D-11 ordering: this reset fires synchronously inside
+    // reanchorSessionClock, which is called BEFORE onAudioReanchorRequired
+    // (the audio-anchor reanchor). The ref is stable at the new clock base by
+    // the time the next rAF tick fires.
+    lastClockNowRef.current = newClockNow
+
     setState((currentState) => {
       if (currentState.status !== 'running') {
         // No-op: reanchor on idle/complete is meaningless.
