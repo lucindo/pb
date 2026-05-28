@@ -1581,3 +1581,84 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
     unmount()
   })
 })
+
+// Phase 52 D-04: topUpLookahead facade tests
+describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
+  class SpyableAC {
+    state: AudioContextState = 'running'
+    sampleRate = 44100
+    destination = {}
+    private _start = performance.now() / 1000
+    get currentTime() { return performance.now() / 1000 - this._start }
+    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(_options?: AudioContextOptions) {}
+    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async resume(): Promise<void> { this.state = 'running' }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async close(): Promise<void> { this.state = 'closed' }
+    addEventListener = vi.fn()
+    removeEventListener = vi.fn()
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('topUpLookahead is exposed in the hook return value', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    expect(typeof result.current.topUpLookahead).toBe('function')
+    unmount()
+  })
+
+  it('topUpLookahead delegates to engine.topUpLookahead after start()', async () => {
+    const topUpSpy = vi.fn()
+    // Reason: partial AudioEngine for testing topUpLookahead delegation.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEngine: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 3),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: topUpSpy,
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn(() => () => undefined),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(fakeEngine)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    const cues = [{ audioTime: 5, phaseDurationSec: 3, kind: 'in' as const }]
+    act(() => {
+      result.current.topUpLookahead(cues)
+    })
+    expect(topUpSpy).toHaveBeenCalledTimes(1)
+    expect(topUpSpy).toHaveBeenCalledWith({ cues })
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('topUpLookahead is a no-op before start() (engine is null)', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    // Should not throw even with no engine
+    expect(() => {
+      result.current.topUpLookahead([{ audioTime: 5, phaseDurationSec: 3, kind: 'in' }])
+    }).not.toThrow()
+    unmount()
+  })
+})
