@@ -528,16 +528,29 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         return
       }
       if (next && activeCues.size > 0) {
-        // D-08 + WR-08: muting mid-cue applies a soft fade-out tail to EVERY in-flight
-        // cue's envelope (lead-in ticks AND bowl cues). Prune already-finished cues
-        // first so we don't ramp dead envelopes.
+        // D-08 + WR-08 (PRESERVED): muting mid-cue applies fade-out to in-flight cues.
+        // Phase 52 D-10: split iteration — in-flight branch fades, future branch cancels.
         pruneExpiredCues()
+        const now = audioCtx.currentTime
         for (const cue of activeCues) {
-          applyMuteFadeOut(cue, audioCtx)
+          if (cue.scheduledAt <= now) {
+            // In-flight cue: apply soft fade-out (D-08/WR-08 behavior preserved).
+            applyMuteFadeOut(cue, audioCtx)
+          }
+        }
+        // Phase 52 D-10: future-queued cues from the lookahead window get hard-cancelled.
+        // Without this, the deeper queue (~6s) would leave audible audio after mute.
+        // Called AFTER the in-flight loop so the loop sees the original Set before mutation.
+        // AH-WR-07 snapshot-iterate-then-mutate pattern (same as pruneExpiredCues).
+        for (const cue of [...activeCues]) {
+          if (cue.scheduledAt > now) {
+            cue.cancel()
+            activeCues.delete(cue)
+          }
         }
       }
-      // D-08: unmuting mid-phase is silent — the next cue plays at the next phase boundary,
-      //       NOT a make-up cue here. Boundary scheduling is owned by App.tsx (Plan 04).
+      // D-08 (PRESERVED): unmute waits for next boundary (the next top-up tick re-queues
+      // from the fresh muted=false state). No make-up cue dispatched here.
       muted = next
     },
 
