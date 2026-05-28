@@ -844,6 +844,7 @@ describe('audioEngine', () => {
         envelope: { gain: { value: 1 } } as unknown as GainNode,
         scheduledAt: 0,
         cleanupAt: 0.02, // 20 ms tail
+        cancel: vi.fn(),
       }
       const endChordSpy = vi.spyOn(nkCueSynth, 'scheduleEndChord').mockReturnValue(fakeChord)
 

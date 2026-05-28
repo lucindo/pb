@@ -71,6 +71,19 @@ export interface AudioEngine {
    *  is closed-over by useCallback and may be stale within the same invocation. Reading
    *  audioCtx.state directly is the live truth. */
   readonly state: AudioContextState | 'interrupted'
+  /** Phase 52 D-04: dispatch a caller-supplied list of cues into the WebAudio scheduler.
+   *  The caller (Plan 03's walkFutureCues helper or Plan 04's force-top-up on onResume)
+   *  pre-computes the cue list; the engine just dispatches via the internal schedule()
+   *  switch. Respects closed/muted guards (matching scheduleNextCue posture) and applies
+   *  the callee-side SAFE_LEAD_SEC clamp on each cue's audioTime. Calls pruneExpiredCues()
+   *  before dispatching to keep activeCues bounded. */
+  topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void
+  /** Phase 52 D-09 + D-10: iterate activeCues snapshot, call cancel() on every cue
+   *  with scheduledAt > audioCtx.currentTime, and remove those cues from activeCues.
+   *  In-flight cues (scheduledAt <= now) are left for applyMuteFadeOut (the D-08 path).
+   *  Uses snapshot-iterate-then-mutate (AH-WR-07) so Set mutation during iteration is safe.
+   *  No-op when engine is closed. */
+  cancelFutureCues(): void
   /** Phase 50 D-11 + revision 1 Blocker #1 / ABSTR-01: SessionClock surface for external
    *  subscribers (onSuspend / onResume / onClose) and time reads (now / schedule). The
    *  clock is constructed once at engine construction time (see createAudioEngine).
@@ -460,6 +473,41 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // flows into the 'in' / 'out' cue payload; schedule()'s arm forwards it as the
       // 5th arg to scheduleInCueForTimbre / scheduleOutCueForTimbre.
       schedule(clampedAudioTime, { kind: newPhase, phaseDurationSec, timbre: sessionTimbre })
+    },
+
+    // Phase 52 D-04: lookahead dispatch facade.
+    // Follows the same posture as scheduleNextCue: closed/muted guards at top,
+    // pruneExpiredCues() before dispatch, callee-side SAFE_LEAD_SEC clamp per cue.
+    // The cue list is pre-computed by Plan 03's walkFutureCues helper; this method
+    // only dispatches via the internal schedule() switch (no walk logic here).
+    topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void {
+      if (closed) return
+      if (muted) return // D-08 unmute-waits-for-boundary; mirrors scheduleNextCue guard.
+      pruneExpiredCues()
+      for (const cue of args.cues) {
+        // AUDIO-02 D-01/D-02 callee-side clamp — identical posture to scheduleNextCue (L439).
+        const clampedAudioTime = Math.max(cue.audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
+        // schedule() adds the returned handle to activeCues internally (D-05).
+        // Engine ignores cue.timbre — uses closed-over sessionTimbre (Phase 18 D-08).
+        schedule(clampedAudioTime, { kind: cue.kind, phaseDurationSec: cue.phaseDurationSec, timbre: sessionTimbre })
+      }
+    },
+
+    // Phase 52 D-09 + D-10: future-cue cancellation helper.
+    // Snapshot-iterate activeCues (AH-WR-07: spread copy decouples iteration from mutation).
+    // For each cue with scheduledAt > now: call cancel() + remove from activeCues.
+    // In-flight cues (scheduledAt <= now) are preserved for applyMuteFadeOut (D-08/D-10).
+    cancelFutureCues(): void {
+      if (closed) return
+      const now = audioCtx.currentTime
+      // AH-WR-07 snapshot-iterate-then-mutate: same pattern as pruneExpiredCues (L322).
+      // D-09 + D-10: cancel() stops oscillators + disconnects all nodes.
+      for (const cue of [...activeCues]) {
+        if (cue.scheduledAt > now) {
+          cue.cancel()
+          activeCues.delete(cue)
+        }
+      }
     },
 
     playEndChord(): void {
