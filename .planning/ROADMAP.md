@@ -212,5 +212,5 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete    | 2026-05-27 |
 | 50. SessionClock / scheduler abstraction | 7/7 | Complete    | 2026-05-28 |
 | 51. Master clock unification | 5/5 | Complete    | 2026-05-28 |
-| 52. Visibility-resume clamp + lookahead scheduling | 4/4 | Complete   | 2026-05-28 |
+| 52. Visibility-resume clamp + lookahead scheduling | 5/5 | Complete   | 2026-05-28 |
 | 53. Master-gain mute | 0/TBD | Not started | — |
