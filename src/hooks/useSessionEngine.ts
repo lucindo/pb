@@ -375,6 +375,22 @@ export function useSessionEngine(
   // 'running' and rewrites startedAtSec = newClockNow - lastFrame.elapsedSec.
   // Deps are `[]` — the updater reads currentState, no closure over `state`.
   const reanchorSessionClock = useCallback((newClockNow: number) => {
+    // Phase 52 D-08: reset lastClockNowRef synchronously so the next rAF tick
+    // computes rawDelta = clock.now() - newClockNow (≈ 0 for an immediate tick)
+    // and the clamp does NOT fire spuriously. Without this reset, the first tick
+    // after the proxy source swap would see rawDelta = newClockNow - oldAnchor,
+    // which may be large enough to rebase startedAtSec incorrectly.
+    //
+    // Shape A (D-08): unconditional write before setState. If the session is NOT
+    // running, the rAF effect is not active, so the ref value is irrelevant until
+    // the next session's start (which re-initializes it via the rAF effect body).
+    //
+    // Phase 51 D-10/D-11 ordering: this reset fires synchronously inside
+    // reanchorSessionClock, which is called BEFORE onAudioReanchorRequired
+    // (the audio-anchor reanchor). The ref is stable at the new clock base by
+    // the time the next rAF tick fires.
+    lastClockNowRef.current = newClockNow
+
     setState((currentState) => {
       if (currentState.status !== 'running') {
         // No-op: reanchor on idle/complete is meaningless.
