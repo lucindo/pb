@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook } from '@testing-library/react'
 
 import { useAmbientScale } from './useAmbientScale'
+import { createWallSessionClock } from '../audio/sessionClock'
 import { MID_SCALE } from '../components/shapeConstants'
 
 afterEach(() => {
@@ -10,7 +11,8 @@ afterEach(() => {
 
 describe('useAmbientScale', () => {
   it('returns MID_SCALE when inactive', () => {
-    const { result } = renderHook(() => useAmbientScale(false))
+    const wallClock = createWallSessionClock()
+    const { result } = renderHook(() => useAmbientScale(false, wallClock))
     expect(result.current).toBe(MID_SCALE)
   })
 
@@ -28,7 +30,8 @@ describe('useAmbientScale', () => {
       dispatchEvent: () => false,
     } as unknown as MediaQueryList)
 
-    const { result } = renderHook(() => useAmbientScale(true))
+    const wallClock = createWallSessionClock()
+    const { result } = renderHook(() => useAmbientScale(true, wallClock))
     expect(result.current).toBe(MID_SCALE)
   })
 
@@ -37,7 +40,8 @@ describe('useAmbientScale', () => {
     // rAF stubbing, and the math is straightforward enough to read directly in
     // useAmbientScale.ts. We only assert the initial state, which is MID_SCALE
     // before the first rAF callback fires.
-    const { result } = renderHook(() => useAmbientScale(true))
+    const wallClock = createWallSessionClock()
+    const { result } = renderHook(() => useAmbientScale(true, wallClock))
     expect(result.current).toBe(MID_SCALE)
   })
 })

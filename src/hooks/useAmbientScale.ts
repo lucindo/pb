@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import type { SessionClock } from '../audio/sessionClock'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from '../components/shapeConstants'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion'
 
@@ -7,8 +8,12 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion'
 // length as the spike's PHASE_MS = 5500 each-way (index.html L569) but biased
 // toward the longer exhale, so the idle ambient breath mirrors the HRV
 // resonant default rather than feeling like a metronome.
-const INHALE_MS = 4400 // 11_000 × 0.40
-const EXHALE_MS = 6600 // 11_000 × 0.60
+//
+// Phase 50 D-02: seconds-shaped (was ms-shaped 4400 / 6600 pre-refactor). The
+// rAF body math is in seconds end-to-end, matching the SessionClock contract
+// (D-01 audio-natural seconds).
+const INHALE_SEC = 4.4 // 11.0 × 0.40
+const EXHALE_SEC = 6.6 // 11.0 × 0.60
 
 function easeInOutSine(t: number): number {
   return 0.5 - 0.5 * Math.cos(Math.PI * Math.max(0, Math.min(1, t)))
@@ -23,8 +28,19 @@ function easeInOutSine(t: number): number {
  *  The inactive/reduced-motion branches return MID_SCALE directly without
  *  resetting state — when transitioning out of an active run the rAF cleanup
  *  stops the ticker and the return-side short-circuit takes over, so the
- *  stale state value is never observed. */
-export function useAmbientScale(active: boolean): number {
+ *  stale state value is never observed.
+ *
+ *  Phase 50 D-07: `wallClock` is the seconds-shaped time source for the INITIAL
+ *  `start` capture. Per-tick time inside the rAF callback uses the rAF
+ *  DOMHighResTimeStamp directly (preserved per revision 1 Warning #8 for
+ *  byte-identicality — the rAF timestamp is the canonical per-frame time and
+ *  reading the clock at the top of each tick would introduce sub-frame
+ *  divergence). Callers (OrbShape) construct a stable wall clock via
+ *  `createWallSessionClock()` and thread it through a `useMemo` so the
+ *  effect's dep array sees a stable identity. D-09: this hook MUST NOT make
+ *  direct calls into `performance` time APIs — the only seconds-shaped time
+ *  source for the initial start is the injected clock. */
+export function useAmbientScale(active: boolean, wallClock: SessionClock): number {
   const reducedMotion = usePrefersReducedMotion()
   const animated = active && !reducedMotion
   const [scale, setScale] = useState(MID_SCALE)
@@ -32,19 +48,26 @@ export function useAmbientScale(active: boolean): number {
   useEffect(() => {
     if (!animated) return
     let phase: 'in' | 'out' = 'in'
-    let start = performance.now()
+    let start = wallClock.now()
     let raf = 0
     let cancelled = false
     const tick = (now: number) => {
       if (cancelled) return
-      const phaseMs = phase === 'in' ? INHALE_MS : EXHALE_MS
-      const elapsed = now - start
-      if (elapsed >= phaseMs) {
-        start = now - (elapsed - phaseMs)
+      // Revision 1 Warning #8: rAF DOMHighResTimeStamp arrives in ms; convert
+      // at the boundary to seconds so the per-tick math is unit-consistent
+      // with `start` (seeded from the injected clock in seconds). The rAF
+      // timestamp is the canonical per-frame time source — preserving it
+      // keeps the oscillation curve byte-identical to the pre-refactor
+      // version (which used `now` directly in ms-shaped arithmetic).
+      const nowSec = now / 1000
+      const phaseSec = phase === 'in' ? INHALE_SEC : EXHALE_SEC
+      const elapsed = nowSec - start
+      if (elapsed >= phaseSec) {
+        start = nowSec - (elapsed - phaseSec)
         phase = phase === 'in' ? 'out' : 'in'
       }
-      const currentPhaseMs = phase === 'in' ? INHALE_MS : EXHALE_MS
-      const t = easeInOutSine((now - start) / currentPhaseMs)
+      const currentPhaseSec = phase === 'in' ? INHALE_SEC : EXHALE_SEC
+      const t = easeInOutSine((nowSec - start) / currentPhaseSec)
       const next =
         phase === 'in'
           ? MIN_SCALE + (MAX_SCALE - MIN_SCALE) * t
@@ -57,7 +80,7 @@ export function useAmbientScale(active: boolean): number {
       cancelled = true
       cancelAnimationFrame(raf)
     }
-  }, [animated])
+  }, [animated, wallClock])
 
   return animated ? scale : MID_SCALE
 }
