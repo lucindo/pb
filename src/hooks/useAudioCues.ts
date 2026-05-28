@@ -12,7 +12,7 @@
 // Cleanup posture (Pitfall 3): the unmount effect closes the engine if one
 // is alive. Mirrors the cancelled-flag idiom from useSessionEngine.ts:53-56.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { BreathingPlan } from '../domain/breathingPlan'
 import {
@@ -21,6 +21,10 @@ import {
   type AudioStatus,
 } from '../audio/audioEngine'
 import type { AudioStatusFlag } from '../audio/audioStatus'
+// Phase 51-02 (D-03/D-05): stable-identity proxy clock backed by the AC clock during sessions.
+import { createSwappableSessionClock } from '../audio/swappableSessionClock'
+import { createWallSessionClock } from '../audio/sessionClock'
+import type { SessionClock } from '../audio/sessionClock'
 // Phase 18 Plan 04: TimbreId is captured per-session via `start(plan, timbre)` and
 // stored synchronously into `timbreRef` BEFORE any await (D-08). DEFAULT_TIMBRE is
 // the ref's initial value — overwritten at the user's first Start click. The hook
@@ -36,6 +40,22 @@ export interface UseAudioCues {
   audioAvailable: boolean
   /** Current mute state (default false per D-07). */
   muted: boolean
+  /**
+   * Phase 51-02 (D-03): stable-identity proxy `SessionClock`. Same `===` reference for the
+   * lifetime of the hook instance — identity never changes across renders or source swaps.
+   *
+   * D-03 posture: built from `createSwappableSessionClock(createWallSessionClock())` exactly
+   * once via `useMemo([], [])` inside the hook body.
+   *
+   * D-05 (HRV swap moment): `clock.now()` delegates to the wall clock before `start()` and
+   * to `engine.clock` after `start()` sets `proxyMemoRef.current.setSource(engine.clock)`.
+   *
+   * D-11 (reconstruction swap): on `reconstructEngine`, `proxyMemoRef.current.setSource(newEngine.clock)`
+   * is called BEFORE the `onReanchorRequired` callback fires. Subscribers (e.g., `useSessionEngine`
+   * via the clock dep) do NOT need to re-subscribe — the proxy's D-04 subscription-survival
+   * semantics keep all callbacks forwarded to the new source automatically.
+   */
+  clock: SessionClock
   /** Called from the Start session click handler (user gesture). Awaits AC creation. May fail
    *  → audioAvailable=false, status='failed'. Returns the audioTime of the first In cue
    *  (or null if AC failed).
@@ -89,7 +109,20 @@ export interface UseAudioCues {
 export function useAudioCues(
   initialMuted?: boolean,
   onReanchorRequired?: (newAudioAnchor: number) => void,
+  onSessionClockReanchored?: (newClockNow: number) => void,
 ): UseAudioCues {
+  // Phase 51-02 (D-03): stable-identity proxy clock. Built ONCE per hook instance via
+  // useMemo with empty deps — the `clock` reference is NEVER rebuilt by setSource().
+  // Store as a ref to avoid adding proxyMemo to useCallback dep arrays (proxyMemo IS stable,
+  // but adding it would surface as an exhaustive-deps warning because the rule cannot statically
+  // prove a useMemo return is stable). Using a ref as a stable handle is the cleanest posture.
+  const proxyMemo = useMemo(() => createSwappableSessionClock(createWallSessionClock()), [])
+  const proxyClock = proxyMemo.clock
+  // Stable ref handle: proxyMemoRef.current is always the same useMemo-created object;
+  // calling proxyMemoRef.current.setSource(next) avoids @typescript-eslint/unbound-method
+  // and does not introduce any new dep into useCallback arrays.
+  const proxyMemoRef = useRef(proxyMemo)
+
   // Imperative resource — engineRef is NOT in render state because each AC create/close
   // is a side effect, not a UI value. Mirrors useSessionEngine.ts's animationFrameId posture.
   const engineRef = useRef<AudioEngine | null>(null)
@@ -150,6 +183,13 @@ export function useAudioCues(
   useEffect(() => {
     onReanchorRequiredRef.current = onReanchorRequired
   }, [onReanchorRequired])
+
+  // Phase 51-02 (D-10/D-11): mirror of onReanchorRequiredRef for the new session-clock
+  // reanchor callback. Fires in reconstructEngine BEFORE onReanchorRequired (D-11 ordering).
+  const onSessionClockReanchoredRef = useRef<typeof onSessionClockReanchored>(onSessionClockReanchored)
+  useEffect(() => {
+    onSessionClockReanchoredRef.current = onSessionClockReanchored
+  }, [onSessionClockReanchored])
 
   // Phase 50 D-11 + revision 1 Blocker #1: clock subscriptions (suspend/resume/close) live
   // alongside engineRef. Must be torn down before engineRef is nulled (stop()) or reassigned
@@ -286,6 +326,11 @@ export function useAudioCues(
         bypassSilentModeRef.current = bypassSilentMode
         const engine = await createAudioEngine({ timbre, bypassSilentMode })
         engineRef.current = engine
+        // Phase 51-02 (D-05): swap the proxy source to the AC clock immediately after
+        // engineRef is assigned. Subsequent clock.now() reads delegate to the AC's currentTime.
+        // This is the HRV swap moment — the lead-in setTimeout chain BEFORE this point runs on
+        // the wall-clock initial source, which is intentional and acceptable per CONTEXT D-05.
+        proxyMemoRef.current.setSource(engine.clock)
         // Phase 50 D-11 + revision 1 Blocker #1: subscribe to the three clock channels.
         // Subscriptions live alongside engineRef and are torn down in stop() and at the top
         // of reconstructEngine() before engineRef is nulled. Revision 2 Blocker #1: handleSuspend
@@ -354,6 +399,16 @@ export function useAudioCues(
     // pointing at a dead engine.
     const engine = engineRef.current
     engineRef.current = null
+    // Phase 51-02 (D-06 "revert to wall on close" pattern): revert the proxy source to a
+    // fresh wall clock so any post-stop clock.now() reads return wall time (not a stale
+    // AC currentTime from a closed context, which most browsers freeze at their last value —
+    // unspecified across implementations). Uses a fresh createWallSessionClock() instance to
+    // avoid any cross-session subscription state from the initial source.
+    // NOTE: the unmount cleanup does NOT add a setProxyClockSource revert here — the hook,
+    // useSessionEngine, and useBreathingSessionController all unmount together, so no
+    // post-unmount clock.now() read can reach the proxy. This is asymmetric with NK Plan
+    // 51-03 by design (see must_haves.truths "Unmount asymmetry").
+    proxyMemoRef.current.setSource(createWallSessionClock())
     firstInCueTimeRef.current = null // WR-05: clear cached anchor for the next start()
     // Plan 06: reset the audioStatus state machine + Pitfall 5 gate so the next
     // session starts clean (otherwise a residual 'needs-resume' from a prior
@@ -446,6 +501,10 @@ export function useAudioCues(
     if (oldEngine !== null) void oldEngine.close()
 
     engineRef.current = newEngine
+    // Phase 51-02 (D-11 step 2): swap the proxy source to the new engine's clock.
+    // After this call, clock.now() delegates to the new AC's currentTime. This fires
+    // BEFORE the onSessionClockReanchored and onReanchorRequired callbacks (D-11 ordering).
+    proxyMemoRef.current.setSource(newEngine.clock)
     // Phase 50 D-11 + revision 1 Blocker #1: re-subscribe the three handlers against the
     // new engine's clock. The old engine's subscriptions were torn down at the top of this
     // callback (before nulling engineRef). The new Set never inherits state from the old
@@ -476,6 +535,12 @@ export function useAudioCues(
     // newEngine.now() per D-03 Option A (clock.now() returns the AC's currentTime).
     const reanchorAudioTime = newEngine.clock.now()
     firstInCueTimeRef.current = reanchorAudioTime
+    // Phase 51-02 (D-11 step 3): fire onSessionClockReanchored BEFORE onReanchorRequired.
+    // D-11 ordering: session-clock reanchor fires first (useSessionEngine rewrites
+    // startedAtSec), then the audio-anchor reanchor (useBreathingSessionController
+    // resets audioAnchorRef). This ensures session elapsed is preserved before the
+    // audio scheduling path re-anchors.
+    onSessionClockReanchoredRef.current?.(reanchorAudioTime)
     onReanchorRequiredRef.current?.(reanchorAudioTime)
     // The new AC starts in 'running' via the WR-06 constructor path. Set
     // audioStatus = 'ok' synchronously — the clock's resume subscriber will also
@@ -541,6 +606,7 @@ export function useAudioCues(
     status,
     audioAvailable,
     muted,
+    clock: proxyClock,
     start,
     stop,
     setMuted,

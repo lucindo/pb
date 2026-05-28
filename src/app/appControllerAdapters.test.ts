@@ -52,6 +52,7 @@ function makeSessionEngine(overrides: Partial<SessionEngine> = {}): SessionEngin
     start: noop,
     end: noop,
     extendDuration: noop,
+    reanchorSessionClock: noop,
     ...overrides,
   }
 }
