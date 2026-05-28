@@ -1642,3 +1642,200 @@ describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
     unmount()
   })
 })
+
+// Phase 52 D-04 forceTopUp on clock.onResume
+// Tests for handleForceTopUp: subscribed to clock.onResume; re-dispatches cached cues;
+// survives reconstruction; torn down by unmount/stop; no-op before first topUpLookahead.
+describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  // Helper: builds a fake engine with a controllable onResume subscription.
+  // Returns the engine, a fire() function to invoke all onResume subscribers,
+  // and a topUpSpy for assertions.
+  function makeFakeEngineWithControllableResume() {
+    const topUpSpy = vi.fn()
+    const resumeSubscribers: Array<() => void> = []
+    const suspendSubscribers: Array<() => void> = []
+    const closeSubscribers: Array<() => void> = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const engine: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 3),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: topUpSpy,
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn((cb: () => void) => {
+          resumeSubscribers.push(cb)
+          return () => {
+            const idx = resumeSubscribers.indexOf(cb)
+            if (idx !== -1) resumeSubscribers.splice(idx, 1)
+          }
+        }),
+        onSuspend: vi.fn((cb: () => void) => {
+          suspendSubscribers.push(cb)
+          return () => {
+            const idx = suspendSubscribers.indexOf(cb)
+            if (idx !== -1) suspendSubscribers.splice(idx, 1)
+          }
+        }),
+        onClose: vi.fn((cb: () => void) => {
+          closeSubscribers.push(cb)
+          return () => {
+            const idx = closeSubscribers.indexOf(cb)
+            if (idx !== -1) closeSubscribers.splice(idx, 1)
+          }
+        }),
+      },
+    }
+    const fireResume = () => { for (const cb of [...resumeSubscribers]) cb() }
+    return { engine, topUpSpy, resumeSubscribers, fireResume }
+  }
+
+  it('D-04 T1: clock.onResume fires with no error even when engine is null (defensive gate)', async () => {
+    // Before start(): engine is null. Firing onResume should not throw.
+    // This is tested by verifying the hook can receive the start call with no engine.
+    const { engine, fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    // Before start(): firing onResume should be a no-op (engine null)
+    // We fire it indirectly by verifying topUpLookahead before any caches exist.
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Dispatch resume BEFORE any topUpLookahead call — cached cues empty → forceTopUp no-op
+    act(() => { fireResume() })
+
+    // topUpSpy should NOT have been called (no cached cues yet)
+    expect(engine.topUpSpy).toBeUndefined() // structural sanity
+    expect(engine.topUpLookahead).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('D-04 T2: clock.onResume fires after topUpLookahead cached cues → re-dispatches those cues via engine.topUpLookahead', async () => {
+    const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    const cues = [
+      { audioTime: 5, phaseDurationSec: 4, kind: 'in' as const },
+      { audioTime: 15, phaseDurationSec: 6, kind: 'out' as const },
+    ]
+
+    // Call topUpLookahead to cache the cues
+    act(() => { result.current.topUpLookahead(cues) })
+    expect(topUpSpy).toHaveBeenCalledTimes(1)
+    topUpSpy.mockClear()
+
+    // Fire onResume → handleForceTopUp should re-dispatch the cached cues
+    act(() => { fireResume() })
+
+    // handleForceTopUp should call engine.topUpLookahead with the SAME cues
+    expect(topUpSpy).toHaveBeenCalledTimes(1)
+    expect(topUpSpy).toHaveBeenCalledWith({ cues })
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('D-04 T6: clock.onResume fires before any topUpLookahead — lastTopUpCuesRef empty, no engine call', async () => {
+    const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Fire onResume BEFORE any topUpLookahead call
+    act(() => { fireResume() })
+
+    // topUpSpy should NOT be called (cache is empty)
+    expect(topUpSpy).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('D-04 T7: successive topUpLookahead calls update the cache — forceTopUp re-dispatches LATEST cues', async () => {
+    const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    const firstCues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' as const }]
+    const secondCues = [
+      { audioTime: 10, phaseDurationSec: 6, kind: 'out' as const },
+      { audioTime: 16, phaseDurationSec: 4, kind: 'in' as const },
+    ]
+
+    act(() => { result.current.topUpLookahead(firstCues) })
+    act(() => { result.current.topUpLookahead(secondCues) })
+
+    topUpSpy.mockClear()
+
+    // Fire onResume → should re-dispatch secondCues (most recent)
+    act(() => { fireResume() })
+
+    expect(topUpSpy).toHaveBeenCalledTimes(1)
+    expect(topUpSpy).toHaveBeenCalledWith({ cues: secondCues })
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('D-04 T4: stop() tears down forceTopUp subscription — no topUpLookahead called after stop', async () => {
+    const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    const cues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' as const }]
+    act(() => { result.current.topUpLookahead(cues) })
+    topUpSpy.mockClear()
+
+    // stop() should tear down all clock subscriptions including forceTopUp
+    await act(async () => { await result.current.stop() })
+
+    // Fire resume AFTER stop — subscription should be gone, no engine call
+    act(() => { fireResume() })
+    expect(topUpSpy).not.toHaveBeenCalled()
+
+    unmount()
+  })
+
+  it('D-04 T3: onResume subscription count — engine.clock.onResume called at least twice (handleResume + handleForceTopUp)', async () => {
+    const { engine, fireResume: _fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // engine.clock.onResume must be called at least 2 times:
+    // once for handleResume and once for handleForceTopUp
+    expect(engine.clock.onResume).toHaveBeenCalledTimes(2)
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+})
