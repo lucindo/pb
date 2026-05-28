@@ -1581,3 +1581,64 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
     unmount()
   })
 })
+
+// Phase 52 D-04: topUpLookahead facade tests
+describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('topUpLookahead is exposed in the hook return value', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    expect(typeof result.current.topUpLookahead).toBe('function')
+    unmount()
+  })
+
+  it('topUpLookahead delegates to engine.topUpLookahead after start()', async () => {
+    const topUpSpy = vi.fn()
+    // Reason: partial AudioEngine for testing topUpLookahead delegation.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEngine: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 3),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: topUpSpy,
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn(() => () => undefined),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(fakeEngine)
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    const cues = [{ audioTime: 5, phaseDurationSec: 3, kind: 'in' as const }]
+    act(() => {
+      result.current.topUpLookahead(cues)
+    })
+    expect(topUpSpy).toHaveBeenCalledTimes(1)
+    expect(topUpSpy).toHaveBeenCalledWith({ cues })
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('topUpLookahead is a no-op before start() (engine is null)', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    // Should not throw even with no engine
+    expect(() => {
+      result.current.topUpLookahead([{ audioTime: 5, phaseDurationSec: 3, kind: 'in' }])
+    }).not.toThrow()
+    unmount()
+  })
+})

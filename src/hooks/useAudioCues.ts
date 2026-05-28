@@ -84,6 +84,10 @@ export interface UseAudioCues {
    *  bowl-cue decay envelope stretches with the phase length at low BPM
    *  (260510-tc9 Bug 2). */
   notifyPhaseBoundary(this: void, args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
+  /** Phase 52 D-04: dispatch a caller-supplied list of pre-computed cues via engine.topUpLookahead.
+   *  The controller calls this on every session frame (rAF tick) with the walkFutureCues output.
+   *  Facade: delegates to engine.topUpLookahead({ cues }); no-op if engine is null (before start). */
+  topUpLookahead(this: void, cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void
   /** Returns engine.clock.now() (= AC currentTime per D-03 Option A), or null if
    *  AC unavailable. App.tsx uses this for the dual-anchor (Pitfall 2). Revision 2
    *  Warning #5: comment updated post Phase 50 — audioNow reads through the SessionClock
@@ -592,6 +596,20 @@ export function useAudioCues(
     [],
   )
 
+  // Phase 52 D-04: top-up facade — parallel to notifyPhaseBoundary; delegates to
+  // engine.topUpLookahead({ cues }). Plan 03 exposes this minimal facade; Plan 04 (Wave 3)
+  // extends it to cache the cues array for the clock.onResume force-top-up path.
+  // Defensive gate pattern: read engineRef into local `engine`; early-return when null
+  // (matches handleResume at L213-222 and all other clock-subscriber callbacks).
+  const topUpLookahead = useCallback(
+    (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void => {
+      const engine = engineRef.current
+      if (engine === null) return
+      engine.topUpLookahead({ cues })
+    },
+    [],
+  )
+
   const audioNow = useCallback((): number | null => {
     // Phase 50 D-11: read through the SessionClock seam (engine.clock.now()) per D-03
     // Option A — byte-identical to the prior engineRef.current?.now() (the AC's currentTime).
@@ -611,6 +629,7 @@ export function useAudioCues(
     stop,
     setMuted,
     notifyPhaseBoundary,
+    topUpLookahead,
     audioNow,
     playEndChord,
     audioStatus,
