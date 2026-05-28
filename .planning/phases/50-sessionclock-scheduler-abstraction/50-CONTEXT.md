@@ -22,7 +22,8 @@ Locked by ROADMAP / REQUIREMENTS (ABSTR-01..04):
 ### Clock unit + base (Area A)
 - **D-01:** `SessionClock.now()` returns **seconds** (float, audio-natural — matches `audioCtx.currentTime` convention).
 - **D-02:** Phase 50 also converts caller-internal time math from ms→sec in `useSessionEngine`, `useNKEngine`, and `useAmbientScale` so all caller-side time arithmetic is consistent. Domain helpers (`startSession`, `extendTimedSession`, `completeIfNeeded`, `startStretchSession`) and their tests follow the same rename.
-- **D-03:** Phase 51's clock-source swap becomes a one-line implementation change inside `createAudioSessionClock` — `() => audioCtx.currentTime` replaces `() => performance.now() / 1000`. No caller changes required for the swap.
+- **D-03:** ~~Phase 51's clock-source swap becomes a one-line implementation change inside `createAudioSessionClock` — `() => audioCtx.currentTime` replaces `() => performance.now() / 1000`. No caller changes required for the swap.~~
+  - **D-03 (resolved 2026-05-27, plan-phase):** `createAudioSessionClock.now()` returns `audioCtx.currentTime` **from Phase 50**, not `performance.now() / 1000`. Original wording conflicted with byte-identical behavior at `useNaviKriyaAudio.ts:75` (`audioCtx.currentTime + SAFE_LEAD_SEC` → `scheduleNKFrontMarker(when, ...)` requires AC-time). Reinterpretation aligns with D-01 ("audio-natural"), preserves D-09's "drift-guard passes by construction", and matches ROADMAP Phase 51 success criterion #3 which already frames Phase 51's work as caller-level rebase of `useSessionEngine` (capture `sessionStartCtxTime` instead of `startedAtMs`), not a factory-body swap. `createWallSessionClock.now()` continues to return `performance.now() / 1000`.
 
 ### `schedule(when, cue)` cue shape (Area B)
 - **D-04:** `cue` is a **typed discriminated union** (closed catalog at Phase 50):
@@ -39,7 +40,7 @@ Locked by ROADMAP / REQUIREMENTS (ABSTR-01..04):
   ```
   Exact field set finalized at plan time after the engine's per-cue helpers are re-walked; payload only what the dispatch needs.
 - **D-05:** The engine has internal dispatch from `cue.kind` to the existing per-cue schedulers (`scheduleInCueForTimbre`, `scheduleOutCueForTimbre`, `scheduleNKFrontMarker`, etc.). Existing engine methods (`scheduleLeadIn`, `scheduleNextCue`, `playEndChord`) and NK schedulers become **thin facades** that build a `Cue` value and call `schedule()`.
-- **D-06:** Phase 52's lookahead window pre-schedules typed `Cue` values directly into the WebAudio graph (background-tab survival), which is why the catalog is closed at Phase 50 — adding a new cue kind is an interface change visible to the scheduler.
+- **D-06** [informational]: Phase 52's lookahead window pre-schedules typed `Cue` values directly into the WebAudio graph (background-tab survival), which is why the catalog is closed at Phase 50 — adding a new cue kind is an interface change visible to the scheduler. *(Forward-looking rationale for D-04's closed catalog; not actionable at Phase 50. The closed-catalog enforcement at Phase 50 is covered by D-04 directly.)*
 
 ### Instance topology — NK + ambient (Area C)
 - **D-07:** One `SessionClock` interface, **two factory functions**:
@@ -47,12 +48,13 @@ Locked by ROADMAP / REQUIREMENTS (ABSTR-01..04):
   - `createWallSessionClock(): SessionClock` — backed by `performance.now() / 1000`. Used by `useAmbientScale`.
 - **D-08:** NK's AudioContext ownership stays with `useNaviKriyaAudio.begin()` (still `new AudioContext()` inside `begin()`, preserves D-09 user-gesture-chain semantics). The factory wraps; it does NOT construct the AC.
 - **D-09:** All 5 callers consume the `SessionClock` interface; `performance.now()` and `new AudioContext()` appear only inside the two factory implementations. The drift-guard passes by construction.
-- **D-10:** Phase 51 swap path: `createAudioSessionClock.now()` becomes `() => audioCtx.currentTime`; `createWallSessionClock` stays untouched (idle ambient has no AC and no Phase 51 work).
+- **D-10** [informational]: ~~Phase 51 swap path: `createAudioSessionClock.now()` becomes `() => audioCtx.currentTime`; `createWallSessionClock` stays untouched (idle ambient has no AC and no Phase 51 work).~~
+  - **D-10 (resolved 2026-05-27, plan-phase):** Superseded by D-03 resolution above. `createAudioSessionClock.now()` already returns `audioCtx.currentTime` at Phase 50. Phase 51's caller-level work (per ROADMAP Phase 51 #3) is: `useSessionEngine` captures `sessionStartCtxTime` at start and computes `elapsed = clock.now() − sessionStartCtxTime`; `useAmbientScale` continues using `createWallSessionClock()` (idle ambient has no AC) — its Phase 51 rebase, if any, comes from feeding it the audio clock for in-session ambient scaling. `createWallSessionClock` stays untouched. *(Superseded — not actionable at Phase 50; D-03 carries the live wiring.)*
 
 ### Phase 50 wiring scope (Area D)
 - **D-11:** `onSuspend` / `onResume` are **wired real** at Phase 50. `createAudioSessionClock` owns the audioCtx `'statechange'` listener; subscribers register via `clock.onSuspend(cb)` / `clock.onResume(cb)`. `useAudioCues` migrates from consuming `onStateChange` in `AudioEngineOptions` to subscribing through the SessionClock surface — but the existing AudioStatusFlag state machine (`needs-resume` flow, gesture-recovery seam) keeps its shape. `createWallSessionClock` exposes `onSuspend`/`onResume` as no-op subscribers (wall clock never suspends).
 - **D-12:** `setMasterGain` is a **stubbed no-op** at Phase 50. No master GainNode is inserted into the audio graph. The interface method exists (ABSTR-01 completeness) and accepts the documented signature, but the body is a no-op. Phase 53 adds both the GainNode insertion AND the mute call-site swap to `setMasterGain(0|1, 0.05)` together — paired with the actual mute behavior change.
-- **D-13:** Existing per-cue mute fade (`applyMuteFadeOut`) stays as the active mute mechanism through Phase 50 — byte-identical to today.
+- **D-13** [informational]: Existing per-cue mute fade (`applyMuteFadeOut`) stays as the active mute mechanism through Phase 50 — byte-identical to today. *(Preservation directive paired with D-12; plans 50-04 and 50-06 honor it explicitly in code review comments / `setMuted` non-modification clauses. Not a new build target; not gated as a separate plan deliverable.)*
 
 ### Claude's Discretion
 - File layout: new `src/audio/sessionClock.ts` carries the `SessionClock` type + both factory functions; `audioEngine.ts` re-exports the `SessionClock` type to literally satisfy ABSTR-02 ("`audioEngine.ts` exports the `SessionClock` interface").
