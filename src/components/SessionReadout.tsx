@@ -78,7 +78,7 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
 
   if (frame === null) return null
 
-  const primary = formatDuration(frame.remainingMs ?? frame.elapsedMs)
+  const primary = formatDuration(frame.remainingSec ?? frame.elapsedSec)
 
   // Stretch path: currentBpm + stage are set on the frame. Format
   // "{currentBpm} {bpmUnit} · {stage}" — stage label rendered uppercase by

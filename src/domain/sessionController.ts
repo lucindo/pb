@@ -20,7 +20,11 @@ export interface RunningSessionState {
   lockedSettings: SessionSettings
   plan: BreathingPlan
   stretchSegments: StretchSegment[] | null
-  startedAtMs: number
+  // Phase 50-02 (D-02 ms→sec cascade): startedAtSec is the seconds-shaped
+  // session-start timestamp from the injected SessionClock. Phase 50 sources
+  // the wall clock (one read per session start); Phase 51 swaps the source to
+  // audioCtx.currentTime via the same SessionClock seam.
+  startedAtSec: number
   lastFrame: SessionFrame
 }
 
@@ -30,7 +34,7 @@ export interface CompleteSessionState {
   lockedSettings: SessionSettings
   plan: BreathingPlan
   stretchSegments: StretchSegment[] | null
-  completedAtMs: number
+  completedAtSec: number
   message: 'Session complete'
 }
 
@@ -44,7 +48,7 @@ function cloneSettings(settings: SessionSettings): SessionSettings {
 }
 
 // D-01: startSession is standard-only — no mode check, stretchSegments always null.
-export function startSession(selectedSettings: SessionSettings, nowMs: number): RunningSessionState {
+export function startSession(selectedSettings: SessionSettings, nowSec: number): RunningSessionState {
   const lockedSettings = cloneSettings(selectedSettings)
   const plan = createBreathingPlan(lockedSettings)
   const lastFrame = getSessionFrame(plan, 0)
@@ -55,7 +59,7 @@ export function startSession(selectedSettings: SessionSettings, nowMs: number): 
     lockedSettings,
     plan,
     stretchSegments: null,
-    startedAtMs: nowMs,
+    startedAtSec: nowSec,
     lastFrame,
   }
 }
@@ -70,7 +74,7 @@ export function startSession(selectedSettings: SessionSettings, nowMs: number): 
 export function startStretchSession(
   stretchSettings: StretchSettings,
   selectedSettings: SessionSettings,
-  nowMs: number,
+  nowSec: number,
 ): RunningSessionState {
   // Lead-in plan: standard SessionSettings using initialBpm and the same ratio.
   // Assigned only to lockedSettings — selectedSettings is the caller's resonant config.
@@ -90,7 +94,7 @@ export function startStretchSession(
     lockedSettings: leadInSettings,                      // synthetic lead-in drives the audio plan
     plan,
     stretchSegments,
-    startedAtMs: nowMs,
+    startedAtSec: nowSec,
     lastFrame,
   }
 }
@@ -105,7 +109,7 @@ export function endSession(state: RunningSessionState | CompleteSessionState): I
 export function extendTimedSession(
   state: RunningSessionState,
   durationMinutes: number,
-  nowMs: number,
+  nowSec: number,
 ): RunningSessionState {
   // D-01: guard on stretchSegments !== null (no mode read — mode concept retired).
   // CONTEXT D-02: stretch duration is governed by the rampDurationMinutes picker
@@ -142,30 +146,30 @@ export function extendTimedSession(
   }
   const plan = createBreathingPlan(lockedSettings)
 
-  // DS-WR-01: recompute `lastFrame` from the live clock (`nowMs - startedAtMs`)
-  // rather than the stale `state.lastFrame.elapsedMs`. `lastFrame` is only
+  // DS-WR-01: recompute `lastFrame` from the live clock (`nowSec - startedAtSec`)
+  // rather than the stale `state.lastFrame.elapsedSec`. `lastFrame` is only
   // refreshed on rAF ticks; an extend invoked between ticks would otherwise make
   // the next `completeIfNeeded` jump elapsed time discontinuously. This mirrors
-  // how `startSession` / `completeIfNeeded` derive elapsed from `startedAtMs`.
-  const elapsedMs = nowMs - state.startedAtMs
+  // how `startSession` / `completeIfNeeded` derive elapsed from `startedAtSec`.
+  const elapsedSec = nowSec - state.startedAtSec
 
   return {
     ...state,
     selectedSettings,
     lockedSettings,
     plan,
-    lastFrame: getSessionFrame(plan, elapsedMs),
+    lastFrame: getSessionFrame(plan, elapsedSec),
   }
 }
 
 export function completeIfNeeded(
   state: RunningSessionState,
-  nowMs: number,
+  nowSec: number,
 ): RunningSessionState | CompleteSessionState {
-  const elapsedMs = nowMs - state.startedAtMs
+  const elapsedSec = nowSec - state.startedAtSec
   const lastFrame = state.stretchSegments !== null
-    ? getStretchFrame(state.stretchSegments, elapsedMs)
-    : getSessionFrame(state.plan, elapsedMs)
+    ? getStretchFrame(state.stretchSegments, elapsedSec)
+    : getSessionFrame(state.plan, elapsedSec)
 
   if (!lastFrame.isComplete) {
     return {
@@ -180,7 +184,7 @@ export function completeIfNeeded(
     lockedSettings: cloneSettings(state.lockedSettings),
     plan: state.plan,
     stretchSegments: state.stretchSegments,
-    completedAtMs: nowMs,
+    completedAtSec: nowSec,
     message: 'Session complete',
   }
 }

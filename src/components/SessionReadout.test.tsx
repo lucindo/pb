@@ -10,33 +10,35 @@ import type { UiStrings } from '../content/strings'
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 const EN_FORM_FIXTURE = EN_STRINGS_FIXTURE.practice.settingsForm
 
-// Sample frame with a non-null remainingMs for timed session scenarios.
-// 600_000 ms remaining → formatDuration renders "10:00".
+// Phase 50-02 (D-02 ms→sec cascade): SessionFrame fields are seconds-shaped.
+// Sample frame with a non-null remainingSec for timed session scenarios.
+// 600 sec remaining → formatDuration renders "10:00".
 const sampleFrame: SessionFrame = {
   phase: 'in',
   phaseLabel: 'In',
-  elapsedMs: 0,
-  remainingMs: 600_000,
+  elapsedSec: 0,
+  remainingSec: 600,
   phaseProgress: 0,
   cycleIndex: 0,
   isComplete: false,
 }
 
 // Stretch-shaped frame: SessionFrame carrying the optional stretch live-state fields.
+// Prior ms fixture values (10_909 / 4_363 / 6_545) divide by 1000.
 const stretchFrame: SessionFrame = {
   phase: 'in',
   phaseLabel: 'In',
-  elapsedMs: 0,
-  remainingMs: 600_000,
+  elapsedSec: 0,
+  remainingSec: 600,
   phaseProgress: 0,
   cycleIndex: 0,
   isComplete: false,
   currentBpm: 5.5,
   stage: 'ramp',
-  cycleStartMs: 0,
-  currentCycleMs: 10_909,
-  currentInhaleMs: 4_363,
-  currentExhaleMs: 6_545,
+  cycleStartSec: 0,
+  currentCycleSec: 10.909,
+  currentInhaleSec: 4.363,
+  currentExhaleSec: 6.545,
 }
 
 interface RenderReadoutProps {

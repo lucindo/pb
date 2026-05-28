@@ -7,7 +7,7 @@ import {
   RATIO_OPTIONS,
   STRETCH_INITIAL_BPM_OPTIONS,
   WARMUP_MINUTES_OPTIONS,
-  computeStretchTotalMs,
+  computeStretchTotalSec,
   getStretchSettingsWithInitialBpm,
   getStretchTargetBpmOptions,
   type CoolDownMinutes,
@@ -47,10 +47,10 @@ export function StretchSettingsForm({
     onChange(getStretchSettingsWithInitialBpm(settings, initialBpm))
   }
 
-  const stretchTotalMs = computeStretchTotalMs(settings)
-  const stretchDurationText = stretchTotalMs === null
+  const stretchTotalSec = computeStretchTotalSec(settings)
+  const stretchDurationText = stretchTotalSec === null
     ? strings.openEndedLabel
-    : `${String(Math.round(stretchTotalMs / 60_000))} ${strings.minutesUnit}`
+    : `${String(Math.round(stretchTotalSec / 60))} ${strings.minutesUnit}`
 
   return (
     <SettingsFormShell ariaLabel={strings.ariaLabel}>
