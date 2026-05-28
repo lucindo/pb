@@ -996,6 +996,181 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
   })
 })
 
+// Phase 52 D-04 — engine.topUpLookahead
+// The facade dispatches a caller-supplied list of cues via the internal schedule()
+// function, respecting closed/muted guards and the callee-side SAFE_LEAD_SEC clamp.
+describe('Phase 52 D-04 topUpLookahead', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('topUpLookahead calls scheduleInCueForTimbre for each "in" cue in the list (D-04)', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    engine.topUpLookahead({
+      cues: [
+        { audioTime: 5, phaseDurationSec: 4, kind: 'in' },
+        { audioTime: 15, phaseDurationSec: 6, kind: 'out' },
+        { audioTime: 25, phaseDurationSec: 4, kind: 'in' },
+      ],
+    })
+
+    expect(inSpy).toHaveBeenCalledTimes(2)
+    await engine.close()
+  })
+
+  it('topUpLookahead on a closed engine is a no-op (closed guard)', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    await engine.close()
+    inSpy.mockClear()
+    outSpy.mockClear()
+
+    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
+
+    expect(inSpy).not.toHaveBeenCalled()
+    expect(outSpy).not.toHaveBeenCalled()
+  })
+
+  it('topUpLookahead while muted is a no-op (muted guard)', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    engine.setMuted(true)
+    inSpy.mockClear()
+    outSpy.mockClear()
+
+    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
+
+    expect(inSpy).not.toHaveBeenCalled()
+    expect(outSpy).not.toHaveBeenCalled()
+    await engine.close()
+  })
+
+  it('topUpLookahead clamps audioTime to currentTime + SAFE_LEAD_SEC when in the past', async () => {
+    const probeTime = 10
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      get currentTime() { return probeTime }
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const { handle: stubHandle } = makeMockCueHandle()
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(stubHandle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    // audioTime 5 < currentTime(10) + SAFE_LEAD_SEC → clamped
+    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
+
+    expect(inSpy.mock.calls[0]?.[1]).toBeCloseTo(probeTime + SAFE_LEAD_SEC, 9)
+    await engine.close()
+  })
+})
+
+// Phase 52 D-09/D-10 — engine.cancelFutureCues
+// cancelFutureCues() iterates activeCues snapshot, calls cancel() on cues with
+// scheduledAt > now, removes them from activeCues; leaves in-flight cues untouched.
+describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('cancelFutureCues() calls cancel() on future cues (scheduledAt > now) and leaves in-flight untouched', async () => {
+    const probeTime = 5
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      get currentTime() { return probeTime }
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    // scheduledAt <= now: in-flight (should NOT be cancelled)
+    const inflight = makeMockCueHandle()
+    inflight.handle.scheduledAt = 3 // 3 <= 5
+    // scheduledAt > now: future (SHOULD be cancelled)
+    const future = makeMockCueHandle()
+    future.handle.scheduledAt = 8 // 8 > 5
+
+    // Inject cues by mocking scheduleInCueForTimbre to return our controlled handles
+    vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+      .mockReturnValueOnce(inflight.handle)
+      .mockReturnValueOnce(future.handle)
+
+    engine.topUpLookahead({
+      cues: [
+        { audioTime: 3, phaseDurationSec: 4, kind: 'in' }, // inflight
+        { audioTime: 8, phaseDurationSec: 4, kind: 'in' }, // future
+      ],
+    })
+
+    engine.cancelFutureCues()
+
+    expect(inflight.handle.cancel).not.toHaveBeenCalled()
+    expect(future.handle.cancel).toHaveBeenCalledTimes(1)
+    await engine.close()
+  })
+
+  it('cancelFutureCues() on a closed engine is a no-op', async () => {
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    await engine.close()
+    // Should not throw and not iterate anything
+    expect(() => { engine.cancelFutureCues() }).not.toThrow()
+  })
+
+  it('cancelFutureCues() uses snapshot-iterate pattern (does not throw when Set mutates during iteration)', async () => {
+    const probeTime = 5
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      get currentTime() { return probeTime }
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    const future = makeMockCueHandle()
+    future.handle.scheduledAt = 10
+
+    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValueOnce(future.handle)
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+
+    // Must not throw even though cancel removes the cue from activeCues mid-iteration
+    expect(() => { engine.cancelFutureCues() }).not.toThrow()
+    expect(future.handle.cancel).toHaveBeenCalledTimes(1)
+    await engine.close()
+  })
+})
+
 // Phase 52 constants — D-02/D-03/D-06
 // These tests import the SYMBOLS (not bare literals) per project memory
 // "No design locking": if a value is tuned in a later phase the tests
