@@ -88,6 +88,11 @@ export interface UseAudioCues {
    *  The controller calls this on every session frame (rAF tick) with the walkFutureCues output.
    *  Facade: delegates to engine.topUpLookahead({ cues }); no-op if engine is null (before start). */
   topUpLookahead(this: void, cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void
+  /** Phase 52 CR-01-FIX: cancel all future cues in the engine's activeCues queue.
+   *  The controller calls this immediately before audioTopUpLookahead() on every
+   *  session.currentFrame change (cancel-then-reschedule per SCHED-05 doctrine D-10).
+   *  Facade: delegates to engine.cancelFutureCues(); no-op if engine is null (before start). */
+  cancelFutureCues(this: void): void
   /** Returns engine.clock.now() (= AC currentTime per D-03 Option A), or null if
    *  AC unavailable. App.tsx uses this for the dual-anchor (Pitfall 2). Revision 2
    *  Warning #5: comment updated post Phase 50 — audioNow reads through the SessionClock
@@ -384,7 +389,31 @@ export function useAudioCues(
         const startAudioTime = engine.clock.now()
         const firstInCueTime = engine.scheduleLeadIn(startAudioTime, plan)
         // AUDIO-03: closed engine — defense-in-depth, fall through to failure.
-        if (firstInCueTime === null) { setAudioAvailable(false); setStatus('failed'); return null }
+        // CR-02-FIX: mirror stop()'s full teardown sequence so no engine, AC, or
+        // clock subscriptions are leaked when scheduleLeadIn returns null.
+        if (firstInCueTime === null) {
+          // Step 1 (CR-02-FIX): tear down clock subscriptions (mirror stop() L420-421).
+          for (const off of clockUnsubsRef.current) off()
+          clockUnsubsRef.current = []
+          // Step 2 (CR-02-FIX): null engineRef (mirror stop() L427).
+          engineRef.current = null
+          // Step 3 (CR-02-FIX): revert proxy clock source to fresh wall clock (mirror stop() L437).
+          proxyMemoRef.current.setSource(createWallSessionClock())
+          // Step 4 (CR-02-FIX): clear cached refs (mirror stop() L438 + WR-02-FIX cache-clear).
+          firstInCueTimeRef.current = null
+          lastTopUpCuesRef.current = []
+          // Step 5: propagate failure (preserved from prior code).
+          setAudioAvailable(false)
+          // Step 6 (WR-01-FIX): set audioStatus='unavailable' so MuteToggle.needsResume
+          // does not read healthy on a dead audio path.
+          setAudioStatus('unavailable')
+          // Step 7: set status='failed' (preserved from prior code).
+          setStatus('failed')
+          // Step 8 (CR-02-FIX): close the engine (fire-and-forget — iOS gesture preservation
+          // posture used in reconstructEngine; no await here, engine is already known-bad).
+          void engine.close()
+          return null
+        }
         firstInCueTimeRef.current = firstInCueTime // WR-05
         setStatus('lead-in')
         setAudioAvailable(true)
@@ -400,6 +429,7 @@ export function useAudioCues(
           console.warn('[useAudioCues] start failed; falling back to visuals-only', error)
         }
         setAudioAvailable(false)
+        setAudioStatus('unavailable') // WR-01-FIX: set audioStatus='unavailable' so MuteToggle.needsResume does not read healthy on a dead audio path.
         setStatus('failed')
         return null
       }
@@ -436,6 +466,7 @@ export function useAudioCues(
     // 51-03 by design (see must_haves.truths "Unmount asymmetry").
     proxyMemoRef.current.setSource(createWallSessionClock())
     firstInCueTimeRef.current = null // WR-05: clear cached anchor for the next start()
+    lastTopUpCuesRef.current = [] // Phase 52 WR-02-FIX: clear cache so fast stop()→start() cannot replay stale cues into new engine.
     // Plan 06: reset the audioStatus state machine + Pitfall 5 gate so the next
     // session starts clean (otherwise a residual 'needs-resume' from a prior
     // suspend cycle would carry into the new session's first render).
@@ -626,13 +657,25 @@ export function useAudioCues(
   // (matches handleResume at L213-222 and all other clock-subscriber callbacks).
   const topUpLookahead = useCallback(
     (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void => {
-      lastTopUpCuesRef.current = cues // Phase 52 D-04: cache for force-top-up on resume
       const engine = engineRef.current
       if (engine === null) return
+      lastTopUpCuesRef.current = cues // Phase 52 D-04 / WR-02-FIX: cache AFTER null-gate so a pre-start call cannot poison the force-top-up cache
       engine.topUpLookahead({ cues })
     },
     [],
   )
+
+  // Phase 52 CR-01-FIX: cancel-future-cues facade — parallel to topUpLookahead.
+  // Stable-identity (empty deps array) matching topUpLookahead. The controller calls this
+  // immediately before audioTopUpLookahead() on every session.currentFrame change
+  // (cancel-then-reschedule per SCHED-05 doctrine D-10, 52-VERIFICATION.md CR-01).
+  // Defensive gate: reads engineRef into local `engine`; early-returns when null
+  // (matches topUpLookahead and all other clock-subscriber callbacks).
+  const cancelFutureCues = useCallback((): void => {
+    const engine = engineRef.current
+    if (engine === null) return
+    engine.cancelFutureCues()
+  }, [])
 
   const audioNow = useCallback((): number | null => {
     // Phase 50 D-11: read through the SessionClock seam (engine.clock.now()) per D-03
@@ -654,6 +697,7 @@ export function useAudioCues(
     setMuted,
     notifyPhaseBoundary,
     topUpLookahead,
+    cancelFutureCues,
     audioNow,
     playEndChord,
     audioStatus,

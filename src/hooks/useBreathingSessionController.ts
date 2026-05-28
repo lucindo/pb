@@ -123,6 +123,7 @@ export function useBreathingSessionController({
   const audioStop = audio.stop
   const audioStart = audio.start
   const audioTopUpLookahead = audio.topUpLookahead
+  const audioCancelFutureCues = audio.cancelFutureCues
   const audioPlayEndChord = audio.playEndChord
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
@@ -371,8 +372,13 @@ export function useBreathingSessionController({
       targetSec,
     })
 
+    // CR-01-FIX: cancel-then-reschedule (SCHED-05 doctrine D-10, 52-VERIFICATION.md CR-01):
+    // cancel all future cues in the engine's activeCues queue BEFORE dispatching the new walk.
+    // This mirrors setMuted(true)'s cancel-then-refill pattern and prevents duplicate
+    // OscillatorNode chains from consecutive overlapping topUpLookahead walks.
+    audioCancelFutureCues()
     audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, stretchSegmentsForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])
 
   useEffect(() => {
     return () => {

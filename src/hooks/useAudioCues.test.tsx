@@ -1006,26 +1006,42 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     unmount()
   })
 
-  // AUDIO-03: hook-side null propagation when engine.scheduleLeadIn returns null
+  // AUDIO-03 (tightened by Phase 52 CR-02-FIX + WR-01-FIX):
+  // hook-side null propagation when engine.scheduleLeadIn returns null.
+  // Additionally asserts: engine.close was called; all 4 clock unsubs fired once each;
+  // audioStatus is 'unavailable' (not 'ok') after the failed start().
   it("AUDIO-03: start() returns null and sets status to failed when engine.scheduleLeadIn returns null", async () => {
     // Stub createAudioEngine to return a fake engine whose scheduleLeadIn returns null.
     // Phase 50 D-11 + revision 1 Blocker #1: start() subscribes to engine.clock.on*
     // immediately after createAudioEngine resolves, so the fake must expose a `clock`
-    // member returning no-op unsubscribes for all three channels.
+    // member returning tracked unsubscribes for all channels (4 in total — Plan 04
+    // added the 4th onResume subscription for handleForceTopUp).
+    // CR-02-FIX: each onXxx mock returns a tracked vi.fn() unsub so we can assert
+    // each was invoked exactly once when the null-leadIn branch tears down subscriptions.
+    const unsubResume1 = vi.fn()
+    const unsubResume2 = vi.fn()
+    const unsubSuspend = vi.fn()
+    const unsubClose = vi.fn()
+    let onResumeCallCount = 0
     const fakeEngine = {
       now: vi.fn(() => 0),
       setMuted: vi.fn(),
       scheduleLeadIn: vi.fn(() => null),
       scheduleNextCue: vi.fn(),
+      topUpLookahead: vi.fn(),
+      cancelFutureCues: vi.fn(),
       close: vi.fn(async () => {}),
       resume: vi.fn(async () => {}),
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
         setMasterGain: vi.fn(),
-        onResume: vi.fn(() => () => undefined),
-        onSuspend: vi.fn(() => () => undefined),
-        onClose: vi.fn(() => () => undefined),
+        onResume: vi.fn(() => {
+          onResumeCallCount++
+          return onResumeCallCount === 1 ? unsubResume1 : unsubResume2
+        }),
+        onSuspend: vi.fn(() => unsubSuspend),
+        onClose: vi.fn(() => unsubClose),
       },
     }
     // Reason: test double providing the minimum AudioEngine surface; no-unsafe-argument is expected here for the mock type.
@@ -1045,6 +1061,38 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     expect(result.current.status).toBe('failed')
     // audioAvailable must be false.
     expect(result.current.audioAvailable).toBe(false)
+    // CR-02-FIX: engine.close must have been called (no AC leak on null-leadIn path).
+    expect(fakeEngine.close).toHaveBeenCalledTimes(1)
+    // CR-02-FIX: all 4 clock unsubscribes must have been invoked (clockUnsubsRef loop).
+    expect(unsubResume1).toHaveBeenCalledTimes(1)
+    expect(unsubResume2).toHaveBeenCalledTimes(1)
+    expect(unsubSuspend).toHaveBeenCalledTimes(1)
+    expect(unsubClose).toHaveBeenCalledTimes(1)
+    // WR-01-FIX: audioStatus must be 'unavailable' (not the default 'ok') on failed start.
+    expect(result.current.audioStatus).toBe('unavailable')
+
+    unmount()
+  })
+
+  // AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws)
+  // also sets audioStatus='unavailable' (WR-01-FIX).
+  it("AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws) also sets audioStatus='unavailable'", async () => {
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockRejectedValueOnce(
+      new Error('iOS construction failed'),
+    )
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    let res: number | null = 42
+    await act(async () => {
+      res = await result.current.start(samplePlan, 'bowl')
+    })
+
+    expect(res).toBeNull()
+    expect(result.current.status).toBe('failed')
+    expect(result.current.audioAvailable).toBe(false)
+    // WR-01-FIX: audioStatus must be 'unavailable' on the construction-catch branch too.
+    expect(result.current.audioStatus).toBe('unavailable')
 
     unmount()
   })
@@ -1848,5 +1896,205 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
 
     await act(async () => { await result.current.stop() })
     unmount()
+  })
+})
+
+// Phase 52 CR-01-FIX: cancelFutureCues facade on useAudioCues
+// Verifies the hook exposes a cancelFutureCues method with the same null-gate posture
+// as all other clock-subscriber callbacks, and that it delegates to engine.cancelFutureCues().
+describe('Phase 52 CR-01-FIX: cancelFutureCues facade', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('cancelFutureCues exposed on hook return', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    expect(typeof result.current.cancelFutureCues).toBe('function')
+    unmount()
+  })
+
+  it('cancelFutureCues no-op when engine is null', () => {
+    const { result, unmount } = renderHook(() => useAudioCues())
+    // Before start(), engine is null — should not throw
+    expect(() => {
+      act(() => { result.current.cancelFutureCues() })
+    }).not.toThrow()
+    unmount()
+  })
+
+  it('cancelFutureCues delegates to engine.cancelFutureCues after start', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEngine: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 3),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: vi.fn(),
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn(() => () => undefined),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(fakeEngine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    act(() => { result.current.cancelFutureCues() })
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(fakeEngine.cancelFutureCues).toHaveBeenCalledTimes(1)
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+})
+
+// Phase 52 WR-02-FIX: topUpLookahead cache-after-gate
+// Verifies lastTopUpCuesRef is written ONLY AFTER the engine null-gate so a pre-start
+// call cannot poison the force-top-up cache, and stop() clears the cache so a fast
+// stop()→start() cycle cannot replay stale cues into a new engine.
+describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('WR-02 topUpLookahead does NOT write lastTopUpCuesRef when engine is null', async () => {
+    // Build a fake engine with controllable resume subscription
+    let resumeCb: (() => void) | null = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEngine: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 3),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: vi.fn(),
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn((cb: () => void) => { resumeCb = cb; return () => undefined }),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(fakeEngine)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+
+    // Call topUpLookahead BEFORE start() — engine is null, cache should NOT be poisoned
+    act(() => {
+      result.current.topUpLookahead([{ audioTime: 999, phaseDurationSec: 4, kind: 'in' }])
+    })
+
+    // Now start the engine
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Clear topUpLookahead call count from start-up
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    fakeEngine.topUpLookahead.mockClear()
+
+    // Fire the onResume callback (simulates clock.onResume) — handleForceTopUp will
+    // dispatch the cached cues. If the pre-start call poisoned the cache, the stale
+    // cue (audioTime: 999) would be dispatched here.
+    act(() => { if (resumeCb) resumeCb() })
+
+    // With cache-after-gate fix: pre-start call should NOT have written the cache,
+    // so forceTopUp should NOT dispatch the stale cue (cache is still empty [])
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(fakeEngine.topUpLookahead).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('WR-02 stop() clears lastTopUpCuesRef', async () => {
+    // First session: start + topUpLookahead + stop
+    let resumeCb1: (() => void) | null = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEngine1: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 3),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: vi.fn(),
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn((cb: () => void) => { resumeCb1 = cb; return () => undefined }),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(fakeEngine1)
+
+    const { result, unmount } = renderHook(() => useAudioCues())
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Cache some cues in the first session
+    const sessionOneCues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' as const }]
+    act(() => { result.current.topUpLookahead(sessionOneCues) })
+
+    // Stop the first session (should clear the cache)
+    await act(async () => { await result.current.stop() })
+
+    // Second session: new fake engine
+    let resumeCb2: (() => void) | null = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeEngine2: any = {
+      setMuted: vi.fn(),
+      scheduleLeadIn: vi.fn(() => 7),
+      scheduleNextCue: vi.fn(),
+      topUpLookahead: vi.fn(),
+      cancelFutureCues: vi.fn(),
+      playEndChord: vi.fn(),
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      clock: {
+        now: vi.fn(() => 0),
+        schedule: vi.fn(),
+        setMasterGain: vi.fn(),
+        onResume: vi.fn((cb: () => void) => { resumeCb2 = cb; return () => undefined }),
+        onSuspend: vi.fn(() => () => undefined),
+        onClose: vi.fn(() => () => undefined),
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(fakeEngine2)
+
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Fire onResume on the new engine — if stop() did NOT clear the cache,
+    // fakeEngine2.topUpLookahead would be called with the stale sessionOneCues.
+    act(() => { if (resumeCb2) resumeCb2() })
+
+    // With WR-02 fix: stop() clears lastTopUpCuesRef → new engine receives ZERO
+    // topUpLookahead invocations from the cached state of the prior session.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(fakeEngine2.topUpLookahead).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+    // Suppress unused variable warning for resumeCb1 — it was captured but not fired.
+    void resumeCb1
   })
 })
