@@ -13,7 +13,6 @@ import {
   startLeadIn,
 } from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
-import { SAFE_LEAD_SEC } from '../audio/audioEngine'
 import { DEFAULT_SETTINGS, createBreathingPlan } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
@@ -328,85 +327,15 @@ describe('App — audio cues (Phase 3)', () => {
     expect(muteButton()).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // -- AUDIO-02: caller-side clamp tests (Phase 9 Plan 02) --------------------
-
-  // Test 15: caller-side clamp — audioTime is clamped to audio.audioNow() + SAFE_LEAD_SEC
-  it('AUDIO-02: App boundary effect clamps audioTime to audio.audioNow() + SAFE_LEAD_SEC (caller-side)', async () => {
-    const tracker = installTrackedAC()
-    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
-
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    // We are now in running. Override the AC's currentTime to a large value
-    // so that audioAnchor + boundaryStartSec yields a PAST value relative to
-    // the fake currentTime. The clamp must lift it to currentTime + SAFE_LEAD_SEC.
-    // Set currentTime to a large value (100 s) so any computed audioTime is in the past.
-    const FAKE_CURRENT_TIME = 100
-    // Reason: tracker.instances is AnyAC[] for test-double access to override currentTime.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const liveAC = tracker.instances[tracker.instances.length - 1]
-    Object.defineProperty(liveAC, 'currentTime', { get: () => FAKE_CURRENT_TIME, configurable: true })
-
-    scheduleOutSpy.mockClear()
-
-    // Advance to the first Out boundary (inhaleSec ≈ 4.363 sec at default BPM 5.5).
-    await act(async () => {
-      vi.advanceTimersByTime(5000)
-      await Promise.resolve()
-    })
-
-    // scheduleOutCue should have been called at least once.
-    expect(scheduleOutSpy).toHaveBeenCalled()
-    // The 2nd argument to scheduleOutCue is the audioTime.
-    // Reason: length asserted by toHaveBeenCalled() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const audioTimeArg = scheduleOutSpy.mock.calls[0]![1]
-    // The caller-side clamp must have lifted it to at least currentTime + SAFE_LEAD_SEC.
-    expect(audioTimeArg).toBeGreaterThanOrEqual(FAKE_CURRENT_TIME + SAFE_LEAD_SEC - 1e-9)
-
-    tracker.restore()
-  })
-
-  // Test 16: paired no-clamp case — audioTime already future, passes verbatim
-  it('AUDIO-02: App boundary effect passes audioTime verbatim when already > now() + SAFE_LEAD_SEC', async () => {
-    const tracker = installTrackedAC()
-    const scheduleOutSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
-
-    render(<App />)
-    await startAndAdvancePastLeadIn()
-
-    // Keep currentTime at its natural (small) value (0 or close to 0 — FakeAudioContext starts at 0
-    // but advances with performance.now()/1000; with vi.useFakeTimers it stays near 0).
-    // The computed audioTime (audioAnchor + boundaryStartMs/1000 ≈ 3 + 4.36 ≈ 7.36 s)
-    // is much greater than currentTime (≈ 0) + SAFE_LEAD_SEC (0.005), so no clamp occurs.
-    scheduleOutSpy.mockClear()
-
-    // Reason: tracker.instances is AnyAC[]; unsafe-assignment on AnyAC[] index.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const lastAC: { currentTime: number } = tracker.instances[tracker.instances.length - 1]
-    const naturalTime = lastAC.currentTime
-
-    await act(async () => {
-      vi.advanceTimersByTime(5000)
-      await Promise.resolve()
-    })
-
-    expect(scheduleOutSpy).toHaveBeenCalled()
-    // Reason: length asserted by toHaveBeenCalled() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const audioTimeArg = scheduleOutSpy.mock.calls[0]![1]
-    // The audioTime must NOT have been clamped — it's already well above the threshold.
-    // The un-clamped value is audioAnchor + boundaryStartMs/1000. Since currentTime ≈ naturalTime
-    // (small), the clamp threshold is naturalTime + 0.005, far below the scheduled audioTime.
-    expect(audioTimeArg).toBeGreaterThan(naturalTime + SAFE_LEAD_SEC)
-    // And the value should NOT equal the clamped minimum (it should be larger).
-    // We can't assert exact equality to the pre-clamp audioTime because we don't have direct
-    // access to audioAnchor. Instead assert it's comfortably above the clamp threshold.
-    expect(audioTimeArg).toBeGreaterThan(1) // audioTime must be > 1 s (anchor ~3 + boundary ~4)
-
-    tracker.restore()
-  })
+  // -- AUDIO-02 caller-side clamp coverage moved to audioEngine.test.ts -------
+  // Phase 52 (52-03) replaced the App-level boundary-detection effect with the
+  // engine-side `topUpLookahead` facade. The clamp-to-`currentTime + SAFE_LEAD_SEC`
+  // behavior these tests asserted is now exercised inside the engine; see:
+  //   - `topUpLookahead clamps audioTime to currentTime + SAFE_LEAD_SEC when in the past` (audioEngine.test.ts)
+  //   - `topUpLookahead calls scheduleInCueForTimbre for each "in" cue` (audioEngine.test.ts)
+  // The legacy `computeBoundaryAudioOffsets` and `notifyPhaseBoundary` surfaces
+  // were removed in 52-03, so the App-level integration tests targeting them
+  // are no longer reachable.
 })
 
 // Helper: wrap the FakeAudioContext from vitest.setup.ts so we can track each

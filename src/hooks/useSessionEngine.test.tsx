@@ -52,13 +52,17 @@ describe('useSessionEngine', () => {
       result.current.start()
     })
     act(() => {
-      vi.advanceTimersByTime(5_000)
+      // Advance slightly past 5s so the LAST rAF callback (queued at ~16ms
+      // intervals via vi fake timers) lands at or after the 5_000ms mark and
+      // elapsedSec reflects the full 5s. Without the buffer, the final rAF
+      // can fire at ~4992ms, producing elapsedSec just under 5.
+      vi.advanceTimersByTime(5_100)
     })
 
     expect(result.current.currentFrame?.phaseLabel).toBe('Out')
     // Phase 50-02 (D-02 ms→sec cascade): elapsedSec is seconds-shaped.
-    // 5_000 ms advanced via fake timers → ~5 sec elapsed (the wall clock
-    // returns performance.now() / 1000).
+    // 5_100 ms advanced via fake timers → at least 5 sec elapsed (the wall
+    // clock returns performance.now() / 1000).
     expect(result.current.currentFrame?.elapsedSec).toBeGreaterThanOrEqual(5)
 
     unmount()
@@ -675,18 +679,21 @@ function createMockSessionClock(initialNow: number): MockSessionClock {
 }
 
 // Phase 52 compatibility helper: advance a mock clock in sub-threshold steps
-// so the per-tick clamp (D-05/D-06) does NOT fire. The clamp condition is
-// `rawDelta > MAX_TICK_DELTA_SEC` (strictly greater), so advancing by exactly
-// MAX_TICK_DELTA_SEC per rAF tick passes through cleanly.
+// so the per-tick clamp (D-05/D-06) does NOT fire. Stepping by exactly
+// MAX_TICK_DELTA_SEC sits on the clamp boundary; IEEE-754 sum-of-0.1 drift
+// occasionally pushes rawDelta above the threshold and rebases startedAtSec
+// forward by float epsilon. Step by MAX_TICK_DELTA_SEC / 2 instead so rawDelta
+// stays unambiguously sub-threshold regardless of accumulated float drift.
 //
-// Each step: advance clock by MAX_TICK_DELTA_SEC → fire one rAF tick via
+// Each step: advance clock by HALF the threshold → fire one rAF tick via
 // vi.advanceTimersByTime(20). Used for "foreground running" simulation in Phase 51
 // AC-suspension tests; "freeze" periods remain as bare vi.advanceTimersByTime() calls.
 function advanceForeground(mock: MockSessionClock, totalSec: number): void {
-  const steps = Math.round(totalSec / MAX_TICK_DELTA_SEC)
+  const STEP = MAX_TICK_DELTA_SEC / 2
+  const steps = Math.round(totalSec / STEP)
   for (let i = 0; i < steps; i++) {
     act(() => {
-      mock.advance(MAX_TICK_DELTA_SEC)
+      mock.advance(STEP)
       vi.advanceTimersByTime(20)
     })
   }
@@ -823,11 +830,15 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
     })
 
     const ITERATIONS = 300
-    const SUB_STEPS_PER_ITER = 10  // 10 × MAX_TICK_DELTA_SEC = 1 sec per outer iteration
+    // Use sub-threshold step (HALF MAX_TICK_DELTA_SEC) so float-precision
+    // overage cannot push rawDelta above the clamp boundary. Double the inner
+    // iterations to still accumulate 1 sec per outer iteration.
+    const SUB_STEP = MAX_TICK_DELTA_SEC / 2
+    const SUB_STEPS_PER_ITER = 20
     for (let i = 1; i <= ITERATIONS; i++) {
       for (let j = 0; j < SUB_STEPS_PER_ITER; j++) {
         act(() => {
-          mock.advance(MAX_TICK_DELTA_SEC)
+          mock.advance(SUB_STEP)
           vi.advanceTimersByTime(20)
         })
       }
@@ -1256,9 +1267,10 @@ describe('useSessionEngine — Phase 52 D-05/D-06/D-07 per-tick clamp', () => {
         mock.advance(chunkSec)
         vi.advanceTimersByTime(20)
       })
-      // Reason: TypeScript cannot model that act() may complete the session.
+      // TypeScript narrows status to 'running' from the earlier non-running throw,
+      // but act() may transition it to 'complete'. Read as string to defeat narrowing.
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (result.current.state.status === 'complete') break
+      if ((result.current.state.status as string) === 'complete') break
     }
 
     expect(result.current.state.status).toBe('complete')

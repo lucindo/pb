@@ -146,7 +146,10 @@ describe('LOCL-02 — stats record on each end path', () => {
     seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' } })
     render(<App />)
     await startAndAdvancePastLeadIn()
-    await advanceTime(35_000)  // 35s elapsed — above 30s threshold (D-01)
+    // Advance well past 35s so the final rAF lands at or above the 35s mark.
+    // rAF cadence within vi fake timers settles the final tick at ~last-16ms;
+    // a tight 35_000 advance leaves elapsed at ~34.99 which floors to 34.
+    await advanceTime(36_000)
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
     // Open-ended: no modal. End fires directly. Stats written in cleanup effect.

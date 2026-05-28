@@ -553,8 +553,10 @@ describe('Phase 34 — stretch session records stretch stats and leaves resonant
       vi.advanceTimersByTime(APP_LEAD_IN_MS)
     })
 
-    // Run 35s so the session exceeds the 30s recording threshold.
-    act(() => { vi.advanceTimersByTime(35_000) })
+    // Run well past the 30s recording threshold and past 35s so the final rAF
+    // tick (which lands ~16ms inside the advance window) carries elapsed solidly
+    // above 35s — `recordPracticeSession` floors elapsedMs/1000.
+    act(() => { vi.advanceTimersByTime(36_000) })
 
     // GAP 3: ending a stretch session now opens the end-confirmation dialog first.
     // Click 'End' to open the dialog, then confirm via the dialog's 'End' button.
