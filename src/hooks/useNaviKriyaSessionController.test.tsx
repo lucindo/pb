@@ -10,7 +10,7 @@
 // deferred to Plan 51-04 as specified in the plan output section.
 
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import type { UseWakeLock } from './useWakeLock'
