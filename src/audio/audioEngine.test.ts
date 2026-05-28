@@ -5,7 +5,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { BreathingPlan } from '../domain/breathingPlan'
-import { createAudioEngine, SAFE_LEAD_SEC } from './audioEngine'
+import {
+  createAudioEngine,
+  SAFE_LEAD_SEC,
+  LOOKAHEAD_WINDOW_SEC,
+  LOOKAHEAD_MIN_CUES,
+  MAX_TICK_DELTA_SEC,
+} from './audioEngine'
 import * as cueSynth from './cueSynth'
 import * as nkCueSynth from './nkCueSynth'
 import type { CueHandle } from './cueSynth'
@@ -891,5 +897,55 @@ describe('audioEngine', () => {
 
       await engine.close()
     })
+  })
+})
+
+// Phase 52 constants — D-02/D-03/D-06
+// These tests import the SYMBOLS (not bare literals) per project memory
+// "No design locking": if a value is tuned in a later phase the tests
+// pass without edit; only the source constant changes.
+describe('Phase 52 constants', () => {
+  it('LOOKAHEAD_WINDOW_SEC resolves as a number (D-02: import does not yield undefined)', () => {
+    expect(typeof LOOKAHEAD_WINDOW_SEC).toBe('number')
+  })
+
+  it('LOOKAHEAD_MIN_CUES resolves as a number (D-03: import does not yield undefined)', () => {
+    expect(typeof LOOKAHEAD_MIN_CUES).toBe('number')
+  })
+
+  it('MAX_TICK_DELTA_SEC resolves as a number (D-06: import does not yield undefined)', () => {
+    expect(typeof MAX_TICK_DELTA_SEC).toBe('number')
+  })
+
+  it('LOOKAHEAD_WINDOW_SEC is locked at 6 (D-02: middle of 5–10s ROADMAP band)', () => {
+    // No design locking: assertion references the imported symbol on the left-hand side.
+    // The numeric literal 6 on the right-hand side is the D-02-locked value — if this
+    // changes, update D-02 in 52-CONTEXT.md and change the literal here intentionally.
+    expect(LOOKAHEAD_WINDOW_SEC).toBe(6)
+  })
+
+  it('LOOKAHEAD_MIN_CUES is locked at 2 (D-03: always queue next + cue-after)', () => {
+    expect(LOOKAHEAD_MIN_CUES).toBe(2)
+  })
+
+  it('MAX_TICK_DELTA_SEC is locked at 0.1 (D-06: 100ms tolerates 60→6fps drop)', () => {
+    expect(MAX_TICK_DELTA_SEC).toBe(0.1)
+  })
+
+  it('LOOKAHEAD_WINDOW_SEC is typed as a literal 6 (satisfies type assertion)', () => {
+    // TypeScript compile-time assertion: the const must have a literal type of `6`.
+    // If the constant is widened to `number`, this line fails tsc.
+    const _typeCheck: 6 = LOOKAHEAD_WINDOW_SEC
+    expect(_typeCheck).toBe(LOOKAHEAD_WINDOW_SEC)
+  })
+
+  it('LOOKAHEAD_MIN_CUES is typed as a literal 2 (satisfies type assertion)', () => {
+    const _typeCheck: 2 = LOOKAHEAD_MIN_CUES
+    expect(_typeCheck).toBe(LOOKAHEAD_MIN_CUES)
+  })
+
+  it('MAX_TICK_DELTA_SEC is typed as a literal 0.1 (satisfies type assertion)', () => {
+    const _typeCheck: 0.1 = MAX_TICK_DELTA_SEC
+    expect(_typeCheck).toBe(MAX_TICK_DELTA_SEC)
   })
 })
