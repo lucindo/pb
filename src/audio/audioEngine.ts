@@ -21,8 +21,14 @@
 
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
-import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
-import { createAudioSessionClock, type SessionClock } from './sessionClock'
+import {
+  scheduleCountdownTick,
+  scheduleEndChord,
+  scheduleNKFrontMarker,
+  scheduleNKBackMarker,
+  scheduleNKTick,
+} from './nkCueSynth'
+import { createAudioSessionClock, type SessionClock, type Cue } from './sessionClock'
 import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
@@ -193,30 +199,19 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // see a fresh user-gesture chain or AC will start in 'suspended'.
   const audioCtx = new AudioContext()
 
-  // Phase 50 D-07: wrap the AC immediately after construction. D-11 + revision 1 Blocker #1:
-  // the clock owns the audioCtx 'statechange' listener and fans suspend/resume/close to
-  // subscribers via the SessionClock interface.
+  // Phase 50 D-07: wrap the AC. D-11 + revision 1 Blocker #1: the clock owns the audioCtx
+  // 'statechange' listener and fans suspend/resume/close to subscribers via the
+  // SessionClock interface.
   //
-  // Revision 1 Blocker #2: no scheduleImpl supplied at this plan — Plan 50-06 will reconstruct
-  // as createAudioSessionClock(audioCtx, engineScheduleFn) when the engine-internal dispatch
-  // lands. The intermediate `clock.schedule()` is a no-op for now.
-  //
-  // Revision 2 Blocker #1: the local clock reference is typed as the AUGMENTED factory return
-  // type `SessionClock & { notifySuspended(): void }` so the engine can invoke the synthetic-
-  // suspend escape hatch at the resume() InvalidStateError catch (preserving the iOS Safari
-  // recovery path byte-identically — Plan 06 D-38). The `engine.clock` public member is
-  // widened to `SessionClock` — external consumers cannot see `notifySuspended`. The escape
-  // hatch is engine-only.
-  //
-  // Revision 1 Warning #12: this is THE engine clock (HRV AC); useNaviKriyaAudio constructs its
-  // own SEPARATE clock for the NK AC — they MUST NOT be conflated.
-  //
-  // Revision 2 Warning #6: construction site is here (immediately after `new AudioContext()`).
-  // Plan 50-06 will MOVE this construction to after the schedule-function definition so the
-  // engine's internal schedule can be plumbed as scheduleImpl. The move does NOT change
-  // observable behavior — the clock's listener attachment, subscribers Set lifecycle, and
-  // notifySuspended() escape hatch are independent of the construction-site line number.
-  const clock: SessionClock & { notifySuspended(): void } = createAudioSessionClock(audioCtx)
+  // Revision 2 Warning #6 + revision 1 Blocker #2 (Plan 50-06): the clock construction is now
+  // placed AFTER the internal `schedule` function is defined (the `const clock = ...` line
+  // appears below the schedule fn). This places the construction AFTER the schedule fn is in
+  // scope so `scheduleImpl` can be plumbed at construction time (no post-hoc readonly
+  // reassignment), and BEFORE the `engine` object literal that references `clock`. Plan 50-04
+  // placed the construction here (immediately after `new AudioContext()`) as an intermediate
+  // state — both positions pass the per-commit green-gate; the move is observationally
+  // equivalent (listener attachment, subscriber Sets, notifySuspended() escape hatch are
+  // independent of the construction-site line number).
 
   // Phase 49 D-01/D-04/D-06: silent looping <audio> element constructed inside the engine,
   // on the sync gesture head, BEFORE any asynchronous suspension. Coerces iOS audio session
@@ -328,6 +323,84 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (cue.cleanupAt < now) activeCues.delete(cue)
     }
   }
+
+  // Phase 50 D-04 / D-05: internal dispatch from a typed Cue value to the per-cue
+  // primitives in cueSynth.ts / nkCueSynth.ts. The public methods (scheduleLeadIn,
+  // scheduleNextCue, playEndChord) are thin facades over this function. The
+  // closed/muted guards live in the facades (so each facade can choose its own
+  // behavior, e.g., scheduleNextCue clamps the time, scheduleLeadIn returns
+  // firstInCueTime). This function assumes the facade has already gated; do NOT
+  // add closed/muted checks here.
+  //
+  // The Cue discriminated union is closed (Plan 50-01 D-04) — every kind has a
+  // switch arm. TypeScript exhaustiveness enforces this at compile time. NK kinds
+  // are wired but currently unused at Phase 50 (NK paths in useNaviKriyaAudio still
+  // call the per-cue scheduler primitives directly per Plan 50-03; D-05's NK
+  // migration through schedule() is documented as available but not exercised
+  // until Phase 52 lookahead).
+  function schedule(when: number, cue: Cue): void {
+    switch (cue.kind) {
+      case 'lead-in-tick':
+        activeCues.add(scheduleCountdownTick(audioCtx, when, audioCtx.destination, sessionTimbre))
+        return
+      case 'countdown-tick':
+        activeCues.add(scheduleCountdownTick(audioCtx, when, audioCtx.destination, sessionTimbre))
+        return
+      // cue.timbre is in the type union for callers that pre-schedule cues without
+      // engine context (Phase 52 lookahead). At the engine layer, sessionTimbre is
+      // the source of truth per Phase 18 D-08 — we ignore cue.timbre here.
+      case 'in':
+        activeCues.add(scheduleInCueForTimbre(audioCtx, when, audioCtx.destination, sessionTimbre, cue.phaseDurationSec))
+        return
+      case 'out':
+        activeCues.add(scheduleOutCueForTimbre(audioCtx, when, audioCtx.destination, sessionTimbre, cue.phaseDurationSec))
+        return
+      case 'end-chord': {
+        const c = scheduleEndChord(audioCtx, when, audioCtx.destination, sessionTimbre)
+        activeCues.add(c)
+        // Record the tail end so close() can defer teardown until the chord rings out.
+        // Take the max in case of double-dispatch — the second call's tail must not
+        // retreat below an earlier-scheduled chord still ringing.
+        endChordTailUntil = Math.max(endChordTailUntil, c.cleanupAt)
+        return
+      }
+      case 'nk-front':
+        activeCues.add(scheduleNKFrontMarker(audioCtx, when, audioCtx.destination, sessionTimbre))
+        return
+      case 'nk-back':
+        activeCues.add(scheduleNKBackMarker(audioCtx, when, audioCtx.destination, sessionTimbre))
+        return
+      case 'nk-tick':
+        activeCues.add(scheduleNKTick(audioCtx, when, audioCtx.destination, sessionTimbre))
+        return
+    }
+  }
+
+  // Phase 50 D-07: wrap the AC. D-11 + revision 1 Blocker #1: the clock owns the
+  // audioCtx 'statechange' listener and fans suspend/resume/close to subscribers.
+  //
+  // Revision 1 Blocker #2: scheduleImpl plumbed at construction (NOT post-hoc
+  // reassignment). The clock's schedule() forwards to the engine's internal
+  // schedule function. No readonly violation — the clock object's members are
+  // set once at construction.
+  //
+  // Revision 2 Blocker #1: the local clock reference is typed as the AUGMENTED
+  // factory return type `SessionClock & { notifySuspended(): void }` so the L445
+  // InvalidStateError catch (already in place from Plan 50-04) can call
+  // clock.notifySuspended(). The engine.clock public member is widened to
+  // SessionClock at the assignment boundary — external consumers cannot call
+  // notifySuspended.
+  //
+  // Revision 2 Warning #6: this construction site (post-schedule-function) is the
+  // FINAL position for the clock. Plan 50-04 placed it at L177 as intermediate;
+  // both positions pass the per-commit green-gate. Moving the construction line
+  // does NOT change observable behavior (listener attachment, subscribers Set
+  // lifecycle, notifySuspended escape hatch are independent of the construction
+  // site).
+  //
+  // Revision 1 Warning #12: this is THE engine clock (HRV AC); useNaviKriyaAudio
+  // constructs its own SEPARATE clock for the NK AC — they MUST NOT be conflated.
+  const clock: SessionClock & { notifySuspended(): void } = createAudioSessionClock(audioCtx, schedule)
 
   const engine: AudioEngine = {
     scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null {

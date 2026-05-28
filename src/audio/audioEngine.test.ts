@@ -743,4 +743,153 @@ describe('audioEngine', () => {
     expect(el.pause).toHaveBeenCalledTimes(1)
     expect(el.removeAttribute).toHaveBeenCalledWith('src')
   })
+
+  // Phase 50-06 D-04 / D-05 — internal schedule(when, cue) dispatch
+  // The engine's internal `schedule` function is plumbed into the SessionClock at
+  // construction (scheduleImpl). Calling `engine.clock.schedule(when, cue)` routes
+  // through the engine's switch dispatch, exercising every Cue arm. Each arm calls
+  // the corresponding per-cue primitive in cueSynth.ts / nkCueSynth.ts and adds the
+  // returned handle to activeCues.
+  //
+  // Revision 1 Warning #9 — test count delta: this block adds 8 tests covering each
+  // `cue.kind` arm. Existing tests above are unchanged (the facade refactor in
+  // Task 2 is observationally transparent — same primitives, same args, same order).
+  describe('Phase 50-06 — internal schedule(when, cue) dispatch (8 Cue arms)', () => {
+    it('schedule({ kind: "lead-in-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
+      const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+
+      engine.clock.schedule(1.5, { kind: 'lead-in-tick' })
+
+      expect(tickSpy).toHaveBeenCalledTimes(1)
+      expect(tickSpy.mock.calls[0]?.[1]).toBe(1.5)
+      expect(tickSpy.mock.calls[0]?.[3]).toBe('bowl')
+
+      await engine.close()
+    })
+
+    it('schedule({ kind: "countdown-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
+      const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+
+      engine.clock.schedule(2.0, { kind: 'countdown-tick' })
+
+      expect(tickSpy).toHaveBeenCalledTimes(1)
+      expect(tickSpy.mock.calls[0]?.[1]).toBe(2.0)
+
+      await engine.close()
+    })
+
+    it('schedule({ kind: "in", phaseDurationSec, timbre }) calls scheduleInCueForTimbre with sessionTimbre (ignores cue.timbre)', async () => {
+      const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+      // Engine is constructed with timbre: 'bell' — that is sessionTimbre and the source of truth.
+      const engine = await createAudioEngine({ timbre: 'bell' })
+
+      // cue.timbre is 'flute' (intentionally different) — the engine ignores it and uses sessionTimbre.
+      engine.clock.schedule(3.0, { kind: 'in', phaseDurationSec: 4.36, timbre: 'flute' })
+
+      expect(inSpy).toHaveBeenCalledTimes(1)
+      expect(inSpy.mock.calls[0]?.[1]).toBe(3.0)
+      // Phase 18 D-08 capture-at-session-start: sessionTimbre wins over cue.timbre.
+      expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
+      expect(inSpy.mock.calls[0]?.[4]).toBeCloseTo(4.36, 5)
+
+      await engine.close()
+    })
+
+    it('schedule({ kind: "out", phaseDurationSec, timbre }) calls scheduleOutCueForTimbre with sessionTimbre (ignores cue.timbre)', async () => {
+      const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+      const engine = await createAudioEngine({ timbre: 'sine' })
+
+      engine.clock.schedule(5.5, { kind: 'out', phaseDurationSec: 6.54, timbre: 'bowl' })
+
+      expect(outSpy).toHaveBeenCalledTimes(1)
+      expect(outSpy.mock.calls[0]?.[1]).toBe(5.5)
+      expect(outSpy.mock.calls[0]?.[3]).toBe('sine')
+      expect(outSpy.mock.calls[0]?.[4]).toBeCloseTo(6.54, 5)
+
+      await engine.close()
+    })
+
+    it('schedule({ kind: "end-chord" }) calls scheduleEndChord, adds to activeCues, AND updates endChordTailUntil for close()-deferral', async () => {
+      // The end-chord case is the only one with extra bookkeeping (the tail-defer
+      // for close()). We assert via the close() defer-path observable: scheduling
+      // an end-chord whose cleanupAt is in the future causes close() to wait.
+      const probeNow = 0
+      class ProbeAC {
+        state: AudioContextState = 'running'
+        sampleRate = 44100
+        destination = {}
+        get currentTime() { return probeNow }
+        resume = vi.fn(async () => {})
+        close = vi.fn(async () => {})
+        createOscillator = vi.fn()
+        createGain = vi.fn()
+        createBiquadFilter = vi.fn()
+        addEventListener = vi.fn()
+        removeEventListener = vi.fn()
+      }
+      vi.stubGlobal('AudioContext', ProbeAC)
+
+      // Stub scheduleEndChord to return a known-future cleanupAt so we can observe
+      // the endChordTailUntil bookkeeping via close()'s setTimeout deferral.
+      const fakeChord: CueHandle = {
+        envelope: { gain: { value: 1 } } as unknown as GainNode,
+        scheduledAt: 0,
+        cleanupAt: 0.02, // 20 ms tail
+      }
+      const endChordSpy = vi.spyOn(nkCueSynth, 'scheduleEndChord').mockReturnValue(fakeChord)
+
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+      engine.clock.schedule(0, { kind: 'end-chord' })
+
+      expect(endChordSpy).toHaveBeenCalledTimes(1)
+      expect(endChordSpy.mock.calls[0]?.[1]).toBe(0)
+
+      // close() must defer for the recorded tail — observable via the setTimeout call
+      // path (we spy on setTimeout to assert the deferral length).
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+      await engine.close()
+      // The setTimeout call inside close() uses tailRemainingSec * 1000 = 0.02 * 1000 = 20.
+      const deferralCall = setTimeoutSpy.mock.calls.find(([, ms]) => ms === 20)
+      expect(deferralCall).toBeDefined()
+    })
+
+    it('schedule({ kind: "nk-front" }) calls scheduleNKFrontMarker and adds to activeCues', async () => {
+      const nkSpy = vi.spyOn(nkCueSynth, 'scheduleNKFrontMarker')
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+
+      engine.clock.schedule(7.0, { kind: 'nk-front' })
+
+      expect(nkSpy).toHaveBeenCalledTimes(1)
+      expect(nkSpy.mock.calls[0]?.[1]).toBe(7.0)
+      expect(nkSpy.mock.calls[0]?.[3]).toBe('bowl')
+
+      await engine.close()
+    })
+
+    it('schedule({ kind: "nk-back" }) calls scheduleNKBackMarker and adds to activeCues', async () => {
+      const nkSpy = vi.spyOn(nkCueSynth, 'scheduleNKBackMarker')
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+
+      engine.clock.schedule(8.0, { kind: 'nk-back' })
+
+      expect(nkSpy).toHaveBeenCalledTimes(1)
+      expect(nkSpy.mock.calls[0]?.[1]).toBe(8.0)
+
+      await engine.close()
+    })
+
+    it('schedule({ kind: "nk-tick" }) calls scheduleNKTick and adds to activeCues', async () => {
+      const nkSpy = vi.spyOn(nkCueSynth, 'scheduleNKTick')
+      const engine = await createAudioEngine({ timbre: 'bowl' })
+
+      engine.clock.schedule(9.0, { kind: 'nk-tick' })
+
+      expect(nkSpy).toHaveBeenCalledTimes(1)
+      expect(nkSpy.mock.calls[0]?.[1]).toBe(9.0)
+
+      await engine.close()
+    })
+  })
 })
