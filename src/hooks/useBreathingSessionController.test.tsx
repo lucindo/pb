@@ -14,6 +14,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS } from '../domain/settings'
 import type { UseWakeLock } from './useWakeLock'
 import { useBreathingSessionController } from './useBreathingSessionController'
+import * as useAudioCuesModule from './useAudioCues'
+import { createWallSessionClock } from '../audio/sessionClock'
 
 const makeWakeLock = (): UseWakeLock => ({
   request: vi.fn().mockResolvedValue(undefined),
@@ -214,6 +216,173 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
       }),
     )
     expect(result.current.phase).toBe('idle')
+    unmount()
+  })
+})
+
+// Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues before topUpLookahead.
+// Uses vi.spyOn on useAudioCues module to intercept the hook and return a controlled fake
+// with trackable cancelFutureCues and topUpLookahead — verifies call ordering via
+// mock.invocationCallOrder (lower number = called first, per Vitest mock tracking).
+describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues before topUpLookahead', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  // Build a minimal fake useAudioCues return that provides enough surface for the
+  // controller to render, go through lead-in, and transition to running phase.
+  // cancelFutureCues and topUpLookahead are tracked vi.fn()s for ordering assertions.
+  function makeFakeAudioCues(overrides: Partial<ReturnType<typeof useAudioCuesModule.useAudioCues>> = {}) {
+    const cancelFutureCues = vi.fn()
+    const topUpLookahead = vi.fn()
+    const wallClock = createWallSessionClock()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeAudio: any = {
+      status: 'idle' as const,
+      audioAvailable: true,
+      muted: false,
+      clock: wallClock,
+      start: vi.fn(async () => 1.0), // returns a non-null lead-in audio time
+      stop: vi.fn(async () => {}),
+      setMuted: vi.fn(),
+      notifyPhaseBoundary: vi.fn(),
+      topUpLookahead,
+      cancelFutureCues,
+      audioNow: vi.fn(() => 0),
+      playEndChord: vi.fn(),
+      audioStatus: 'ok' as const,
+      resume: vi.fn(async () => {}),
+      ...overrides,
+    }
+    return { fakeAudio, cancelFutureCues, topUpLookahead }
+  }
+
+  it('CR-01-FIX top-up effect calls cancelFutureCues immediately before topUpLookahead', async () => {
+    const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    // Drive controller through start → lead-in → running phase.
+    // Mirror the appTestHarness.startAndAdvancePastLeadIn() pattern:
+    // flush promises before advancing timers so the async audioStart resolves first.
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100) // LEAD_IN_DURATION_MS = 3000ms
+    })
+
+    // At this point phase should be 'running' and audioAnchorRef set to 1.0
+    // (audio.start returned 1.0 as the lead-in time)
+    expect(result.current.phase).toBe('running')
+
+    // Clear call counts so we can assert per-frame behavior
+    cancelFutureCues.mockClear()
+    topUpLookahead.mockClear()
+
+    // Trigger a session.currentFrame advance by advancing time (rAF tick simulation)
+    // The session engine drives currentFrame via internal state; advancing timers
+    // causes the session to tick forward, which triggers the useEffect dep on currentFrame.
+    await act(async () => {
+      vi.advanceTimersByTime(200)
+      await Promise.resolve()
+    })
+
+    // Assert call ordering: cancel must have been called BEFORE topUpLookahead.
+    // invocationCallOrder is a Vitest mock property — lower number = called first.
+    if (cancelFutureCues.mock.calls.length > 0 && topUpLookahead.mock.calls.length > 0) {
+      expect(cancelFutureCues.mock.invocationCallOrder[0])
+        .toBeLessThan(topUpLookahead.mock.invocationCallOrder[0] as number)
+    }
+
+    // Both should have been called at least once on a frame change
+    expect(cancelFutureCues.mock.calls.length).toBeGreaterThanOrEqual(1)
+    expect(topUpLookahead.mock.calls.length).toBeGreaterThanOrEqual(1)
+    // cancelFutureCues called with no arguments
+    expect(cancelFutureCues.mock.calls[0]).toEqual([])
+
+    unmount()
+  })
+
+  it('CR-01-FIX two consecutive frame changes — cancel fires twice and dispatch fires twice', async () => {
+    const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100)
+    })
+    expect(result.current.phase).toBe('running')
+
+    cancelFutureCues.mockClear()
+    topUpLookahead.mockClear()
+
+    // TWO frame advances
+    await act(async () => { vi.advanceTimersByTime(200); await Promise.resolve() })
+    await act(async () => { vi.advanceTimersByTime(200); await Promise.resolve() })
+
+    // Both should have been called at least twice (once per frame change)
+    expect(cancelFutureCues.mock.calls.length).toBeGreaterThanOrEqual(2)
+    expect(topUpLookahead.mock.calls.length).toBeGreaterThanOrEqual(2)
+
+    // Pairwise ordering: for each frame advance, cancel[i] < dispatch[i]
+    for (let i = 0; i < Math.min(cancelFutureCues.mock.invocationCallOrder.length, topUpLookahead.mock.invocationCallOrder.length); i++) {
+      const cancelOrder = cancelFutureCues.mock.invocationCallOrder[i] as number
+      const dispatchOrder = topUpLookahead.mock.invocationCallOrder[i] as number
+      expect(cancelOrder).toBeLessThan(dispatchOrder)
+    }
+
+    unmount()
+  })
+
+  it('CR-01-FIX top-up effect does NOT call cancelFutureCues when audioAnchor is null', async () => {
+    const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    // Stay in idle — audioAnchor is null, phase is not 'running'
+    expect(result.current.phase).toBe('idle')
+    expect(cancelFutureCues.mock.calls.length).toBe(0)
+    expect(topUpLookahead.mock.calls.length).toBe(0)
+
     unmount()
   })
 })
