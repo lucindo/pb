@@ -166,6 +166,25 @@ export const LEAD_IN_DURATION_MS = LEAD_IN_DURATION_SEC * 1000
  *  No duplicated literals; both clamp sites derive from this constant. */
 export const SAFE_LEAD_SEC = 0.005
 
+/** Phase 52 D-02: lookahead window in seconds.
+ *  Locked at 6 s — the middle of the ROADMAP 5–10 s band. At any BPM ≥ 3 the
+ *  seconds budget alone keeps ≥ 1 cue queued through a brief tab switch; the
+ *  LOOKAHEAD_MIN_CUES floor handles the low-BPM (≤ 3 BPM) tail. */
+export const LOOKAHEAD_WINDOW_SEC = 6 as const
+
+/** Phase 52 D-03: minimum cue queue depth regardless of BPM.
+ *  Always keeps the next cue + cue-after queued (next + one-ahead). At 1 BPM
+ *  (60 s/breath) the floor pre-schedules ~120 s of audio; cancel cost on a
+ *  settings change = at most 2 oscillator stops + node disconnects. */
+export const LOOKAHEAD_MIN_CUES = 2 as const
+
+/** Phase 52 D-06: per-tick elapsed-delta clamp ceiling in seconds.
+ *  100 ms is tight enough that a 60→6 fps frame-rate drop passes through
+ *  unchanged (6×16.67 ms = 100 ms). Anything beyond this threshold is treated
+ *  as a hidden-window resumption and the session anchor is rebased forward by
+ *  (raw_delta − MAX_TICK_DELTA_SEC) to preserve practice-time semantics. */
+export const MAX_TICK_DELTA_SEC = 0.1 as const
+
 function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
   const now = audioCtx.currentTime
   const gainParam = activeCue.envelope.gain
