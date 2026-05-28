@@ -26,6 +26,10 @@ import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
 
+// ABSTR-02: re-export SessionClock to satisfy the "audioEngine.ts exports the SessionClock interface" contract. Implementation lives in ./sessionClock per Plan 50-01.
+// The augmented factory return type `SessionClock & { notifySuspended(): void }` is NOT re-exported. notifySuspended is an engine-only escape hatch — it stays scoped to createAudioEngine's internal closure (revision 2 Blocker #1).
+export type { SessionClock } from './sessionClock'
+
 export interface AudioEngine {
   /** Schedule the 3-2-1 lead-in: ticks at startAudioTime + 0/+1/+2 s, first In cue at startAudioTime + 3 s.
    *  Returns the audioTime of the first In cue (= startAudioTime + 3), or null when the engine
