@@ -389,7 +389,31 @@ export function useAudioCues(
         const startAudioTime = engine.clock.now()
         const firstInCueTime = engine.scheduleLeadIn(startAudioTime, plan)
         // AUDIO-03: closed engine — defense-in-depth, fall through to failure.
-        if (firstInCueTime === null) { setAudioAvailable(false); setStatus('failed'); return null }
+        // CR-02-FIX: mirror stop()'s full teardown sequence so no engine, AC, or
+        // clock subscriptions are leaked when scheduleLeadIn returns null.
+        if (firstInCueTime === null) {
+          // Step 1 (CR-02-FIX): tear down clock subscriptions (mirror stop() L420-421).
+          for (const off of clockUnsubsRef.current) off()
+          clockUnsubsRef.current = []
+          // Step 2 (CR-02-FIX): null engineRef (mirror stop() L427).
+          engineRef.current = null
+          // Step 3 (CR-02-FIX): revert proxy clock source to fresh wall clock (mirror stop() L437).
+          proxyMemoRef.current.setSource(createWallSessionClock())
+          // Step 4 (CR-02-FIX): clear cached refs (mirror stop() L438 + WR-02-FIX cache-clear).
+          firstInCueTimeRef.current = null
+          lastTopUpCuesRef.current = []
+          // Step 5: propagate failure (preserved from prior code).
+          setAudioAvailable(false)
+          // Step 6 (WR-01-FIX): set audioStatus='unavailable' so MuteToggle.needsResume
+          // does not read healthy on a dead audio path.
+          setAudioStatus('unavailable')
+          // Step 7: set status='failed' (preserved from prior code).
+          setStatus('failed')
+          // Step 8 (CR-02-FIX): close the engine (fire-and-forget — iOS gesture preservation
+          // posture used in reconstructEngine; no await here, engine is already known-bad).
+          void engine.close()
+          return null
+        }
         firstInCueTimeRef.current = firstInCueTime // WR-05
         setStatus('lead-in')
         setAudioAvailable(true)
@@ -405,6 +429,7 @@ export function useAudioCues(
           console.warn('[useAudioCues] start failed; falling back to visuals-only', error)
         }
         setAudioAvailable(false)
+        setAudioStatus('unavailable') // WR-01-FIX: set audioStatus='unavailable' so MuteToggle.needsResume does not read healthy on a dead audio path.
         setStatus('failed')
         return null
       }
