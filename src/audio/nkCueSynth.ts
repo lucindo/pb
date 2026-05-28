@@ -215,7 +215,19 @@ export function scheduleNKTick(
     try { t.envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
-  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt }
+  // Phase 52 D-09: cancel() — stop oscillator + disconnect chain. Same try/catch
+  // posture as the 'ended' listener above (T-31-04 / AUDIO-04 posture). The
+  // 'ended' listener and cancel() may both fire; both must be safe (idempotent).
+  const cancel = (): void => {
+    t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+    try { t.osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { t.partialGain.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { t.filter.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { t.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+  }
+
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt, cancel }
 }
 
 /**
@@ -245,7 +257,19 @@ export function scheduleCountdownTick(
     try { t.envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
-  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt }
+  // Phase 52 D-09: cancel() — stop oscillator + disconnect chain. Same try/catch
+  // posture as the 'ended' listener above (T-31-04 / AUDIO-04 posture). The
+  // 'ended' listener and cancel() may both fire; both must be safe (idempotent).
+  const cancel = (): void => {
+    t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+    try { t.osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { t.partialGain.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { t.filter.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { t.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+  }
+
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt, cancel }
 }
 
 /**
@@ -277,6 +301,12 @@ export function scheduleEndChord(
   let lastCleanupAt = 0
   let lastOsc: OscillatorNode | null = null
 
+  // Phase 52 D-09: collect voice nodes for cancel() closure.
+  const voiceOscs: OscillatorNode[] = []
+  const voicePartialGains: GainNode[] = []
+  const voiceFilters: BiquadFilterNode[] = []
+  const voiceEnvelopes: GainNode[] = []
+
   for (const ratio of END_CHORD_RATIOS) {
     const t = buildNKToneNodes(
       audioCtx, preset.fundamentalHzOut * ratio, END_CHORD_DURATION_SEC, when,
@@ -290,6 +320,10 @@ export function scheduleEndChord(
       try { t.filter.disconnect() } catch { /* silent */ }
       try { t.envelope.disconnect() } catch { /* silent */ }
     }, { once: true })
+    voiceOscs.push(t.osc)
+    voicePartialGains.push(t.partialGain)
+    voiceFilters.push(t.filter)
+    voiceEnvelopes.push(t.envelope)
     lastCleanupAt = t.cleanupAt
     lastOsc = t.osc
   }
@@ -302,5 +336,28 @@ export function scheduleEndChord(
     }, { once: true })
   }
 
-  return { envelope: masterEnvelope, scheduledAt: when, cleanupAt: lastCleanupAt }
+  // Phase 52 D-09: cancel() — stop all voice oscillators + disconnect all nodes.
+  // cancelScheduledValues on the master envelope discards pending automation.
+  // Same try/catch posture as the 'ended' listeners above (T-31-04 / AUDIO-04).
+  // The 'ended' listeners and cancel() may both fire on the same voice; both
+  // must be safe (idempotent).
+  const cancel = (): void => {
+    masterEnvelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    for (const osc of voiceOscs) {
+      try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+      try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    for (const pg of voicePartialGains) {
+      try { pg.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    for (const f of voiceFilters) {
+      try { f.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    for (const ve of voiceEnvelopes) {
+      try { ve.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    try { masterEnvelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+  }
+
+  return { envelope: masterEnvelope, scheduledAt: when, cleanupAt: lastCleanupAt, cancel }
 }
