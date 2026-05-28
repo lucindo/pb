@@ -933,13 +933,7 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
     unmount()
   })
 
-  // B3 (engine surface) — reanchor preserves elapsed across an AC swap. The
-  // 51-02 Task 1 unit tests already cover the rewrite math (startedAtSec
-  // rewritten to newClockNow − lastFrame.elapsedSec). This test adds the
-  // cross-clock-source angle: the reanchor flow targets a swap where the
-  // *clock's now() identity changes* (the proxy swapped from AC#1 to AC#2,
-  // each with a different `currentTime` origin). The engine should not
-  // observe a discontinuity — elapsedSec is preserved by the rewrite.
+  // B3 (engine surface) — reanchor preserves elapsed across an AC swap.
   it('B3 (engine surface): reanchorSessionClock preserves elapsed across an AC origin change', () => {
     // Set up: start the session under "AC #1" (mock A starting at 100).
     const mock = createMockSessionClock(100)
@@ -998,6 +992,314 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
     const elapsedAfterAC2Advance = result.current.liveFrame?.elapsedSec ?? -1
     expect(elapsedAfterAC2Advance).toBeGreaterThanOrEqual(39.9)
     expect(elapsedAfterAC2Advance).toBeLessThanOrEqual(40.1)
+
+    unmount()
+  })
+})
+
+// Phase 52 D-05/D-06/D-07: per-tick elapsed-delta clamp + startedAtSec rebase.
+//
+// Test strategy: use the existing createMockSessionClock (controllable clock
+// independent of vi fake timers). "Hidden window" simulation = advance the
+// mock clock by N seconds without firing a rAF tick, then fire a single rAF
+// tick via vi.advanceTimersByTime(small). The tick sees rawDelta = N seconds;
+// clamp fires when N > MAX_TICK_DELTA_SEC; rebase adjusts startedAtSec.
+//
+// Tests import MAX_TICK_DELTA_SEC from audioEngine (per "no-design-locking"
+// project memory — no hard-coded 0.1 literals in test arithmetic).
+import { MAX_TICK_DELTA_SEC } from '../audio/audioEngine'
+
+describe('useSessionEngine — Phase 52 D-05/D-06/D-07 per-tick clamp', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // Test 1 (D-05): foreground tick passthrough — rAF at 16ms apart sees
+  // rawDelta ≈ 0.016; clamp does NOT fire; startedAtSec is unchanged.
+  it('D-05 clamps delta to MAX_TICK_DELTA_SEC: foreground tick passthrough leaves startedAtSec unchanged', () => {
+    const mock = createMockSessionClock(100)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Advance one "foreground frame" — 16ms of clock time + rAF tick.
+    act(() => {
+      mock.advance(0.016) // 16ms in seconds
+      vi.advanceTimersByTime(20)
+    })
+
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const startedAtSecAfterFrame1 = result.current.state.startedAtSec
+
+    // Advance another foreground frame.
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const startedAtSecAfterFrame2 = result.current.state.startedAtSec
+
+    // startedAtSec must be the same across both frames — clamp did NOT fire.
+    // (rawDelta ≈ 0.016 < MAX_TICK_DELTA_SEC = 0.1 → no rebase)
+    expect(startedAtSecAfterFrame2).toBeCloseTo(startedAtSecAfterFrame1, 10)
+
+    unmount()
+  })
+
+  // Test 2 (D-07): clamp fires on hidden-window resumption — advance clock.now()
+  // by 5 seconds without rAF, then one tick; startedAtSec rebased forward by
+  // (5 - MAX_TICK_DELTA_SEC); new elapsed ≤ pre-hide-elapsed + MAX_TICK_DELTA_SEC.
+  it('D-07 rebases startedAtSec by overage on clamp fire: hidden window of 5s produces correct rebase', () => {
+    const mock = createMockSessionClock(100)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Let the session run for 1 second (foreground) to establish baseline.
+    act(() => {
+      mock.advance(1)
+      vi.advanceTimersByTime(100)
+    })
+
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const startedAtSecBeforeHide = result.current.state.startedAtSec
+    const elapsedBeforeHide = result.current.state.lastFrame.elapsedSec
+    expect(elapsedBeforeHide).toBeGreaterThanOrEqual(0.9)
+
+    // Simulate hidden window: advance clock by 5s WITHOUT firing rAF.
+    // (Just call mock.advance — do NOT call vi.advanceTimersByTime yet.)
+    mock.advance(5)
+
+    // Now fire one rAF tick. The tick sees rawDelta = 5s (>> MAX_TICK_DELTA_SEC).
+    // Clamp fires; startedAtSec rebases forward by (5 - MAX_TICK_DELTA_SEC).
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running after hidden tick')
+    const startedAtSecAfterClamp = result.current.state.startedAtSec
+    const elapsedAfterClamp = result.current.state.lastFrame.elapsedSec
+
+    // startedAtSec must have been rebased forward by (5 - MAX_TICK_DELTA_SEC).
+    const expectedRebase = 5 - MAX_TICK_DELTA_SEC
+    expect(startedAtSecAfterClamp).toBeCloseTo(startedAtSecBeforeHide + expectedRebase, 5)
+
+    // elapsed = clock.now() - startedAtSec must be ≤ pre-hide-elapsed + MAX_TICK_DELTA_SEC.
+    // clock.now() = 100 + 1 + 5 = 106; newStartedAtSec = startedAtSecBeforeHide + 4.9
+    // elapsed ≈ elapsedBeforeHide + MAX_TICK_DELTA_SEC (only the clamped delta adds to elapsed)
+    expect(elapsedAfterClamp).toBeLessThanOrEqual(elapsedBeforeHide + MAX_TICK_DELTA_SEC + 0.05)
+
+    unmount()
+  })
+
+  // Test 3 (D-06): clamp threshold imported from audioEngine — test uses
+  // MAX_TICK_DELTA_SEC in arithmetic; no hard-coded 0.1 appears in this file.
+  it('D-06 uses imported MAX_TICK_DELTA_SEC (not hard-coded 0.1): clamp fires exactly at threshold', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Advance exactly MAX_TICK_DELTA_SEC (boundary case — should NOT fire rebase
+    // since Math.min(rawDelta, MAX_TICK_DELTA_SEC) = rawDelta when rawDelta === MAX_TICK_DELTA_SEC).
+    const atThreshold = MAX_TICK_DELTA_SEC
+    mock.advance(atThreshold)
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const startedAtSecAtThreshold = result.current.state.startedAtSec
+
+    // Now advance just above the threshold — clamp MUST fire.
+    const aboveThreshold = MAX_TICK_DELTA_SEC + 0.05
+    mock.advance(aboveThreshold)
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running after above-threshold tick')
+    const startedAtSecAboveThreshold = result.current.state.startedAtSec
+
+    // Above threshold: startedAtSec must have moved forward by the overage.
+    const expectedOverage = aboveThreshold - MAX_TICK_DELTA_SEC
+    expect(startedAtSecAboveThreshold).toBeCloseTo(startedAtSecAtThreshold + expectedOverage, 5)
+
+    unmount()
+  })
+
+  // Test 4 (D-07 practice-time semantics): a 10-minute timed session hidden for
+  // 5 minutes mid-way records ≈ 10 minutes of attention time, NOT 15 wall-clock
+  // minutes. The hidden 5 minutes are excluded from session duration via the rebase.
+  it('D-07 practice-time semantics: 10-min session hidden 5min records ~10min, not 15min', () => {
+    const mock = createMockSessionClock(0)
+    // 10-minute timed session
+    const timed = { ...defaultSettings, durationMinutes: 10 as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(timed, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Run 5 minutes of foreground time (in 30-sec chunks).
+    for (let i = 0; i < 10; i++) {
+      act(() => {
+        mock.advance(30)
+        vi.advanceTimersByTime(100)
+      })
+    }
+    expect(result.current.state.status).toBe('running')
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const elapsedAt5min = result.current.state.lastFrame.elapsedSec
+    expect(elapsedAt5min).toBeGreaterThanOrEqual(299.9)
+    expect(elapsedAt5min).toBeLessThanOrEqual(300.1)
+
+    // HIDDEN WINDOW: advance clock by 5 minutes WITHOUT rAF.
+    mock.advance(5 * 60) // 300 seconds hidden
+
+    // Fire one rAF tick. Clamp fires: rebase forward by (300 - MAX_TICK_DELTA_SEC).
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running after hidden tick')
+    const elapsedAfterHiddenWindow = result.current.state.lastFrame.elapsedSec
+    // elapsed must still be ≤ 5min + MAX_TICK_DELTA_SEC (NOT 10 min).
+    expect(elapsedAfterHiddenWindow).toBeLessThanOrEqual(5 * 60 + MAX_TICK_DELTA_SEC + 0.1)
+
+    // Continue running 5 more foreground minutes so total attention time ≈ 10 min.
+    // The session should complete at the cycle boundary after 10-min AC-attention-time.
+    for (let i = 0; i < 10; i++) {
+      act(() => {
+        mock.advance(30)
+        vi.advanceTimersByTime(100)
+      })
+      if (result.current.state.status === 'complete') break
+    }
+
+    // Session completes at ~10min of attention time (cycle-boundary aligned).
+    // At bpm 5.5, cycles are ~10.9s — advance a bit more to cross the boundary.
+    act(() => {
+      mock.advance(15)
+      vi.advanceTimersByTime(100)
+    })
+
+    expect(result.current.state.status).toBe('complete')
+
+    unmount()
+  })
+
+  // Test 5: lastClockNowRef initialization at effect start, not hook construction.
+  // The ref is initialized to clock.now() at the START of the rAF effect (when
+  // status flips to 'running'), NOT at hook construction time.
+  it('lastClockNowRef initialized at effect start: first tick sees minimal delta even if time passed before start', () => {
+    const mock = createMockSessionClock(50)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    // Advance the clock before start() — simulates time passing while hook is
+    // constructed but session hasn't started yet. If the ref were initialized at
+    // hook construction (clock.now() = 50), the first tick after start() (at t=60)
+    // would see rawDelta = 60-50 = 10s → clamp fires spuriously.
+    // If initialized at effect-start (when status transitions to 'running'),
+    // rawDelta = 0 on the first rAF tick.
+    mock.advance(10) // clock.now() = 60
+
+    act(() => {
+      result.current.start()
+      // effect start: lastClockNowRef.current = clock.now() = 60
+    })
+
+    // First rAF tick: rawDelta = clock.now() - 60 ≈ 0 (no time advance between
+    // effect-start and first tick under fake timers).
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    // startedAtSec was set at start() = clock.now() - 0 = 60 (start called at t=60).
+    // After first tick with NO clamp fire, startedAtSec must be unchanged.
+    const startedAtSec = result.current.state.startedAtSec
+    // elapsed ≤ MAX_TICK_DELTA_SEC (no spurious 10s clamp-rebase happened).
+    const elapsedAfterFirstTick = result.current.state.lastFrame.elapsedSec
+    expect(elapsedAfterFirstTick).toBeLessThanOrEqual(MAX_TICK_DELTA_SEC + 0.05)
+    // startedAtSec near 60 (the clock.now() at start time).
+    expect(startedAtSec).toBeCloseTo(60, 1)
+
+    unmount()
+  })
+
+  // Test 6: multiple consecutive hidden windows — each rebase is independent.
+  // Successive hidden windows (advance 3s tick; advance 3s tick) each rebase
+  // startedAtSec forward by (rawDelta - MAX_TICK_DELTA_SEC) independently.
+  it('D-07 multiple consecutive clamps: each rebase is independent, cumulative rebase = sum of overages', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Baseline tick to establish lastClockNow.
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const startedAtSecBaseline = result.current.state.startedAtSec
+
+    // Hidden window 1: advance 3s, fire tick.
+    mock.advance(3)
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+    if (result.current.state.status !== 'running') throw new Error('Expected running after hide 1')
+    const startedAtAfterHide1 = result.current.state.startedAtSec
+    const expectedRebase1 = 3 - MAX_TICK_DELTA_SEC
+    expect(startedAtAfterHide1).toBeCloseTo(startedAtSecBaseline + expectedRebase1, 5)
+
+    // Hidden window 2: advance another 3s, fire tick.
+    mock.advance(3)
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+    if (result.current.state.status !== 'running') throw new Error('Expected running after hide 2')
+    const startedAtAfterHide2 = result.current.state.startedAtSec
+    const expectedRebase2 = 3 - MAX_TICK_DELTA_SEC
+    // Cumulative rebase = expectedRebase1 + expectedRebase2.
+    expect(startedAtAfterHide2).toBeCloseTo(startedAtAfterHide1 + expectedRebase2, 5)
+    expect(startedAtAfterHide2).toBeCloseTo(startedAtSecBaseline + expectedRebase1 + expectedRebase2, 5)
 
     unmount()
   })
