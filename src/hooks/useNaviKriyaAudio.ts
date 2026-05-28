@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { SAFE_LEAD_SEC } from '../audio/audioEngine'
 import {
@@ -9,7 +9,8 @@ import {
   scheduleNKFrontMarker,
   scheduleNKTick,
 } from '../audio/nkCueSynth'
-import { createAudioSessionClock } from '../audio/sessionClock'
+import { createAudioSessionClock, createWallSessionClock, type SessionClock } from '../audio/sessionClock'
+import { createSwappableSessionClock } from '../audio/swappableSessionClock'
 import type { TimbreId } from '../domain/settings'
 import type { NKAudioCallbacks } from './useNKEngine'
 
@@ -32,6 +33,25 @@ export interface NaviKriyaAudioController {
   begin(this: void, getTimbre: () => TimbreId): NaviKriyaAudioSession
   close(this: void): void
   closeAfterEndCue(this: void): void
+  /**
+   * Stable proxy clock reference (D-03 — proxy identity invariant: the same
+   * `SessionClock` object reference is returned for the lifetime of the hook
+   * instance, regardless of how many begin/close cycles have occurred).
+   *
+   * D-06 (NK swap moment + revert posture):
+   *   - Pre-begin: delegates to a `createWallSessionClock()` source.
+   *   - After `begin()` (AC construction succeeds): delegates to
+   *     `createAudioSessionClock(audioCtx)` — AC-backed stats reads.
+   *   - After `close()` / `closeAfterEndCue()` / unmount: reverts to a fresh
+   *     `createWallSessionClock()` source so post-end stats reads return a
+   *     sensible wall-clock value instead of a frozen closed-AC timestamp.
+   *
+   * D-12 (no reanchor path for NK): NK lifecycle is `begin()` → `close()`
+   * only. There is no in-session AC reconstruction path and therefore NO
+   * `onSessionClockReanchored` callback or `reanchorSessionClock` method on
+   * the NK path. The proxy is swapped only at `begin()` and reverted at close.
+   */
+  clock: SessionClock
 }
 
 function closeAudioContext(audioCtx: AudioContext): void {
@@ -51,6 +71,20 @@ function createOptionalAudioContext(): AudioContext | null {
 
 export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
   const audioCtxRef = useRef<AudioContext | null>(null)
+
+  // D-03: stable proxy clock reference — created exactly once per hook instance
+  // via useMemo (empty deps). The proxy always starts delegating to a wall clock;
+  // proxy.setSource swaps it to the AC clock inside begin() and reverts to a
+  // fresh wall clock in close() / closeAfterEndCue() / unmount cleanup (D-06).
+  // Reason: proxy reference is kept (not destructured) to satisfy
+  // @typescript-eslint/unbound-method — accessing proxy.setSource via the
+  // object reference avoids the unintentional-`this` warning. Mirrors the
+  // Plan 51-01 lint fix recorded in 51-01-SUMMARY.md Deviation #1.
+  const proxy = useMemo(
+    () => createSwappableSessionClock(createWallSessionClock()),
+    [],
+  )
+
   const mutedRef = useRef<boolean>(muted)
 
   useEffect(() => {
@@ -77,6 +111,12 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
     // clock, NOT the engine clock; they wrap distinct AudioContexts. NK passes
     // NO scheduleImpl — clock.schedule is a no-op at Phase 50.
     const clock = createAudioSessionClock(audioCtx)
+    // D-06 (NK swap moment): proxy now delegates to the audio clock so external
+    // consumers (useNKEngine via naviAudio.clock) read AC-backed time. The local
+    // `clock` variable continues to be used by the closures below (cueWhen at
+    // the next line) — those closures need direct access to the AC clock and are
+    // UNCHANGED by this proxy wiring.
+    proxy.setSource(clock)
 
     // Reason (D-08, mirrors useAudioCues timbreRef posture): timbre is read
     // once and captured into the four returned closures. A cross-tab timbre
@@ -106,23 +146,32 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
       },
       countdownTick,
     }
-  }, [])
+  }, [proxy])
 
   const close = useCallback((): void => {
     const audioCtx = audioCtxRef.current
     audioCtxRef.current = null
     if (audioCtx !== null) {
       closeAudioContext(audioCtx)
+      // D-06 (revert posture): proxy reverts to wall clock after AC teardown so
+      // any post-close clock.now() reads (e.g. from useNKEngine.end()) get a
+      // sensible wall-clock value rather than reading from a closed AC.
+      proxy.setSource(createWallSessionClock())
     }
-  }, [])
+  }, [proxy])
 
   const closeAfterEndCue = useCallback((): void => {
     const audioCtx = audioCtxRef.current
     audioCtxRef.current = null
     if (audioCtx !== null) {
+      // D-06 (D-12 mandate): proxy revert is SYNCHRONOUS — not inside the
+      // setTimeout callback. Post-end stats reads from useNKEngine.end()'s
+      // onComplete chain fire before the AC actually closes; they must read a
+      // sensible clock value. The AC teardown itself is deferred for ring-out.
+      proxy.setSource(createWallSessionClock())
       window.setTimeout(() => { closeAudioContext(audioCtx) }, END_CHORD_RINGOUT_MS)
     }
-  }, [])
+  }, [proxy])
 
   useEffect(() => {
     return () => {
@@ -130,9 +179,13 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
       audioCtxRef.current = null
       if (audioCtx !== null) {
         closeAudioContext(audioCtx)
+        // D-06 (defensive revert on unmount): hook is unmounting but a stray
+        // clock.now() read in the same tick should still resolve to a sensible
+        // wall-clock value rather than a frozen closed-AC timestamp.
+        proxy.setSource(createWallSessionClock())
       }
     }
-  }, [])
+  }, [proxy])
 
-  return { begin, close, closeAfterEndCue }
+  return { begin, close, closeAfterEndCue, clock: proxy.clock }
 }
