@@ -900,6 +900,101 @@ describe('audioEngine', () => {
   })
 })
 
+// Phase 52 D-09: CueHandle.cancel contract
+// Tests use the real FakeAudioContext polyfill from vitest.setup.ts so that the
+// oscillator/gain/filter nodes are real fake-AC nodes with spy-compatible methods.
+// The cancel() closure must: (1) stop all oscillators at currentTime, (2) disconnect
+// every node in the chain, (3) be idempotent (calling twice must not throw).
+describe('Phase 52 D-09 CueHandle.cancel', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('D-09 T1: handle returned from scheduleInCueForTimbre has a cancel field that is a function', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
+    expect(typeof handle.cancel).toBe('function')
+  })
+
+  it('D-09 T1b: scheduleInCueForTimbre returns a handle with cancel: () => void (direct call)', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
+    expect(typeof handle.cancel).toBe('function')
+  })
+
+  it('D-09 T1c: scheduleOutCueForTimbre returns a handle with cancel: () => void', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleOutCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
+    expect(typeof handle.cancel).toBe('function')
+  })
+
+  it('D-09 T3: cancel() is idempotent — calling twice does not throw', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
+    expect(() => {
+      handle.cancel()
+      handle.cancel()
+    }).not.toThrow()
+  })
+
+  it('D-09 T4a: scheduleInCue (bowl wrapper) handle also has a callable cancel', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleInCue(audioCtx, 1, audioCtx.destination, 4)
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4b: scheduleOutCue (bowl wrapper) handle also has a callable cancel', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleOutCue(audioCtx, 1, audioCtx.destination, 4)
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4c: scheduleTick handle has a callable cancel', () => {
+    const audioCtx = new AudioContext()
+    const handle = cueSynth.scheduleTick(audioCtx, 1, audioCtx.destination)
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4d: scheduleNKTick handle has a callable cancel', () => {
+    const audioCtx = new AudioContext()
+    const handle = nkCueSynth.scheduleNKTick(audioCtx, 1, audioCtx.destination, 'bowl')
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4e: scheduleCountdownTick handle has a callable cancel', () => {
+    const audioCtx = new AudioContext()
+    const handle = nkCueSynth.scheduleCountdownTick(audioCtx, 1, audioCtx.destination, 'bowl')
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4f: scheduleNKFrontMarker handle has a callable cancel (delegates to scheduleInCueForTimbre)', () => {
+    const audioCtx = new AudioContext()
+    const handle = nkCueSynth.scheduleNKFrontMarker(audioCtx, 1, audioCtx.destination, 'bowl')
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4g: scheduleNKBackMarker handle has a callable cancel (delegates to scheduleOutCueForTimbre)', () => {
+    const audioCtx = new AudioContext()
+    const handle = nkCueSynth.scheduleNKBackMarker(audioCtx, 1, audioCtx.destination, 'bowl')
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+
+  it('D-09 T4h: scheduleEndChord handle has a callable cancel', () => {
+    const audioCtx = new AudioContext()
+    const handle = nkCueSynth.scheduleEndChord(audioCtx, 1, audioCtx.destination, 'bowl')
+    expect(typeof handle.cancel).toBe('function')
+    expect(() => { handle.cancel() }).not.toThrow()
+  })
+})
+
 // Phase 52 constants — D-02/D-03/D-06
 // These tests import the SYMBOLS (not bare literals) per project memory
 // "No design locking": if a value is tuned in a later phase the tests
