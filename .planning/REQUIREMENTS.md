@@ -38,11 +38,11 @@ Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (P
 
 ### Master Clock (Phase 51 — clock unification onto audioCtx.currentTime)
 
-- [ ] **CLOCK-01**: Session elapsed time in `useSessionEngine` derives from `SessionClock.now() − sessionStartCtxTime` (not `performance.now() − startedAtMs`).
-- [ ] **CLOCK-02**: Ambient scale (`useAmbientScale`) reads elapsed time from the audio clock (not `performance.now()`).
-- [ ] **CLOCK-03**: Animation phase progress is derived from the audio clock each rAF tick — no independent time source remains in the animation path.
-- [ ] **CLOCK-04**: User locks an iOS device mid-session and unlocks it: audio and animation remain in phase on resume — no visible burst, no audible drift (closes diagnosis #1).
-- [ ] **CLOCK-05**: Foreground mid-session run without lock/background events produces no observable audio/animation sync drift (closes diagnosis #2 — eliminates the two-clock divergence path).
+- [x] **CLOCK-01**: Session elapsed time in `useSessionEngine` derives from `SessionClock.now() − sessionStartCtxTime` (not `performance.now() − startedAtMs`).
+- [x] **CLOCK-02**: Ambient scale (`useAmbientScale`) reads elapsed time from the audio clock (not `performance.now()`).
+- [x] **CLOCK-03**: Animation phase progress is derived from the audio clock each rAF tick — no independent time source remains in the animation path.
+- [x] **CLOCK-04**: User locks an iOS device mid-session and unlocks it: audio and animation remain in phase on resume — no visible burst, no audible drift (closes diagnosis #1).
+- [x] **CLOCK-05**: Foreground mid-session run without lock/background events produces no observable audio/animation sync drift (closes diagnosis #2 — eliminates the two-clock divergence path).
 
 ### Scheduling (Phase 52 — visibility-resume clamp + lookahead)
 
@@ -106,11 +106,11 @@ Which phases cover which requirements. Roadmapper will populate the Phase column
 | ABSTR-02 | Phase 50 | Complete |
 | ABSTR-03 | Phase 50 | Complete |
 | ABSTR-04 | Phase 50 | Complete |
-| CLOCK-01 | Phase 51 | Pending |
-| CLOCK-02 | Phase 51 | Pending |
-| CLOCK-03 | Phase 51 | Pending |
-| CLOCK-04 | Phase 51 | Pending |
-| CLOCK-05 | Phase 51 | Pending |
+| CLOCK-01 | Phase 51 | Complete |
+| CLOCK-02 | Phase 51 | Complete |
+| CLOCK-03 | Phase 51 | Complete |
+| CLOCK-04 | Phase 51 | Complete |
+| CLOCK-05 | Phase 51 | Complete |
 | SCHED-01 | Phase 52 | Pending |
 | SCHED-02 | Phase 52 | Pending |
 | SCHED-03 | Phase 52 | Pending |
