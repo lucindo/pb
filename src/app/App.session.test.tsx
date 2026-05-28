@@ -16,7 +16,12 @@ import {
 import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
 import type { TimbreId } from '../domain'
-import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_MS, NK_OM_SECONDS } from '../hooks/useNKEngine'
+import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_SEC, NK_OM_SECONDS } from '../hooks/useNKEngine'
+
+// Plan 50-03 D-02 boundary: NK_LEAD_SEC is seconds; vi.advanceTimersByTime takes
+// ms. Convert once at this single test-file boundary so the rest of the math
+// reads ms-shaped consistently with the existing omMs literals.
+const NK_LEAD_MS_FOR_TIMERS = NK_LEAD_SEC * 1000
 
 describe('running session display', () => {
   beforeEach(() => {
@@ -328,7 +333,7 @@ function seedNK(nk: NKSeed = {}): void {
 const NK_COUNTDOWN = APP_LEAD_IN_MS
 
 // Full Navi session wall-time (ms), start() → natural completion. Every round
-// is a front phase + a back phase, each opening with an NK_LEAD_MS lead-in.
+// is a front phase + a back phase, each opening with an NK_LEAD_SEC lead-in.
 // Every OM runs for omMs, except the last OM of each phase, which holds for
 // NK_LAST_OM_HOLD_MULTIPLIER × omMs — so each phase carries one extra
 // (multiplier − 1) × omMs, two per round. Derived from the engine constants so
@@ -341,7 +346,7 @@ function nkSessionMs(
   const omMs = NK_OM_SECONDS[omLength] * 1000
   const backCount = frontCount / 4
   const lastOmExtra = 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1) * omMs
-  const perRound = 2 * NK_LEAD_MS + (frontCount + backCount) * omMs + lastOmExtra
+  const perRound = 2 * NK_LEAD_MS_FOR_TIMERS + (frontCount + backCount) * omMs + lastOmExtra
   return perRound * rounds
 }
 
@@ -473,7 +478,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     await act(async () => {
       await Promise.resolve()
       vi.advanceTimersByTime(
-        NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + NK_LEAD_MS + 2 * NK_OM_SECONDS.fast * 1000,
+        NK_COUNTDOWN + nkSessionMs(100, 'fast', 1) + NK_LEAD_MS_FOR_TIMERS + 2 * NK_OM_SECONDS.fast * 1000,
       )
     })
 

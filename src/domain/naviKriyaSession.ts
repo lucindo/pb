@@ -1,12 +1,13 @@
 import type { NaviKriyaSettings, OmLength } from './naviKriyaSettings'
 
+// NK_OM_SECONDS is already seconds-shaped per D-02 — no rename needed.
 export const NK_OM_SECONDS: Record<OmLength, number> = {
   fast: 1.75,
   medium: 2.16,
   slow: 3.0,
 }
 
-export const NK_LEAD_MS = 5000
+export const NK_LEAD_SEC = 5
 export const NK_LAST_OM_HOLD_MULTIPLIER = 1.5
 
 export type NaviKriyaPhase = 'front' | 'back'
@@ -32,17 +33,17 @@ export function getNaviKriyaPhaseTarget(
     : getNaviKriyaBackCount(settings.frontCount)
 }
 
-export function estimateNaviKriyaDurationMs(settings: NaviKriyaSettings): number {
+export function estimateNaviKriyaDurationSec(settings: NaviKriyaSettings): number {
   const backCount = getNaviKriyaBackCount(settings.frontCount)
-  const omMs = NK_OM_SECONDS[settings.omLength] * 1000
+  const omSec = NK_OM_SECONDS[settings.omLength]
   const heldOmCount = 2 * (NK_LAST_OM_HOLD_MULTIPLIER - 1)
 
   return (
-    settings.rounds * (settings.frontCount + backCount + heldOmCount) * omMs
-    + settings.rounds * 2 * NK_LEAD_MS
+    settings.rounds * (settings.frontCount + backCount + heldOmCount) * omSec
+    + settings.rounds * 2 * NK_LEAD_SEC
   )
 }
 
 export function estimateNaviKriyaDurationMinutes(settings: NaviKriyaSettings): number {
-  return Math.round(estimateNaviKriyaDurationMs(settings) / 60_000)
+  return Math.round(estimateNaviKriyaDurationSec(settings) / 60)
 }

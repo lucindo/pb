@@ -9,6 +9,7 @@ import {
   scheduleNKFrontMarker,
   scheduleNKTick,
 } from '../audio/nkCueSynth'
+import { createAudioSessionClock } from '../audio/sessionClock'
 import type { TimbreId } from '../domain/settings'
 import type { NKAudioCallbacks } from './useNKEngine'
 
@@ -67,12 +68,22 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
       }
     }
 
+    // Phase 50 D-08: wrap the AC immediately after construction. The audioCtx
+    // is the source of truth (NK AC ownership stays in begin per D-08); the
+    // clock is the typed surface for time reads (D-09 — audioCtx.currentTime
+    // is no longer read directly by this caller). Per D-03 Option A (resolved
+    // 2026-05-27), clock.now() returns audioCtx.currentTime — byte-identical
+    // to the pre-refactor read. Per revision 1 Warning #12: this is the NK
+    // clock, NOT the engine clock; they wrap distinct AudioContexts. NK passes
+    // NO scheduleImpl — clock.schedule is a no-op at Phase 50.
+    const clock = createAudioSessionClock(audioCtx)
+
     // Reason (D-08, mirrors useAudioCues timbreRef posture): timbre is read
     // once and captured into the four returned closures. A cross-tab timbre
     // change mid-session must NOT mutate this session's cues — do not refactor
     // these closures to re-read getTimbre() each call without revisiting D-08.
     const timbre = getTimbre()
-    const cueWhen = (): number => audioCtx.currentTime + SAFE_LEAD_SEC
+    const cueWhen = (): number => clock.now() + SAFE_LEAD_SEC
     const countdownTick = (): void => {
       if (mutedRef.current) return
       scheduleCountdownTick(audioCtx, cueWhen(), audioCtx.destination, timbre)
