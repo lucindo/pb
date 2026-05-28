@@ -56,6 +56,7 @@ function makeMockCueHandle(opts: { withCancelAndHold?: boolean } = {}): {
     envelope,
     scheduledAt: 0,
     cleanupAt: 10,
+    cancel: vi.fn(),
   }
   return { handle, fns }
 }

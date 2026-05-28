@@ -70,6 +70,10 @@ export interface CueHandle {
   envelope: GainNode // exposed for D-08 mute fade-out
   scheduledAt: number // audioCtx.currentTime at strike
   cleanupAt: number // when nodes can be GC'd (start + 5*timeConstant + tail)
+  /** Phase 52 D-09: stop oscillators + disconnect all nodes in the cue chain.
+   *  Idempotent — safe to call multiple times; every disconnect is wrapped in
+   *  try/catch per the Phase 18 AUDIO-04 posture at cueSynth.ts L164-178. */
+  cancel(this: void): void
 }
 
 function scheduleBowlCue(
@@ -146,6 +150,11 @@ function scheduleBowlCue(
   // Build + wire each partial in a single loop so osc and partialGain stay as
   // local references for the 'ended' listener — avoids parallel-array indexing
   // and the noUncheckedIndexedAccess guard that came with it.
+  //
+  // Phase 52 D-09: collect all oscillator nodes so the cancel() closure can stop
+  // + disconnect them. The partial gain nodes pair 1-to-1 with each oscillator.
+  const oscList: OscillatorNode[] = []
+  const partialGainList: GainNode[] = []
   let lastOsc: OscillatorNode | null = null
   for (const partial of preset.partials) {
     const osc = audioCtx.createOscillator()
@@ -166,6 +175,8 @@ function scheduleBowlCue(
       try { partialGain.disconnect() } catch { /* silent */ }
     }, { once: true })
 
+    oscList.push(osc)
+    partialGainList.push(partialGain)
     lastOsc = osc
   }
   // Disconnect shared filter + envelope after the last partial ends (all partials share stopAt,
@@ -177,10 +188,30 @@ function scheduleBowlCue(
     }, { once: true })
   }
 
+  // Phase 52 D-09: cancel() — stop oscillators + disconnect all chain nodes.
+  // Mirrors the close() explicit-disconnect loop at audioEngine.ts:534-537 and
+  // the AUDIO-04 try/catch posture at L164-178 above. cancelScheduledValues
+  // discards pending automation so no further gain ramps fire post-cancel.
+  // Every stop() + disconnect() is wrapped in try/catch — the 'ended' listener
+  // and cancel() may both fire on the same cue; both must be safe (idempotent).
+  const cancel = (): void => {
+    envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    for (const osc of oscList) {
+      try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+      try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    for (const pg of partialGainList) {
+      try { pg.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    try { filter.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+  }
+
   return {
     envelope,
     scheduledAt: when,
     cleanupAt,
+    cancel,
   }
 }
 
@@ -270,9 +301,21 @@ export function scheduleTick(
     try { envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
+  // Phase 52 D-09: cancel() — stop oscillator + disconnect chain. Same try/catch
+  // posture as the 'ended' listener above (AUDIO-04 Phase 18). The 'ended' listener
+  // and cancel() may both fire; both must be safe (idempotent).
+  const cancel = (): void => {
+    envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+    try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { filter.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+  }
+
   return {
     envelope,
     scheduledAt: when,
     cleanupAt: when + TICK_TOTAL_DURATION_SEC + TICK_CLEANUP_PADDING_SEC,
+    cancel,
   }
 }
