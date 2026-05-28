@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   SAFE_LEAD_SEC,
 } from '../audio/audioEngine'
-import { createWallSessionClock } from '../audio/sessionClock'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { computeBoundaryAudioOffsets } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
@@ -74,15 +73,6 @@ export function useBreathingSessionController({
 }: UseBreathingSessionControllerArgs): BreathingSessionController {
   const initialMute = useMemo<boolean>(() => loadMute(), [])
   const activeStretchSettings = activePractice === 'stretch' ? stretchSettings : null
-  // Phase 50-02 / D-07: wall-clock injection for useSessionEngine. The audio
-  // engine's own clock is NOT yet exposed via useAudioCues (Plan 50.04 introduces
-  // it). At Phase 50, useSessionEngine reads from this wall clock — Phase 51
-  // will swap the source to audioCtx.currentTime via the seam this clock
-  // provides. Behavior is byte-identical to the pre-Phase-50 state because
-  // createWallSessionClock.now() = performance.now() / 1000 (D-09).
-  const sessionClock = useMemo(() => createWallSessionClock(), [])
-  const session = useSessionEngine(initialSettings, activeStretchSettings, sessionClock)
-  const { state } = session
 
   const [phase, setPhase] = useState<BreathingSessionPhase>('idle')
   const [leadInDigit, setLeadInDigit] = useState<LeadInDigit | null>(null)
@@ -96,11 +86,7 @@ export function useBreathingSessionController({
   const lastBoundaryKeyRef = useRef<string | null>(null)
   const recordedSessionKeyRef = useRef<string | null>(null)
   const sessionCueRef = useRef<CueStyleId | null>(null)
-  const sessionFrameRef = useRef(session.liveFrame)
-
-  useEffect(() => {
-    sessionFrameRef.current = session.liveFrame
-  }, [session.liveFrame])
+  const sessionFrameRef = useRef<SessionFrame | null>(null)
 
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number): void => {
     // Phase 50-02 (D-02 ms→sec cascade): liveFrame.elapsedSec is seconds-shaped at
@@ -109,7 +95,30 @@ export function useBreathingSessionController({
     audioAnchorRef.current = newAudioAnchor - elapsedSec
   }, [])
 
-  const audio = useAudioCues(initialMute, onAudioReanchorRequired)
+  // Phase 51-02 (D-10/D-11): bridge from useAudioCues.onSessionClockReanchored to
+  // useSessionEngine.reanchorSessionClock. Defined via a stable callback that reads
+  // through sessionReanchorRef so the callback identity is fixed for useAudioCues's
+  // dep tracking, even though `session` itself is created on the line below.
+  const sessionReanchorRef = useRef<((newClockNow: number) => void) | null>(null)
+  const onSessionClockReanchored = useCallback((newClockNow: number): void => {
+    sessionReanchorRef.current?.(newClockNow)
+  }, [])
+
+  // Phase 51-02: audio precedes session (D-05 hook ordering — audio.clock is the
+  // SessionClock seam useSessionEngine reads from). Today the audio-backed proxy
+  // exists from first render (initial source is a wall clock) and swaps to the
+  // AC clock inside useAudioCues.start() (D-05).
+  const audio = useAudioCues(initialMute, onAudioReanchorRequired, onSessionClockReanchored)
+  const session = useSessionEngine(initialSettings, activeStretchSettings, audio.clock)
+  const { state } = session
+
+  useEffect(() => {
+    sessionFrameRef.current = session.liveFrame
+  }, [session.liveFrame])
+
+  useEffect(() => {
+    sessionReanchorRef.current = session.reanchorSessionClock
+  }, [session.reanchorSessionClock])
 
   const audioStop = audio.stop
   const audioStart = audio.start
