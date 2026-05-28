@@ -1698,12 +1698,15 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
       },
     }
     const fireResume = () => { for (const cb of [...resumeSubscribers]) cb() }
+    // Reason: fake engine is partial any-typed for test isolation; full AudioEngine typing is not required here.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     return { engine, topUpSpy, resumeSubscribers, fireResume }
   }
 
   it('D-04 T1: clock.onResume fires with no error even when engine is null (defensive gate)', async () => {
     // Before start(): engine is null. Firing onResume should not throw.
     // This is tested by verifying the hook can receive the start call with no engine.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { engine, fireResume } = makeFakeEngineWithControllableResume()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
@@ -1718,7 +1721,9 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
     act(() => { fireResume() })
 
     // topUpSpy should NOT have been called (no cached cues yet)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(engine.topUpSpy).toBeUndefined() // structural sanity
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(engine.topUpLookahead).not.toHaveBeenCalled()
 
     await act(async () => { await result.current.stop() })
@@ -1726,6 +1731,7 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   })
 
   it('D-04 T2: clock.onResume fires after topUpLookahead cached cues → re-dispatches those cues via engine.topUpLookahead', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
@@ -1755,6 +1761,7 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   })
 
   it('D-04 T6: clock.onResume fires before any topUpLookahead — lastTopUpCuesRef empty, no engine call', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
@@ -1773,6 +1780,7 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   })
 
   it('D-04 T7: successive topUpLookahead calls update the cache — forceTopUp re-dispatches LATEST cues', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
@@ -1802,6 +1810,7 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   })
 
   it('D-04 T4: stop() tears down forceTopUp subscription — no topUpLookahead called after stop', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { engine, topUpSpy, fireResume } = makeFakeEngineWithControllableResume()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
@@ -1824,7 +1833,8 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   })
 
   it('D-04 T3: onResume subscription count — engine.clock.onResume called at least twice (handleResume + handleForceTopUp)', async () => {
-    const { engine, fireResume: _fireResume } = makeFakeEngineWithControllableResume()
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { engine } = makeFakeEngineWithControllableResume()
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockResolvedValueOnce(engine)
 
@@ -1833,6 +1843,7 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
 
     // engine.clock.onResume must be called at least 2 times:
     // once for handleResume and once for handleForceTopUp
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(engine.clock.onResume).toHaveBeenCalledTimes(2)
 
     await act(async () => { await result.current.stop() })

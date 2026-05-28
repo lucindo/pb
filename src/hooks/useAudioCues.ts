@@ -180,6 +180,12 @@ export function useAudioCues(
   // Reset to false on every transition back to 'running' (or on stop()).
   const visibilityResumeAttemptedRef = useRef<boolean>(false)
 
+  /** Phase 52 D-04: cache the last cues array dispatched via topUpLookahead.
+   *  handleForceTopUp re-dispatches this on clock.onResume so AC reconstruction /
+   *  iOS unlock force-tops up before the next rAF tick fires. Stale by ≤ 1 rAF
+   *  (~16ms); engine's SAFE_LEAD_SEC callee clamp absorbs the drift. */
+  const lastTopUpCuesRef = useRef<Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>>([])
+
   // Plan 06 D-35: re-anchor callback stored in a ref to avoid closure-capture issues
   // when App.tsx passes a new callback identity per render. The reconstruction path
   // reads this ref synchronously and invokes the latest callback.
@@ -247,6 +253,21 @@ export function useAudioCues(
     if (engine === null) return
     void engine
     setAudioStatus('unavailable')
+  }, [])
+
+  // Phase 52 D-04: force-top-up handler subscribed to clock.onResume.
+  // Re-dispatches the last cues array passed to topUpLookahead so the lookahead queue
+  // refills before the next rAF tick fires (covers AC reconstruction / iOS unlock / engine swap).
+  // Cached cues may be ≤ 1 rAF stale (~16ms); engine's SAFE_LEAD_SEC callee clamp absorbs drift.
+  // Follows the same defensive-gate posture as handleResume (L213-222): engineRef null-gate + early return.
+  const handleForceTopUp = useCallback((): void => {
+    // Phase 52 D-04: AC reconstruction / iOS unlock force-top-up. Re-dispatches
+    // last cues so the queue refills before the next rAF tick fires.
+    const engine = engineRef.current
+    if (engine === null) return
+    const cues = lastTopUpCuesRef.current
+    if (cues.length === 0) return // No prior dispatch (e.g., lead-in still running) — safe no-op.
+    engine.topUpLookahead({ cues })
   }, [])
 
   // Cleanup-on-unmount: close the engine if a session is still alive.
@@ -345,7 +366,8 @@ export function useAudioCues(
         const unsubResume = engine.clock.onResume(handleResume)
         const unsubSuspend = engine.clock.onSuspend(handleSuspend)
         const unsubClose = engine.clock.onClose(handleClose)
-        clockUnsubsRef.current = [unsubResume, unsubSuspend, unsubClose]
+        const unsubForceTopUp = engine.clock.onResume(handleForceTopUp) // Phase 52 D-04
+        clockUnsubsRef.current = [unsubResume, unsubSuspend, unsubClose, unsubForceTopUp]
         // HOOKS-01 / D-11: read mute from mutedRef so `start` does NOT depend on
         // the React `muted` state. The ref-mirror effect above keeps the ref in
         // sync with the React state before any subsequent callback observation;
@@ -382,7 +404,7 @@ export function useAudioCues(
         return null
       }
     },
-    [handleResume, handleSuspend, handleClose],
+    [handleResume, handleSuspend, handleClose, handleForceTopUp],
   )
 
   const stop = useCallback(async (): Promise<void> => {
@@ -516,7 +538,8 @@ export function useAudioCues(
     const unsubResume = newEngine.clock.onResume(handleResume)
     const unsubSuspend = newEngine.clock.onSuspend(handleSuspend)
     const unsubClose = newEngine.clock.onClose(handleClose)
-    clockUnsubsRef.current = [unsubResume, unsubSuspend, unsubClose]
+    const unsubForceTopUp = newEngine.clock.onResume(handleForceTopUp) // Phase 52 D-04
+    clockUnsubsRef.current = [unsubResume, unsubSuspend, unsubClose, unsubForceTopUp]
     // D-35b: replay mute state synchronously so the new engine starts with the
     // user's chosen muted-ness — the React `muted` state was not reset by the
     // close + new-create cycle.
@@ -552,7 +575,7 @@ export function useAudioCues(
     visibilityResumeAttemptedRef.current = false
     setAudioStatus('ok')
     setAudioAvailable(true)
-  }, [handleResume, handleSuspend, handleClose])
+  }, [handleResume, handleSuspend, handleClose, handleForceTopUp])
 
   // Plan 06 D-34: public resume() — invoked from the App.tsx mute-button click
   // handler when audioStatus === 'needs-resume'. The click IS a user gesture
@@ -597,12 +620,13 @@ export function useAudioCues(
   )
 
   // Phase 52 D-04: top-up facade — parallel to notifyPhaseBoundary; delegates to
-  // engine.topUpLookahead({ cues }). Plan 03 exposes this minimal facade; Plan 04 (Wave 3)
-  // extends it to cache the cues array for the clock.onResume force-top-up path.
+  // engine.topUpLookahead({ cues }). Plan 04 extends Plan 03's facade to cache the cues
+  // array in lastTopUpCuesRef for the clock.onResume force-top-up path (handleForceTopUp).
   // Defensive gate pattern: read engineRef into local `engine`; early-return when null
   // (matches handleResume at L213-222 and all other clock-subscriber callbacks).
   const topUpLookahead = useCallback(
     (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void => {
+      lastTopUpCuesRef.current = cues // Phase 52 D-04: cache for force-top-up on resume
       const engine = engineRef.current
       if (engine === null) return
       engine.topUpLookahead({ cues })
