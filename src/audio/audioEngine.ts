@@ -408,20 +408,23 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (closed) return null // AUDIO-03: closed engine has no meaningful projection.
       if (muted) return firstInCueTime
 
-      // 3 ticks at +0/+1/+2 (D-14 lead-in). Track each so mid-lead-in mute can
-      // fade them out (WR-08). Consistency: the countdown beep is the shared
-      // scheduleCountdownTick — the same beep the Navi Kriya countdown uses —
-      // and honours the session timbre.
-      activeCues.add(scheduleCountdownTick(audioCtx, startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination, sessionTimbre))
-      activeCues.add(scheduleCountdownTick(audioCtx, startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination, sessionTimbre))
-      activeCues.add(scheduleCountdownTick(audioCtx, startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, audioCtx.destination, sessionTimbre))
+      // Plan 50-06 D-05: facade over the internal schedule(when, cue) dispatch.
+      // 3 ticks at +0/+1/+2 (D-14 lead-in) + first In cue at +3. Track each so
+      // mid-lead-in mute can fade them out (WR-08) — schedule()'s switch arms
+      // do the activeCues.add bookkeeping. Consistency: the countdown beep is
+      // the shared scheduleCountdownTick — the same beep the Navi Kriya
+      // countdown uses — and honours the session timbre.
+      schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
+      schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
+      schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       // First In cue at +3 (numerals replaced by the In phase label at t=0; bowl strikes).
       // 260510-tc9 Bug 2: pass the upcoming In-phase duration so the decay envelope
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does
       // the same for every subsequent cue). Phase 50-02 (ms→sec cascade): plan.inhaleSec
       // is already seconds-shaped at the source — no runtime `/1000` conversion.
-      const firstInPhaseDurationSec = plan.inhaleSec
-      activeCues.add(scheduleInCueForTimbre(audioCtx, firstInCueTime, audioCtx.destination, sessionTimbre, firstInPhaseDurationSec))
+      // cue.timbre carries sessionTimbre for type-completeness; the engine ignores it
+      // and uses its closed-over sessionTimbre per Phase 18 D-08.
+      schedule(firstInCueTime, { kind: 'in', phaseDurationSec: plan.inhaleSec, timbre: sessionTimbre })
 
       return firstInCueTime
     },
@@ -430,27 +433,26 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (closed) return
       if (muted) return // D-08 unmute-waits-for-boundary; if currently muted, skip this cue.
       pruneExpiredCues()
-      // AUDIO-02 D-01/D-02 callee-side clamp.
+      // AUDIO-02 D-01/D-02 callee-side clamp. The audioCtx.currentTime read here
+      // is INSIDE the engine and OUTSIDE the drift-guard scope (which targets the
+      // 5 caller files exclusively per 50-CONTEXT.md specifics).
       const clampedAudioTime = Math.max(audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
-      // 260510-tc9 Bug 2: forward phaseDurationSec as the 4th arg so cueSynth
-      // can stretch the decay envelope to the phase length.
-      const cue =
-        newPhase === 'in'
-          ? scheduleInCueForTimbre(audioCtx, clampedAudioTime, audioCtx.destination, sessionTimbre, phaseDurationSec)
-          : scheduleOutCueForTimbre(audioCtx, clampedAudioTime, audioCtx.destination, sessionTimbre, phaseDurationSec)
-      activeCues.add(cue)
+      // Plan 50-06 D-05: facade over schedule(). 260510-tc9 Bug 2: phaseDurationSec
+      // flows into the 'in' / 'out' cue payload; schedule()'s arm forwards it as the
+      // 5th arg to scheduleInCueForTimbre / scheduleOutCueForTimbre.
+      schedule(clampedAudioTime, { kind: newPhase, phaseDurationSec, timbre: sessionTimbre })
     },
 
     playEndChord(): void {
       if (closed) return
       if (muted) return // consistent with the Navi end cue — muted = silent.
+      // Plan 50-06 D-05: facade over schedule(). The endChordTailUntil
+      // Math.max bookkeeping is preserved inside schedule()'s 'end-chord' arm
+      // (Task 1) — close() still defers teardown until the tail rings out.
+      // The audioCtx.currentTime read for `when` stays inside the engine
+      // (NOT in drift-guard scope per 50-CONTEXT.md specifics).
       const when = audioCtx.currentTime + SAFE_LEAD_SEC
-      const cue = scheduleEndChord(audioCtx, when, audioCtx.destination, sessionTimbre)
-      activeCues.add(cue)
-      // Record the tail end so close() can defer teardown until it rings out.
-      // Take the max in case the caller double-dispatches: the second call's
-      // tail must not retreat below an earlier-scheduled chord still ringing.
-      endChordTailUntil = Math.max(endChordTailUntil, cue.cleanupAt)
+      schedule(when, { kind: 'end-chord' })
     },
 
     setMuted(next: boolean): void {
