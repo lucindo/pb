@@ -295,11 +295,13 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     cancelFutureCues.mockClear()
     topUpLookahead.mockClear()
 
-    // Trigger a session.currentFrame advance by advancing time (rAF tick simulation)
-    // The session engine drives currentFrame via internal state; advancing timers
-    // causes the session to tick forward, which triggers the useEffect dep on currentFrame.
+    // Trigger a session.currentFrame advance by advancing past a phase boundary.
+    // At DEFAULT_SETTINGS (5.5 BPM, 40:60), in-phase is ~4.36s. Advancing by 5.1s
+    // crosses the first In→Out boundary, which changes session.currentFrame and
+    // triggers the top-up effect dep (session.currentFrame identity changes at
+    // phase boundaries per useSessionEngine D-03 / HOOKS-03).
     await act(async () => {
-      vi.advanceTimersByTime(200)
+      vi.advanceTimersByTime(5100)
       await Promise.resolve()
     })
 
@@ -345,9 +347,11 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     cancelFutureCues.mockClear()
     topUpLookahead.mockClear()
 
-    // TWO frame advances
-    await act(async () => { vi.advanceTimersByTime(200); await Promise.resolve() })
-    await act(async () => { vi.advanceTimersByTime(200); await Promise.resolve() })
+    // TWO frame advances: each advance crosses a phase boundary (In→Out, Out→In).
+    // At DEFAULT_SETTINGS (5.5 BPM), in-phase ~4.36s, out-phase ~6.55s.
+    // Advance 5.1s per step to reliably cross one phase boundary per step.
+    await act(async () => { vi.advanceTimersByTime(5100); await Promise.resolve() })
+    await act(async () => { vi.advanceTimersByTime(7000); await Promise.resolve() })
 
     // Both should have been called at least twice (once per frame change)
     expect(cancelFutureCues.mock.calls.length).toBeGreaterThanOrEqual(2)
