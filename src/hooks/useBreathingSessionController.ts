@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
-  SAFE_LEAD_SEC,
+  LOOKAHEAD_MIN_CUES,
+  LOOKAHEAD_WINDOW_SEC,
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
-import { computeBoundaryAudioOffsets } from '../domain/sessionAudio'
+import { walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
@@ -83,7 +84,6 @@ export function useBreathingSessionController({
   const planRef = useRef<ReturnType<typeof createBreathingPlan> | null>(null)
   const startGenerationRef = useRef<number>(0)
   const leadInTimeoutsRef = useRef<number[]>([])
-  const lastBoundaryKeyRef = useRef<string | null>(null)
   const recordedSessionKeyRef = useRef<string | null>(null)
   const sessionCueRef = useRef<CueStyleId | null>(null)
   const sessionFrameRef = useRef<SessionFrame | null>(null)
@@ -122,12 +122,11 @@ export function useBreathingSessionController({
 
   const audioStop = audio.stop
   const audioStart = audio.start
-  const audioNotifyPhaseBoundary = audio.notifyPhaseBoundary
+  const audioTopUpLookahead = audio.topUpLookahead
   const audioPlayEndChord = audio.playEndChord
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
   const audioMuted = audio.muted
-  const audioAudioNow = audio.audioNow
   const audioSetMuted = audio.setMuted
   const wakeLockRequest = wakeLock.request
   const wakeLockRelease = wakeLock.release
@@ -157,7 +156,6 @@ export function useBreathingSessionController({
     planRef.current = null
     sessionCueRef.current = null
     setSessionCue(null)
-    lastBoundaryKeyRef.current = null
   }, [])
 
   const setSelectedSettings = useCallback((next: SessionSettings): void => {
@@ -322,46 +320,59 @@ export function useBreathingSessionController({
     clearCapturedSession,
   ])
 
+  // Phase 52 D-04: top-up trigger — replaces the boundary-detection effect (L325-364).
+  // On every session frame change (rAF tick), compute the next N cue audioTimes from
+  // the anchor via walkFutureCues and dispatch via engine.topUpLookahead.
+  // Preserves load-bearing patterns from the original boundary effect:
+  //   1. phase !== 'running' early return (guards lead-in + post-end)
+  //   2. audioAnchor === null gate (anchor is null until lead-in onComplete at L224)
+  //   3. plan === null gate (mirrors prior null guard)
+  // D-12: session stays 'running' through hidden windows — queued cues self-terminate
+  // via cueSynth envelope (cueSynth.ts L89-95, UNCHANGED).
+  //
+  // stretchSegmentsForTopUp: derive a dep-array-safe value by narrowing outside the
+  // effect. IdleSessionState has no stretchSegments property; accessing it directly in
+  // the dep array causes a TS2339 error with tsc -b. The local const is typed as
+  // StretchSegment[] | null | undefined and is stable-referentially when idle (undefined).
+  const stretchSegmentsForTopUp =
+    state.status === 'running' || state.status === 'complete'
+      ? state.stretchSegments
+      : undefined
   useEffect(() => {
-    if (phase !== 'running') {
-      lastBoundaryKeyRef.current = null
-      return
-    }
+    if (phase !== 'running') return
 
     const frame = session.currentFrame
     if (frame === null) return
 
-    const key = `${String(frame.cycleIndex)}:${frame.phase}`
-    if (lastBoundaryKeyRef.current === key) return
-    lastBoundaryKeyRef.current = key
-
-    if (frame.cycleIndex === 0 && frame.phase === 'in') return
-
     const audioAnchor = audioAnchorRef.current
     const plan = planRef.current
-    if (audioAnchor === null && plan !== null) {
-      lastBoundaryKeyRef.current = null
-      return
-    }
-    // Reason: plan === null only on idle/post-end (clearCapturedSession ran);
-    // phase === 'running' guard above + the phase !== 'running' branch that
-    // clears the key both make this case unreachable in practice. Preserving
-    // the key here is a no-op rather than a hazard.
     if (audioAnchor === null || plan === null) return
 
-    const { boundaryStartSec, phaseDurationSec } = computeBoundaryAudioOffsets(frame, plan)
-    const liveAudioNow = audioAudioNow()
-    if (liveAudioNow === null) return
+    // D-07: session-elapsed relative to anchor for D-14 window computation
+    const elapsedSec = frame.elapsedSec
 
-    // Phase 50-02 (D-02 ms→sec cascade): boundaryStartSec is seconds-shaped at the
-    // source — add it directly to the audioAnchor (no `/1000` runtime conversion).
-    const audioTime = audioAnchor + boundaryStartSec
-    audioNotifyPhaseBoundary({
-      newPhase: frame.phase,
-      audioTime: Math.max(audioTime, liveAudioNow + SAFE_LEAD_SEC),
-      phaseDurationSec,
+    // Stretch sessions expose segments via state.stretchSegments (set by startStretchSession).
+    // stretchSegmentsForTopUp is derived above from the narrowed state union (safe for TS).
+    const segments = stretchSegmentsForTopUp ?? undefined
+
+    // D-14: timed sessions trim the lookahead at plan.totalSec so no cue is queued
+    // past the session end. Open-ended sessions (plan.totalSec === null) use undefined.
+    const targetSec = plan.totalSec ?? undefined
+
+    const cues = walkFutureCues({
+      audioAnchor,
+      elapsedSec,
+      fromCycleIndex: frame.cycleIndex,
+      fromPhase: frame.phase,
+      plan,
+      segments,
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+      targetSec,
     })
-  }, [phase, session.currentFrame, audioNotifyPhaseBoundary, audioAudioNow])
+
+    audioTopUpLookahead(cues)
+  }, [phase, session.currentFrame, audioTopUpLookahead, stretchSegmentsForTopUp])
 
   useEffect(() => {
     return () => {

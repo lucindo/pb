@@ -116,7 +116,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
 
   // Test 1: controller exposes topUpLookahead in audio interface (indirectly via audio object)
   // The hook exposes audio.topUpLookahead when the boundary effect is replaced
-  it('controller wires top-up trigger: session.currentFrame changes call audio.topUpLookahead', async () => {
+  it('controller wires top-up trigger: session.currentFrame changes call audio.topUpLookahead', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
@@ -134,7 +134,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   })
 
   // Test 2: phase!=='running' guard: in lead-in state top-up should not fire
-  it('phase guard: top-up effect is no-op during lead-in phase', async () => {
+  it('phase guard: top-up effect is no-op during lead-in phase', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,

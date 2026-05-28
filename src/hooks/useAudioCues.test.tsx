@@ -1584,26 +1584,6 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
 
 // Phase 52 D-04: topUpLookahead facade tests
 describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
-  class SpyableAC {
-    state: AudioContextState = 'running'
-    sampleRate = 44100
-    destination = {}
-    private _start = performance.now() / 1000
-    get currentTime() { return performance.now() / 1000 - this._start }
-    // Reason: AudioContext API accepts an options parameter; kept for structural compatibility.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    constructor(_options?: AudioContextOptions) {}
-    createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
-    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
-    createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async resume(): Promise<void> { this.state = 'running' }
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async close(): Promise<void> { this.state = 'closed' }
-    addEventListener = vi.fn()
-    removeEventListener = vi.fn()
-  }
-
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()

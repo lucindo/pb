@@ -88,7 +88,9 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
     // AudioTimes must be monotonically increasing
     for (let i = 1; i < cues.length; i++) {
-      expect(cues[i]?.audioTime).toBeGreaterThan(cues[i - 1]?.audioTime)
+      const prevTime = cues[i - 1]?.audioTime ?? 0
+      const currTime = cues[i]?.audioTime ?? 0
+      expect(currTime).toBeGreaterThan(prevTime)
     }
   })
 
@@ -144,7 +146,9 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     expect(uniqueTimes.size).toBe(audioTimes.length)
     // Monotonically increasing
     for (let i = 1; i < cues.length; i++) {
-      expect(cues[i]?.audioTime).toBeGreaterThan(cues[i - 1]?.audioTime)
+      const prevTime = cues[i - 1]?.audioTime ?? 0
+      const currTime = cues[i]?.audioTime ?? 0
+      expect(currTime).toBeGreaterThan(prevTime)
     }
   })
 
