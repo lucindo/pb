@@ -237,7 +237,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
   // Build a minimal fake useAudioCues return that provides enough surface for the
   // controller to render, go through lead-in, and transition to running phase.
   // cancelFutureCues and topUpLookahead are tracked vi.fn()s for ordering assertions.
-  function makeFakeAudioCues(overrides: Partial<ReturnType<typeof useAudioCuesModule.useAudioCues>> = {}) {
+  function makeFakeAudioCues() {
     const cancelFutureCues = vi.fn()
     const topUpLookahead = vi.fn()
     const wallClock = createWallSessionClock()
@@ -247,8 +247,8 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
       audioAvailable: true,
       muted: false,
       clock: wallClock,
-      start: vi.fn(async () => 1.0), // returns a non-null lead-in audio time
-      stop: vi.fn(async () => {}),
+      start: vi.fn(() => Promise.resolve(1.0 as number | null)), // returns a non-null lead-in audio time
+      stop: vi.fn(() => Promise.resolve()),
       setMuted: vi.fn(),
       notifyPhaseBoundary: vi.fn(),
       topUpLookahead,
@@ -256,15 +256,13 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
       audioNow: vi.fn(() => 0),
       playEndChord: vi.fn(),
       audioStatus: 'ok' as const,
-      resume: vi.fn(async () => {}),
-      ...overrides,
+      resume: vi.fn(() => Promise.resolve()),
     }
-    return { fakeAudio, cancelFutureCues, topUpLookahead }
+    return { fakeAudio: fakeAudio as ReturnType<typeof useAudioCuesModule.useAudioCues>, cancelFutureCues, topUpLookahead }
   }
 
   it('CR-01-FIX top-up effect calls cancelFutureCues immediately before topUpLookahead', async () => {
-    const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues()
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues() // fakeAudio is properly typed via as ReturnType<...>
     vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
 
     const { result, unmount } = renderHook(() =>
@@ -323,7 +321,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
 
   it('CR-01-FIX two consecutive frame changes — cancel fires twice and dispatch fires twice', async () => {
     const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues()
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
 
     const { result, unmount } = renderHook(() =>
@@ -367,9 +364,8 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     unmount()
   })
 
-  it('CR-01-FIX top-up effect does NOT call cancelFutureCues when audioAnchor is null', async () => {
+  it('CR-01-FIX top-up effect does NOT call cancelFutureCues when audioAnchor is null', () => {
     const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCues()
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
 
     const { result, unmount } = renderHook(() =>

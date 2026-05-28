@@ -1077,7 +1077,6 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
   // AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws)
   // also sets audioStatus='unavailable' (WR-01-FIX).
   it("AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws) also sets audioStatus='unavailable'", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockRejectedValueOnce(
       new Error('iOS construction failed'),
     )
@@ -1987,7 +1986,6 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
         setMasterGain: vi.fn(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onResume: vi.fn((cb: () => void) => { resumeCb = cb; return () => undefined }),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -2041,7 +2039,6 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
         setMasterGain: vi.fn(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onResume: vi.fn((cb: () => void) => { resumeCb1 = cb; return () => undefined }),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -2076,7 +2073,6 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
         setMasterGain: vi.fn(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onResume: vi.fn((cb: () => void) => { resumeCb2 = cb; return () => undefined }),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
