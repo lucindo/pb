@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   LOOKAHEAD_MIN_CUES,
   LOOKAHEAD_WINDOW_SEC,
+  SAFE_LEAD_SEC,
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
 import { walkFutureCues } from '../domain/sessionAudio'
@@ -124,6 +125,7 @@ export function useBreathingSessionController({
   const audioStart = audio.start
   const audioTopUpLookahead = audio.topUpLookahead
   const audioCancelFutureCues = audio.cancelFutureCues
+  const audioNow = audio.audioNow
   const audioPlayEndChord = audio.playEndChord
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
@@ -372,13 +374,31 @@ export function useBreathingSessionController({
       targetSec,
     })
 
-    // CR-01-FIX: cancel-then-reschedule (SCHED-05 doctrine D-10, 52-VERIFICATION.md CR-01):
-    // cancel all future cues in the engine's activeCues queue BEFORE dispatching the new walk.
-    // This mirrors setMuted(true)'s cancel-then-refill pattern and prevents duplicate
-    // OscillatorNode chains from consecutive overlapping topUpLookahead walks.
+    // CR-01-FIX Plan 05: cancel-then-reschedule (SCHED-05 doctrine D-10): cancel all future
+    // cues in the engine's activeCues queue BEFORE dispatching the new walk so consecutive
+    // overlapping topUpLookahead walks cannot accumulate duplicate OscillatorNode chains.
     audioCancelFutureCues()
-    audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])
+
+    // CR-01-FIX Plan 06 (dispatch-site filter): after cancel-then-reschedule, still filter
+    // the cue list against the live audio clock. cancelFutureCues skips cues that have
+    // already started (scheduledAt <= audioNow) — those cues remain in the engine. The first
+    // cue of the new walk typically corresponds to the just-crossed boundary whose cue was
+    // already in-flight. Re-dispatching it produces a double-strike / flam: two OscillatorNode
+    // chains striking the same bowl a few ms apart (CR-01 race window described in 52-REVIEW.md).
+    //
+    // Fix: keep only cues whose audioTime is strictly ahead of audioNow + SAFE_LEAD_SEC
+    // (i.e., not yet started and not imminently starting). When audioNow is null (AC unavailable
+    // / before start), pass all cues unchanged — degrade gracefully.
+    //
+    // SAFE_LEAD_SEC is the same symbol used by the engine's callee-side clamp — imported as a
+    // named symbol, never a hard-coded literal (Tiger Style no-magic-numbers).
+    const liveAudioNow = audioNow()
+    const freshCues = liveAudioNow === null
+      ? cues
+      : cues.filter((c) => c.audioTime > liveAudioNow + SAFE_LEAD_SEC)
+
+    audioTopUpLookahead(freshCues)
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioNow, stretchSegmentsForTopUp])
 
   useEffect(() => {
     return () => {
