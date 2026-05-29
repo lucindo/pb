@@ -207,7 +207,8 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   2. Desktop: on returning to the foreground at any point, the breathing orb resyncs to the live audio position without a racing catch-up burst and without doubled/replayed cues; recorded session duration includes the (audio-played) background time.
   3. Mobile (installed PWA): focused screen-on practice works correctly; background behavior degrades gracefully and predictably given platform audio-suspend constraints (no garbled/doubled output on return). Practice-time exclusion preserved.
   4. No regression to Phase 52 foreground behavior, the Phase 51 master-clock invariant, or ANY Navi Kriya behavior across HRV / Stretch / Navi.
-**Plans**: TBD
+**Plans**: implemented directly (no formal plan files — minimal change per operator "keep it simple"). Commits: eeda95d (in-flight boundary-cue dedup / flam), 9a866d0 (worker heartbeat for background continuity + clamp removal).
+**Status**: implemented; awaiting operator real-device verification (hours-backgrounded desktop continuity + on-return sync; mobile unchanged). tsc/lint/vite build/dev-boot clean; full suite green.
 **UI hint**: no
 
 ## Progress
