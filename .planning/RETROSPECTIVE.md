@@ -471,6 +471,39 @@ Fix-only patch closing all 26 findings from REVIEW.md (5 Critical / 12 Warning /
 
 ---
 
+## Milestone: v2.2 — Audio Sync
+
+**Shipped:** 2026-05-29
+**Phases:** 7 (49, 49.1, 50, 51, 52 formal; 53, 54 implemented directly)
+
+### What Was Built
+Made the breathing app's audio correct on desktop and mobile: `SessionClock` abstraction (50) + master-clock unification onto `audioCtx.currentTime` (51); iOS speaker route fix (49) + opt-out toggle (49.1); full-session background-audio continuity via a Web Worker heartbeat with the visibility-resume clamp removed (54); instant master-gain mute (53); engine-layer in-flight cue dedup that killed the per-breath boundary flam.
+
+### What Worked
+- **Tearing out beat patching.** The original Phase 52 clamp + lookahead was the *source* of the desync bug. The fix that worked was deleting the clamp and ~800 lines of tests that propped it up, then driving cue top-up from a worker — the canonical web-audio pattern. The milestone ended with *less* code than it started.
+- **Reasoning from how the platform actually behaves** (audio-playing tabs are freeze-exempt; worker timers aren't throttled; a suspended AC freezes its own clock) gave correct behavior on both platforms with zero platform-branching.
+- **Adversarial self-review of delegated work** caught a real bug pre-commit (worker re-arming frozen rAF callbacks that would burst on resume).
+
+### What Was Inefficient
+- **Two wrong fixes before the right one** on GAP-52H-1 (one rewound audio → audible cycle-restart, hard-reset out). Root cause: treating the failing test / existing clamp design as ground truth instead of reasoning from desired behavior. Cost real trust.
+- The **Phase 52 clamp+lookahead edifice** (and its large test suite) was over-engineered for what reduced to "keep the queue full from a worker; snap the orb to audio on return." Built a cathedral for a shed.
+
+### Patterns Established
+- **Tests serve behavior, not vice versa.** A green test asserting a bug (the Phase-10 reconstruction test locked in a 200ms-late duplicate strike) is worse than no test — delete it on merit, never design around it.
+- **Master clock as single source of truth**; stop writing code that fights it.
+- **Worker-timer + WebAudio lookahead** for background-resilient scheduling.
+
+### Key Lessons
+- Test count is a smell, not a metric. ~800 lines of clamp tests evaporated when the clamp did, and the app got *more* correct.
+- When the operator says "keep it simple / do the correct fix / stop keeping useless code," favor deletion and direct implementation over the full plan/verify ceremony — phases 53/54 shipped that way successfully.
+- Verify by running the real app + operator device test for behavior that unit tests structurally cannot prove (hours-backgrounded audio, real-device iOS).
+
+### Cost Observations
+- Net code: **−521 lines** (Phase 54) + further removals in 53; ~800 test lines deleted. One 6-line worker + one gain ramp added.
+- Process deviation: phases 53/54 have no formal SUMMARY/VERIFICATION artifacts (direct implementation) — lighter audit trail, documented in ROADMAP + MILESTONES + this retro.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
