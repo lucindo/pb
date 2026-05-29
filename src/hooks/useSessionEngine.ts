@@ -200,14 +200,24 @@ export function useSessionEngine(
       // Foreground frames (~16ms) pass through unchanged; only post-hidden-window
       // first-frame is affected (rawDelta >> MAX_TICK_DELTA_SEC).
       // D-06: MAX_TICK_DELTA_SEC = 0.1 imported from audioEngine.ts (no literal).
-      // The clamp condition `rawDelta > MAX_TICK_DELTA_SEC` is evaluated inside
-      // the setState updater where the rebase math lives (AH-WR-05).
-      // Update anchor for the NEXT tick — outside the setState updater because
-      // refs are mutable and this read happens once per tick, not per invocation.
+      // WR-03 (Plan 06): the anchor is advanced optimistically before setState.
+      // If the updater short-circuits (status flips to non-running), the anchor is
+      // RESET to the pre-tick value inside the non-running branch so the rawDelta
+      // credit is NOT consumed without a corresponding rebase. The next running
+      // tick will then see the accumulated rawDelta (including the hidden window)
+      // and apply the rebase atomically. This preserves the tick-by-tick anchor
+      // progression for normal foreground ticks while ensuring the clamp+rebase
+      // is atomic: anchor advance only "commits" when the running branch commits.
       lastClockNowRef.current = clockNowSec
 
       setState((currentState) => {
         if (currentState.status !== 'running') {
+          // WR-03 (Plan 06): short-circuit path — reset anchor to pre-tick value.
+          // The missed rawDelta (including any hidden-window gap) is preserved for
+          // the next running tick, which will then apply the rebase correctly.
+          // This makes the anchor advance atomic with the rebase commit:
+          // if no rebase commits, the anchor does not advance.
+          lastClockNowRef.current = lastClockNow
           return currentState
         }
 

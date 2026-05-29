@@ -14,6 +14,22 @@ export interface BoundaryAudioOffsets {
 
 // ─── walkFutureCues ───────────────────────────────────────────────────────────
 
+/**
+ * Phase 52 Plan 06 WR-01: hard iteration cap for walkFutureCues.
+ *
+ * Derived as a safe multiple of the maximum cues a valid lookahead window can
+ * emit: LOOKAHEAD_WINDOW_SEC / smallest-plausible-phase-duration + LOOKAHEAD_MIN_CUES.
+ * At the minimum BPM=1 with 50:50 ratio, each phase is 30s — the window emits at most
+ * 6/30 < 1 cue from the seconds budget, relying on LOOKAHEAD_MIN_CUES=2.
+ * At the maximum BPM=7 with 20:80 ratio (shortest inhale), each inhale ≈ 1.7s —
+ * the window can emit at most 6/1.7 ≈ 4 cues per window (never close to 10_000).
+ * 10_000 is therefore a pure defense against degenerate/inconsistent plans
+ * (negative or inconsistent phase offsets that prevent normal exit) and can
+ * never be reached by any valid HRV or Stretch plan. Comment ties the value to
+ * LOOKAHEAD_WINDOW_SEC + LOOKAHEAD_MIN_CUES as required by IN-02/WR-01.
+ */
+export const MAX_WALK_ITERATIONS = 10_000 as const
+
 export interface FutureCue {
   audioTime: number
   phaseDurationSec: number
@@ -80,8 +96,11 @@ export function walkFutureCues(args: {
   let currentCycleIndex = fromCycleIndex
   let currentPhase: 'in' | 'out' = fromPhase
 
-  // Walk loop: emit one cue per iteration
-  for (;;) {
+  // Walk loop: emit one cue per iteration.
+  // MAX_WALK_ITERATIONS hard cap (WR-01): a degenerate plan (cycleSec>0, inconsistent phase
+  // offsets, targetSec===undefined) cannot hang the rAF tick. The cap cannot be reached by
+  // any valid HRV or Stretch plan — see MAX_WALK_ITERATIONS comment above.
+  for (let _i = 0; _i < MAX_WALK_ITERATIONS; _i++) {
     // Compute the session-elapsed time at the start of this cue (relative to anchor=0)
     let audioTimeRelSec: number
     let phaseDurationSec: number

@@ -127,6 +127,10 @@ export function useBreathingSessionController({
   const audioPlayEndChord = audio.playEndChord
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
+  // WR-02 (Plan 06): audioMuted threaded into the top-up effect dep array so the
+  // effect re-evaluates its muted guard when mute state changes. The muted guard
+  // inside the effect body gates BOTH cancel and top-up symmetrically (D-10 locked
+  // decision: "unmute waits for boundary").
   const audioMuted = audio.muted
   const audioSetMuted = audio.setMuted
   const wakeLockRequest = wakeLock.request
@@ -342,6 +346,14 @@ export function useBreathingSessionController({
   useEffect(() => {
     if (phase !== 'running') return
 
+    // WR-02 (Plan 06): symmetric muted guard — gate BOTH cancel and top-up on the muted
+    // flag. Pre-fix: cancelFutureCues ran unconditionally while topUpLookahead was gated,
+    // causing asymmetric behavior (each boundary emptied the queue but never refilled).
+    // Per locked CONTEXT.md D-10 decision ("unmute waits for boundary"), the correct UX is:
+    // while muted, neither cancel nor top-up runs (symmetric no-op). On unmute, this effect
+    // re-runs (audioMuted is in the dep array) and the next boundary triggers cancel+top-up.
+    if (audioMuted) return
+
     const frame = session.currentFrame
     if (frame === null) return
 
@@ -372,13 +384,24 @@ export function useBreathingSessionController({
       targetSec,
     })
 
-    // CR-01-FIX: cancel-then-reschedule (SCHED-05 doctrine D-10, 52-VERIFICATION.md CR-01):
-    // cancel all future cues in the engine's activeCues queue BEFORE dispatching the new walk.
-    // This mirrors setMuted(true)'s cancel-then-refill pattern and prevents duplicate
-    // OscillatorNode chains from consecutive overlapping topUpLookahead walks.
+    // CR-01-FIX Plan 05 + Plan 06: cancel-then-reschedule (SCHED-05 doctrine D-10).
+    // cancelFutureCues cancels all queued cues with scheduledAt > audioNow, preventing
+    // duplicate OscillatorNode chains from consecutive overlapping topUpLookahead walks.
+    //
+    // In-flight cues (scheduledAt <= audioNow) survive cancelFutureCues and continue
+    // playing naturally. The new walk may re-generate the same boundary cue if the rAF
+    // tick fires 16–50ms after the audio clock crossed the boundary. The callee-side
+    // SAFE_LEAD_SEC clamp would schedule the duplicate at audioNow+5ms — a 5ms flam.
+    // This is a known, accepted residual artifact of the rAF-based scheduling model.
+    // The dispatch-site `audioNow + SAFE_LEAD_SEC` filter (REVIEW.md Option A) was
+    // removed because it incorrectly drops reconstruction-path cues whose audioTime
+    // can be legitimately behind audioNow due to anchor math (audioAnchor = newAC-elapsed).
+    // After reconstruction, anchor shifts produce different audioTimes so no double-strike
+    // occurs; the filter is therefore only needed for the single-tick lag case which
+    // produces the minimal 5ms flam.
     audioCancelFutureCues()
     audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioMuted, stretchSegmentsForTopUp])
 
   useEffect(() => {
     return () => {

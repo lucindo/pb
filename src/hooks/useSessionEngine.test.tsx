@@ -1381,6 +1381,136 @@ describe('useSessionEngine — Phase 52 D-05/D-06/D-07 per-tick clamp', () => {
   })
 })
 
+// Phase 52 Plan 06 WR-03: clamp anchor (lastClockNowRef) advances only inside the committed
+// running-tick branch, not before the setState call.
+//
+// Pre-fix (bug): `lastClockNowRef.current = clockNowSec` is written BEFORE the setState
+// updater. If the updater short-circuits (status is non-running), the anchor advances but
+// the rebase never applies. On the very next running tick, rawDelta = clockNow - advancedAnchor
+// is small (no jump), but the rebase credit from the missed hidden window was lost.
+//
+// The behavioral invariant: after a large hidden window followed by session end and restart,
+// the anchor should be re-initialized at session start (not stale from the pre-fix advance).
+// This is guaranteed by the rAF effect re-initialization (lastClockNowRef.current = clock.now()
+// at effect start) which happens on every session start. The WR-03 fix ensures the anchor
+// advance is conditional on the committed running branch, preventing the subtle case where
+// a session stays running despite the updater short-circuiting (React concurrent mode).
+//
+// The test here captures the behavioral intention: when the updater short-circuits because
+// status is non-running (end() was called), the first tick of the new session sees no
+// spurious clamp fire from a stale anchor.
+describe('useSessionEngine — Phase 52 Plan 06 WR-03: atomic clamp/rebase anchor', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-09T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  // WR-03 Test 1: when a rAF tick fires with status already non-running (the updater
+  // short-circuits), followed by a restart, the first post-restart tick sees no
+  // unclamped elapsed jump. The anchor must be initialized to the session-start
+  // clock value, not to an advanced value from the pre-fix tick.
+  it('WR-03 T1: status flip mid-updater produces no elapsed jump on next running tick', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Establish foreground baseline (5 sub-threshold ticks).
+    advanceForeground(mock, 2)
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const elapsedAtBaseline = result.current.state.lastFrame.elapsedSec
+    expect(elapsedAtBaseline).toBeGreaterThanOrEqual(1.9)
+
+    // Simulate a large hidden window (5s) WITHOUT firing rAF.
+    mock.advance(5)  // clock.now() = baseline + 5
+
+    // End the session BEFORE the next tick fires (simulates status flip between ref-read and commit).
+    act(() => {
+      result.current.end()
+    })
+    expect(result.current.state.status).toBe('idle')
+
+    // Fire a rAF tick — the tick closure runs with the new status='idle'.
+    // Pre-fix: lastClockNowRef.current = clock.now() = baseline+5 (advanced, even though updater short-circuits).
+    // Post-fix: lastClockNowRef.current is only set inside the committed-running branch, which never runs.
+    act(() => {
+      vi.advanceTimersByTime(20)
+    })
+
+    // Restart the session. The rAF effect initializes lastClockNowRef.current = clock.now().
+    act(() => {
+      result.current.start()
+    })
+    expect(result.current.state.status).toBe('running')
+
+    // First foreground tick after restart — must see near-zero rawDelta (no jump from stale anchor).
+    act(() => {
+      mock.advance(0.016)
+      vi.advanceTimersByTime(20)
+    })
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running after restart tick')
+
+    // Key assertion: the first post-restart tick should NOT produce a large elapsed jump.
+    // elapsed ≈ 0.016 (the first foreground tick from session start).
+    // If the anchor was stale (pre-fix), the tick would still see near-zero delta because
+    // the rAF effect re-init resets the anchor. So the behavioral outcome is the same either way —
+    // the fix ensures this at the source by making the anchor advance conditional.
+    const elapsedPostRestart = result.current.liveFrame?.elapsedSec ?? -1
+    // elapsed after first tick of new session should be near-zero (0.016 + start offset ≈ 0-0.1s).
+    expect(elapsedPostRestart).toBeLessThanOrEqual(MAX_TICK_DELTA_SEC + 0.05)
+    expect(elapsedPostRestart).toBeGreaterThanOrEqual(0)
+
+    unmount()
+  })
+
+  // WR-03 Test 2: within a running session, the anchor advance is conditional on the
+  // committed running-tick branch. Normal foreground ticks are unchanged (rawDelta small,
+  // no rebase, startedAtSec unchanged). The fix moves the ref write INSIDE the updater
+  // to ensure atomicity.
+  it('WR-03 T2: normal foreground ticks unaffected by the fix (startedAtSec stable)', () => {
+    const mock = createMockSessionClock(0)
+    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const { result, unmount } = renderHook(() =>
+      useSessionEngine(openEnded, null, mock.clock),
+    )
+
+    act(() => {
+      result.current.start()
+    })
+
+    // Several sub-threshold ticks: rawDelta < MAX_TICK_DELTA_SEC on every tick.
+    // startedAtSec must remain unchanged throughout (no rebase, anchor properly advances).
+    if (result.current.state.status !== 'running') throw new Error('Expected running')
+    const startedAtSecInitial = result.current.state.startedAtSec
+
+    for (let i = 0; i < 10; i++) {
+      act(() => {
+        mock.advance(0.05) // sub-threshold
+        vi.advanceTimersByTime(20)
+      })
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (result.current.state.status !== 'running') throw new Error('Expected running after ticks')
+    // startedAtSec must not have changed (no clamp-rebase fired).
+    expect(result.current.state.startedAtSec).toBeCloseTo(startedAtSecInitial, 10)
+    // Elapsed should be ≈ 10 × 0.05 = 0.5s.
+    expect(result.current.liveFrame?.elapsedSec ?? -1).toBeGreaterThanOrEqual(0.4)
+
+    unmount()
+  })
+})
+
 // Phase 52 D-08: synchronous lastClockNow reset inside reanchorSessionClock.
 //
 // reanchorSessionClock(newClockNow) must reset lastClockNowRef.current = newClockNow

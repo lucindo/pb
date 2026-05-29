@@ -528,6 +528,13 @@ export function useAudioCues(
     // generation counter (both patterns address different races).
     engineRef.current = null
     firstInCueTimeRef.current = null
+    // WR-05 (Plan 06): clear lastTopUpCuesRef alongside the other ref resets (mirroring
+    // stop()'s WR-02-FIX cache-clear). Without this, handleForceTopUp fires on the new
+    // engine's first clock.onResume and replays cached cues with audioTimes from the OLD
+    // AC origin — those times get clamped to audioNow + SAFE_LEAD_SEC on the new AC,
+    // collapsing all N cues onto one instant (stacked strike / WR-04). Clearing here
+    // ensures the first onResume after reconstruction sees an empty cache and exits early.
+    lastTopUpCuesRef.current = []
 
     let newEngine: AudioEngine
     try {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { LOOKAHEAD_MIN_CUES, LOOKAHEAD_WINDOW_SEC } from '../audio/audioEngine'
 import type { BreathingPlan } from './breathingPlan'
-import { computeBoundaryAudioOffsets, walkFutureCues } from './sessionAudio'
+import { computeBoundaryAudioOffsets, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
 import type { SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
@@ -301,6 +301,82 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       minCues: LOOKAHEAD_MIN_CUES,
     })
     expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
+  })
+})
+
+// Phase 52 Plan 06 WR-01: hard iteration cap on walkFutureCues.
+// Verifies a degenerate plan (cycleSec > 0, targetSec=undefined, inhaleSec=0 so
+// phaseOffset for 'out' = 0 = same as 'in') terminates at MAX_WALK_ITERATIONS
+// instead of looping forever. Without the cap, 6/1e-9 = 6e9 iterations would hang.
+describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
+  it('degenerate plan terminates within MAX_WALK_ITERATIONS cap instead of looping forever', () => {
+    // cycleSec=1e-9 (near-zero positive, passes cycleSec > 0 guard).
+    // inhaleSec=0 → phaseOffset for 'out' = inhaleSec = 0 too.
+    // audioTimeRelSec per cue = cycleIndex * 1e-9.
+    // windowEnd = elapsedSec + LOOKAHEAD_WINDOW_SEC = 0 + 6 → needs 6e9 iterations to exit normally.
+    // Without the cap this hangs the rAF tick. With the cap it returns in ≤ MAX_WALK_ITERATIONS.
+    const degeneratePlan: BreathingPlan = {
+      bpm: 1,
+      ratio: '50:50',
+      cycleSec: 1e-9,  // near-zero positive — passes cycleSec > 0 guard
+      inhaleSec: 0,
+      exhaleSec: 0,
+      totalSec: null,  // open-ended — no targetSec exit
+    }
+
+    // Must complete before the vitest test timeout (no hang)
+    const start = performance.now()
+    const cues = walkFutureCues({
+      audioAnchor: 0,
+      elapsedSec: 0,
+      fromCycleIndex: 0,
+      fromPhase: 'in',
+      plan: degeneratePlan,
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+      targetSec: undefined,
+    })
+    const elapsed = performance.now() - start
+
+    // Must terminate well under 1s — the cap prevents the infinite loop
+    expect(elapsed).toBeLessThan(500)
+    // Result length bounded by MAX_WALK_ITERATIONS (symbol, not literal — Tiger Style no-magic-numbers).
+    expect(cues.length).toBeGreaterThan(0)
+    expect(cues.length).toBeLessThanOrEqual(MAX_WALK_ITERATIONS)
+  })
+
+  it('normal HRV plan output is unchanged with iteration cap (regression)', () => {
+    // Verify that a well-formed plan produces the same cue sequence as before the cap.
+    // The cap must NOT affect normal operation (10 BPM, window=6s produces ~3 cues).
+    const normalPlan: BreathingPlan = {
+      bpm: 10,
+      ratio: '50:50',
+      cycleSec: 6,
+      inhaleSec: 3,
+      exhaleSec: 3,
+      totalSec: null,
+    }
+
+    const cuesWithCap = walkFutureCues({
+      audioAnchor: 100,
+      elapsedSec: 0,
+      fromCycleIndex: 0,
+      fromPhase: 'in',
+      plan: normalPlan,
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+    })
+
+    // Output should be same as Test 1 in the existing suite (byte-for-byte regression)
+    expect(cuesWithCap.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
+    expect(cuesWithCap[0]).toEqual({ audioTime: 100 + 0, phaseDurationSec: 3, kind: 'in' })
+    expect(cuesWithCap[1]).toEqual({ audioTime: 100 + 3, phaseDurationSec: 3, kind: 'out' })
+    // Monotonically increasing times
+    for (let i = 1; i < cuesWithCap.length; i++) {
+      const prevTime = cuesWithCap[i - 1]?.audioTime ?? 0
+      const currTime = cuesWithCap[i]?.audioTime ?? 0
+      expect(currTime).toBeGreaterThan(prevTime)
+    }
   })
 })
 

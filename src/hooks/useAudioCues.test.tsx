@@ -2098,3 +2098,153 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
     void resumeCb1
   })
 })
+
+// Phase 52 Plan 06 WR-04 + WR-05: reconstruction path top-up gating and lastTopUpCuesRef reset.
+//
+// WR-04: After reconstructEngine, the next clock.onResume must NOT replay cached cues
+// (whose absolute audioTimes belonged to the old AC origin and collapse onto the same
+// instant after SAFE_LEAD_SEC clamp). Reconstruction re-anchors via onReanchorRequired
+// and the next boundary effect refills against the fresh anchor.
+//
+// WR-05: reconstructEngine must reset lastTopUpCuesRef.current = [] alongside its other
+// ref resets (mirroring stop()'s cache-clear pattern from WR-02-FIX). Without this reset,
+// a later clock.onResume fires handleForceTopUp with stale pre-reconstruction cues.
+//
+// Fix: add `lastTopUpCuesRef.current = []` to reconstructEngine before re-subscribing
+// handleForceTopUp to the new engine's clock. This ensures:
+//   (a) any immediate onResume after reconstruction sees empty cache → no stale replay
+//   (b) future top-up calls on the new engine start from a clean slate
+describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and lastTopUpCuesRef reset', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  // Helper: builds two fake engines (pre/post reconstruction) with controllable onResume.
+  // engineA simulates the initial session engine; engineB simulates the reconstructed engine.
+  // Both track topUpLookahead calls so we can assert no stale-cue replay on reconstruction.
+  function makeReconstructFakeEngines() {
+    function makeFakeEngine(clockNowValue: number) {
+      const topUpSpy = vi.fn()
+      const resumeSubscribers: Array<() => void> = []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const engine: any = {
+        setMuted: vi.fn(),
+        scheduleLeadIn: vi.fn(() => clockNowValue + 3),
+        scheduleNextCue: vi.fn(),
+        topUpLookahead: topUpSpy,
+        cancelFutureCues: vi.fn(),
+        playEndChord: vi.fn(),
+        resume: vi.fn(async () => {}),
+        close: vi.fn(async () => {}),
+        clock: {
+          now: vi.fn(() => clockNowValue),
+          schedule: vi.fn(),
+          setMasterGain: vi.fn(),
+          onResume: vi.fn((cb: () => void) => {
+            resumeSubscribers.push(cb)
+            return () => {
+              const idx = resumeSubscribers.indexOf(cb)
+              if (idx !== -1) resumeSubscribers.splice(idx, 1)
+            }
+          }),
+          onSuspend: vi.fn(() => () => undefined),
+          onClose: vi.fn(() => () => undefined),
+        },
+      }
+      const fireResume = () => { for (const cb of [...resumeSubscribers]) cb() }
+      // Reason: partial any-typed engine for test isolation.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      return { engine, topUpSpy, fireResume }
+    }
+    // engineA: initial session (AC currentTime = 10)
+    const engineA = makeFakeEngine(10)
+    // engineB: reconstructed session (AC currentTime = 0.5 — new AC origin)
+    const engineB = makeFakeEngine(0.5)
+    return { engineA, engineB }
+  }
+
+  it('WR-05: reconstructEngine resets lastTopUpCuesRef so subsequent onResume does not replay pre-reconstruction cues', async () => {
+    const { engineA, engineB } = makeReconstructFakeEngines()
+
+    // Start with engineA
+    vi.spyOn(audioEngineModule, 'createAudioEngine')
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      .mockResolvedValueOnce(engineA.engine) // first call: start()
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      .mockResolvedValueOnce(engineB.engine) // second call: reconstructEngine()
+
+    const reanchorSpy = vi.fn()
+    const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Populate lastTopUpCuesRef with pre-reconstruction cues (old AC origin audioTimes)
+    const preReconstructCues = [
+      { audioTime: 10 + 5, phaseDurationSec: 4, kind: 'in' as const },  // absolute to engineA origin
+      { audioTime: 10 + 15, phaseDurationSec: 6, kind: 'out' as const },
+    ]
+    act(() => { result.current.topUpLookahead(preReconstructCues) })
+
+    // Verify the cache was populated
+    expect(engineA.topUpSpy).toHaveBeenCalledTimes(1)
+    engineA.topUpSpy.mockClear()
+
+    // Trigger reconstruction (simulate what public resume() does)
+    await act(async () => { await result.current.resume() })
+
+    // After reconstruction, the cache should be cleared (WR-05 fix).
+    // Fire onResume on the NEW engine — handleForceTopUp should see an empty cache and NO-OP.
+    act(() => { engineB.fireResume() })
+
+    // WR-05 + WR-04 assertion: engineB.topUpLookahead must NOT have been called with the
+    // pre-reconstruction cues. With the fix, lastTopUpCuesRef.current is [] after reconstructEngine,
+    // so handleForceTopUp's `if (cues.length === 0) return` guard exits early.
+    expect(engineB.topUpSpy).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+
+  it('WR-04 + WR-05: no collapsed-onto-one-instant stack on reconstruct-path onResume (no stale cue replay)', async () => {
+    // This test verifies the behavioral outcome: no topUpLookahead calls with stale cues
+    // on the reconstruct-path onResume. The collapsed-stack artifact (WR-04) would
+    // manifest as topUpLookahead being called with cues that have absolute audioTimes
+    // from the old AC origin — which the engine would clamp to audioNow + SAFE_LEAD_SEC,
+    // collapsing all N cues onto the same instant.
+    //
+    // With the WR-05 fix (lastTopUpCuesRef cleared in reconstructEngine), handleForceTopUp
+    // sees an empty cache and exits without calling topUpLookahead. The fix subsumes WR-04.
+    const { engineA, engineB } = makeReconstructFakeEngines()
+
+    vi.spyOn(audioEngineModule, 'createAudioEngine')
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      .mockResolvedValueOnce(engineA.engine)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      .mockResolvedValueOnce(engineB.engine)
+
+    const { result, unmount } = renderHook(() => useAudioCues(false, vi.fn()))
+    await act(async () => { await result.current.start(samplePlan, 'bowl') })
+
+    // Cache several cues with audioTimes belonging to engineA's clock origin (currentTime=10).
+    // If these were replayed on the engineB origin (currentTime=0.5), all would clamp to 0.505.
+    const staleCues = [
+      { audioTime: 15, phaseDurationSec: 4, kind: 'in' as const },
+      { audioTime: 25, phaseDurationSec: 6, kind: 'out' as const },
+      { audioTime: 35, phaseDurationSec: 4, kind: 'in' as const },
+    ]
+    act(() => { result.current.topUpLookahead(staleCues) })
+
+    // Reconstruct
+    await act(async () => { await result.current.resume() })
+
+    // Fire onResume on new engine — MUST NOT replay stale cues
+    engineB.topUpSpy.mockClear()
+    act(() => { engineB.fireResume() })
+
+    // Assert: no topUpLookahead call on the new engine with the stale pre-reconstruction cues
+    expect(engineB.topUpSpy).not.toHaveBeenCalled()
+
+    await act(async () => { await result.current.stop() })
+    unmount()
+  })
+})
