@@ -370,6 +370,144 @@ describe('Phase 52 Plan 06 CR-01: dispatch-site filter drops in-flight boundary 
   })
 })
 
+// Phase 52 Plan 06 WR-02: muted-gating asymmetry — cancel/top-up must be symmetric.
+// Pre-fix: cancelFutureCues runs unconditionally on every boundary even when muted,
+// while topUpLookahead gates on muted. Asymmetry: while muted, each boundary empties the
+// queue but never refills it. On unmute, nothing fires until the next boundary.
+// Fix: gate both cancel and top-up on the muted flag in the controller (symmetric no-op).
+// Per locked CONTEXT.md D-10 decision: "unmute waits for boundary" is the desired UX.
+// After unmuting, the next boundary triggers both cancel and top-up (fresh cues dispatch).
+describe('Phase 52 Plan 06 WR-02: muted-gating symmetric cancel+top-up', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  // Build a fake audio object with controllable muted state for testing.
+  // This extends the existing makeFakeAudioCues() helper pattern.
+  function makeFakeAudioCuesWithMuteControl() {
+    const cancelFutureCues = vi.fn()
+    const topUpLookahead = vi.fn()
+    const wallClock = createWallSessionClock()
+    let muted = true  // Start muted to test the guard
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeAudio: any = {
+      get status() { return 'idle' as const },
+      audioAvailable: true,
+      get muted() { return muted },
+      clock: wallClock,
+      start: vi.fn(() => Promise.resolve(1.0 as number | null)),
+      stop: vi.fn(() => Promise.resolve()),
+      setMuted: vi.fn((next: boolean) => { muted = next }),
+      notifyPhaseBoundary: vi.fn(),
+      topUpLookahead,
+      cancelFutureCues,
+      audioNow: vi.fn(() => 0),
+      playEndChord: vi.fn(),
+      audioStatus: 'ok' as const,
+      resume: vi.fn(() => Promise.resolve()),
+    }
+    return {
+      fakeAudio: fakeAudio as ReturnType<typeof useAudioCuesModule.useAudioCues>,
+      cancelFutureCues,
+      topUpLookahead,
+      setMuted: (next: boolean) => { muted = next },
+    }
+  }
+
+  it('WR-02: cancelFutureCues NOT called while muted (symmetric with topUpLookahead)', async () => {
+    const { fakeAudio, cancelFutureCues, topUpLookahead } = makeFakeAudioCuesWithMuteControl()
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    // Drive to running phase (muted=true)
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100)
+    })
+    expect(result.current.phase).toBe('running')
+
+    // Clear call counts after lead-in
+    cancelFutureCues.mockClear()
+    topUpLookahead.mockClear()
+
+    // Advance past a boundary — both cancel and top-up should be SKIPPED while muted
+    await act(async () => {
+      vi.advanceTimersByTime(5100) // cross In→Out boundary
+      await Promise.resolve()
+    })
+
+    // Pre-fix: cancelFutureCues would be called (asymmetric — runs unconditionally)
+    // Post-fix: cancelFutureCues should NOT be called while muted (symmetric no-op)
+    expect(cancelFutureCues.mock.calls.length).toBe(0)
+    // topUpLookahead also not called (already gated by engine's muted guard)
+    expect(topUpLookahead.mock.calls.length).toBe(0)
+
+    unmount()
+  })
+
+  it('WR-02: after unmute, next boundary fires both cancelFutureCues and topUpLookahead', async () => {
+    const { fakeAudio, cancelFutureCues, topUpLookahead, setMuted } = makeFakeAudioCuesWithMuteControl()
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100)
+    })
+    expect(result.current.phase).toBe('running')
+
+    // Advance while muted — no cancel/top-up
+    await act(async () => {
+      vi.advanceTimersByTime(5100)
+      await Promise.resolve()
+    })
+    cancelFutureCues.mockClear()
+    topUpLookahead.mockClear()
+
+    // Unmute — per D-10 locked decision, next boundary will trigger cancel+top-up
+    setMuted(false)
+
+    // Advance past the next boundary (Out→In crossing, ~6.55s at 5.5 BPM)
+    await act(async () => {
+      vi.advanceTimersByTime(7000)
+      await Promise.resolve()
+    })
+
+    // After unmute, the next boundary must trigger both (symmetric re-queue)
+    expect(cancelFutureCues.mock.calls.length).toBeGreaterThanOrEqual(1)
+    expect(topUpLookahead.mock.calls.length).toBeGreaterThanOrEqual(1)
+
+    unmount()
+  })
+})
+
 // Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues before topUpLookahead.
 // Uses vi.spyOn on useAudioCues module to intercept the hook and return a controlled fake
 // with trackable cancelFutureCues and topUpLookahead — verifies call ordering via
