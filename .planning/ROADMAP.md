@@ -175,7 +175,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 - [x] 52-03-PLAN.md — walkFutureCues pure domain helper (HRV + Stretch + targetSec trim) + audio.topUpLookahead facade in useAudioCues + boundary-effect replacement in useBreathingSessionController (Wave 2, autonomous; SCHED-02/03/04; D-01/D-04/D-11/D-12/D-14)
 - [x] 52-04-PLAN.md — Mute future-cue cancel via cancelFutureCues (D-10) + clock.onResume → handleForceTopUp re-dispatch of cached cues (D-04 force-top-up half) (Wave 3, autonomous; SCHED-05/SCHED-03)
 - [x] 52-05-PLAN.md — Gap closure from 52-VERIFICATION.md: CR-01 cancel-then-reschedule wiring + WR-02 cache-after-gate + CR-02 null-leadIn teardown + WR-01 audioStatus on failure (Wave 4, autonomous; SCHED-02/03/04/05)
-- [ ] 52-06-PLAN.md — Gap closure #2 from 52-REVIEW.md: CR-01 race-window double-strike (dispatch-site audioNow filter) + WR-01 walkFutureCues iteration cap + WR-03 atomic clamp/rebase + WR-04/WR-05 reconstruction-path top-up gating + WR-02 muted-gating symmetry (Wave 5, autonomous; SCHED-01..05)
+- [x] 52-06-PLAN.md — Gap closure #2 from 52-REVIEW.md: CR-01 race-window double-strike (dispatch-site audioNow filter) + WR-01 walkFutureCues iteration cap + WR-03 atomic clamp/rebase + WR-04/WR-05 reconstruction-path top-up gating + WR-02 muted-gating symmetry (Wave 5, autonomous; SCHED-01..05)
 **UI hint**: no
 
 ### Phase 53: Master-gain mute
@@ -214,5 +214,5 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | 49.1. Advanced Settings + Bypass silent mode toggle | 3/3 | Complete    | 2026-05-27 |
 | 50. SessionClock / scheduler abstraction | 7/7 | Complete    | 2026-05-28 |
 | 51. Master clock unification | 5/5 | Complete    | 2026-05-28 |
-| 52. Visibility-resume clamp + lookahead scheduling | 5/6 | Wave 5 planned   | — |
+| 52. Visibility-resume clamp + lookahead scheduling | 6/6 | Complete   | 2026-05-29 |
 | 53. Master-gain mute | 0/TBD | Not started | — |
