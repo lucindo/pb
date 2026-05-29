@@ -1,5 +1,25 @@
 # Milestones
 
+## v2.2 Audio Sync (Shipped: 2026-05-29)
+
+**Phases:** 7 (49, 49.1, 50, 51, 52 — formal; 53, 54 — implemented directly per operator "keep it simple" directive)
+**Audit:** `.planning/milestones/v2.2-MILESTONE-AUDIT.md` — PASSED (10/10 requirements resolved: 8 satisfied + SCHED-01/SCHED-04 intentionally superseded by the Phase 54 requirements-correction).
+**Verification:** operator-verified end-to-end on **desktop and mobile, including Navi Kriya** (2026-05-29).
+
+**Delivered:** Fixed the breathing app's audio so it works correctly on both desktop and mobile. The milestone unified all session timing onto the audio clock (`audioCtx.currentTime`), made background audio actually continue for the full session on desktop, eliminated the resume desync and the per-breath boundary tick, and replaced the old mute mechanism with an instant master-gain ramp. Notably, the milestone made the codebase **smaller** — the visibility-resume clamp scaffolding, the per-cue mute machinery, and dead `setMasterGain` plumbing were removed along with ~800 lines of tests that only existed to exercise them. Zero new runtime dependencies.
+
+**Key accomplishments:**
+
+1. **iOS speaker route fix (Phase 49):** silent looping `<audio>` on the user-gesture chain coerces iOS Safari from the "ambient" to "playback" audio session category — cues play through the speaker even with the silent switch ON. No UA sniffing, no new deps, no React in `audioEngine.ts`.
+2. **Advanced Settings + bypass-silent-mode toggle (Phase 49.1):** user-facing control to opt out of the silent-mode coercion, threaded through the engine construction path.
+3. **SessionClock scheduler abstraction (Phase 50):** a `SessionClock` interface (`now`/`schedule`/`onSuspend`/`onResume`/`onClose`) replaces direct `AudioContext`/`performance.now()` access; an import-graph drift-guard test locks the 5 caller files against regressions. Zero behavior change at close.
+4. **Master clock unification (Phase 51):** session elapsed, animation phase, and ambient scale all derive from `audioCtx.currentTime` — closing the three-clocks divergence behind iOS lock/unlock drift.
+5. **Background-audio continuity + resume sync (Phase 54):** a Web Worker heartbeat drives the cue top-up so audio keeps playing the full session while a desktop tab is backgrounded (rAF freezes when hidden; the worker doesn't). Removed the per-tick resume clamp entirely — the orb now tracks true audio time and snaps to the live position on return. (Superseded the original Phase 52 clamp + "stops cleanly after lookahead" approach, which was the source of the desync.)
+6. **Master-gain mute (Phase 53):** a single master `GainNode`; mute/unmute is a 0.05s ramp — instant, with no "wait for the next boundary" on unmute.
+7. **Boundary-flam fix:** engine-layer in-flight cue dedup — one clean strike per inhale/exhale boundary (closed GAP-52H-2).
+
+---
+
 ## v2.1 Kuthasta and Settings Switches (Shipped: 2026-05-26)
 
 **Phases completed:** 3 phases (46, 47, 48), 11 plans, 197 commits, 2-day timeline (2026-05-25 → 2026-05-26).

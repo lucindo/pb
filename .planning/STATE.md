@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Audio Sync
-status: executing
+status: Awaiting next milestone
 stopped_at: Phase 52 context gathered
-last_updated: "2026-05-29T00:34:47.884Z"
-last_activity: 2026-05-29 -- Phase 52 execution started
+last_updated: "2026-05-29T05:29:54.171Z"
+last_activity: 2026-05-29 — Milestone v2.2 completed and archived
 progress:
-  total_phases: 6
-  completed_phases: 4
+  total_phases: 7
+  completed_phases: 5
   total_plans: 23
-  completed_plans: 22
-  percent: 67
+  completed_plans: 23
+  percent: 71
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-27 after v2.2 Audio Sync milestone in
 
 ## Current Position
 
-Phase: 52 (visibility-resume-clamp-lookahead-scheduling) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 52
-Last activity: 2026-05-29 -- Phase 52 execution started
+Phase: Milestone v2.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-29 — Milestone v2.2 completed and archived
 
 ## Performance Metrics
 
@@ -125,6 +125,4 @@ Next command: /gsd:plan-phase 49 (iOS speaker route fix — fast-shipping opener
 
 ## Operator Next Steps
 
-- Run `/gsd:plan-phase 49` to break Phase 49 (iOS speaker route fix) into executable plans. Canonical implementation spec is at `.planning/todos/2026-05-27-ios-speaker-route-audio-element-fix.md` — load it into the plan-phase context.
-- Phase 50 (SessionClock / scheduler abstraction) can be planned in parallel with Phase 49 or immediately after — they are independent.
-- Phases 51 and 52 wait on Phase 50 (interface consumption); Phase 53 waits on Phase 50 only and can be parallelized with 51 + 52 after 50 lands.
+- Start the next milestone with /gsd-new-milestone
