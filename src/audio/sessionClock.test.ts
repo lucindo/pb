@@ -5,7 +5,6 @@
 //     wall factory now() returns performance.now() / 1000.
 //   - D-11 wired-real subscribers: onSuspend / onResume / onClose fan-out via the
 //     audioCtx 'statechange' listener.
-//   - D-12 setMasterGain no-op.
 //   - Revision 1 Blocker #1: onClose member added; fan-out on 'closed'; unsubscribe.
 //   - Revision 1 Blocker #2: scheduleImpl forwarding when supplied; no-op when absent.
 //   - Revision 2 Blocker #1: notifySuspended() engine-only escape hatch — fan-out
@@ -206,17 +205,6 @@ describe('createAudioSessionClock', () => {
     }).not.toThrow()
   })
 
-  it('setMasterGain(0, 0.05) is a no-op — does not throw and does not require an audio graph (D-12)', () => {
-    const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
-
-    // setMasterGain has no behavior at Phase 50 — assertion is that calling it
-    // is safe (no throw, no observable side effect via the Fake AC's surface).
-    expect(() => {
-      clock.setMasterGain(0, 0.05)
-    }).not.toThrow()
-  })
-
   it('notifySuspended() fan-out: invokes suspend subscribers without a statechange event (revision 2 Blocker #1)', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
@@ -352,13 +340,6 @@ describe('createWallSessionClock', () => {
     expect(suspendCb).not.toHaveBeenCalled()
     expect(resumeCb).not.toHaveBeenCalled()
     expect(closeCb).not.toHaveBeenCalled()
-  })
-
-  it('setMasterGain is a no-op (D-12)', () => {
-    const clock = createWallSessionClock()
-    expect(() => {
-      clock.setMasterGain(1, 0.05)
-    }).not.toThrow()
   })
 
   it('schedule is a no-op (D-04 closed-catalog symmetry; wall clock has no audio graph)', () => {

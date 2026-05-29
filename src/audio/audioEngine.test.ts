@@ -32,6 +32,24 @@ interface MockEnvelopeFns {
   setValueAtTime: ReturnType<typeof vi.fn>
 }
 
+// Phase 53: the engine creates a master GainNode right after `new AudioContext()`
+// and calls masterGain.connect(destination). The bare-bones ProbeAC stubs below need
+// createGain() to return a node with connect/disconnect + a gain AudioParam carrying
+// the automation methods setMuted() drives.
+function makeFakeGain(): GainNode {
+  return {
+    connect: vi.fn().mockReturnThis(),
+    disconnect: vi.fn(),
+    gain: {
+      value: 1,
+      setValueAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn(),
+      cancelScheduledValues: vi.fn(),
+      cancelAndHoldAtTime: vi.fn(),
+    },
+  } as unknown as GainNode
+}
+
 function makeMockCueHandle(opts: { withCancelAndHold?: boolean } = {}): {
   handle: CueHandle
   fns: MockEnvelopeFns
@@ -151,48 +169,43 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('scheduleNextCue does NOT call cueSynth when muted', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+  // Phase 53: master-gain mute. The engine creates exactly one master GainNode right
+  // after `new AudioContext()` (before any cue gain nodes). Spy on createGain to capture
+  // it as the FIRST-returned gain node, then assert setMuted ramps it.
+  it('Phase 53: setMuted(true) ramps the master gain toward 0, setMuted(false) toward 1', async () => {
+    const createGainSpy = vi.spyOn(window.AudioContext.prototype, 'createGain')
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.setMuted(true)
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
-    engine.scheduleNextCue({ newPhase: 'out', audioTime: 6, phaseDurationSec: 6.54 })
-    expect(inSpy).not.toHaveBeenCalled()
-    expect(outSpy).not.toHaveBeenCalled()
-    await engine.close()
-  })
-
-  it('setMuted(true) mid-cue applies cancelAndHoldAtTime + setTargetAtTime fade-out (D-08)', async () => {
-    const { handle, fns } = makeMockCueHandle({ withCancelAndHold: true })
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(handle)
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    engine.scheduleLeadIn(0, samplePlan) // produces an active In cue (the +3 boundary)
-    engine.setMuted(true)
-
-    expect(fns.cancelAndHoldAtTime).toHaveBeenCalledTimes(1)
-    expect(fns.setTargetAtTime).toHaveBeenCalledTimes(1)
-    const setTargetCall = fns.setTargetAtTime.mock.calls[0]
-    expect(setTargetCall?.[0]).toBe(0.0001)
-    expect(setTargetCall?.[2]).toBe(0.05)
-
-    await engine.close()
-  })
-
-  it('setMuted(false) mid-phase does NOT fire any cue immediately (D-08 unmute-waits-for-boundary)', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
-    const engine = await createAudioEngine({ timbre: 'bowl' })
+    // First createGain() call = the master gain (created before any cue scheduling).
+    const masterGain = createGainSpy.mock.results[0]?.value as GainNode
+    // Reason: the FakeGainNode's gain.linearRampToValueAtTime is a field-initialized
+    // vi.fn() (not a real prototype method), so extracting it is safe here.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const ramp = vi.mocked(masterGain.gain.linearRampToValueAtTime)
 
     engine.setMuted(true)
-    inSpy.mockClear()
-    outSpy.mockClear()
+    expect(ramp).toHaveBeenCalledTimes(1)
+    expect(ramp.mock.calls[0]?.[0]).toBe(0)
+
     engine.setMuted(false)
+    expect(ramp).toHaveBeenCalledTimes(2)
+    expect(ramp.mock.calls[1]?.[0]).toBe(1)
 
-    expect(inSpy).not.toHaveBeenCalled()
-    expect(outSpy).not.toHaveBeenCalled()
+    await engine.close()
+  })
 
+  // Phase 53: cues KEEP being scheduled while muted (they play silently through the
+  // master gain at 0). The old muted-skips-scheduling gates are gone.
+  it('Phase 53: scheduleNextCue + topUpLookahead STILL schedule cues while muted', async () => {
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
+    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    engine.setMuted(true)
+
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.topUpLookahead({ cues: [{ audioTime: 9, phaseDurationSec: 6.54, kind: 'out' }] })
+
+    expect(inSpy).toHaveBeenCalledTimes(1)
+    expect(outSpy).toHaveBeenCalledTimes(1)
     await engine.close()
   })
 
@@ -219,7 +232,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => {})
       close = closeSpy
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -242,7 +255,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => {})
       close = closeSpy
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -284,7 +297,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -308,7 +321,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -334,7 +347,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -366,7 +379,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => { probeState = 'running' })
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -382,26 +395,6 @@ describe('audioEngine', () => {
 
     probeState = 'interrupted'
     expect(engine.state).toBe('interrupted')
-
-    await engine.close()
-  })
-
-  it('cancelAndHoldAtTime fallback (Pitfall 9 / AH-WR-06): when undefined, uses cancelScheduledValues + setTargetAtTime only', async () => {
-    const { handle, fns } = makeMockCueHandle({ withCancelAndHold: false })
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(handle)
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    engine.scheduleLeadIn(0, samplePlan) // captures activeCue
-    engine.setMuted(true)
-
-    expect(fns.cancelScheduledValues).toHaveBeenCalledTimes(1)
-    // AH-WR-06: the fallback no longer re-asserts the current value via
-    // setValueAtTime — on Safari <16.4 gainParam.value reports the last
-    // explicitly-set value (peakGain), not the live ramped value, so
-    // re-asserting it would freeze the envelope back up and click/swell.
-    expect(fns.setValueAtTime).not.toHaveBeenCalled()
-    // The fallback relies on cancelScheduledValues + setTargetAtTime alone.
-    expect(fns.setTargetAtTime).toHaveBeenCalledTimes(1)
 
     await engine.close()
   })
@@ -581,7 +574,7 @@ describe('audioEngine', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -717,7 +710,7 @@ describe('audioEngine', () => {
       resume = vi.fn(() => Promise.reject(new DOMException('autoplay vetoed', 'NotAllowedError')))
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -830,7 +823,7 @@ describe('audioEngine', () => {
         resume = vi.fn(async () => {})
         close = vi.fn(async () => {})
         createOscillator = vi.fn()
-        createGain = vi.fn()
+        createGain = vi.fn(makeFakeGain)
         createBiquadFilter = vi.fn()
         addEventListener = vi.fn()
         removeEventListener = vi.fn()
@@ -998,7 +991,7 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
 
 // Phase 52 D-04 — engine.topUpLookahead
 // The facade dispatches a caller-supplied list of cues via the internal schedule()
-// function, respecting closed/muted guards and the callee-side SAFE_LEAD_SEC clamp.
+// function, respecting the closed guard and the callee-side SAFE_LEAD_SEC clamp.
 describe('Phase 52 D-04 topUpLookahead', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -1035,21 +1028,6 @@ describe('Phase 52 D-04 topUpLookahead', () => {
     expect(outSpy).not.toHaveBeenCalled()
   })
 
-  it('topUpLookahead while muted is a no-op (muted guard)', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.setMuted(true)
-    inSpy.mockClear()
-    outSpy.mockClear()
-
-    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
-
-    expect(inSpy).not.toHaveBeenCalled()
-    expect(outSpy).not.toHaveBeenCalled()
-    await engine.close()
-  })
-
   it('topUpLookahead clamps audioTime to currentTime + SAFE_LEAD_SEC when in the past', async () => {
     const probeTime = 10
     class ProbeAC {
@@ -1060,7 +1038,7 @@ describe('Phase 52 D-04 topUpLookahead', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -1098,7 +1076,7 @@ describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -1150,7 +1128,7 @@ describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
@@ -1167,259 +1145,6 @@ describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
     // Must not throw even though cancel removes the cue from activeCues mid-iteration
     expect(() => { engine.cancelFutureCues() }).not.toThrow()
     expect(future.handle.cancel).toHaveBeenCalledTimes(1)
-    await engine.close()
-  })
-})
-
-// Phase 52 D-10 — setMuted future-cue cancel
-// Tests for the extended setMuted(true) body: in-flight cues (scheduledAt <= now) get
-// applyMuteFadeOut; future cues (scheduledAt > now) get cancelFutureCues() called.
-// Both branches fire in the same setMuted(true) call (D-10 "two branches" contract).
-describe('Phase 52 D-10 setMuted future-cue cancel', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    vi.restoreAllMocks()
-  })
-
-  it('D-10 T1: setMuted(true) with both in-flight and future cues — in-flight gets applyMuteFadeOut, future gets cancel()', async () => {
-    const probeTime = 5
-    class ProbeAC {
-      state: AudioContextState = 'running'
-      sampleRate = 44100
-      destination = {}
-      get currentTime() { return probeTime }
-      resume = vi.fn(async () => {})
-      close = vi.fn(async () => {})
-      createOscillator = vi.fn()
-      createGain = vi.fn()
-      createBiquadFilter = vi.fn()
-      addEventListener = vi.fn()
-      removeEventListener = vi.fn()
-    }
-    vi.stubGlobal('AudioContext', ProbeAC)
-
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    // In-flight cue: scheduledAt <= now (5)
-    const inflight = makeMockCueHandle({ withCancelAndHold: true })
-    inflight.handle.scheduledAt = 3 // 3 <= 5 → in-flight
-
-    // Future cue: scheduledAt > now (5)
-    const future = makeMockCueHandle({ withCancelAndHold: true })
-    future.handle.scheduledAt = 8 // 8 > 5 → future
-
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-      .mockReturnValueOnce(inflight.handle)
-      .mockReturnValueOnce(future.handle)
-
-    engine.topUpLookahead({
-      cues: [
-        { audioTime: 3, phaseDurationSec: 4, kind: 'in' },
-        { audioTime: 8, phaseDurationSec: 4, kind: 'in' },
-      ],
-    })
-
-    engine.setMuted(true)
-
-    // In-flight cue: should have applyMuteFadeOut applied (cancelAndHoldAtTime + setTargetAtTime)
-    expect(inflight.fns.cancelAndHoldAtTime).toHaveBeenCalledTimes(1)
-    expect(inflight.fns.setTargetAtTime).toHaveBeenCalledTimes(1)
-    // In-flight cue: should NOT have cancel() called
-    expect(inflight.handle.cancel).not.toHaveBeenCalled()
-
-    // Future cue: should have cancel() called
-    expect(future.handle.cancel).toHaveBeenCalledTimes(1)
-    // Future cue: should NOT have applyMuteFadeOut applied
-    expect(future.fns.cancelAndHoldAtTime).not.toHaveBeenCalled()
-
-    await engine.close()
-  })
-
-  it('D-10 T2: setMuted(true) with only future cues — cancelFutureCues fires, applyMuteFadeOut NOT called', async () => {
-    const probeTime = 5
-    class ProbeAC {
-      state: AudioContextState = 'running'
-      sampleRate = 44100
-      destination = {}
-      get currentTime() { return probeTime }
-      resume = vi.fn(async () => {})
-      close = vi.fn(async () => {})
-      createOscillator = vi.fn()
-      createGain = vi.fn()
-      createBiquadFilter = vi.fn()
-      addEventListener = vi.fn()
-      removeEventListener = vi.fn()
-    }
-    vi.stubGlobal('AudioContext', ProbeAC)
-
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    // Only future cues (all scheduledAt > now=5)
-    const future1 = makeMockCueHandle({ withCancelAndHold: true })
-    future1.handle.scheduledAt = 7
-    const future2 = makeMockCueHandle({ withCancelAndHold: true })
-    future2.handle.scheduledAt = 10
-
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-      .mockReturnValueOnce(future1.handle)
-      .mockReturnValueOnce(future2.handle)
-
-    engine.topUpLookahead({
-      cues: [
-        { audioTime: 7, phaseDurationSec: 4, kind: 'in' },
-        { audioTime: 10, phaseDurationSec: 4, kind: 'in' },
-      ],
-    })
-
-    engine.setMuted(true)
-
-    // Both future cues should be cancelled
-    expect(future1.handle.cancel).toHaveBeenCalledTimes(1)
-    expect(future2.handle.cancel).toHaveBeenCalledTimes(1)
-
-    // No applyMuteFadeOut (no in-flight cues)
-    expect(future1.fns.cancelAndHoldAtTime).not.toHaveBeenCalled()
-    expect(future2.fns.cancelAndHoldAtTime).not.toHaveBeenCalled()
-
-    await engine.close()
-  })
-
-  it('D-10 T3: setMuted(true) with only in-flight cues — applyMuteFadeOut called, no future cues to cancel', async () => {
-    const probeTime = 10
-    class ProbeAC {
-      state: AudioContextState = 'running'
-      sampleRate = 44100
-      destination = {}
-      get currentTime() { return probeTime }
-      resume = vi.fn(async () => {})
-      close = vi.fn(async () => {})
-      createOscillator = vi.fn()
-      createGain = vi.fn()
-      createBiquadFilter = vi.fn()
-      addEventListener = vi.fn()
-      removeEventListener = vi.fn()
-    }
-    vi.stubGlobal('AudioContext', ProbeAC)
-
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    // Only in-flight cues (scheduledAt <= now=10)
-    const inflight1 = makeMockCueHandle({ withCancelAndHold: true })
-    inflight1.handle.scheduledAt = 5 // 5 <= 10 → in-flight
-
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValueOnce(inflight1.handle)
-    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
-
-    engine.setMuted(true)
-
-    // applyMuteFadeOut called on in-flight cue
-    expect(inflight1.fns.cancelAndHoldAtTime).toHaveBeenCalledTimes(1)
-    expect(inflight1.fns.setTargetAtTime).toHaveBeenCalledTimes(1)
-
-    // cancel() NOT called (it's in-flight, not future)
-    expect(inflight1.handle.cancel).not.toHaveBeenCalled()
-
-    await engine.close()
-  })
-
-  it('D-10 T4: setMuted(false) — unchanged behavior (no fade-in, no cue dispatch; unmute waits for boundary per D-08)', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    engine.setMuted(true)
-    inSpy.mockClear()
-    outSpy.mockClear()
-    engine.setMuted(false)
-
-    // D-08 unmute-waits-for-boundary: no cue dispatched on unmute
-    expect(inSpy).not.toHaveBeenCalled()
-    expect(outSpy).not.toHaveBeenCalled()
-
-    await engine.close()
-  })
-
-  it('D-10 T5: setMuted(true) on closed engine — early return; neither applyMuteFadeOut nor cancelFutureCues fires', async () => {
-    const probeTime = 5
-    class ProbeAC {
-      state: AudioContextState = 'running'
-      sampleRate = 44100
-      destination = {}
-      get currentTime() { return probeTime }
-      resume = vi.fn(async () => {})
-      close = vi.fn(async () => {})
-      createOscillator = vi.fn()
-      createGain = vi.fn()
-      createBiquadFilter = vi.fn()
-      addEventListener = vi.fn()
-      removeEventListener = vi.fn()
-    }
-    vi.stubGlobal('AudioContext', ProbeAC)
-
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-    const future = makeMockCueHandle({ withCancelAndHold: true })
-    future.handle.scheduledAt = 8
-
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValueOnce(future.handle)
-    engine.topUpLookahead({ cues: [{ audioTime: 8, phaseDurationSec: 4, kind: 'in' }] })
-    await engine.close()
-
-    // Call setMuted(true) after close
-    engine.setMuted(true)
-
-    // Closed engine: nothing should fire (early-return path preserves muted state only)
-    expect(future.handle.cancel).not.toHaveBeenCalled()
-    expect(future.fns.cancelAndHoldAtTime).not.toHaveBeenCalled()
-  })
-
-  it('D-10 T6: future cues removed from activeCues after setMuted(true) cancels them — next cancelFutureCues is a no-op', async () => {
-    const probeTime = 5
-    class ProbeAC {
-      state: AudioContextState = 'running'
-      sampleRate = 44100
-      destination = {}
-      get currentTime() { return probeTime }
-      resume = vi.fn(async () => {})
-      close = vi.fn(async () => {})
-      createOscillator = vi.fn()
-      createGain = vi.fn()
-      createBiquadFilter = vi.fn()
-      addEventListener = vi.fn()
-      removeEventListener = vi.fn()
-    }
-    vi.stubGlobal('AudioContext', ProbeAC)
-
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    const future1 = makeMockCueHandle({ withCancelAndHold: true })
-    future1.handle.scheduledAt = 7
-    const future2 = makeMockCueHandle({ withCancelAndHold: true })
-    future2.handle.scheduledAt = 9
-
-    vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-      .mockReturnValueOnce(future1.handle)
-      .mockReturnValueOnce(future2.handle)
-
-    engine.topUpLookahead({
-      cues: [
-        { audioTime: 7, phaseDurationSec: 4, kind: 'in' },
-        { audioTime: 9, phaseDurationSec: 4, kind: 'in' },
-      ],
-    })
-
-    // setMuted(true) should cancel the future cues and remove them from activeCues
-    engine.setMuted(true)
-
-    expect(future1.handle.cancel).toHaveBeenCalledTimes(1)
-    expect(future2.handle.cancel).toHaveBeenCalledTimes(1)
-
-    // Calling cancelFutureCues again should be a no-op (already removed)
-    engine.cancelFutureCues()
-
-    // cancel() should NOT be called again
-    expect(future1.handle.cancel).toHaveBeenCalledTimes(1)
-    expect(future2.handle.cancel).toHaveBeenCalledTimes(1)
-
     await engine.close()
   })
 })
@@ -1539,7 +1264,7 @@ describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
       addEventListener = vi.fn()
       removeEventListener = vi.fn()

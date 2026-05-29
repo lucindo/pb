@@ -137,18 +137,6 @@ export function createSwappableSessionClock(
     },
 
     /**
-     * Forward `setMasterGain(value, rampSec)` to the CURRENT source.
-     *
-     * D-12 (Phase 50 stub posture preserved): `createWallSessionClock` and the
-     * Phase 50 `createAudioSessionClock` both implement this as a no-op stub.
-     * Phase 53 lands the GainNode insertion; the proxy transparently forwards it
-     * when the real implementation arrives.
-     */
-    setMasterGain(value: number, rampSec: number): void {
-      currentSource.setMasterGain(value, rampSec)
-    },
-
-    /**
      * Subscribe `cb` to suspend transitions.
      *
      * D-04: registers `cb` in the proxy's `proxySuspendSubs` Set AND against the

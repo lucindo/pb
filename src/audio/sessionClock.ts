@@ -3,12 +3,8 @@
 //
 // Owns:
 //   - The single clock source closure for now() (D-01 / D-03 — audio-natural seconds).
-//   - FOUR subscriber Sets in createAudioSessionClock: suspendSubscribers,
-//     resumeSubscribers, closeSubscribers (revision 1 Blocker #1), and the reserved
-//     conceptual slot for masterGainSubscribers that Phase 53 may add (NOT declared
-//     here — kept out at Phase 50 per scope discipline).
-//   - The master-gain setter signature (D-12 — stubbed no-op at Phase 50; Phase 53
-//     lands the GainNode insertion AND the mute call-site swap together).
+//   - THREE subscriber Sets in createAudioSessionClock: suspendSubscribers,
+//     resumeSubscribers, closeSubscribers (revision 1 Blocker #1).
 //
 // Invariants:
 //   - D-08 wrap-don't-construct: createAudioSessionClock ACCEPTS an AudioContext;
@@ -18,9 +14,9 @@
 //     AudioContext statechange transitions in the audio factory.
 //     createWallSessionClock exposes them as no-op subscribers (wall clock
 //     never suspends/resumes/closes).
-//   - D-12 stubbed no-op: setMasterGain has an empty body at Phase 50 — no
-//     GainNode is inserted into the audio graph here. The signature exists for
-//     ABSTR-01 completeness; Phase 53 swaps the body and the call site together.
+//   - Phase 53: master-gain mute lives entirely in the engine (a single GainNode
+//     it owns). The clock has no setMasterGain surface — the prior D-12 stub was
+//     removed when the engine took over the master gain directly.
 //   - Revision 1 Blocker #1 — onClose preserves the byte-identical
 //     setAudioStatus('unavailable') setter at useAudioCues.ts:164-165 through
 //     the SessionClock seam (Phase 50 success criterion #3).
@@ -70,7 +66,7 @@ export type Cue =
   | { kind: 'countdown-tick' }
 
 /**
- * SessionClock — typed read-only interface with EXACTLY 6 members.
+ * SessionClock — typed read-only interface with EXACTLY 5 members.
  *
  * Revision 2 Blocker #1: this surface is the PUBLIC contract that every
  * external consumer sees. The engine-only `notifySuspended()` escape hatch
@@ -111,17 +107,6 @@ export interface SessionClock {
    * (useAmbientScale only calls now()).
    */
   schedule(when: number, cue: Cue): void
-
-  /**
-   * Linear-ramp the master gain to `value` over `rampSec` seconds.
-   *
-   * D-12: STUBBED NO-OP at Phase 50. No master GainNode is inserted into the
-   * audio graph here — the existing per-cue mute fade (`applyMuteFadeOut` in
-   * audioEngine.ts) remains the active mute mechanism (D-13). Phase 53 lands
-   * the GainNode insertion AND the mute call-site swap together — paired with
-   * the actual mute behavior change so the swap is verifiable as one unit.
-   */
-  setMasterGain(value: number, rampSec: number): void
 
   /**
    * Subscribe to suspend transitions. Returns an unsubscribe function.
@@ -280,13 +265,6 @@ export function createAudioSessionClock(
       }
     },
 
-    setMasterGain(value: number, rampSec: number): void {
-      // D-12: stubbed no-op at Phase 50. Phase 53 lands the GainNode insertion
-      // AND the mute call-site swap together. Body intentionally empty.
-      void value
-      void rampSec
-    },
-
     onSuspend(cb: () => void): () => void {
       suspendSubscribers.add(cb)
       return (): void => {
@@ -359,12 +337,6 @@ export function createWallSessionClock(): SessionClock {
       // into, so this is a typed no-op by design.
       void when
       void cue
-    },
-
-    setMasterGain(value: number, rampSec: number): void {
-      // D-12: no audio graph here either — stays no-op.
-      void value
-      void rampSec
     },
 
     onSuspend(cb: () => void): () => void {

@@ -3,17 +3,19 @@
 //
 // Owns:
 //   - The single AudioContext (D-09: created from a user-gesture chain only).
-//   - The active cue's GainNode envelope (D-08: mute applies a soft fade-out).
+//   - A single master GainNode all cues route through; mute ramps it (Phase 53).
 //   - The lead-in scheduling primitive (3 ticks at +0/+1/+2 s + first In cue at +3 s).
 //   - The boundary-driven scheduleNextCue dispatch (in → scheduleInCue, out → scheduleOutCue).
 //   - close(): idempotent teardown that releases the system audio resources (D-11).
 //
-// Mute semantics (D-08):
-//   - setMuted(true) mid-cue: applies cancelAndHoldAtTime + setTargetAtTime fade-out
-//     (Pitfall 9 fallback: cancelScheduledValues + setValueAtTime when cancelAndHoldAtTime
-//     is unavailable on Safari < 16.4).
-//   - setMuted(false) mid-phase: does NOT fire any make-up cue. The next cue plays at
-//     the next phase boundary. This is the "unmute waits for boundary" rule.
+// Mute semantics (Phase 53 — master gain):
+//   - All cues route through a single master GainNode (masterGain → destination).
+//   - setMuted(true): linear-ramps masterGain to 0 over 0.05 s (Safari-safe anchor
+//     via cancelAndHoldAtTime, else cancelScheduledValues + setValueAtTime).
+//   - setMuted(false): linear-ramps masterGain back to 1 over 0.05 s — INSTANT, with
+//     no boundary wait. Unmute lands on whatever cue is currently playing.
+//   - Cues KEEP being scheduled while muted (they play silently through gain=0), which
+//     is what makes unmute instant — there is no "unmute waits for boundary" anymore.
 //
 // AC failure (D-10):
 //   - createAudioEngine throws (rejects) when `new AudioContext()` throws. The caller
@@ -43,18 +45,19 @@ export interface AudioEngine {
    *  is closed — AUDIO-03. */
   scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null
   /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue
-   *  at the given audioTime if not muted. `phaseDurationSec` is the length of the
+   *  at the given audioTime (always — muted cues route silently through masterGain).
+   *  `phaseDurationSec` is the length of the
    *  UPCOMING phase (in / out) in seconds; cueSynth uses it to stretch the bowl
    *  decay envelope so the cue stays audible through the entire phase at low BPM
    *  (260510-tc9 Bug 2). The boundary scheduler in App.tsx derives this from
    *  plan.inhaleSec / plan.exhaleSec (Phase 50-02 ms→sec cascade). */
   scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
   /** Schedule the shared session-ending chord on this engine's AudioContext —
-   *  the same sound the Navi Kriya completion plays. No-op when closed or
-   *  muted. close() defers AudioContext teardown until the chord rings out. */
+   *  the same sound the Navi Kriya completion plays. No-op when closed (muted cues
+   *  route silently through masterGain). close() defers teardown until the chord rings. */
   playEndChord(): void
-  /** Toggle mute. Mid-cue: applies a soft fade-out to the active cue's envelope.
-   *  Mid-phase unmute: does NOT fire a make-up cue (D-08). */
+  /** Toggle mute. Phase 53: linear-ramps the master gain to 0 (mute) or 1 (unmute)
+   *  over 0.05 s. Instant; unmute lands on whatever cue is currently playing. */
   setMuted(muted: boolean): void
   /** Current mute state (mirrors what was last passed to setMuted). */
   readonly muted: boolean
@@ -74,15 +77,15 @@ export interface AudioEngine {
   /** Phase 52 D-04: dispatch a caller-supplied list of cues into the WebAudio scheduler.
    *  The caller (Plan 03's walkFutureCues helper or Plan 04's force-top-up on onResume)
    *  pre-computes the cue list; the engine just dispatches via the internal schedule()
-   *  switch. Respects closed/muted guards (matching scheduleNextCue posture) and applies
+   *  switch. Respects the closed guard (matching scheduleNextCue posture) and applies
    *  the callee-side SAFE_LEAD_SEC clamp on each cue's audioTime. Calls pruneExpiredCues()
    *  before dispatching to keep activeCues bounded. */
   topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void
   /** Phase 52 D-09 + D-10: iterate activeCues snapshot, call cancel() on every cue
    *  with scheduledAt > audioCtx.currentTime, and remove those cues from activeCues.
-   *  In-flight cues (scheduledAt <= now) are left for applyMuteFadeOut (the D-08 path).
+   *  In-flight cues (scheduledAt <= now) are left to ring out naturally.
    *  Uses snapshot-iterate-then-mutate (AH-WR-07) so Set mutation during iteration is safe.
-   *  No-op when engine is closed. */
+   *  Still used by the caller's cancel-then-reschedule on each top-up. No-op when closed. */
   cancelFutureCues(): void
   /** Phase 50 D-11 + revision 1 Blocker #1 / ABSTR-01: SessionClock surface for external
    *  subscribers (onSuspend / onResume / onClose) and time reads (now / schedule). The
@@ -119,12 +122,8 @@ export interface AudioEngineOptions {
   bypassSilentMode?: boolean
 }
 
-// D-08: soft fade-out tail when muting mid-cue.
-// timeConstant 0.05 → ~150 ms perceptual decay (3× constant — see 03-RESEARCH.md Pattern 5).
-const MUTE_FADE_TIME_CONSTANT = 0.05
-// Never ramp gain to 0.0 — exponentialRampToValueAtTime would throw, and even
-// setTargetAtTime is more numerically stable with a nonzero target.
-const MIN_GAIN_VALUE = 0.0001
+// Phase 53: master-gain mute ramp duration (seconds).
+const MUTE_RAMP_SEC = 0.05
 
 // Phase 49 D-03: silent-loop WAV data URL used to coerce iOS Safari's audio
 // session category from "ambient" to "playback" so cue audio routes through
@@ -191,31 +190,6 @@ export const LOOKAHEAD_WINDOW_SEC = 6 as const
  *  settings change = at most 2 oscillator stops + node disconnects. */
 export const LOOKAHEAD_MIN_CUES = 2 as const
 
-function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
-  const now = audioCtx.currentTime
-  const gainParam = activeCue.envelope.gain
-  // Modern browsers: cancelAndHoldAtTime is the right primitive — it preserves the
-  // current automation curve up to `now` and discards everything after.
-  // Safari < 16.4 (Pitfall 9 in 03-RESEARCH.md) lacks cancelAndHoldAtTime; fall back
-  // to cancelScheduledValues alone.
-  //
-  // AH-WR-06: the fallback does NOT re-assert the current value via
-  // setValueAtTime(gainParam.value, now). On the Safari <16.4 fallback path,
-  // gainParam.value returns the last value set explicitly via an automation
-  // call (peakGain), NOT the live ramped value mid-decay — Safari does not
-  // reflect setTargetAtTime progress back into .value. Re-asserting it would
-  // freeze the envelope back UP to peakGain before fading, producing an audible
-  // click/swell when muting mid-decay. cancelScheduledValues(now) discards the
-  // pending automation; the subsequent setTargetAtTime then ramps from whatever
-  // value the param actually holds at `now` toward silence.
-  if (typeof gainParam.cancelAndHoldAtTime === 'function') {
-    gainParam.cancelAndHoldAtTime(now)
-  } else {
-    gainParam.cancelScheduledValues(now)
-  }
-  gainParam.setTargetAtTime(MIN_GAIN_VALUE, now, MUTE_FADE_TIME_CONSTANT)
-}
-
 /** Create a new AudioContext + engine. MUST be called from a user-gesture path (D-09).
  *  Throws (rejects) if AudioContext construction fails (D-10 caller branch). */
 export async function createAudioEngine(opts: AudioEngineOptions): Promise<AudioEngine> {
@@ -223,6 +197,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // Start session click handler in App.tsx (Plan 04). The browser autoplay policy MUST
   // see a fresh user-gesture chain or AC will start in 'suspended'.
   const audioCtx = new AudioContext()
+
+  // Phase 53: single master GainNode all cues route through. mute ramps it to 0,
+  // unmute ramps it to 1 (over MUTE_RAMP_SEC). Cues schedule silently while muted.
+  const masterGain = audioCtx.createGain()
+  masterGain.gain.value = 1
+  masterGain.connect(audioCtx.destination)
 
   // Phase 50 D-07: wrap the AC. D-11 + revision 1 Blocker #1: the clock owns the audioCtx
   // 'statechange' listener and fans suspend/resume/close to subscribers via the
@@ -351,11 +331,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
   // Phase 50 D-04 / D-05: internal dispatch from a typed Cue value to the per-cue
   // primitives in cueSynth.ts / nkCueSynth.ts. The public methods (scheduleLeadIn,
-  // scheduleNextCue, playEndChord) are thin facades over this function. The
-  // closed/muted guards live in the facades (so each facade can choose its own
-  // behavior, e.g., scheduleNextCue clamps the time, scheduleLeadIn returns
-  // firstInCueTime). This function assumes the facade has already gated; do NOT
-  // add closed/muted checks here.
+  // scheduleNextCue, playEndChord) are thin facades over this function. The closed
+  // guard lives in the facades (so each facade can choose its own behavior, e.g.,
+  // scheduleNextCue clamps the time, scheduleLeadIn returns firstInCueTime). Phase 53:
+  // there is NO muted guard — cues always schedule and route through masterGain (silent
+  // at gain=0). This function assumes the facade has already gated closed; do NOT add
+  // closed/muted checks here.
   //
   // The Cue discriminated union is closed (Plan 50-01 D-04) — every kind has a
   // switch arm. TypeScript exhaustiveness enforces this at compile time. NK kinds
@@ -366,22 +347,22 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   function schedule(when: number, cue: Cue): void {
     switch (cue.kind) {
       case 'lead-in-tick':
-        activeCues.add(scheduleCountdownTick(audioCtx, when, audioCtx.destination, sessionTimbre))
+        activeCues.add(scheduleCountdownTick(audioCtx, when, masterGain, sessionTimbre))
         return
       case 'countdown-tick':
-        activeCues.add(scheduleCountdownTick(audioCtx, when, audioCtx.destination, sessionTimbre))
+        activeCues.add(scheduleCountdownTick(audioCtx, when, masterGain, sessionTimbre))
         return
       // cue.timbre is in the type union for callers that pre-schedule cues without
       // engine context (Phase 52 lookahead). At the engine layer, sessionTimbre is
       // the source of truth per Phase 18 D-08 — we ignore cue.timbre here.
       case 'in':
-        activeCues.add(scheduleInCueForTimbre(audioCtx, when, audioCtx.destination, sessionTimbre, cue.phaseDurationSec))
+        activeCues.add(scheduleInCueForTimbre(audioCtx, when, masterGain, sessionTimbre, cue.phaseDurationSec))
         return
       case 'out':
-        activeCues.add(scheduleOutCueForTimbre(audioCtx, when, audioCtx.destination, sessionTimbre, cue.phaseDurationSec))
+        activeCues.add(scheduleOutCueForTimbre(audioCtx, when, masterGain, sessionTimbre, cue.phaseDurationSec))
         return
       case 'end-chord': {
-        const c = scheduleEndChord(audioCtx, when, audioCtx.destination, sessionTimbre)
+        const c = scheduleEndChord(audioCtx, when, masterGain, sessionTimbre)
         activeCues.add(c)
         // Record the tail end so close() can defer teardown until the chord rings out.
         // Take the max in case of double-dispatch — the second call's tail must not
@@ -390,13 +371,13 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         return
       }
       case 'nk-front':
-        activeCues.add(scheduleNKFrontMarker(audioCtx, when, audioCtx.destination, sessionTimbre))
+        activeCues.add(scheduleNKFrontMarker(audioCtx, when, masterGain, sessionTimbre))
         return
       case 'nk-back':
-        activeCues.add(scheduleNKBackMarker(audioCtx, when, audioCtx.destination, sessionTimbre))
+        activeCues.add(scheduleNKBackMarker(audioCtx, when, masterGain, sessionTimbre))
         return
       case 'nk-tick':
-        activeCues.add(scheduleNKTick(audioCtx, when, audioCtx.destination, sessionTimbre))
+        activeCues.add(scheduleNKTick(audioCtx, when, masterGain, sessionTimbre))
         return
     }
   }
@@ -431,7 +412,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null {
       const firstInCueTime = startAudioTime + LEAD_IN_DURATION_SEC
       if (closed) return null // AUDIO-03: closed engine has no meaningful projection.
-      if (muted) return firstInCueTime
+      // Phase 53: cues schedule even while muted (they play silently through masterGain=0).
 
       // Plan 50-06 D-05: facade over the internal schedule(when, cue) dispatch.
       // 3 ticks at +0/+1/+2 (D-14 lead-in) + first In cue at +3. Track each so
@@ -456,7 +437,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
     scheduleNextCue({ newPhase, audioTime, phaseDurationSec }: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void {
       if (closed) return
-      if (muted) return // D-08 unmute-waits-for-boundary; if currently muted, skip this cue.
+      // Phase 53: schedule even while muted (silent through masterGain=0).
       pruneExpiredCues()
       // AUDIO-02 D-01/D-02 callee-side clamp. The audioCtx.currentTime read here
       // is INSIDE the engine and OUTSIDE the drift-guard scope (which targets the
@@ -469,13 +450,13 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     },
 
     // Phase 52 D-04: lookahead dispatch facade.
-    // Follows the same posture as scheduleNextCue: closed/muted guards at top,
+    // Follows the same posture as scheduleNextCue: closed guard at top,
     // pruneExpiredCues() before dispatch, callee-side SAFE_LEAD_SEC clamp per cue.
     // The cue list is pre-computed by Plan 03's walkFutureCues helper; this method
     // only dispatches via the internal schedule() switch (no walk logic here).
     topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void {
       if (closed) return
-      if (muted) return // D-08 unmute-waits-for-boundary; mirrors scheduleNextCue guard.
+      // Phase 53: schedule even while muted (silent through masterGain=0).
       pruneExpiredCues()
       const nowSec = audioCtx.currentTime
       for (const cue of args.cues) {
@@ -510,7 +491,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     // Phase 52 D-09 + D-10: future-cue cancellation helper.
     // Snapshot-iterate activeCues (AH-WR-07: spread copy decouples iteration from mutation).
     // For each cue with scheduledAt > now: call cancel() + remove from activeCues.
-    // In-flight cues (scheduledAt <= now) are preserved for applyMuteFadeOut (D-08/D-10).
+    // In-flight cues (scheduledAt <= now) are preserved to ring out naturally.
     cancelFutureCues(): void {
       if (closed) return
       const now = audioCtx.currentTime
@@ -526,7 +507,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
     playEndChord(): void {
       if (closed) return
-      if (muted) return // consistent with the Navi end cue — muted = silent.
+      // Phase 53: schedule even while muted (silent through masterGain=0).
       // Plan 50-06 D-05: facade over schedule(). The endChordTailUntil
       // Math.max bookkeeping is preserved inside schedule()'s 'end-chord' arm
       // (Task 1) — close() still defers teardown until the tail rings out.
@@ -537,35 +518,21 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     },
 
     setMuted(next: boolean): void {
-      if (closed) {
-        muted = next
-        return
-      }
-      if (next && activeCues.size > 0) {
-        // D-08 + WR-08 (PRESERVED): muting mid-cue applies fade-out to in-flight cues.
-        // Phase 52 D-10: split iteration — in-flight branch fades, future branch cancels.
-        pruneExpiredCues()
-        const now = audioCtx.currentTime
-        for (const cue of activeCues) {
-          if (cue.scheduledAt <= now) {
-            // In-flight cue: apply soft fade-out (D-08/WR-08 behavior preserved).
-            applyMuteFadeOut(cue, audioCtx)
-          }
-        }
-        // Phase 52 D-10: future-queued cues from the lookahead window get hard-cancelled.
-        // Without this, the deeper queue (~6s) would leave audible audio after mute.
-        // Called AFTER the in-flight loop so the loop sees the original Set before mutation.
-        // AH-WR-07 snapshot-iterate-then-mutate pattern (same as pruneExpiredCues).
-        for (const cue of [...activeCues]) {
-          if (cue.scheduledAt > now) {
-            cue.cancel()
-            activeCues.delete(cue)
-          }
-        }
-      }
-      // D-08 (PRESERVED): unmute waits for next boundary (the next top-up tick re-queues
-      // from the fresh muted=false state). No make-up cue dispatched here.
       muted = next
+      if (closed) return
+      // Phase 53: ramp the single master gain — instant, no boundary wait. Cues keep
+      // scheduling through masterGain (silent at gain=0), so unmute lands on whatever
+      // cue is currently playing. Anchor the current value first (Safari-safe), then
+      // linear-ramp to the target over MUTE_RAMP_SEC.
+      const gainParam = masterGain.gain
+      const now = audioCtx.currentTime
+      if (typeof gainParam.cancelAndHoldAtTime === 'function') {
+        gainParam.cancelAndHoldAtTime(now)
+      } else {
+        gainParam.cancelScheduledValues(now)
+        gainParam.setValueAtTime(gainParam.value, now)
+      }
+      gainParam.linearRampToValueAtTime(next ? 0 : 1, now + MUTE_RAMP_SEC)
     },
 
     get muted(): boolean {
@@ -629,6 +596,8 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         try { cue.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
       }
       activeCues.clear()
+      // Phase 53: disconnect the master gain from destination as part of teardown.
+      try { masterGain.disconnect() } catch { /* silent — node may already be disconnected */ }
       // Pitfall 8: in-flight cue tails (up to ~5× decayTimeConstant) ring out via the audio
       // thread's already-scheduled gain ramps. We close immediately and trust those ramps
       // to drain naturally. D-11: closing AudioContext releases the system audio resources.

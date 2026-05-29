@@ -45,7 +45,6 @@ function makeFakeClock(nowValue = 0): FakeClock {
   return {
     now: () => nowValue,
     schedule: scheduleImpl,
-    setMasterGain: vi.fn(),
     onSuspend(cb): () => void {
       suspendSubs.add(cb)
       return (): void => { suspendSubs.delete(cb) }

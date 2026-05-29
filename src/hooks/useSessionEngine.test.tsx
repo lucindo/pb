@@ -663,7 +663,6 @@ function createMockSessionClock(initialNow: number): MockSessionClock {
     clock: {
       now: () => nowValue,
       schedule: () => undefined,
-      setMasterGain: () => undefined,
       onSuspend: () => noopUnsub,
       onResume: () => noopUnsub,
       onClose: () => noopUnsub,

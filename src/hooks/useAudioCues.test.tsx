@@ -91,7 +91,7 @@ describe('useAudioCues', () => {
       resume = vi.fn(async () => {})
       close = closeSpy
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -223,7 +223,7 @@ describe('useAudioCues', () => {
       resume = vi.fn(async () => {})
       close = closeSpy
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -263,7 +263,7 @@ describe('useAudioCues', () => {
       resume = vi.fn(async () => {})
       close = closeSpy
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -304,7 +304,7 @@ describe('useAudioCues', () => {
       resume = vi.fn(async () => {})
       close = vi.fn(async () => {})
       createOscillator = vi.fn()
-      createGain = vi.fn()
+      createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
       // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
@@ -346,7 +346,7 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     constructor(_options?: AudioContextOptions) {}
     // AUDIO-04: addEventListener added so cueSynth's { once: true } 'ended' listener registration succeeds.
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
-    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -467,7 +467,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     constructor(_options?: AudioContextOptions) { constructed += 1; SpyableAC.lastInstance = this }
     // AUDIO-04: addEventListener added so cueSynth's { once: true } 'ended' listener registration succeeds.
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
-    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // Reason: async required to match AudioContext.resume() Promise<void> signature; conditional throw produces a rejected promise without await.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -818,7 +818,6 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     const makeFakeClock = (): unknown => ({
       now: vi.fn(() => 0),
       schedule: vi.fn(),
-      setMasterGain: vi.fn(),
       onResume: vi.fn(() => () => undefined),
       onSuspend: vi.fn(() => () => undefined),
       onClose: vi.fn(() => () => undefined),
@@ -1035,7 +1034,6 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn(() => {
           onResumeCallCount++
           return onResumeCallCount === 1 ? unsubResume1 : unsubResume2
@@ -1118,7 +1116,7 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
     // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) {}
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
-    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // Reason: AudioContextState mutation is the async side-effect; no await needed in this synchronous stub.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -1233,7 +1231,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) { SpyableAC.lastInstance = this }
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
-    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // eslint-disable-next-line @typescript-eslint/require-await
     async resume(): Promise<void> { this.state = 'running'; this._fireStateChange() }
@@ -1437,7 +1435,7 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) { SpyableAC.lastInstance = this }
     createOscillator() { return { type: 'sine', frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), value: 0 }, detune: { setValueAtTime: vi.fn(), value: 0 }, start: vi.fn(), stop: vi.fn(), connect: vi.fn().mockReturnThis(), disconnect: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() } }
-    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
+    createGain() { return { gain: { setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), value: 1 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     createBiquadFilter() { return { type: 'lowpass', frequency: { setValueAtTime: vi.fn(), value: 350 }, Q: { setValueAtTime: vi.fn(), value: 1 }, gain: { setValueAtTime: vi.fn(), value: 0 }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() } }
     // Reason: async required to match AudioContext.resume() Promise<void> signature; conditional throw produces a rejected promise without await.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -1485,12 +1483,11 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
 
   it('D-03: clock member is exposed on UseAudioCues and conforms to SessionClock interface', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
-    // clock must exist and expose all 6 SessionClock members.
+    // clock must exist and expose all 5 SessionClock members.
     const clock = result.current.clock
     expect(clock).toBeDefined()
     expect(typeof clock.now).toBe('function')
     expect(typeof clock.schedule).toBe('function')
-    expect(typeof clock.setMasterGain).toBe('function')
     expect(typeof clock.onSuspend).toBe('function')
     expect(typeof clock.onResume).toBe('function')
     expect(typeof clock.onClose).toBe('function')
@@ -1659,7 +1656,6 @@ describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn(() => () => undefined),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -1721,7 +1717,6 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn((cb: () => void) => {
           resumeSubscribers.push(cb)
           return () => {
@@ -1937,7 +1932,6 @@ describe('Phase 52 CR-01-FIX: cancelFutureCues facade', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn(() => () => undefined),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -1985,7 +1979,6 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn((cb: () => void) => { resumeCb = cb; return () => undefined }),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -2038,7 +2031,6 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn((cb: () => void) => { resumeCb1 = cb; return () => undefined }),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -2072,7 +2064,6 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
       clock: {
         now: vi.fn(() => 0),
         schedule: vi.fn(),
-        setMasterGain: vi.fn(),
         onResume: vi.fn((cb: () => void) => { resumeCb2 = cb; return () => undefined }),
         onSuspend: vi.fn(() => () => undefined),
         onClose: vi.fn(() => () => undefined),
@@ -2140,7 +2131,6 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
         clock: {
           now: vi.fn(() => clockNowValue),
           schedule: vi.fn(),
-          setMasterGain: vi.fn(),
           onResume: vi.fn((cb: () => void) => {
             resumeSubscribers.push(cb)
             return () => {

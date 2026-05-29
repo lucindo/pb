@@ -82,10 +82,9 @@ describe('useNaviKriyaAudio — SessionClock proxy + setSource lifecycle (Phase 
     const { result } = renderHook(() => useNaviKriyaAudio(false))
     const { clock } = result.current
 
-    // SessionClock has exactly 6 members
+    // SessionClock has exactly 5 members
     expect(typeof clock.now).toBe('function')
     expect(typeof clock.schedule).toBe('function')
-    expect(typeof clock.setMasterGain).toBe('function')
     expect(typeof clock.onSuspend).toBe('function')
     expect(typeof clock.onResume).toBe('function')
     expect(typeof clock.onClose).toBe('function')
