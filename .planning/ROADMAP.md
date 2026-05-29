@@ -191,7 +191,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. The engine-reconstruction path is removed from the mute flow only — the standalone iOS Phase 5.1 audio-recovery affordance (morphing `MuteToggle` triggered by `audioStatus === 'interrupted'` / `'needs-resume'`) remains operational and continues to reconstruct the engine when invoked.
   4. HRV cue envelope continuity through mute/unmute is preserved — the existing non-zero sustain-floor design in `cueSynth.ts` keeps cues audible at the floor level during phase sustain, so an unmute mid-phase lands the user back into an audible cue immediately.
 **Plans**: implemented directly (minimal, per operator "keep it simple"). Commit f998490.
-**Status**: implemented; awaiting operator real-device verification (mute = instant silence; unmute mid-phase = immediately audible on the current cue, no boundary wait; iOS recovery affordance unchanged). Net -521 lines (removed per-cue fade, cancel-on-mute, 4 muted scheduling-gates, dead setMasterGain plumbing). tsc/lint/build/dev-boot clean; full suite green.
+**Status**: COMPLETE — operator-verified working on device (2026-05-29). Mute instant; unmute mid-phase immediately audible (no boundary wait); iOS recovery unchanged. Net -521 lines (removed per-cue fade, cancel-on-mute, 4 muted scheduling-gates, dead setMasterGain plumbing).
 **UI hint**: no
 
 ### Phase 54: Background-audio continuity + platform behavior split
