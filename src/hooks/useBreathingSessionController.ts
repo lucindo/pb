@@ -129,6 +129,10 @@ export function useBreathingSessionController({
   const audioPlayEndChord = audio.playEndChord
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
+  // WR-02 (Plan 06): audioMuted threaded into the top-up effect dep array so the
+  // effect re-evaluates its muted guard when mute state changes. The muted guard
+  // inside the effect body gates BOTH cancel and top-up symmetrically (D-10 locked
+  // decision: "unmute waits for boundary").
   const audioMuted = audio.muted
   const audioSetMuted = audio.setMuted
   const wakeLockRequest = wakeLock.request
@@ -344,6 +348,14 @@ export function useBreathingSessionController({
   useEffect(() => {
     if (phase !== 'running') return
 
+    // WR-02 (Plan 06): symmetric muted guard — gate BOTH cancel and top-up on the muted
+    // flag. Pre-fix: cancelFutureCues ran unconditionally while topUpLookahead was gated,
+    // causing asymmetric behavior (each boundary emptied the queue but never refilled).
+    // Per locked CONTEXT.md D-10 decision ("unmute waits for boundary"), the correct UX is:
+    // while muted, neither cancel nor top-up runs (symmetric no-op). On unmute, this effect
+    // re-runs (audioMuted is in the dep array) and the next boundary triggers cancel+top-up.
+    if (audioMuted) return
+
     const frame = session.currentFrame
     if (frame === null) return
 
@@ -398,7 +410,7 @@ export function useBreathingSessionController({
       : cues.filter((c) => c.audioTime > liveAudioNow + SAFE_LEAD_SEC)
 
     audioTopUpLookahead(freshCues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioNow, stretchSegmentsForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, audioNow, audioMuted, stretchSegmentsForTopUp])
 
   useEffect(() => {
     return () => {
