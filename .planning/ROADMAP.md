@@ -194,14 +194,19 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **UI hint**: no
 
 ### Phase 54: Background-audio continuity + platform behavior split
-**Goal**: Deliver the operator's actual requirement — **on desktop, audio continues for the full session (hours) while the tab is backgrounded indefinitely** (multitasking use); **on mobile, the app is the installed focused-practice PWA** (screen-on, single-task) where background continuity is not the goal (and iOS suspends web audio in the background regardless). Re-architect cue top-up so it is NOT driven by `requestAnimationFrame` (which the browser freezes on hidden tabs) — drive the lookahead refill from a source that survives backgrounding (e.g. a Web Worker timer / `setInterval` in a worker), reusing Phase 52's `topUpLookahead` / `cancelFutureCues` / clamp foundation. Foreground return resyncs the breathing orb to the live audio position (snap, not race). Supersedes Phase 52 SC#1/SC#2 and closes GAP-52H-1.
+**Goal**: Deliver the operator's actual requirement for **HRV + Stretch** (breathing practices, multitasking-friendly) — **on desktop, audio continues for the full session (hours) while the tab is backgrounded indefinitely**; **on mobile, the app is the installed focused-practice PWA** (screen-on, single-task) where background continuity is not the goal (iOS suspends web audio in the background regardless). Re-architect cue top-up so it is NOT driven by `requestAnimationFrame` (which the browser freezes on hidden tabs) — drive the lookahead refill from a **Web Worker timer** that survives backgrounding, reusing Phase 52's `topUpLookahead` / `cancelFutureCues` / clamp foundation. Foreground return resyncs the breathing orb to the live audio position (snap, not race). Supersedes Phase 52 SC#1/SC#2 and closes GAP-52H-1.
+**SCOPE GUARDS (locked 2026-05-29):**
+- **Navi Kriya is OUT of scope — the NK stack (`useNaviKriyaAudio.ts`, `useNKEngine.ts`, `nkCueSynth.ts`) is NOT touched.** NK is a focused single-task practice (long sessions, but the user does not multitask during it), so background continuity is not wanted; and protecting the working NK code is an explicit operator requirement.
+- **Stats:** desktop background time COUNTS toward session duration (audio played = real guided practice); mobile keeps practice-time exclusion (audio suspends).
+- **Additive + reversible:** new worker path is desktop-gated (via existing `useIsStandaloneOrPhone`); the existing rAF top-up path is PRESERVED as the foreground/mobile/fallback driver, not deleted. Full existing test suite stays green as a per-step regression gate.
 **Depends on**: Phase 50 (`SessionClock.schedule`), Phase 51 (master clock), Phase 52 (lookahead/cancel/clamp foundation)
 **Requirements**: TBD (background-continuity + platform-split requirements to be derived during spec/discuss)
+**Folds in (independent bugs from the 2026-05-29 audit):** B-4 (handleForceTopUp stale-cue replay → doubled audio) and B-5 (SAFE_LEAD_SEC stacking past-due cues) — the resume audio path is rebuilt here. (B-3 boundary flam / GAP-52H-2 is fixed separately/first as a standalone steady-state dedup.)
 **Success Criteria** (what must be TRUE):
-  1. Desktop: user starts a session, switches to other tabs, and stays away for the entire session length (e.g. 10+ min, ideally hours) — audio keeps playing correct cues the whole time, never going silent until the session actually ends.
-  2. Desktop: on returning to the foreground at any point, the breathing orb resyncs to the live audio position without a racing catch-up burst and without doubled/replayed cues.
-  3. Mobile (installed PWA): focused screen-on practice works correctly; background behavior degrades gracefully and predictably given platform audio-suspend constraints (no garbled/doubled output on return).
-  4. No regression to Phase 52 foreground behavior or the Phase 51 master-clock invariant across HRV / Stretch / Navi.
+  1. Desktop (HRV/Stretch): user starts a session, switches to other tabs, and stays away for the entire session length (e.g. 10+ min, ideally hours) — audio keeps playing correct cues the whole time, never going silent until the session actually ends.
+  2. Desktop: on returning to the foreground at any point, the breathing orb resyncs to the live audio position without a racing catch-up burst and without doubled/replayed cues; recorded session duration includes the (audio-played) background time.
+  3. Mobile (installed PWA): focused screen-on practice works correctly; background behavior degrades gracefully and predictably given platform audio-suspend constraints (no garbled/doubled output on return). Practice-time exclusion preserved.
+  4. No regression to Phase 52 foreground behavior, the Phase 51 master-clock invariant, or ANY Navi Kriya behavior across HRV / Stretch / Navi.
 **Plans**: TBD
 **UI hint**: no
 
