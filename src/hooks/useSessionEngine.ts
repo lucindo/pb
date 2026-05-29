@@ -4,9 +4,6 @@ import type { RefObject } from 'react'
 // Phase 50-02: SessionClock is the D-09 substitute for direct wall-clock
 // reads. The audioEngine re-export (ABSTR-02) is the preferred entry point so
 // downstream callers don't reach into the audio subdirectory's internal layout.
-// Phase 52 D-06: MAX_TICK_DELTA_SEC = 0.1 imported as a typed literal constant
-// (single source of truth in audioEngine.ts — no duplicated literal here).
-import { MAX_TICK_DELTA_SEC } from '../audio/audioEngine'
 import type { SessionClock } from '../audio/audioEngine'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { SessionSettings, StretchSettings } from '../domain/settings'
@@ -131,15 +128,6 @@ export function useSessionEngine(
   // DELETED in Task 3; the hook is now the single writer.
   const runningSnapshotRef = useRef<RunningSnapshot | null>(null)
 
-  // Phase 52 D-05 / D-08: monotonic last-clock-now anchor for per-tick delta
-  // computation (D-05) and for the synchronous reset inside reanchorSessionClock
-  // (D-08 — "reset synchronously inside reanchorSessionClock so the next rAF
-  // tick computes delta against the new clock base"). Initial value 0; overwritten
-  // at the START of the rAF effect when status transitions to 'running' — NOT at
-  // hook construction time (clock may not yet be backed by the AC at construction).
-  // Stable ref — NOT a dep array entry anywhere (mirrors runningSnapshotRef posture).
-  const lastClockNowRef = useRef<number>(0)
-
   // AH-WR-05 INVARIANT — STALE-CLOSURE TRAP: the dep array below is
   // intentionally `[state.status, clock]` only, so this effect (and its rAF loop)
   // is created ONCE per session (when status transitions to running) and NOT
@@ -154,9 +142,6 @@ export function useSessionEngine(
   // `currentState`, not the closure. `clock` is included in the dep array per
   // exhaustive-deps; callers thread a stable memoized instance (Phase 50-02
   // Task 4), so the rAF loop is not re-created mid-session in practice.
-  // Phase 52 D-07: the clamp-rebase block inside the updater follows the same
-  // constraint — startedAtSec is rewritten via the rebasedState shadow variable,
-  // NEVER via state.startedAtSec from the outer closure.
   useEffect(() => {
     if (state.status !== 'running') {
       // HOOKS-02 / D-06: DO NOT null the snapshot here. Hook effects (custom-
@@ -172,99 +157,52 @@ export function useSessionEngine(
       return undefined
     }
 
-    // Phase 52 D-05/D-08 (Pattern note from PATTERNS.md §"Pattern note on the
-    // new lastClockNow ref"): initialize at the START of the rAF effect — NOT
-    // at hook construction. The clock may not yet be backed by the AudioContext
-    // at construction time; initializing here ensures the first tick sees a
-    // near-zero rawDelta rather than a large delta from the gap between hook
-    // construction and session start.
-    lastClockNowRef.current = clock.now()
-
     let animationFrameId = 0
     let cancelled = false
 
-    const tick = () => {
-      // HOOKS-04 / D-10: top-of-tick cancel-guard. An rAF callback that fires
-      // AFTER the effect cleanup ran (jsdom fake-timer rAF drain ordering, or
-      // a race in a real browser) becomes a no-op. Prevents setState on a
+    // advance: read the master clock once and commit one state step. Stateless
+    // and idempotent per clockNowSec — safe to call from BOTH the rAF loop and
+    // the worker heartbeat. Does NOT schedule the next frame (the caller owns
+    // cadence) so the worker path cannot accumulate queued rAF callbacks while
+    // hidden.
+    const advance = () => {
+      // HOOKS-04 / D-10: cancel-guard. A call that lands AFTER the effect
+      // cleanup ran (jsdom fake-timer rAF drain ordering, an in-flight worker
+      // message, or a real-browser race) becomes a no-op — never setState on a
       // torn-down state owner.
       if (cancelled) return
 
-      // Phase 52 D-05/D-06: per-tick delta computation + always-cap clamp.
-      // Single read of clock.now() per tick — shared by the clamp math and
-      // the completeIfNeeded call inside the updater (consistent clockNowSec).
+      // Single read of clock.now() — the master clock (audioCtx.currentTime via
+      // SessionClock) is the source of truth. The orb tracks true audio time;
+      // on resume from a hidden desktop tab (AC kept running) it snaps to the
+      // correct position, and on iOS (AC suspended → currentTime frozen)
+      // elapsed simply pauses and resumes.
       const clockNowSec = clock.now()
-      const lastClockNow = lastClockNowRef.current
-      const rawDelta = clockNowSec - lastClockNow
-      // D-05: clamp applies on every tick via Math.min(rawDelta, MAX_TICK_DELTA_SEC).
-      // Foreground frames (~16ms) pass through unchanged; only post-hidden-window
-      // first-frame is affected (rawDelta >> MAX_TICK_DELTA_SEC).
-      // D-06: MAX_TICK_DELTA_SEC = 0.1 imported from audioEngine.ts (no literal).
-      // WR-03 (Plan 06): the anchor is advanced optimistically before setState.
-      // If the updater short-circuits (status flips to non-running), the anchor is
-      // RESET to the pre-tick value inside the non-running branch so the rawDelta
-      // credit is NOT consumed without a corresponding rebase. The next running
-      // tick will then see the accumulated rawDelta (including the hidden window)
-      // and apply the rebase atomically. This preserves the tick-by-tick anchor
-      // progression for normal foreground ticks while ensuring the clamp+rebase
-      // is atomic: anchor advance only "commits" when the running branch commits.
-      lastClockNowRef.current = clockNowSec
 
       setState((currentState) => {
         if (currentState.status !== 'running') {
-          // WR-03 (Plan 06): short-circuit path — reset anchor to pre-tick value.
-          // The missed rawDelta (including any hidden-window gap) is preserved for
-          // the next running tick, which will then apply the rebase correctly.
-          // This makes the anchor advance atomic with the rebase commit:
-          // if no rebase commits, the anchor does not advance.
-          lastClockNowRef.current = lastClockNow
           return currentState
         }
 
-        // Phase 52 D-07: clamp-rebase block. If rawDelta > MAX_TICK_DELTA_SEC
-        // (hidden window resumed), push sessionStartCtxTime forward by the overage
-        // so elapsed = clock.now() - startedAtSec stays consistent across the
-        // clamp boundary. Hidden time is NOT counted toward session duration.
-        // "Practice-time semantics" extends Phase 51 D-07 (iOS lock) to desktop
-        // tab-hide. AH-WR-05: startedAtSec is read via currentState (NOT outer-
-        // closure state) — rebase uses the rebasedState shadow variable.
-        const rebasedState =
-          rawDelta > MAX_TICK_DELTA_SEC
-            ? {
-                ...currentState,
-                startedAtSec: currentState.startedAtSec + (rawDelta - MAX_TICK_DELTA_SEC),
-              }
-            : currentState
-
         // HOOKS-02 / D-06 / D-08: write the running-snapshot from
-        // `rebasedState` (NOT outer-closure `state` — RESEARCH §Pitfall 1
+        // `currentState` (NOT outer-closure `state` — RESEARCH §Pitfall 1
         // closure staleness). Placement: AFTER the early-return narrowed
-        // `currentState` to `RunningSessionState` and AFTER the rebase so
-        // the snapshot reflects the corrected startedAtSec anchor.
+        // `currentState` to `RunningSessionState`.
         runningSnapshotRef.current = {
-          key: String(rebasedState.startedAtSec),
-          startedAtSec: rebasedState.startedAtSec,
-          lastElapsedSec: rebasedState.lastFrame.elapsedSec,
+          key: String(currentState.startedAtSec),
+          startedAtSec: currentState.startedAtSec,
+          lastElapsedSec: currentState.lastFrame.elapsedSec,
         }
 
-        // Pass rebasedState and the captured clockNowSec (NOT a fresh clock.now()
-        // call) — the rebase math depends on a single consistent clockNowSec value.
-        return completeIfNeeded(rebasedState, clockNowSec)
+        return completeIfNeeded(currentState, clockNowSec)
       })
+    }
 
-      // Re-check cancelled BEFORE scheduling the next rAF. The top-of-tick
-      // guard (HOOKS-04 / D-10) already covers callbacks that fire after
-      // teardown. This second check guards against the narrow case where the
-      // setState above commits synchronously, triggers an effect-cleanup that
-      // flips `cancelled = true`, and we would otherwise re-schedule a tick
-      // on a torn-down state owner. TS narrows `cancelled` as `false` along
-      // this path (it was checked at the top); silence the always-truthy
-      // warning with a targeted annotation.
-      // Reason: `cancelled` is mutated by the effect cleanup function which
-      // runs synchronously when the running effect is torn down. The
-      // narrower cannot model cross-function reassignment of the closure
-      // variable; the runtime check is genuinely needed.
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // Foreground driver: rAF at ~60fps for smooth visual updates. Self-chaining;
+    // re-checks `cancelled` before re-scheduling so a tick whose setState
+    // synchronously tears down the effect does not re-arm on a dead owner.
+    const tick = () => {
+      advance()
       if (!cancelled) {
         animationFrameId = requestAnimationFrame(tick)
       }
@@ -272,9 +210,29 @@ export function useSessionEngine(
 
     animationFrameId = requestAnimationFrame(tick)
 
+    // Background heartbeat: browsers freeze rAF on a hidden tab, so the rAF loop
+    // above stops advancing the frame while hidden. A Worker timer is exempt
+    // from the background throttle, so it calls `advance()` (state step only, no
+    // rAF re-schedule) every 250ms. setState and the boundary-driven cue top-up
+    // effect both still run while hidden, so the cue lookahead queue keeps
+    // getting refilled and audio stays alive for the full session. Graceful
+    // no-op when Worker is unavailable (jsdom / test / SSR).
+    let heartbeat: Worker | null = null
+    if (typeof Worker !== 'undefined') {
+      heartbeat = new Worker(new URL('./lookaheadHeartbeat.worker.ts', import.meta.url), {
+        type: 'module',
+      })
+      heartbeat.onmessage = () => {
+        advance()
+      }
+    }
+
     return () => {
       cancelled = true
       cancelAnimationFrame(animationFrameId)
+      if (heartbeat !== null) {
+        heartbeat.terminate()
+      }
     }
   }, [state.status, clock])
 
@@ -385,22 +343,6 @@ export function useSessionEngine(
   // 'running' and rewrites startedAtSec = newClockNow - lastFrame.elapsedSec.
   // Deps are `[]` — the updater reads currentState, no closure over `state`.
   const reanchorSessionClock = useCallback((newClockNow: number) => {
-    // Phase 52 D-08: reset lastClockNowRef synchronously so the next rAF tick
-    // computes rawDelta = clock.now() - newClockNow (≈ 0 for an immediate tick)
-    // and the clamp does NOT fire spuriously. Without this reset, the first tick
-    // after the proxy source swap would see rawDelta = newClockNow - oldAnchor,
-    // which may be large enough to rebase startedAtSec incorrectly.
-    //
-    // Shape A (D-08): unconditional write before setState. If the session is NOT
-    // running, the rAF effect is not active, so the ref value is irrelevant until
-    // the next session's start (which re-initializes it via the rAF effect body).
-    //
-    // Phase 51 D-10/D-11 ordering: this reset fires synchronously inside
-    // reanchorSessionClock, which is called BEFORE onAudioReanchorRequired
-    // (the audio-anchor reanchor). The ref is stable at the new clock base by
-    // the time the next rAF tick fires.
-    lastClockNowRef.current = newClockNow
-
     setState((currentState) => {
       if (currentState.status !== 'running') {
         // No-op: reanchor on idle/complete is meaningless.

@@ -191,13 +191,6 @@ export const LOOKAHEAD_WINDOW_SEC = 6 as const
  *  settings change = at most 2 oscillator stops + node disconnects. */
 export const LOOKAHEAD_MIN_CUES = 2 as const
 
-/** Phase 52 D-06: per-tick elapsed-delta clamp ceiling in seconds.
- *  100 ms is tight enough that a 60→6 fps frame-rate drop passes through
- *  unchanged (6×16.67 ms = 100 ms). Anything beyond this threshold is treated
- *  as a hidden-window resumption and the session anchor is rebased forward by
- *  (raw_delta − MAX_TICK_DELTA_SEC) to preserve practice-time semantics. */
-export const MAX_TICK_DELTA_SEC = 0.1 as const
-
 function applyMuteFadeOut(activeCue: CueHandle, audioCtx: AudioContext): void {
   const now = audioCtx.currentTime
   const gainParam = activeCue.envelope.gain
