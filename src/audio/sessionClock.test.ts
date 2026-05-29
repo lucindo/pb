@@ -355,7 +355,7 @@ describe('createWallSessionClock', () => {
     // member. `@ts-expect-error` MUST match — if the method were exposed, this
     // assertion would fail at compile time.
     // @ts-expect-error - wall clock has no notifySuspended (revision 2 Blocker #1)
-    const probe = clock.notifySuspended
+    const probe: unknown = clock.notifySuspended
     // Runtime: the property does not exist on the returned object literal.
     expect(probe).toBeUndefined()
   })

@@ -251,10 +251,9 @@ export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
       // DEV warn; production stays silent per D-03/D-17 (RAM state
       // authoritative).
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.warn(
-          `[storage] refusing to overwrite on-disk envelope v${currentVersion} ` +
-          `(this build is v${STATE_VERSION}). Writes are silently discarded — ` +
+          `[storage] refusing to overwrite on-disk envelope v${String(currentVersion)} ` +
+          `(this build is v${String(STATE_VERSION)}). Writes are silently discarded — ` +
           `reload the newer build or clear localStorage.`,
         )
       }

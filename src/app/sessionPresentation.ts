@@ -110,7 +110,7 @@ function getVisibleNaviPhase(phase: NaviKriyaPresentationInput['phase']): NaviKr
   // silently coercing to 'front'. 'idle' should never reach here per the
   // sessionActive invariant — surface the violation explicitly.
   if (phase === 'done') return 'back'
-  throw new Error(`getVisibleNaviPhase: unexpected phase ${String(phase)}`)
+  throw new Error(`getVisibleNaviPhase: unexpected phase ${phase}`)
 }
 
 export function getNaviKriyaPresentation(

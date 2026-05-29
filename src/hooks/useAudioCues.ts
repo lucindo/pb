@@ -425,7 +425,6 @@ export function useAudioCues(
         if (import.meta.env.DEV) {
           // Reason: dev-only breadcrumb for triage of iOS-Safari construction
           // failures from real-device logs; never surfaces to production users.
-          // eslint-disable-next-line no-console
           console.warn('[useAudioCues] start failed; falling back to visuals-only', error)
         }
         setAudioAvailable(false)

@@ -119,7 +119,6 @@ export function useWakeLock(): UseWakeLock {
       // bump the generation counter so request() discards it post-await.
       // The ref is a monotonic counter that is only ever mutated, never captured
       // for later reads — the stale-ref warning does not apply here.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       requestGenerationRef.current += 1
       // Pitfall 6: unmount-cleanup race against in-flight request(). Synchronously
       // null the sentinel ref BEFORE the await on release() so a fast new request()
