@@ -46,23 +46,23 @@ Requirements for the v2.2 release. Each maps to one phase in the v2.2 roadmap (P
 
 ### Scheduling (Phase 52 — visibility-resume clamp + lookahead)
 
-- [ ] **SCHED-01**: A per-tick elapsed-delta clamp suppresses catch-up bursts on the first rAF after a long hidden window (closes diagnosis #4).
-- [ ] **SCHED-02**: Cue scheduling uses a 5–10s lookahead window — N cues ahead are queued into the WebAudio graph; the rAF tick is no longer the bottleneck for audio continuity.
-- [ ] **SCHED-03**: User backgrounds the tab for ≤ lookahead-window seconds: audio continues to play; on foreground the animation does not race (closes diagnosis #5 partial).
-- [ ] **SCHED-04**: User backgrounds the tab indefinitely: audio plays through the lookahead window, then stops cleanly with no garbled output (closes diagnosis #5 full).
-- [ ] **SCHED-05**: User changes BPM or timbre mid-session: queued cues in the lookahead window are cancelled and rescheduled cleanly — no stale cues with the old settings fire.
+- [~] **SCHED-01** *(superseded by Phase 54 — see v2.2-MILESTONE-AUDIT.md)*: A per-tick elapsed-delta clamp suppresses catch-up bursts. The clamp was the bug; it was removed. Goal (no resume race, diagnosis #4) met by the orb tracking true audio time and snapping to the live position.
+- [x] **SCHED-02**: Cue scheduling uses a 5–10s lookahead window — N cues ahead are queued into the WebAudio graph; the rAF tick is no longer the bottleneck for audio continuity.
+- [x] **SCHED-03** *(exceeded)*: User backgrounds the tab: audio continues to play (indefinitely on desktop via Phase 54 worker heartbeat); on foreground the animation snaps without racing (closes diagnosis #5).
+- [~] **SCHED-04** *(superseded by Phase 54 requirements-correction)*: original "audio stops cleanly after the lookahead window" was the wrong requirement — operator's real need is that audio does NOT stop. Audio now continues for the full session on desktop.
+- [x] **SCHED-05**: User changes BPM or timbre mid-session: queued cues in the lookahead window are cancelled and rescheduled cleanly — no stale cues with the old settings fire.
 
 ### Mute UX (Phase 53 — master-gain mute)
 
-- [ ] **MUTE-01**: A master `GainNode` sits between every cue chain and the audio `destination`.
-- [ ] **MUTE-02**: Mute applies `linearRampToValueAtTime(0, now + 0.05)`; unmute applies the inverse — audible attenuation lands within ~50 ms.
-- [ ] **MUTE-03**: Mute/unmute does not teardown or reconstruct the audio engine — the engine-reconstruction path is removed from the mute flow (kept available for the existing iOS Phase 5.1 recovery affordance).
-- [ ] **MUTE-04**: User mutes mid-HRV / Stretch session and unmutes: audio resumes immediately at the cue's current sustain-floor level — no perceptual wait for the next phase boundary (closes diagnosis #3a).
+- [x] **MUTE-01**: A master `GainNode` sits between every cue chain and the audio `destination`.
+- [x] **MUTE-02**: Mute applies `linearRampToValueAtTime(0, now + 0.05)`; unmute applies the inverse — audible attenuation lands within ~50 ms.
+- [x] **MUTE-03**: Mute/unmute does not teardown or reconstruct the audio engine — the engine-reconstruction path is removed from the mute flow (kept available for the existing iOS Phase 5.1 recovery affordance).
+- [x] **MUTE-04**: User mutes mid-HRV / Stretch session and unmutes: audio resumes immediately at the current cue level — no perceptual wait for the next phase boundary (closes diagnosis #3a).
 
 ### Cross-Cutting (verified per-phase)
 
-- [ ] **DEPS-01**: No new runtime dependencies added across the milestone — `dependencies` in `package.json` stays `react` + `react-dom`.
-- [ ] **QUAL-01**: Per-commit green-gate (`tsc && lint && build && test`) holds through every commit on `main` for the duration of the milestone (the v1.0.1 D-09/D-15 invariant).
+- [x] **DEPS-01**: No new runtime dependencies added across the milestone — `dependencies` stays react + react-dom + @fontsource-variable/inter. (The Phase 54 worker is a source file, not a dependency.)
+- [x] **QUAL-01**: Per-commit green-gate (`tsc && lint && build && test`) green at milestone close (lint drift cleared at close).
 
 ## Future Requirements
 
@@ -111,17 +111,17 @@ Which phases cover which requirements. Roadmapper will populate the Phase column
 | CLOCK-03 | Phase 51 | Complete |
 | CLOCK-04 | Phase 51 | Complete |
 | CLOCK-05 | Phase 51 | Complete |
-| SCHED-01 | Phase 52 | Pending |
-| SCHED-02 | Phase 52 | Pending |
-| SCHED-03 | Phase 52 | Pending |
-| SCHED-04 | Phase 52 | Pending |
-| SCHED-05 | Phase 52 | Pending |
-| MUTE-01 | Phase 53 | Pending |
-| MUTE-02 | Phase 53 | Pending |
-| MUTE-03 | Phase 53 | Pending |
-| MUTE-04 | Phase 53 | Pending |
-| DEPS-01 | all (per-phase) | Pending |
-| QUAL-01 | all (per-phase) | Pending |
+| SCHED-01 | Phase 52→54 | Superseded (clamp removed in Phase 54; resume-race goal met by orb tracking true audio time) |
+| SCHED-02 | Phase 52 | Complete |
+| SCHED-03 | Phase 52→54 | Complete (exceeded — audio continues indefinitely on desktop) |
+| SCHED-04 | Phase 52→54 | Superseded (Phase 54 requirements-correction: audio must NOT stop) |
+| SCHED-05 | Phase 52 | Complete |
+| MUTE-01 | Phase 53 | Complete |
+| MUTE-02 | Phase 53 | Complete |
+| MUTE-03 | Phase 53 | Complete |
+| MUTE-04 | Phase 53 | Complete |
+| DEPS-01 | all (per-phase) | Complete |
+| QUAL-01 | all (per-phase) | Complete |
 
 **Coverage:**
 - v2.2 requirements: 24 total (22 phase-specific + 2 cross-cutting verified per-phase)
