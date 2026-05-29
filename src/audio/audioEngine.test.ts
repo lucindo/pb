@@ -1519,6 +1519,81 @@ describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () =
   })
 })
 
+// GAP-52H-2 / REVIEW WR-01 — engine-layer dedup of the in-flight boundary cue.
+// Closes the audible ~5ms boundary flam: the rAF top-up re-walks the boundary it is
+// currently crossing, whose in-flight cue survived cancelFutureCues (scheduledAt <= now);
+// re-scheduling it lands a second strike. The dedup skips a requested cue whose unclamped
+// audioTime is within SAFE_LEAD_SEC of an IN-FLIGHT cue's scheduledAt — and ONLY in-flight
+// (future cues remain the caller's cancel-then-reschedule responsibility).
+describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  function probeACAt(probeTime: number) {
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      get currentTime() { return probeTime }
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn()
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    return ProbeAC
+  }
+
+  it('does NOT re-schedule a cue matching an in-flight cue (boundary flam suppressed), but still schedules a distinct cue', async () => {
+    // now is just past the boundary (rAF lag) — the boundary cue is now in-flight.
+    vi.stubGlobal('AudioContext', probeACAt(10.02))
+    const inflight = makeMockCueHandle()
+    inflight.handle.scheduledAt = 10 // the boundary; 10 <= 10.02 → in-flight
+    inflight.handle.cleanupAt = 100 // keep it past pruneExpiredCues
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(inflight.handle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    // Seed the in-flight boundary cue.
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+    inSpy.mockClear()
+
+    // Re-walk: the same boundary (10) plus the genuinely-next cue (14).
+    engine.topUpLookahead({
+      cues: [
+        { audioTime: 10, phaseDurationSec: 4, kind: 'in' }, // duplicate of in-flight → skipped
+        { audioTime: 14, phaseDurationSec: 4, kind: 'in' }, // distinct → scheduled
+      ],
+    })
+
+    // Only the distinct cue dispatched; the boundary cue was deduped (no second strike).
+    expect(inSpy.mock.calls.length).toBe(1)
+    expect(inSpy.mock.calls[0]?.[1]).toBeCloseTo(14, 9)
+    await engine.close()
+  })
+
+  it('does NOT dedup against a FUTURE cue (cancel-then-reschedule invariant preserved)', async () => {
+    vi.stubGlobal('AudioContext', probeACAt(5))
+    const future = makeMockCueHandle()
+    future.handle.scheduledAt = 10 // 10 > 5 → future, NOT in-flight
+    future.handle.cleanupAt = 100
+    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(future.handle)
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+    inSpy.mockClear()
+
+    // Re-walk the same time: a FUTURE match must still be scheduled (caller cancels first).
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+
+    expect(inSpy.mock.calls.length).toBe(1)
+    await engine.close()
+  })
+})
+
 // Phase 52 constants — D-02/D-03/D-06
 // These tests import the SYMBOLS (not bare literals) per project memory
 // "No design locking": if a value is tuned in a later phase the tests

@@ -484,7 +484,28 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       if (closed) return
       if (muted) return // D-08 unmute-waits-for-boundary; mirrors scheduleNextCue guard.
       pruneExpiredCues()
+      const nowSec = audioCtx.currentTime
       for (const cue of args.cues) {
+        // GAP-52H-2 / REVIEW WR-01 — engine-layer dedup (closes the audible ~5ms boundary flam).
+        // The rAF top-up re-walks the boundary it is currently crossing; that boundary's
+        // IN-FLIGHT cue survived cancelFutureCues (scheduledAt <= now), so re-scheduling it
+        // here lands a second strike ~SAFE_LEAD_SEC after the first — the audible double-tick.
+        // Skip any requested cue whose UNCLAMPED audioTime is within SAFE_LEAD_SEC of an
+        // already-IN-FLIGHT cue's scheduledAt. Compare the unclamped time (not the SAFE_LEAD
+        // clamp below) so a boundary a few ms in the past still matches its in-flight handle.
+        // Scope to in-flight (scheduledAt <= now) ONLY: future queued cues are the caller's
+        // cancel-then-reschedule responsibility (D-10/CR-01) — deduping them could leave a
+        // stale old-settings cue in place after a BPM/timbre change. Distinct breathing cues
+        // are always >> SAFE_LEAD_SEC apart, so this never drops a genuinely separate cue.
+        // No-op after reconstruction — activeCues starts empty (WR-04).
+        let isInFlightDuplicate = false
+        for (const active of activeCues) {
+          if (active.scheduledAt <= nowSec && Math.abs(active.scheduledAt - cue.audioTime) < SAFE_LEAD_SEC) {
+            isInFlightDuplicate = true
+            break
+          }
+        }
+        if (isInFlightDuplicate) continue
         // AUDIO-02 D-01/D-02 callee-side clamp — identical posture to scheduleNextCue (L439).
         const clampedAudioTime = Math.max(cue.audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
         // schedule() adds the returned handle to activeCues internally (D-05).
