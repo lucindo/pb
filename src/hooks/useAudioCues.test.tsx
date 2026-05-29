@@ -2186,7 +2186,6 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
     act(() => { result.current.topUpLookahead(preReconstructCues) })
 
     // Verify the cache was populated
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(engineA.topUpSpy).toHaveBeenCalledTimes(1)
     engineA.topUpSpy.mockClear()
 
@@ -2200,7 +2199,6 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
     // WR-05 + WR-04 assertion: engineB.topUpLookahead must NOT have been called with the
     // pre-reconstruction cues. With the fix, lastTopUpCuesRef.current is [] after reconstructEngine,
     // so handleForceTopUp's `if (cues.length === 0) return` guard exits early.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(engineB.topUpSpy).not.toHaveBeenCalled()
 
     await act(async () => { await result.current.stop() })
@@ -2244,7 +2242,6 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
     act(() => { engineB.fireResume() })
 
     // Assert: no topUpLookahead call on the new engine with the stale pre-reconstruction cues
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(engineB.topUpSpy).not.toHaveBeenCalled()
 
     await act(async () => { await result.current.stop() })
