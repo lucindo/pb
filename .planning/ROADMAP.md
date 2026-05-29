@@ -11,11 +11,11 @@
 - ✅ **v1.5 Multi-Practice** — Phases 30–35 (shipped 2026-05-19)
 - ✅ **v2.0 New Design** — Phases 36–41, 44, 45 (shipped 2026-05-25)
 - ✅ **v2.1 Kuthasta and Settings Switches** — Phases 46–48 (shipped 2026-05-26)
-- 🚧 **v2.2 Audio Sync** — Phases 49, 49.1, 50–53 (in progress, started 2026-05-27)
+- 🚧 **v2.2 Audio Sync** — Phases 49, 49.1, 50–54 (in progress, started 2026-05-27)
 
 ## Phases
 
-### v2.2 Audio Sync (Phases 49, 49.1, 50–53)
+### v2.2 Audio Sync (Phases 49, 49.1, 50–54)
 
 - [x] **Phase 49: iOS speaker route fix** — Silent looping `<audio playsInline>` on the user-gesture chain coerces iOS Safari from "ambient" to "playback" audio session category so audio plays through the speaker even with the silent switch ON (completed 2026-05-27)
 - [ ] **Phase 49.1: Advanced Settings + "Bypass silent mode" toggle** — Renames the Appearance page to **Advanced** (its "Visual" section becomes "Behavior") and surfaces the Phase 49 silent-loop as a user-toggleable behavior preference. Default on (preserves Phase 49 shipped behavior); query-string parity (`?bypassSilentMode=false`) on the Phase 48 `readFeatureFlags(search, persisted)` resolver. When OFF, `createAudioEngine()` skips silent-loop construction entirely. EN + PT-BR strings native-validated by operator (no `// TODO: native-speaker review` markers).
@@ -169,6 +169,8 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
   3. User changes BPM or timbre mid-session: queued cues already scheduled in the lookahead window are cancelled and rescheduled cleanly — no stale cues with the old settings fire after the change.
   4. Cue scheduling is no longer driven by per-tick rAF boundary detection — the scheduler queues N cues ahead into the WebAudio graph, and the rAF tick is not the bottleneck for audio continuity.
   5. Foreground session behavior across all three practices (HRV / Stretch / Navi) remains accurate — BPM cadence, ratio splits, and timed-completion all match v2.1 baseline; the dual-anchor scheduling invariant established in Phase 3 D-13/D-14 is preserved through the lookahead model.
+
+> **⚠ Requirements correction (2026-05-28):** SC#1 ("shorter than the lookahead window") and SC#2 ("audio stops cleanly after the window") encode a TOO-NARROW requirement. The operator's actual need is **full-session (hours) background-audio continuity on desktop** — audio must NOT stop while a tab is backgrounded indefinitely. The ~6s rAF-driven lookahead architecturally cannot deliver this (rAF freezes when the tab is hidden → top-up loop dies → queue drains → silence). Phase 52's clamp + lookahead + cancel machinery is KEPT as foundation; the continuity goal moves to **Phase 54**. GAP-52H-1 (desync) is a symptom of this gap, not a standalone Phase-52 bug — do not re-debug it at this layer. GAP-52H-2 (boundary flam) remains a valid standalone fix (engine-layer dedup, REVIEW WR-01).
 **Plans**: 6 plans
 - [x] 52-01-PLAN.md — Engine foundation: LOOKAHEAD_WINDOW_SEC / LOOKAHEAD_MIN_CUES / MAX_TICK_DELTA_SEC constants + CueHandle.cancel extension (D-09) + engine.topUpLookahead facade + engine.cancelFutureCues helper (Wave 1, autonomous; SCHED-02 + SCHED-05)
 - [x] 52-02-PLAN.md — Per-tick clamp + sessionStartCtxTime rebase + reanchor lastClockNow reset in useSessionEngine rAF tick (Wave 2, autonomous; SCHED-01; D-05/D-06/D-07/D-08; depends on 52-01 for MAX_TICK_DELTA_SEC import)
@@ -191,6 +193,18 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 **Plans**: TBD
 **UI hint**: no
 
+### Phase 54: Background-audio continuity + platform behavior split
+**Goal**: Deliver the operator's actual requirement — **on desktop, audio continues for the full session (hours) while the tab is backgrounded indefinitely** (multitasking use); **on mobile, the app is the installed focused-practice PWA** (screen-on, single-task) where background continuity is not the goal (and iOS suspends web audio in the background regardless). Re-architect cue top-up so it is NOT driven by `requestAnimationFrame` (which the browser freezes on hidden tabs) — drive the lookahead refill from a source that survives backgrounding (e.g. a Web Worker timer / `setInterval` in a worker), reusing Phase 52's `topUpLookahead` / `cancelFutureCues` / clamp foundation. Foreground return resyncs the breathing orb to the live audio position (snap, not race). Supersedes Phase 52 SC#1/SC#2 and closes GAP-52H-1.
+**Depends on**: Phase 50 (`SessionClock.schedule`), Phase 51 (master clock), Phase 52 (lookahead/cancel/clamp foundation)
+**Requirements**: TBD (background-continuity + platform-split requirements to be derived during spec/discuss)
+**Success Criteria** (what must be TRUE):
+  1. Desktop: user starts a session, switches to other tabs, and stays away for the entire session length (e.g. 10+ min, ideally hours) — audio keeps playing correct cues the whole time, never going silent until the session actually ends.
+  2. Desktop: on returning to the foreground at any point, the breathing orb resyncs to the live audio position without a racing catch-up burst and without doubled/replayed cues.
+  3. Mobile (installed PWA): focused screen-on practice works correctly; background behavior degrades gracefully and predictably given platform audio-suspend constraints (no garbled/doubled output on return).
+  4. No regression to Phase 52 foreground behavior or the Phase 51 master-clock invariant across HRV / Stretch / Navi.
+**Plans**: TBD
+**UI hint**: no
+
 ## Progress
 
 | Milestone | Phase Range | Plans | Status | Completed |
@@ -204,7 +218,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 | v1.5 Multi-Practice | 30–35 | 27 | Complete | 2026-05-19 |
 | v2.0 New Design | 36–41, 44, 45 | 35 + 18 spike-loop items | Complete | 2026-05-25 |
 | v2.1 Kuthasta and Settings Switches | 46–48 | 11 | Complete | 2026-05-26 |
-| v2.2 Audio Sync | 49–53 | 0/TBD | In progress | — |
+| v2.2 Audio Sync | 49–54 | 0/TBD | In progress | — |
 
 ### v2.2 Phase Progress
 

@@ -40,11 +40,11 @@ blocked: 0
 ## Gaps
 
 ### GAP-52H-1 — Animation/audio desync on short-background resume (+ doubled audio)
-status: failed
+status: superseded_by_requirements_correction — DO NOT RE-DEBUG AS A PHASE-52 BUG
 source_test: 1
 observed: After backgrounding the tab < 6s and returning, the breathing animation resumes from the frozen position (clamp suppressed the burst) but remains out of sync with the audio, which progressed on the lookahead queue; the two clocks never re-converge. Audio also sounds doubled around the resume.
-hypothesis: The per-tick clamp (SCHED-01) suppresses the visual catch-up but no reanchor/resync brings the animation clock back onto the audio (master) clock — so visual and audio drift apart for the short-hidden case. The "doubled audio" may be a resume-path re-dispatch / stale-cue replay distinct from (or compounding) the steady-state boundary flam (GAP-52H-2). Needs diagnosis: is the dual-anchor invariant (Phase 51 master-clock) being re-established on the clamped resume path, or does the clamp short-circuit the reanchor?
-relates_to: SCHED-01 clamp; Phase 51 master-clock dual-anchor invariant
+root_finding (2026-05-28, debug session + operator clarification): This is NOT a Phase-52-patchable bug. It is a symptom of a requirements gap. Phase 52's clamp (D-07) deliberately FREEZES the visual clock on resume (practice-time semantics), while the lookahead keeps audio advancing in real time — so they are desynced BY DESIGN with no reconvergence path. More fundamentally, the operator's ACTUAL requirement is full-session (hours) background audio continuity on DESKTOP (see Phase 52 SC#2 "audio stops cleanly after lookahead" — that accepted criterion is WRONG vs. the real requirement). The ~6s rAF-driven lookahead architecturally cannot deliver this (rAF freezes when the tab is hidden → top-up loop dies → queue drains → silence). A patch fix was attempted this session and REVERTED (it re-anchored audio onto the frozen visual → audible cycle-restart; commit bae8aec hard-reset out). The correct resolution is a re-architecture (rAF-independent / Web Worker-driven top-up) tracked as a NEW phase, with platform-split behavior (desktop = indefinite background continuity; mobile = installed focused PWA, screen-on). See ROADMAP "Phase 54" and memory project_background_audio_full_session.
+relates_to: SCHED-01 clamp; Phase 51 master-clock dual-anchor invariant; ROADMAP Phase 52 SC#1/SC#2 (requirements correction); new background-continuity phase
 
 ### GAP-52H-2 — Audible boundary flam (M-1 / CR-01 residual / REVIEW WR-01)
 status: failed
