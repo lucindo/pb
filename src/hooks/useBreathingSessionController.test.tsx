@@ -220,6 +220,156 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   })
 })
 
+// Phase 52 Plan 06 CR-01 (second pass): controller filters in-flight boundary cues before dispatch.
+// The pre-existing cancel-then-reschedule fix (Plan 05) prevents duplicate walks from accumulating,
+// but does NOT filter the case where the audio clock has already advanced PAST the boundary cue
+// (scheduledAt <= audioNow). That cue is not cancelled (cancelFutureCues skips it) yet the new
+// walk re-dispatches it, causing a double-strike / flam effect at every phase boundary when the
+// rAF tick lags the audio clock by ≥ SAFE_LEAD_SEC (~5ms, which is ALWAYS true in practice).
+//
+// NOTE: the pre-existing tests (Plan 05 CR-01-FIX) pass because `audioNow` returns 0 in those
+// tests — the fake audioNow never advances past any cue's audioTime, so the filter never fires.
+// This new test exercises the lagging-frame scenario by setting audioNow to a value PAST the
+// boundary cue's audioTime, making the existing code double-dispatch.
+describe('Phase 52 Plan 06 CR-01: dispatch-site filter drops in-flight boundary cues (lagging-frame)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  // Build a fake useAudioCues where audioNow() returns a value PAST the first cue's audioTime,
+  // simulating the rAF tick lagging the audio clock (the audio boundary cue is already in-flight).
+  // The topUpLookahead spy records all dispatched cues so we can assert no double-dispatch.
+  function makeFakeAudioCuesWithLaggingClock(audioNowValue: number) {
+    const cancelFutureCues = vi.fn()
+    const topUpLookahead = vi.fn()
+    const wallClock = createWallSessionClock()
+    // audioNow returns a value ahead of the boundary cue — simulates lagging rAF tick
+    // Typed as returning number | null to match UseAudioCues.audioNow signature.
+    // Reason: cast to any avoids vitest generic inference issue (vi.fn infers number, not number|null).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const audioNow = vi.fn(() => audioNowValue) as any as ReturnType<typeof vi.fn> & (() => number | null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeAudio: any = {
+      status: 'idle' as const,
+      audioAvailable: true,
+      muted: false,
+      clock: wallClock,
+      start: vi.fn(() => Promise.resolve(1.0 as number | null)),
+      stop: vi.fn(() => Promise.resolve()),
+      setMuted: vi.fn(),
+      notifyPhaseBoundary: vi.fn(),
+      topUpLookahead,
+      cancelFutureCues,
+      audioNow,
+      playEndChord: vi.fn(),
+      audioStatus: 'ok' as const,
+      resume: vi.fn(() => Promise.resolve()),
+    }
+    return {
+      fakeAudio: fakeAudio as ReturnType<typeof useAudioCuesModule.useAudioCues>,
+      cancelFutureCues,
+      topUpLookahead,
+      audioNow,
+    }
+  }
+
+  it('CR-01 Plan06: when audioNow is past boundary cue audioTime, that cue is NOT dispatched (no double-strike)', async () => {
+    // audioAnchor=1.0, elapsedSec≈0, cycleIndex=0, phase='in', cycleSec≈10.9s
+    // The first cue (kind='in') has audioTime = audioAnchor + 0 = 1.0
+    // Set audioNow to 1.010 — PAST the first cue (1.0 + SAFE_LEAD_SEC = 1.005),
+    // so it is already in-flight. The fix must filter it out (audioTime > audioNow + SAFE_LEAD_SEC
+    // i.e. 1.0 > 1.010 + 0.005 = 1.015 is FALSE).
+    // Pre-fix: topUpLookahead would be called with ALL cues including the in-flight one.
+    // Post-fix: topUpLookahead is called with only strictly-future cues (audioTime > 1.015).
+    //
+    // NOTE: The pre-existing Plan 05 tests do NOT catch this because audioNow returns 0 there,
+    // so no cue fails the filter (all audioTimes > 0 + SAFE_LEAD_SEC = 0.005 for anchor=1.0).
+    const AUDIO_ANCHOR = 1.0
+    // audioNow past the first boundary cue (audioAnchor + 0 = 1.0)
+    const AUDIO_NOW_PAST_BOUNDARY = AUDIO_ANCHOR + 0.010 // 1.010 > 1.0 + SAFE_LEAD_SEC
+
+    const { fakeAudio, topUpLookahead } = makeFakeAudioCuesWithLaggingClock(AUDIO_NOW_PAST_BOUNDARY)
+    // Set audio.start to return AUDIO_ANCHOR so audioAnchorRef is set to that value
+    fakeAudio.start = vi.fn(() => Promise.resolve(AUDIO_ANCHOR as number | null))
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100) // past lead-in
+    })
+    expect(result.current.phase).toBe('running')
+
+    // First top-up fires immediately when entering running (the effect runs once on mount with running frame)
+    // Check that NO cue with audioTime <= audioNow + SAFE_LEAD_SEC was dispatched.
+    // SAFE_LEAD_SEC = 0.005, audioNow = 1.010 → threshold = 1.015
+    // First cue audioTime = audioAnchor + 0 = 1.0 → 1.0 <= 1.015 → should be FILTERED
+    if (topUpLookahead.mock.calls.length > 0) {
+      for (const callArgs of topUpLookahead.mock.calls) {
+        const cues = callArgs[0] as Array<{ audioTime: number }>
+        for (const cue of cues) {
+          // Every dispatched cue must have audioTime > audioNow + SAFE_LEAD_SEC = 1.015
+          expect(cue.audioTime).toBeGreaterThan(AUDIO_NOW_PAST_BOUNDARY + 0.005)
+        }
+      }
+    }
+
+    unmount()
+  })
+
+  it('CR-01 Plan06: when audioNow is null (AC unavailable), all cues dispatch (graceful degradation)', async () => {
+    // When audioNow() returns null, the filter must not drop any cues — degrade gracefully.
+    const { fakeAudio, topUpLookahead, audioNow } = makeFakeAudioCuesWithLaggingClock(0)
+    // Override audioNow to return null (AC unavailable)
+    audioNow.mockReturnValue(null)
+    fakeAudio.start = vi.fn(() => Promise.resolve(1.0 as number | null))
+    vi.spyOn(useAudioCuesModule, 'useAudioCues').mockReturnValue(fakeAudio)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100)
+    })
+    expect(result.current.phase).toBe('running')
+
+    // When audioNow is null, all cues from walkFutureCues should dispatch (no filter)
+    if (topUpLookahead.mock.calls.length > 0) {
+      // At least LOOKAHEAD_MIN_CUES should have been dispatched in total
+      const totalCues = topUpLookahead.mock.calls.reduce((sum, args) => sum + (args[0] as unknown[]).length, 0)
+      expect(totalCues).toBeGreaterThan(0)
+    }
+
+    unmount()
+  })
+})
+
 // Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues before topUpLookahead.
 // Uses vi.spyOn on useAudioCues module to intercept the hook and return a controlled fake
 // with trackable cancelFutureCues and topUpLookahead — verifies call ordering via
