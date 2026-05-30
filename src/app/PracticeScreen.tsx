@@ -15,11 +15,10 @@ interface PracticeScreenProps {
   vm: AppViewModel
 }
 
-/** The practice surface — the appScreen='practice' route. Anchoring per
- *  spike 010 PracticeChrome: top group (top bar → switcher → orb → variable
- *  region) anchors to viewport top; flex-1 spacer absorbs remaining vertical
- *  space; bottom group (controls → disclaimer) anchors to viewport bottom
- *  with a 16 px min-gap above Start. The orb's y-position is constant
+/** The practice surface — the appScreen='practice' route. Top group (top bar →
+ *  switcher → orb → variable region) anchors to viewport top; flex-1 spacer absorbs
+ *  remaining vertical space; bottom group (controls → disclaimer) anchors to viewport
+ *  bottom with a 16 px min-gap above Start. The orb's y-position is constant
  *  across practice × phase combinations. */
 export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)

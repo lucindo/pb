@@ -20,9 +20,9 @@ export interface BreathingPresentationInput {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
-  // Resonant pace context (always present — preserved across stretch sessions
-  // per WR-03 in sessionController). Drives the "X BPM · ratio" secondary line
-  // on HRV; the stretch path reads currentBpm + stage off the frame instead.
+  // Resonant pace context (always present — preserved across stretch sessions so
+  // the HRV session's BPM · ratio caption stays stable). Drives the "X BPM · ratio"
+  // secondary line on HRV; the stretch path reads currentBpm + stage off the frame instead.
   bpm: number
   ratio: string
 }

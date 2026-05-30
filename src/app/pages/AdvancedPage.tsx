@@ -20,8 +20,7 @@ export interface AdvancedPageProps {
 
 /** Full-page Advanced surface. Composes PageShell + TopAppBar (back
  *  chevron in the leading slot) + two SectionCards. Focuses the back
- *  chevron on mount. Changes apply live across the app via the Phase 47
- *  choice-hook setters. */
+ *  chevron on mount. Changes apply live across the app via the choice-hook setters. */
 export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
   const strings = useUiStrings().advanced
   const { orbIdle, setOrbIdle } = useOrbIdleChoice()
@@ -81,10 +80,9 @@ export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
             checked={switcherIcon}
             onChange={setSwitcherIcon}
           />
-          {/* D-09: changing this toggle mid-session does NOT rebuild the audio engine.
-              The flag is read at engine construction time (Start click / reconstruct);
-              a toggle change applies on the NEXT engine construction via the captured
-              bypassSilentModeRef in useAudioCues (Plan 02). */}
+          {/* Changing this toggle mid-session does NOT rebuild the audio engine. The flag
+              is read at engine construction time (Start click / reconstruct); a toggle
+              change applies on the next engine construction via bypassSilentModeRef. */}
           <SettingsToggleRow
             label={strings.bypassSilentMode.label}
             ariaLabel={strings.bypassSilentMode.label}

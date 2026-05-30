@@ -1,8 +1,7 @@
 // src/styles/faviconPalette.ts
 //
-// Phase 21 Plan 01: Single source of truth for per-palette favicon colors and the
-// recolor-only SVG circle template. Consumed by useFavicon (Plan 02) and the
-// favicon.sync.test.ts sync guard.
+// Single source of truth for per-palette favicon colors and the recolor-only SVG
+// circle template. Consumed by useFavicon and the favicon.sync.test.ts sync guard.
 
 import type { ThemeId } from '../domain/settings'
 
@@ -17,12 +16,10 @@ export const FAVICON_COLORS = {
   dark: '#ccd0d9',
 } as const satisfies Record<Exclude<ThemeId, 'system'>, string>
 
-// D-01: Recolor-only SVG template. J16 Mono Zen update — the breathing-rings
-// mark from spike 006 (two strokes + dot) is replaced by the new orb halo
-// structure: three concentric filled circles at decreasing opacity (0.22 →
-// 0.32 → 0.50) topped by a fully-opaque centre disc, mirroring the in-app
-// orb's 3-halo + accent-disc layout. Still single-colour: __FILL__ is the
-// only substituted value, so per-theme recolouring keeps working.
+// Recolor-only SVG template. Three concentric filled circles at decreasing opacity
+// (0.22 → 0.32 → 0.50) topped by a fully-opaque centre disc, mirroring the in-app
+// orb's 3-halo + accent-disc layout. Single-colour: __FILL__ is the only substituted
+// value, so per-theme recolouring keeps working.
 // SYNC WITH the inline favUri() SVG in index.html and public/favicon.svg.
 export const FAVICON_SVG_TEMPLATE =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
@@ -48,11 +45,10 @@ if (FAVICON_FILL_PLACEHOLDER_COUNT === 0) {
   )
 }
 
-// D-03: Produces a runtime-recolored SVG data-URI from the single template.
-// No new static per-theme files are created in public/.
-// CS-WR-01: The whole SVG payload is percent-encoded via encodeURIComponent so the
-// data-URI is RFC 2397-conformant — raw `<`, `>`, `"`, and spaces are all escaped,
-// not just the `#` in the hex color.
+// Produces a runtime-recolored SVG data-URI from the single template.
+// No static per-theme files are created in public/.
+// The whole SVG payload is percent-encoded via encodeURIComponent so the data-URI is
+// RFC 2397-conformant — raw `<`, `>`, `"`, and spaces are all escaped, not just the `#`.
 export function buildFaviconDataUri(theme: Exclude<ThemeId, 'system'>): string {
   const hex = FAVICON_COLORS[theme]
   // replaceAll — the template has multiple `__FILL__` placeholders (current

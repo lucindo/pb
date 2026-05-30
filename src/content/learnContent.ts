@@ -1,9 +1,6 @@
-// Source file authority: CONTEXT.md D-10 + Phase 19 I18N-01..07.
-// Phase 32: restructured into per-practice partition. The shared base retains
-// explainer.forrest and links.* (minus heroVideo/keyVideos which moved into
-// practices.resonant.videos). A new `practices` map holds per-practice
-// description sections and video links.
-// The locked Forrest phrase no longer appears inside forrest.body — it lives in
+// Per-practice learn content. The shared base retains explainer.forrest and links.*;
+// the `practices` map holds per-practice description sections and video links.
+// The locked Forrest phrase does not appear inside forrest.body — it lives in
 // src/content/lockedCopy.ts (LOCKED_COPY.*.inspiredByForrest) and is composed at
 // render time by the LearnPanel surface.
 
@@ -50,7 +47,7 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
     explainer: {
       forrest: {
         title: 'Who is Forrest Knutson',
-        // STRIPPED: locked Forrest phrase removed — lives in lockedCopy.ts as inspiredByForrest (Phase 19 D-04)
+        // Locked Forrest phrase lives in lockedCopy.ts as inspiredByForrest; composed at render time.
         body: "Forrest Knutson is a Kriya Yoga guru, meditation teacher, author, and online educator best known for simplifying ancient yogic and contemplative practices for modern audiences. Through his videos and teachings, he explains techniques related to breathwork, meditation, nervous system regulation, and spiritual development. His work is appreciated for combining practical instruction with clear, science-informed explanations that make complex spiritual concepts more accessible.",
       },
     },
@@ -139,7 +136,7 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
     explainer: {
       forrest: {
         title: 'Quem é Forrest Knutson',
-        // NOTE: "inspirado nos ensinamentos do Forrest" MUST NOT appear here — lives in lockedCopy.ts (Phase 19 D-04)
+        // NOTE: "inspirado nos ensinamentos do Forrest" MUST NOT appear here — lives in lockedCopy.ts as inspiredByForrest.
         body: "Forrest Knutson é um guru de Kriya Yoga, professor de meditação, autor e educador online, reconhecido por tornar práticas yóguicas e contemplativas milenares acessíveis ao público moderno. Por meio de seus vídeos e ensinamentos, ele explica técnicas de respiração, meditação, regulação do sistema nervoso e desenvolvimento espiritual. Seu trabalho é valorizado pela combinação de instrução prática com explicações claras e embasadas na ciência, tornando conceitos espirituais complexos mais compreensíveis.",
       },
     },
