@@ -11,7 +11,7 @@ export interface SessionFrame {
   readonly phaseProgress: number
   readonly cycleIndex: number
   readonly isComplete: boolean
-  // Optional stretch-only fields — undefined for standard sessions (Phase 22 Plan 01)
+  // Optional stretch-only fields — undefined for standard sessions
   readonly cycleStartSec?: number
   readonly currentCycleSec?: number
   readonly currentInhaleSec?: number
@@ -29,9 +29,9 @@ export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): Sessio
   const phaseDurationSec = isInPhase ? plan.inhaleSec : plan.exhaleSec
   const phaseProgress = phaseDurationSec === 0 ? 0 : phaseElapsedSec / phaseDurationSec
   const remainingSec = plan.totalSec === null ? null : Math.max(0, plan.totalSec - safeElapsedSec)
-  // Phase 3 fix: completion holds until the current cycle finishes so audio cues
-  // and the visual orb never get cut mid-In/mid-Out. Round the configured total up
-  // to the next cycle boundary; isComplete fires only at that boundary.
+  // Completion holds until the current cycle finishes so audio cues and the visual
+  // orb are never cut mid-In/mid-Out. The configured total is rounded up to the next
+  // cycle boundary; isComplete fires only at that boundary.
   const completionSec =
     plan.totalSec === null
       ? null
@@ -48,11 +48,8 @@ export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): Sessio
   }
 }
 
-// Phase 50-02: `formatDuration` consumes seconds-shaped values (one consumer,
-// SessionReadout.tsx, passes frame.remainingSec ?? frame.elapsedSec — both
-// seconds-shaped after the ms→sec cascade). Renamed param `sec` so the unit
-// is explicit at the call site. Test fixtures in sessionMath.test.ts likewise
-// pass seconds.
+// `formatDuration` consumes seconds-shaped values; param `sec` makes the unit
+// explicit at the call site.
 export function formatDuration(sec: number): string {
   const totalSeconds = Math.max(0, Math.floor(sec))
   const minutes = Math.floor(totalSeconds / 60)

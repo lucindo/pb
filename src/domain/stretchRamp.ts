@@ -1,15 +1,13 @@
 // src/domain/stretchRamp.ts
 //
-// Pure-domain ramp engine for BPM Stretch sessions (Phase 22).
+// Pure-domain ramp engine for BPM Stretch sessions.
 // No React, no I/O. Mirrors the sessionMath.ts / breathingPlan.ts pure-function style.
 //
 // Architecture: piecewise-constant segment table built once at session start.
 // Each segment holds a fixed BPM for its duration. getStretchFrame looks up the
 // active segment by elapsedSec and computes the frame within that segment.
-//
-// Phase 50-02 (D-02 ms→sec cascade): every time-shaped identifier in this file
-// is seconds (number). Numeric literals use 60 for whole-second computations
-// (`60 / bpm` for cycle length, `* 60` for minutes-to-seconds).
+// Every time-shaped identifier is seconds (number). Numeric literals use 60 for
+// whole-second computations (`60 / bpm` for cycle length, `* 60` for minutes-to-seconds).
 
 import type { StretchSettings } from './settings'
 import { RATIO_PARTS } from './settings'
@@ -21,8 +19,8 @@ export type StretchStage = 'hold-initial' | 'ramp' | 'hold-target'
 
 /**
  * One piecewise-constant BPM step.
- * cycleBaseIndex = cumulative cycles completed in ALL prior segments (Pitfall 1 —
- * ensures absolute monotonic cycleIndex across the full session).
+ * cycleBaseIndex = cumulative cycles completed in ALL prior segments — ensures
+ * absolute monotonic cycleIndex across the full session.
  */
 export interface StretchSegment {
   readonly startSec: number
@@ -53,7 +51,7 @@ export interface StretchSessionFrame extends SessionFrame {
 
 /**
  * Builds the piecewise-constant segment table for a stretch session.
- * D-02: accepts a single StretchSettings argument; ratio is read from settings.ratio.
+ * Accepts a single StretchSettings argument; ratio is read from settings.ratio.
  *
  * Step 1: warm-up hold at initialBpm for warmUpMinutes — snapped to whole cycles so
  *         the boundary lands on an Out→In transition (BPM never steps mid-breath).
@@ -76,26 +74,24 @@ export interface StretchSessionFrame extends SessionFrame {
  *     unchanged — only the cool-down SPAN shifts, not the cycle length.
  *
  * cycleBaseIndex on each segment = running sum of segment cycle counts for all prior
- * segments (Pitfall 1 — absolute cycleIndex never resets).
+ * segments — absolute cycleIndex never resets across the full session.
  */
 export function buildStretchSegments(settings: StretchSettings): StretchSegment[] {
   const { initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes } = settings
-  // DS-WR-02: this is an exported pure function that does not call validateSettings.
+  // This is an exported pure function that does not call validateSettings.
   // A 0, negative, or NaN rampDurationMinutes yields a degenerate or NaN/Infinity
   // segment table. Reject it defensively so the engine never silently produces a
   // poisoned table.
   if (!Number.isFinite(rampDurationMinutes) || rampDurationMinutes <= 0) {
     throw new RangeError('rampDurationMinutes must be a positive finite number')
   }
-  // CR-01 defensive guard (mirrors the rampDurationMinutes guard above): the BPM
-  // relationship must be validated up front so the engine never silently collapses
+  // Validate the BPM relationship up front so the engine never silently collapses
   // an inverted or zero-span ramp to one segment via the Math.max(1, …) numSteps
-  // floor below (defense-in-depth behind coerceStretchSettings). The !(…<…) form
-  // also trips for NaN BPMs.
+  // floor below. The !(…<…) form also trips for NaN BPMs.
   if (!(targetBpm < initialBpm)) {
     throw new RangeError('targetBpm must be strictly below initialBpm')
   }
-  // D-02: ratio is read from settings.ratio internally
+  // ratio is read from settings.ratio internally
   const ratioParts = RATIO_PARTS[settings.ratio]
   const segments: StretchSegment[] = []
   let cursorSec = 0
@@ -116,7 +112,7 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     // boundary lands on an Out→In transition (mid-cycle BPM-step bug fix).
     // When snap is false (bounded cool-down residual absorption), the requested
     // span is used verbatim — but still floored at one whole cycle so the span
-    // can never be zero or negative (WR-01: the snapping residual from prior
+    // can never be zero or negative (the snapping residual from prior
     // segments can otherwise exceed the requested cool-down span).
     const cycleCount = isOpenEnded ? 0 : Math.max(1, Math.round(requestedSec / cycleSec))
     const durationSec = isOpenEnded
@@ -147,11 +143,11 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
   // Snapped to whole cycles so the warm-up boundary lands on an Out→In transition.
   segments.push(makeSegment(initialBpm, warmUpMinutes * 60, 'hold-initial'))
 
-  // Step 2: ramp — each step is strictly < 0.5 BPM by construction (D-04, STRETCH-04).
+  // Step 2: ramp — each step is strictly < 0.5 BPM by construction.
   // Every ramp step is also snapped to whole cycles for the same Out→In boundary reason.
   // Math.max(1, …) is a defense-in-depth floor for a legitimate near-zero-span ramp
-  // (bpmSpan tiny but positive). The BPM relationship is now validated up front by the
-  // CR-01 guard above, so this floor is no longer the primary protection against an
+  // (bpmSpan tiny but positive). The BPM relationship is validated up front by the
+  // guard above, so this floor is no longer the primary protection against an
   // inverted or zero-span ramp.
   const bpmSpan = initialBpm - targetBpm
   const numSteps = Math.max(1, Math.ceil(bpmSpan / 0.4999))
@@ -175,18 +171,18 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     // snapped to a whole number of targetBpm cycles. This is produced through
     // makeSegment with { snap: false } so the segment shape, cycleSec/inhaleSec/
     // exhaleSec ratio math, and cursorSec/cumulativeCycles bookkeeping all stay
-    // owned by a single code path (WR-03 — no hand-rolled duplicate of makeSegment).
+    // owned by a single code path (no hand-rolled duplicate of makeSegment).
     //
     // makeSegment's snap:false branch floors the span at one whole cycle
     // (Math.max(cycleSec, requestedSec)) so the cool-down span can never be zero or
     // negative even when the upward snapping residual from prior segments exceeds
-    // the requested cool-down span (WR-01). The cycleSec field retains the true
+    // the requested cool-down span. The cycleSec field retains the true
     // breath-cycle length (60 / targetBpm) so getStretchFrame's
     //   Math.floor(elapsedInSec / cycleSec)
     // phase math is completely unchanged — only the span shifts; the cycle length does not.
     //
-    // Pitfall-1 invariant: cycleBaseIndex = cumulativeCycles (the running total from
-    // all prior segments) keeps the absolute monotonic cycleIndex intact.
+    // cycleBaseIndex = cumulativeCycles (the running total from all prior segments)
+    // keeps the absolute monotonic cycleIndex intact.
     const requestedTotalSec = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60
     segments.push(makeSegment(targetBpm, requestedTotalSec - cursorSec, 'hold-target', { snap: false }))
   }
@@ -201,7 +197,7 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
  *
  * Mirrors getSessionFrame in structure but uses the piecewise segment table
  * to handle variable cycle lengths. cycleIndex is absolute (session-global
- * monotonic) — never resets at segment boundaries (Pitfall 1).
+ * monotonic) — never resets at segment boundaries.
  *
  * The session's true end is the last segment's endSec — buildStretchSegments
  * already snapped every segment to a whole cycle boundary, so completion and
@@ -228,19 +224,17 @@ export function getStretchFrame(
     }
   }
 
-  // DS-WR-03 (narrowed): when safeElapsedSec lands exactly on the last bounded
-  // segment's endSec, no segment satisfies `safeElapsedSec < seg.endSec` and
-  // `activeSeg` falls through to that final segment. An unclamped
-  // `elapsedInSec` would then equal the full segment span, making
-  // `cycleInSegment` compute exactly `cycleCount` — one past the last valid
-  // index — and the completion frame would carry a phantom extra in-phase
-  // cycle. The clamp guards ONLY that exact-endSec landing: the ceiling is
-  // 0.001 sec inside the segment span (CLAMP_EPSILON_SEC — same physical
-  // quantity as the prior 1 ms guard). For any elapsed value strictly below
-  // endSec, rawElapsedInSec < segmentSpan, so the clamp has no effect and the
-  // frame advances freely through the entire final cycle (including the last
-  // exhale). Only when elapsed lands exactly on endSec is rawElapsedInSec
-  // nudged 1 ms below the boundary, keeping
+  // When safeElapsedSec lands exactly on the last bounded segment's endSec,
+  // no segment satisfies `safeElapsedSec < seg.endSec` and `activeSeg` falls
+  // through to the final segment. An unclamped `elapsedInSec` would then equal
+  // the full segment span, making `cycleInSegment` compute exactly `cycleCount`
+  // — one past the last valid index — and the completion frame would carry a
+  // phantom extra in-phase cycle. The clamp guards ONLY that exact-endSec
+  // landing: the ceiling is 0.001 sec inside the segment span (CLAMP_EPSILON_SEC).
+  // For any elapsed value strictly below endSec, rawElapsedInSec < segmentSpan,
+  // so the clamp has no effect and the frame advances freely through the entire
+  // final cycle (including the last exhale). Only when elapsed lands exactly on
+  // endSec is rawElapsedInSec nudged 1 ms below the boundary, keeping
   // Math.floor(elapsedInSec / cycleSec) on the last real cycle index.
   // This matches HRV's getSessionFrame: no mid-cycle freeze; animation and
   // countdown complete together. The open-ended segment (endSec === Infinity)
@@ -260,11 +254,10 @@ export function getStretchFrame(
   const isInPhase = cycleElapsedSec < activeSeg.inhaleSec
   const phaseElapsedSec = isInPhase ? cycleElapsedSec : cycleElapsedSec - activeSeg.inhaleSec
   const phaseDurationSec = isInPhase ? activeSeg.inhaleSec : activeSeg.exhaleSec
-  // WR-02: after the 34-10 residual-absorption rework the bounded cool-down span
-  // is no longer a whole-cycle multiple, so the final cycle in that segment is a
-  // partial cycle. If it ends mid-out-phase, phaseElapsedSec can exceed exhaleSec,
-  // pushing the raw ratio above 1.0 for elapsed values just below endSec. Clamp to
-  // [0, 1] so shape interpolation never receives an
+  // The bounded cool-down span is no longer a whole-cycle multiple, so the final
+  // cycle in that segment is a partial cycle. If it ends mid-out-phase, phaseElapsedSec
+  // can exceed exhaleSec, pushing the raw ratio above 1.0 for elapsed values just
+  // below endSec. Clamp to [0, 1] so shape interpolation never receives an
   // out-of-range progress value.
   const rawProgress = phaseDurationSec === 0 ? 0 : phaseElapsedSec / phaseDurationSec
   const phaseProgress = Math.min(1, Math.max(0, rawProgress))
@@ -301,8 +294,8 @@ export function getStretchFrame(
  * by buildStretchSegments. Returns the last segment's endSec — the same source
  * of truth that getStretchFrame's isComplete check uses — so the displayed
  * Duration agrees with the elapsed time at which the session reports complete.
- * Returns null when coolDownMinutes is 'open-ended' (D-11).
- * D-02: accepts StretchSettings (not SessionSettings).
+ * Returns null when coolDownMinutes is 'open-ended'.
+ * Accepts StretchSettings (not SessionSettings).
  */
 export function computeStretchTotalSec(settings: StretchSettings): number | null {
   if (settings.coolDownMinutes === 'open-ended') return null

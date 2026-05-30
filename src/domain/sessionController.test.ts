@@ -18,8 +18,7 @@ const baseSettings: SessionSettings = {
   durationMinutes: 10,
 }
 
-// Phase 50-02 (D-02 ms→sec cascade): numeric time values are seconds-shaped.
-// Prior ms literals (1_000 ms, 5_000 ms, etc.) divide by 1000 (1 sec, 5 sec).
+// Numeric time values are seconds-shaped.
 
 describe('session lifecycle controller', () => {
   it('locks BPM and ratio when starting so later selected settings cannot mutate the running plan', () => {
@@ -49,10 +48,9 @@ describe('session lifecycle controller', () => {
 
   it('completes timed sessions with the required message when total duration is reached', () => {
     const running = startSession({ ...baseSettings, durationMinutes: 5 }, 2)
-    // Phase 3 fix: completion holds to the next cycle boundary so cues never
-    // get cut mid-In/mid-Out. At bpm 5.5 the 5-min boundary lands mid-cycle;
-    // assert that completion does NOT fire at the raw duration mark, then fires
-    // once the surrounding cycle finishes.
+    // Completion holds to the next cycle boundary so cues are never cut mid-In/mid-Out.
+    // At bpm 5.5 the 5-min boundary lands mid-cycle; completion fires once the
+    // surrounding cycle finishes, not at the raw duration mark.
     const cycleSec = running.plan.cycleSec
     const completionSec = Math.ceil((5 * 60) / cycleSec) * cycleSec
 
@@ -100,14 +98,14 @@ describe('session lifecycle controller', () => {
     expect(() => extendTimedSession(openEnded, 60, 0)).toThrow(RangeError)
   })
 
-  it('throws RangeError for a finite durationMinutes not in DURATION_OPTIONS (D-01 allowlist boundary)', () => {
+  it('throws RangeError for a finite durationMinutes not in DURATION_OPTIONS (allowlist boundary)', () => {
     const running = startSession({ ...baseSettings, durationMinutes: 10 }, 0)
     // 7 is finite but not in DURATION_OPTIONS (which contains 5,10,15,...,60,'open-ended')
     expect(() => extendTimedSession(running, 7, 0)).toThrow(RangeError)
   })
 })
 
-describe('startSession standard-only (D-01)', () => {
+describe('startSession standard-only', () => {
   it('sets stretchSegments to null for standard sessions (regression guard)', () => {
     const running = startSession(baseSettings, 1)
     expect(running.stretchSegments).toBeNull()
@@ -122,7 +120,7 @@ describe('startSession standard-only (D-01)', () => {
   })
 })
 
-describe('startStretchSession (D-01, D-02)', () => {
+describe('startStretchSession', () => {
   const stretchSettings: StretchSettings = {
     ratio: '40:60',
     initialBpm: 6,
@@ -192,10 +190,10 @@ describe('startStretchSession (D-01, D-02)', () => {
     expect(atTotal.message).toBe('Session complete')
   })
 
-  // WR-03 regression: selectedSettings must be the caller's resonant config,
-  // NOT the synthetic lead-in. lockedSettings carries the lead-in (for the plan),
-  // selectedSettings is passed through so endSession returns the resonant config.
-  it('WR-03: selectedSettings deep-equals the passed resonant settings (NOT the lead-in)', () => {
+  // selectedSettings must be the caller's resonant config, NOT the synthetic lead-in.
+  // lockedSettings carries the lead-in (for the plan); selectedSettings is passed
+  // through so endSession returns the resonant config.
+  it('selectedSettings deep-equals the passed resonant settings (NOT the lead-in)', () => {
     const running = startStretchSession(stretchSettings, resonantSettings, 0)
     // selectedSettings must equal the resonant config (passed as second arg).
     expect(running.selectedSettings).toEqual(resonantSettings)
@@ -204,20 +202,20 @@ describe('startStretchSession (D-01, D-02)', () => {
     expect(running.selectedSettings.durationMinutes).toBe(resonantSettings.durationMinutes)
   })
 
-  it('WR-03: lockedSettings is the synthetic lead-in (bpm: initialBpm, durationMinutes: open-ended)', () => {
+  it('lockedSettings is the synthetic lead-in (bpm: initialBpm, durationMinutes: open-ended)', () => {
     const running = startStretchSession(stretchSettings, resonantSettings, 0)
     expect(running.lockedSettings.bpm).toBe(stretchSettings.initialBpm)
     expect(running.lockedSettings.durationMinutes).toBe('open-ended')
   })
 
-  it('WR-03: endSession returns idle selectedSettings equal to the original resonant settings', () => {
+  it('endSession returns idle selectedSettings equal to the original resonant settings', () => {
     const running = startStretchSession(stretchSettings, resonantSettings, 0)
     const idle = endSession(running)
     expect(idle.selectedSettings).toEqual(resonantSettings)
   })
 })
 
-describe('extendTimedSession — no mode check (D-01)', () => {
+describe('extendTimedSession — standard sessions only', () => {
   it('throws RangeError for a stretch session (stretchSegments !== null gate)', () => {
     const stretchSettings: StretchSettings = {
       ratio: '40:60',

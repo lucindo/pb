@@ -1,6 +1,6 @@
 import type { NaviKriyaSettings, OmLength } from './naviKriyaSettings'
 
-// NK_OM_SECONDS is already seconds-shaped per D-02 — no rename needed.
+// NK_OM_SECONDS values are seconds-shaped.
 export const NK_OM_SECONDS: Record<OmLength, number> = {
   fast: 1.75,
   medium: 2.16,
