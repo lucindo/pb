@@ -7,13 +7,13 @@ import {
   DEFAULT_NK_SETTINGS,
 } from './naviKriyaSettings'
 
-describe('isValidFrontCount', () => {
+describe('isValidFrontCount (D-02, Pitfall 5)', () => {
   it('returns true for valid multiples of 4: 4 (smallest), 100 (default)', () => {
     expect(isValidFrontCount(4)).toBe(true)
     expect(isValidFrontCount(100)).toBe(true)
   })
 
-  it('returns false for 102 — a positive integer that is NOT a multiple of 4 (backCount regression guard)', () => {
+  it('returns false for 102 — a positive integer that is NOT a multiple of 4 (Pitfall 5 regression guard)', () => {
     expect(isValidFrontCount(102)).toBe(false)
   })
 
@@ -37,7 +37,7 @@ describe('isValidFrontCount', () => {
   })
 })
 
-describe('isValidOmLength', () => {
+describe('isValidOmLength (D-02)', () => {
   it('returns true for all valid OmLength values: "fast", "medium", "slow"', () => {
     expect(isValidOmLength('fast')).toBe(true)
     expect(isValidOmLength('medium')).toBe(true)
@@ -58,7 +58,7 @@ describe('isValidOmLength', () => {
   })
 })
 
-describe('isValidRounds', () => {
+describe('isValidRounds (D-02)', () => {
   it('returns true for valid integers >= 1: 1 and 3', () => {
     expect(isValidRounds(1)).toBe(true)
     expect(isValidRounds(3)).toBe(true)
@@ -84,8 +84,8 @@ describe('isValidRounds', () => {
   })
 })
 
-describe('DEFAULT_NK_SETTINGS', () => {
-  it('equals the expected default object', () => {
+describe('DEFAULT_NK_SETTINGS (D-02)', () => {
+  it('equals the exact D-02 default object', () => {
     expect(DEFAULT_NK_SETTINGS).toEqual({
       frontCount: 100,
       omLength: 'medium',
