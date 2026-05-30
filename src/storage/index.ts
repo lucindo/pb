@@ -1,5 +1,5 @@
 // src/storage/index.ts
-// Public surface for Phase 4 storage. Consumers import via `from '../storage'`.
+// Public storage surface. Consumers import via `from '../storage'`.
 
 export * from './storage'
 export * from './settings'

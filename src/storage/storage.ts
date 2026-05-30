@@ -1,12 +1,11 @@
 // src/storage/storage.ts
 //
-// Phase 4 D-16/D-17: silent-fallback envelope adapter for localStorage.
-// Mirrors src/audio/audioEngine.ts's D-10 posture: every risky op is wrapped in
-// try { } catch { } and the catch swallows ALL errors. Caller continues with
-// in-memory defaults. NO warn/log in production (D-17 says it is "acceptable
-// but not required"); gate on `import.meta.env.DEV` if you add it (Open Question 1).
+// Silent-fallback envelope adapter for localStorage. Every risky op is wrapped
+// in try { } catch { } and the catch swallows ALL errors. Caller continues with
+// in-memory defaults. No warn/log in production; gate on `import.meta.env.DEV`
+// if you add logging.
 
-// WR-05: dual-versioning convention.
+// Dual-versioning convention.
 //
 // Two parallel version markers cover different schema-evolution scenarios:
 //
@@ -23,10 +22,10 @@
 //     orphaned (not user-data-loss because we never had cloud sync — they would
 //     just see defaults on first load of the new code).
 //
-// Phase 30 PRACTICE-04: the first real migration step lands here. STATE_VERSION
-// is bumped 1→2 and `migrateEnvelope` gains a v1→v2 ladder that folds a returning
-// user's flat `settings`/`stats` into the new per-practice `practices.resonant`
-// subtree. STATE_KEY is deliberately unchanged — v1 data is fully migratable.
+// STATE_VERSION is bumped 1→2 when `migrateEnvelope` gains a v1→v2 ladder that
+// folds a returning user's flat `settings`/`stats` into the per-practice
+// `practices.resonant` subtree. STATE_KEY is deliberately unchanged — v1 data
+// is fully migratable.
 //
 // Tests should NOT depend on the literal STATE_KEY string; assert through the
 // public load*/save* API where possible. Tests that DO use STATE_KEY directly
@@ -37,38 +36,36 @@
 // The FOUC script also hardcodes the `prefs.theme` JSON path; if the prefs
 // subtree ever moves (e.g. under `practices.appearance.prefs`), update the
 // FOUC script's `JSON.parse(raw).prefs` lookup too — otherwise every returning
-// user gets a data-theme="light" flash on every load (silent fallback per
-// D-17). Nothing in the build catches this desync; the link is hand-maintained.
+// user gets a data-theme="light" flash on every load. Nothing in the build
+// catches this desync; the link is hand-maintained.
 export const STATE_KEY = 'hrv:state:v1'
-// Phase 34 STRETCH-03: bumped 2→3. The v2→v3 ladder in migrateEnvelope seeds the
-// practices.stretch slice from the resonant blob and zeroes stretch stats.
+// STATE_VERSION bumped 2→3: migrateEnvelope seeds the practices.stretch slice
+// from the resonant blob and zeroes stretch stats.
 export const STATE_VERSION = 3 as const
 
 export interface StorageDeps {
-  now?: () => number       // D-18 — defaults to Date.now (consumed by stats.ts / format.ts)
+  now?: () => number       // defaults to Date.now (consumed by stats.ts / format.ts)
   storage?: Storage        // defaults to window.localStorage
 }
 
 export interface Envelope {
-  // STORAGE-01: widened from `typeof STATE_VERSION` (literal 1) to `number` so
-  // readEnvelope can surface an on-disk version > STATE_VERSION when a newer
-  // build (v2+) has written to the same key from another tab. EMPTY_ENVELOPE
-  // still compiles because STATE_VERSION (`1 as const`) is assignable to number.
-  // Per RESEARCH RQ-4 Option b, no `[k: string]: unknown` index signature is
-  // added — D-01 carries forward-compat via the runtime `...p` spread, not the
-  // static type. The static surface remains the four known fields.
+  // Widened from `typeof STATE_VERSION` (literal 1) to `number` so readEnvelope
+  // can surface an on-disk version > STATE_VERSION when a newer build has written
+  // to the same key from another tab. EMPTY_ENVELOPE still compiles because
+  // STATE_VERSION (`3 as const`) is assignable to number.
+  // Forward-compat is carried via the runtime `...p` spread, not the static type;
+  // the static surface remains the known fields.
   version: number
   settings?: unknown
   mute?: unknown
   stats?: unknown
-  // Phase 14 D-11: static type acknowledges the runtime forward-compat already proven
-  // by the prefs probe at storage.test.ts:79-99. `unknown` mirrors settings/mute/stats;
-  // coercer narrows at the boundary. Avoids storage→domain typed circular import.
+  // Static type acknowledges the runtime forward-compat proven by the prefs probe
+  // in storage.test.ts. `unknown` mirrors settings/mute/stats; coercer narrows at
+  // the boundary. Avoids storage→domain typed circular import.
   prefs?: unknown
-  // Phase 30 PRACTICE-02/04: the v2 per-practice subtree. `practices` holds a
-  // { resonant, naviKriya } map of settings+stats slices; `activePractice` is the
-  // selected practice id. Both `unknown` per Pitfall 7 — coercePractices /
-  // coerceActivePractice (src/storage/practices.ts) narrow at the boundary.
+  // The v2 per-practice subtree. `practices` holds a { resonant, naviKriya } map
+  // of settings+stats slices; `activePractice` is the selected practice id.
+  // Both `unknown` — coercePractices / coerceActivePractice narrow at the boundary.
   practices?: unknown
   activePractice?: unknown
 }
@@ -76,23 +73,21 @@ export interface Envelope {
 const EMPTY_ENVELOPE: Envelope = { version: STATE_VERSION }
 
 /**
- * DS-WR-04: explicit migrate-on-read seam.
+ * Explicit migrate-on-read seam.
  *
- * The dual-versioning comment above promises "migrate-on-read"; this function is
- * the contract. It is applied in `readEnvelope` before the envelope reaches the
- * per-field coercers. The forward-compatible top-level spread is preserved — the
- * returned envelope is a `{ ...env }` superset so unknown top-level fields written
- * by a newer build survive the read+write round-trip.
+ * Applied in `readEnvelope` before the envelope reaches the per-field coercers.
+ * The forward-compatible top-level spread is preserved — the returned envelope is
+ * a `{ ...env }` superset so unknown top-level fields written by a newer build
+ * survive the read+write round-trip.
  *
- * v1→v2 ladder (Phase 30 PRACTICE-04): when `fromVersion < 2`, a pre-existing flat
- * v1 envelope is folded into the v2 per-practice shape. The user's flat
- * `settings`/`stats` become `practices.resonant.{settings,stats}` (still `unknown`
- * — downstream coercers validate them field-by-field as always), and
- * `activePractice` is seeded to `'resonant'`. The flat `settings`/`stats` fields
- * are deliberately NOT deleted: the forward-compat spread preserves them as
- * harmless orphans, keeping the migration lossless. naviKriya is intentionally
- * absent so coercePractices supplies defaults. The ladder is idempotent — a v2
- * envelope (`fromVersion >= 2`) skips the step and passes through unchanged.
+ * v1→v2 ladder: when `fromVersion < 2`, a pre-existing flat v1 envelope is folded
+ * into the v2 per-practice shape. The user's flat `settings`/`stats` become
+ * `practices.resonant.{settings,stats}` (still `unknown` — downstream coercers
+ * validate them field-by-field as always), and `activePractice` is seeded to
+ * `'resonant'`. The flat `settings`/`stats` fields are deliberately NOT deleted:
+ * the forward-compat spread preserves them as harmless orphans, keeping the
+ * migration lossless. naviKriya is intentionally absent so coercePractices
+ * supplies defaults. The ladder is idempotent — a v2 envelope skips the step.
  */
 export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
   let out: Envelope = { ...env }
@@ -115,7 +110,7 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
     // Seed settings from the resonant blob (still unknown — coerceStretchSettings validates downstream).
     // Leave the resonant blob untouched — orphan fields are fine (v1→v2 precedent).
     // CRITICAL: Do NOT import ZERO_STATS from stats.ts — stats.ts imports from storage.ts,
-    //           creating a circular dep. Use the inline literal instead (RESEARCH Pitfall 1).
+    //           creating a circular dep. Use the inline literal instead.
     const existingPractices = (out.practices ?? {}) as Record<string, unknown>
     const resonantSlice = (existingPractices['resonant'] ?? {}) as Record<string, unknown>
     const resonantSettings = resonantSlice['settings']  // unknown — coerceStretchSettings validates downstream
@@ -147,45 +142,37 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
     if (raw === null) return { ...EMPTY_ENVELOPE }
     const parsed: unknown = JSON.parse(raw)
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      // STORAGE-01 / D-01: forward-compatible read.
+      // Forward-compatible read.
       //   - Spread `p` FIRST so unknown top-level fields written by a future
-      //     build (e.g. a v2 envelope's new top-level subtree) survive the
-      //     round-trip. Earlier code (CR-01) picked only the known subtree
-      //     keys — that silently discarded forward-compatible fields and broke
-      //     the "newer build wrote here, older build is reading" invariant we
-      //     now lock with STORAGE-02 on the write side.
+      //     build survive the round-trip. Earlier code picked only the known
+      //     subtree keys — that silently discarded forward-compatible fields and
+      //     broke the "newer build wrote here, older build is reading" invariant
+      //     locked by the write-side guard in writeEnvelope.
       //   - Then override `version` with the on-disk numeric value (or fall
       //     back to STATE_VERSION when absent / non-numeric) using
-      //     `Number.isFinite` per RESEARCH §"Recommended Implementation
-      //     Approach". The override pins `version` to the disk value so the
-      //     downstream writeEnvelope guard (D-04a / STORAGE-02) can detect a
-      //     future-schema envelope and refuse to downgrade it.
+      //     `Number.isFinite`. The override pins `version` to the disk value so
+      //     the downstream writeEnvelope guard can detect a future-schema
+      //     envelope and refuse to downgrade it.
       //   - The `version: onDiskVersion` override anchors the return shape
       //     to Envelope (`version: number` is the one required field); the
-      //     spread already carries the four known subtree fields through
-      //     when present on disk, and absent fields stay absent (no
-      //     `undefined`-valued own-property is introduced — the post-spread
-      //     shape matches EMPTY_ENVELOPE for first-load reads).
-      //   - D-02 invariant: subtree coercers (coerceSettings / coerceMute /
-      //     coerceStats in src/storage/{settings,mute,stats}.ts) still strip
-      //     unknown sub-keys downstream — forward-compat is top-level ONLY.
-      //   - Pitfall 3: do NOT revert to a pick-only-known-keys return shape;
-      //     that breaks STORAGE-01 contract and the storage.test.ts
-      //     "preserves on-disk version when reading" case will fail.
+      //     spread already carries the known subtree fields through when present
+      //     on disk, and absent fields stay absent.
+      //   - Subtree coercers (coerceSettings / coerceMute / coerceStats) still
+      //     strip unknown sub-keys downstream — forward-compat is top-level ONLY.
+      //   - Do NOT revert to a pick-only-known-keys return shape; that breaks the
+      //     forward-compat contract and the "preserves on-disk version" test.
       const p = parsed as Record<string, unknown>
       const onDiskVersion =
         typeof p.version === 'number' && Number.isFinite(p.version)
           ? p.version
           : STATE_VERSION
-      // DS-WR-04: route every on-disk read through the explicit migration seam
-      // so the migrate-on-read contract is structurally present and testable.
-      // No-op passthrough for v1; the seam preserves the forward-compatible
-      // top-level spread.
+      // Route every on-disk read through the explicit migration seam so the
+      // migrate-on-read contract is structurally present and testable.
       return migrateEnvelope({ ...p, version: onDiskVersion }, onDiskVersion)
     }
     return { ...EMPTY_ENVELOPE }
   } catch {
-    // D-17: read failures silent (corrupt JSON, throwing getItem in Safari ITP)
+    // Read failures silent (corrupt JSON, throwing getItem in Safari ITP).
     return { ...EMPTY_ENVELOPE }
   }
 }
@@ -193,45 +180,42 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
 export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
   const storage = deps.storage ?? window.localStorage
   try {
-    // STORAGE-02 / D-04a: inline re-read guards against the cross-tab race
-    // where another tab running a NEWER build (v2+) wrote a future-schema
-    // envelope between this tab's caller-side read and this write. The guard
-    // refuses to silently downgrade by overwriting that envelope with v1
-    // data, which would corrupt the newer tab's view on its next read.
+    // Inline re-read guards against the cross-tab race where another tab running
+    // a NEWER build wrote a future-schema envelope between this tab's read and
+    // this write. The guard refuses to silently downgrade by overwriting that
+    // envelope with older data, which would corrupt the newer tab's view on its
+    // next read.
     //
-    // D-03: silent refusal — no warn, no DEV-mode branch, no toast.
-    // A debugging developer cannot distinguish refusal from a D-16 quota
-    // failure; both yield "RAM state authoritative, disk may not have
-    // synced" semantics for the running app (WR-08 posture).
+    // Silent refusal — no warn, no DEV-mode branch, no toast. A debugging
+    // developer cannot distinguish refusal from a quota failure; both yield
+    // "RAM state authoritative, disk may not have synced" semantics.
     //
-    // Scope: this addresses the CROSS-tab newer-version race only. The
-    // in-tab WR-07 increment race (concurrent recordSession calls in the
-    // same tab) remains documented v1.x debt — STORAGE-03 handles only the
-    // UI consistency half of cross-tab sync.
+    // Scope: addresses the CROSS-tab newer-version race only. The in-tab
+    // concurrent recordSession race is documented v1.x debt — the storage-event
+    // listener in App.tsx handles only the UI consistency half of cross-tab sync.
     //
-    // Residual TOCTOU window: the inner re-read narrows but does NOT close
-    // the cross-tab race. Between the inner storage.getItem (below) and the
-    // outer storage.setItem, another tab running a newer build can still
-    // commit a future-schema envelope; this tab's stale currentVersion read
-    // returns the older number, the guard does not fire, and the older
-    // payload overwrites the newer envelope. Closing this fully would
-    // require BroadcastChannel-coordinated locking or the Web Locks API
-    // (deferred). The guard is best-effort, not transactional.
+    // Residual TOCTOU window: the inner re-read narrows but does NOT close the
+    // cross-tab race. Between the inner storage.getItem (below) and the outer
+    // storage.setItem, another tab running a newer build can still commit a
+    // future-schema envelope; this tab's stale currentVersion read returns the
+    // older number, the guard does not fire, and the older payload overwrites the
+    // newer envelope. Closing this fully would require BroadcastChannel-coordinated
+    // locking or the Web Locks API (deferred). The guard is best-effort, not
+    // transactional.
     //
-    // User-facing failure mode: an older build loaded after a newer build
-    // has written a future-version envelope (browser cache, stale SW, bfcache)
+    // User-facing failure mode: an older build loaded after a newer build has
+    // written a future-version envelope (browser cache, stale SW, bfcache)
     // short-circuits at the currentVersion > STATE_VERSION check below — every
     // user action that calls a save*/record* function is silently discarded.
     // QA/UAT should clear localStorage between builds when downgrading. A
-    // DEV-only console.warn at the short-circuit site (gated on
-    // import.meta.env.DEV) signals the situation to developers; production
-    // stays silent per D-03/D-17.
+    // DEV-only console.warn at the short-circuit site signals the situation to
+    // developers; production stays silent.
     //
-    // Pitfall 1: the inner re-read MUST live in its OWN nested try/catch.
-    // If the inner getItem throws (Safari ITP / private mode) and we let
-    // the outer D-16 catch swallow it, the entire write is silently skipped
-    // — wrong outcome. The guard must be fail-open: when we cannot read the
-    // disk version, assume STATE_VERSION and proceed with the write.
+    // The inner re-read MUST live in its OWN nested try/catch. If the inner
+    // getItem throws (Safari ITP / private mode) and we let the outer catch
+    // swallow it, the entire write is silently skipped — wrong outcome. The guard
+    // must be fail-open: when we cannot read the disk version, assume STATE_VERSION
+    // and proceed with the write.
     let currentVersion: number = STATE_VERSION
     try {
       const raw = storage.getItem(STATE_KEY)
@@ -243,13 +227,10 @@ export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
         }
       }
     } catch {
-      // D-17 posture: treat throw/corrupt as "no version info"; proceed.
+      // Treat throw/corrupt as "no version info"; proceed with write.
     }
     if (currentVersion > STATE_VERSION) {
-      // DEV-only signal so developers can spot a downgrade-after-upgrade in
-      // the console. Open Question 1 at the top of this file invited this
-      // DEV warn; production stays silent per D-03/D-17 (RAM state
-      // authoritative).
+      // DEV-only signal so developers can spot a downgrade-after-upgrade.
       if (import.meta.env.DEV) {
         console.warn(
           `[storage] refusing to overwrite on-disk envelope v${String(currentVersion)} ` +
@@ -259,12 +240,11 @@ export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
       }
       return
     }
-    // D-04: this build stamps STATE_VERSION on every successful write.
-    // Caller-passed `env.version` is structurally ignored (the spread is
-    // overridden by the explicit `version: STATE_VERSION` key).
+    // Stamp STATE_VERSION on every successful write. Caller-passed `env.version`
+    // is structurally ignored (the spread is overridden by the explicit key).
     const payload = JSON.stringify({ ...env, version: STATE_VERSION })
     storage.setItem(STATE_KEY, payload)
   } catch {
-    // D-16: write failures silent (quota, ITP, private mode).
+    // Write failures silent (quota, ITP, private mode).
   }
 }
