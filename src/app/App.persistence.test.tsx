@@ -37,17 +37,16 @@ function seedEnvelope(opts: SeedOpts = {}) {
   }))
 }
 
-// Phase 30: after the v1→v2 migration the authoritative resonant stats live at
-// env.practices.resonant.stats — recordResonantSession
-// writes here, not the flat env.stats orphan. This helper extracts that subtree.
+// After the v1→v2 migration, the authoritative resonant stats live at
+// env.practices.resonant.stats — recordResonantSession writes here, not env.stats.
 function resonantStatsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
   const practices = env?.['practices'] as Record<string, unknown> | undefined
   const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
   return resonant?.['stats'] as Record<string, unknown> | undefined
 }
 
-// CR-01 (Phase 31): resonant settings now persist to practices.resonant.settings
-// via saveResonantSettings — NOT the legacy flat env.settings write path.
+// Resonant settings persist to practices.resonant.settings via saveResonantSettings —
+// not the legacy flat env.settings write path.
 function resonantSettingsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
   const practices = env?.['practices'] as Record<string, unknown> | undefined
   const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
@@ -90,7 +89,7 @@ describe('LOCL-01 — restoration on mount', () => {
     expect(screen.getByText('5.5 BPM')).toBeInTheDocument()
     expect(screen.getByText('40:60')).toBeInTheDocument()
     expect(screen.getByText('10 min')).toBeInTheDocument()
-    // Default mute is false (D-07) — aria-label "Mute audio cues"
+    // Default mute is false — aria-label "Mute audio cues"
     expect(screen.getByRole('button', { name: 'Mute audio cues' })).toBeInTheDocument()
   })
 })
@@ -131,7 +130,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
     // Run past 5 minutes — the engine flips to 'complete'.
-    // Advance an extra minute so the surrounding cycle finishes (Phase 3 fix).
+    // Advance an extra minute so the surrounding cycle finishes.
     await advanceTime(6 * 60_000)
     const env = readRawEnvelope()
     const stats = resonantStatsOf(env)
@@ -163,7 +162,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' } })
     render(<App />)
     await startAndAdvancePastLeadIn()
-    await advanceTime(10_000)  // 10s elapsed — below 30s threshold (D-01)
+    await advanceTime(10_000)  // 10s elapsed — below 30s threshold
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
     const env = readRawEnvelope()
@@ -178,9 +177,9 @@ describe('LOCL-02 — stats record on each end path', () => {
       await Promise.resolve()
       vi.advanceTimersByTime(1000)  // mid-lead-in (1 of 3 seconds)
     })
-    // Re-click during lead-in cancels per onStartClick cancel branch (D-03)
-    // session.status is still 'idle' so runningSnapshotRef was never populated
-    // Button label is 'Cancel' during lead-in (Phase 20 LEAD-01).
+    // Re-click during lead-in cancels; session.status is still 'idle' so
+    // runningSnapshotRef was never populated.
+    // Button label is 'Cancel' during lead-in.
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await advanceTime(0)
     const env = readRawEnvelope()
@@ -203,13 +202,10 @@ describe('LOCL-02 — stats record on each end path', () => {
 })
 
 // ---------------------------------------------------------------------------
-// PRACTICE-02 — Resonant settings survive remount (Phase 33 gap closure)
+// PRACTICE-02 — Resonant settings survive remount.
 //
-// These tests verify the read-path fix from Phase 33: App.tsx seeds
-// initialSettings from loadPractices().resonant.settings (per-practice
-// envelope), NOT the abandoned flat env.settings field. Both scenarios
-// would FAIL if Task 1's change were reverted (i.e., if loadSettings()
-// were restored).
+// Verifies that App.tsx seeds initialSettings from loadPractices().resonant.settings
+// (per-practice envelope), NOT the abandoned flat env.settings field.
 // ---------------------------------------------------------------------------
 
 // Seed a v2 envelope directly — flat env.settings is absent (fresh-v2 user).
@@ -242,7 +238,7 @@ describe('PRACTICE-02 — resonant settings survive remount', () => {
     // Simulate a user who: (1) migrated from v1 (flat env.settings = stale BPM 6),
     // then (2) changed settings (saveResonantSettings wrote BPM 4 to practices.resonant).
     // The flat env.settings is now a stale orphan; the read-path must prefer the
-    // per-practice value (D-04).
+    // The read-path must prefer the per-practice value.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
       version: 2,
       settings: { bpm: 6, ratio: '40:60', durationMinutes: 10 },  // stale orphan

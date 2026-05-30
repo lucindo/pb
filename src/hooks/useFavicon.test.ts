@@ -128,7 +128,7 @@ describe('useFavicon', () => {
     renderHook(() => { useFavicon() })
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
 
-    // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
+    // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
       prefs: { theme: 'light', timbre: 'bowl', locale: 'en' },

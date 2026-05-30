@@ -77,9 +77,8 @@ describe('coerceSettings (D-15)', () => {
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
   })
 
-  // Phase 34 D-01/D-02: coerceSettings is now standard-only (3 fields).
-  // Stretch ramp fields (mode, initialBpm, targetBpm, warmUpMinutes, coolDownMinutes,
-  // rampDurationMinutes) have moved to coerceStretchSettings in practices.ts.
+  // coerceSettings is standard-only (3 fields). Stretch ramp fields (mode, initialBpm,
+  // targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes) live in coerceStretchSettings.
   it('returns exactly { bpm, ratio, durationMinutes } — no mode or ramp fields present', () => {
     // A raw blob carrying old stretch fields should produce only the 3 standard fields.
     const rawWithRampFields = {

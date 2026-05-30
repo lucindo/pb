@@ -1,10 +1,9 @@
 // src/styles/theme.contrast.test.ts
 //
-// J4: scoped to role-pair contrast checks (accent-strong vs on-accent for primary CTA
+// Scoped to role-pair contrast checks (accent-strong vs on-accent for primary CTA
 // readability; destructive vs destructive-on for End-session button). The historical
-// orb-in vs orb-out gradient midpoint test (THEME-05 / D-14) was removed when the
-// orb body redesign replaced the in/out crossfade with halo layers + a single
-// centre disc — the primitive it asserted no longer exists.
+// orb-in vs orb-out gradient midpoint test was removed when the orb body redesign
+// replaced the in/out crossfade with halo layers + a single centre disc.
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -17,7 +16,7 @@ import { resolve } from 'node:path'
 
 import { THEME_OPTIONS, type ThemeId } from '../domain/settings'
 
-// Inline helpers — D-18 (no new deps)
+// Inline helpers (no new deps)
 
 function srgbToLinear(c: number): number {
   // WCAG 2.x canonical formula uses 0.03928 threshold (NOT IEC 0.04045)
@@ -81,11 +80,9 @@ function contrastRatio(
   return (bright + 0.05) / (dark + 0.05)
 }
 
-// Theme.css injection — D-15 / RESEARCH §"jsdom Cascade Probe"
-// jsdom 29.1.1 does NOT recognize Tailwind v4's @theme at-rule (silently drops declarations).
-// Rewrite @theme { -> :root { before injection to make cascade work correctly.
-// Also, getComputedStyle(div).background returns var() UNRESOLVED in jsdom — read CSS variables
-// directly from documentElement instead (empirically verified in research session 2026-05-12).
+// Theme.css injection: jsdom does not recognize Tailwind v4's @theme at-rule, so we rewrite
+// @theme { -> :root { before injection. getComputedStyle(div).background returns var() UNRESOLVED
+// in jsdom — read CSS variables directly from documentElement instead.
 let styleEl: HTMLStyleElement
 
 beforeAll(() => {
@@ -112,23 +109,21 @@ function readToken(token: string): [number, number, number] {
   return parseColorToRgb(value)
 }
 
-// D-16: skip 'system' — it has no CSS branch per S-01; JS resolves to 'light' or 'dark' at runtime
+// Skip 'system' — it has no CSS branch; JS resolves to 'light' or 'dark' at runtime
 const CONCRETE_THEMES = THEME_OPTIONS.filter(
   (t): t is Exclude<ThemeId, 'system'> => t !== 'system',
 )
 
-// J4: the reduced-motion in/out gradient midpoint-contrast test was removed.
-// The orb body is now halos + centre disc (Phase 41 J4, commit a742c0b); the
-// gradient crossfade it asserted no longer exists in the codebase. Phase
-// distinction comes from the inner-ring opacity fade gated by `showRings`.
-// The accent-strong / on-accent and destructive-contrast tests below remain
-// meaningful and unchanged.
+// The reduced-motion in/out gradient midpoint-contrast test was removed.
+// The orb body is now halos + centre disc; the gradient crossfade it asserted no
+// longer exists. Phase distinction comes from the inner-ring opacity fade gated by `showRings`.
+// The accent-strong / on-accent and destructive-contrast tests below remain meaningful.
 
 describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
   it('accent-strong vs on-accent contrast ratio is >= 1.5 (D-01)', () => {
-    // Phase 16.1 D-01: new --color-breathing-on-accent token is the foreground role
-    // when sitting on a --color-breathing-accent-strong background (e.g. primary
-    // action button in SessionActionRow). The ≥ 1.5 floor matches THEME-05.
+    // --color-breathing-on-accent is the foreground role on a --color-breathing-accent-strong
+    // background (e.g. primary action button in SessionActionRow). The ≥ 1.5 floor is the
+    // minimum acceptable contrast for this pairing.
     if (themeId === 'light') {
       delete document.documentElement.dataset.theme
     } else {

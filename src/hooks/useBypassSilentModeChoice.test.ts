@@ -1,5 +1,4 @@
-// src/hooks/useBypassSilentModeChoice.test.ts — Phase 49.1 Plan 01 Task 3: paste-and-rename from
-// useSwitcherIconChoice.test.ts. All 6 tests from the analog + explicit default-on (true) contract test.
+// src/hooks/useBypassSilentModeChoice.test.ts
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'

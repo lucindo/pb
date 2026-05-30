@@ -1,12 +1,7 @@
 // src/styles/theme.no-hardcoded-classes.test.ts
 //
-// Phase 16.1 THEME-UI-01 / D-04: regression guard — no production .tsx file
-// references the 10 banned hardcoded Tailwind palette utilities. Long-term safety net
-// for Phase 17/18/19 to prevent silent re-introduction of theme-blind colors.
-//
-// Status: GREEN as of Phase 16.1 close (plan 07). The guard is active on every commit
-// — any future re-introduction of one of the 10 banned patterns in production .tsx
-// fails CI. Long-term safety net for Phase 17/18/19.
+// Regression guard: no production .tsx file may reference the 10 banned hardcoded
+// Tailwind palette utilities. Any re-introduction of these patterns fails CI.
 
 /// <reference types="node" />
 
@@ -14,7 +9,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 
-// CONTEXT.md D-04: the 10 banned regex patterns (authoritative for both migration AND guard).
+// The 10 banned regex patterns:
 const BANNED_PATTERNS: ReadonlyArray<readonly [string, RegExp]> = [
   ['text-slate-N', /\btext-slate-[0-9]/],
   ['bg-slate-N', /\bbg-slate-[0-9]/],
@@ -28,14 +23,13 @@ const BANNED_PATTERNS: ReadonlyArray<readonly [string, RegExp]> = [
   ['bg-black', /\bbg-black\b/],
 ]
 
-// CONTEXT.md D-04: exclude *.test.tsx, *.stories.tsx, and src/themes/** (token defs).
-// PATTERNS.md §3: walker is shape-identical to the recursive scan in theme.contrast.test.ts.
+// Exclude *.test.tsx, *.stories.tsx, and src/themes/** (token defs).
 function collectTsxFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry)
     const st = statSync(full)
     if (st.isDirectory()) {
-      if (entry === 'themes') continue // src/themes/** exclusion (D-04)
+      if (entry === 'themes') continue // src/themes/** exclusion
       collectTsxFiles(full, acc)
     } else if (
       entry.endsWith('.tsx') &&

@@ -1,5 +1,4 @@
-// Tests for the useAudioCues React hook (Plan 03-02).
-// Source: 03-02-PLAN.md <behavior> tests 1-10.
+// Tests for the useAudioCues React hook.
 // Mirrors the renderHook + act idiom from useSessionEngine.test.tsx.
 
 import { act, renderHook } from '@testing-library/react'
@@ -11,7 +10,7 @@ import * as audioEngineModule from '../audio/audioEngine'
 import * as cueSynth from '../audio/cueSynth'
 import { useAudioCues } from './useAudioCues'
 
-// Phase 50-02 (D-02 ms→sec cascade): BreathingPlan fixture is seconds-shaped.
+// BreathingPlan fixture is seconds-shaped.
 const samplePlan: BreathingPlan = {
   bpm: 5.5,
   ratio: '40:60',
@@ -93,7 +92,6 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -225,7 +223,7 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
+      // engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -265,7 +263,6 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -306,7 +303,7 @@ describe('useAudioCues', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(() => ({ gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn(), cancelAndHoldAtTime: vi.fn() }, connect: vi.fn().mockReturnThis(), disconnect: vi.fn() }))
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
+      // engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -373,7 +370,7 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
     await act(async () => {
       await result.current.start(samplePlan, 'bowl')
     })
-    // Reset spy call count after start() which may call resume() internally (WR-06 path).
+    // Reset spy call count after start() which may call resume() internally.
     resumeSpy.mockClear()
     // Model iOS unlock: visibilityState flips to 'visible', visibilitychange fires.
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
@@ -410,7 +407,7 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
       .spyOn(SpyableAC.prototype, 'resume')
       .mockRejectedValueOnce(new Error('iOS veto'))
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
-    // The act() must NOT throw — silent absorption per D-09.
+    // The act() must NOT throw — resume rejection is silently absorbed.
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
       await Promise.resolve()
@@ -444,15 +441,15 @@ describe('useAudioCues — visibility resume (Phase 5.1 D-01..D-09)', () => {
 })
 
 describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1 Plan 06 D-34/D-35/D-37/D-41)', () => {
-  // Extended SpyableAC for Plan 06: adds 'interrupted' state, real statechange
-  // registry, _simulateInterrupted, _simulateResumeReject, and tracks construction
-  // count for reconstruction-path assertions. resume/close stay as regular methods
-  // (Pattern E) so vi.spyOn(SpyableAC.prototype, 'resume') intercepts calls.
+  // Extended SpyableAC: adds 'interrupted' state, real statechange registry,
+  // _simulateInterrupted, _simulateResumeReject, and tracks construction count
+  // for reconstruction-path assertions. resume/close stay as regular methods
+  // so vi.spyOn(SpyableAC.prototype, 'resume') intercepts calls.
   let constructed = 0
   class SpyableAC {
     // Track the most recently constructed instance so prototype-spy tests can
-    // reach the live AC the engine is holding (used by D-41 (d) closed-transition
-    // discriminating assertion). reset() clears both the count and the reference.
+    // Tracks the most recently constructed instance for prototype-spy tests.
+    // reset() clears both the count and the reference.
     static lastInstance: SpyableAC | null = null
     static reset() { constructed = 0; SpyableAC.lastInstance = null }
     state: AudioContextState | 'interrupted' = 'running'
@@ -512,8 +509,6 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     vi.restoreAllMocks()
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
   })
-
-  // D-41 four-state matrix:
 
   it("D-41 (a): 'running' state — audioStatus stays 'ok' after visibility resume succeeds", async () => {
     SpyableAC.reset()
@@ -576,8 +571,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
       await Promise.resolve() // settle the rejection
     })
     // visibilityResumeAttemptedRef is armed; engine swallowed the reject and fired the
-    // synthetic suspend event via clock.notifySuspended() (revision 2 Blocker #1 / Plan 06
-    // D-38 InvalidStateError branch); handleSuspend flipped audioStatus to 'needs-resume'.
+    // synthetic suspend event via clock.notifySuspended(); handleSuspend flipped audioStatus to 'needs-resume'.
     expect(result.current.audioStatus).toBe('needs-resume')
     await act(async () => { await result.current.stop() })
     unmount()
@@ -592,13 +586,11 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     expect(result.current.audioStatus).toBe('ok')
 
     // Drive a synthetic 'closed' statechange dispatch on the live AC instance via
-    // a prototype-level spy on dispatchStateChange (same SpyableAC pattern as D-41 (c)).
-    // The spy flips this.state to 'closed' and then invokes every registered
-    // 'statechange' listener — the engine's listener forwards to the hook's
-    // handleStateChange, which MUST flip audioStatus to 'unavailable' on 'closed'.
-    // We assert that transition DIRECTLY, BEFORE stop() runs (stop() resets to 'ok').
-    // This makes the test discriminating: it FAILS if the close→unavailable branch
-    // in handleStateChange is removed (D-41 contract).
+    // Spy on dispatchStateChange: flips this.state to 'closed' and invokes every
+    // registered 'statechange' listener. The engine's listener forwards to the hook's
+    // handleStateChange, which must flip audioStatus to 'unavailable' on 'closed'.
+    // We assert that transition BEFORE stop() runs (stop() would reset to 'ok'),
+    // making the test discriminating: it fails if the close→unavailable branch is removed.
     vi.spyOn(SpyableAC.prototype, 'dispatchStateChange').mockImplementationOnce(function (this: SpyableAC) {
       this.state = 'closed'
       // Reason: accessing private _listeners map through any cast to simulate state-change dispatch in closed spy.
@@ -629,8 +621,6 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     unmount()
   })
 
-  // D-33 / D-35 / D-35b reconstruction tests:
-
   it("public resume() falls back to reconstruction when engine.resume rejects again (D-33)", async () => {
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
@@ -638,7 +628,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     const { result, unmount } = renderHook(() => useAudioCues(false, reanchorSpy))
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
     const initialConstructed = constructed
-    // Drive audioStatus to 'needs-resume' via the same path as D-41 (c).
+    // Drive audioStatus to 'needs-resume'.
     // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
     // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
@@ -740,17 +730,15 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     })
     // audioStatus should be 'ok' (resume succeeded; no reconstruction).
     expect(result.current.audioStatus).toBe('ok')
-    // onReanchorRequired must NOT have been called — D-06 preserved on plain resume.
+    // onReanchorRequired must NOT have been called on plain resume success.
     expect(reanchorSpy).not.toHaveBeenCalled()
     await act(async () => { await result.current.stop() })
     unmount()
   })
 
-  // Post-UAT regression guard (real-iPhone Plan 06 Task 8 cycle 2 — kitchen-sink fix
-  // 2026-05-10). The diagnostic proved plain resume() on iOS Safari returns
-  // state='running' but the audio session is dead (AC.currentTime stuck, cues never
-  // fire, beep test silent). The recovery path now ALWAYS reconstructs a fresh AC
-  // inside the gesture context — never relies on engine.resume() to restore the AC.
+  // Regression guard: plain resume() on iOS Safari returns state='running' but the audio
+  // session is dead (AC.currentTime stuck, cues never fire). The recovery path always
+  // reconstructs a fresh AC inside the gesture context — never relies on engine.resume().
   it("public resume() always reconstructs a fresh AC (kitchen-sink fix for iOS state-lies bug)", async () => {
     SpyableAC.reset()
     vi.stubGlobal('AudioContext', SpyableAC)
@@ -759,8 +747,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
     const initialConstructed = constructed
 
-    // Drive audioStatus to 'needs-resume' via the visibility-handler optimistic
-    // resume() rejecting (matches the device-confirmed Plan 06 Task 8 trace).
+    // Drive audioStatus to 'needs-resume' via the visibility-handler optimistic resume() rejecting.
     // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
     // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
@@ -779,11 +766,9 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     })
     expect(result.current.audioStatus).toBe('needs-resume')
 
-    // Gesture-attached public resume() — kitchen-sink fix means this ALWAYS
-    // reconstructs a fresh AC. The bug being guarded against: previously the
-    // hook tried engine.resume() first, which on iOS appeared to succeed but
-    // left the AC clock dead. Now we skip engine.resume() entirely and go
-    // straight to reconstruction.
+    // Gesture-attached public resume() always reconstructs a fresh AC.
+    // Previously the hook tried engine.resume() first, which on iOS appeared to succeed
+    // but left the AC clock dead. Now reconstruction is unconditional.
     await act(async () => {
       await result.current.resume()
       await Promise.resolve()
@@ -791,7 +776,7 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
 
     // Exactly one new AC must have been constructed (reconstruction fired).
     expect(constructed).toBe(initialConstructed + 1)
-    // Re-anchor callback fired with new AC's currentTime (D-35).
+    // Re-anchor callback must fire with the new AC's currentTime.
     expect(reanchorSpy).toHaveBeenCalledTimes(1)
     // Reason: length asserted by toHaveBeenCalledTimes(1) immediately above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -810,11 +795,9 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     // on a controllable promise. The start() call (#1) completes synchronously with a
     // fake engine. The reconstruct call parks until we resolve it.
     const newEngineClose = vi.fn(async () => {})
-    // Phase 50 D-11 + revision 1 Blocker #1: every fake engine MUST expose a `clock`
-    // member with onResume/onSuspend/onClose returning no-op unsubscribes, because
-    // useAudioCues.start() / reconstructEngine() subscribe to all three channels right
-    // after createAudioEngine resolves. Returning a no-op unsub keeps the orphaned-engine
-    // bail path quiet without simulating statechange fan-out (irrelevant to this test).
+    // Every fake engine must expose a `clock` member with onResume/onSuspend/onClose
+    // returning no-op unsubscribes, because start() / reconstructEngine() subscribe to
+    // all three channels right after createAudioEngine resolves.
     const makeFakeClock = (): unknown => ({
       now: vi.fn(() => 0),
       schedule: vi.fn(),
@@ -933,15 +916,14 @@ describe('useAudioCues — audioStatus state machine + reconstruction (Phase 5.1
     expect(result.current.audioStatus).toBe('ok')
 
     // Dispatch a synthetic 'closed' statechange on the last AC instance AFTER stop().
-    // Phase 50 D-11 + revision 1 Blocker #1: stop() tore down the clock subscriptions
-    // before nulling engineRef, so the clock's fan-out reaches an EMPTY subscriber Set —
-    // handleClose is never invoked. The handler's internal engineRef-null gate is layered
-    // defense; the primary mechanism is unsubscribe-before-null.
+    // stop() tears down clock subscriptions before nulling engineRef, so the clock's
+    // fan-out reaches an empty subscriber set — handleClose is never invoked.
+    // The engineRef-null gate is layered defense; the primary mechanism is unsubscribe-before-null.
     await act(async () => {
       const live = SpyableAC.lastInstance as SpyableAC
       // dispatchStateChange fires every registered 'statechange' listener on the AC.
       // The clock's listener is still attached (it owns the AC's statechange listener per
-      // Plan 50-01), but its subscriber Sets are empty post-stop().
+      // but its subscriber Sets are empty post-stop().
       live.dispatchStateChange()
       await Promise.resolve()
       await Promise.resolve()
@@ -962,7 +944,7 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     vi.restoreAllMocks()
   })
 
-  // AUDIO-06: AudioStatus union excludes "starting" (D-07 type-level lock)
+  // AUDIO-06: AudioStatus union excludes "starting" (type-level lock)
   it("AUDIO-06: AudioStatus union excludes 'starting' (D-07)", () => {
     // TypeScript-level lock: if 'starting' is reintroduced into AudioStatus, the type
     // assertion below fails to compile (TS2322: type 'string' is not assignable).
@@ -1005,18 +987,14 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     unmount()
   })
 
-  // AUDIO-03 (tightened by Phase 52 CR-02-FIX + WR-01-FIX):
-  // hook-side null propagation when engine.scheduleLeadIn returns null.
-  // Additionally asserts: engine.close was called; all 4 clock unsubs fired once each;
-  // audioStatus is 'unavailable' (not 'ok') after the failed start().
+  // AUDIO-03: hook-side null propagation when engine.scheduleLeadIn returns null.
+  // Also asserts: engine.close was called; all 4 clock unsubs fired; audioStatus is 'unavailable'.
   it("AUDIO-03: start() returns null and sets status to failed when engine.scheduleLeadIn returns null", async () => {
     // Stub createAudioEngine to return a fake engine whose scheduleLeadIn returns null.
-    // Phase 50 D-11 + revision 1 Blocker #1: start() subscribes to engine.clock.on*
-    // immediately after createAudioEngine resolves, so the fake must expose a `clock`
-    // member returning tracked unsubscribes for all channels (4 in total — Plan 04
-    // added the 4th onResume subscription for handleForceTopUp).
-    // CR-02-FIX: each onXxx mock returns a tracked vi.fn() unsub so we can assert
-    // each was invoked exactly once when the null-leadIn branch tears down subscriptions.
+    // start() subscribes to engine.clock.on* immediately after createAudioEngine resolves,
+    // so the fake must expose a `clock` member returning tracked unsubscribes for all
+    // channels (4 total: onResume×2, onSuspend×1, onClose×1). Each unsub is tracked so
+    // we can assert each was invoked exactly once when the null-leadIn branch tears down.
     const unsubResume1 = vi.fn()
     const unsubResume2 = vi.fn()
     const unsubSuspend = vi.fn()
@@ -1066,14 +1044,13 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     expect(unsubResume2).toHaveBeenCalledTimes(1)
     expect(unsubSuspend).toHaveBeenCalledTimes(1)
     expect(unsubClose).toHaveBeenCalledTimes(1)
-    // WR-01-FIX: audioStatus must be 'unavailable' (not the default 'ok') on failed start.
+    // audioStatus must be 'unavailable' (not the default 'ok') on failed start.
     expect(result.current.audioStatus).toBe('unavailable')
 
     unmount()
   })
 
-  // AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws)
-  // also sets audioStatus='unavailable' (WR-01-FIX).
+  // AUDIO-03: construction-failure branch (createAudioEngine throws) also sets audioStatus='unavailable'.
   it("AUDIO-03 + WR-01: construction-failure branch (createAudioEngine throws) also sets audioStatus='unavailable'", async () => {
     vi.spyOn(audioEngineModule, 'createAudioEngine').mockRejectedValueOnce(
       new Error('iOS construction failed'),
@@ -1089,23 +1066,20 @@ describe('useAudioCues — AUDIO-03 + AUDIO-06 (Phase 9 Plan 02)', () => {
     expect(res).toBeNull()
     expect(result.current.status).toBe('failed')
     expect(result.current.audioAvailable).toBe(false)
-    // WR-01-FIX: audioStatus must be 'unavailable' on the construction-catch branch too.
+    // audioStatus must be 'unavailable' on the construction-catch branch too.
     expect(result.current.audioStatus).toBe('unavailable')
 
     unmount()
   })
 })
 
-// Phase 10 HOOKS-01 callback identity contract.
-// Locks the mutedRef-on-top-of-muted-state posture (D-11): toggling `setMuted`
-// MUST NOT churn the identity of `start` or `resume` callbacks. With `muted`
-// removed from their useCallback dep arrays and the value read from the
-// ref-mirror at call time, downstream `useCallback`s in App.tsx that include
-// `audio.start` in deps no longer cascade re-creates on every mute toggle.
+// Callback identity contract: toggling `setMuted` must not churn the identity of
+// `start` or `resume` callbacks. With `muted` removed from their useCallback dep
+// arrays and the value read from the ref-mirror at call time, downstream `useCallback`s
+// that include `audio.start` in deps no longer cascade re-creates on every mute toggle.
 describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
-  // Inline SpyableAC matching the Phase 5.1 describe block (lines 337-360).
-  // The class is duplicated here rather than hoisted to module scope to avoid
-  // touching the existing test geography; this block is strictly additive.
+  // Inline SpyableAC duplicated here rather than hoisted to module scope to keep
+  // each describe block self-contained.
   class SpyableAC {
     state: AudioContextState = 'running'
     sampleRate = 44100
@@ -1172,9 +1146,8 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
       result.current.setMuted(true)
     })
 
-    // `resume` depends on `reconstructEngine`, which itself no longer depends
-    // on `muted` (D-11). The reconstruction path reads mutedRef.current at
-    // call time. Identity stable.
+    // `resume` depends on `reconstructEngine`, which reads mutedRef.current at
+    // call time rather than depending on `muted`. Identity stable.
     const resumeAfterMute = result.current.resume
 
     expect(resumeAfterMute).toBe(resumeBefore)
@@ -1186,9 +1159,8 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
     vi.stubGlobal('AudioContext', SpyableAC)
     const { result, unmount } = renderHook(() => useAudioCues())
 
-    // Phase 50 D-11 + revision 1 Blocker #1: the unified `handleStateChange` split into
-    // three handlers. `start` now depends on `[handleResume, handleSuspend, handleClose]`
-    // — all three useCallback deps are `[]`. If any of the three identities churns across
+    // `start` depends on `[handleResume, handleSuspend, handleClose]` — all three
+    // useCallback deps are `[]`. If any of the three identities churns across
     // setMuted (they should not), this proxy assertion would fail.
     const startBefore = result.current.start
 
@@ -1202,22 +1174,12 @@ describe('useAudioCues — callback identity (Phase 10 HOOKS-01)', () => {
   })
 })
 
-// Phase 18 Plan 04 timbre capture + reconstruction (D-08 + D-11).
-//
-// Truth set:
-//  - start(plan, timbre) MUST construct the AudioEngine with the caller-passed timbre
-//    (D-08 capture-at-Start at the hook layer — engine receives the snapshot via
-//    createAudioEngine({ timbre, ... })).
-//  - reconstructEngine MUST reuse the original session timbre (timbreRef.current)
-//    even when storage has been mutated mid-session (D-11 invariant — capture-at-Start
-//    is the only mutation path; iOS visibility-suspend recovery never re-reads prefs).
-//  - start(samplePlan, 'bowl') MUST exercise the v1.0.1 Bowl byte-identical path —
-//    sanity check that the new timbre parameter does not perturb the default flow.
+// Timbre capture + reconstruction: start(plan, timbre) constructs the engine with
+// the caller-passed timbre; reconstructEngine reuses timbreRef.current so mid-session
+// prefs changes have no effect (capture-at-Start is the only mutation path).
 describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11)', () => {
-  // Spyable AudioContext mirroring the Phase 5.1 / Plan 06 pattern (registry-backed
-  // statechange listeners + reconstruction-friendly resume()). Local to this block
-  // to avoid touching the existing test geography. Construction count is observed
-  // via createAudioEngine spy (mock.calls.length) — no separate counter needed here.
+  // SpyableAC with registry-backed statechange listeners and reconstruction-friendly resume().
+  // Local to this block; construction count is observed via createAudioEngine spy.
   class SpyableAC {
     static lastInstance: SpyableAC | null = null
     static reset(): void { SpyableAC.lastInstance = null }
@@ -1267,9 +1229,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     await act(async () => {
       await result.current.start(samplePlan, 'bell')
     })
-    // D-08: the engine is constructed with exactly the caller-passed timbre.
-    // Phase 50 D-11: `onStateChange` removed from AudioEngineOptions — external subscribers
-    // now consume engine.clock.on*; the timbre-capture assertion stays focused on `timbre`.
+    // The engine is constructed with exactly the caller-passed timbre.
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({ timbre: 'bell' }),
     )
@@ -1292,17 +1252,16 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     expect(createSpy.mock.calls[0]?.[0]).toMatchObject({ timbre: 'bell' })
     const callsAfterStart = createSpy.mock.calls.length
 
-    // 2. Mutate localStorage's prefs.timbre to 'flute' mid-session. If the hook
-    //    re-read user prefs during reconstruction (D-11 violation), the new engine
-    //    would be constructed with 'flute'. The hook MUST NOT do this — it reads
-    //    timbreRef.current exclusively, which still holds 'bell'.
+    // 2. Mutate localStorage's prefs.timbre to 'flute' mid-session. The hook must
+    //    not re-read prefs during reconstruction — it reads timbreRef.current exclusively,
+    //    which still holds 'bell'.
     window.localStorage.setItem(
       'hrv:state:v1',
       JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'flute', locale: 'en' } }),
     )
 
     // 3. Trigger reconstruction via public resume() — which internally calls
-    //    reconstructEngine() per useAudioCues.ts:362 (the kitchen-sink fix path).
+    //    reconstructEngine().
     await act(async () => {
       await result.current.resume()
       await Promise.resolve()
@@ -1319,9 +1278,8 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     unmount()
   })
 
-  // Phase 49.1 D-07/D-08/D-09: bypassSilentMode threading through useAudioCues.start
-  // (3rd arg) and bypassSilentModeRef capture-and-replay in reconstructEngine.
-  // Tests mirror the existing timbre D-08/D-11 tests above — same pattern, new field.
+  // bypassSilentMode threading through useAudioCues.start (3rd arg) and
+  // bypassSilentModeRef capture-and-replay in reconstructEngine.
 
   it('start(plan, "bowl", false) forwards bypassSilentMode: false to createAudioEngine (D-07)', async () => {
     SpyableAC.reset()
@@ -1361,7 +1319,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     await act(async () => {
       await result.current.start(samplePlan, 'bowl')
     })
-    // Per D-07: undefined coerces to "construct" at the engine layer.
+    // undefined coerces to "construct" at the engine layer.
     // The hook must forward undefined (not elide the key) so the caller chain is explicit.
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({ bypassSilentMode: undefined }),
@@ -1390,7 +1348,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     })
 
     // 3. Reconstruction must call createAudioEngine again with bypassSilentMode: false
-    //    (the captured ref value), NOT undefined (the default) — D-09 no-mid-session-rebuild.
+    //    (the captured ref value), NOT undefined (the default — no mid-session rebuild).
     expect(createSpy.mock.calls.length).toBeGreaterThan(callsAfterStart)
     const reconstructCall = createSpy.mock.calls[createSpy.mock.calls.length - 1]
     expect(reconstructCall?.[0]).toMatchObject({ bypassSilentMode: false })
@@ -1418,7 +1376,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
   })
 })
 
-// Phase 51 Plan 02: proxy clock exposed via UseAudioCues.clock (D-03/D-05/D-10/D-11).
+// SessionClock proxy exposed via UseAudioCues.clock.
 describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 51 D-03/D-05/D-10/D-11)', () => {
   // SpyableAC with full statechange support for reconstruction tests.
   class SpyableAC {
@@ -1542,7 +1500,7 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
       await result.current.start(samplePlan, 'bowl')
     })
 
-    // Drive reconstruction via the D-41(c) path (resume rejection → reconstruct).
+    // Drive reconstruction via the resume rejection path.
     // Reason: async required to match AudioContext.resume() Promise<void> signature; throw produces a rejected promise without await.
     // eslint-disable-next-line @typescript-eslint/require-await
     vi.spyOn(SpyableAC.prototype, 'resume').mockImplementationOnce(async function (this: SpyableAC) {
@@ -1570,7 +1528,7 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
     expect(onSessionClockReanchored).toHaveBeenCalledTimes(1)
     expect(onReanchorRequired).toHaveBeenCalledTimes(1)
 
-    // D-11 ordering: onSessionClockReanchored fires BEFORE onReanchorRequired.
+    // onSessionClockReanchored fires BEFORE onReanchorRequired.
     // invocationCallOrder is a Vitest mock property — lower number = called first.
     expect(onSessionClockReanchored.mock.invocationCallOrder[0])
       .toBeLessThan(onReanchorRequired.mock.invocationCallOrder[0] as number)
@@ -1627,7 +1585,7 @@ describe('useAudioCues — SessionClock proxy + onSessionClockReanchored (Phase 
   })
 })
 
-// Phase 52 D-04: topUpLookahead facade tests
+// topUpLookahead facade tests
 describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -1687,9 +1645,8 @@ describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
   })
 })
 
-// Phase 52 D-04 forceTopUp on clock.onResume
-// Tests for handleForceTopUp: subscribed to clock.onResume; re-dispatches cached cues;
-// survives reconstruction; torn down by unmount/stop; no-op before first topUpLookahead.
+// handleForceTopUp subscribed to clock.onResume: re-dispatches cached cues, survives
+// reconstruction, torn down by unmount/stop, no-op before first topUpLookahead.
 describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -1894,9 +1851,8 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
   })
 })
 
-// Phase 52 CR-01-FIX: cancelFutureCues facade on useAudioCues
-// Verifies the hook exposes a cancelFutureCues method with the same null-gate posture
-// as all other clock-subscriber callbacks, and that it delegates to engine.cancelFutureCues().
+// cancelFutureCues facade: exposes the method with the same null-gate posture as other
+// clock-subscriber callbacks; delegates to engine.cancelFutureCues().
 describe('Phase 52 CR-01-FIX: cancelFutureCues facade', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -1953,10 +1909,9 @@ describe('Phase 52 CR-01-FIX: cancelFutureCues facade', () => {
   })
 })
 
-// Phase 52 WR-02-FIX: topUpLookahead cache-after-gate
-// Verifies lastTopUpCuesRef is written ONLY AFTER the engine null-gate so a pre-start
-// call cannot poison the force-top-up cache, and stop() clears the cache so a fast
-// stop()→start() cycle cannot replay stale cues into a new engine.
+// topUpLookahead cache-after-gate: lastTopUpCuesRef is written only after the engine
+// null-gate so a pre-start call cannot poison the force-top-up cache; stop() clears the
+// cache so a stop()→start() cycle cannot replay stale cues into a new engine.
 describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -2078,7 +2033,7 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
     // fakeEngine2.topUpLookahead would be called with the stale sessionOneCues.
     act(() => { if (resumeCb2) resumeCb2() })
 
-    // With WR-02 fix: stop() clears lastTopUpCuesRef → new engine receives ZERO
+    // With the fix: stop() clears lastTopUpCuesRef → new engine receives zero
     // topUpLookahead invocations from the cached state of the prior session.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(fakeEngine2.topUpLookahead).not.toHaveBeenCalled()
@@ -2090,21 +2045,10 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
   })
 })
 
-// Phase 52 Plan 06 WR-04 + WR-05: reconstruction path top-up gating and lastTopUpCuesRef reset.
-//
-// WR-04: After reconstructEngine, the next clock.onResume must NOT replay cached cues
-// (whose absolute audioTimes belonged to the old AC origin and collapse onto the same
-// instant after SAFE_LEAD_SEC clamp). Reconstruction re-anchors via onReanchorRequired
-// and the next boundary effect refills against the fresh anchor.
-//
-// WR-05: reconstructEngine must reset lastTopUpCuesRef.current = [] alongside its other
-// ref resets (mirroring stop()'s cache-clear pattern from WR-02-FIX). Without this reset,
-// a later clock.onResume fires handleForceTopUp with stale pre-reconstruction cues.
-//
-// Fix: add `lastTopUpCuesRef.current = []` to reconstructEngine before re-subscribing
-// handleForceTopUp to the new engine's clock. This ensures:
-//   (a) any immediate onResume after reconstruction sees empty cache → no stale replay
-//   (b) future top-up calls on the new engine start from a clean slate
+// Reconstruction-path top-up gating: after reconstructEngine, the next clock.onResume
+// must NOT replay cached cues (whose absolute audioTimes belonged to the old AC origin).
+// reconstructEngine resets lastTopUpCuesRef.current = [] so any immediate onResume sees
+// an empty cache and future top-up calls on the new engine start from a clean slate.
 describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and lastTopUpCuesRef reset', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -2182,13 +2126,12 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
     // Trigger reconstruction (simulate what public resume() does)
     await act(async () => { await result.current.resume() })
 
-    // After reconstruction, the cache should be cleared (WR-05 fix).
-    // Fire onResume on the NEW engine — handleForceTopUp should see an empty cache and NO-OP.
+    // After reconstruction, the cache is cleared.
+    // Fire onResume on the new engine — handleForceTopUp should see an empty cache and NO-OP.
     act(() => { engineB.fireResume() })
 
-    // WR-05 + WR-04 assertion: engineB.topUpLookahead must NOT have been called with the
-    // pre-reconstruction cues. With the fix, lastTopUpCuesRef.current is [] after reconstructEngine,
-    // so handleForceTopUp's `if (cues.length === 0) return` guard exits early.
+    // engineB.topUpLookahead must NOT have been called with the pre-reconstruction cues.
+    // lastTopUpCuesRef.current is [] after reconstructEngine, so handleForceTopUp exits early.
     expect(engineB.topUpSpy).not.toHaveBeenCalled()
 
     await act(async () => { await result.current.stop() })
@@ -2197,13 +2140,11 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
 
   it('WR-04 + WR-05: no collapsed-onto-one-instant stack on reconstruct-path onResume (no stale cue replay)', async () => {
     // This test verifies the behavioral outcome: no topUpLookahead calls with stale cues
-    // on the reconstruct-path onResume. The collapsed-stack artifact (WR-04) would
-    // manifest as topUpLookahead being called with cues that have absolute audioTimes
-    // from the old AC origin — which the engine would clamp to audioNow + SAFE_LEAD_SEC,
-    // collapsing all N cues onto the same instant.
-    //
-    // With the WR-05 fix (lastTopUpCuesRef cleared in reconstructEngine), handleForceTopUp
-    // sees an empty cache and exits without calling topUpLookahead. The fix subsumes WR-04.
+    // On the reconstruct-path onResume, stale cues must not be replayed. The stale-replay
+    // artifact would manifest as topUpLookahead called with absolute audioTimes from the
+    // old AC origin — which the engine would clamp, collapsing all N cues onto the same instant.
+    // With lastTopUpCuesRef cleared in reconstructEngine, handleForceTopUp sees an empty
+    // cache and exits without calling topUpLookahead.
     const { engineA, engineB } = makeReconstructFakeEngines()
 
     vi.spyOn(audioEngineModule, 'createAudioEngine')

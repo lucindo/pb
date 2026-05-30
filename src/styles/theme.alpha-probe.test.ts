@@ -1,51 +1,8 @@
 // src/styles/theme.alpha-probe.test.ts
 //
-// Phase 16.1 / Wave 0 / CONTEXT.md D-02: alpha-modifier strategy probe.
-//
-// =====================================================================================
-// D-02 STRATEGY DECISION (recorded here so plans 04/05 can reference without re-debating)
-// =====================================================================================
-//
-// Question: Does Tailwind v4 parse `bg-[var(--color-breathing-surface)]/70` (arbitrary
-// value + alpha modifier on a `var()` reference) and emit a working background-color?
-//
-// Why this matters: 5 alpha sites in the migration surface use `bg-white/70`, `bg-white/80`,
-// or `border-white/80`. We need ONE strategy for all 5 so we don't ship a hybrid mess.
-//
-// jsdom CANNOT answer this question. Tailwind v4 codegen runs at Vite build time, not
-// inside jsdom — there is no way for a Vitest+jsdom test to render an arbitrary-value
-// Tailwind class and observe the computed background. The probe's PRIMARY value is
-// therefore forcing the decision (Path A vs Path B) into writing BEFORE plans 04/05
-// touch any alpha site.
-//
-// Path A (DEFAULT — try first):
-//   `bg-[var(--color-breathing-surface)]/70`
-//   Tailwind v4 documents `/N` alpha-modifier support on arbitrary-value var() refs.
-//   Emitted CSS uses `color-mix(in oklab, var(...) 70%, transparent)` or equivalent.
-//   Verification: plan 04 dev-server smoke check (see below).
-//
-// Path B (FALLBACK — switch to this if Path A produces transparent render):
-//   className="..." (drop the alpha class)
-//   style={{ backgroundColor: 'rgb(from var(--color-breathing-surface) r g b / 0.7)' }}
-//   CSS-native `rgb(from ...)` syntax is supported in Chrome 119+, Safari 16.4+,
-//   Firefox 113+ (all evergreen targets per 16.1-RESEARCH.md §"Pitfall 3").
-//
-// Dev-server smoke check (plan 04 MUST run this before committing migration):
-//   1. `npm run dev`
-//   2. Open browser DevTools on a page rendering:
-//      <div className="bg-[var(--color-breathing-surface)]/70 p-4">probe</div>
-//   3. Inspect element; read getComputedStyle().backgroundColor
-//   4. Expected (Light palette): rgba(255, 255, 255, 0.7) OR color-mix(...)
-//      with non-zero alpha
-//   5. If the computed style is `transparent` or `rgba(0, 0, 0, 0)`: switch the
-//      WHOLE wave to Path B (inline style with rgb(from ...)).
-//   6. Whichever path wins: ALL 5 alpha sites use the SAME path.
-//
-// =====================================================================================
-// This test itself asserts the upstream invariant: --color-breathing-surface resolves to
-// a valid hex on documentElement. If THAT breaks, neither Path A nor Path B can work,
-// and the migration is blocked at a more fundamental level.
-// =====================================================================================
+// Alpha-modifier strategy probe: asserts that --color-breathing-surface resolves to a
+// valid hex on documentElement. If that breaks, neither the `bg-[var(...)]/70` approach
+// nor the `rgb(from var(...) r g b / 0.7)` fallback approach can work.
 
 /// <reference types="node" />
 

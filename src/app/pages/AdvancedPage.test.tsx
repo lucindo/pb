@@ -145,7 +145,7 @@ describe('AdvancedPage', () => {
     })
 
     it('writes bypassSilentMode=false to the prefs envelope when toggled off', async () => {
-      // Default is bypassSilentMode=true (D-05), toggle OFF writes false.
+      // Default is bypassSilentMode=true; toggle OFF writes false.
       const user = userEvent.setup()
       renderPage()
       await user.click(

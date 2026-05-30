@@ -6,8 +6,7 @@ import { STATE_KEY } from '../storage'
 import type { UserPrefs } from '../storage/prefs'
 
 // Helper: seed the localStorage with a full envelope containing the given prefs.
-// The exact envelope shape mirrors the structure used by loadPrefs/coercePrefs
-// (Phase 14 D-17 per-field coerce guarantees valid values on the way out).
+// Per-field coerce guarantees valid values on read.
 function seedPrefs(prefs: UserPrefs): void {
   window.localStorage.setItem(
     STATE_KEY,

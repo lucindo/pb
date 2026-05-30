@@ -1,5 +1,4 @@
-// Tests for the useWakeLock React hook (Plan 05-02).
-// Covers MOBL-02 hook-level rows in 05-VALIDATION.md Per-Task Verification Map (Wave 1).
+// Tests for the useWakeLock React hook.
 // Mirrors the renderHook + act idiom from useAudioCues.test.tsx.
 
 import { act, renderHook } from '@testing-library/react'
@@ -128,7 +127,7 @@ describe('useWakeLock', () => {
     // Reason: request() was awaited successfully above; results[0] is guaranteed populated.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
-    // Release the sentinel to clear sentinelRef while wasAcquiredRef stays true (D-04).
+    // Release the sentinel to clear sentinelRef while wasAcquiredRef stays true.
     await act(async () => {
       await sentinel.release()
     })
@@ -182,7 +181,7 @@ describe('useWakeLock', () => {
       value: 'visible',
       configurable: true,
     })
-    // First visibility event: re-acquire fails silently, wasAcquiredRef stays true (D-05).
+    // First visibility event: re-acquire fails silently, wasAcquiredRef stays true.
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
       await Promise.resolve()

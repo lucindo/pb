@@ -67,7 +67,7 @@ describe('App — audio cues (Phase 3)', () => {
     expect(acSpy).toHaveBeenCalledTimes(1)
   })
 
-  // -- Test 6: AudioContext NOT constructed before Start click (D-09 gesture) --
+  // -- Test 6: AudioContext NOT constructed before Start click (gesture gate) --
   it('does not construct AudioContext before the user clicks Start (D-09 user-gesture)', () => {
     const OriginalAC = window.AudioContext
     const acSpy = vi.fn(function (this: AudioContext, ...args: unknown[]) {
@@ -98,8 +98,7 @@ describe('App — audio cues (Phase 3)', () => {
     // The first Out boundary occurs at t = inhaleSec from session start. With default
     // settings BPM 5.5, ratio 40:60 → cycleSec = 60 / 5.5 ≈ 10.909 sec;
     // inhaleSec = cycleSec * 0.4 ≈ 4.363 sec. Advance 5 sec (5000 ms) past the
-    // first Out boundary. (Phase 50-02 ms→sec cascade — vi.advanceTimersByTime
-    // still takes ms; multiply by 1000 at this boundary only.)
+    // first Out boundary. (vi.advanceTimersByTime takes ms; multiply by 1000 at this boundary.)
     await act(async () => {
       vi.advanceTimersByTime(5000)
       await Promise.resolve()
@@ -184,9 +183,8 @@ describe('App — audio cues (Phase 3)', () => {
     fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
-    // Phase 3 fix: completion now waits for the surrounding cycle to finish so
-    // cues never get cut mid-In/mid-Out. Advance an extra minute to clear the
-    // next cycle boundary after the 5-min duration mark.
+    // Completion waits for the surrounding cycle to finish so cues are never cut
+    // mid-In/mid-Out. Advance an extra minute to clear the next cycle boundary.
     act(() => {
       vi.advanceTimersByTime(6 * 60_000)
     })
@@ -208,8 +206,8 @@ describe('App — audio cues (Phase 3)', () => {
     expect(closeMock).toHaveBeenCalled()
   })
 
-  // -- Test 11: cancel-during-lead-in (W4 + Open Question 2 (a)) ---------------
-  // D-07: rewritten — Phase 20 relabels the primary button to 'Cancel' during lead-in (LEAD-01).
+  // -- Test 11: cancel-during-lead-in ---------------
+  // The primary button reads 'Cancel' during lead-in.
   // The cancel-behavior assertions (no dialog, numerals cleared, AC.close called) are retained.
   it('pressing the primary button during lead-in (labelled Cancel per LEAD-01) cancels back to idle without opening the EndSessionDialog', async () => {
     const OriginalAC = window.AudioContext
@@ -229,10 +227,9 @@ describe('App — audio cues (Phase 3)', () => {
     })
     expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
-    // Per checker W4 (Phase 20 D-04/D-07 revision): the primary button label is now
-    // 'Cancel' during lead-in (LEAD-01 via inLeadIn prop). session.status is still
-    // 'idle' from useSessionEngine's POV (SESS-05); the click is routed through
-    // onStartClick which detects appPhase === 'lead-in' and cancels.
+    // The primary button label is 'Cancel' during lead-in (inLeadIn prop).
+    // session.status is still 'idle' from useSessionEngine's POV; the click is routed
+    // through onStartClick which detects appPhase === 'lead-in' and cancels.
     const primaryBtn = screen.getByRole('button', { name: 'Cancel' })
     fireEvent.click(primaryBtn)
     await flushMicrotasks()
@@ -247,7 +244,7 @@ describe('App — audio cues (Phase 3)', () => {
     expect(closeMock).toHaveBeenCalled()
   })
 
-  // -- Test 11b: lead-in label regression (D-08 EN+PT-BR) ----------------------
+  // -- Test 11b: lead-in label regression (EN+PT-BR) ----------------------
   it('LEAD-01 D-08: primary button shows "Cancel" (EN) during lead-in and disappears once session starts', async () => {
     render(<App />)
     // Confirm idle label before lead-in
@@ -266,7 +263,7 @@ describe('App — audio cues (Phase 3)', () => {
     expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
   })
 
-  // -- Test 12: AC failure path (D-10 visuals-only fallback) ------------------
+  // -- Test 12: AC failure path (visuals-only fallback) ------------------
   it('renders lead-in numerals visuals-only when AudioContext construction fails (D-10)', async () => {
     vi.stubGlobal(
       'AudioContext',
@@ -287,7 +284,7 @@ describe('App — audio cues (Phase 3)', () => {
     // Visuals-only fallback: lead-in numerals still render.
     expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
 
-    // Mute icon shows the disabled state with the D-10 accessible name.
+    // Mute icon shows the disabled state with the accessible name.
     const mute = muteButton()
     expect(mute).toHaveAttribute('aria-label', 'Audio unavailable in this browser')
     expect(mute).toBeDisabled()
@@ -327,18 +324,13 @@ describe('App — audio cues (Phase 3)', () => {
   })
 
   // -- AUDIO-02 caller-side clamp coverage moved to audioEngine.test.ts -------
-  // Phase 52 (52-03) replaced the App-level boundary-detection effect with the
-  // engine-side `topUpLookahead` facade. The clamp-to-`currentTime + SAFE_LEAD_SEC`
-  // behavior these tests asserted is now exercised inside the engine; see:
-  //   - `topUpLookahead clamps audioTime to currentTime + SAFE_LEAD_SEC when in the past` (audioEngine.test.ts)
-  //   - `topUpLookahead calls scheduleInCueForTimbre for each "in" cue` (audioEngine.test.ts)
-  // The legacy `computeBoundaryAudioOffsets` and `notifyPhaseBoundary` surfaces
-  // were removed in 52-03, so the App-level integration tests targeting them
-  // are no longer reachable.
+  // The App-level boundary-detection effect was replaced with the engine-side
+  // `topUpLookahead` facade. The clamp behavior is now exercised inside the engine
+  // (see audioEngine.test.ts). The legacy `computeBoundaryAudioOffsets` and
+  // `notifyPhaseBoundary` surfaces were removed; their App-level tests are no longer reachable.
 })
 
-// Helper: wrap the FakeAudioContext from vitest.setup.ts so we can track each
-// constructed instance. Used in both 'App — audio cues' and 'Plan 06 D-42' describe blocks.
+// Helper: wrap the FakeAudioContext so we can track each constructed instance.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyAC = any
 function installTrackedAC(): { instances: AnyAC[]; constructed: () => number; restore: () => void } {
@@ -410,11 +402,10 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
   })
 
   it("D-42 (2): clicking mute button in needs-resume reconstructs a fresh AC (kitchen-sink fix)", async () => {
-    // Plan 06 Task 8 UAT cycle 2 (2026-05-10) revealed that plain engine.resume()
-    // returns state='running' on iOS Safari but the underlying audio session is
-    // dead — AC.currentTime never advances, scheduled cues never fire. The
-    // gesture-attached recovery now ALWAYS reconstructs a fresh AC (never just
-    // resumes the old one). This test enforces that contract.
+    // Plain engine.resume() can return state='running' on iOS Safari while the
+    // underlying audio session is dead — AC.currentTime never advances, scheduled
+    // cues never fire. The gesture-attached recovery always reconstructs a fresh AC.
+    // This test enforces that contract.
     const tracker = installTrackedAC()
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -485,15 +476,12 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
       await Promise.resolve()
       await Promise.resolve()
     })
-    // Contract (D-35b + D-31 dual recovery):
-    //   1. muted=true is preserved ACROSS the reconstruction step (the hook calls
-    //      newEngine.setMuted(currentMuted) synchronously — see useAudioCues
-    //      reconstructEngine).
-    //   2. The click handler then runs persistedSetMuted(!audio.muted) — i.e.,
-    //      flips mute from the preserved value (true) to its negation (false).
-    //   3. Net label after click = 'Mute audio cues' (muted is now false → action
-    //      verb is 'Mute'). If reconstruction failed and we are still in
-    //      needs-resume, the label would be 'Resume audio' instead.
+    // Dual recovery contract:
+    //   1. muted=true is preserved across reconstruction (the hook calls
+    //      newEngine.setMuted(currentMuted) synchronously in reconstructEngine).
+    //   2. The click handler flips mute from the preserved value (true) to false.
+    //   3. Net label after click = 'Mute audio cues'. If reconstruction failed and
+    //      we are still in needs-resume, the label would be 'Resume audio' instead.
     const labelAfter = muteButton().getAttribute('aria-label')
     expect(['Mute audio cues', 'Resume audio']).toContain(labelAfter)
     tracker.restore()

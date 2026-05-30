@@ -76,19 +76,16 @@ describe('coercePrefs (D-10 / D-17)', () => {
   })
 
   it('pre-Phase-25 envelope (no cue key) coerces cue to default preserving three other valid fields (D-13)', () => {
-    // A stored pre-Phase-25 envelope has no cue key — this IS the migration, no STATE_VERSION bump.
+    // A stored envelope with no cue key coerces to default; no STATE_VERSION bump needed.
     expect(coercePrefs({ theme: 'dark', timbre: 'bell', locale: 'pt-BR' }))
       .toEqual({ ...DEFAULT_PREFS, theme: 'dark', timbre: 'bell', cue: DEFAULT_CUE, locale: 'pt-BR' })
   })
 
   it('tolerates legacy variant key on persisted envelope — VAR-05 forward-compat (Phase 38 D-01)', () => {
-    // VAR-05 / CONTEXT D-01: a returning user with a pre-Phase-38 persisted envelope carrying
-    // `variant: 'square' | 'diamond' | 'orb'` must read through coercePrefs as a clean 8-field
-    // UserPrefs (Phase 47 extends from 4 to 8) with NO `variant` property surviving — the unknown
-    // key is silently dropped on read (Phase 8 D-01 envelope tolerance). No STATE_VERSION bump
-    // needed; the render path is always OrbShape (Plan 01), so the dropped key is harmless. This
-    // is the literal-envelope adversarial test the structural per-field + proto-pollution coverage
-    // does not assert.
+    // A returning user with a pre-v2.0 persisted envelope carrying `variant: 'square' | 'diamond'`
+    // must read through coercePrefs as a clean 8-field UserPrefs with NO `variant` property —
+    // the unknown key is silently dropped on read (envelope tolerance). No STATE_VERSION bump
+    // needed; the render path is always OrbShape.
     const legacySquareEnvelope: unknown = { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en', variant: 'square' }
     const coercedSquare = coercePrefs(legacySquareEnvelope)
     expect(coercedSquare).toEqual({ ...DEFAULT_PREFS, theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en' })
@@ -131,11 +128,9 @@ describe('coerceTheme / coerceTimbre / coerceCue / coerceLocale (D-10 per-field)
     expect(coerceTimbre(0)).toBe(DEFAULT_TIMBRE)
   })
 
-  // AUDIO-02: legacy-value migration — 'chime' was the fourth timbre slot before Phase 35
-  // renamed it to 'flute'. A returning user's persisted 'chime' must land on 'flute', not
-  // the bowl default. A stale value like 'ring' (removed from valid list) coerces to the
-  // default rather than preserving the old preference; 'chime' users DID choose the fourth
-  // slot and should seamlessly continue with 'flute'.
+  // AUDIO-02: legacy-value migration — 'chime' was the fourth timbre slot before it was
+  // renamed to 'flute'. A returning user's persisted 'chime' must land on 'flute', not
+  // the bowl default. 'chime' users chose the fourth slot and continue seamlessly with 'flute'.
   it("coerceTimbre('chime') → 'flute' — AUDIO-02 legacy-value migration for returning users", () => {
     expect(coerceTimbre('chime')).toBe('flute')
   })
@@ -327,7 +322,7 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
   })
 
   it("falls back to BYPASS_SILENT_MODE_FLAG.defaultValue (true) for unparseable strings", () => {
-    expect(coerceBypassSilentMode('bogus')).toBe(true) // D-05: default true (flip from switcherIcon's false)
+    expect(coerceBypassSilentMode('bogus')).toBe(true) // default true (note: flipped from switcherIcon's false)
   })
 
   it("falls back to true for non-string, non-boolean inputs (null / undefined / numbers / objects)", () => {
@@ -341,8 +336,8 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
 })
 
 describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
-  // Per-field non-throwing coerce-and-fallback: a single corrupt new-flag field
-  // falls back to the per-flag default; the other 8 fields are preserved.
+  // Per-field non-throwing coerce-and-fallback: a single corrupt field falls back
+  // to the per-flag default; the other 8 fields are preserved.
   it("breathingShape: 'junk' → 'orb-halo' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
@@ -396,17 +391,15 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
       breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
       orbIdle: 'still', switcherIcon: true, bypassSilentMode: 'junk',
     })
-    expect(out.bypassSilentMode).toBe(true) // D-05: corrupt-field falls back to true
+    expect(out.bypassSilentMode).toBe(true) // corrupt-field falls back to true (bypassSilentMode default)
     expect(out.orbIdle).toBe('still')
     expect(out.switcherIcon).toBe(true)
   })
 
   it("pre-Phase-47 envelope (4 keys only) coerces the 5 new keys to per-flag defaults (PREFS-03)", () => {
     // A returning user from a pre-Phase-47 build has 4 prefs keys — the 5 new
-    // keys are read as undefined from `r` and each coercer's non-string branch
-    // falls back to the per-flag default. This is the PREFS-03 returning-users
-    // contract: returning users see the production defaults, byte-identical to
-    // the v2.0 hardcoded flags.
+    // keys are undefined and each coercer falls back to the per-flag default.
+    // Returning users see the production defaults.
     const out = coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
     expect(out).toEqual({
       ...DEFAULT_PREFS,
@@ -447,8 +440,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
 
   it('round-trips a 9-field UserPrefs with the 5 new flags set to non-default values (Phase 47 + 49.1)', () => {
     // Full-fidelity round-trip: every new field carries a non-default value so the
-    // assertion fails if any of the 5 new coercers, the JSON re-hydration, or the
-    // envelope-merge contract drops or rewrites a value.
+    // assertion fails if any coercer, the JSON re-hydration, or the envelope-merge drops a value.
     const fullPrefs: UserPrefs = {
       theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR',
       breathingShape: 'spiritual-eye',
@@ -493,9 +485,6 @@ describe('loadPrefs / savePrefs round-trip', () => {
 })
 
 describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
-  // RED gate for Task 1: this block exists before src/storage/prefs.ts is extended.
-  // It will fail compile (missing exports) and assertion (UserPrefs is still 4-field)
-  // until Task 1's GREEN edit lands.
   it('exports the 4 new coercers and they have the contracted defaults', () => {
     expect(coerceBreathingShape('junk')).toBe('orb-halo')
     expect(coerceRingCue('junk')).toBe('progress-arc')
@@ -508,8 +497,8 @@ describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
     expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
     expect(DEFAULT_PREFS.switcherIcon).toBe(false)
-    expect(DEFAULT_PREFS.bypassSilentMode).toBe(true) // Phase 49.1 D-05
-    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(9) // Phase 49.1: 9-field UserPrefs
+    expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(9)
   })
 
   it('coercePrefs returns 9-field UserPrefs and uses the alias table (D-03)', () => {
@@ -518,18 +507,14 @@ describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
     expect(out.ringCue).toBe('progress-arc')
     expect(out.orbIdle).toBe('ambient')
     expect(out.switcherIcon).toBe(false)
-    expect(out.bypassSilentMode).toBe(true) // Phase 49.1 D-05 default
+    expect(out.bypassSilentMode).toBe(true)
   })
 })
 
 describe('THM-05 forward-compat (CONTEXT D-02)', () => {
-  // THM-05 / CONTEXT D-02: a returning user with a pre-Phase-39 persisted envelope carrying
-  // `theme: 'moss' | 'slate' | 'dusk'` must read through coercePrefs as `theme: 'system'`
-  // (read-coerce half), and the next savePrefs must overwrite the on-disk value with 'system'
-  // (round-trip half). No STATE_VERSION bump — Phase 8 D-01 envelope tolerance + per-field
-  // coercer carries the on-disk value until the next savePrefs call overwrites it.
-  // Mirrors the Phase 38 VAR-05 forward-compat pattern (commit `4bd5e78`); captured up-front
-  // per CONTEXT §specifics to avoid a retroactive validation cycle.
+  // A returning user with deprecated persisted theme values ('moss' | 'slate' | 'dusk')
+  // reads through coercePrefs as 'system'; the next savePrefs overwrites the on-disk value.
+  // No STATE_VERSION bump needed — per-field coercion carries the value until savePrefs.
 
   it('coerces deprecated persisted theme values to "system" on read — THM-05 (CONTEXT D-02)', () => {
     for (const deprecated of ['moss', 'slate', 'dusk']) {

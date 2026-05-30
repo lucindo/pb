@@ -1,10 +1,7 @@
 // src/styles/favicon.sync.test.ts
 //
-// Phase 21 Plan 01: D-07 automated sync guard.
-// Asserts that FAVICON_COLORS, theme.css --color-breathing-accent-strong tokens, and
-// index.html inline favicon map all agree. Prevents silent drift across the three sites.
-//
-// Analog: src/styles/theme.contrast.test.ts (reads theme.css, describe.each over concrete themes)
+// Automated sync guard: FAVICON_COLORS, theme.css --color-breathing-accent-strong tokens,
+// and index.html inline favicon map must all agree. Prevents silent drift across the three sites.
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -18,7 +15,7 @@ import { resolve } from 'node:path'
 import { FAVICON_COLORS } from './faviconPalette'
 import { THEME_OPTIONS, type ThemeId } from '../domain/settings'
 
-// D-16: skip 'system' — it has no CSS branch; JS resolves to 'light' or 'dark' at runtime
+// Skip 'system' — it has no CSS branch; JS resolves to 'light' or 'dark' at runtime
 const CONCRETE_THEMES = THEME_OPTIONS.filter(
   (t): t is Exclude<ThemeId, 'system'> => t !== 'system',
 )
@@ -73,7 +70,7 @@ describe.each(CONCRETE_THEMES)('theme=%s', (themeId) => {
   })
 
   // Assertion (2): FAVICON_COLORS[themeId] must match the inline hex map in index.html
-  // PLAN 02: now live — index.html inline favicon map added in Plan 02 Task 2.
+  // Assertion (2b): FAVICON_COLORS[themeId] must match the inline hex map in index.html.
   it('FAVICON_COLORS hex matches index.html inline favicon map', () => {
     const indexHtmlPath = resolve(__dirname, '../../index.html')
     const indexHtml = readFileSync(indexHtmlPath, 'utf-8')

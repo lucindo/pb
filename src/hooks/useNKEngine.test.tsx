@@ -5,14 +5,13 @@ import { createWallSessionClock } from '../audio/sessionClock'
 import type { NaviKriyaSettings } from '../domain/naviKriyaSettings'
 import { NK_LEAD_SEC, NK_OM_SECONDS, useNKEngine } from './useNKEngine'
 
-// Plan 50-03 D-02 boundary: NK_LEAD_SEC is seconds; vi.advanceTimersByTime takes
-// ms. Convert once at this single test-file boundary so the rest of the math
-// reads ms-shaped consistently with the existing omMs literals.
+// NK_LEAD_SEC is seconds; vi.advanceTimersByTime takes ms. Convert once at the
+// test-file boundary so the rest of the math reads ms-shaped.
 const NK_LEAD_MS_FOR_TIMERS = NK_LEAD_SEC * 1000
 
-// Plan 50-03 Task 3 fixture: wall clock identity-piped under vitest fake
-// timers (performance.now() is fake-timer-controlled). Each test gets a fresh
-// instance via the factory so closure-captured state doesn't leak across tests.
+// Wall clock identity-piped under vitest fake timers (performance.now() is
+// fake-timer-controlled). Each test gets a fresh instance via the factory.
+
 const makeClock = () => createWallSessionClock()
 
 // Default small settings so tests finish quickly under fake timers

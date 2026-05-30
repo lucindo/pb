@@ -81,8 +81,8 @@ describe('writeEnvelope', () => {
   it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
     // Seed a v4 envelope (simulates a future schema written by a newer build
     // in another tab). Must be > STATE_VERSION (3) to exercise the future-version
-    // guard. `prefs` is the forward-compat probe — STORAGE-01's D-01 spread must
-    // let it survive the readEnvelope round-trip.
+    // guard. `prefs` is the forward-compat probe — the spread must let it survive
+    // the readEnvelope round-trip.
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
       version: 4, settings: { bpm: 4 }, prefs: { theme: 'dark' },
     }))
@@ -91,16 +91,13 @@ describe('writeEnvelope', () => {
     const env = readEnvelope()
     expect(env.version).toBe(4)
     expect(env.settings).toEqual({ bpm: 4 })
-    // STORAGE-01 / D-01: unknown top-level fields survive the read (positive
-    // forward-compat coverage). Type-cast required because Envelope.prefs is
-    // not statically declared — the forward-compat surface is runtime-only
-    // by design (RESEARCH RQ-4 Option b). Without this assertion a regression
-    // to a pick-only-known-keys readEnvelope (Pitfall 3) would not be caught
-    // by the existing post-write disk-dump check because that check only
-    // proves the write was refused, not that the read preserved the field.
+    // STORAGE-01: unknown top-level fields survive the read (positive forward-compat
+    // coverage). Type-cast required because Envelope.prefs is not statically declared.
+    // Without this assertion a regression to a pick-only-known-keys readEnvelope
+    // would not be caught by the post-write disk-dump check.
     expect((env as unknown as Record<string, unknown>).prefs)
       .toEqual({ theme: 'dark' })
-    // STORAGE-02 / D-04a: disk version 4 > STATE_VERSION 3 → write refused.
+    // STORAGE-02: disk version 4 > STATE_VERSION 3 → write refused.
     // The caller's `version: 1` does NOT require an `as any` cast because
     // Envelope.version is widened to `number`.
     writeEnvelope({ version: 1, settings: { bpm: 5 } })
@@ -128,7 +125,7 @@ describe('writeEnvelope', () => {
         lastSessionDurationSeconds: null,
       },
     })
-    // D-03 silent refusal: disk envelope unchanged at version: 4.
+    // Silent refusal: disk envelope unchanged at version: 4.
     const rawAfter = window.localStorage.getItem(STATE_KEY)
     expect(rawAfter).not.toBeNull()
     // Reason: rawAfter non-null asserted by expect().not.toBeNull() above.
@@ -208,8 +205,8 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
   })
 
   it('STATE_KEY stays exactly "hrv:state:v1" after a write (no accidental key bump)', () => {
-    // Pitfall 1: the :v1 suffix is the key NAME, not the version field. Bumping
-    // STATE_VERSION must never touch STATE_KEY (index.html FOUC script depends on it).
+    // The :v1 suffix is the key NAME, not the version field. Bumping
+    // STATE_VERSION must never touch STATE_KEY (the FOUC script depends on it).
     expect(STATE_KEY).toBe('hrv:state:v1')
     writeEnvelope({ version: STATE_VERSION, settings: V1_SETTINGS })
     expect(window.localStorage.getItem('hrv:state:v1')).not.toBeNull()
@@ -304,11 +301,10 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
   // the v2 or v3 ladder shipped. migrateEnvelope(env, 1) must cascade BOTH
   // ladder steps (v1→v2 then v2→v3) in a single call.
   //
-  // Per CONTEXT D-06 wording resolution (36-PATTERNS §1 strategy (a)):
-  // this block asserts only what `migrateEnvelope` actually produces —
+  // This block asserts only what `migrateEnvelope` actually produces —
   // resonant + stretch + activePractice. naviKriya seeding is NOT asserted
   // because `migrateEnvelope` does not seed naviKriya; defaults are supplied
-  // downstream by `coercePractices` (see src/storage/storage.ts:88).
+  // downstream by `coercePractices`.
   // The v1→v2 analog block above also omits naviKriya assertions.
   //
   // The inline ZERO_STATS_LITERAL guards the circular-dep boundary called
