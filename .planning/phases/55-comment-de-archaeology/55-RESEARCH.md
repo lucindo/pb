@@ -49,7 +49,7 @@
 
 Phase 55 is a **mechanical, comment-only sweep** across **255 TypeScript/TSX files** under `src/` — **135 non-test + 120 test files** (notably larger than the audit's stated "77 + 61"; the audit counted at an earlier commit and excluded smaller files). The task: strip planning-process archaeology (decision IDs, phase refs, plan refs, blocker/pitfall numbers, spike pointers, dated kitchen-sink notes) and every stale `L###` line-reference from comments, rephrasing genuinely load-bearing rationale into present-tense invariants. No executable token — code, type, value, or import — may change.
 
-**Verified work surface (live grep, deduplicated by line):** **non-test = 1,043 archaeology lines across 67 files; test = 892 lines across 83 files; ~1,935 lines / 150 files total** (the audit's "~1,329" counted a smaller earlier tree). The surface is skewed: the **hooks layer (~390 non-test lines)** and **audio layer (~265)** hold the bulk of the *judgment-heavy* keep-rephrase prose; `src/hooks/useAudioCues.ts` alone carries **150 tag-matching lines** of `D-xx`/`Phase NN`/`WR-xx`/`Pitfall`/`Blocker`/`kitchen-sink` references in dense block-comment essays, and `audio/audioEngine.ts` carries 107. Test files hold ~892 raw tag lines but these are overwhelmingly mechanical strips with little keep-rephrase.
+**Verified work surface (live grep, deduplicated by line):** **non-test = ~940 archaeology lines across 83 files; test = ~797 lines across 78 files; ~1,737 lines / 161 files total** (the audit's "~1,329" counted a smaller earlier tree; raw per-tag sums run higher because one line can match several tags). The surface is skewed: the **hooks layer (~390 non-test lines)** and **audio layer (~265)** hold the bulk of the *judgment-heavy* keep-rephrase prose; `src/hooks/useAudioCues.ts` alone carries **150 tag-matching lines** of `D-xx`/`Phase NN`/`WR-xx`/`Pitfall`/`Blocker`/`kitchen-sink` references in dense block-comment essays, and `audio/audioEngine.ts` carries 107. Test files hold ~797 raw tag lines but these are overwhelmingly mechanical strips with little keep-rephrase.
 
 The work is unusually low-risk for a refactor because comments are inert: a correct change is provably behavior-preserving by inspecting the diff and confirming only comment tokens moved. The real risks are not runtime; they are (1) **collateral edits to trailing-comment code lines** (confirmed live: `useAudioCues.ts:431` ends in `setAudioStatus('unavailable') // WR-01-FIX: …`), (2) **over-cutting load-bearing "why"** the audit wants kept, (3) **JSDoc/TSDoc** blocks dense with `D-xx` (the `UseAudioCues` interface has `/** … D-10 … */` on nearly every member), and (4) **the marker-guard test family** — though verification confirms these fs-scan source for string *values*, not for comments, so comment edits don't break them.
 
@@ -74,7 +74,7 @@ No runtime architecture — comments are inert. "Tiers" here are codebase *layer
 | Root (`src/featureFlags.ts`) | **~8 / 1** | LOW | Standard strip. |
 | Test files (`*.test.ts(x)`, all layers) | **~892 / 83** | VERY LOW | D-01 strip / D-02 no-delete. Mechanical. Batch last. |
 
-*(Per-layer figures are deduplicated line counts and sum to ~935; the 1,043 non-test grand total is the all-`src` dedup including `revision`-tag lines not in every per-layer pass. Use grand totals for milestone framing, per-layer for wave sizing.)*
+*(Per-layer dedup figures sum to ~935, matching the ~940 non-test grand total. Use grand totals for milestone framing, per-layer for wave sizing.)*
 
 ## Standard Stack
 
@@ -252,7 +252,7 @@ Not applicable — no external library/version landscape. The only "old vs new" 
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | The 135 non-test + 120 test split and the dedup totals (non-test 1,043/67, test 892/83) are authoritative for wave sizing. | Summary / batching | Low — counted live this session. Differs from the audit's "77+61 / ~1,329" (earlier/narrower); re-run the Wave-0 grep at plan time only if the tree changed. [VERIFIED: live grep] |
+| A1 | The 135 non-test + 120 test split and the dedup totals (non-test ~940/83, test ~797/78) are authoritative for wave sizing. (Counts vary +-5% by exact tag pattern set; per-file `git grep -c` is the precise edit-volume signal.) | Summary / batching | Low — counted live this session. Differs from the audit's "77+61 / ~1,329" (earlier/narrower); re-run the Wave-0 grep at plan time only if the tree changed. [VERIFIED: live grep] |
 | A2 | eslint has no comment-format rule that reflows/flags stripped comments. | Summary / toolchain | Low — `eslint.config.js` is `js.recommended` + `strictTypeChecked` + react-hooks + react-refresh; none touch comment text. [VERIFIED: eslint.config.js] |
 | A3 | No test asserts on comment/tag string content. | Pitfall 3 | RESOLVED — grep for tag tokens inside `expect`/`toContain`/`toMatch` returned zero; marker-guard tests fs-scan source for shipped string values, confirmed by reading `content.no-review-markers.test.ts`. [VERIFIED: live grep + read] |
 | A4 | Stripping comments does not change emitted bundle bytes. | Runtime State Inventory | Low — standard Vite/esbuild behavior; confirmed structurally by a green `npm run build`. [ASSUMED] |
@@ -374,7 +374,7 @@ Not applicable to this phase's content (comment-only text edits introduce no aut
 - `.planning/REQUIREMENTS.md` — COMMENT-01/02, cross-cutting gates, Out of Scope.
 - `.planning/CODE-QUALITY-REVIEW.md` §3 — driving audit, worst-offender list, remedy phrasing, the stale `useAudioCues.ts` example.
 - `package.json`, `eslint.config.js`, `tsconfig.json`, `.planning/config.json` — verified toolchain, gate commands, no comment-format lint rule.
-- **Live enumeration (this session):** file counts (135 non-test + 120 test = 255), per-tag raw totals, dedup grand totals (non-test 1,043/67, test 892/83), per-file & per-layer counts, comment-assertion-test check (none), I18N marker location (12 in strings.ts), spike provenance file list (26 components).
+- **Live enumeration (this session):** file counts (135 non-test + 120 test = 255), per-tag raw totals, dedup grand totals (non-test ~940/83, test ~797/78), per-file & per-layer counts, comment-assertion-test check (none), I18N marker location (12 in strings.ts), spike provenance file list (26 components).
 - **Full read of `src/hooks/useAudioCues.ts`** and `src/content/content.no-review-markers.test.ts` — confirmed trailing-comment landmines, the lying `L213-222` ref, JSDoc tag density, the gesture-token keep-essay, and the marker-guard mechanism.
 
 ### Secondary (MEDIUM confidence)
