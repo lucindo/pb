@@ -24,7 +24,7 @@ import {
 } from './settings'
 import type { SessionSettings, StretchSettings } from './settings'
 
-describe('isValidBpm (HYGIENE-02 D-08)', () => {
+describe('isValidBpm', () => {
   it('returns true for valid BPM_OPTIONS members (e.g. 5.5)', () => {
     expect(isValidBpm(5.5)).toBe(true)
   })
@@ -42,7 +42,7 @@ describe('isValidBpm (HYGIENE-02 D-08)', () => {
   })
 })
 
-describe('isValidRatio (HYGIENE-02 D-08)', () => {
+describe('isValidRatio', () => {
   it('returns true for RATIO_OPTIONS members (e.g. "40:60")', () => {
     expect(isValidRatio('40:60')).toBe(true)
   })
@@ -57,7 +57,7 @@ describe('isValidRatio (HYGIENE-02 D-08)', () => {
   })
 })
 
-describe('isValidDuration (HYGIENE-02 D-08)', () => {
+describe('isValidDuration', () => {
   it('returns true for DURATION_OPTIONS numeric members (e.g. 10)', () => {
     expect(isValidDuration(10)).toBe(true)
   })
@@ -108,7 +108,7 @@ describe('duration and stretch option helpers', () => {
   })
 })
 
-describe('isValidTheme (INFRA-02 D-01)', () => {
+describe('isValidTheme', () => {
   it('returns true for THEME_OPTIONS members (e.g. "system")', () => {
     expect(isValidTheme('system')).toBe(true)
   })
@@ -127,7 +127,7 @@ describe('isValidTheme (INFRA-02 D-01)', () => {
   })
 })
 
-describe('isValidTimbre (INFRA-02 D-01)', () => {
+describe('isValidTimbre', () => {
   it('returns true for TIMBRE_OPTIONS members (e.g. "bowl")', () => {
     expect(isValidTimbre('bowl')).toBe(true)
   })
@@ -146,7 +146,7 @@ describe('isValidTimbre (INFRA-02 D-01)', () => {
   })
 })
 
-describe('isValidCue (Phase 25 CUE-01)', () => {
+describe('isValidCue', () => {
   it('returns true for all CUE_OPTIONS members: labels, arrow, nose', () => {
     expect(isValidCue('labels')).toBe(true)
     expect(isValidCue('arrow')).toBe(true)
@@ -171,17 +171,17 @@ describe('isValidCue (Phase 25 CUE-01)', () => {
   })
 })
 
-describe('CUE_OPTIONS and DEFAULT_CUE (Phase 25 CUE-01)', () => {
+describe('CUE_OPTIONS and DEFAULT_CUE', () => {
   it('CUE_OPTIONS deep-equals ["labels", "arrow", "nose"]', () => {
     expect([...CUE_OPTIONS]).toEqual(['labels', 'arrow', 'nose'])
   })
 
-  it('DEFAULT_CUE is "arrow" (set via quick task 260519-9mi, superseding CONTEXT D-01)', () => {
+  it('DEFAULT_CUE is "arrow"', () => {
     expect(DEFAULT_CUE).toBe('arrow')
   })
 })
 
-describe('isValidLocale (INFRA-02 D-01)', () => {
+describe('isValidLocale', () => {
   it('returns true for LOCALE_OPTIONS members (e.g. "en")', () => {
     expect(isValidLocale('en')).toBe(true)
   })
@@ -200,9 +200,7 @@ describe('isValidLocale (INFRA-02 D-01)', () => {
   })
 })
 
-// STRETCH-03 (D-07) predicate tests (isValidMode is removed — these remain)
-
-describe('isValidWarmUp (STRETCH-03, D-07)', () => {
+describe('isValidWarmUp', () => {
   it('returns true for WARMUP_MINUTES_OPTIONS members (5, 10, 15)', () => {
     expect(isValidWarmUp(5)).toBe(true)
     expect(isValidWarmUp(10)).toBe(true)
@@ -227,7 +225,7 @@ describe('isValidWarmUp (STRETCH-03, D-07)', () => {
   })
 })
 
-describe('isValidCoolDown (STRETCH-03, D-07, D-11)', () => {
+describe('isValidCoolDown', () => {
   it('returns true for COOLDOWN_OPTIONS numeric members (5, 10, 15, 20)', () => {
     expect(isValidCoolDown(5)).toBe(true)
     expect(isValidCoolDown(10)).toBe(true)
@@ -235,7 +233,7 @@ describe('isValidCoolDown (STRETCH-03, D-07, D-11)', () => {
     expect(isValidCoolDown(20)).toBe(true)
   })
 
-  it('returns true for "open-ended" sentinel (D-11)', () => {
+  it('returns true for "open-ended" sentinel', () => {
     expect(isValidCoolDown('open-ended')).toBe(true)
   })
 
@@ -252,7 +250,7 @@ describe('isValidCoolDown (STRETCH-03, D-07, D-11)', () => {
   })
 })
 
-describe('isValidRampDuration (STRETCH-03, D-07)', () => {
+describe('isValidRampDuration', () => {
   it('returns true for RAMP_DURATION_OPTIONS members (5, 10, 15, 20)', () => {
     expect(isValidRampDuration(5)).toBe(true)
     expect(isValidRampDuration(10)).toBe(true)
@@ -277,8 +275,7 @@ describe('isValidRampDuration (STRETCH-03, D-07)', () => {
   })
 })
 
-// D-01/D-02: SessionSettings is now standard-only (3 fields)
-describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => {
+describe('SessionSettings and validateSettings', () => {
   it('DEFAULT_SETTINGS has exactly bpm, ratio, durationMinutes — no mode field', () => {
     expect(DEFAULT_SETTINGS).not.toHaveProperty('mode')
     expect(DEFAULT_SETTINGS).toHaveProperty('bpm')
@@ -312,8 +309,8 @@ describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => 
 })
 
 // DEFAULT_STRETCH_SETTINGS: typed as StretchSettings, includes ratio, all six fields
-describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
-  it('has ratio field (required by D-02 — ratio consumed by buildStretchSegments)', () => {
+describe('DEFAULT_STRETCH_SETTINGS', () => {
+  it('has ratio field (ratio consumed by buildStretchSegments internally)', () => {
     expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('ratio')
     expect(DEFAULT_STRETCH_SETTINGS.ratio).toBe('40:60')
   })
@@ -334,8 +331,7 @@ describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
   })
 })
 
-// validateStretchSettings: new function carrying the former stretch-branch checks
-describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
+describe('validateStretchSettings', () => {
   const validStretch: StretchSettings = {
     ratio: '40:60',
     initialBpm: 6,
@@ -358,7 +354,7 @@ describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
     expect(() => validateStretchSettings(bad)).toThrow(RangeError)
   })
 
-  it('throws RangeError when targetBpm >= initialBpm (down-only constraint, D-02)', () => {
+  it('throws RangeError when targetBpm >= initialBpm (down-only constraint)', () => {
     const equalBpm: StretchSettings = { ...validStretch, targetBpm: 6 }  // equal
     expect(() => validateStretchSettings(equalBpm)).toThrow(RangeError)
     const higherBpm: StretchSettings = { ...validStretch, targetBpm: 7 }  // higher

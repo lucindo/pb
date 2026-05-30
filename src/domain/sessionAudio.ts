@@ -3,11 +3,10 @@ import type { SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
 export interface BoundaryAudioOffsets {
-  // Phase 50-02 (D-02 ms→sec cascade): boundaryStartSec is the session-elapsed
-  // seconds at the start of the upcoming phase. The caller in
-  // useBreathingSessionController converts this to an audio-clock time by
-  // adding the per-session audio anchor — boundaryStartSec is a sessionFrame-
-  // shaped quantity, not an audio-clock instant.
+  // boundaryStartSec is the session-elapsed seconds at the start of the upcoming
+  // phase. The caller converts this to an audio-clock time by adding the
+  // per-session audio anchor — boundaryStartSec is a sessionFrame-shaped
+  // quantity, not an audio-clock instant.
   readonly boundaryStartSec: number
   readonly phaseDurationSec: number
 }
@@ -15,7 +14,7 @@ export interface BoundaryAudioOffsets {
 // ─── walkFutureCues ───────────────────────────────────────────────────────────
 
 /**
- * Phase 52 Plan 06 WR-01: hard iteration cap for walkFutureCues.
+ * Hard iteration cap for walkFutureCues.
  *
  * Derived as a safe multiple of the maximum cues a valid lookahead window can
  * emit: LOOKAHEAD_WINDOW_SEC / smallest-plausible-phase-duration + LOOKAHEAD_MIN_CUES.
@@ -25,8 +24,7 @@ export interface BoundaryAudioOffsets {
  * the window can emit at most 6/1.7 ≈ 4 cues per window (never close to 10_000).
  * 10_000 is therefore a pure defense against degenerate/inconsistent plans
  * (negative or inconsistent phase offsets that prevent normal exit) and can
- * never be reached by any valid HRV or Stretch plan. Comment ties the value to
- * LOOKAHEAD_WINDOW_SEC + LOOKAHEAD_MIN_CUES as required by IN-02/WR-01.
+ * never be reached by any valid HRV or Stretch plan.
  */
 export const MAX_WALK_ITERATIONS = 10_000 as const
 
@@ -37,21 +35,21 @@ export interface FutureCue {
 }
 
 /**
- * Phase 52 D-01/D-11/D-14: walk N future cues forward from the given anchor + position.
+ * Walk N future cues forward from the given anchor + position.
  *
  * Returns an array of cue descriptors for dispatch via engine.topUpLookahead.
  * Each entry represents one upcoming phase boundary.
  *
- * Pure function: no React, no I/O, no side effects. Mirrors computeBoundaryAudioOffsets style.
+ * Pure function: no React, no I/O, no side effects.
  *
- * D-01 hybrid window: queue any cue whose relSec ≤ windowEndElapsedSec, but always
+ * Hybrid window: queue any cue whose relSec ≤ windowEndElapsedSec, but always
  * keep at least minCues cues (floor). At low BPM the floor dominates; at high BPM
  * the seconds window dominates.
  *
- * D-11 Stretch: when segments[] is provided, each cue's phaseDurationSec comes from
+ * Stretch: when segments[] is provided, each cue's phaseDurationSec comes from
  * its OWN segment (linear-walk per cue, matching getStretchFrame posture in stretchRamp.ts).
  *
- * D-14 timed-session trim: when targetSec is defined, never emit cues past
+ * Timed-session trim: when targetSec is defined, never emit cues past
  * audioAnchor + targetSec. The trim overrides the floor for timed sessions.
  */
 export function walkFutureCues(args: {
@@ -87,7 +85,7 @@ export function walkFutureCues(args: {
 
   // Compute window end in elapsed-seconds space
   let windowEndElapsedSec = elapsedSec + lookaheadWindowSec
-  // D-14: if targetSec is defined, clamp the window at the session end
+  // If targetSec is defined, clamp the window at the session end
   if (targetSec !== undefined) {
     windowEndElapsedSec = Math.min(windowEndElapsedSec, targetSec)
   }
@@ -97,7 +95,7 @@ export function walkFutureCues(args: {
   let currentPhase: 'in' | 'out' = fromPhase
 
   // Walk loop: emit one cue per iteration.
-  // MAX_WALK_ITERATIONS hard cap (WR-01): a degenerate plan (cycleSec>0, inconsistent phase
+  // MAX_WALK_ITERATIONS hard cap: a degenerate plan (cycleSec>0, inconsistent phase
   // offsets, targetSec===undefined) cannot hang the rAF tick. The cap cannot be reached by
   // any valid HRV or Stretch plan — see MAX_WALK_ITERATIONS comment above.
   for (let _i = 0; _i < MAX_WALK_ITERATIONS; _i++) {
@@ -114,7 +112,7 @@ export function walkFutureCues(args: {
     } else {
       // ── Stretch branch: per-segment cycleSec from segment table ──
       // Compute audioTimeRelSec from cycleIndex + phase using segment walk
-      // (mirrors L221-256 in stretchRamp.ts getStretchFrame)
+      // (mirrors getStretchFrame segment walk in stretchRamp.ts)
       // segments is non-empty (guarded by the caller via allDegenerate check above);
       // the last element is always present. Provide a fallback to satisfy TypeScript without
       // a non-null assertion — this branch is unreachable with a valid segments array.
@@ -136,12 +134,12 @@ export function walkFutureCues(args: {
 
     const audioTime = audioAnchor + audioTimeRelSec
 
-    // D-14 timed-session trim: never emit cues past targetSec — overrides floor
+    // Timed-session trim: never emit cues past targetSec — overrides floor
     if (targetSec !== undefined && audioTimeRelSec > targetSec) {
       break
     }
 
-    // D-01 hybrid stop: floor satisfied AND window exhausted → stop
+    // Hybrid stop: floor satisfied AND window exhausted → stop
     if (result.length >= minCues && audioTimeRelSec > windowEndElapsedSec) {
       break
     }

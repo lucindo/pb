@@ -60,15 +60,10 @@ describe('supported breathing settings', () => {
 
 describe('breathing plan math', () => {
   it('converts BPM, ratio, and duration into continuous inhale/exhale timing', () => {
-    // Phase 50-02 (D-02 ms→sec cascade): BreathingPlan fields are seconds-shaped
-    // at the source. The seconds-shaped construction `12 * (40/100)` produces
-    // 4.800000000000001 due to IEEE-754 representation of 0.4 (the prior
-    // ms-shaped form `12_000 * 0.4` = 4800 was integer-clean by coincidence).
-    // This FP-residue is benign: downstream consumers either compare with
-    // toBeCloseTo, or feed the value into Math.floor / threshold tests where
-    // a 1e-15 difference is invisible. Switch the deep-equal to per-field
-    // toBeCloseTo to assert structural equivalence without anchoring on the
-    // exact ms→sec arithmetic byte representation.
+    // BreathingPlan fields are seconds-shaped. The construction `12 * (40/100)` produces
+    // 4.800000000000001 due to IEEE-754 representation of 0.4 — this FP residue is
+    // benign (downstream consumers use toBeCloseTo or Math.floor). Per-field toBeCloseTo
+    // asserts structural equivalence without anchoring on exact arithmetic byte representation.
     const plan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })
     expect(plan.bpm).toBe(5)
     expect(plan.ratio).toBe('40:60')

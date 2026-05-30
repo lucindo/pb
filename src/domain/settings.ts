@@ -14,15 +14,14 @@ export const COOLDOWN_OPTIONS = [5, 10, 15, 20, 'open-ended'] as const satisfies
 
 export const RAMP_DURATION_OPTIONS = [5, 10, 15, 20] as const satisfies readonly number[]
 
-// D-01/D-02: SessionSettings is standard-only — trim to 3 fields.
-// mode, initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes removed.
+// SessionSettings is standard-only — 3 fields (bpm, ratio, durationMinutes).
 export interface SessionSettings {
   bpm: number
   ratio: RatioLabel
   durationMinutes: DurationOption
 }
 
-// D-02: StretchSettings is a standalone type — ratio + the five ramp fields.
+// StretchSettings is a standalone type — ratio + the five ramp fields.
 // durationMinutes is NOT stored here (it is computed from the ramp table).
 export interface StretchSettings {
   ratio: RatioLabel
@@ -50,7 +49,7 @@ export const BPM_OPTIONS = [
 ] as const satisfies readonly number[]
 
 // STRETCH_INITIAL_BPM_OPTIONS: BPM_OPTIONS filtered to >= 1.5 so targetBpm always has
-// at least one valid option below initialBpm (Pitfall 4 — prevents empty targetBpm picker)
+// at least one valid option below initialBpm (prevents empty targetBpm picker)
 export const STRETCH_INITIAL_BPM_OPTIONS: readonly number[] = (BPM_OPTIONS as readonly number[]).filter(
   (v) => v >= 1.5,
 )
@@ -90,7 +89,7 @@ export const DEFAULT_SETTINGS: SessionSettings = {
 
 // DEFAULT_STRETCH_SETTINGS: the per-field stretch defaults referenced by the
 // storage coercer. Warm-up 5 + Ramp 5 + Cool-down 5 = 15-minute computed total.
-// ratio: '40:60' added per D-02 — ratio is consumed by buildStretchSegments internally.
+// ratio is consumed by buildStretchSegments internally.
 export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
   ratio: '40:60',
   initialBpm: 5.5,
@@ -137,8 +136,8 @@ export function getStretchSettingsWithInitialBpm(
   return { ...settings, initialBpm }
 }
 
-// Phase 14 D-01: v1.1 customization enum surfaces — predicates are FINAL;
-// downstream phases (16/17/18/19) only add UI/CSS/audio wiring and do NOT re-edit.
+// Customization enum surfaces — predicates are stable; consumers add UI/CSS/audio
+// wiring without editing the domain types.
 
 export type ThemeId = 'light' | 'dark' | 'system'
 
@@ -168,7 +167,7 @@ export function isValidCue(v: unknown): v is CueStyleId {
   return typeof v === 'string' && (CUE_OPTIONS as readonly string[]).includes(v)
 }
 
-export const DEFAULT_CUE: CueStyleId = 'arrow'  // 'arrow' set via quick task 260519-9mi (2026-05-19), superseding earlier CONTEXT D-01 "labels (fixed)" decision
+export const DEFAULT_CUE: CueStyleId = 'arrow'
 
 export type LocaleId = 'en' | 'pt-BR'
 
@@ -214,7 +213,7 @@ export function isValidRampDuration(v: unknown): v is number {
     && (RAMP_DURATION_OPTIONS as readonly number[]).includes(v)
 }
 
-// D-01/D-02: validateSettings is standard-only — 3 fields, no mode check.
+// validateSettings is standard-only — 3 fields, no mode check.
 export function validateSettings(settings: SessionSettings): SessionSettings {
   if (!isValidBpm(settings.bpm)) {
     throw new RangeError(`Unsupported BPM: ${String(settings.bpm)}`)
@@ -223,8 +222,9 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
   if (!isValidRatio(settings.ratio)) {
     // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
     // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
-    // is preserved verbatim (D-09 byte-identical message format) so the runtime string
-    // ("Unsupported ratio: 99:1" for an upstream-cast offending value) remains correct.
+    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
+    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
+    // is preserved verbatim so the runtime string remains correct.
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
   }
@@ -236,14 +236,12 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
   return { ...settings }
 }
 
-// D-01/D-02: validateStretchSettings carries the former stretch-branch checks
-// from validateSettings. Receives a StretchSettings (not SessionSettings).
+// validateStretchSettings receives a StretchSettings (not SessionSettings).
 export function validateStretchSettings(settings: StretchSettings): StretchSettings {
   if (!isValidRatio(settings.ratio)) {
     // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
     // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
-    // is preserved verbatim (D-09 byte-identical message format) so the runtime string
-    // ("Unsupported ratio: 99:1" for an upstream-cast offending value) remains correct.
+    // is preserved verbatim so the runtime string remains correct.
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
   }

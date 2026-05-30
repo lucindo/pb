@@ -25,8 +25,8 @@ export const DEFAULT_NK_SETTINGS: NaviKriyaSettings = {
 }
 
 // isValidFrontCount: checks typeof number, Number.isFinite, Number.isInteger, v > 0,
-// AND v % 4 === 0 — the multiple-of-4 check is the critical Pitfall 5 guard so
-// backCount = frontCount / 4 is never fractional.
+// AND v % 4 === 0 — the multiple-of-4 invariant ensures backCount = frontCount / 4
+// is never fractional.
 export function isValidFrontCount(v: unknown): v is number {
   return typeof v === 'number'
     && Number.isFinite(v)

@@ -20,10 +20,8 @@ export interface RunningSessionState {
   lockedSettings: SessionSettings
   plan: BreathingPlan
   stretchSegments: StretchSegment[] | null
-  // Phase 50-02 (D-02 ms→sec cascade): startedAtSec is the seconds-shaped
-  // session-start timestamp from the injected SessionClock. Phase 50 sources
-  // the wall clock (one read per session start); Phase 51 swaps the source to
-  // audioCtx.currentTime via the same SessionClock seam.
+  // startedAtSec is the seconds-shaped session-start timestamp from the
+  // injected SessionClock (audioCtx.currentTime via the SessionClock seam).
   startedAtSec: number
   lastFrame: SessionFrame
 }
@@ -47,7 +45,7 @@ function cloneSettings(settings: SessionSettings): SessionSettings {
   return { ...settings }
 }
 
-// D-01: startSession is standard-only — no mode check, stretchSegments always null.
+// startSession is standard-only — no mode check, stretchSegments always null.
 export function startSession(selectedSettings: SessionSettings, nowSec: number): RunningSessionState {
   const lockedSettings = cloneSettings(selectedSettings)
   const plan = createBreathingPlan(lockedSettings)
@@ -64,13 +62,10 @@ export function startSession(selectedSettings: SessionSettings, nowSec: number):
   }
 }
 
-// D-01/D-02: startStretchSession — new function for stretch sessions.
-// Lead-in plan runs at initialBpm so cue duration matches the warm-up rate.
-// WR-03: the caller's resonant selectedSettings are passed through unchanged so
-// endSession returns the resonant config (not the synthetic lead-in). The
-// synthetic lead-in lives ONLY in lockedSettings (it drives the lead-in plan);
-// selectedSettings carries the resonant config through the entire session so
-// endSession's `cloneSettings(state.selectedSettings)` preserves it to idle.
+// startStretchSession: lead-in plan runs at initialBpm so cue duration matches the warm-up rate.
+// The caller's resonant selectedSettings are passed through unchanged so endSession returns
+// the resonant config (not the synthetic lead-in). The synthetic lead-in lives ONLY in
+// lockedSettings; selectedSettings carries the resonant config through the entire session.
 export function startStretchSession(
   stretchSettings: StretchSettings,
   selectedSettings: SessionSettings,
@@ -84,7 +79,7 @@ export function startStretchSession(
     durationMinutes: 'open-ended',
   }
   const plan = createBreathingPlan(leadInSettings)
-  // D-02: buildStretchSegments now takes a single StretchSettings arg
+  // buildStretchSegments takes a single StretchSettings arg
   const stretchSegments = buildStretchSegments(stretchSettings)
   const lastFrame = getStretchFrame(stretchSegments, 0)
 
@@ -111,9 +106,8 @@ export function extendTimedSession(
   durationMinutes: number,
   nowSec: number,
 ): RunningSessionState {
-  // D-01: guard on stretchSegments !== null (no mode read — mode concept retired).
-  // CONTEXT D-02: stretch duration is governed by the rampDurationMinutes picker
-  // and the computed segment-table total, never by the durationMinutes stepper.
+  // Stretch sessions cannot be extended via durationMinutes — their duration is
+  // governed by the rampDurationMinutes picker and the computed segment-table total.
   if (state.stretchSegments !== null) {
     throw new RangeError('Stretch sessions cannot be extended via durationMinutes')
   }
@@ -146,11 +140,10 @@ export function extendTimedSession(
   }
   const plan = createBreathingPlan(lockedSettings)
 
-  // DS-WR-01: recompute `lastFrame` from the live clock (`nowSec - startedAtSec`)
-  // rather than the stale `state.lastFrame.elapsedSec`. `lastFrame` is only
-  // refreshed on rAF ticks; an extend invoked between ticks would otherwise make
-  // the next `completeIfNeeded` jump elapsed time discontinuously. This mirrors
-  // how `startSession` / `completeIfNeeded` derive elapsed from `startedAtSec`.
+  // Recompute `lastFrame` from the live clock (`nowSec - startedAtSec`) rather
+  // than the stale `state.lastFrame.elapsedSec`. `lastFrame` is only refreshed
+  // on rAF ticks; an extend invoked between ticks would otherwise make the next
+  // `completeIfNeeded` jump elapsed time discontinuously.
   const elapsedSec = nowSec - state.startedAtSec
 
   return {

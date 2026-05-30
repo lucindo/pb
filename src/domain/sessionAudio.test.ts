@@ -6,8 +6,7 @@ import { computeBoundaryAudioOffsets, walkFutureCues, MAX_WALK_ITERATIONS } from
 import type { SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
-// Phase 50-02 (D-02 ms→sec cascade): fixture values are seconds-shaped.
-// Prior ms values 10_909 / 4_363 / 6_545 → 10.909 / 4.363 / 6.545 sec.
+// Fixture values are seconds-shaped.
 const plan: BreathingPlan = {
   bpm: 5.5,
   ratio: '40:60',
@@ -27,7 +26,7 @@ const baseFrame: SessionFrame = {
   isComplete: false,
 }
 
-// ─── Phase 52 D-01/D-11/D-14 walkFutureCues tests ───────────────────────────
+// ─── walkFutureCues tests ─────────────────────────────────────────────────────
 
 // HRV fixture plan: 10 BPM (cycleSec=6, inhale=3, exhale=3)
 const hrvPlan: BreathingPlan = {
@@ -63,7 +62,7 @@ const stretchSegs: StretchSegment[] = [
   },
 ]
 
-describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
+describe('walkFutureCues', () => {
   // Test 1: HRV walk basic — at 10 BPM (cycleSec=6), floor=2, window=6s
   it('HRV basic walk returns ≥LOOKAHEAD_MIN_CUES cues starting at anchor+0 for fromPhase=in', () => {
     const anchor = 100
@@ -113,8 +112,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
     })
-    // D-01/D-03 floor: even though the window (6s) doesn't reach the next cycle (60s),
-    // the floor kicks in and returns LOOKAHEAD_MIN_CUES cues
+    // floor kicks in even though the window (6s) doesn't reach the next cycle (60s)
     expect(cues.length).toBe(LOOKAHEAD_MIN_CUES)
     expect(cues[0]?.kind).toBe('in')
     expect(cues[1]?.kind).toBe('out')
@@ -199,7 +197,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
-  // Test 6: targetSec trim — timed session, floor does NOT override D-14
+  // Test 6: targetSec trim — timed session, floor does NOT override the end trim
   it('targetSec trim: no cue queued past audioAnchor+targetSec even with floor', () => {
     const anchor = 0
     // 5-min session (targetSec=300), current elapsed=298, window would want 6s ahead
@@ -217,7 +215,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     for (const cue of cues) {
       expect(cue.audioTime).toBeLessThanOrEqual(anchor + 300)
     }
-    // D-14: floor does NOT override target — may return fewer than LOOKAHEAD_MIN_CUES
+    // floor does NOT override target — may return fewer than LOOKAHEAD_MIN_CUES
     // The cycle at index 49: audioTimeRelSec = 49*6 = 294 (in), 294+3=297 (out)
     // Next cycle at 300 is exactly at targetSec — may or may not be included but must not exceed
     for (const cue of cues) {
@@ -304,11 +302,11 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
   })
 })
 
-// Phase 52 Plan 06 WR-01: hard iteration cap on walkFutureCues.
+// walkFutureCues hard iteration cap.
 // Verifies a degenerate plan (cycleSec > 0, targetSec=undefined, inhaleSec=0 so
 // phaseOffset for 'out' = 0 = same as 'in') terminates at MAX_WALK_ITERATIONS
 // instead of looping forever. Without the cap, 6/1e-9 = 6e9 iterations would hang.
-describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
+describe('walkFutureCues hard iteration cap', () => {
   it('degenerate plan terminates within MAX_WALK_ITERATIONS cap instead of looping forever', () => {
     // cycleSec=1e-9 (near-zero positive, passes cycleSec > 0 guard).
     // inhaleSec=0 → phaseOffset for 'out' = inhaleSec = 0 too.
@@ -385,7 +383,7 @@ describe('computeBoundaryAudioOffsets', () => {
     const out = computeBoundaryAudioOffsets({ ...baseFrame, phase: 'in' }, plan)
 
     expect(out.boundaryStartSec).toBe(3 * plan.cycleSec)
-    // Phase 50-02: phaseDurationSec is plan.inhaleSec directly (no `/1000`).
+    // phaseDurationSec is plan.inhaleSec directly (seconds-shaped).
     expect(out.phaseDurationSec).toBe(plan.inhaleSec)
   })
 
