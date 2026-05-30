@@ -74,9 +74,9 @@ describe('coerceNaviKriyaSettings (D-02 / Pitfall 5 / T-30-06)', () => {
   })
 
   it('rounds a non-multiple-of-4 frontCount DOWN to the nearest multiple of 4, then snaps to nearest option', () => {
-    // Pitfall 5: a fractional backCount would break Phase 31 arithmetic. The
-    // coercer rounds down to a multiple of 4, then snaps to the nearest
-    // NK_FRONT_COUNT_OPTIONS entry so the SettingsStepper always has a valid index.
+    // A fractional backCount would break NK arithmetic. The coercer rounds down to
+    // a multiple of 4, then snaps to the nearest NK_FRONT_COUNT_OPTIONS entry so
+    // the SettingsStepper always has a valid index.
     expect(coerceNaviKriyaSettings({ frontCount: 102 }).frontCount).toBe(100)   // 102→100 (multiple-of-4 floor), 100 is in options
     expect(coerceNaviKriyaSettings({ frontCount: 90 }).frontCount).toBe(100)    // 90→88 (floor), snap(88)=100
     expect(coerceNaviKriyaSettings({ frontCount: 88 }).frontCount).toBe(100)    // 88 already multiple of 4, snap(88)=100
@@ -295,7 +295,7 @@ describe('recordNaviKriyaSession (NK-08 / D-13 / T-31-07 / T-31-08)', () => {
   })
 
   it('does not count a sub-threshold incomplete session (early end below COUNT_THRESHOLD_MS)', () => {
-    // D-13: below-threshold early end is NOT recorded.
+    // Below-threshold early end is NOT recorded.
     const next = recordNaviKriyaSession(5_000, 2, false)
     expect(next.totalSessions).toBe(0)
     expect(next.roundsCompleted).toBeUndefined()

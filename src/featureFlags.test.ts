@@ -13,10 +13,9 @@ import {
   type QueryFeatureFlagSpec,
 } from './featureFlags'
 
-// Snapshot of v2.0 production defaults — used as the second arg to the 2-arg
-// readFeatureFlags(search, persisted) resolver (Phase 47 D-05/D-06). Because
-// this snapshot equals the production defaults, every existing single-flag
-// assertion below stays byte-identical (default-wins half of D-06).
+// Snapshot of production defaults — used as the second arg to the 2-arg
+// readFeatureFlags(search, persisted) resolver. Because this snapshot equals
+// the production defaults, every existing single-flag assertion stays byte-identical.
 const DEFAULT_PERSISTED: FeatureFlags = {
   switcherIcon: false,
   breathingShape: 'orb-halo',
@@ -223,7 +222,7 @@ describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
   it('BREATHING_SHAPE_FLAG is exported with the production default + alias parser', () => {
     expect(BREATHING_SHAPE_FLAG.queryParam).toBe('breathingShape')
     expect(BREATHING_SHAPE_FLAG.defaultValue).toBe('orb-halo')
-    // Alias-table reuse contract — Plan 02 coercer will rely on this.
+    // Alias-table reuse: the prefs coercer relies on this parse method.
     expect(BREATHING_SHAPE_FLAG.parse('kuthasta')).toBe('spiritual-eye')
     expect(BREATHING_SHAPE_FLAG.parse('junk')).toBeNull()
   })

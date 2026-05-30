@@ -1,12 +1,7 @@
-// Phase 51 Plan 02 Task 3 — useBreathingSessionController smoke test.
-//
-// Goal: confirm the controller renders without crashing after the
-// L83 `createWallSessionClock()` deletion + hook-order flip (audio → session)
-// and the audio.clock → useSessionEngine wiring (D-05 / hook ordering).
-//
-// Deep behavioral coverage (HRV elapsed on AC time, suspension freeze, reanchor
-// preserves elapsed across AC reconstruction) is deferred to Plan 51-04 as
-// specified in the plan must_haves.
+// useBreathingSessionController smoke test.
+// Confirms the controller renders without crashing after the hook-order flip
+// (audio → session) and the audio.clock → useSessionEngine wiring.
+// Deep behavioral coverage is in the AC-suspension semantics describe blocks.
 
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -55,7 +50,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
 
   // Smoke test 2: session.reanchorSessionClock is wired through audio.onSessionClockReanchored —
   // the bridge ref must be populated so reconstruction can preserve elapsed across the AC swap.
-  // This proves the hook-order flip didn't break the D-10/D-11 callback chain.
   it('exposes session.reanchorSessionClock as a callable function', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
@@ -69,8 +63,8 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
 
     expect(typeof result.current.session.reanchorSessionClock).toBe('function')
 
-    // Idle-state reanchor is a no-op (verified at the engine level in Plan 51-02 Task 1
-    // tests). Calling it here proves the wiring does not throw end-to-end.
+    // Idle-state reanchor is a no-op (proven at the engine level).
+    // Calling it here proves the wiring does not throw end-to-end.
     act(() => {
       result.current.session.reanchorSessionClock(123.456)
     })
@@ -103,9 +97,8 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
   })
 })
 
-// Phase 52 D-04/D-14: top-up trigger behavioral tests
-// These tests verify that after the boundary-detection effect is replaced,
-// the top-up trigger calls audio.topUpLookahead on every session frame change.
+// Top-up trigger behavioral tests: the top-up trigger calls audio.topUpLookahead
+// on every session frame change.
 describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -203,7 +196,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     unmount()
   })
 
-  // Test 6: timed completion trim - targetSec sourced from plan.totalSec (D-14)
+  // Test 6: timed completion trim — targetSec sourced from plan.totalSec
   it('timed session: controller sources targetSec from plan.totalSec (D-14 trim behavioral)', () => {
     const timedSettings = { ...DEFAULT_SETTINGS, durationMinutes: 5 as const }
     const { result, unmount } = renderHook(() =>
@@ -220,20 +213,11 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   })
 })
 
-// Phase 52 Plan 06 CR-01 (second pass — deviation from plan): dispatch-site filter analysis.
-// The plan proposed a dispatch-site filter (REVIEW.md Option A) to prevent re-dispatching
-// in-flight boundary cues when the rAF tick lags the audio clock. After implementation,
-// the filter was found to break the App.audio reconstruction test because it incorrectly
-// drops reconstruction-path cues whose audioTime is legitimately behind audioNow (anchor
-// math produces audioTime = newAC.currentTime + (inhaleSec - elapsed), which can be 200ms
-// in the past by the time the boundary boundary fires in the test).
-//
-// Deviation: the `audioTime > audioNow + SAFE_LEAD_SEC` filter was REMOVED. The residual
-// double-strike (5ms flam from a single lagging rAF tick) is an accepted artifact —
-// Plan 05's cancel-then-reschedule handles the main case (consecutive overlapping walks).
-// After reconstruction, anchor changes ensure different audioTimes so no double-strike occurs.
-//
-// This describe block documents the analysis and tests the cancel-then-reschedule ordering.
+// Cancel-then-reschedule ordering: the dispatch-site filter option was not implemented
+// because it incorrectly drops reconstruction-path cues whose audioTime is legitimately
+// behind audioNow. The residual double-strike (5ms flam) is accepted;
+// cancel-then-reschedule handles consecutive overlapping walks; anchor changes after
+// reconstruction ensure different audioTimes so no double-strike occurs.
 describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site filter deferred)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -246,8 +230,6 @@ describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site
 
   it('CR-01 Plan06: cancel fires before topUpLookahead even when audioNow is past boundary cue', async () => {
     // Tests cancel-then-reschedule ordering in the lagging-frame scenario.
-    // The dispatch-site filter (REVIEW.md Option A) was not implemented due to the
-    // reconstruction-path edge case. Cancel-then-reschedule (Plan 05) is preserved.
     const wallClock = createWallSessionClock()
     const cancelFutureCues = vi.fn()
     const topUpLookahead = vi.fn()
@@ -295,7 +277,7 @@ describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site
       await Promise.resolve()
     })
 
-    // cancel fires before topUpLookahead (Plan 05 cancel-then-reschedule preserved).
+    // cancel fires before topUpLookahead (cancel-then-reschedule preserved).
     if (cancelFutureCues.mock.calls.length > 0 && topUpLookahead.mock.calls.length > 0) {
       expect(cancelFutureCues.mock.invocationCallOrder[0])
         .toBeLessThan(topUpLookahead.mock.invocationCallOrder[0] as number)
@@ -308,10 +290,9 @@ describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site
   })
 })
 
-// Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues before topUpLookahead.
-// Uses vi.spyOn on useAudioCues module to intercept the hook and return a controlled fake
-// with trackable cancelFutureCues and topUpLookahead — verifies call ordering via
-// mock.invocationCallOrder (lower number = called first, per Vitest mock tracking).
+// Controller top-up effect calls cancelFutureCues before topUpLookahead.
+// Uses vi.spyOn on useAudioCues module to return a controlled fake; verifies call ordering
+// via mock.invocationCallOrder (lower number = called first).
 describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues before topUpLookahead', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -384,8 +365,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     // Trigger a session.currentFrame advance by advancing past a phase boundary.
     // At DEFAULT_SETTINGS (5.5 BPM, 40:60), in-phase is ~4.36s. Advancing by 5.1s
     // crosses the first In→Out boundary, which changes session.currentFrame and
-    // triggers the top-up effect dep (session.currentFrame identity changes at
-    // phase boundaries per useSessionEngine D-03 / HOOKS-03).
+    // triggers the top-up effect dep (session.currentFrame identity changes at phase boundaries).
     await act(async () => {
       vi.advanceTimersByTime(5100)
       await Promise.resolve()

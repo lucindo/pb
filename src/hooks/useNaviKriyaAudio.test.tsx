@@ -68,7 +68,7 @@ describe('useNaviKriyaAudio', () => {
   })
 })
 
-// Phase 51 Plan 03 — D-03/D-06/D-12 proxy clock lifecycle tests
+// SessionClock proxy + setSource lifecycle tests
 describe('useNaviKriyaAudio — SessionClock proxy + setSource lifecycle (Phase 51 D-03/D-06/D-12)', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -77,7 +77,7 @@ describe('useNaviKriyaAudio — SessionClock proxy + setSource lifecycle (Phase 
   })
 
   // Test 1 — Proxy clock exposed: the returned controller has a clock member
-  // with the full SessionClock surface (D-03 identity invariant).
+  // with the full SessionClock surface.
   it('Test 1: exposes a clock member with SessionClock interface on the controller', () => {
     const { result } = renderHook(() => useNaviKriyaAudio(false))
     const { clock } = result.current

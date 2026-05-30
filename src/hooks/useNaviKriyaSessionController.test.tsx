@@ -1,13 +1,6 @@
-// Phase 51 Plan 03 Task 2 — useNaviKriyaSessionController smoke test.
-//
-// Goal: confirm the controller renders without crashing after the hook-call-order
-// flip (naviAudio → nkEngine) and the naviAudio.clock → useNKEngine wiring (D-02).
-// The test-double for useNaviKriyaAudio includes a no-op `clock` member per the
-// Plan 51-03 sweep requirement — any test that mocks NaviKriyaAudioController must
-// include clock.
-//
-// Deep behavioral coverage (NK stats on AC time, AC-suspend freezes elapsed) is
-// deferred to Plan 51-04 as specified in the plan output section.
+// useNaviKriyaSessionController smoke test: confirms the controller renders without
+// crashing after the hook-call-order flip and the naviAudio.clock → useNKEngine wiring.
+// The test-double for useNaviKriyaAudio includes a no-op `clock` member.
 
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

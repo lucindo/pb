@@ -1,5 +1,4 @@
-// App-integration tests for Phase 5 Wake Lock wiring (Plan 05-03).
-// Covers MOBL-02 Wave 2 rows in 05-VALIDATION.md Per-Task Verification Map.
+// App-integration tests for Wake Lock wiring.
 // Mirrors the fireEvent + fake-timers idiom from App.audio.test.tsx.
 
 import '@testing-library/jest-dom/vitest'
@@ -26,10 +25,10 @@ describe('App — wake lock (Phase 5)', () => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
-    vi.clearAllMocks() // clear polyfill vi.fn() call history between tests (mirrors Plan 02 fix)
+    vi.clearAllMocks() // clear polyfill vi.fn() call history between tests
   })
 
-  // -- Test 1: request fires once on Start session click (D-01) --------------
+  // -- Test 1: request fires once on Start session click --------------
   it('triggers navigator.wakeLock.request once on Start session click (D-01)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -39,7 +38,7 @@ describe('App — wake lock (Phase 5)', () => {
     expect(requestSpy).toHaveBeenCalledWith('screen')
   })
 
-  // -- Test 2: release on manual End for open-ended session (D-07) -----------
+  // -- Test 2: release on manual End for open-ended session -----------
   it('releases the wake lock when an open-ended session is ended directly (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -61,7 +60,7 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 3: release on modal-confirm End for timed session (D-07) ---------
+  // -- Test 3: release on modal-confirm End for timed session ---------
   it('releases the wake lock when the user confirms End via the EndSessionDialog (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -79,7 +78,7 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 4: release on timed completion (D-07 / SC3) ----------------------
+  // -- Test 4: release on timed completion ----------------------
   it('releases the wake lock when a timed session reaches completion automatically (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -101,7 +100,7 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 5: release on cancel-during-lead-in (D-07 / D-08) ----------------
+  // -- Test 5: release on cancel-during-lead-in ----------------
   it('releases the wake lock when the user cancels during lead-in (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -116,21 +115,19 @@ describe('App — wake lock (Phase 5)', () => {
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
-    // Cancel-during-lead-in: button label is 'Cancel' during lead-in (Phase 20 LEAD-01 / D-07).
+    // Cancel-during-lead-in: button label is 'Cancel' during lead-in.
     const primaryBtn = screen.getByRole('button', { name: 'Cancel' })
     fireEvent.click(primaryBtn)
     await flushMicrotasks()
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /Lead-in/ })).not.toBeInTheDocument()
-    // Per D-08 idempotency, release MAY be called even if sentinel was not yet held (cancel race).
-    // The assertion is liberal: release was called OR the cancel completed without error.
-    // The actual key invariant is no error reaches the user — verified by the queryByRole assertions above.
-    // For deterministic D-07 verification, assert release called at least once:
+    // Release MAY be called even if the sentinel was not yet held (cancel race).
+    // The key invariant is no error reaches the user — verified by the queryByRole assertions above.
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 6: silent fallback when navigator.wakeLock is undefined (D-09) ---
+  // -- Test 6: silent fallback when navigator.wakeLock is undefined ---
   describe('silent fallback (D-09)', () => {
     let savedWakeLock: WakeLock | undefined
 
@@ -161,8 +158,7 @@ describe('App — wake lock (Phase 5)', () => {
       await flushMicrotasks()
       expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
 
-      // Zero user-visible artifact: no banner, toast, or error message references "wake lock"
-      // anywhere in the DOM (D-10 / D-12 — no UI surface in v1).
+      // Zero user-visible artifact: no banner, toast, or error message references "wake lock".
       expect(screen.queryByText(/wake[- ]?lock/i)).not.toBeInTheDocument()
     })
   })

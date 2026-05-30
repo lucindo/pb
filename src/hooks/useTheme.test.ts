@@ -5,8 +5,7 @@ import { useTheme } from './useTheme'
 import { STATE_KEY } from '../storage'
 
 // Helper: seed the localStorage with a full envelope containing the given theme.
-// The exact envelope shape mirrors the structure used by loadPrefs/coercePrefs
-// (Phase 14 D-17 per-field coerce guarantees a valid ThemeId on the way out).
+// Per-field coerce guarantees a valid ThemeId on read.
 function seedPrefs(theme: string): void {
   window.localStorage.setItem(
     STATE_KEY,
@@ -120,7 +119,7 @@ describe('useTheme', () => {
     const { result } = renderHook(() => useTheme())
     expect(result.current.theme).toBe('dark')
 
-    // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
+    // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
       prefs: { theme: 'light', timbre: 'bowl', locale: 'en' },

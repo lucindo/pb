@@ -9,9 +9,8 @@ function setSearch(search: string): void {
   window.history.pushState(null, '', `${window.location.pathname}${search}`)
 }
 
-// Phase 47 Plan 03 — seed a full 8-field envelope keyed at STATE_KEY.
-// Mirrors useTheme.test.ts:10-18 but accepts a complete UserPrefs literal so
-// each test can override the exact field(s) it exercises.
+// Seed a full 8-field envelope keyed at STATE_KEY; accepts a complete UserPrefs literal
+// so each test can override the exact field(s) it exercises.
 function seedPrefs(prefs: UserPrefs): void {
   window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 1, prefs }))
 }
@@ -46,10 +45,7 @@ describe('useFeatureFlags', () => {
     expect(result.current.switcherIcon).toBe(true)
   })
 
-  // Phase 47 Plan 03 Task 1 RED — proves the hook seeds its persisted snapshot
-  // from loadPrefs() at mount. With the current PRODUCTION_DEFAULTS literal
-  // bridge (Plan 01), seeded non-default prefs are ignored — this test fails
-  // until the hook is wired to loadPrefs().
+  // Proves the hook seeds its persisted snapshot from loadPrefs() at mount.
   it('seeds feature flags from loadPrefs() at mount when no query string is present (PREFS-01)', () => {
     seedPrefs({
       ...DEFAULT_PREFS,
@@ -65,9 +61,7 @@ describe('useFeatureFlags', () => {
     expect(result.current.switcherIcon).toBe(true)
   })
 
-  // PREFS-02 integration — Plan 01's resolver enforces query-wins; this test
-  // confirms the integrated hook still honours that precedence when the
-  // persisted snapshot disagrees with the query.
+  // PREFS-02 integration: query string wins over persisted when they disagree.
   it('query string wins over persisted on mount (PREFS-02)', () => {
     seedPrefs({ ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' })
     setSearch('?breathingShape=minimal-rings')
@@ -81,7 +75,7 @@ describe('useFeatureFlags', () => {
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.breathingShape).toBe('orb-halo')
 
-    // Write the new envelope BEFORE dispatching (Pitfall 6: handler reads disk synchronously)
+    // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
       prefs: { ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' },
@@ -225,7 +219,7 @@ describe('useFeatureFlags', () => {
     expect(result.current.breathingShape).toBe('orb-halo')
   })
 
-  // Phase 49.1 — 5th key: bypassSilentMode event triggers re-read
+  // 5th key: bypassSilentMode event triggers re-read
   it('same-tab hrv:prefs-changed with detail.key === "bypassSilentMode" re-reads persisted', async () => {
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.bypassSilentMode).toBe(true) // default
@@ -242,16 +236,16 @@ describe('useFeatureFlags', () => {
     expect(result.current.bypassSilentMode).toBe(false)
   })
 
-  // Phase 49.1 — slim projection includes bypassSilentMode field
+  // slim projection includes bypassSilentMode field
   it('seeds bypassSilentMode from loadPrefs() at mount', () => {
     seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.bypassSilentMode).toBe(false)
   })
 
-  // D-11 forward-compat — `detail.key === undefined` (no key property) means
-  // "re-read all prefs". Future dimensions can dispatch the same event name
-  // with no key and useFeatureFlags will pick up persisted changes too.
+  // `detail.key === undefined` (no key property) means "re-read all prefs".
+  // Future dimensions can dispatch the event name with no key and useFeatureFlags
+  // will pick up persisted changes.
   it('same-tab hrv:prefs-changed with detail.key === undefined re-reads persisted (forward-compat)', async () => {
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.breathingShape).toBe('orb-halo')

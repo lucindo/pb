@@ -13,12 +13,10 @@ const defaultSettings: SessionSettings = {
   durationMinutes: 10,
 }
 
-// Phase 50-02 (D-09): useSessionEngine accepts a SessionClock as its 3rd arg.
+// useSessionEngine accepts a SessionClock as its 3rd arg.
 // Tests use createWallSessionClock() which reads `performance.now() / 1000` —
 // under vi.useFakeTimers() this advances with vi.advanceTimersByTime, so
-// `clock.now()` matches the fake-timer clock divided by 1000. Per-render
-// captured into a closure-stable instance so dep arrays containing `clock`
-// do not churn across renders.
+// `clock.now()` matches the fake-timer clock divided by 1000.
 const fakeClock = createWallSessionClock()
 
 describe('useSessionEngine', () => {
@@ -59,9 +57,7 @@ describe('useSessionEngine', () => {
     })
 
     expect(result.current.currentFrame?.phaseLabel).toBe('Out')
-    // Phase 50-02 (D-02 ms→sec cascade): elapsedSec is seconds-shaped.
-    // 5_100 ms advanced via fake timers → at least 5 sec elapsed (the wall
-    // clock returns performance.now() / 1000).
+    // elapsedSec is seconds-shaped: 5_100 ms advanced via fake timers → at least 5 sec elapsed.
     expect(result.current.currentFrame?.elapsedSec).toBeGreaterThanOrEqual(5)
 
     unmount()
@@ -94,10 +90,9 @@ describe('useSessionEngine', () => {
     act(() => {
       result.current.start()
     })
-    // Phase 3 fix: completion holds until the cycle that contains the
-    // configured duration finishes. 5 min at bpm 5.5 lands mid-cycle, so the
-    // hook only flips to 'complete' after the next cycle boundary
-    // (~305 454 ms). Advance well past it.
+    // Completion holds until the cycle that contains the configured duration finishes.
+    // 5 min at bpm 5.5 lands mid-cycle, so the hook only flips to 'complete' after
+    // the next cycle boundary (~305 454 ms). Advance well past it.
     act(() => {
       vi.advanceTimersByTime(6 * 60_000)
     })
@@ -127,7 +122,7 @@ describe('useSessionEngine', () => {
       throw new Error('Expected timed running state')
     }
     expect(timed.result.current.state.selectedSettings.durationMinutes).toBe(15)
-    // Phase 50-02: BreathingPlan.totalSec is seconds-shaped.
+    // BreathingPlan.totalSec is seconds-shaped.
     expect(timed.result.current.state.plan.totalSec).toBe(15 * 60)
 
     act(() => {
@@ -155,13 +150,8 @@ describe('useSessionEngine', () => {
   })
 })
 
-// Phase 10 HOOKS-03 / HOOKS-04 / HOOKS-02 identity contracts.
-// Locks the new currentFrame per-phase-stable identity (D-03), the liveFrame
-// per-rAF identity (D-04), the top-of-tick cancel-guard (D-10), and the
-// engine-owned runningSnapshotRef writer (D-06/D-07/D-08). The 5 existing
-// tests in the describe block above are preserved verbatim — this block is
-// strictly additive per CONTEXT D-13 / D-20 (with PATTERNS.md drift correction:
-// EXTEND existing .tsx, do NOT create a new .ts).
+// Identity contracts: currentFrame is per-phase-stable, liveFrame changes per rAF,
+// cancel-guard prevents ticks after teardown, runningSnapshotRef is engine-owned.
 describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -272,22 +262,13 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   it('rAF cancel-guard: tick after teardown is a no-op (HOOKS-04 D-10)', () => {
     const { result, unmount } = renderHook(() => useSessionEngine(defaultSettings, null, fakeClock))
 
-    // WR-01 (Plan 10-02): turn the implicit negative-by-absence assertion
-    // into an explicit positive one. Vitest does NOT fail tests on uncaught
-    // console.error by default. Note: React 18 silently no-ops setState-on-
-    // unmounted (the React 17 "Can't perform a React state update on an
-    // unmounted component" warning was removed) — so a regression that
-    // removed BOTH the top-of-tick cancel-guard AND the cleanup's
-    // cancelAnimationFrame would still not necessarily emit a console.error.
-    // The spy + positive assertion here remains valuable as defense-in-depth:
-    // it locks the LOCAL invariant "no unexpected console.error is emitted
-    // from this hook's rAF lifecycle" so any React (or future linting layer)
-    // warning that DOES surface — e.g. an `act()` complaint about state
-    // updates outside an act block, or a future re-introduction of the
-    // unmounted warning — becomes a test failure instead of silent
-    // tolerance. The mockImplementation(() => {}) swallows the output so a
-    // real regression's warning does not pollute test runner output; the
-    // spy still records calls so the assertion can read them.
+    // Explicit positive assertion for the cancel-guard: Vitest does NOT fail tests on
+    // uncaught console.error by default. React silently no-ops setState-on-unmounted,
+    // so a regression that removed both the top-of-tick cancel-guard AND the cleanup's
+    // cancelAnimationFrame would not necessarily emit a console.error. The spy locks
+    // "no unexpected console.error from this hook's rAF lifecycle" as a directly
+    // testable invariant — any warning that surfaces becomes a failure rather than
+    // silent tolerance.
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     act(() => {
@@ -339,12 +320,11 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
 
     const snap = result.current.runningSnapshotRef.current
     expect(snap).not.toBeNull()
-    // The key derives from startedAtSec per D-07 (Phase 50-02 ms→sec cascade).
+    // key is derived from startedAtSec.
     expect(snap?.key).toBe(String(snap?.startedAtSec))
-    // lastElapsedSec reflects the rAF tick value (allow some jitter — fake
-    // timers advance setState across multiple rAF callbacks so the snapshot
-    // captures the latest known elapsed inside the setState updater per D-08;
-    // ≥ 0.9 sec keeps the assertion robust against the ~16ms per-frame quantum).
+    // lastElapsedSec reflects the rAF tick value (allow some jitter — fake timers
+    // advance setState across multiple rAF callbacks; ≥ 0.9 sec is robust against
+    // the ~16ms per-frame quantum).
     expect(snap?.lastElapsedSec).toBeGreaterThanOrEqual(0.9)
     const snapKey = snap?.key
 
@@ -377,10 +357,9 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
   })
 })
 
-// WR-03 regression (Plan 34-06): a stretch session round-trip must not clobber
-// the engine's resonant selectedSettings. After start() + end() with stretch
-// settings wired, idle state.selectedSettings must equal the initialSettings
-// the engine was initialized with — not the stretch-derived synthetic lead-in.
+// Stretch session round-trip must not clobber the engine's resonant selectedSettings.
+// After start() + end() with stretch settings wired, idle state.selectedSettings must
+// equal the initialSettings the engine was initialized with.
 describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preservation', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -420,8 +399,8 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
       result.current.end()
     })
 
-    // After end, idle selectedSettings must equal the resonant settings (WR-03).
-    // Before the fix, endSession returned the synthetic lead-in settings (bpm: initialBpm, durationMinutes: 'open-ended').
+    // After end, idle selectedSettings must equal the resonant settings.
+    // Before the fix, endSession returned the synthetic lead-in settings.
     expect(result.current.state.status).toBe('idle')
     expect(result.current.state.selectedSettings).toEqual(resonantSettings)
 
@@ -429,8 +408,8 @@ describe('useSessionEngine — WR-03 stretch round-trip selectedSettings preserv
   })
 })
 
-// Phase 51 Plan 02: reanchorSessionClock rewrites startedAtSec to preserve
-// elapsed across an AudioContext reconstruction (D-10 invariant).
+// reanchorSessionClock rewrites startedAtSec to preserve elapsed across
+// an AudioContext reconstruction.
 describe('useSessionEngine — reanchorSessionClock (Phase 51 D-10/D-11)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -476,7 +455,7 @@ describe('useSessionEngine — reanchorSessionClock (Phase 51 D-10/D-11)', () =>
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (result.current.state.status !== 'running') throw new Error('Expected running after reanchor')
 
-    // D-10 reanchor math: newStartedAtSec = newClockNow - lastFrame.elapsedSec
+    // Reanchor math: newStartedAtSec = newClockNow - lastFrame.elapsedSec.
     // The elapsed at reanchor time was captured just before the call.
     const expectedStartedAtSec = newClockNow - elapsedSecBeforeReanchor
     expect(result.current.state.startedAtSec).toBeCloseTo(expectedStartedAtSec, 5)
@@ -637,17 +616,15 @@ describe('useSessionEngine — stretch session path (Phase 34)', () => {
   })
 })
 
-// Phase 51 Plan 04 — AC-suspension semantics + foreground long-run smoke.
+// AC-suspension semantics + foreground long-run smoke.
 //
-// Locks D-07 (AC suspend freezes session elapsed) + D-07-corollary (timed
-// completion fires on AC-time, not wall time) + CLOCK-05 (foreground no-drift
-// over a 5-minute simulated window).
+// Locks: AC suspend freezes session elapsed; timed completion fires on AC-time,
+// not wall time; foreground elapsed is drift-free over a 5-minute simulated window.
 //
-// Test fixture: createMockSessionClock(initialNow) exposes a controllable
-// `now()` independent of vi's fake timers. `advance(deltaSec)` and
-// `set(value)` mutate the clock; `freeze()` is implicit (just stop calling
-// advance/set). The rAF loop still fires via vi.advanceTimersByTime — but it
-// reads clock.now() from this mock instead of performance.now() / 1000.
+// Test fixture: createMockSessionClock(initialNow) exposes a controllable `now()`
+// independent of vi's fake timers. `advance(deltaSec)` and `set(value)` mutate the
+// clock; freeze is implicit (just stop calling advance/set). The rAF loop still fires
+// via vi.advanceTimersByTime but reads clock.now() from this mock.
 import type { SessionClock } from '../audio/sessionClock'
 
 interface MockSessionClock {
@@ -700,10 +677,9 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
     vi.useRealTimers()
   })
 
-  // B1 — AC-suspension freezes HRV session elapsed (D-07).
-  // The mock clock simulates AC suspension by NOT advancing while vi timers
-  // (which drive rAF) continue. lastFrame.elapsedSec must stay frozen at
-  // its pre-suspend value, then resume cleanly when the clock advances again.
+  // B1 — AC-suspension freezes session elapsed.
+  // The mock clock simulates suspension by NOT advancing while vi timers (rAF) continue.
+  // lastFrame.elapsedSec must stay frozen at its pre-suspend value, then resume cleanly.
   it('B1: AC-suspend freezes elapsed; resume continues from frozen value', () => {
     const mock = createMockSessionClock(100)
     const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
@@ -751,14 +727,11 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
     unmount()
   })
 
-  // B2 — Timed completion fires on elapsed-time, not wall-time (D-07 corollary).
-  // A 5-min timed session frozen mid-way must NOT auto-complete while wall
+  // B2 — Timed completion fires on elapsed-time, not wall-time.
+  // A 5-min timed session frozen mid-way must not auto-complete while wall
   // time advances past the duration; it completes only when elapsed AC-time
-  // accumulates past the target via sub-threshold foreground ticks.
-  //
-  // Phase 52 update: both pre-freeze and post-freeze advances use sub-threshold
-  // steps. The completion trigger is unchanged — completeIfNeeded fires when
-  // elapsed crosses the duration target at a cycle boundary.
+  // accumulates past the target. Both pre-freeze and post-freeze advances use
+  // sub-threshold steps; completeIfNeeded fires at a cycle boundary.
   it('B2: timed session completes on AC-time, ignoring wall-time during freeze', () => {
     const mock = createMockSessionClock(0)
     // 5-minute timed session (smallest valid DurationOption per settings.ts).
@@ -839,18 +812,10 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
     unmount()
   })
 
-  // B5 (engine surface) — runningSnapshotRef.lastElapsedSec freezes under
-  // clock freeze. The HRV stats-recording effect at
-  // useBreathingSessionController.ts L266-314 reads from
-  // `session.runningSnapshotRef.current.lastElapsedSec` when computing
-  // `elapsedMs` for `recordResonantSession`. The snapshot is written from
-  // inside the rAF tick (useSessionEngine.ts L181-185) as
-  // `lastElapsedSec = currentState.lastFrame.elapsedSec`. So:
-  //   stats elapsedMs ← snapshot.lastElapsedSec ← state.lastFrame.elapsedSec ← clock.now() − startedAtSec
-  // B1 proves the rightmost dependency freezes on AC suspension; this test
-  // proves the snapshot inherits that freeze. NK stats (B6) follow by
-  // symmetry — the NK controller has the same composition path through
-  // `useNKEngine` → `clock.now()`.
+  // B5 — runningSnapshotRef.lastElapsedSec freezes under clock freeze.
+  // The stats-recording effect reads from snapshot.lastElapsedSec; the snapshot
+  // is written inside the rAF tick from state.lastFrame.elapsedSec = clock.now() − startedAtSec.
+  // B1 proves the rightmost dependency freezes; this test proves the snapshot inherits that freeze.
   it('B5/B6 (engine surface): runningSnapshotRef.lastElapsedSec inherits clock freeze (D-08 composition)', () => {
     const mock = createMockSessionClock(200)
     const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
@@ -889,9 +854,7 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
   })
 
   // B8 — Stretch ramp position is determined by clock.now() − startedAtSec.
-  // stretchRamp.ts math is unchanged at Phase 51 (D-09 invariant); the test
-  // confirms the upstream clock-source change does not break ramp continuity
-  // under freeze/resume.
+  // Confirms that the clock-source does not break ramp continuity under freeze/resume.
   it('B8: stretch session lastFrame.elapsedSec rides AC-time (freeze freezes the ramp)', () => {
     const mock = createMockSessionClock(0)
     const { result, unmount } = renderHook(() =>

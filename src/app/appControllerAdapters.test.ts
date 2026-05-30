@@ -23,7 +23,7 @@ import {
 } from './appControllerAdapters'
 import type { AppNavigation } from './useAppNavigation'
 
-// Phase 50-02 (D-02 ms→sec cascade): SessionFrame is seconds-shaped.
+// SessionFrame is seconds-shaped.
 const frame: SessionFrame = {
   phase: 'in',
   phaseLabel: 'In',

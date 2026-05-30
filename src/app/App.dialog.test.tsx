@@ -128,7 +128,7 @@ describe('end-session confirmation modal (App integration)', () => {
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
 
       // Advance past the session end without the user dismissing the modal.
-      // Phase 3 fix: completion now waits for the surrounding cycle to finish;
+      // Completion waits for the surrounding cycle to finish;
       // advance an extra minute past the 5-min duration mark.
       act(() => {
         vi.advanceTimersByTime(6 * 60_000)
@@ -145,13 +145,10 @@ describe('end-session confirmation modal (App integration)', () => {
   })
 })
 
-// UI-02 / WR-09: post Item-D refactor, Learn/Settings are full-page routes,
-// not modal overlays on the practice surface — so a session cannot start while
-// the user is on those pages (Start lives only on the practice surface). The
-// underlying closeOnSessionView invariant is covered by useAppNavigation.test.tsx
-// ("forcibly returns to practice when the session view becomes active"). What
-// we verify at the app integration level here is the routing-replaces-modal
-// behavior: clicking Learn navigates away from the practice surface.
+// Learn/Settings are full-page routes, not modal overlays on the practice surface —
+// so a session cannot start while the user is on those pages.
+// The underlying closeOnSessionView invariant is covered by useAppNavigation.test.tsx.
+// What we verify here is the routing-replaces-modal behavior.
 describe('WR-09 surface routing replaces dialog overlay', () => {
   beforeEach(() => {
     vi.useFakeTimers()

@@ -18,9 +18,8 @@ import { STATE_KEY } from '../storage'
 import type { TimbreId } from '../domain'
 import { NK_LAST_OM_HOLD_MULTIPLIER, NK_LEAD_SEC, NK_OM_SECONDS } from '../hooks/useNKEngine'
 
-// Plan 50-03 D-02 boundary: NK_LEAD_SEC is seconds; vi.advanceTimersByTime takes
-// ms. Convert once at this single test-file boundary so the rest of the math
-// reads ms-shaped consistently with the existing omMs literals.
+// NK_LEAD_SEC is seconds; vi.advanceTimersByTime takes ms. Convert once at the
+// test-file boundary so the rest of the math reads ms-shaped.
 const NK_LEAD_MS_FOR_TIMERS = NK_LEAD_SEC * 1000
 
 describe('running session display', () => {
@@ -39,7 +38,7 @@ describe('running session display', () => {
 
     await startAndAdvancePastLeadIn()
 
-    // D-03: the In/Out label lives inside the orb (orb is the single visible source).
+    // The In/Out label lives inside the orb (orb is the single visible source).
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
 
     // The readout region is still rendered (clock pill + ARIA contract preserved).
@@ -100,9 +99,9 @@ describe('running duration edits and completion', () => {
     fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /decrease duration/i }))
     await startAndAdvancePastLeadIn()
 
-    // Phase 3 fix: timed completion holds until the surrounding cycle ends so
-    // cues never get cut mid-In/mid-Out. 5 min at the default bpm lands
-    // mid-cycle; advance an extra minute to clear the next boundary.
+    // Timed completion holds until the surrounding cycle ends so cues are not cut
+    // mid-In/mid-Out. 5 min at the default bpm lands mid-cycle; advance an extra
+    // minute to clear the next boundary.
     act(() => {
       vi.advanceTimersByTime(6 * 60_000)
     })
@@ -193,13 +192,10 @@ describe('manual session ending', () => {
   })
 })
 
-// TIMBRE-03 capture-at-Start integration tests (Phase 18 Plan 06).
-// Seeds localStorage with a chosen timbre BEFORE App renders, clicks Start, and asserts
-// that the timbre threaded
-// through useAudioCues.start (→ createAudioEngine → scheduleInCueForTimbre) is the one
-// captured at Start, not any later mid-session mutation. The assertion target is the
-// 4th argument to cueSynth.scheduleInCueForTimbre — that's the timbre parameter the
-// engine receives at construction time (audioEngine.ts: sessionTimbre captured-once).
+// TIMBRE-03 capture-at-Start: seeds localStorage with a chosen timbre BEFORE App renders,
+// clicks Start, and asserts the timbre threaded through useAudioCues.start is the one
+// captured at Start — not any later mid-session mutation. The assertion target is the 4th
+// argument to cueSynth.scheduleInCueForTimbre (the timbre at engine construction time).
 
 function seedTimbre(timbre: TimbreId): void {
   const envelope = {
@@ -223,13 +219,12 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
   })
 
   it('TIMBRE-03: captures timbre at Start; mid-session prefs change does not affect active session', async () => {
-    // (a) Pre-seed prefs.timbre='bell' BEFORE App renders. Phase 18 D-09/D-10: onStartClick
-    //     reads loadPrefs().timbre inside the user-gesture chain (mirror of sessionVariantRef
-    //     capture at line ~338 of App.tsx).
+    // (a) Pre-seed prefs.timbre='bell' BEFORE App renders. onStartClick reads loadPrefs().timbre
+    //     inside the user-gesture chain.
     seedTimbre('bell')
     // (b) Spy on the dispatch surface (scheduleInCueForTimbre). The engine calls this for
     //     the lead-in's first In cue at audioEngine.ts:179 with the captured sessionTimbre.
-    //     The 4th argument (index 3) IS the timbre — D-08 capture-at-construction proof.
+    //     The 4th argument (index 3) IS the timbre — capture-at-construction proof.
     const scheduleInSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
 
     render(<App />)
@@ -248,8 +243,8 @@ describe('TIMBRE-03 captures timbre at Start; mid-session prefs change does not 
 
     // (e) Mid-session pref change: write prefs.timbre='flute' to localStorage and fire
     //     the 'storage' event. This simulates a cross-tab pref change — if onStartClick
-    //     re-read loadPrefs() OR the engine re-read prefs during reconstruction (D-11
-    //     violation), subsequent cue scheduling would observe 'flute'. The captured
+    //     re-read loadPrefs() or the engine re-read prefs during reconstruction,
+    //     subsequent cue scheduling would observe 'flute'. The captured
     //     timbreRef.current inside useAudioCues must continue to dispatch 'bell'.
     const fluteEnvelope = JSON.stringify({
       version: 1,
@@ -491,7 +486,7 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     await act(async () => { await Promise.resolve() })
 
     const env = readStoredEnvelope()
-    // D-13: the one fully-completed round is recorded; resonant stays untouched.
+    // The one fully-completed round is recorded; resonant stays untouched.
     expect(practiceStatsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
     expect(practiceStatsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
     expect((practiceStatsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
