@@ -1,15 +1,15 @@
-// Tests for createSwappableSessionClock (Plan 51-01, Task 2).
+// Tests for createSwappableSessionClock.
 //
 // Covers:
-//   - D-03: proxy clock identity is === stable across setSource calls.
-//   - D-04: now() delegates to the CURRENT source; setSource(next) immediately
-//     shifts the delegation to `next`.
-//   - D-04 (subscription survival): a callback subscribed BEFORE setSource fires
-//     when the NEW source fans an event AND no longer fires from the OLD source.
-//   - D-04 (old-source teardown): the old source's subscriber Set shrinks after
-//     setSource (no leaked subscriptions across swaps).
-//   - D-04 (idempotent unsubscribe): the () => void returned by onSuspend can be
-//     called twice with no throw and removes the callback on the first call.
+//   - Proxy clock identity is === stable across setSource calls.
+//   - now() delegates to the CURRENT source; setSource(next) immediately shifts
+//     the delegation to `next`.
+//   - Subscription survival: a callback subscribed BEFORE setSource fires when
+//     the NEW source fans an event AND no longer fires from the OLD source.
+//   - Old-source teardown: the old source's subscriber Set shrinks after setSource
+//     (no leaked subscriptions across swaps).
+//   - Idempotent unsubscribe: the () => void returned by onSuspend can be called
+//     twice with no throw and removes the callback on the first call.
 //   - schedule(when, cue) forwarding: proxy routes to the current source's
 //     schedule() and routes to the new source after setSource.
 //   - onResume + onClose channel symmetry with onSuspend (single condensed test).
@@ -69,7 +69,7 @@ function makeFakeClock(nowValue = 0): FakeClock {
 // ---------------------------------------------------------------------------
 
 describe('createSwappableSessionClock', () => {
-  // Test 1 — Identity stability across setSource (D-03)
+  // Test 1 — Identity stability across setSource
   it('proxy clock identity is === stable across setSource calls', () => {
     const srcA = makeFakeClock()
     const srcB = makeFakeClock()
@@ -83,7 +83,7 @@ describe('createSwappableSessionClock', () => {
     expect(proxy.clock).toBe(capturedRef)
   })
 
-  // Test 2 — now() delegates to current source (D-04)
+  // Test 2 — now() delegates to current source
   it('now() returns the current source value and updates after setSource', () => {
     const srcA = makeFakeClock(1.5)
     const srcB = makeFakeClock(99.25)
@@ -97,7 +97,7 @@ describe('createSwappableSessionClock', () => {
     expect(proxy.clock.now()).toBe(99.25)
   })
 
-  // Test 3 — Subscription survives source swap (D-04 core invariant)
+  // Test 3 — Subscription survives source swap
   it('a callback subscribed before setSource fires from the NEW source after swap', () => {
     const srcA = makeFakeClock()
     const srcB = makeFakeClock()
@@ -118,7 +118,7 @@ describe('createSwappableSessionClock', () => {
     expect(cb).toHaveBeenCalledTimes(2)
   })
 
-  // Test 4 — Old source unsubscribed on swap (D-04 / D-11 teardown)
+  // Test 4 — Old source unsubscribed on swap
   it('callback does NOT fire from the old source after setSource (old-source teardown)', () => {
     const srcA = makeFakeClock()
     const srcB = makeFakeClock()

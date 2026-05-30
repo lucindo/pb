@@ -112,7 +112,7 @@ describe('nkCueSynth', () => {
     expect(handle.cleanupAt - handle.scheduledAt).toBeCloseTo(END_CHORD_RINGOUT_SEC, 5)
   })
 
-  // -- D-07: tick is soft and short (barely-there) ---------------------------
+  // -- Per-OM tick: soft and short (barely-there) ---------------------------
 
   it('scheduleNKTick returns a valid CueHandle', () => {
     const ac = createAc()
@@ -122,7 +122,7 @@ describe('nkCueSynth', () => {
     expect(handle.cleanupAt).toBeGreaterThan(handle.scheduledAt)
   })
 
-  it('scheduleNKTick duration is shorter than scheduleEndChord duration (D-07 barely-there)', () => {
+  it('scheduleNKTick duration is shorter than scheduleEndChord duration (barely-there)', () => {
     const ac = createAc()
     const when = 1.0
 
@@ -135,7 +135,7 @@ describe('nkCueSynth', () => {
     expect(tickDuration).toBeLessThan(endDuration)
   })
 
-  // -- Spike 004: countdown beep retuned to "Crisp ping" --------------------
+  // -- Countdown beep: a crisper, higher, snappier sound than the per-OM tick --
 
   it('scheduleCountdownTick returns a valid CueHandle', () => {
     const ac = createAc()
@@ -152,7 +152,7 @@ describe('nkCueSynth', () => {
     }
   })
 
-  it('countdown beep is shorter than the per-OM tick (Spike 004 — the two diverged)', () => {
+  it('countdown beep is shorter than the per-OM tick (they are semantically distinct)', () => {
     const ac = createAc()
     const when = 1.0
 
@@ -165,16 +165,16 @@ describe('nkCueSynth', () => {
     expect(countdownDuration).toBeLessThan(tickDuration)
   })
 
-  // -- D-06: markers reuse the HRV breath cues for every timbre --------------
+  // -- Markers reuse the HRV breath cues for every timbre --
 
-  it('scheduleNKFrontMarker does not throw for any TimbreId (D-06 reuses HRV in-cue)', () => {
+  it('scheduleNKFrontMarker does not throw for any TimbreId (reuses HRV in-cue)', () => {
     const ac = createAc()
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleNKFrontMarker(ac, 1.0, ac.destination, timbre)).not.toThrow()
     }
   })
 
-  it('scheduleNKBackMarker does not throw for any TimbreId (D-06 reuses HRV out-cue)', () => {
+  it('scheduleNKBackMarker does not throw for any TimbreId (reuses HRV out-cue)', () => {
     const ac = createAc()
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleNKBackMarker(ac, 1.0, ac.destination, timbre)).not.toThrow()

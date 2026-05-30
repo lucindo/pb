@@ -1,20 +1,18 @@
-// Tests for createAudioSessionClock + createWallSessionClock (Plan 50-01).
+// Tests for createAudioSessionClock + createWallSessionClock.
 //
 // Covers:
-//   - D-03 Option A contract: audio factory now() returns audioCtx.currentTime;
-//     wall factory now() returns performance.now() / 1000.
-//   - D-11 wired-real subscribers: onSuspend / onResume / onClose fan-out via the
-//     audioCtx 'statechange' listener.
-//   - Revision 1 Blocker #1: onClose member added; fan-out on 'closed'; unsubscribe.
-//   - Revision 1 Blocker #2: scheduleImpl forwarding when supplied; no-op when absent.
-//   - Revision 2 Blocker #1: notifySuspended() engine-only escape hatch — fan-out
-//     parity with natural statechange, trigger-source isolation, unsubscribe
-//     symmetry, absence on the wall clock.
+//   - Audio factory now() returns audioCtx.currentTime; wall factory returns
+//     performance.now() / 1000.
+//   - onSuspend / onResume / onClose fan-out via the audioCtx 'statechange' listener.
+//   - onClose member added; fan-out on 'closed'; unsubscribe.
+//   - scheduleImpl forwarding when supplied; no-op when absent.
+//   - notifySuspended() engine-only escape hatch — fan-out parity with natural
+//     statechange, trigger-source isolation, unsubscribe symmetry, absence on the
+//     wall clock.
 //
-// Per the no-design-locking memory rule: tests assert dispatch BEHAVIOR
-// (callback invocations, returned-function shape, scheduleImpl forwarding,
-// notifySuspended fan-out), NOT exact Cue field tuples. The Cue catalog is
-// closed at Phase 50 (D-04) but future phases may extend per-kind payloads.
+// Tests assert dispatch BEHAVIOR (callback invocations, returned-function shape,
+// scheduleImpl forwarding, notifySuspended fan-out), NOT exact Cue field tuples.
+// The Cue catalog is closed but future phases may extend per-kind payloads.
 
 import { describe, expect, it, vi } from 'vitest'
 
@@ -65,7 +63,7 @@ function asAudioCtx(fake: FakeAudioCtxShape): AudioContext {
 }
 
 describe('createAudioSessionClock', () => {
-  it('now() returns audioCtx.currentTime (D-03 Option A — audio-natural seconds)', () => {
+  it('now() returns audioCtx.currentTime (audio-natural seconds)', () => {
     const audioCtx = makeFakeAudioCtx()
     audioCtx.currentTime = 1.5
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
@@ -75,7 +73,7 @@ describe('createAudioSessionClock', () => {
     expect(clock.now()).toBe(2.75)
   })
 
-  it('now() does NOT call performance.now (D-03 anti-drift assertion)', () => {
+  it('now() does NOT call performance.now (anti-drift assertion)', () => {
     const audioCtx = makeFakeAudioCtx()
     audioCtx.currentTime = 3.0
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
@@ -87,7 +85,7 @@ describe('createAudioSessionClock', () => {
     perfSpy.mockRestore()
   })
 
-  it('onSuspend(cb) is invoked on the natural "suspended" statechange transition (D-11)', () => {
+  it('onSuspend(cb) is invoked on the natural "suspended" statechange transition', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const cb = vi.fn()
@@ -99,7 +97,7 @@ describe('createAudioSessionClock', () => {
     expect(cb).toHaveBeenCalledTimes(1)
   })
 
-  it('onSuspend(cb) is invoked on the WebKit "interrupted" statechange transition (D-11 / Phase 5.1)', () => {
+  it('onSuspend(cb) is invoked on the WebKit "interrupted" statechange transition (iOS lock-screen)', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const cb = vi.fn()
@@ -111,7 +109,7 @@ describe('createAudioSessionClock', () => {
     expect(cb).toHaveBeenCalledTimes(1)
   })
 
-  it('onResume(cb) is invoked on "running" and NOT on "suspended" (D-11)', () => {
+  it('onResume(cb) is invoked on "running" and NOT on "suspended"', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const resumeCb = vi.fn()
@@ -126,7 +124,7 @@ describe('createAudioSessionClock', () => {
     expect(resumeCb).toHaveBeenCalledTimes(1)
   })
 
-  it('onClose(cb) is invoked on "closed" and NOT onSuspend/onResume subscribers (revision 1 Blocker #1)', () => {
+  it('onClose(cb) is invoked on "closed" and NOT onSuspend/onResume subscribers', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const suspendCb = vi.fn()
@@ -144,7 +142,7 @@ describe('createAudioSessionClock', () => {
     expect(resumeCb).not.toHaveBeenCalled()
   })
 
-  it('onClose unsubscribe works (revision 1 Blocker #1)', () => {
+  it('onClose unsubscribe works', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const cb = vi.fn()
@@ -185,7 +183,7 @@ describe('createAudioSessionClock', () => {
     expect(cb2).toHaveBeenCalledTimes(1)
   })
 
-  it('scheduleImpl forwarding: when provided, schedule() calls it with the same args (revision 1 Blocker #2)', () => {
+  it('scheduleImpl forwarding: when provided, schedule() calls it with the same args', () => {
     const audioCtx = makeFakeAudioCtx()
     const impl = vi.fn<(when: number, cue: Cue) => void>()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx), impl)
@@ -196,7 +194,7 @@ describe('createAudioSessionClock', () => {
     expect(impl).toHaveBeenCalledWith(1.5, { kind: 'lead-in-tick' })
   })
 
-  it('scheduleImpl absent: schedule() is a no-op and does not throw (revision 1 Blocker #2)', () => {
+  it('scheduleImpl absent: schedule() is a no-op and does not throw', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
 
@@ -205,7 +203,7 @@ describe('createAudioSessionClock', () => {
     }).not.toThrow()
   })
 
-  it('notifySuspended() fan-out: invokes suspend subscribers without a statechange event (revision 2 Blocker #1)', () => {
+  it('notifySuspended() fan-out: invokes suspend subscribers without a statechange event', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const cb = vi.fn()
@@ -217,7 +215,7 @@ describe('createAudioSessionClock', () => {
     expect(cb).toHaveBeenCalledTimes(1)
   })
 
-  it('notifySuspended() parity with natural statechange: both trigger the same fan-out (revision 2 Blocker #1)', () => {
+  it('notifySuspended() parity with natural statechange: both trigger the same fan-out', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const cb = vi.fn()
@@ -233,7 +231,7 @@ describe('createAudioSessionClock', () => {
     expect(cb).toHaveBeenCalledTimes(2)
   })
 
-  it('notifySuspended() does NOT trigger onResume or onClose (revision 2 Blocker #1 trigger-source isolation)', () => {
+  it('notifySuspended() does NOT trigger onResume or onClose (trigger-source isolation)', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const suspendCb = vi.fn()
@@ -250,7 +248,7 @@ describe('createAudioSessionClock', () => {
     expect(closeCb).not.toHaveBeenCalled()
   })
 
-  it('notifySuspended() respects unsubscribe (revision 2 Blocker #1 — symmetric path with statechange)', () => {
+  it('notifySuspended() respects unsubscribe (symmetric path with statechange)', () => {
     const audioCtx = makeFakeAudioCtx()
     const clock = createAudioSessionClock(asAudioCtx(audioCtx))
     const cb = vi.fn()
@@ -262,7 +260,7 @@ describe('createAudioSessionClock', () => {
     expect(cb).not.toHaveBeenCalled()
   })
 
-  it('augmented return type exposes notifySuspended but a SessionClock-widened reference does not (revision 2 Blocker #1)', () => {
+  it('augmented return type exposes notifySuspended but a SessionClock-widened reference does not', () => {
     const audioCtx = makeFakeAudioCtx()
     // Augmented type — direct return shape from createAudioSessionClock.
     const augmentedClock = createAudioSessionClock(asAudioCtx(audioCtx))
@@ -281,7 +279,7 @@ describe('createAudioSessionClock', () => {
     expect(typeof publicClock.now).toBe('function')
   })
 
-  it('wires exactly one statechange listener on the AC (D-11 single-listener invariant)', () => {
+  it('wires exactly one statechange listener on the AC (single-listener invariant)', () => {
     const audioCtx = makeFakeAudioCtx()
     createAudioSessionClock(asAudioCtx(audioCtx))
 
@@ -293,7 +291,7 @@ describe('createAudioSessionClock', () => {
 })
 
 describe('createWallSessionClock', () => {
-  it('now() returns performance.now() / 1000 (D-01)', () => {
+  it('now() returns performance.now() / 1000', () => {
     const perfSpy = vi.spyOn(performance, 'now').mockReturnValue(5000)
     const clock = createWallSessionClock()
 
@@ -314,7 +312,7 @@ describe('createWallSessionClock', () => {
     perfSpy.mockRestore()
   })
 
-  it('onSuspend / onResume / onClose accept a callback, return a function, and never invoke the callback (D-11 — wall clock never suspends/resumes/closes)', () => {
+  it('onSuspend / onResume / onClose accept a callback, return a function, and never invoke the callback (wall clock never suspends/resumes/closes)', () => {
     const clock = createWallSessionClock()
     const suspendCb = vi.fn()
     const resumeCb = vi.fn()
@@ -342,19 +340,19 @@ describe('createWallSessionClock', () => {
     expect(closeCb).not.toHaveBeenCalled()
   })
 
-  it('schedule is a no-op (D-04 closed-catalog symmetry; wall clock has no audio graph)', () => {
+  it('schedule is a no-op (closed-catalog symmetry; wall clock has no audio graph)', () => {
     const clock = createWallSessionClock()
     expect(() => {
       clock.schedule(0, { kind: 'lead-in-tick' })
     }).not.toThrow()
   })
 
-  it('createWallSessionClock does NOT expose notifySuspended (revision 2 Blocker #1 — plain SessionClock return type)', () => {
+  it('createWallSessionClock does NOT expose notifySuspended (plain SessionClock return type)', () => {
     const clock = createWallSessionClock()
     // Type-level: the return type is `SessionClock`, which has no `notifySuspended`
     // member. `@ts-expect-error` MUST match — if the method were exposed, this
     // assertion would fail at compile time.
-    // @ts-expect-error - wall clock has no notifySuspended (revision 2 Blocker #1)
+    // @ts-expect-error - wall clock has no notifySuspended (engine-only escape hatch)
     const probe: unknown = clock.notifySuspended
     // Runtime: the property does not exist on the returned object literal.
     expect(probe).toBeUndefined()

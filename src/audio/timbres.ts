@@ -1,16 +1,13 @@
 // Pure data module — zero React imports. Exports TimbrePreset interface and
 // TIMBRE_PRESETS record. All four named-timbre DSP recipes live here; cueSynth
-// (Plan 03) will read the preset at call time. Bowl preset values are the
-// cueSynth.ts module-level constants verbatim (TIMBRE-02 byte-identical proof:
-// git diff between Plan 01 and Plan 03 shows a constants MOVE, not a numeric
-// change). Per-timbre fundamentals are locked at A4 In / A3 Out (440/220 Hz)
-// across all four presets per TIMBRE-05 / D-21 — overrides research's
-// per-timbre fundamental variation.
+// reads the preset at call time.
 //
-// D-14: all four presets use OscillatorType='sine' — no PeriodicWave, no new deps.
-// D-15: this module does NOT edit src/domain/settings.ts (Phase 14 D-09 invariant).
-// D-21: a Vitest guard in src/audio/timbres.test.ts asserts every preset has
-//       fundamentalHzIn === 440 && fundamentalHzOut === 220.
+// Per-timbre fundamentals are locked at A4 In / A3 Out (440/220 Hz) across all
+// four presets — a Vitest guard in timbres.test.ts asserts every preset has
+// fundamentalHzIn === 440 && fundamentalHzOut === 220.
+//
+// All four presets use OscillatorType='sine' — no PeriodicWave, no new deps.
+// This module does NOT edit src/domain/settings.ts.
 
 import type { TimbreId } from '../domain/settings'
 
@@ -29,29 +26,27 @@ export interface TimbrePreset {
 }
 
 export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
-  // D-02 — Bowl preset: verbatim copy of src/audio/cueSynth.ts lines 11-24 module-level
-  // constants. TIMBRE-02 byte-identical proof at the data layer. Plan 03 will
-  // delete the duplicate module-level constants from cueSynth.ts when the
-  // consumer side migrates to read from this preset record.
+  // Bowl preset: DSP parameters shared with the legacy cueSynth.ts module-level
+  // constants (the bowl values were moved here; no numeric changes).
   bowl: {
-    fundamentalHzIn: 440, // verbatim IN_FUNDAMENTAL_HZ (A4)
-    fundamentalHzOut: 220, // verbatim OUT_FUNDAMENTAL_HZ (A3)
+    fundamentalHzIn: 440, // A4
+    fundamentalHzOut: 220, // A3
     partials: [
       { ratio: 1.0, gain: 1.0 },
       { ratio: 2.76, gain: 0.4 },
       { ratio: 5.4, gain: 0.15 },
-    ], // verbatim PARTIALS
-    decayTauIn: 1.4, // verbatim IN_DECAY_TIME_CONSTANT
-    decayTauOut: 1.8, // verbatim OUT_DECAY_TIME_CONSTANT
-    filterFreqHz: 3000, // verbatim FILTER_FREQ_HZ
-    filterQ: 0.5, // verbatim FILTER_Q
-    peakGain: 0.18, // verbatim PEAK_GAIN
+    ],
+    decayTauIn: 1.4,
+    decayTauOut: 1.8,
+    filterFreqHz: 3000,
+    filterQ: 0.5,
+    peakGain: 0.18,
     attackSec: 0, // instant strike — byte-identical to pre-AUDIO-01 behaviour
     oscillatorType: 'sine',
   },
-  // D-03 — Bell preset: soft hand-bell variant, mildly inharmonic. 2.5 ratio is
-  // the distinguishing inharmonic partial; shorter decay than Bowl; brighter
-  // filter with mild peak. Same peakGain as Bowl for consistent loudness.
+  // Bell: soft hand-bell variant, mildly inharmonic. 2.5 ratio is the
+  // distinguishing inharmonic partial; shorter decay than Bowl; brighter filter
+  // with mild peak.
   bell: {
     fundamentalHzIn: 440,
     fundamentalHzOut: 220,
@@ -68,10 +63,9 @@ export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
     attackSec: 0, // instant strike — byte-identical to pre-AUDIO-01 behaviour
     oscillatorType: 'sine',
   },
-  // D-04 — Sine preset: pure single sine, soft + long. Single 1.0-ratio partial;
-  // longest decay of the four presets (pairs with breath cycle). Filter is
-  // near-transparent (8 kHz / Q 0.3) — included only for code-shape symmetry
-  // with the partial-stacked presets.
+  // Sine: pure single sine, soft + long. Single 1.0-ratio partial; longest decay
+  // of the four presets (pairs with breath cycle). Filter is near-transparent
+  // (8 kHz / Q 0.3) — included for code-shape symmetry with the partial-stacked presets.
   sine: {
     fundamentalHzIn: 440,
     fundamentalHzOut: 220,
@@ -84,11 +78,9 @@ export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
     attackSec: 0, // instant strike — byte-identical to pre-AUDIO-01 behaviour
     oscillatorType: 'sine',
   },
-  // AUDIO-01 / spike-008 — Flute preset: harmonic sine-additive recipe with a soft breath
-  // attack. Replaces the old D-05 wind-bell slot (which was a near-clone of Bowl). Harmonic
-  // integer partials (1·2·3) separate it clearly from Bowl/Bell (inharmonic), and the
-  // 0.13 s attack ramp is the load-bearing feature that distinguishes it from Sine.
-  // fundamentalHzIn/Out stay at 440/220 (D-21 guard). oscillatorType stays 'sine' (D-14).
+  // Flute: harmonic sine-additive recipe with a soft breath attack. Harmonic integer
+  // partials (1·2·3) separate it clearly from Bowl/Bell (inharmonic), and the 0.13 s
+  // attack ramp is the load-bearing feature that distinguishes it from Sine.
   flute: {
     fundamentalHzIn: 440,
     fundamentalHzOut: 220,
@@ -102,7 +94,7 @@ export const TIMBRE_PRESETS: Readonly<Record<TimbreId, TimbrePreset>> = {
     filterFreqHz: 4000,
     filterQ: 0.4,
     peakGain: 0.18,
-    attackSec: 0.13, // soft breath onset — the deciding feature (spike-008)
+    attackSec: 0.13, // soft breath onset — the deciding feature
     oscillatorType: 'sine',
   },
 } as const
