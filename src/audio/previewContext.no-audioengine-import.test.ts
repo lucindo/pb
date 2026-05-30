@@ -36,7 +36,7 @@ const FORBIDDEN_IMPORTS: Array<{ label: string; pattern: RegExp }> = [
   { label: "import from '../hooks/useAudioCues'", pattern: /from\s+['"]\.\.\/hooks\/useAudioCues['"]/ },
 ]
 
-describe('drift-guard: previewContext.ts must not import audioEngine (structural lock)', () => {
+describe('Phase 40 drift-guard: previewContext.ts must not import audioEngine (PREV-03 structural lock)', () => {
   it('previewContext.ts imports neither ./audioEngine nor any module that re-exports muted state', () => {
     const text = readFileSync(PREVIEW_PATH, 'utf-8')
     const hits: string[] = []

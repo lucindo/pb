@@ -54,8 +54,8 @@ describe('session frame derivation', () => {
     })
   })
 
-  // Timed completion holds until the current cycle ends so cues and the orb
-  // finish their In/Out before transitioning to 'complete'.
+  // Phase 3 fix: timed completion holds until the current cycle ends so cues
+  // and the orb finish their In/Out before transitioning to 'complete'.
   it('holds completion until the current cycle finishes when total duration falls mid-cycle', () => {
     // bpm 5.5 → cycle ≈ 10.909 sec; 5 min total → 27.5 cycles (mid-cycle).
     const offsetPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5.5, ratio: '40:60', durationMinutes: 5 })
@@ -85,7 +85,7 @@ describe('session frame derivation', () => {
 
 describe('formatDuration', () => {
   it('formats seconds as clock time', () => {
-    // formatDuration accepts seconds-shaped values.
+    // Phase 50-02 (D-02 ms→sec cascade): formatDuration now accepts seconds.
     expect(formatDuration(0)).toBe('0:00')
     expect(formatDuration(65)).toBe('1:05')
     expect(formatDuration(3_665)).toBe('61:05')

@@ -71,7 +71,7 @@ describe('timbres', () => {
     expect(flute.oscillatorType).toBe('sine')
   })
 
-  // attackSec field: bowl/bell/sine carry 0 (strike path); flute carries 0.13.
+  // AUDIO-01 — attackSec field: bowl/bell/sine carry 0 (strike path); flute carries 0.13.
   it('bowl attackSec is 0 (strike path unchanged)', () => {
     expect(TIMBRE_PRESETS.bowl.attackSec).toBe(0)
   })

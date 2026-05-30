@@ -62,7 +62,7 @@ const stretchSegs: StretchSegment[] = [
   },
 ]
 
-describe('walkFutureCues', () => {
+describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
   // Test 1: HRV walk basic — at 10 BPM (cycleSec=6), floor=2, window=6s
   it('HRV basic walk returns ≥LOOKAHEAD_MIN_CUES cues starting at anchor+0 for fromPhase=in', () => {
     const anchor = 100
@@ -198,7 +198,7 @@ describe('walkFutureCues', () => {
     }
   })
 
-  // Test 6: targetSec trim — timed session, floor does NOT override the end trim
+  // Test 6: targetSec trim — timed session, floor does NOT override D-14
   it('targetSec trim: no cue queued past audioAnchor+targetSec even with floor', () => {
     const anchor = 0
     // 5-min session (targetSec=300), current elapsed=298, window would want 6s ahead
@@ -383,7 +383,7 @@ describe('computeBoundaryAudioOffsets', () => {
     const out = computeBoundaryAudioOffsets({ ...baseFrame, phase: 'in' }, plan)
 
     expect(out.boundaryStartSec).toBe(3 * plan.cycleSec)
-    // phaseDurationSec is plan.inhaleSec directly (seconds-shaped).
+    // Phase 50-02: phaseDurationSec is plan.inhaleSec directly (no `/1000`).
     expect(out.phaseDurationSec).toBe(plan.inhaleSec)
   })
 

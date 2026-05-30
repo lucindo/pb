@@ -100,7 +100,7 @@ function stripComments(text: string): string {
   return noLines
 }
 
-describe('SessionClock drift-guard', () => {
+describe('SessionClock drift-guard (Phase 50 / ABSTR-03 / D-09)', () => {
   it('no caller reads time directly (no performance.now() / new AudioContext() / audioCtx.currentTime)', () => {
     const hits: string[] = []
     for (const file of CALLER_FILES) {
@@ -118,7 +118,7 @@ describe('SessionClock drift-guard', () => {
       hits,
       `SessionClock drift-guard found banned tokens in caller files. ` +
         `These callers MUST consume time exclusively through the SessionClock ` +
-        `interface. Hits:\n${hits.join('\n')}`,
+        `interface (D-09 / ABSTR-03). Hits:\n${hits.join('\n')}`,
     ).toEqual([])
   })
 
@@ -140,7 +140,8 @@ describe('SessionClock drift-guard', () => {
     const stripped = stripComments(raw)
     // The fixture contains banned tokens inside string literals. After
     // comment-strip, the string literals are preserved, so the regex
-    // matches them (known false-positive behavior of the simple stripper).
+    // matches them. This documents the known false-positive behavior
+    // of the simple stripper.
     expect(
       /\bperformance\.now\(/.test(stripped),
       'fixture should contain a string-literal form of `performance.now(` ' +
@@ -156,7 +157,8 @@ describe('SessionClock drift-guard', () => {
       'fixture should contain a string-literal form of `audioCtx.currentTime` ' +
         'that the simple regex matches (documenting the known limitation)',
     ).toBe(true)
-    // Contract: production caller files MUST be free of banned-token string
-    // literals. Enforced by manual audit and by the main drift-guard test above.
+    // Contract: production caller files MUST be free of banned-token
+    // string literals. Enforced by manual audit (Plans 50-02 through
+    // 50-05) and by the main drift-guard test above.
   })
 })

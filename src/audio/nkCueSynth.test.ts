@@ -122,7 +122,7 @@ describe('nkCueSynth', () => {
     expect(handle.cleanupAt).toBeGreaterThan(handle.scheduledAt)
   })
 
-  it('scheduleNKTick duration is shorter than scheduleEndChord duration (barely-there)', () => {
+  it('scheduleNKTick duration is shorter than scheduleEndChord duration (D-07 barely-there)', () => {
     const ac = createAc()
     const when = 1.0
 
@@ -135,7 +135,7 @@ describe('nkCueSynth', () => {
     expect(tickDuration).toBeLessThan(endDuration)
   })
 
-  // -- Countdown beep: a crisper, higher, snappier sound than the per-OM tick --
+  // -- Spike 004: countdown beep retuned to "Crisp ping" --------------------
 
   it('scheduleCountdownTick returns a valid CueHandle', () => {
     const ac = createAc()
@@ -152,7 +152,7 @@ describe('nkCueSynth', () => {
     }
   })
 
-  it('countdown beep is shorter than the per-OM tick (they are semantically distinct)', () => {
+  it('countdown beep is shorter than the per-OM tick (Spike 004 — the two diverged)', () => {
     const ac = createAc()
     const when = 1.0
 
@@ -167,14 +167,14 @@ describe('nkCueSynth', () => {
 
   // -- markers reuse the HRV breath cues for every timbre -------------------
 
-  it('scheduleNKFrontMarker does not throw for any TimbreId (reuses HRV in-cue)', () => {
+  it('scheduleNKFrontMarker does not throw for any TimbreId (D-06 reuses HRV in-cue)', () => {
     const ac = createAc()
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleNKFrontMarker(ac, 1.0, ac.destination, timbre)).not.toThrow()
     }
   })
 
-  it('scheduleNKBackMarker does not throw for any TimbreId (reuses HRV out-cue)', () => {
+  it('scheduleNKBackMarker does not throw for any TimbreId (D-06 reuses HRV out-cue)', () => {
     const ac = createAc()
     for (const timbre of TIMBRE_OPTIONS) {
       expect(() => scheduleNKBackMarker(ac, 1.0, ac.destination, timbre)).not.toThrow()
