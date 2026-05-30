@@ -20,7 +20,7 @@
 
 Behavior-preserving tech-debt paydown from the full `src/` maintainability audit (`.planning/CODE-QUALITY-REVIEW.md`). Architecture is healthy — this is deletion + consolidation, not redesign. **Verification gate on every phase: no user-facing behavior change.** Tests are NOT the gate — a refactor is correct because the app behaves identically (verified by reasoning from behavior / running the app), not because a suite stays green; the test suite is itself in scope for curation (keep/fix real-behavior tests, delete stale / decision-locking / drift-guard cruft).
 
-- [ ] **Phase 55: Comment de-archaeology** — strip planning-tag comments + stale line-refs across `src/`; keep load-bearing *why* in present tense
+- [x] **Phase 55: Comment de-archaeology** — strip planning-tag comments + stale line-refs across `src/`; keep load-bearing *why* in present tense
 - [ ] **Phase 56: Storage de-duplication** — collapse `record*Session` / `save*Settings`; hoist `asRecord`; add `isMember` / `isPositiveInteger`
 - [ ] **Phase 57: View-model layer flattening** — delete `appControllerAdapters.ts`; merge redundant VM interfaces; single-source per-practice dispatch
 - [ ] **Phase 58: Session-stack shell** — extract `useSessionShell` + `useEventCallback` (engine drivers stay separate)
