@@ -29,7 +29,7 @@
 
 ### Deferred Ideas (OUT OF SCOPE)
 - Deleting/rewriting garbage tests → Phase 61 (TEST-02) + per-phase TEST-01.
-- The `// TODO: native-speaker review` markers → I18N-04 carry-forward. **Do not touch these** (15 confirmed, all in `src/content/appearanceStrings.ts`).
+- The `// TODO: native-speaker review` markers → I18N-04 carry-forward. **Do not touch these** (12 confirmed, all in `src/content/strings.ts`; an additional reference lives as a STRING in the marker-guard test — also leave it).
 - Storage / view-model / shell / frame / component de-duplication → Phases 56–60. **Comment-only here; no code consolidation.**
 </user_constraints>
 
@@ -39,8 +39,8 @@
 | ID | Description | Research Support |
 |----|-------------|------------------|
 | COMMENT-01 | Planning-artifact tags (`D-xx`, `WR-xx`, `Phase NN`, `Blocker #N`, `Pitfall N`, `spike NNN`, dated "kitchen-sink fix" notes) removed from all `src/` comments; load-bearing rationale rephrased as present-tense invariant. | Verified per-tag totals + per-file/per-layer counts (below); mechanical strip procedure; keep-vs-cut tree (D-03/D-04). |
-| COMMENT-02 | Stale code cross-references (`formerly at L###`, `mirror X L###`, any line-number citation) removed from `src/` comments. | 54 `L###` + 70 `mirror` + 17 `formerly` lines located; the confirmed lying ref (`useAudioCues.ts` line 267 cites `L213-222`; `handleResume` is actually at line 228). |
-| TEST-01 (cross-cutting) | Audit tests covering touched code; keep/fix real-behavior tests, delete garbage. | Only test interaction here is comment-stripping inside test files (D-01) WITHOUT deletion (D-02). Verified: **no test asserts on comment text**; the marker-guard tests assert on string VALUES (safe). See Pitfall 3. |
+| COMMENT-02 | Stale code cross-references (`formerly at L###`, `mirror X L###`, any line-number citation) removed from `src/` comments. | 47 `L###` + 85 `mirror` + 2 `formerly` lines located; the confirmed lying ref (`useAudioCues.ts:267` cites `L213-222`; `handleResume` is actually at line 228). |
+| TEST-01 (cross-cutting) | Audit tests covering touched code; keep/fix real-behavior tests, delete garbage. | Only test interaction here is comment-stripping inside test files (D-01) WITHOUT deletion (D-02). Verified: **no test asserts on comment text**; the marker-guard tests scan source for shipped string VALUES (safe). See Pitfall 3. |
 | BEHAVIOR-01 (cross-cutting) | No user-facing behavior change. | Satisfied structurally by D-09: every changed line comment-only via git-diff token check; then green gate. |
 | QUAL-01 (cross-cutting) | `tsc` + `lint` + `build` exit 0 per commit; curated suite passes; deps stay `react` + `react-dom`. | Exact gate commands documented. Zero net-new deps (deletion pass). |
 </phase_requirements>
@@ -49,9 +49,9 @@
 
 Phase 55 is a **mechanical, comment-only sweep** across **255 TypeScript/TSX files** under `src/` — **135 non-test + 120 test files** (notably larger than the audit's stated "77 + 61"; the audit counted at an earlier commit and excluded smaller files). The task: strip planning-process archaeology (decision IDs, phase refs, plan refs, blocker/pitfall numbers, spike pointers, dated kitchen-sink notes) and every stale `L###` line-reference from comments, rephrasing genuinely load-bearing rationale into present-tense invariants. No executable token — code, type, value, or import — may change.
 
-The raw work surface is large but skewed: the **audio layer (1,148 archaeology lines / 11 files)** and **hooks layer (922 / 13 files)** together hold the bulk of the *judgment-heavy* keep-rephrase prose; `src/hooks/useAudioCues.ts` alone carries **150 lines** of `D-xx`/`Phase NN`/`WR-xx`/`Pitfall`/`Blocker`/`kitchen-sink` references in dense block-comment essays. Test files hold even more raw tag lines (~1,156 across 90 files) but these are overwhelmingly mechanical strips with little keep-rephrase.
+**Verified work surface (live grep, deduplicated by line):** **non-test = 1,043 archaeology lines across 67 files; test = 892 lines across 83 files; ~1,935 lines / 150 files total** (the audit's "~1,329" counted a smaller earlier tree). The surface is skewed: the **hooks layer (~390 non-test lines)** and **audio layer (~265)** hold the bulk of the *judgment-heavy* keep-rephrase prose; `src/hooks/useAudioCues.ts` alone carries **150 tag-matching lines** of `D-xx`/`Phase NN`/`WR-xx`/`Pitfall`/`Blocker`/`kitchen-sink` references in dense block-comment essays, and `audio/audioEngine.ts` carries 107. Test files hold ~892 raw tag lines but these are overwhelmingly mechanical strips with little keep-rephrase.
 
-The work is unusually low-risk for a refactor because comments are inert: a correct change is provably behavior-preserving by inspecting the diff and confirming only comment tokens moved. The real risks are not runtime; they are (1) **collateral edits to trailing-comment code lines** (confirmed live: `useAudioCues.ts:431` ends in `setAudioStatus('unavailable') // WR-01-FIX: …`), (2) **over-cutting load-bearing "why"** the audit wants kept, (3) **JSDoc/TSDoc** blocks dense with `D-xx` (the `UseAudioCues` interface has `/** … D-10 … */` on nearly every member), and (4) **the marker-guard test family** — though verification confirms these assert on string *values*, not comments, so comment edits don't break them.
+The work is unusually low-risk for a refactor because comments are inert: a correct change is provably behavior-preserving by inspecting the diff and confirming only comment tokens moved. The real risks are not runtime; they are (1) **collateral edits to trailing-comment code lines** (confirmed live: `useAudioCues.ts:431` ends in `setAudioStatus('unavailable') // WR-01-FIX: …`), (2) **over-cutting load-bearing "why"** the audit wants kept, (3) **JSDoc/TSDoc** blocks dense with `D-xx` (the `UseAudioCues` interface has `/** … D-10 … */` on nearly every member), and (4) **the marker-guard test family** — though verification confirms these fs-scan source for string *values*, not for comments, so comment edits don't break them.
 
 The eslint flat config is `js.recommended` + `tseslint.strictTypeChecked` + react-hooks + react-refresh — **no `capitalized-comments`, `multiline-comment-style`, `spaced-comment`, or any comment-format rule** — so lint will not reflow or flag stripped comments. The green gate is `npm run build` (`tsc -b && vite build`) + `npm run lint` (`eslint .`) + `npm run test:run` (`vitest run`).
 
@@ -59,19 +59,22 @@ The eslint flat config is `js.recommended` + `tseslint.strictTypeChecked` + reac
 
 ## Architectural Responsibility Map
 
-No runtime architecture — comments are inert. "Tiers" here are codebase *layers*, which double as batch boundaries. Counts are **non-test archaeology lines** (verified live).
+No runtime architecture — comments are inert. "Tiers" here are codebase *layers*, which double as batch boundaries. Counts are **non-test archaeology lines, deduplicated** (verified live; a line matching multiple tags counted once).
 
-| Capability (layer) | Archaeology lines / files | Keep-rephrase density | Rationale |
-|--------------------|---------------------------|------------------------|-----------|
-| `src/audio/` (engine, clocks, cueSynth, timbres) | **1,148 / 11** | HIGH | iOS gesture-token sequencing, TOCTOU envelope, silent-WAV rationale all STAY rephrased (D-04). Most judgment-heavy. |
-| `src/hooks/` (useAudioCues, session controllers, engines, wakeLock) | **922 / 13** | HIGH | `useAudioCues.ts` = 150 lines alone; dense block essays + JSDoc; mix of invariant and history. |
-| `src/domain/` (sessionController, sessionMath, sessionAudio, stretchRamp, settings) | **302 / 11** | MEDIUM | sessionController role-distinction prose is load-bearing; sessionAudio `mirrors L221-256` = delete. |
-| `src/storage/` (storage, practices, stats, prefs, settings) | **288 / 9** | LOW (mostly delete) | "DS-WR-06 parity" / "modeled on recordResonantSession" → delete outright (D-03 cut side). |
-| `src/components/` (OrbShape, TimbrePicker, LearnPanel, SettingsToggleRow, NKSessionReadout, CueGlyph, CheckIcon) | **274 / 19** | LOW-MED | Spike-geometry provenance (D-07/D-08): strip `L###` + `index.html`/spike pointer; keep values; keep what-it-controls if non-obvious. |
-| `src/app/` (App, view-models, presentation, pages) | **201 / 13** | LOW | Standard strip; lower density. |
-| `src/content/` (strings, learnContent, appearanceStrings) | **72 / 14** | LOW | Standard strip. **NB: do NOT touch the 15 `// TODO: native-speaker review` markers in `appearanceStrings.ts` (I18N-04).** |
-| `src/styles/` | 0 / 0 | — | No archaeology in style modules (only their tests carry tags). |
-| Test files (`*.test.ts(x)`, all layers) | **~1,156 / 90** | VERY LOW | D-01 strip / D-02 no-delete. Mechanical. Batch last. |
+| Capability (layer) | Archaeology lines / files (non-test) | Keep-rephrase density | Rationale |
+|--------------------|--------------------------------------|------------------------|-----------|
+| `src/hooks/` (useAudioCues, session controllers, engines, wakeLock) | **~390 / 28** | HIGH | `useAudioCues.ts` = 150 tag-lines alone; dense block essays + JSDoc; mix of invariant and history. Highest absolute volume. |
+| `src/audio/` (audioEngine, clocks, cueSynth, timbres) | **~265 / 8** | HIGH | iOS gesture-token sequencing, TOCTOU envelope, silent-WAV rationale all STAY rephrased (D-04). Most judgment-heavy per line. |
+| `src/storage/` (storage, practices, stats, prefs, settings) | **~98 / 7** | LOW (mostly delete) | "DS-WR-06 parity" / "modeled on recordResonantSession" → delete outright (D-03 cut side). |
+| `src/components/` (OrbShape, MuteToggle, pickers, primitives, …) | **~87 / 55** | LOW-MED | Spike-geometry provenance (D-07/D-08) in **26 files** (not the 5 named in CONTEXT) — strip `L###` + `index.html`/spike pointer; keep values; keep what-it-controls if non-obvious. |
+| `src/domain/` (sessionController, sessionMath, sessionAudio, stretchRamp, settings) | **~56 / 10** | MEDIUM | sessionController role-distinction prose is load-bearing; sessionAudio "mirrors L221-256" = delete. |
+| `src/content/` (strings, learnContent) | **~16 / 3** | LOW | Standard strip. **NB: do NOT touch the 12 `// TODO: native-speaker review` markers in `strings.ts` (I18N-04).** |
+| `src/styles/` (non-test) | **~8 / 1** | LOW | Minimal; most style archaeology is in the guard tests. |
+| `src/app/` (App, view-models, presentation, pages) | **~7 / 20** | LOW | Surprisingly thin; standard strip. |
+| Root (`src/featureFlags.ts`) | **~8 / 1** | LOW | Standard strip. |
+| Test files (`*.test.ts(x)`, all layers) | **~892 / 83** | VERY LOW | D-01 strip / D-02 no-delete. Mechanical. Batch last. |
+
+*(Per-layer figures are deduplicated line counts and sum to ~935; the 1,043 non-test grand total is the all-`src` dedup including `revision`-tag lines not in every per-layer pass. Use grand totals for milestone framing, per-layer for wave sizing.)*
 
 ## Standard Stack
 
@@ -133,19 +136,19 @@ For each comment line/block containing a planning tag or L###:
 
 ### Recommended batch structure (waves) — sized from verified counts
 ```
-Wave 1  AUDIO        src/audio/**            (1,148 lines / 11 files — highest judgment; isolate)
-Wave 2  HOOKS        src/hooks/**            (922 / 13 — useAudioCues 150, useSessionEngine, controllers)
-Wave 3  DOMAIN       src/domain/**           (302 / 11 — keep sessionController role prose; delete "mirrors L###")
-Wave 4  STORAGE      src/storage/**          (288 / 9 — mostly delete: parity/modeling)
-Wave 5  COMPONENTS   src/components/**        (274 / 19 — D-07/D-08 spike geometry in 7 files)
-Wave 6  APP+CONTENT  src/app/** src/content/** + root files (273 / 27 — standard strip; SKIP the 15 I18N markers)
-Wave 7  TESTS        **/*.test.ts(x)         (~1,156 / 90 — mechanical; D-01 strip, D-02 no-delete)
+Wave 1  HOOKS        src/hooks/**            (~390 non-test lines / 28 files — useAudioCues 150, useSessionEngine, controllers; highest volume)
+Wave 2  AUDIO        src/audio/**            (~265 / 8 — highest per-line judgment; isolate)
+Wave 3  DOMAIN       src/domain/**           (~56 / 10 — keep sessionController role prose; delete "mirrors L###")
+Wave 4  STORAGE      src/storage/**          (~98 / 7 — mostly delete: parity/modeling)
+Wave 5  COMPONENTS   src/components/**        (~87 / 55 — D-07/D-08 spike geometry in 26 files)
+Wave 6  APP+CONTENT  src/app/** src/content/** src/styles/** + root files (~39 — standard strip; SKIP the 12 I18N markers in strings.ts)
+Wave 7  TESTS        **/*.test.ts(x)         (~892 / 83 — mechanical; D-01 strip, D-02 no-delete)
 ```
-Each wave is independently committable (each file's diff is comment-only). Audio + hooks are the two waves where most D-03 judgment lives — keep them separate and review carefully. Tests batch last; they are high-volume but low-judgment.
+Each wave is independently committable (each file's diff is comment-only). Hooks + audio are the two waves where most D-03 judgment lives — keep them separate and review carefully. Tests batch last; high-volume but low-judgment. The planner may split Wave 1/Wave 7 by file-count into sub-waves (e.g. useAudioCues + useSessionEngine + audioEngine as their own plan given their density).
 
 ### Anti-Patterns to Avoid
 - **Blind sed/regex mass-strip** — cannot rephrase to invariant; can corrupt code tokens; can match inside strings.
-- **Touching the 15 `// TODO: native-speaker review` markers** in `appearanceStrings.ts` — OUT OF SCOPE (I18N-04). Leave verbatim.
+- **Touching the 12 `// TODO: native-speaker review` markers** in `strings.ts` — OUT OF SCOPE (I18N-04). Leave verbatim.
 - **Editing the `REVIEW_MARKER = 'TODO: native-speaker review'` string literal** in `content.no-review-markers.test.ts` — it's a test STRING, not a comment.
 - **Deleting/rewriting any test** (D-02) — even an obvious garbage one. That's Phase 61.
 - **Inventing `docs/audio-architecture.md`** (D-06).
@@ -190,17 +193,17 @@ This phase touches only inert comment text in source files.
 **Warning signs:** Deleting prose that describes a *currently-true constraint* rather than a *past change*.
 
 ### Pitfall 3: Tests asserting on comment/tag text — VERIFIED ABSENT
-**What was checked:** `grep` for tag tokens (`D-NN`, `Phase NN`, `WR-NN`, `spike`) inside `expect(...)`/`toContain`/`toMatch` string literals across all test files → **zero matches**. The marker-guard family (`content.no-review-markers.test.ts`, `content.no-removed-themes.test.ts`, `content.no-stats-ui.test.ts`, `content.no-variants.test.ts`, `theme.no-hardcoded-classes.test.ts`) asserts on shipped **string VALUES / class names**, not on comments — confirmed by reading `content.no-review-markers.test.ts` (it guards `appearanceStrings` *values*; its own comments cite `Phase 48 D-03` and WILL be stripped under D-01, but the assertion `REVIEW_MARKER = 'TODO: native-speaker review'` is a code string and stays).
-**Residual risk:** None for runtime. The only care item: when stripping the comments *inside* these guard tests, do not touch their assertion string literals.
-**Resolution:** Assumption A3 (below) is resolved — no comment-assertion test exists.
+**What was checked:** `grep` for tag tokens (`D-NN`, `Phase NN`, `WR-NN`, `spike`) inside `expect(...)`/`toContain`/`toMatch` string literals across all test files → **zero matches**. The marker-guard family (`content.no-review-markers.test.ts`, `content.no-removed-themes.test.ts`, `content.no-stats-ui.test.ts`, `content.no-variants.test.ts`, `theme.no-hardcoded-classes.test.ts`, etc.) fs-scans **source files** for banned shipped string VALUES / class names — NOT for comments. Confirmed by reading `content.no-review-markers.test.ts`: it scans `src/content/*.ts` for the literal `REVIEW_MARKER = 'TODO: native-speaker review'` outside an allowlisted block; it deliberately excludes `.test.ts` files so its own marker-string const doesn't self-trigger, and it stays green whether or not the markers exist.
+**Residual care:** (a) when stripping comments *inside* these guard tests, do NOT touch their assertion string literals or the `REVIEW_MARKER` const; (b) the guard tests' OWN comments cite `Phase 26 D-12` / `Phase 48 D-18` / `WR-03` and WILL be stripped under D-01 — that's fine, the assertions don't read those comments.
+**Resolution:** Assumption A3 is resolved — no comment-assertion test exists.
 
 ### Pitfall 4: JSDoc/TSDoc structural edits
 **What goes wrong:** The `UseAudioCues` interface (`useAudioCues.ts:37-116`) has `/** … D-10 … Phase 51-02 (D-03) … */` on nearly every member. Mangling a block can detach editor hover docs (cosmetic) — no `tsc` rule enforces doc shape here, so the risk is hover quality, not a gate failure.
 **How to avoid:** Keep `/** */` and `@param`/`@returns` structure intact; strip only archaeology tokens within prose. Don't leave a `/**` without its `*/`.
 
-### Pitfall 5: Spike provenance `L###` + dead-file pointers (D-07)
+### Pitfall 5: Spike provenance `L###` + dead-file pointers (D-07) — BROADER than CONTEXT lists
 **What goes wrong:** Leaving `index.html L1006-1014` refs that point at Phase-36-deleted files, or deleting the *value* note along with the provenance.
-**Where:** 17 `spike`/`index.html` lines across **7 files** — `OrbShape.tsx`, `TimbrePicker.tsx`, `LearnPanel.tsx`, `SettingsToggleRow.tsx`, `NKSessionReadout.tsx` (named in CONTEXT) **plus `CueGlyph.tsx` and `icons/CheckIcon.tsx`** (found live — not in CONTEXT's list; planner should include them).
+**Where (verified live):** 67 `spike`/`index.html` lines across **26 component files** — far more than CONTEXT's named 5. The set includes the named `OrbShape.tsx`, `TimbrePicker.tsx`, `LearnPanel.tsx`, `SettingsToggleRow.tsx`, `NKSessionReadout.tsx` PLUS `MuteToggle.tsx`, `CueGlyph.tsx`, `SettingsSectionHeader.tsx`, `FeedbackCount.tsx`, `SettingsSheet.tsx`, `SettingsPanelBody.tsx`, `SetupCard.tsx`, `PracticeToggle.tsx`, `FeedbackTime.tsx`, `SettingsStepper.tsx`, `SettingsSegmentedRow.tsx`, `SessionReadout.tsx`, `SettingsRow.tsx`, `SessionActionRow.tsx`, `ThemePicker.tsx`, and the `primitives/` files (`PageShell`, `TopAppBar`, `PickerCardGrid`, `SegmentedControl`, `SectionCard`, `Toggle`). The planner must scope Wave 5 to all 26, not 5. Many cite specific `index.html L###` (e.g. `OrbShape.tsx:146` "Spike 010 CheckMarker (index.html L1006-1014)", `MuteToggle.tsx:5` "spike 010 MuteButton, index.html lines 455-486").
 **How to avoid:** Delete `L###` + `spike NNN`/`index.html` pointer; keep the geometry value (D-08); keep a what-it-controls note only if non-obvious.
 **Warning signs:** Any surviving `index.html` or `spike` token in `src/components/`.
 
@@ -231,7 +234,7 @@ Rephrasing model (verified sites + CONTEXT exemplars):
 // AFTER
 // Follows the same defensive-gate posture as handleResume: engineRef null-gate + early return.
 
-// BEFORE  (spike provenance, D-07)
+// BEFORE  (spike provenance, D-07 — OrbShape.tsx:146)
 // Spike 010 CheckMarker (index.html L1006-1014): 32x32 / 24-viewBox
 // AFTER   (value note only, if non-obvious — else drop entirely)
 // 32x32 check disc, 24 viewBox
@@ -249,21 +252,20 @@ Not applicable — no external library/version landscape. The only "old vs new" 
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | The 135 non-test + 120 test file split (and per-layer counts) is authoritative for wave sizing. | Summary / batching | Low — counted live this session via `find`/`git grep`. Differs from the audit's "77+61" (earlier commit / narrower count); re-run the Wave-0 grep at plan time only to refresh if the tree changed. [VERIFIED: live grep] |
+| A1 | The 135 non-test + 120 test split and the dedup totals (non-test 1,043/67, test 892/83) are authoritative for wave sizing. | Summary / batching | Low — counted live this session. Differs from the audit's "77+61 / ~1,329" (earlier/narrower); re-run the Wave-0 grep at plan time only if the tree changed. [VERIFIED: live grep] |
 | A2 | eslint has no comment-format rule that reflows/flags stripped comments. | Summary / toolchain | Low — `eslint.config.js` is `js.recommended` + `strictTypeChecked` + react-hooks + react-refresh; none touch comment text. [VERIFIED: eslint.config.js] |
-| A3 | No test asserts on comment/tag string content. | Pitfall 3 | RESOLVED — grep for tag tokens inside `expect`/`toContain`/`toMatch` returned zero; marker-guard tests assert on string values, confirmed by reading `content.no-review-markers.test.ts`. [VERIFIED: live grep + read] |
+| A3 | No test asserts on comment/tag string content. | Pitfall 3 | RESOLVED — grep for tag tokens inside `expect`/`toContain`/`toMatch` returned zero; marker-guard tests fs-scan source for shipped string values, confirmed by reading `content.no-review-markers.test.ts`. [VERIFIED: live grep + read] |
 | A4 | Stripping comments does not change emitted bundle bytes. | Runtime State Inventory | Low — standard Vite/esbuild behavior; confirmed structurally by a green `npm run build`. [ASSUMED] |
-| A5 | The per-file `git grep` hit counts (e.g. useAudioCues 150) approximate the edit volume; actual keep-vs-delete ratio is per-line judgment. | Batch sizing | Low — counts are line-hits not edit-decisions; they size waves, not outcomes. [VERIFIED: counts] / [ASSUMED: ratio] |
+| A5 | Per-file `git grep` hit counts (e.g. useAudioCues 150) approximate edit volume; the keep-vs-delete ratio is per-line judgment. | Batch sizing | Low — counts are line-hits not edit-decisions; they size waves, not outcomes. [VERIFIED: counts] / [ASSUMED: ratio] |
 
 ## Open Questions
 
 1. **Exact keep-vs-delete ratio per file.**
-   - What we know: total archaeology line-hits per file/layer (verified). `useAudioCues.ts` = 150 hits, audio layer = 1,148, hooks = 922, tests ≈ 1,156.
-   - What's unclear: how many of those lines are KEEP-rephrase vs DELETE — that is per-line D-03 judgment, only knowable at edit time.
-   - Recommendation: size waves from hit-counts; expect audio/hooks to be ~half keep-rephrase (the valuable essays), storage/tests to be ~mostly delete.
+   - What we know: total archaeology line-hits per file/layer (verified). `useAudioCues.ts` = 150 hits, audio ≈ 265, hooks ≈ 390, tests ≈ 892.
+   - What's unclear: how many of those lines are KEEP-rephrase vs DELETE — per-line D-03 judgment, only knowable at edit time.
+   - Recommendation: size waves from hit-counts; expect audio/hooks ~half keep-rephrase (the valuable essays), storage/tests ~mostly delete.
 
-2. **`CueGlyph.tsx` + `icons/CheckIcon.tsx` spike provenance** (found live, not in CONTEXT's 5-file list).
-   - Recommendation: include both in the Wave 5 spike-geometry batch under D-07/D-08.
+2. **Spike provenance scope.** RESOLVED — 26 component files (not CONTEXT's 5). Wave 5 must cover all 26 (list in Pitfall 5).
 
 ## Environment Availability
 
@@ -298,18 +300,18 @@ Not applicable — no external library/version landscape. The only "old vs new" 
 | BEHAVIOR-01 | Every changed line comment-only | git-diff token check (D-09) | `git diff --word-diff=porcelain <file>` reviewed; plus the green gate | existing gate |
 | QUAL-01 | Green gate, no new deps | gate run | `npm run build && npm run lint && npm run test:run` exit 0; `git diff package.json` empty | existing gate |
 
-### Verified taxonomy line-counts (whole `src/`, incl. tests)
+### Verified taxonomy line-counts (whole `src/`, incl. tests — raw, NOT deduplicated)
 | Tag | Lines | | Tag | Lines |
 |-----|-------|-|-----|-------|
-| `D-NN` | 1095 | | `revision N` | 86 |
-| `Phase NN` | 882 | | `mirror` | 70 |
-| `WR-NN`/`DS-WR-NN` | 273 | | `Blocker` | 66 |
-| `Plan NN` | 257 | | `L###` (COMMENT-02) | 54 |
-| `Pitfall` | 99 | | `dated YYYY-MM-DD` | 43 |
-| `spike NNN` | 24 | | `formerly at` | 17 |
-| `kitchen-sink` | 10 | | | |
+| `D-NN` | 1039 | | `mirror` | 85 |
+| `Phase NN` | 527 | | `Pitfall` | 68 |
+| `Plan NN` | 181 | | `Blocker` | 65 |
+| `WR-NN`/`DS-WR-NN` | 138 | | `L###` (COMMENT-02) | 47 |
+| `revision N` | 46 | | `dated YYYY-MM-DD` | 23 |
+| `spike NNN` | 22 | | `kitchen-sink` | 8 |
+| | | | `formerly at` | 2 |
 
-(Non-test subset: `D-NN` 580, `Phase NN` 642, `WR` 212, `Plan` 184, `L###` 40, `mirror` 58, `formerly` 14, `spike` 13.) Sums exceed the audit's "~1,329" because a line can match multiple tags and the live tree is larger.
+(Non-test subset, raw: `D-NN` 521, `Phase NN` 287, `Plan` 108, `WR` 77, `L###` 45, `mirror` 63, `spike` 17.) Raw sums exceed the dedup totals (non-test 1,043, test 892) because one line can match several tags.
 
 ### Top worst-offender files (verified `git grep -c`, sorted)
 | File | Hits | | File | Hits |
@@ -321,7 +323,7 @@ Not applicable — no external library/version landscape. The only "old vs new" 
 | `audio/sessionClock.ts` | 55 | | `domain/stretchRamp.ts` | 17 |
 | `hooks/useSessionEngine.test.tsx` | 40 | | `domain/sessionAudio.ts` | 12 |
 | `storage/prefs.test.ts` | 36 | | `domain/sessionController.ts` | 10 |
-| `storage/storage.ts` | 33 | | (full table → Wave-0 grep #2) | |
+| `storage/storage.ts` | 33 | | (full table → Wave-0 grep #1) | |
 
 ### Sampling Rate
 - **Per file edited:** `git diff <file>` (confirm comment-only) — every file.
@@ -333,17 +335,19 @@ The enumeration below was run live; re-run only if the tree changed before plann
 ```bash
 # per-file hit counts, sorted worst-first
 git grep -cE '\b(D-[0-9]+|(DS-)?WR-[0-9]+|Phase [0-9]+|Plan [0-9]+|revision [0-9]+|Blocker|Pitfall|spike[ -]?[0-9]+|kitchen.?sink|L[0-9]{2,}|formerly at|mirror)' -- 'src/**/*.ts' 'src/**/*.tsx' | sort -t: -k2 -rn
-# confirm the 15 I18N markers (DO NOT TOUCH)
-git grep -nE '// TODO: native-speaker review' -- src   # → 15, all in content/appearanceStrings.ts
+# confirm the 12 I18N markers (DO NOT TOUCH)
+git grep -nE '// TODO: native-speaker review' -- src/content/strings.ts   # → 12
 # confirm no comment-assertion test
 git grep -nE "(toContain|toMatch|toBe|toEqual)\(.*\b(D-[0-9]+|Phase [0-9]+|WR-[0-9]+|spike)" -- '**/*.test.ts' '**/*.test.tsx'   # → empty (verified)
+# enumerate all spike-geometry component files (Wave 5)
+git grep -liE 'spike|index\.html' -- 'src/components/**/*.tsx'   # → 26 files
 ```
 
 ### Wave 0 Gaps
 - [x] Per-file/per-layer archaeology counts — captured live (tables above).
 - [x] Comment-assertion test check — VERIFIED none exist (A3 resolved).
-- [x] I18N-04 marker location — 15, all in `appearanceStrings.ts` (do not touch).
-- [x] Spike-geometry file list — 7 files (CONTEXT's 5 + `CueGlyph.tsx` + `icons/CheckIcon.tsx`).
+- [x] I18N-04 marker location — 12 in `src/content/strings.ts` (do not touch); 1 string-const in the guard test (also leave).
+- [x] Spike-geometry file list — 26 component files (CONTEXT's 5 + 21 more; full list in Pitfall 5).
 - [ ] Confirm package manager (npm vs pnpm) so gate binaries exist — operator/planner.
 - [ ] No framework install needed — Vitest/ESLint/tsc/Vite already in devDependencies.
 
@@ -370,8 +374,8 @@ Not applicable to this phase's content (comment-only text edits introduce no aut
 - `.planning/REQUIREMENTS.md` — COMMENT-01/02, cross-cutting gates, Out of Scope.
 - `.planning/CODE-QUALITY-REVIEW.md` §3 — driving audit, worst-offender list, remedy phrasing, the stale `useAudioCues.ts` example.
 - `package.json`, `eslint.config.js`, `tsconfig.json`, `.planning/config.json` — verified toolchain, gate commands, no comment-format lint rule.
-- **Live enumeration (this session):** `find`/`git grep -c`/`grep --include` for file counts (135 non-test + 120 test = 255), per-tag totals, per-file/per-layer hit counts, comment-assertion-test check (none), I18N marker location (15 in appearanceStrings.ts), spike provenance file list (7).
-- **Full read of `src/hooks/useAudioCues.ts`** — confirmed trailing-comment landmines, the lying `L213-222` ref, JSDoc tag density, keep-worthy gesture-token essay.
+- **Live enumeration (this session):** file counts (135 non-test + 120 test = 255), per-tag raw totals, dedup grand totals (non-test 1,043/67, test 892/83), per-file & per-layer counts, comment-assertion-test check (none), I18N marker location (12 in strings.ts), spike provenance file list (26 components).
+- **Full read of `src/hooks/useAudioCues.ts`** and `src/content/content.no-review-markers.test.ts` — confirmed trailing-comment landmines, the lying `L213-222` ref, JSDoc tag density, the gesture-token keep-essay, and the marker-guard mechanism.
 
 ### Secondary (MEDIUM confidence)
 - `.planning/STATE.md` — milestone framing, BEHAVIOR-01-not-tests gate note.
@@ -383,8 +387,8 @@ Not applicable to this phase's content (comment-only text edits introduce no aut
 
 **Confidence breakdown:**
 - Decisions / scope: HIGH — all 9 read verbatim from CONTEXT.md.
-- Toolchain / gate / landmines: HIGH — verified from package.json, eslint.config.js, and a full read of the worst-offender file.
-- Work-surface enumeration: HIGH — file counts, per-tag totals, per-file & per-layer counts, comment-assertion-test check, I18N + spike locations all captured live.
+- Toolchain / gate / landmines: HIGH — verified from package.json, eslint.config.js, and full reads of the worst-offender file + a guard test.
+- Work-surface enumeration: HIGH — file counts, per-tag totals, dedup grand totals, per-file & per-layer counts, comment-assertion-test check, I18N + spike locations all captured live.
 - Procedure / batching: HIGH — derived from verified counts + decisions.
 
 **Research date:** 2026-05-30
