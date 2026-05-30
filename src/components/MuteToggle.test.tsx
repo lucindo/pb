@@ -84,7 +84,7 @@ describe('MuteToggle', () => {
     expect(containerOff.querySelectorAll('svg line').length).toBe(2)
   })
 
-  // Plan 06 D-32 tests:
+  // Resume-audio accessible-name tests:
   it('when needsResume=true and audioAvailable=true, accessible name is "Resume audio" and aria-pressed is absent', () => {
     renderToggle({ needsResume: true, muted: false, audioAvailable: true })
     const button = screen.getByRole('button', { name: 'Resume audio' })
@@ -117,7 +117,7 @@ describe('MuteToggle', () => {
     expect(button).toBeDisabled()
   })
 
-  // A11Y-01 tests (Phase 11): aria-describedby conditional on needsResume.
+  // aria-describedby conditional on needsResume.
   it('needsResume=true → button has aria-describedby set to resumeHintId', () => {
     renderToggle({ needsResume: true, resumeHintId: 'x', audioAvailable: true })
     const button = screen.getByRole('button', { name: 'Resume audio' })

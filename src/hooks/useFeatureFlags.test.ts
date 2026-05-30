@@ -69,7 +69,7 @@ describe('useFeatureFlags', () => {
     expect(result.current.breathingShape).toBe('minimal-rings')
   })
 
-  // T-47-03-01 / T-47-03-04 mitigations — cross-tab 'storage' event with
+  // Cross-tab 'storage' event with
   // key === STATE_KEY re-reads disk; event payload is discarded.
   it('cross-tab storage event with key === STATE_KEY re-reads persisted snapshot', async () => {
     const { result } = renderHook(() => useFeatureFlags())
@@ -116,7 +116,7 @@ describe('useFeatureFlags', () => {
     expect(result.current.breathingShape).toBe('orb-halo')
   })
 
-  // T-47-03-02 / T-47-03-05 mitigations — same-tab 'hrv:prefs-changed' for
+  // Same-tab 'hrv:prefs-changed' for
   // each of the 4 keys re-reads disk; the payload's `value` is never trusted.
   it('same-tab hrv:prefs-changed with detail.key === "breathingShape" re-reads persisted', async () => {
     const { result } = renderHook(() => useFeatureFlags())
@@ -182,7 +182,7 @@ describe('useFeatureFlags', () => {
     expect(result.current.switcherIcon).toBe(true)
   })
 
-  // T-47-03-05 negative — unrelated 'theme' key MUST NOT trigger a re-read.
+  // Negative: unrelated 'theme' key MUST NOT trigger a re-read.
   // The test mutates disk so the only way the assertion can hold is if the
   // hook ignores the event (proves the 4-key filter doesn't false-positive).
   it('same-tab hrv:prefs-changed with detail.key === "theme" is ignored', async () => {

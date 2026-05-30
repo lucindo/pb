@@ -55,7 +55,7 @@ describe('OrbShape', () => {
   })
 })
 
-// ── Phase 25 Plan 03: cue prop threading ─────────────────────────────────────
+// ── cue prop threading ─────────────────────────────────────
 describe('OrbShape — cue prop (Phase 25 Plan 03)', () => {
   it('defaults cue to "labels" when no cue prop passed — phaseLabel text visible (zero regression)', () => {
     render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
@@ -112,7 +112,7 @@ describe('OrbShape — cue prop (Phase 25 Plan 03)', () => {
   })
 })
 
-// ── Phase 45: ringCue prop ────────────────────────────────────────────────────
+// ── ringCue prop ────────────────────────────────────────────────────
 // Locks four invariants: default (omitted) renders the progress-arc SVG layer,
 // explicit ringCue="outer-inner" preserves the legacy outer + inner ring DOM
 // (no arc SVG), progress-arc renders 2 path elements with spike-locked stroke

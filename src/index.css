@@ -6,12 +6,12 @@
 @source not './**/*.test.ts';
 @import './styles/theme.css';
 
-/* D-04: NK per-OM pulse animation — gentle scale bump from 1.0 → 1.06 → 1.0.
+/* NK per-OM pulse animation — gentle scale bump from 1.0 → 1.06 → 1.0.
    Rest state is scale(1) so the compounded transform (outer wrapper × inner
    OrbContainer .orb at MID 0.79) lands at 0.79 — matching the lead-in orb's
    visible size and y-position. Peak at scale(1.06) gives a 6% pulse, subtle
-   but visible in line with the Mono Zen aesthetic. No expanding ring (D-04
-   locked). key={`nk-${count}`} on the NKShape caller triggers a React remount
+   but visible in line with the Mono Zen aesthetic. No expanding ring.
+   key={`nk-${count}`} on the NKShape caller triggers a React remount
    that restarts the animation on each OM. */
 @keyframes nk-om-pulse {
   0%   { transform: translate3d(0,0,0) scale(1); }
@@ -44,7 +44,7 @@
     margin: 0;
   }
 
-  /* CS-WR-03: bare ::selection — the UI lives under #root, so body::selection never matched app text. */
+  /* Bare ::selection — the UI lives under #root, so body::selection never matched app text. */
   ::selection {
     color: var(--color-breathing-on-accent);
     background: var(--color-breathing-accent);

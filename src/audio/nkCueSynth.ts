@@ -79,7 +79,7 @@ interface PadEnvelope {
  * Private helper: build a single oscillator → partialGain → filter → envelope chain.
  * Schedules the tone at `when` for `durationSec`, connects to `destination`, and
  * returns the constructed nodes for the caller to attach cleanup listeners.
- * Caller is responsible for registering 'ended' listeners (T-31-04).
+ * Caller is responsible for registering 'ended' listeners.
  *
  * `envelopeSpec` selects the gain shape:
  *   - a `number` → strike: instant attack to peak, exponential decay (τ = the number).
@@ -196,7 +196,7 @@ export function scheduleNKTick(
     audioCtx, preset.fundamentalHzIn, NK_TICK_DURATION_SEC, when,
     destination, preset, NK_TICK_PEAK_GAIN, NK_TICK_DECAY_TAU,
   )
-  // T-31-04: disconnect tick nodes on 'ended'
+  // Disconnect tick nodes on 'ended'
   t.osc.addEventListener('ended', () => {
     try { t.osc.disconnect() } catch { /* silent */ }
     try { t.partialGain.disconnect() } catch { /* silent */ }
@@ -237,7 +237,7 @@ export function scheduleCountdownTick(
     audioCtx, preset.fundamentalHzIn * COUNTDOWN_TICK_PITCH_RATIO, COUNTDOWN_TICK_DURATION_SEC, when,
     destination, preset, COUNTDOWN_TICK_PEAK_GAIN, COUNTDOWN_TICK_DECAY_TAU,
   )
-  // Disconnect the tick nodes on 'ended' (mirrors scheduleNKTick / T-31-04).
+  // Disconnect the tick nodes on 'ended' (mirrors scheduleNKTick).
   t.osc.addEventListener('ended', () => {
     try { t.osc.disconnect() } catch { /* silent */ }
     try { t.partialGain.disconnect() } catch { /* silent */ }
@@ -301,7 +301,7 @@ export function scheduleEndChord(
       masterEnvelope, preset, END_CHORD_PEAK_GAIN,
       { attackSec: END_CHORD_ATTACK_SEC, releaseSec: END_CHORD_RELEASE_SEC },
     )
-    // T-31-04: disconnect each chord tone's nodes on 'ended'
+    // Disconnect each chord tone's nodes on 'ended'
     t.osc.addEventListener('ended', () => {
       try { t.osc.disconnect() } catch { /* silent */ }
       try { t.partialGain.disconnect() } catch { /* silent */ }

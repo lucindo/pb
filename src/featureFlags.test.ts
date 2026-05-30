@@ -216,7 +216,7 @@ describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
 
   it('BYPASS_SILENT_MODE_FLAG is exported with the production default and queryParam', () => {
     expect(BYPASS_SILENT_MODE_FLAG.queryParam).toBe('bypassSilentMode')
-    expect(BYPASS_SILENT_MODE_FLAG.defaultValue).toBe(true) // D-05: default true
+    expect(BYPASS_SILENT_MODE_FLAG.defaultValue).toBe(true) // default true
   })
 
   it('BREATHING_SHAPE_FLAG is exported with the production default + alias parser', () => {

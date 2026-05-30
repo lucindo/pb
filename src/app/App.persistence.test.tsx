@@ -197,7 +197,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // recordedSessionKeyRef prevents double-write via idempotency key.
     await advanceTime(100)
     const env = readRawEnvelope()
-    expect(resonantStatsOf(env)?.['totalSessions']).toBe(1)  // exactly one, not two (Pitfall 1)
+    expect(resonantStatsOf(env)?.['totalSessions']).toBe(1)  // exactly one, not two
   })
 })
 

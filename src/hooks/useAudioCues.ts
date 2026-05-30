@@ -215,7 +215,7 @@ export function useAudioCues(
   // AudioStatusFlag is exactly `'ok' | 'needs-resume' | 'unavailable'`.
   //   - handleResume: clears the needs-resume state when AC transitions to running.
   //   - handleSuspend: flips to needs-resume when a prior visibility-resume attempt
-  //     is in flight for this cycle (Pitfall 5 gate preserved).
+  //     is in flight for this cycle (the resume-attempt gate).
   //   - handleClose: sets unavailable when the AC transitions to closed.
   const handleResume = useCallback((): void => {
     // Defensive null-gate at top — protects future branches that read
@@ -231,7 +231,7 @@ export function useAudioCues(
     const engine = engineRef.current
     if (engine === null) return
     void engine
-    // Pitfall 5 gate preserved: only flip to 'needs-resume' when a prior visibility-driven
+    // Resume-attempt gate: only flip to 'needs-resume' when a prior visibility-driven
     // resume attempt is in flight for this suspend cycle. Startup-time transient
     // suspended → running transitions are intentionally ignored.
     if (visibilityResumeAttemptedRef.current) {
@@ -291,7 +291,7 @@ export function useAudioCues(
   // Mirrors useWakeLock.ts — same shape, same gate posture. The hook owns its own
   // DOM listener so the audioEngine stays free of document.* / window.* access.
   // The single gate is engineRef.current !== null. visibilityResumeAttemptedRef is
-  // set to true BEFORE the void-call, which arms the Pitfall 5 gate inside
+  // set to true BEFORE the void-call, which arms the resume-attempt gate inside
   // handleSuspend so a subsequent 'suspended'/'interrupted' transition can flip
   // audioStatus = 'needs-resume'. The optimistic resume call is preserved —
   // sometimes it works without a gesture (headphone in, brief lock, certain iOS
@@ -400,7 +400,7 @@ export function useAudioCues(
           console.warn('[useAudioCues] start failed; falling back to visuals-only', error)
         }
         setAudioAvailable(false)
-        setAudioStatus('unavailable') // WR-01-FIX: set audioStatus='unavailable' so MuteToggle.needsResume does not read healthy on a dead audio path.
+        setAudioStatus('unavailable') // set audioStatus='unavailable' so MuteToggle.needsResume does not read healthy on a dead audio path.
         setStatus('failed')
         return null
       }
@@ -438,7 +438,7 @@ export function useAudioCues(
     proxyMemoRef.current.setSource(createWallSessionClock())
     firstInCueTimeRef.current = null // Clear cached anchor for the next start()
     lastTopUpCuesRef.current = [] // Clear cache so fast stop()→start() cannot replay stale cues into new engine.
-    // Reset the audioStatus state machine + Pitfall 5 gate so the next session
+    // Reset the audioStatus state machine + resume-attempt gate so the next session
     // starts clean (otherwise a residual 'needs-resume' from a prior suspend cycle
     // would carry into the new session's first render).
     visibilityResumeAttemptedRef.current = false

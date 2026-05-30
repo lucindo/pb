@@ -8,7 +8,7 @@
 //   wasAcquiredRef — true if the consumer has called request() and has NOT
 //                    yet called release(). Stays true through OS-initiated
 //                    releases (sentinel 'release' event) so the visibility
-//                    re-acquire path (D-03/D-05) can retry.
+//                    re-acquire path can retry.
 //
 // Cleanup posture: the useEffect cleanup synchronously nulls sentinelRef BEFORE
 // awaiting sentinel.release(), preventing a fast new request() arriving during
@@ -48,7 +48,7 @@ export function useWakeLock(): UseWakeLock {
     if (sentinelRef.current !== null) return
     // Second concurrent caller no-ops while first await is pending.
     if (requestInFlightRef.current) return
-    // AH-WR-01: stamp this request's generation token before the await.
+    // Stamp this request's generation token before the await.
     const gen = requestGenerationRef.current
     try {
       requestInFlightRef.current = true

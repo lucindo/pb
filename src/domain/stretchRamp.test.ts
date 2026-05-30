@@ -8,7 +8,7 @@ import type { StretchSegment } from './stretchRamp'
 import { DEFAULT_STRETCH_SETTINGS } from './settings'
 import type { StretchSettings } from './settings'
 
-// Phase 50-02 (D-02 ms→sec cascade): every time-shaped value is seconds.
+// Every time-shaped value is seconds.
 // Prior ms values (60_000 / 5 * 60_000) become 60 / 5 * 60. Numeric ms
 // fixtures (10_000, 600_000, etc.) divide by 1000.
 
@@ -193,7 +193,7 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
     expect(segs.some(s => s.stage === 'ramp')).toBe(true)
   })
 
-  // WR-01 regression: the bounded cool-down absorbs the upward cycle-snapping
+  // Regression: the bounded cool-down absorbs the upward cycle-snapping
   // residual from warm-up + ramp. For a wide, slow ramp the residual can exceed
   // the requested cool-down span — the cool-down segment span must still be
   // floored at one whole cycle (never zero or negative), and cycleIndex must
@@ -292,7 +292,7 @@ describe('getStretchFrame', () => {
     const segs = buildStretchSegments(baseSettings)
     const endSec = (segs[segs.length - 1] as StretchSegment).endSec
 
-    // Phase 50-02: 1 ms = 0.001 sec (CLAMP_EPSILON_SEC parity).
+    // 1 ms = 0.001 sec (CLAMP_EPSILON_SEC parity).
     expect(getStretchFrame(segs, endSec - 0.001).isComplete).toBe(false)
     expect(getStretchFrame(segs, endSec).isComplete).toBe(true)
     expect(getStretchFrame(segs, endSec + 0.1).isComplete).toBe(true)
@@ -354,7 +354,7 @@ describe('getStretchFrame', () => {
     }
   })
 
-  // WR-02 regression: after the 34-10 residual-absorption rework the bounded
+  // Regression: after the residual-absorption rework the bounded
   // cool-down span is no longer a whole-cycle multiple, so the final cycle is a
   // partial cycle. If it ends mid-out-phase the raw phaseElapsedSec / exhaleSec
   // ratio can exceed 1.0 for elapsed values just below endSec. phaseProgress must
@@ -395,7 +395,7 @@ describe('getStretchFrame', () => {
   it('GAP-3: phaseProgress is NOT frozen during the final cycle — the orb animates the last exhale', () => {
     // Reproduce the 5-min cool-down freeze: sample the final out-phase (last exhale) and
     // confirm phaseProgress keeps advancing all the way to near 1.0 until isComplete fires.
-    // With the broken DS-WR-03 clamp (segmentSpan - cycleSec/2), phaseProgress freezes at
+    // With the broken clamp (segmentSpan - cycleSec/2), phaseProgress freezes at
     // ~1/6 for the entire last exhale. After the fix it should reach >= 0.95.
     //
     // GAP-1 update: after the plan 34-10 rework, the final cool-down no longer ends on a
@@ -431,7 +431,7 @@ describe('getStretchFrame', () => {
     // phaseProgress must advance across the final out-phase.
     // The last sample is at sessionEndSec - 0.001.
     // With the fix: phaseProgress near the end should be well above 0.8 — clearly
-    // advancing, not frozen at ~1/6 (=0.167) as it was with the broken DS-WR-03 clamp.
+    // advancing, not frozen at ~1/6 (=0.167) as it was with the broken clamp.
     // Note: after the GAP-1 rework the last cycle may be a partial one (the cool-down
     // absorbs the residual), so phaseProgress may not reach near 1.0 in all cases.
     const lastFrame = requireValue(outFrames.at(-1), 'Expected final out-phase frame')
@@ -503,7 +503,7 @@ describe('getStretchFrame', () => {
     // After the GAP-1 rework, the final cool-down segment no longer ends on a whole-cycle
     // boundary — its span includes a partial residual cycle. This test confirms that
     // getStretchFrame's phaseProgress still advances (does not freeze) through the
-    // final part of the session up to isComplete. The DS-WR-03 CLAMP_EPSILON_SEC = 0.001
+    // final part of the session up to isComplete. The CLAMP_EPSILON_SEC = 0.001
     // sec clamp from plan 34-09 guards only the exact-endSec landing; any elapsed value
     // strictly below endSec flows unclamped — so phaseProgress advances freely.
     const segs = buildStretchSegments(DEFAULT_STRETCH_SETTINGS)
@@ -537,7 +537,7 @@ describe('getStretchFrame', () => {
 
     // phaseProgress must advance across the samples — the last sample must have a
     // higher (or equal) phaseProgress than the first, and must NOT be frozen at
-    // ~0.167 (the DS-WR-03 broken-clamp freeze value for the 40:60 ratio).
+    // ~0.167 (the broken-clamp freeze value for the 40:60 ratio).
     // We check that the first and last samples differ, confirming animation advances.
     const firstFrame = requireValue(frames[0], 'Expected first sampled frame')
     const lastFrame = requireValue(frames.at(-1), 'Expected last sampled frame')

@@ -32,9 +32,9 @@ interface NKEngineRecord {
   frontCount: number
   backCount: number        // = frontCount / 4, computed once at start()
   rounds: number
-  omSec: number            // NK_OM_SECONDS[omLength] (seconds-shaped per D-02)
+  omSec: number            // NK_OM_SECONDS[omLength] (seconds-shaped)
   cueOn: boolean           // mirrors perOmCue; mutable for live toggle via toggleCue()
-  startedAtSec: number     // clock.now() at start — for elapsed stats (D-02 seconds-shaped)
+  startedAtSec: number     // clock.now() at start — for elapsed stats (seconds-shaped)
   completedRounds: number  // fully-completed rounds (for early-end stats)
   // Delay (seconds) of the currently-pending step timer. Markers schedule the
   // next step with NK_LEAD_SEC; per-OM steps use omSec. Recorded so schedule()
