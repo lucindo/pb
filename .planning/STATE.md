@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Maintainability
 status: planning
-last_updated: "2026-05-30T02:58:11.765Z"
+last_updated: "2026-05-30T03:30:00.000Z"
 last_activity: 2026-05-30
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,59 +17,55 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-27 after v2.2 Audio Sync milestone init)
+See: .planning/PROJECT.md (updated 2026-05-29 after v2.3 Maintainability milestone init)
 
 **Core value:** Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch, or Navi Kriya — and comfortably follow accurate, uninterrupted guidance through synchronized visuals and optional sound.
-**Current focus:** Phase 52 — visibility-resume-clamp-lookahead-scheduling
+**Current focus:** Phase 55 — Comment de-archaeology (behavior-preserving comment strip; unblocks reading for the rest of the milestone)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 55 — Comment de-archaeology (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-30 — Milestone v2.3 started
+Status: Roadmap drafted; awaiting `/gsd:plan-phase 55`
+Last activity: 2026-05-30 — v2.3 roadmap created (Phases 55–61), 100% requirement coverage
 
 ## Performance Metrics
 
 **Velocity (plans completed per milestone):**
 
-- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6 · v1.5: 27 · v2.0: 35 + 18 spike-loop items · v2.1: 11
+- v1.0: 30 · v1.0.1: 12 · v1.1: 47 · v1.2: 8 · v1.3: 11 · v1.4: 6 · v1.5: 27 · v2.0: 35 + 18 spike-loop items · v2.1: 11 · v2.2: 23 (+ 53/54 direct)
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and PROJECT.md Key Decisions. v2.1 decisions (spike-012 verbatim tokens, per-field `coerceSettings` for 4 flags with no `STATE_VERSION` bump, paste-and-rename picker hooks, existing-primitives-only Appearance composition, `returningFromAppearance` sentinel-based focus restoration, `appSettings.sections.appearance` → `sections.theme` rename, drift-guard `ALLOWED_KEY_PATTERNS` allowlist) are captured in PROJECT.md Key Decisions.
+Decisions are logged in PROJECT.md Key Decisions table — see the v1.5 rows for the multi-practice architecture, the migration ladder, the Navi Kriya engine, the Stretch promotion, the switcher A/B treatment, and the Flute timbre. v2.0 decisions (spike-010 visual system, anti-gamification stance, Variant removal, Theme collapse) are captured in `.planning/spikes/MANIFEST.md` Requirements and PROJECT.md Key Decisions. v2.1 decisions (spike-012 verbatim tokens, per-field `coerceSettings` for 4 flags with no `STATE_VERSION` bump, paste-and-rename picker hooks, existing-primitives-only Appearance composition, `returningFromAppearance` sentinel-based focus restoration) are captured in PROJECT.md Key Decisions. v2.2 decisions (5-phase audio-stack shape, `SessionClock` abstraction, master-clock unification, Web Worker background continuity, master-gain mute) are captured in PROJECT.md / the v2.2 milestone docs.
 
-**v2.2 roadmap-time decisions (pre-plan-phase):**
+**v2.3 roadmap-time decisions (pre-plan-phase):**
 
-- **Phase shape locked at 5 phases (49–53)** mirroring the operator-authoritative `.planning/notes/audio-clock-milestone-proposal.md` A–E proposal. Five phases derive directly from the audio-stack bug list — not imposed by template granularity.
-- **Phase 49 is independent of Phases 50–53** — operator-designated fast-shipping opener (lives in this milestone because it's the same audio-stack domain, not because it depends on the clock unification work).
-- **Phase 50 is a pure structural refactor with full test parity** — zero end-user behavior change at close. The `feedback_design_logic_separation` memory rule applies in reverse: this phase keeps logic untouched in user-facing terms (the refactor is behind the interface).
-- **Phase 51 depends on Phase 50** (callers must consume the `SessionClock` interface before the clock source can be rebased onto `audioCtx.currentTime`).
-- **Phase 52 depends on Phase 50 + 51** — the clamp behavior is clearer once both clocks are unified, and the lookahead window queues against `audioCtx.currentTime` via `SessionClock.schedule`.
-- **Phase 53 depends on Phase 50 only** — independent of Phases 51 and 52 and could be parallelized with them after Phase 50 lands.
-- **DEPS-01 + QUAL-01 cross-cutting** — verified in every phase rather than mapped to a separate verification phase. `dependencies` in `package.json` stays `react` + `react-dom`; per-commit green-gate (`tsc && lint && build && test`) holds on every commit.
-- **Library migration (Tone.js / Howler) explicitly OUT of scope** — the `SessionClock` abstraction (Phase 50) keeps the swap available as a single-implementation change later.
-- **Continuous ambient layer OUT of scope** — HRV cue envelope already provides perceptual continuity via the non-zero sustain floor (`cueSynth.ts:89-95`). Tracked as forward-looking requirement AMBIENT-F1 at `.planning/seeds/continuous-ambient-layer.md`; seed is preserved, not deleted.
-- **Existing iOS Phase 5.1 reconstruction path preserved** — Phase 53's MUTE-03 only removes the engine-rebuild path from the MUTE flow; the standalone iOS-audio-recovery affordance (morphing `MuteToggle` triggered by `audioStatus === 'interrupted'`) stays in place.
+- **Phase shape locked at 7 phases (55–61)** — the 6 groupings from `.planning/CODE-QUALITY-REVIEW.md` "Suggested milestone shape" PLUS one standalone test-audit phase (61). Phases derive directly from the maintainability audit's findings (#1–#6), not from template granularity. Operator-endorsed mapping; numbering continues from v2.2's last phase (54).
+- **Cross-cutting requirements mapped to EVERY phase, not a separate phase** — TEST-01 (per-phase test pruning of the area touched), BEHAVIOR-01 (no user-facing behavior change, the milestone gate), and QUAL-01 (`tsc`/`lint`/`build` green per commit, curated suite passes, deps stay `react` + `react-dom`) are verified in each of phases 55–61.
+- **Success criteria phrased as "no user-facing behavior change" — NEVER "tests pass"** (operator-mandated, per [[feedback_tests_not_truth_app_is_simple]]). Tests are not the source of truth and are themselves in scope for deletion/curation; green-tests-as-a-gate steers toward preserving garbage tests or contorting code to satisfy false assertions. Each phase's criteria are framed around observable app behavior + the structural outcome (file deleted, function collapsed, type converted), with test-curation as an explicit deliverable rather than a gate.
+- **Phase 55 (comment strip) lands first** — biggest ROI, lowest risk, and it unblocks reading for phases 56–60. Phases 55–60 are otherwise largely independent (each touches a different area).
+- **Phase 58 (session shell) + Phase 59 (frame model) are the deeper structural work** — per the audit, each warrants its own discuss/plan cycle. Phase 58 explicitly does NOT unify the rAF/worker vs setTimeout engine drivers (essential difference; "do not fix"). Phase 59 is independent domain-layer work.
+- **Phase 61 (test sweep) is intentionally LAST** — per-phase pruning (TEST-01) will have already removed the area-tied garbage, leaving only orphan tests not tied to any refactor area for the standalone sweep (TEST-02).
+- **Audit "do not fix" list honored as Out of Scope** — file-size splits, the three settings forms, the storage `unknown`-boundary coercion, the HRV/NK engine drivers, and `NKShape.tsx` are explicitly excluded (REQUIREMENTS.md Out of Scope table).
 
 ### Roadmap Evolution
 
-- v2.2 roadmap created (2026-05-27): 5 phases continuing the v2.1 numbering (49, 50, 51, 52, 53). 24/24 requirements mapped: IOS-01..05 → Phase 49; ABSTR-01..04 → Phase 50; CLOCK-01..05 → Phase 51; SCHED-01..05 → Phase 52; MUTE-01..04 → Phase 53; cross-cutting DEPS-01 + QUAL-01 verified per-phase. Coverage 100%; no orphaned requirements. Authoritative scope input: `.planning/notes/audio-clock-milestone-proposal.md`.
-- v2.1 closed (2026-05-26): 3 phases (46, 47, 48), 11 plans, 17/17 requirements complete; tagged `v2.1`; archives at `.planning/milestones/v2.1-ROADMAP.md` + `v2.1-REQUIREMENTS.md`.
-- v2.1 roadmap created (2026-05-25): 3 phases continuing the v2.0 numbering (no `--reset-phase-numbers`). 17/17 requirements mapped: KUTH-01..04 → Phase 46; PREFS-01..04 → Phase 47; APPEAR-01..06 + I18N-01..03 → Phase 48.
+- v2.3 roadmap created (2026-05-30): 7 phases continuing the v2.2 numbering (55–61; no `--reset-phase-numbers`). 18/18 phase-mapped requirements mapped to exactly one phase — COMMENT-01/02 → Phase 55; STORAGE-01..05 → Phase 56; VIEWMODEL-01..03 → Phase 57; SHELL-01/02 → Phase 58; FRAME-01/02 → Phase 59; CLEANUP-01..03 → Phase 60; TEST-02 → Phase 61. Cross-cutting TEST-01 + BEHAVIOR-01 + QUAL-01 verified in every phase. Coverage 100%; no orphaned requirements. Authoritative scope input: `.planning/CODE-QUALITY-REVIEW.md` (architecture healthy, no blockers — deletion + consolidation, not redesign).
+- v2.2 closed (2026-05-29): 7 phases (49, 49.1, 50–54), audit PASSED, operator-verified end-to-end on desktop and mobile; tagged `v2.2`.
+- v2.1 closed (2026-05-26): 3 phases (46, 47, 48), 11 plans, 17/17 requirements complete; tagged `v2.1`.
 
 ### Pending Todos
 
-- PT-BR native-speaker review of v2.1 `appearance.*` strings (I18N-04, listed as Future Requirement in archived v2.1 REQUIREMENTS) — removes the 15 `// TODO: native-speaker review` markers added in Phase 48 per Phase 26 D-01 pattern. Operator pass; not blocking the v2.2 milestone.
-- v2.x carry-forwards (CARRY-01..04 — see PROJECT.md "v2.x carry-forward") — Phase 51 CLOCK-04 partially addresses iOS Safari mid-page audio recovery on lock/unlock; wake-lock items (S2 Android Chrome UAT, iOS standalone-PWA Wake Lock < 18.4, iOS Pitfall 6 phone-call interrupted state) are NOT in v2.2 scope and remain deferred.
-- v1.x deferred (partially dispositioned): `.orb-layer--in/--out` → `.shape-layer--in/--out` rename — **obsolete-by-redesign** (closed in v2.0 Phase 44). Remaining items from this entry (per-variant token sets; live idle preview; additional shape variants) remain deferred (not yet obviated).
+- PT-BR native-speaker review of v2.1 `appearance.*` strings (I18N-04, Future Requirement) — removes the 15 `// TODO: native-speaker review` markers added in Phase 48. Operator pass; NOT in v2.3 scope.
+- v2.x carry-forwards — S2 Android Chrome wake-lock real-device UAT (physical device dependent); iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision; iOS Pitfall 6 phone-call interrupted state. NOT in v2.3 scope (v2.3 is behavior-preserving cleanup only).
 
 ### Blockers/Concerns
 
-- None blocking. v2.2 roadmap is drafted with full requirement coverage; next operator step is `/gsd:plan-phase 49` to begin Phase 49 (iOS speaker route fix — fast-shipping opener).
-- Risk flagged at roadmap time for plan-phase awareness: Phase 52 may need extended fake-timer support beyond the existing FakeAudioContext polyfill in `vitest.setup.ts` to validate the lookahead model. Flag this in Phase 52's plan-time risks.
+- None blocking. v2.3 roadmap is drafted with full requirement coverage; next operator step is `/gsd:plan-phase 55` (Comment de-archaeology — the low-risk opener that unblocks reading for the rest).
+- Note for plan-phase awareness: BEHAVIOR-01 is verified by behavior reasoning / running the app, NOT by a green suite. Every phase must treat its area's tests as in-scope for curation (TEST-01) — do not preserve a garbage test or contort code to satisfy a false assertion.
 
 ### Quick Tasks Completed
 
@@ -94,34 +90,32 @@ Items acknowledged and carried forward across milestone closes. The v1.x procedu
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| v2.x carry-forward (in scope) | iOS Safari mid-page audio recovery after lock/unlock (Override SC1, OS-level audio session loss) | Partially addressed by v2.2 Phase 51 CLOCK-04 (master clock unification on iOS lock/unlock) | 2026-05-20 v2.0 scoping |
-| Deferred (product) | iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) — detect + warn | Documented in README at Phase 27; NOT in v2.2 scope (wake-lock domain) | 2026-05-15 v1.3 scoping |
-| Deferred (product) | iOS Safari Pitfall 6 — phone-call interrupted state | Domain overlap with iOS audio recovery; NOT in v2.2 scope (deferred to a future audio milestone with real-device UAT) | 2026-05-20 v2.0 scoping |
-| Deferred (resource) | S2 Android Chrome wake-lock real-device UAT | Physical device unavailable; NOT in v2.2 scope (wake-lock domain, not audio) | 2026-05-11 v1.0 close |
-| Deferred (product) | Stats display surface — re-introduce after a deliberate anti-gamification-compatible design decision (calm, non-comparative, no streaks/leaderboards) | Computation continues in v2.0; visible surface removed by Phase 37 | 2026-05-20 v2.0 scoping |
-| Deferred (workflow) | PT-BR native-speaker review of v2.1 strings (I18N-04) — removes the `// TODO: native-speaker review` markers added in Phase 48 | Operator pass per Phase 26 D-01 pattern; tracked as Future Requirement in v2.1 REQUIREMENTS.md (archived) | 2026-05-25 v2.1 scoping |
-| Forward-looking (v2.2 future requirement) | Continuous ambient layer (AMBIENT-F1) — seed at `.planning/seeds/continuous-ambient-layer.md` | Tracked as Future Requirement in v2.2 REQUIREMENTS.md; trigger conditions are aesthetic-direction or sample-content additions. Seed preserved, not deleted | 2026-05-27 v2.2 scoping |
-| Folded into v2.0 | Phase 12 VALIDATION + SECURITY; Phase 33/35 Nyquist VALIDATION; Phase 31 VERIFICATION re-flip; Phase 32/33/34/35 SUMMARY `requirements-completed` frontmatter backfill; Phase 02/03/05/15/18 VERIFICATION `human_needed` flips; 28-01/28-03 SUMMARY drift; explicit v1→v2→v3 chained-migration regression test | Absorbed into Phase 36 (HOUSE-01..09) | 2026-05-20 v2.0 scoping |
-| Folded into v2.0 | 28 Info-severity findings from the 2026-05-16 deep review | Absorbed into Phase 44 POLISH-02 (disposition each: fix / defer-with-reason / obsolete-by-redesign) | 2026-05-20 v2.0 scoping |
-| Naturally superseded | Inner-ring UX symmetry (replaced by Phase 41 J4 orb rewrite); Code review WR-01 `IosInstallSteps` `::marker` (dropped permanently — V3 install banner UX-12/13/14 abandoned at Phase 41 J13); Firefox Desktop orb scale-animation flicker (dropped permanently — old `.orb` keyframes don't survive Phase 41 J4) | Closed at v2.0 close | 2026-05-25 v2.0 close |
+| v2.x carry-forward | iOS Safari mid-page audio recovery after lock/unlock (Override SC1, OS-level audio session loss) | Addressed by v2.2 SessionClock/master-clock + reconstruction-reanchor; operator-verified on mobile at v2.2 close | 2026-05-20 v2.0 scoping |
+| Deferred (product) | iOS standalone-PWA Wake Lock unavailable on iOS < 18.4 (WebKit bug 254545) — detect + warn | Documented in README at Phase 27; NOT in v2.3 scope (behavior-preserving cleanup only) | 2026-05-15 v1.3 scoping |
+| Deferred (product) | iOS Safari Pitfall 6 — phone-call interrupted state | Domain overlap with iOS audio recovery; NOT in v2.3 scope | 2026-05-20 v2.0 scoping |
+| Deferred (resource) | S2 Android Chrome wake-lock real-device UAT | Physical device unavailable; NOT in v2.3 scope | 2026-05-11 v1.0 close |
+| Deferred (product) | Stats display surface — re-introduce after a deliberate anti-gamification-compatible design decision | Computation continues; visible surface removed by Phase 37 | 2026-05-20 v2.0 scoping |
+| Deferred (workflow) | PT-BR native-speaker review of v2.1 strings (I18N-04) — removes the `// TODO: native-speaker review` markers added in Phase 48 | Operator pass per Phase 26 D-01 pattern; tracked as Future Requirement in REQUIREMENTS.md | 2026-05-25 v2.1 scoping |
+| Forward-looking | Continuous ambient layer (AMBIENT-F1) — seed at `.planning/seeds/continuous-ambient-layer.md` | Tracked as Future Requirement; trigger is an aesthetic-direction or sample-content addition. Seed preserved, not deleted | 2026-05-27 v2.2 scoping |
 
 **Audit references:**
 
 - `.planning/milestones/v1.0-MILESTONE-AUDIT.md` — PASSED 23/23
 - `.planning/milestones/v1.0.1-MILESTONE-AUDIT.md` — PASSED 27/27
-- v1.2, v1.3 — no milestone audit run (operator proceeded without `/gsd-audit-milestone`; requirements fully checked, all phases complete). v1.3 open-artifact gaps were resolved (not deferred) at close.
-- `.planning/milestones/v1.4-MILESTONE-AUDIT.md` — PASSED (7/7 requirements, 12/12 integration, 7/7 E2E flows). Two coverage-doc gaps (29-VALIDATION.md stale, 29-SECURITY.md missing) closed at audit time.
-- `.planning/milestones/v1.5-MILESTONE-AUDIT.md` — PASSED (re-audit 2026-05-19; 26/26 requirements, 6/6 phases, 0 integration blockers, 6/6 E2E flows).
-- v2.0 close 2026-05-25 — all 8 phases (36, 37, 38, 39, 40, 41, 44, 45) verified; 9/9 POLISH satisfied at 44-VERIFICATION.md `passed`; 22/22 STRIDE threats verified at 44-SECURITY.md; 1166/1166 tests pass.
-- v2.1 close 2026-05-26 — all 3 phases (46, 47, 48) verified; 14/14 (P46) + 5/5 (P47) + 9/9 (P48) must-haves satisfied; 17/17 requirements complete in archived `v2.1-REQUIREMENTS.md` traceability table; 1283/1283 tests pass. Operator proceeded without standalone `/gsd:audit-milestone` (matching v2.0 close pattern).
+- v1.2, v1.3 — no milestone audit run (requirements fully checked, all phases complete)
+- `.planning/milestones/v1.4-MILESTONE-AUDIT.md` — PASSED (7/7 requirements, 12/12 integration, 7/7 E2E flows)
+- `.planning/milestones/v1.5-MILESTONE-AUDIT.md` — PASSED (re-audit 2026-05-19; 26/26 requirements, 6/6 phases)
+- v2.0 close 2026-05-25 — all 8 phases verified; 9/9 POLISH satisfied; 22/22 STRIDE threats verified; 1166/1166 tests pass
+- v2.1 close 2026-05-26 — all 3 phases verified; 17/17 requirements complete; 1283/1283 tests pass
+- `.planning/milestones/v2.2-MILESTONE-AUDIT.md` — PASSED (10/10 requirements resolved); operator-verified end-to-end on desktop and mobile
 
 ## Session Continuity
 
-Last session: 2026-05-28T14:49:04.175Z
-Stopped at: Phase 52 context gathered
-Resume file: .planning/phases/52-visibility-resume-clamp-lookahead-scheduling/52-CONTEXT.md
-Next command: /gsd:plan-phase 49 (iOS speaker route fix — fast-shipping opener; independent of Phases 50–53)
+Last session: 2026-05-30T03:30:00.000Z
+Stopped at: v2.3 roadmap created (Phases 55–61)
+Resume file: .planning/ROADMAP.md
+Next command: /gsd:plan-phase 55 (Comment de-archaeology — low-risk opener that unblocks reading for the rest)
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Run `/gsd:plan-phase 55` to begin the milestone (Comment de-archaeology).

@@ -81,37 +81,38 @@ Explicitly excluded — documented to prevent scope creep.
 
 ## Traceability
 
-Populated during roadmap creation (phases continue from v2.2; numbering starts at **Phase 55**).
+Phases continue from v2.2; numbering starts at **Phase 55**. Roadmap created 2026-05-30.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COMMENT-01 | — | Pending |
-| COMMENT-02 | — | Pending |
-| STORAGE-01 | — | Pending |
-| STORAGE-02 | — | Pending |
-| STORAGE-03 | — | Pending |
-| STORAGE-04 | — | Pending |
-| STORAGE-05 | — | Pending |
-| VIEWMODEL-01 | — | Pending |
-| VIEWMODEL-02 | — | Pending |
-| VIEWMODEL-03 | — | Pending |
-| SHELL-01 | — | Pending |
-| SHELL-02 | — | Pending |
-| FRAME-01 | — | Pending |
-| FRAME-02 | — | Pending |
-| CLEANUP-01 | — | Pending |
-| CLEANUP-02 | — | Pending |
-| CLEANUP-03 | — | Pending |
-| TEST-01 | (cross-cutting) | Pending |
-| TEST-02 | — | Pending |
-| BEHAVIOR-01 | (cross-cutting) | Pending |
-| QUAL-01 | (cross-cutting) | Pending |
+| COMMENT-01 | Phase 55 | Pending |
+| COMMENT-02 | Phase 55 | Pending |
+| STORAGE-01 | Phase 56 | Pending |
+| STORAGE-02 | Phase 56 | Pending |
+| STORAGE-03 | Phase 56 | Pending |
+| STORAGE-04 | Phase 56 | Pending |
+| STORAGE-05 | Phase 56 | Pending |
+| VIEWMODEL-01 | Phase 57 | Pending |
+| VIEWMODEL-02 | Phase 57 | Pending |
+| VIEWMODEL-03 | Phase 57 | Pending |
+| SHELL-01 | Phase 58 | Pending |
+| SHELL-02 | Phase 58 | Pending |
+| FRAME-01 | Phase 59 | Pending |
+| FRAME-02 | Phase 59 | Pending |
+| CLEANUP-01 | Phase 60 | Pending |
+| CLEANUP-02 | Phase 60 | Pending |
+| CLEANUP-03 | Phase 60 | Pending |
+| TEST-02 | Phase 61 | Pending |
+| TEST-01 | Cross-cutting (all phases 55–61) | Pending |
+| BEHAVIOR-01 | Cross-cutting (all phases 55–61) | Pending |
+| QUAL-01 | Cross-cutting (all phases 55–61) | Pending |
 
 **Coverage:**
-- v1 requirements: 21 total (17 phase-mapped + 4 cross-cutting)
-- Mapped to phases: TBD by roadmapper
-- Unmapped: 0 (target)
+- v1 requirements: 21 total (18 phase-mapped + 3 cross-cutting)
+- Phase-mapped: 18/18 → exactly one phase each (Phase 55: 2 · Phase 56: 5 · Phase 57: 3 · Phase 58: 2 · Phase 59: 2 · Phase 60: 3 · Phase 61: 1)
+- Cross-cutting (verified in every phase 55–61): TEST-01, BEHAVIOR-01, QUAL-01
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-29*
-*Last updated: 2026-05-29 after v2.3 milestone init*
+*Last updated: 2026-05-30 — roadmap created, traceability populated (Phases 55–61)*
