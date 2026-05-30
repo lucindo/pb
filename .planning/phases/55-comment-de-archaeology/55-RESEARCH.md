@@ -72,7 +72,7 @@ No runtime architecture — comments are inert. "Tiers" here are codebase *layer
 | `src/styles/` (non-test) | **~8 / 1** | LOW | Minimal; most style archaeology is in the guard tests. |
 | `src/app/` (App, view-models, presentation, pages) | **~7 / 20** | LOW | Surprisingly thin; standard strip. |
 | Root (`src/featureFlags.ts`) | **~8 / 1** | LOW | Standard strip. |
-| Test files (`*.test.ts(x)`, all layers) | **~892 / 83** | VERY LOW | D-01 strip / D-02 no-delete. Mechanical. Batch last. |
+| Test files (`*.test.ts(x)`, all layers) | **~797 / 78** | VERY LOW | D-01 strip / D-02 no-delete. Mechanical. Batch last. |
 
 *(Per-layer dedup figures sum to ~935, matching the ~940 non-test grand total. Use grand totals for milestone framing, per-layer for wave sizing.)*
 
@@ -142,7 +142,7 @@ Wave 3  DOMAIN       src/domain/**           (~56 / 10 — keep sessionControlle
 Wave 4  STORAGE      src/storage/**          (~98 / 7 — mostly delete: parity/modeling)
 Wave 5  COMPONENTS   src/components/**        (~87 / 55 — D-07/D-08 spike geometry in 26 files)
 Wave 6  APP+CONTENT  src/app/** src/content/** src/styles/** + root files (~39 — standard strip; SKIP the 12 I18N markers in strings.ts)
-Wave 7  TESTS        **/*.test.ts(x)         (~892 / 83 — mechanical; D-01 strip, D-02 no-delete)
+Wave 7  TESTS        **/*.test.ts(x)         (~797 / 78 — mechanical; D-01 strip, D-02 no-delete)
 ```
 Each wave is independently committable (each file's diff is comment-only). Hooks + audio are the two waves where most D-03 judgment lives — keep them separate and review carefully. Tests batch last; high-volume but low-judgment. The planner may split Wave 1/Wave 7 by file-count into sub-waves (e.g. useAudioCues + useSessionEngine + audioEngine as their own plan given their density).
 
@@ -261,7 +261,7 @@ Not applicable — no external library/version landscape. The only "old vs new" 
 ## Open Questions
 
 1. **Exact keep-vs-delete ratio per file.**
-   - What we know: total archaeology line-hits per file/layer (verified). `useAudioCues.ts` = 150 hits, audio ≈ 265, hooks ≈ 390, tests ≈ 892.
+   - What we know: total archaeology line-hits per file/layer (verified). `useAudioCues.ts` = 150 hits, audio ≈ 265, hooks ≈ 390, tests ≈ 797.
    - What's unclear: how many of those lines are KEEP-rephrase vs DELETE — per-line D-03 judgment, only knowable at edit time.
    - Recommendation: size waves from hit-counts; expect audio/hooks ~half keep-rephrase (the valuable essays), storage/tests ~mostly delete.
 
@@ -311,7 +311,7 @@ Not applicable — no external library/version landscape. The only "old vs new" 
 | `spike NNN` | 22 | | `kitchen-sink` | 8 |
 | | | | `formerly at` | 2 |
 
-(Non-test subset, raw: `D-NN` 521, `Phase NN` 287, `Plan` 108, `WR` 77, `L###` 45, `mirror` 63, `spike` 17.) Raw sums exceed the dedup totals (non-test 1,043, test 892) because one line can match several tags.
+(Non-test subset, raw: `D-NN` 521, `Phase NN` 287, `Plan` 108, `WR` 77, `L###` 45, `mirror` 63, `spike` 17.) Raw sums exceed the dedup totals (non-test ~940, test ~797) because one line can match several tags.
 
 ### Top worst-offender files (verified `git grep -c`, sorted)
 | File | Hits | | File | Hits |
