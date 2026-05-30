@@ -20,11 +20,24 @@ Users can start a hands-off Forrest Knutson practice — HRV breathing, Stretch,
 
 For full v2.1 detail see `.planning/milestones/v2.1-ROADMAP.md` + `v2.1-REQUIREMENTS.md`; for v2.0 see `.planning/milestones/v2.0-ROADMAP.md` + `v2.0-REQUIREMENTS.md`.
 
-## Current Milestone: (none — v2.2 Audio Sync shipped 2026-05-29)
+## Current Milestone: v2.3 Maintainability
 
-v2.2 closed all four audio-stack bugs that were on file (iOS speaker route, three-clocks drift, background-tab audio death, mute-as-teardown) and landed the `SessionClock` abstraction (library swap stays a single-implementation change later). See **Current State** above for what shipped. Next milestone not yet defined — run `/gsd:new-milestone` to scope it.
+**Goal:** Pay down the structural tech debt surfaced in the full `src/` maintainability audit (`.planning/CODE-QUALITY-REVIEW.md`) — behavior-preserving only.
 
-**Carry-forwards for the next milestone:** PT-BR native-speaker review of v2.1 `appearance.*` strings (I18N-04 — removes the 15 `// TODO: native-speaker review` markers); iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision; S2 Android Chrome wake-lock real-device UAT (physical device dependent). The continuous-ambient-layer seed (`.planning/seeds/continuous-ambient-layer.md`) remains parked for a future aesthetic/sample-content trigger.
+**Verification gate (every phase):** **no user-facing behavior change.** Tests are NOT the gate — a refactor is correct because the app behaves identically (verified by reasoning from behavior / running the app), not because a suite stays green. Per [[feedback_tests_not_truth_app_is_simple]], the test suite is itself IN SCOPE: in each touched area, keep/fix the few tests worth keeping and delete the stale / old-decision-locking / drift-guard cruft that only passes because it tests the wrong thing. `tsc` + `lint` + `build` stay green; the curated suite passes (garbage removed, not preserved).
+
+**Target work (from CODE-QUALITY-REVIEW.md — architecture is healthy, no blockers, no file-size problems; this is deletion + consolidation, not redesign):**
+- **Comment de-archaeology** (#3) — strip planning-tag comments (`D-xx`/`WR-xx`/`Phase NN`/`Blocker`/`Pitfall`/stale `L###` refs) across `src/`; keep load-bearing *why* in present tense
+- **Storage de-duplication** (#1 + #6) — collapse 3 byte-identical `record*Session` + `save*Settings` into one parameterized helper; hoist `asRecord`; add `isMember`/`isPositiveInteger` predicates
+- **View-model flattening** (#2) — delete the `appControllerAdapters.ts` pass-through layer, merge the redundant `ViewState`/`PresentationInput` interfaces, single-source the per-practice dispatch
+- **Session-stack shell** (#4) — extract `useSessionShell` + `useEventCallback`; do NOT unify the rAF-vs-setTimeout engine drivers below it
+- **Domain frame model** (#5) — convert `SessionFrame` to a `kind: 'hrv' | 'stretch'` discriminated union + de-dup `walkFutureCues`
+- **Component/leftover cleanups** (#6 remainder) — `OrbShape` map/ternary collapse, shared validation predicates
+- **Test-suite garbage sweep** — standalone phase auditing tests not tied to any of the above refactor areas; delete the garbage, keep what protects real behavior
+
+**Key context:** Honors [[feedback_design_logic_separation]] (no business-logic behavior change) and [[no_design_locking]]. Phases 1–3 are low-risk/high-value; 4–5 are deeper structural wins warranting their own discuss/plan cycle.
+
+**Carry-forwards (NOT in v2.3 scope):** PT-BR native-speaker review of v2.1 `appearance.*` strings (I18N-04); iOS standalone-PWA Wake Lock < 18.4 detect-and-warn product decision; S2 Android Chrome wake-lock real-device UAT (physical device dependent). The continuous-ambient-layer seed (`.planning/seeds/continuous-ambient-layer.md`) remains parked.
 
 ## Requirements
 
@@ -110,7 +123,17 @@ v2.2 closed all four audio-stack bugs that were on file (iOS speaker route, thre
 
 ### Active
 
-No active milestone — v2.2 Audio Sync shipped 2026-05-29 (see Current State). Run `/gsd:new-milestone` to scope the next one. The v2.2 audio requirements moved to **Validated** below.
+**v2.3 Maintainability** (behavior-preserving tech-debt paydown — see `.planning/REQUIREMENTS.md` for REQ-IDs and `.planning/CODE-QUALITY-REVIEW.md` for the source audit):
+
+- [ ] Strip planning-changelog comments across `src/`; keep load-bearing *why* in present tense
+- [ ] Collapse the 3 duplicated `record*Session` + `save*Settings` storage functions; hoist `asRecord`; add shared validation predicates
+- [ ] Delete the `appControllerAdapters.ts` pass-through layer; merge redundant view-model interfaces
+- [ ] Extract a shared `useSessionShell` (+ `useEventCallback`) for the HRV/NK session stacks
+- [ ] Convert `SessionFrame` to a discriminated union; de-dup `walkFutureCues`
+- [ ] Batch the lower-priority component/leftover cleanups
+- [ ] Audit the test suite — keep/fix worthwhile tests, delete garbage/stale/decision-locking tests
+
+Verification gate on all of the above: **no user-facing behavior change** (tests are not the gate).
 
 ### v2.x Carry-Forwards (Known Bugs)
 
@@ -275,4 +298,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 after v2.2 Audio Sync shipped (audit PASSED, operator-verified desktop + mobile incl. Navi). Closed all four audio-stack bugs: unified timing onto `audioCtx.currentTime` (Phase 50 `SessionClock` + Phase 51 master-clock); iOS speaker route (49) + opt-out toggle (49.1); full-session background-audio continuity via a Web Worker heartbeat + removal of the visibility-resume clamp that caused the desync (Phase 54); instant master-gain mute (Phase 53); engine-layer in-flight cue dedup killed the boundary flam. Net simplification — clamp/per-cue-mute/dead-plumbing scaffolding + ~800 lines of tests removed; one 6-line worker + one gain ramp added. Zero new runtime deps; green gate (1447 tests) at close. Phases 53/54 implemented directly at operator direction (minimal fix after the Phase 52 clamp approach proved to be the bug). Next milestone not yet defined.*
+*Last updated: 2026-05-29 after v2.3 Maintainability milestone init (behavior-preserving tech-debt paydown from `.planning/CODE-QUALITY-REVIEW.md`; gate = no user-facing behavior change, tests in scope for curation). Prior: 2026-05-29 after v2.2 Audio Sync shipped (audit PASSED, operator-verified desktop + mobile incl. Navi). Closed all four audio-stack bugs: unified timing onto `audioCtx.currentTime` (Phase 50 `SessionClock` + Phase 51 master-clock); iOS speaker route (49) + opt-out toggle (49.1); full-session background-audio continuity via a Web Worker heartbeat + removal of the visibility-resume clamp that caused the desync (Phase 54); instant master-gain mute (Phase 53); engine-layer in-flight cue dedup killed the boundary flam. Net simplification — clamp/per-cue-mute/dead-plumbing scaffolding + ~800 lines of tests removed; one 6-line worker + one gain ramp added. Zero new runtime deps; green gate (1447 tests) at close. Phases 53/54 implemented directly at operator direction (minimal fix after the Phase 52 clamp approach proved to be the bug). Next milestone not yet defined.*
