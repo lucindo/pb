@@ -1,13 +1,12 @@
 // src/storage/settings.ts
 //
-// Phase 4 D-14/D-15: per-field validate-and-fallback for settings + mute.
-// Coercers are NON-THROWING (cousin to validateSettings in src/domain/settings.ts which
-// throws — see Pitfall 3). Per-field policy means a single drifted field does NOT
-// discard the rest of the envelope.
+// Per-field validate-and-fallback for settings + mute. Coercers are NON-THROWING
+// (cousin to validateSettings in src/domain/settings.ts which throws). Per-field
+// policy means a single drifted field does NOT discard the rest of the envelope.
 //
-// Phase 34 D-01/D-02: coerceSettings trimmed to standard-only (3 fields).
-// mode, initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes
-// moved to coerceStretchSettings in practices.ts.
+// coerceSettings covers the 3 standard fields only; stretch-specific fields
+// (initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes)
+// live in coerceStretchSettings in practices.ts.
 
 import {
   DEFAULT_SETTINGS,
@@ -31,7 +30,7 @@ export function coerceSettings(raw: unknown): SessionSettings {
 }
 
 export function coerceMute(raw: unknown): boolean {
-  return typeof raw === 'boolean' ? raw : false  // D-07 seed default + D-15 type check
+  return typeof raw === 'boolean' ? raw : false
 }
 
 export function loadMute(deps: StorageDeps = {}): boolean {

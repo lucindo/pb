@@ -1,15 +1,10 @@
 // src/storage/practices.ts
 //
-// Phase 30 PRACTICE-02: the per-practice persistence layer. A v2 envelope holds a
-// `practices` map — { resonant, naviKriya } — each carrying its own settings +
-// stats slice, plus a top-level `activePractice` id.
+// Per-practice persistence layer. The v2 envelope holds a `practices` map —
+// { resonant, naviKriya, stretch } — each carrying its own settings + stats
+// slice, plus a top-level `activePractice` id.
 //
-// Phase 34 STRETCH-03/04/05: the stretch practice becomes a first-class slice.
-// PracticeId gains 'stretch'; PracticeMap gains a stretch slot; coerceStretchSettings,
-// saveStretchSettings, and recordStretchSession are added, modeled exactly on their
-// resonant counterparts.
-//
-// Coercers are NON-THROWING and prototype-pollution-safe (T-30-05), mirroring
+// Coercers are NON-THROWING and prototype-pollution-safe, mirroring
 // prefs.ts / settings.ts: a single drifted field never discards the rest of the
 // envelope. `raw` is never spread into a prototype-accessible object — only named
 // keys are read from a guarded Record (ASVS V5).
@@ -49,7 +44,7 @@ export interface PracticeMap {
   naviKriya: PracticeSlice<NaviKriyaSettings>
 }
 
-// Prototype-pollution-safe object guard (T-30-05): only treat `raw` as a record
+// Prototype-pollution-safe object guard: only treat `raw` as a record
 // when it is a plain non-array object; otherwise hand back an empty record so
 // every named-key read falls through to a default.
 function asRecord(raw: unknown): Record<string, unknown> {
@@ -92,16 +87,15 @@ function snapToNearestOption(value: number): number {
 
 export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
   const r = asRecord(raw)
-  // frontCount (Pitfall 5 / T-30-06): a tampered non-multiple-of-4 value is
-  // rounded DOWN to the nearest multiple of 4 rather than discarded, so
-  // backCount = frontCount / 4 is never fractional in Phase 31 arithmetic.
+  // frontCount: a tampered non-multiple-of-4 value is rounded DOWN to the
+  // nearest multiple of 4 so backCount = frontCount / 4 is never fractional.
   // A non-finite / non-positive value (or one that rounds to 0) falls back to
   // the default.
   // Then snap to the nearest NK_FRONT_COUNT_OPTIONS entry so the SettingsStepper
   // always has a valid selectedIndex. Ties round UP. Values below the minimum
   // snap up to the minimum (100). Without this snap, a returning user with a
-  // stale persisted frontCount not in the new options would see index -1 in the
-  // stepper, disabling both +/- buttons (AH-WR-02 / 260519-91w operator decision).
+  // stale persisted frontCount not in the current options would see index -1
+  // in the stepper, disabling both +/- buttons.
   let frontCount = DEFAULT_NK_SETTINGS.frontCount
   const fc = r.frontCount
   if (typeof fc === 'number' && Number.isFinite(fc) && fc > 0) {
@@ -116,16 +110,15 @@ export function coerceNaviKriyaSettings(raw: unknown): NaviKriyaSettings {
   }
 }
 
-// Phase 34 T-34-02: coerceStretchSettings modeled exactly on coerceNaviKriyaSettings.
-// Uses asRecord guard for prototype-pollution safety; per-field non-throwing fallback
-// means one drifted field never discards the rest.
+// coerceStretchSettings uses asRecord guard for prototype-pollution safety;
+// per-field non-throwing fallback means one drifted field never discards the rest.
 //
-// CR-01 fix: enforces the cross-field invariant targetBpm < initialBpm (parity with
+// Enforces the cross-field invariant targetBpm < initialBpm (parity with
 // validateStretchSettings). A persisted slice that violates it falls back to
-// DEFAULT_STRETCH_SETTINGS for BOTH BPM fields so the ramp engine never receives an
-// inverted or zero-span ramp. initialBpm is restricted to STRETCH_INITIAL_BPM_OPTIONS
-// (>= 1.5) so a coerced initialBpm can never collapse the targetBpm picker
-// to an empty target-BPM option list (WR-01).
+// DEFAULT_STRETCH_SETTINGS for BOTH BPM fields so the ramp engine never receives
+// an inverted or zero-span ramp. initialBpm is restricted to
+// STRETCH_INITIAL_BPM_OPTIONS (>= 1.5) so a coerced initialBpm can never
+// collapse the targetBpm picker to an empty option list.
 export function coerceStretchSettings(raw: unknown): StretchSettings {
   const r = asRecord(raw)
   // Compute BPM fields into mutable locals first so the cross-field check can
@@ -175,7 +168,7 @@ export function coercePractices(raw: unknown): PracticeMap {
   const r = asRecord(raw)
   return {
     resonant:  coercePracticeSlice(r.resonant,  coerceSettings),
-    stretch:   coercePracticeSlice(r.stretch,   coerceStretchSettings),   // Phase 34 STRETCH-03
+    stretch:   coercePracticeSlice(r.stretch,   coerceStretchSettings),
     naviKriya: coercePracticeSlice(r.naviKriya, coerceNaviKriyaSettings),
   }
 }
@@ -248,7 +241,6 @@ export function saveNaviKriyaSettings(settings: NaviKriyaSettings, deps: Storage
   )
 }
 
-// Phase 34 STRETCH-04: modeled on saveResonantSettings (above).
 // Spreads the raw practices map then overrides only the stretch slice — the
 // resonant and naviKriya slices are passed through as their raw on-disk shape.
 export function saveStretchSettings(settings: StretchSettings, deps: StorageDeps = {}): void {
@@ -267,15 +259,11 @@ export function saveStretchSettings(settings: StretchSettings, deps: StorageDeps
   )
 }
 
-// Pitfall 3: the resonant analogue of stats.ts recordSession. Identical
-// COUNT_THRESHOLD_MS / Number.isFinite guard logic, but reads from and writes to
-// practices.resonant.stats instead of the flat env.stats — so a completed
-// session is attributed to the correct practice subtree (T-30-08).
-//
-// Return value is the IN-MEMORY projection. writeEnvelope is fire-and-forget
-// per D-16/D-17; the caller must treat the returned PersistedStats as
-// RAM-authoritative (see recordSession docstring in stats.ts for the full
-// posture).
+// Reads from and writes to practices.resonant.stats — a completed session is
+// attributed to the correct practice subtree. Return value is the IN-MEMORY
+// projection; writeEnvelope is fire-and-forget (quota / ITP / private mode /
+// future-version short-circuit all silently swallow the write). Callers treat
+// the return as RAM-authoritative — UI updates immediately.
 export function recordResonantSession(
   elapsedMs: number,
   isComplete: boolean,
@@ -288,12 +276,12 @@ export function recordResonantSession(
   const rawPractices = rawPracticesMap(env.practices)
   const rawResonant = asRecord(rawPractices.resonant)
   const stats = coerceStats(rawResonant.stats)
-  // DS-WR-06 parity: reject NaN/Infinity/negative elapsedMs up front so a bad
-  // frame cannot poison totalElapsedSeconds.
+  // Reject NaN/Infinity/negative elapsedMs up front so a bad frame cannot
+  // poison totalElapsedSeconds.
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
     return stats
   }
-  // D-01 parity: count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
   if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
     return stats
   }
@@ -318,13 +306,12 @@ export function recordResonantSession(
   return next
 }
 
-// Phase 34 STRETCH-05: modeled exactly on recordResonantSession above.
 // Reads from / writes to practices.stretch.stats ONLY — resonant and naviKriya
-// slices are passed through untouched (T-34-02 isolation guarantee).
-// No `roundsCompleted` arg — Stretch does not count rounds (unlike NaviKriya).
+// slices are passed through untouched (isolation guarantee). No `roundsCompleted`
+// arg — Stretch does not count rounds (unlike NaviKriya).
 //
-// Return value is the IN-MEMORY projection per the same fire-and-forget
-// posture documented on recordResonantSession.
+// Return value is the IN-MEMORY projection per the same fire-and-forget posture
+// as recordResonantSession.
 export function recordStretchSession(
   elapsedMs: number,
   isComplete: boolean,
@@ -334,11 +321,12 @@ export function recordStretchSession(
   const rawPractices = rawPracticesMap(env.practices)
   const rawStretch = asRecord(rawPractices.stretch)
   const stats = coerceStats(rawStretch.stats)
-  // DS-WR-06 parity: reject NaN/Infinity/negative elapsedMs up front.
+  // Reject NaN/Infinity/negative elapsedMs up front so a bad frame cannot
+  // poison totalElapsedSeconds.
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
     return stats
   }
-  // D-01 parity: count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
   if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
     return stats
   }
@@ -363,18 +351,16 @@ export function recordStretchSession(
   return next
 }
 
-// NK-08: Navi Kriya analogue of recordResonantSession. Mirrors the same
-// COUNT_THRESHOLD_MS / Number.isFinite guard logic but reads from and writes to
-// practices.naviKriya.stats ONLY — the resonant slice is passed through untouched
-// (T-31-07 isolation guarantee).
+// Navi Kriya analogue of recordResonantSession. Reads from and writes to
+// practices.naviKriya.stats ONLY — the resonant slice is passed through untouched.
 //
-// D-13: when isComplete is false (early end) the roundsCompleted argument carries
-// only the fully-completed rounds and elapsedMs the partial elapsed time — both are
+// When isComplete is false (early end) the roundsCompleted argument carries only
+// the fully-completed rounds and elapsedMs the partial elapsed time — both are
 // recorded the same way, so an early-ended session still adds its completed rounds
 // and minutes to the NK history.
 //
-// Return value is the IN-MEMORY projection per the same fire-and-forget
-// posture documented on recordResonantSession.
+// Return value is the IN-MEMORY projection per the same fire-and-forget posture
+// as recordResonantSession.
 export function recordNaviKriyaSession(
   elapsedMs: number,
   roundsCompleted: number,
@@ -385,12 +371,12 @@ export function recordNaviKriyaSession(
   const rawPractices = rawPracticesMap(env.practices)
   const rawNaviKriya = asRecord(rawPractices.naviKriya)
   const stats = coerceStats(rawNaviKriya.stats)
-  // T-31-08: reject NaN/Infinity/negative elapsedMs so a bad frame cannot
-  // poison totalElapsedSeconds (DS-WR-06 parity).
+  // Reject NaN/Infinity/negative elapsedMs so a bad frame cannot
+  // poison totalElapsedSeconds.
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
     return stats
   }
-  // D-01 parity: count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
   if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
     return stats
   }
@@ -402,13 +388,13 @@ export function recordNaviKriyaSession(
     totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
     lastSessionAtMs: now(),
     lastSessionDurationSeconds: elapsedSeconds,
-    // NK-08: accumulate rounds across sessions. Spread stats above keeps any
+    // Accumulate rounds across sessions. Spread stats above keeps any
     // pre-existing fields; this line explicitly updates roundsCompleted.
     roundsCompleted: (stats.roundsCompleted ?? 0) + roundsCompleted,
   }
-  // T-31-07: write ONLY the naviKriya slice — resonant and stretch are passed
-  // through as their raw on-disk shape (rawPractices spread) so unknown
-  // forward-compatible sub-keys and partial-corruption fields are preserved.
+  // Write ONLY the naviKriya slice — resonant and stretch are passed through
+  // as their raw on-disk shape (rawPractices spread) so unknown forward-compatible
+  // sub-keys and partial-corruption fields are preserved.
   writeEnvelope(
     {
       ...env,
