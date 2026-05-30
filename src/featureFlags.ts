@@ -13,7 +13,7 @@ export interface FeatureFlags {
   breathingShape: BreathingShapeVariant
   orbIdle: OrbIdleBehavior
   ringCue: RingCueStyle
-  bypassSilentMode: boolean  // Phase 49.1 D-05: default true preserves Phase 49 shipped posture
+  bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
@@ -49,16 +49,14 @@ export function parseQueryBoolean(rawValue: string): boolean | null {
   return null
 }
 
-// Public extensibility surface — no in-app caller today; the production
-// flag pipeline uses `readFeatureFlags` (which routes through the private
-// `readQueryFeatureFlagOrNull` so it can fall through to the persisted
-// snapshot per D-07). Kept exported so ad-hoc / experimental / non-flag
-// query parameters can be parsed with the same spec contract without
-// owning their own URLSearchParams plumbing — exercised by the
+// Public extensibility surface — no in-app caller today; the production flag pipeline
+// uses `readFeatureFlags` (which routes through the private `readQueryFeatureFlagOrNull`
+// so it can fall through to the persisted snapshot). Kept exported so ad-hoc /
+// experimental / non-flag query parameters can be parsed with the same spec contract
+// without owning their own URLSearchParams plumbing — exercised by the
 // 'supports adding non-boolean query flags with custom parsers' test.
-// If a future audit confirms no consumer (in-app or otherwise) wants the
-// default-falling-back behaviour, this export and its test can be dropped
-// together.
+// If a future audit confirms no consumer wants the default-falling-back behaviour,
+// this export and its test can be dropped together.
 export function readQueryFeatureFlag<T>(
   search: string,
   spec: QueryFeatureFlagSpec<T>,
@@ -69,9 +67,9 @@ export function readQueryFeatureFlag<T>(
   return spec.parse(rawValue) ?? spec.defaultValue
 }
 
-// Phase 47 D-07: returns `null` for absent OR unparseable query values so the
-// resolver's `??` chain falls through to the persisted snapshot (not to the
-// production default). Private helper — only `readFeatureFlags` consumes it.
+// Returns `null` for absent OR unparseable query values so the resolver's `??` chain
+// falls through to the persisted snapshot (not to the production default). Private
+// helper — only `readFeatureFlags` consumes it.
 function readQueryFeatureFlagOrNull<T>(
   search: string,
   spec: QueryFeatureFlagSpec<T>,
@@ -125,7 +123,7 @@ export const ORB_IDLE_FLAG = {
 // variant, which is why 'rings' is accepted here as a UI-label alias.
 //   outer-inner aliases:
 //     - 'rings'      : UI-label token (strings.ts options.rings = 'Rings').
-//     - 'production' : Phase 21/47 spike-branch alias (was the production default before Phase 47 flipped to progress-arc).
+//     - 'production' : spike-branch alias (was the production default before the flip to progress-arc).
 //     - 'default'    : convenience alias for spike branches that wrote `?ringCue=default`.
 //   progress-arc aliases:
 //     - 'arc'        : UI-label token (strings.ts options.arc = 'Arc').
@@ -149,16 +147,15 @@ export const RING_CUE_FLAG = {
 
 export const BYPASS_SILENT_MODE_FLAG = {
   queryParam: 'bypassSilentMode',
-  defaultValue: true, // D-05: default true preserves Phase 49 shipped bypass posture
+  defaultValue: true, // default true preserves the no-silent-mode bypass users rely on
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
-// Phase 47 D-05/D-06/D-07: per-field 5-way resolver (Phase 49.1 extends from 4 to 5 fields).
-// Resolution order for each field is query > persisted > default, evaluated independently
-// per field. `readQueryFeatureFlagOrNull` returns `null` for absent OR unparseable values,
-// so the `??` chain falls through to `persisted.<field>` (D-07: invalid query is not
-// silently masked into the production default). The boolean cases (switcherIcon,
-// bypassSilentMode) are safe because the helper returns `null`, not `false`.
+// Per-field 5-way resolver. Resolution order for each field: query > persisted > default,
+// evaluated independently. `readQueryFeatureFlagOrNull` returns `null` for absent OR
+// unparseable values so the `??` chain falls through to `persisted.<field>` (an invalid
+// query value is not silently masked into the production default). The boolean cases
+// (switcherIcon, bypassSilentMode) are safe because the helper returns `null`, not `false`.
 // The function stays pure (no I/O) so the App-side hook (useFeatureFlags) owns
 // the storage read and supplies `persisted` from loadPrefs().
 export function readFeatureFlags(
@@ -170,6 +167,6 @@ export function readFeatureFlags(
     breathingShape:   readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG)    ?? persisted.breathingShape,
     orbIdle:          readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)           ?? persisted.orbIdle,
     ringCue:          readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)           ?? persisted.ringCue,
-    bypassSilentMode: readQueryFeatureFlagOrNull(search, BYPASS_SILENT_MODE_FLAG) ?? persisted.bypassSilentMode, // Phase 49.1 D-05/D-06
+    bypassSilentMode: readQueryFeatureFlagOrNull(search, BYPASS_SILENT_MODE_FLAG) ?? persisted.bypassSilentMode,
   }
 }

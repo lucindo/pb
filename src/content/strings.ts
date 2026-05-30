@@ -1,11 +1,9 @@
-// Source file authority: Phase 19 I18N-01..I18N-07.
-// D-01 strings catalog separation: UI strings live here, not inline in components.
-// D-10 nested-interface decision: UiStrings uses sub-objects per component/feature.
-// D-12 option-name translation: theme/variant/timbre option names are translated.
-// D-14 native-endonym LOCALE_DISPLAY_NAMES: picker labels use native endonyms.
-// D-15 template-fn entries: interpolated strings are typed as functions.
+// UI strings catalog — all UI strings live here, not inline in components.
+// UiStrings uses sub-objects per component/feature.
+// Theme/variant/timbre option names are translated; picker labels use native endonyms.
+// Interpolated strings are typed as functions.
 // EN values are the literals currently shipped in source components.
-// PT-BR values reviewed by a native speaker in Phase 26 per I18N-07.
+// PT-BR values reviewed by a native speaker.
 //
 // Refactor F5: top-level keys reorganized by SURFACE
 //   - practice.* — everything on PracticeScreen (header, controls, switcher,

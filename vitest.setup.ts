@@ -1,11 +1,11 @@
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, vi } from 'vitest'
 
-// Phase 4 isolation: clear localStorage before every test so persisted state from one
-// test (e.g. saveMute(true) in a mute-toggle test) does not contaminate the next test's
-// mount-time restore (loadSettings / loadMute / loadStats). Storage-specific tests that
-// need pre-seeded data call localStorage.setItem() in their own beforeEach / test body —
-// this global clear runs first and provides a clean slate.
+// Clear localStorage before every test so persisted state from one test (e.g.
+// saveMute(true) in a mute-toggle test) does not contaminate the next test's
+// mount-time restore (loadSettings / loadMute / loadStats). Storage-specific tests
+// that need pre-seeded data call localStorage.setItem() in their own beforeEach /
+// test body — this global clear runs first and provides a clean slate.
 beforeEach(() => {
   // Reason: jsdom always defines window, but the guard is kept for environments where this setup may run outside jsdom.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -16,18 +16,17 @@ beforeEach(() => {
 
 // localStorage polyfill — Node 25 ships a built-in localStorage that is a non-functional
 // empty object when `--localstorage-file` is not provided (overriding jsdom's functional
-// Storage). Phase 4 storage tests require a fully-operational Storage instance including
-// `clear()`, and `vi.spyOn(Storage.prototype, 'getItem')` must intercept calls.
+// Storage). Tests that spy on Storage.prototype methods or call clear() require a
+// fully-operational Storage instance.
 //
-// Strategy (WR-01): install methods on `Storage.prototype` so `vi.spyOn` finds them on
+// Strategy: install methods on `Storage.prototype` so `vi.spyOn` finds them on
 // the prototype chain, but back each fake Storage instance with its OWN Map via a
 // WeakMap keyed on the instance itself. This gives per-instance isolation: localStorage
-// and sessionStorage no longer share a single backing Map (the previous polyfill closed
-// over one `_store` for both, so a write to either store contaminated the other and a
-// `localStorage.clear()` wiped sessionStorage too). The methods read `this` to look up
-// the per-instance Map.
+// and sessionStorage each have their own backing Map, so a write to one does not
+// contaminate the other and localStorage.clear() does not wipe sessionStorage. The
+// methods read `this` to look up the per-instance Map.
 //
-// Source: 04-RESEARCH.md; observed in Node 25.9.0 + jsdom 29.1.1 combination.
+// Observed in Node 25.9.0 + jsdom 29.1.1 combination.
 // Reason: jsdom always defines window, but the guard is kept for environments where this setup may run outside jsdom.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'function') {
@@ -85,8 +84,7 @@ if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'fu
 }
 
 // HTMLDialogElement polyfill — jsdom 29.1.1 does not implement show/showModal/close.
-// Source: 02-RESEARCH.md Pitfall 1 / Code Examples; verified against
-// github.com/jestjs/jest/issues/13010 and github.com/jsdom/jsdom/issues/3294.
+// Verified against github.com/jestjs/jest/issues/13010 and github.com/jsdom/jsdom/issues/3294.
 if (typeof HTMLDialogElement !== 'undefined') {
   // Reason: jsdom may not implement showModal; guard ensures polyfill is only applied when missing.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -116,7 +114,6 @@ if (typeof HTMLDialogElement !== 'undefined') {
 // window.matchMedia polyfill — jsdom has no layout engine and does not implement matchMedia.
 // Default `matches: false` keeps the suite running under "motion ALLOWED" semantics.
 // Reduced-motion tests override with `vi.spyOn(window, 'matchMedia').mockReturnValue(...)`.
-// Source: 02-RESEARCH.md Pitfall 2 / Code Examples; mantine.dev/guides/vitest pattern.
 // Reason: jsdom always defines window, but the guards are kept for environments where this setup may run outside jsdom.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (typeof window !== 'undefined' && !window.matchMedia) {
@@ -136,8 +133,7 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 }
 
 // AudioContext polyfill — jsdom 29.1.1 does not implement Web Audio.
-// Source: 03-RESEARCH.md Code Examples (lines 585-649); verified against
-// github.com/jsdom/jsdom/issues/2900.
+// Verified against github.com/jsdom/jsdom/issues/2900.
 // Reason: jsdom always defines window, but the guards are kept for environments where this setup may run outside jsdom.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (typeof window !== 'undefined' && !window.AudioContext) {
@@ -151,8 +147,8 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
     cancelAndHoldAtTime = vi.fn()
   }
 
-  // AUDIO-04 D-14: FakeAudioNode inherits from EventTarget so osc.addEventListener('ended', ...)
-  // works in tests — OscillatorNode is an EventTarget in real browsers and cueSynth attaches
+  // FakeAudioNode inherits from EventTarget so osc.addEventListener('ended', ...) works in
+  // tests — OscillatorNode is an EventTarget in real browsers and cueSynth attaches
   // { once: true } 'ended' listeners for automatic node-graph cleanup.
   class FakeAudioNode extends EventTarget {
     connect = vi.fn().mockReturnThis()
@@ -179,7 +175,7 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
   }
 
   class FakeAudioContext {
-    // Plan 06 D-37/D-40: WebKit superset includes 'interrupted'. Type widened.
+    // WebKit superset includes 'interrupted' (iOS Safari interrupted state). Type widened.
     state: AudioContextState | 'interrupted' = 'running'
     sampleRate = 44100
     destination = new FakeAudioNode()
@@ -230,13 +226,13 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
       this._fireStateChange()
     })
 
-    // Plan 01 D-14 (preserved):
+    // Test helper — simulate AudioContext.suspend() without going through the async API.
     _simulateSuspend = (): void => {
       this.state = 'suspended'
       this._fireStateChange()
     }
 
-    // Plan 06 D-40 additions:
+    // Test helpers — simulate iOS WebKit interrupted state and rejected resume.
     _simulateInterrupted = (): void => {
       this.state = 'interrupted'
       this._fireStateChange()
@@ -248,9 +244,8 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
       this._fireStateChange()
     }
 
-    // Real listener registry — replaces Plan 01's `addEventListener = vi.fn()` stub
-    // so the engine's wired statechange listener actually receives events. The mock
-    // identity remains a vi.fn() so existing tests asserting `.toHaveBeenCalled` still work.
+    // Real listener registry so the engine's wired statechange listener actually receives
+    // events. The mock identity remains a vi.fn() so tests asserting `.toHaveBeenCalled` work.
     addEventListener = vi.fn((type: string, listener: EventListener): void => {
       let set = this._listeners.get(type)
       if (!set) {
@@ -271,18 +266,16 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
 
   Object.defineProperty(window, 'AudioContext', {
     writable: true,
-    configurable: true, // allow vi.stubGlobal('AudioContext', ...) per-test overrides (D-10 / failure-path tests in audioEngine).
+    configurable: true, // allow vi.stubGlobal('AudioContext', ...) per-test overrides (failure-path tests in audioEngine).
     value: FakeAudioContext,
   })
 }
 
-// navigator.wakeLock polyfill — D-13 + RESEARCH Pattern 3 (polyfill-and-spy). TypeScript
-// types (WakeLockSentinel / WakeLock / WakeLockType / Navigator.wakeLock) are already
-// bundled in TS 6.0.2 lib.dom.d.ts; no @types package needed. jsdom 29.1.1 does not
-// implement the Screen Wake Lock API. Per-test failure paths use
-// `vi.spyOn(navigator.wakeLock, 'request').mockRejectedValueOnce(...)` and per-test
-// API-absent paths use a per-test Object.defineProperty override on navigator.wakeLock
-// (set value to undefined) — both rely on the configurable flag in the install below.
+// navigator.wakeLock polyfill — jsdom 29.1.1 does not implement the Screen Wake Lock API.
+// TypeScript types are bundled in lib.dom.d.ts; no @types package needed.
+// Per-test failure paths use `vi.spyOn(navigator.wakeLock, 'request').mockRejectedValueOnce(...)`
+// and per-test API-absent paths use a per-test Object.defineProperty override on
+// navigator.wakeLock (set value to undefined) — both rely on the configurable flag below.
 if (typeof navigator !== 'undefined' && !('wakeLock' in navigator)) {
   class FakeWakeLockSentinel extends EventTarget {
     type: WakeLockType = 'screen'
@@ -306,7 +299,7 @@ if (typeof navigator !== 'undefined' && !('wakeLock' in navigator)) {
 
   Object.defineProperty(navigator, 'wakeLock', {
     writable: true,
-    configurable: true, // allow per-test vi.stubGlobal / Object.defineProperty override (D-09 failure-path tests)
+    configurable: true, // allow per-test vi.stubGlobal / Object.defineProperty override (failure-path tests)
     value: {
       // Reason: async signature matches WakeLock.request() API contract; the parameter is intentionally unused in the fake.
       // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars

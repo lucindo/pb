@@ -22,7 +22,7 @@ export interface AppSettingsPageProps {
  *  SettingsPanelBody. `inSessionView` is hard-coded false: navigation to this
  *  page is gated by `controlsDisabled` in useAppNavigation, so the user can
  *  only be here when no session is active. Focuses the back button on mount
- *  (fresh entry) or the right-chevron (returningFromAdvanced=true, D-13). */
+ *  (fresh entry) or the right-chevron (returningFromAdvanced=true). */
 export function AppSettingsPage({
   isIOS,
   isStandalone,

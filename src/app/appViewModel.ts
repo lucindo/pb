@@ -172,7 +172,7 @@ export interface BreathingSessionViewState {
   status: SessionStatus
   inSessionView: boolean
   // Resonant selected settings — drives the HRV pace caption (X BPM · ratio).
-  // Preserved across stretch sessions per WR-03 in sessionController.
+  // Preserved across stretch sessions so the caption stays stable during a stretch run.
   selectedSettings: SessionSettings
 }
 
