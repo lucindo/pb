@@ -42,14 +42,14 @@ Behavior-preserving tech-debt paydown from the full `src/` maintainability audit
 **Plans**: TBD
 
 **Plans:**
-- [ ] 55-01-PLAN.md — De-archaeologize src/hooks comments (densest; useAudioCues 150 hits)
-- [ ] 55-02-PLAN.md — De-archaeologize src/audio comments (preserve iOS/TOCTOU/silent-WAV invariants)
-- [ ] 55-03-PLAN.md — De-archaeologize src/domain comments
-- [ ] 55-04-PLAN.md — De-archaeologize src/storage comments (mostly delete parity/modeling)
-- [ ] 55-05-PLAN.md — De-archaeologize src/components comments (spike-geometry provenance, keep values)
-- [ ] 55-06-PLAN.md — De-archaeologize src/app/content/styles + root (skip 12 I18N markers)
-- [ ] 55-07-PLAN.md — Strip tags in audio/components/content/domain test comments (no test deletion)
-- [ ] 55-08-PLAN.md — Strip tags in hooks/storage/app/styles + top-level test comments (no test deletion)
+- [x] 55-01-PLAN.md — De-archaeologize src/hooks comments (densest; useAudioCues 150 hits)
+- [x] 55-02-PLAN.md — De-archaeologize src/audio comments (preserve iOS/TOCTOU/silent-WAV invariants)
+- [x] 55-03-PLAN.md — De-archaeologize src/domain comments
+- [x] 55-04-PLAN.md — De-archaeologize src/storage comments (mostly delete parity/modeling)
+- [x] 55-05-PLAN.md — De-archaeologize src/components comments (spike-geometry provenance, keep values)
+- [x] 55-06-PLAN.md — De-archaeologize src/app/content/styles + root (skip 12 I18N markers)
+- [x] 55-07-PLAN.md — Strip tags in audio/components/content/domain test comments (no test deletion)
+- [x] 55-08-PLAN.md — Strip tags in hooks/storage/app/styles + top-level test comments (no test deletion)
 
 ### Phase 56: Storage de-duplication
 **Goal**: A change to the session-record guard logic or settings-persistence shape is made in exactly one place — the three byte-identical `record*Session` and `save*Settings` families collapse to single parameterized helpers, and the scattered storage-edge predicates have one definition each. (Audit #1 + #6 helpers.)
@@ -218,7 +218,7 @@ Earlier milestones (v1.0 → v1.2) are archived under `.planning/milestones/` �
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 55. Comment de-archaeology | 0/TBD | Not started | - |
+| 55. Comment de-archaeology | 8/8 | Complete   | 2026-05-30 |
 | 56. Storage de-duplication | 0/TBD | Not started | - |
 | 57. View-model layer flattening | 0/TBD | Not started | - |
 | 58. Session-stack shell | 0/TBD | Not started | - |
