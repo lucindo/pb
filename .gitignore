@@ -25,3 +25,5 @@ dist-ssr
 
 # Claude Code per-project files
 .claude/
+CLAUDE.md
+AGENTS.md
