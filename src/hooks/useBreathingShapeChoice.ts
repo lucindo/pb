@@ -1,4 +1,5 @@
-// src/hooks/useBreathingShapeChoice.ts — Phase 47 Plan 04 (D-09): paste-and-rename of useTimbreChoice for the breathingShape field. Dispatches hrv:prefs-changed with detail.key === 'breathingShape' per D-10.
+// src/hooks/useBreathingShapeChoice.ts — Picker-side hook for the breathingShape prefs field.
+// Dispatches hrv:prefs-changed with detail.key === 'breathingShape'.
 
 import { useCallback, useState } from 'react'
 

@@ -1,4 +1,5 @@
-// src/hooks/useRingCueChoice.ts — Phase 47 Plan 04 (D-09): paste-and-rename of useTimbreChoice for the ringCue field. Dispatches hrv:prefs-changed with detail.key === 'ringCue' per D-10.
+// src/hooks/useRingCueChoice.ts — Picker-side hook for the ringCue prefs field.
+// Dispatches hrv:prefs-changed with detail.key === 'ringCue'.
 
 import { useCallback, useState } from 'react'
 

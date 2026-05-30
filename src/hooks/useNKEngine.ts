@@ -2,15 +2,14 @@
 // Audio is injected as callbacks so this hook is audio-agnostic and fully
 // testable with fake timers and vi.fn() stubs.
 //
-// AH-WR-05 INVARIANT — STALE-CLOSURE TRAP: stepOm reads ONLY eng.current and
-// callback refs. It never reads closed-over React state. All per-tick values
-// (count, phase, omSec, cueOn, ...) come from the mutable NKEngineRecord ref.
+// STALE-CLOSURE INVARIANT: stepOm reads ONLY eng.current and callback refs. It
+// never reads closed-over React state. All per-tick values (count, phase, omSec,
+// cueOn, ...) come from the mutable NKEngineRecord ref.
 //
-// Phase 50 D-09: time is read exclusively via the injected SessionClock —
-// zero performance.now() references in this file's source. The clock parameter
-// makes elapsed-stats math independent of the time source; Phase 51 can later
-// rebase the caller-supplied clock onto audioCtx.currentTime without touching
-// this file.
+// Time is read exclusively via the injected SessionClock — zero performance.now()
+// references in this file. The clock parameter makes elapsed-stats math
+// independent of the time source; the caller-supplied clock can be rebased onto
+// audioCtx.currentTime without touching this file.
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SessionClock } from '../audio/audioEngine'
@@ -37,17 +36,17 @@ interface NKEngineRecord {
   cueOn: boolean           // mirrors perOmCue; mutable for live toggle via toggleCue()
   startedAtSec: number     // clock.now() at start — for elapsed stats (D-02 seconds-shaped)
   completedRounds: number  // fully-completed rounds (for early-end stats)
-  // Delay (seconds) of the currently-pending step timer. Phase markers schedule
-  // the next step with NK_LEAD_SEC; per-OM steps use omSec. Recorded so
-  // schedule() always has the current pending delay for reference. (D-02
-  // seconds-shaped; the only ms-shaped value in this file is the setTimeout
-  // boundary multiplication inside schedule().)
+  // Delay (seconds) of the currently-pending step timer. Markers schedule the
+  // next step with NK_LEAD_SEC; per-OM steps use omSec. Recorded so schedule()
+  // always has the current pending delay for reference. (Seconds-shaped; the
+  // only ms-shaped value in this file is the setTimeout boundary multiplication
+  // inside schedule().)
   pendingDelaySec: number
-  // D-11 fix: armed when an OM reaches the phase target. The phase transition
-  // does NOT run in the same tick that counted the last OM — that flashed the
-  // final count for 0 ms (back's single OM never showed "1"). Instead the last
-  // OM runs for its full omSec like any other, and the NEXT stepOm — seeing
-  // this flag — performs the transition.
+  // Armed when an OM reaches the phase target. The phase transition does NOT run
+  // in the same tick that counted the last OM — that would flash the final count
+  // for 0 ms (back's single OM would never show "1"). Instead the last OM runs
+  // for its full omSec like any other, and the NEXT stepOm — seeing this flag —
+  // performs the transition.
   pendingTransition: boolean
 }
 
@@ -94,26 +93,26 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
   const onCompleteRef = useRef<NKOnComplete | null>(null)
 
   // schedule: internal helper used inside stepOm and other stable callbacks.
-  // Accepts a seconds-shaped delay; records it on the engine record and
-  // converts to ms only at the setTimeout boundary (D-02).
+  // Accepts a seconds-shaped delay; records it on the engine record and converts
+  // to ms only at the setTimeout boundary.
   const schedule = useCallback((delaySec: number) => {
     if (timer.current !== null) clearTimeout(timer.current)
     if (eng.current) eng.current.pendingDelaySec = delaySec
-    // D-02 boundary: setTimeout takes ms; engine record is seconds-shaped.
+    // setTimeout takes ms; engine record is seconds-shaped.
     // Multiply at this boundary only.
     timer.current = setTimeout(() => { stepOmRef.current() }, delaySec * 1000)
   }, [])
 
   // stepOm: the per-OM callback. Reads ONLY eng.current and callback refs —
-  // never closed-over React state (stale-closure trap prevention, AH-WR-05).
+  // never closed-over React state (stale-closure invariant — see header comment).
   const stepOm = useCallback(function stepOm() {
     const e = eng.current
     if (!e) return
     const cbs = cbsRef.current
 
-    // D-11 fix: pendingTransition means the previous OM was the last of its
-    // phase and has now had its full omSec of display time. Perform the phase
-    // change — do NOT count another OM this tick.
+    // pendingTransition means the previous OM was the last of its phase and has
+    // now had its full omSec of display time. Perform the phase change — do NOT
+    // count another OM this tick.
     if (e.pendingTransition) {
       e.pendingTransition = false
       if (e.phase === 'front') {
@@ -162,10 +161,9 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
 
     if (e.count >= target) {
       // Last OM of the phase: arm pendingTransition so the NEXT stepOm changes
-      // phase instead of counting (D-11 fix — the last count is shown, not
-      // flashed). It also holds longer than a normal OM
-      // (NK_LAST_OM_HOLD_MULTIPLIER × omSec) for a smoother settle into the
-      // next phase.
+      // phase instead of counting (the last count is shown, not flashed). It
+      // also holds longer than a normal OM (NK_LAST_OM_HOLD_MULTIPLIER × omSec)
+      // for a smoother settle into the next phase.
       e.pendingTransition = true
       schedule(e.omSec * NK_LAST_OM_HOLD_MULTIPLIER)
     } else {
@@ -198,7 +196,7 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
       cueOn: settings.perOmCue,
       startedAtSec: clock.now(),
       completedRounds: 0,
-      // start() schedules the first step with NK_LEAD_SEC below.
+      // start() schedules the first step with NK_LEAD_SEC.
       pendingDelaySec: NK_LEAD_SEC,
       pendingTransition: false,
     }
@@ -248,7 +246,7 @@ export function useNKEngine(clock: SessionClock): NKEngineApi {
     }
   }, [])
 
-  // T-31-02 mitigation: cleanup cancels the pending timer on unmount
+  // Cleanup cancels the pending timer on unmount to prevent stale callbacks.
   useEffect(() => {
     return () => {
       if (timer.current !== null) clearTimeout(timer.current)

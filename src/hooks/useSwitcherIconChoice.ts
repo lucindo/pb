@@ -1,4 +1,5 @@
-// src/hooks/useSwitcherIconChoice.ts — Phase 47 Plan 04 (D-09): paste-and-rename of useTimbreChoice for the switcherIcon field (boolean type — no type import needed). Dispatches hrv:prefs-changed with detail.key === 'switcherIcon' per D-10.
+// src/hooks/useSwitcherIconChoice.ts — Picker-side hook for the switcherIcon prefs field
+// (boolean). Dispatches hrv:prefs-changed with detail.key === 'switcherIcon'.
 
 import { useCallback, useState } from 'react'
 

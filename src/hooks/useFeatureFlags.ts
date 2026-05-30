@@ -1,20 +1,20 @@
 // src/hooks/useFeatureFlags.ts
 //
-// Phase 47 Plan 03 + Phase 49.1 Plan 01: App-side orchestrator hook with persisted-prefs snapshot.
+// App-side orchestrator hook with persisted-prefs snapshot.
 //
 // Architecture (mirrors useTheme.ts):
 //   - popstate subscription via useSyncExternalStore — URL navigation triggers a
-//     re-read of `search` (preserved byte-identical from Plan 01).
-//   - useState<UserPrefs> seeded from loadPrefs() at mount (PREFS-01 first-paint).
+//     re-read of `search`.
+//   - useState<UserPrefs> seeded from loadPrefs() at mount (first-paint).
 //   - Cross-tab 'storage' listener (empty deps) — re-reads loadPrefs() on
-//     STATE_KEY writes (Phase 8 D-04a contract; event payload discarded).
+//     STATE_KEY writes (event payload discarded).
 //   - Same-tab 'hrv:prefs-changed' listener (empty deps) — re-reads loadPrefs()
-//     when detail.key is one of breathingShape/ringCue/orbIdle/switcherIcon/bypassSilentMode or
-//     undefined (D-11 5-key filter + forward-compat undefined branch; Phase 47 + Phase 49.1 5-key set).
+//     when detail.key is one of breathingShape/ringCue/orbIdle/switcherIcon/bypassSilentMode
+//     or undefined (5-key filter + forward-compat undefined branch).
 //   - Per-field 5-way merge via readFeatureFlags(search, slim-projection) —
-//     query > persisted > default (Plan 01 D-05/D-06/D-07 resolver).
+//     query > persisted > default.
 //
-// D-08 invariant: this hook is the only non-test caller of readFeatureFlags.
+// This hook is the only non-test caller of readFeatureFlags.
 // Hook return type stays FeatureFlags — no breaking change for useAppViewModel
 // or PracticeScreen.
 
@@ -52,9 +52,9 @@ export function useFeatureFlags(): FeatureFlags {
   const [persisted, setPersisted] = useState<UserPrefs>(() => loadPrefs())
 
   // Cross-tab 'storage' listener — re-read persisted snapshot on STATE_KEY
-  // writes (Phase 8 D-04a). Event payload is discarded (signal only) — disk is
-  // the source of truth; loadPrefs() goes through coercePrefs for the
-  // prototype-pollution mitigation T-14-01 / T-25-01.
+  // writes. Event payload is discarded (signal only) — disk is the source of
+  // truth; loadPrefs() goes through coercePrefs for the prototype-pollution
+  // mitigation.
   useEffect(() => {
     const onStorage = (e: StorageEvent): void => {
       if (e.key === STATE_KEY) {
@@ -67,9 +67,9 @@ export function useFeatureFlags(): FeatureFlags {
     }
   }, [])
 
-  // Same-tab 'hrv:prefs-changed' listener — filter on Phase 47 + Phase 49.1 5-key set plus
-  // undefined forward-compat per D-11. Unrelated keys (theme / timbre / cue /
-  // locale) are ignored to avoid spurious re-renders when those pickers fire.
+  // Same-tab 'hrv:prefs-changed' listener — filter on the 5-key set plus undefined
+  // forward-compat. Unrelated keys (theme / timbre / cue / locale) are ignored to
+  // avoid spurious re-renders when those pickers fire.
   useEffect(() => {
     const onPrefsChanged = (e: Event): void => {
       if (!(e instanceof CustomEvent)) return
@@ -81,7 +81,7 @@ export function useFeatureFlags(): FeatureFlags {
         detail.key === 'ringCue' ||
         detail.key === 'orbIdle' ||
         detail.key === 'switcherIcon' ||
-        detail.key === 'bypassSilentMode' // Phase 49.1 D-08: 5th key
+        detail.key === 'bypassSilentMode'
       ) {
         setPersisted(loadPrefs())
       }
@@ -93,14 +93,13 @@ export function useFeatureFlags(): FeatureFlags {
   }, [])
 
   // Per-field 5-way merge: query > persisted > default. The slim projection
-  // strips UserPrefs (9 fields) to the 5 FeatureFlags fields — matches the
-  // FeatureFlags interface field order exactly. D-09: inline projection
-  // chosen over Pick-typed pass-through for clarity at the single call site.
+  // strips UserPrefs to the 5 FeatureFlags fields. Inline projection chosen
+  // over Pick-typed pass-through for clarity at the single call site.
   return readFeatureFlags(search, {
     switcherIcon:     persisted.switcherIcon,
     breathingShape:   persisted.breathingShape,
     orbIdle:          persisted.orbIdle,
     ringCue:          persisted.ringCue,
-    bypassSilentMode: persisted.bypassSilentMode, // Phase 49.1 D-05/D-06
+    bypassSilentMode: persisted.bypassSilentMode,
   })
 }

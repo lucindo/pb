@@ -4,14 +4,12 @@ import type { SessionClock } from '../audio/sessionClock'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from '../components/shapeConstants'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion'
 
-// 11-second cycle (≈ 5.5 BPM) split 40:60 inhale:exhale — same total breath
-// length as the spike's PHASE_MS = 5500 each-way (index.html L569) but biased
-// toward the longer exhale, so the idle ambient breath mirrors the HRV
-// resonant default rather than feeling like a metronome.
+// 11-second cycle (≈ 5.5 BPM) split 40:60 inhale:exhale — biased toward the
+// longer exhale so the idle ambient breath mirrors the HRV resonant default
+// rather than feeling like a metronome.
 //
-// Phase 50 D-02: seconds-shaped (was ms-shaped 4400 / 6600 pre-refactor). The
-// rAF body math is in seconds end-to-end, matching the SessionClock contract
-// (D-01 audio-natural seconds).
+// Seconds-shaped throughout; the rAF body math is in seconds end-to-end,
+// matching the SessionClock contract.
 const INHALE_SEC = 4.4 // 11.0 × 0.40
 const EXHALE_SEC = 6.6 // 11.0 × 0.60
 
@@ -30,16 +28,15 @@ function easeInOutSine(t: number): number {
  *  stops the ticker and the return-side short-circuit takes over, so the
  *  stale state value is never observed.
  *
- *  Phase 50 D-07: `wallClock` is the seconds-shaped time source for the INITIAL
- *  `start` capture. Per-tick time inside the rAF callback uses the rAF
- *  DOMHighResTimeStamp directly (preserved per revision 1 Warning #8 for
- *  byte-identicality — the rAF timestamp is the canonical per-frame time and
- *  reading the clock at the top of each tick would introduce sub-frame
+ *  `wallClock` is the seconds-shaped time source for the INITIAL `start`
+ *  capture. Per-tick time inside the rAF callback uses the rAF
+ *  DOMHighResTimeStamp directly (the rAF timestamp is the canonical per-frame
+ *  time; reading the clock at the top of each tick would introduce sub-frame
  *  divergence). Callers (OrbShape) construct a stable wall clock via
  *  `createWallSessionClock()` and thread it through a `useMemo` so the
- *  effect's dep array sees a stable identity. D-09: this hook MUST NOT make
- *  direct calls into `performance` time APIs — the only seconds-shaped time
- *  source for the initial start is the injected clock. */
+ *  effect's dep array sees a stable identity. This hook MUST NOT make direct
+ *  calls into `performance` time APIs — the only seconds-shaped time source for
+ *  the initial start is the injected clock. */
 export function useAmbientScale(active: boolean, wallClock: SessionClock): number {
   const reducedMotion = usePrefersReducedMotion()
   const animated = active && !reducedMotion
@@ -53,12 +50,10 @@ export function useAmbientScale(active: boolean, wallClock: SessionClock): numbe
     let cancelled = false
     const tick = (now: number) => {
       if (cancelled) return
-      // Revision 1 Warning #8: rAF DOMHighResTimeStamp arrives in ms; convert
-      // at the boundary to seconds so the per-tick math is unit-consistent
-      // with `start` (seeded from the injected clock in seconds). The rAF
-      // timestamp is the canonical per-frame time source — preserving it
-      // keeps the oscillation curve byte-identical to the pre-refactor
-      // version (which used `now` directly in ms-shaped arithmetic).
+      // rAF DOMHighResTimeStamp arrives in ms; convert at the boundary to
+      // seconds so the per-tick math is unit-consistent with `start` (seeded
+      // from the injected clock in seconds). The rAF timestamp is the canonical
+      // per-frame time source.
       const nowSec = now / 1000
       const phaseSec = phase === 'in' ? INHALE_SEC : EXHALE_SEC
       const elapsed = nowSec - start
