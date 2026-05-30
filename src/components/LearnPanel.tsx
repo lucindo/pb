@@ -20,9 +20,9 @@ export interface LearnPanelProps {
   activePractice: PracticeId
 }
 
-// Spike-locked card chrome — 1px border-soft + surface bg + 20 px radius
-// (spike index.html L1809-1814). Mirrors SettingsPanelBody's private
-// SectionCard for visual consistency between Learn + AppSettings pages.
+// Card chrome — 1px border-soft + surface bg + 20 px radius.
+// Mirrors the SectionCard primitive for visual consistency between Learn
+// + AppSettings pages. Kept separate as the signature differs (no `padding` prop).
 function SectionCard({ children }: { children: ReactNode }): ReactElement {
   return (
     <div

@@ -22,8 +22,8 @@ export interface SettingsStepperProps<T extends string | number> {
   strings: UiStrings['practice']['settingsForm']['stepper']
 }
 
-// Spike 010 Stepper (index.html L1503-1525):
-// - Row layout: label left / [- value unit +] right
+// Stepper row layout. Locked values:
+// - Row: label left / [- value unit +] right
 // - py-3, 1 px border-soft top
 // - Label: 15 px / weight 400 / text token
 // - Value: 16 px / weight 500 / text token / tabular-nums; unit 12 px / muted
@@ -31,7 +31,7 @@ export interface SettingsStepperProps<T extends string | number> {
 //
 // The fieldset wrapper preserves role="group" + the aria-label that
 // `settingGroup(name)` in appTestHarness queries against. No visible legend —
-// the inline label span serves both visual and (via aria-labelledby) a11y.
+// the inline label span serves both visual and a11y.
 export function SettingsStepper<T extends string | number>({
   label,
   value,

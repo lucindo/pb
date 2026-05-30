@@ -1,5 +1,5 @@
 // Persistent icon anchor labeled `Learn`, leading slot of TopAppBar.
-// D-03: disabled (not hidden) during lead-in and running — aria-disabled +
+// Disabled (not hidden) during lead-in and running — aria-disabled +
 // no-op click handler.
 
 import type { UiStrings } from '../content/strings'

@@ -1,17 +1,16 @@
 // CueGlyph.tsx — in-orb phase-indicator renderer for all 3 cue modes.
 //
-// Design source: .planning/phases/25-labels-vs-icons-cue-toggle/25-cue-icon-mockup.html
-//   • Arrow mode: candidate F — soft solid filled chevron (up = In, down = Out, per D-03)
-//   • Nose mode:  candidate D2 — nose outline + straight up/down arrows (per D-05)
+// Arrow mode: soft solid filled chevron (up = In, down = Out).
+// Nose mode: nose outline + straight up/down arrows.
 //
-// D-08: SVG sized to the text-5xl/sm:text-6xl footprint; static glyph — no animation,
-//       no reduced-motion branch.
-// D-09 / CUE-03: arrow and nose modes render aria-hidden SVG + visually-hidden sr-only
-//                span so screen readers still announce the localized In/Out word.
-// J4: in-orb glyph uses currentColor — the parent centre disc sets
-//     color: var(--color-breathing-on-accent), which cascades into all 3 cue modes.
-//     Preview swatches (CuePicker) use var(--color-breathing-accent) so the glyph
-//     reads against the picker's surface bg.
+// SVG sized to the text-5xl/sm:text-6xl footprint; static glyph — no animation,
+// no reduced-motion branch.
+// Arrow and nose modes render aria-hidden SVG + visually-hidden sr-only span so
+// screen readers still announce the localized In/Out word.
+// In-orb glyph uses currentColor — the parent centre disc sets
+// color: var(--color-breathing-on-accent), which cascades into all 3 cue modes.
+// Preview swatches (CuePicker) use var(--color-breathing-accent) so the glyph
+// reads against the picker's surface bg.
 
 import type { CueStyleId } from '../domain'
 
@@ -31,23 +30,22 @@ export interface CueGlyphProps {
   previewLabel?: string
 }
 
-// ── Arrow SVG path data (candidate F — soft solid chevron) ───────────────────
-// viewBox 0 0 100 100 (sourced from 25-cue-icon-mockup.html)
+// ── Arrow SVG path data (soft solid chevron) ─────────────────────────────────
+// viewBox 0 0 100 100
 const ARROW_IN_PATH =
   'M50 28 Q54 28 57 32 L82 64 Q84 68 80 70 Q76 72 73 68 L50 44 L27 68 Q24 72 20 70 Q16 68 18 64 L43 32 Q46 28 50 28 Z'
 const ARROW_OUT_PATH =
   'M50 72 Q46 72 43 68 L18 36 Q16 32 20 30 Q24 28 27 32 L50 56 L73 32 Q76 28 80 30 Q84 32 82 36 L57 68 Q54 72 50 72 Z'
 
-// ── Nose SVG elements (candidate D2 — nose outline + straight arrows) ────────
+// ── Nose SVG elements (nose outline + straight arrows) ───────────────────────
 // Nose paths are identical for In and Out — only the arrows differ.
-// Sourced from 25-cue-icon-mockup.html D2 section.
 const NOSE_PATHS = [
   'M44 16 Q38 40 34 55',
   'M56 16 Q62 40 66 55',
   'M34 55 Q35 66 44 64 Q48 63 50 66 Q52 63 56 64 Q65 66 66 55',
 ]
 
-// D2 In: straight arrows pointing up (In = inhale = up per D-03)
+// Straight arrows pointing up (In = inhale = up)
 // line + polyline arrowhead
 const NOSE_IN_ARROWS = {
   lines: [
@@ -57,7 +55,7 @@ const NOSE_IN_ARROWS = {
   arrowheads: ['31,82 37,75 43,82', '57,82 63,75 69,82'],
 }
 
-// D2 Out: straight arrows pointing down (Out = exhale = down per D-03)
+// Straight arrows pointing down (Out = exhale = down)
 const NOSE_OUT_ARROWS = {
   lines: [
     { x1: 37, y1: 74, x2: 37, y2: 90 },
@@ -67,7 +65,7 @@ const NOSE_OUT_ARROWS = {
 }
 
 export function CueGlyph({ cue, phase, phaseLabel, preview = false, previewLabel }: CueGlyphProps): React.ReactElement {
-  // J4: in-orb glyph inherits currentColor from the centre disc (which sets
+  // In-orb glyph inherits currentColor from the centre disc (which sets
   // color: var(--color-breathing-on-accent)). Picker swatch uses the accent
   // token directly so the glyph reads against the surface bg.
   const colorClass = preview ? 'text-[var(--color-breathing-accent)]' : ''
@@ -87,7 +85,7 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false, previewLabel
     const pathD = phase === 'in' ? ARROW_IN_PATH : ARROW_OUT_PATH
     return (
       <span className={`relative z-10 ${colorClass}`}>
-        {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint.
+        {/* Sized to match the text-5xl/sm:text-6xl word footprint.
             `key={phase}` forces React to unmount + remount the SVG on
             in/out flip — the alternative (same <path> with a mutated `d`
             attribute) gets cached by Mobile Safari inside the orb's
@@ -116,7 +114,7 @@ export function CueGlyph({ cue, phase, phaseLabel, preview = false, previewLabel
   const arrowData = phase === 'in' ? NOSE_IN_ARROWS : NOSE_OUT_ARROWS
   return (
     <span className={`relative z-10 ${colorClass}`}>
-      {/* D-08: sized to match the text-5xl/sm:text-6xl word footprint */}
+      {/* Sized to match the text-5xl/sm:text-6xl word footprint */}
       <svg
         aria-hidden="true"
         focusable="false"

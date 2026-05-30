@@ -2,15 +2,11 @@ import { useId, type ReactElement, type ReactNode } from 'react'
 
 import { useModalDialog } from './useModalDialog'
 
-// Spike 010 PracticeSettingsSheet (index.html lines 1585-1645).
 // Responsive sheet/modal primitive: bottom-anchored full-width sheet on
 // mobile (< sm), auto-centered modal on desktop (≥ sm). Native <dialog>
 // via useModalDialog (focus trap, Esc handling, backdrop click delegated).
 // Pure presentation primitive — caller supplies open/onClose/title/
-// subtitle/closeLabel/children. NOT wired into the app surface yet (J10
-// wires the SetupCard tap → SettingsSheet flow + atomically swaps the
-// per-practice forms into the children slot, preserving the in-session
-// extend-duration affordance).
+// subtitle/closeLabel/children.
 
 export interface SettingsSheetProps {
   open: boolean

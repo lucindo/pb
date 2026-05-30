@@ -15,10 +15,9 @@ export interface SettingsRowProps {
   noBorder?: boolean
   /**
    * When provided, the label span is wrapped in a <div> with this className.
-   * Used by SettingsSegmentedRow (spike 010 L1527-1554 column layout: label
-   * above the full-width segmented pill, separated by mb-2 spacing).
-   * Omit for inline row layouts (Toggle, Stepper) where label and control
-   * are siblings inside a flex container.
+   * Used by SettingsSegmentedRow (column layout: label above the full-width
+   * segmented pill, separated by mb-2 spacing). Omit for inline row layouts
+   * (Toggle, Stepper) where label and control are siblings in a flex container.
    */
   labelContainerClassName?: string
   children: ReactNode

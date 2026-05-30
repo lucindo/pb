@@ -7,9 +7,8 @@ export interface EndSessionDialogProps {
   onConfirm(this: void): void
   onCancel(this: void): void
   strings: UiStrings['practice']['endSessionDialog']
-  // D-12: optional summary slot rendered between the title and the action
-  // buttons — the Navi Kriya completion dialog uses it for the rounds/duration
-  // summary. When absent the dialog behaves byte-identically to before.
+  // Optional summary slot rendered between the title and the action buttons —
+  // the Navi Kriya completion dialog uses it for the rounds/duration summary.
   body?: ReactNode
 }
 
@@ -18,14 +17,14 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
   // Imperative open/close so the browser sets up <dialog>'s top-layer + inert behavior.
-  // D-12: default focus on Keep going (cancel), not on the destructive primary.
+  // Default focus on Keep going (cancel), not on the destructive primary.
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
     if (open && !dialog.open) {
-      // AC-WR-05: a force-closed dialog can leave dialog.open === false while
-      // React still believes open === true; showModal() then throws
-      // InvalidStateError if the dialog is actually already open non-modally.
+      // A force-closed dialog can leave dialog.open === false while React still
+      // believes open === true; showModal() then throws InvalidStateError if
+      // the dialog is actually already open non-modally.
       try {
         dialog.showModal()
       } catch {
@@ -38,7 +37,7 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
   }, [open])
 
   // Esc fires `cancel` (preventable) then `close`. We handle `cancel` and call onCancel.
-  // RESEARCH Pitfall 5: prevent default to avoid double-fire of the close event.
+  // preventDefault avoids double-fire of the close event.
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return

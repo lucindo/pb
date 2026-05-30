@@ -12,8 +12,8 @@ export interface PickerCardGridProps<T extends string> {
   columns: 2 | 3 | 4
   disabled?: boolean
   optionLayout?: PickerCardLayout
-  // J14: when true, the `<p>` sublabel is rendered sr-only — visible label
-  // duty has moved to an enclosing SettingsSectionHeader, but the radiogroup's
+  // When true, the `<p>` sublabel is rendered sr-only — visible label duty has
+  // moved to an enclosing SettingsSectionHeader, but the radiogroup's
   // `aria-labelledby` link stays intact for screen readers.
   sectionLabelHidden?: boolean
 }
@@ -24,7 +24,7 @@ const COLUMNS_CLASS: Record<2 | 3 | 4, string> = {
   4: 'grid-cols-4',
 }
 
-// Spike 010 picker chrome (index.html L1818-1830 inline, L1568-1577 stack):
+// Picker card chrome (locked values):
 // - Selected: bg=bg-soft + 1px accent border + text token
 // - Unselected: bg=surface + 1px border-soft + text-soft
 // - No shadow

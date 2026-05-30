@@ -10,12 +10,11 @@ import type { UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
 import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 
-// Spike 010 FeedbackHRV (index.html L1060-1085) + FeedbackStretch — both
-// resolve to FeedbackTime: a big remaining-time number above an uppercase
-// tracked secondary line. HRV's secondary is "X BPM · ratio" (static), the
-// stretch path's secondary is "X BPM · STAGE" (currentBpm + stage from frame).
-// Completion shows just the "Session complete" headline; lead-in shows the
-// placeholder time the upcoming session will count down from.
+// Both HRV and Stretch readouts resolve to FeedbackTime: a big remaining-time
+// number above an uppercase tracked secondary line. HRV's secondary is
+// "X BPM · ratio" (static), the stretch path's secondary is "X BPM · STAGE"
+// (currentBpm + stage from frame). Completion shows just the "Session complete"
+// headline; lead-in shows the placeholder time the upcoming session counts from.
 
 function stageText(stage: StretchStage, strings: UiStrings['practice']['readout']): string {
   switch (stage) {

@@ -17,7 +17,7 @@ export interface SegmentedControlProps<T extends string> {
   className?: string
 }
 
-// Spike 010 SegmentedControl (index.html L1527-1554):
+// SegmentedControl locked values:
 // - Container: rounded-full, p-1, bg=bg-soft, 1px border-soft
 // - Active button: bg=accent, color=on-accent, weight 600, no shadow
 // - Inactive button: transparent, color=text-soft, weight 500

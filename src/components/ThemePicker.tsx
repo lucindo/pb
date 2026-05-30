@@ -10,9 +10,9 @@ export interface ThemePickerProps {
   sectionLabelHidden?: boolean
 }
 
-// Theme color-swatches matching the spike's L1831-1834 pattern (a 14×14 circle
-// showing the theme's bg color, regardless of the currently rendered theme).
-// Hex values come from src/styles/theme.css --color-breathing-bg in each scope.
+// Theme color-swatches: a 14×14 circle showing each theme's bg color,
+// regardless of the currently rendered theme. Hex values from --color-breathing-bg
+// in src/styles/theme.css per theme scope.
 const SWATCH_STYLE: Record<ThemeId, React.CSSProperties> = {
   light: { background: '#f3f5f7' },
   dark: { background: '#1a1d24' },

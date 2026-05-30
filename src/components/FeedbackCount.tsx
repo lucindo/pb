@@ -1,17 +1,16 @@
 import type { ReactElement } from 'react'
 
-// Spike 010 FeedbackCount (index.html lines 1087-1121) — count-based readout
-// shared by Stretch + Navi. Big current-count number baseline-aligned with a
-// smaller "of N" / "/ N" suffix, above an uppercase context line. Pure
-// presentation primitive: caller supplies pre-formatted localized strings
-// (no formatting logic here). Wiring lands in a follow-up item.
+// Count-based readout shared by Stretch + Navi. Big current-count number
+// baseline-aligned with a smaller "of N" / "/ N" suffix, above an uppercase
+// context line. Pure presentation primitive: caller supplies pre-formatted
+// localized strings (no formatting logic here).
 //
-// Values transcribed verbatim from the spike:
+// Locked layout values:
 // - container: flex flex-col items-center, marginTop 22
 // - row: flex items-baseline gap-2, tabular-nums (so big + mid digits align)
 // - big: fontSize 36, weight 600, letterSpacing -0.01em, color text
-// - mid: fontSize 16, weight 500, color text-soft (note: spike uses
-//   text-soft here, not muted — slightly stronger than the small caption)
+// - mid: fontSize 16, weight 500, color text-soft (text-soft, not muted —
+//   slightly stronger than the small caption)
 // - small: marginTop 4, fontSize 12, weight 500, letterSpacing 0.14em,
 //   uppercase, color muted
 

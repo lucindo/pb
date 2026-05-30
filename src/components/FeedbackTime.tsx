@@ -1,11 +1,10 @@
 import type { ReactElement } from 'react'
 
-// Spike 010 FeedbackHRV (index.html lines 1060-1085) — HRV time-based readout.
-// Big remaining-time number above a small uppercase pace caption. Pure
-// presentation primitive: caller supplies pre-formatted localized strings
-// (no formatting logic here). Wiring lands in a follow-up item.
+// HRV time-based readout. Big remaining-time number above a small uppercase
+// pace caption. Pure presentation primitive: caller supplies pre-formatted
+// localized strings (no formatting logic here).
 //
-// Values transcribed verbatim from the spike:
+// Locked layout values:
 // - container: flex flex-col items-center, marginTop 28
 // - primary: fontSize 28, weight 500, letterSpacing 0.04em, tabular-nums, color text
 // - secondary: marginTop 6, fontSize 12, weight 500, letterSpacing 0.16em,

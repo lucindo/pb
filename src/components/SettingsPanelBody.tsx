@@ -13,12 +13,10 @@ import { TimbrePicker } from './TimbrePicker'
 // AppSettingsPage. Excludes the title and back affordance — those belong
 // to the surrounding page chrome (TopAppBar).
 //
-// J14: restructured into 4 spike-locked sections per spike 010 sixth +
-// seventh pass (index.html lines 1797-1894): Appearance / Language / Audio
-// / About. Each section is a self-contained card (border-soft + surface +
-// 20px radius). Install moves into About (operator OQ-1). Spike's
-// illustrative "Subtle haptics" toggle in Audio is intentionally omitted
-// per [[spike-is-design-not-features]] — no haptics in the app domain.
+// Structured into 4 sections: Appearance / Language / Audio / About.
+// Each section is a self-contained card (border-soft + surface + 20px radius).
+// Install lives inside About. The "Subtle haptics" toggle from the design
+// prototype is intentionally omitted — no haptics in the app domain.
 
 const GITHUB_URL = 'https://github.com/lucindo/hrv'
 
