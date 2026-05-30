@@ -12,7 +12,7 @@ export interface ToggleProps {
   className?: string
 }
 
-// Spike 010 ToggleSwitch (index.html L1476-1500):
+// Toggle locked values:
 // - 44 × 24 pill; bg=accent when on / transparent + 1 px border-soft when off
 // - 20 × 20 knob; on-accent color when on / muted when off
 // - 180 ms slide; subtle 0 1px 2px shadow on the knob

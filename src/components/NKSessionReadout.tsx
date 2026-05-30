@@ -3,9 +3,9 @@ import type { ReactElement } from 'react'
 import type { UiStrings } from '../content/strings'
 import { FeedbackCount } from './FeedbackCount'
 
-// Spike 010 FeedbackCount (index.html L1087-1121) wired for Navi: big OM
-// count + small " / target" baseline-aligned, above an uppercase tracked
-// "ROUND X OF Y · PHASE" context line.
+// FeedbackCount wired for Navi: big OM count + small " / target"
+// baseline-aligned, above an uppercase tracked "ROUND X OF Y · PHASE"
+// context line.
 
 export interface NKSessionReadoutProps {
   phase: 'front' | 'back'

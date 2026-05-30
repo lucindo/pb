@@ -5,11 +5,9 @@ export type PageShellWidth = 'practice' | 'page'
 export interface PageShellProps {
   children: ReactNode
   overlays?: ReactNode
-  // J15: 'practice' caps at 520px on desktop (the breathing surface — narrower
-  // for meditative focus); 'page' caps at 600px (scrollable content like Learn
-  // and AppSettings). Mobile (<sm) is full-width in either case. Defaults to
-  // 'page'. Spike values verbatim from spike 010 eleventh pass (README lines
-  // 522-523).
+  // 'practice' caps at 520px on desktop (narrower for meditative focus);
+  // 'page' caps at 600px (scrollable content like Learn and AppSettings).
+  // Mobile (<sm) is full-width in either case. Defaults to 'page'.
   width?: PageShellWidth
 }
 
@@ -21,10 +19,9 @@ const WIDTH_CLASS: Record<PageShellWidth, string> = {
 /** Page-level wrapper: radial-gradient `<main>` with consistent padding,
  *  containing a centered `<section>` capped per the `width` prop. The page
  *  background gradient is sourced from the --page-bg-gradient custom property
- *  (defined in theme.css with a desktop media-query override per spike 010
- *  eleventh pass). Page-level overlays (dialogs) render as siblings of the
- *  section via the `overlays` slot — kept inside `<main>` to preserve page
- *  semantics.
+ *  (defined in theme.css with a desktop media-query override). Page-level
+ *  overlays (dialogs) render as siblings of the section via the `overlays`
+ *  slot — kept inside `<main>` to preserve page semantics.
  *
  *  Heading contract: callers must provide a `<TopAppBar>` (or equivalent
  *  `<h1>`-bearing header) as the first child so the page satisfies the

@@ -10,10 +10,8 @@ export interface TimbrePickerProps {
   sectionLabel: string
 }
 
-// Timbre glyphs match spike 010 PracticeSettingsSheet "Cue timbre" VisualPicker
-// (index.html L1672-1675). Unicode characters chosen as abstract representations
-// of each timbre — kept inline with the label to match the Appearance picker
-// chrome (operator: "follow the appearance reference").
+// Timbre glyphs: Unicode characters chosen as abstract representations of each
+// timbre — kept inline with the label to match the Appearance picker chrome.
 const TIMBRE_GLYPH: Record<TimbreId, string> = {
   bowl: '◯',
   bell: '⟡',

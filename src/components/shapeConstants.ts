@@ -4,7 +4,7 @@
  * The drift guard at shapeConstants.test.ts fails CI if either side diverges —
  * change both files together (or delete both sides together, if the scale
  * concept goes away in a future orb redesign).
- * Phase 38 (VAR-01 / VAR-02): shape variants removed; OrbShape is the only shape.
+ * OrbShape is the only shape.
  */
 
 // The TS constants drive the breathing math here; the CSS tokens are exposed
@@ -13,4 +13,4 @@
 // in index.css). Sync enforced by src/components/shapeConstants.test.ts.
 export const MIN_SCALE = 0.58
 export const MAX_SCALE = 1.0
-export const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — D-06 reduced-motion fixed size
+export const MID_SCALE = (MIN_SCALE + MAX_SCALE) / 2 // 0.79 — reduced-motion fixed size

@@ -1,12 +1,11 @@
-// Extracted from InstallBanner.tsx per CONTEXT D-06 — one source of truth for
-// the iOS Share → Add to Home Screen step list used by both the banner and the
-// Settings install row. The `id` prop is required so each consumer can set a
-// unique DOM id (Pitfall 3: no hardcoded id literal in this shared component).
+// One source of truth for the iOS Share → Add to Home Screen step list used by
+// both the banner and the Settings install row. The `id` prop is required so
+// each consumer can set a unique DOM id — no hardcoded id literal here.
 
 import type { UiStrings } from '../content/strings'
 
 export interface IosInstallStepsProps {
-  /** Unique DOM id for the steps container — set by each consumer (Pitfall 3: no hardcoded literal here). */
+  /** Unique DOM id for the steps container — set by each consumer (no hardcoded literal here). */
   id: string
   strings: UiStrings['install']
 }
@@ -14,11 +13,11 @@ export interface IosInstallStepsProps {
 export function IosInstallSteps({ id, strings }: IosInstallStepsProps) {
   return (
     <div id={id} aria-live="polite" className="pt-4 text-sm leading-6">
-      {/* WR-04: ordered list conveys the sequential step relationship both
-          visually (numbering) and to assistive tech. */}
+      {/* Ordered list conveys the sequential step relationship both visually
+          (numbering) and to assistive tech. */}
       {/* All three steps carry explicit theme-aware breathing color tokens:
-          step 1 = accent-strong (first-step highlight per 29-UI-SPEC §Color);
-          steps 2 & 3 = muted (clears WCAG AA 4.5 on all 5 themes, dark muted-vs-bg = 5.36). */}
+          step 1 = accent-strong (first-step highlight);
+          steps 2 & 3 = muted (clears WCAG AA 4.5 on all themes). */}
       <ol className="list-decimal pl-5">
         <li className="text-[var(--color-breathing-accent-strong)]">
           {strings.iosStep1}

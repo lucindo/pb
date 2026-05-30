@@ -1,10 +1,8 @@
 import type { ReactElement } from 'react'
 
-// Spike 010 V1 Grid SetupCard (index.html lines 1214-1244).
-// Locked over V2 List / V3 Primary-metric / V4 Pills / V5 Narrative per
-// spike README line 354. Pure presentation primitive — caller supplies
-// pre-formatted items + onTap + ariaLabel. Data derivation (current
-// settings → summary items) lives at the J10 wiring site, not here.
+// Grid SetupCard — locked layout. Pure presentation primitive: caller
+// supplies pre-formatted items + onTap + ariaLabel. Data derivation (current
+// settings → summary items) lives at the wiring site, not here.
 
 export interface SetupCardItem {
   // Stable identifier used as the React key (independent of locale/label).

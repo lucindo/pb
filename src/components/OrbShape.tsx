@@ -14,35 +14,30 @@ export interface OrbShapeProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
   strings: UiStrings['practice']['breathing']
-  // Phase 25 Plan 03: OPTIONAL, default 'labels' — zero-regression for callers
-  // that pre-date Phase 25. OrbLeadIn does NOT receive cue (D-07).
+  // OPTIONAL, default 'labels' — zero-regression for callers that don't supply a cue.
+  // OrbLeadIn does NOT receive cue.
   cue?: CueStyleId
-  // Phase 31: NKShape passes 'front' | 'back' to render its locked MID_SCALE
-  // shell with a phase-aware centre-disc bg (front=accent, back=accent-strong).
+  // NKShape passes 'front' | 'back' to render its locked MID_SCALE shell with a
+  // phase-aware centre-disc bg (front=accent, back=accent-strong).
   // NKShape overlays the live OM count, so the shell carries no label/digit.
   nkPhase?: 'front' | 'back'
-  // J7 wires this off at Idle + Complete call sites. Default true matches the
-  // spike (rings show during Running). OrbLeadIn never shows rings — its prop
-  // default is hard-set to false inside the component.
+  // Wired off at Idle + Complete call sites; default true = rings show during Running.
+  // OrbLeadIn's prop default is hard-set to false inside the component.
   showRings?: boolean
-  // J5: query-string-gated variant. 'orb-halo' (V1, default) = 3-layered
-  // organic-puddle halos + disc with soft shadow + rings at 0.45 opacity.
-  // 'minimal-rings' (V2) = single full-bleed accent halo at 0.16 opacity +
-  // disc with no shadow + rings at 0.5 opacity.
+  // 'orb-halo' (V1, default) = 3-layered organic-puddle halos + disc with soft shadow
+  // + rings at 0.45 opacity. 'minimal-rings' (V2) = single full-bleed accent halo at
+  // 0.16 opacity + disc with no shadow + rings at 0.5 opacity.
   variant?: BreathingShapeVariant
-  // J6: when set AND no frame/leadIn/nkPhase, render the idle orb (empty
-  // centre disc; scale = MID_SCALE for 'still', breath-clock scale for
-  // 'ambient'). showRings is hard-set to false on the idle path per spike
-  // 010 IdleScreen line 1979 + CompleteScreen line 2026.
+  // When set AND no frame/leadIn/nkPhase, renders the idle orb (empty centre disc;
+  // scale = MID_SCALE for 'still', breath-clock-driven for 'ambient').
+  // showRings is hard-set to false on the idle path.
   idleMode?: OrbIdleBehavior | null
-  // Phase 45: query-string-gated ring-cue style. Default 'progress-arc'
-  // renders the spike-011 bidirectional progress arc (south-anchored,
-  // suppressed under reduced-motion; faint outer track always present).
+  // Ring-cue style. Default 'progress-arc' renders the bidirectional progress arc
+  // (south-anchored, suppressed under reduced-motion; faint outer track always present).
   // 'outer-inner' preserves the prior outer + inner ring rendering.
   ringCue?: RingCueStyle
-  // J16: completion state — static halo orb (showRings false, scale MID)
-  // with a checkmark glyph centred on the accent disc. Spike 010 L2026 +
-  // CheckMarker L1006-1014. Takes priority over the frame === null idle path.
+  // Completion state — static halo orb (showRings false, scale MID) with a checkmark
+  // glyph centred on the accent disc. Takes priority over the frame === null idle path.
   showCompletion?: boolean
   // Rendered inside the centre disc — currently only consumed by the nkPhase
   // branch, where NKShape passes the live OM count so it inherits the disc's
@@ -51,19 +46,17 @@ export interface OrbShapeProps {
   children?: ReactNode
 }
 
-// V1 3-layer halo geometry — transcribed verbatim from spike 010/index.html
-// lines 617-619 (the VariantOrbHalo body). Asymmetric border-radii give
-// the organic puddle feel; small px shifts layer the halos with offset.
+// V1 3-layer halo geometry — asymmetric border-radii give the organic puddle feel;
+// small px shifts layer the halos with offset.
 const V1_HALOS = [
   { token: '--color-orb-halo-1', pct: 1.0, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4, 2] },
   { token: '--color-orb-halo-2', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [3, -2] },
   { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1, 3] },
 ] as const
 
-// Spike 012 V5 Halo Flame: same geometry as V1_HALOS — only the halo-1
-// and halo-2 tokens differ (gold rgba per spike lock); halo-3 reuses the
-// existing --color-orb-halo-3 (cool slate, intentionally unchanged per
-// spike README L168-169).
+// Spiritual-eye halo flame: same geometry as V1_HALOS — only the halo-1 and
+// halo-2 tokens differ (gold rgba); halo-3 reuses --color-orb-halo-3 (cool
+// slate, intentionally unchanged to preserve the warm/cool contrast).
 const SPIRITUAL_EYE_HALOS = [
   { token: '--color-orb-halo-1-spiritual-eye', pct: 1.0, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4, 2] },
   { token: '--color-orb-halo-2-spiritual-eye', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [3, -2] },
@@ -71,9 +64,7 @@ const SPIRITUAL_EYE_HALOS = [
 ] as const
 
 const DISC_PCT = 0.62
-// J5: 600 ms ease per spike V1 line 635 + V2 line 746 (corrected from J4's
-// erroneous 400 ms ease-in-out, which was copied from the deleted
-// .shape-marker--inner CSS rule instead of transcribed from the spike).
+// 600 ms ease is the locked ring transition duration.
 const RING_TRANSITION = 'opacity 600ms ease'
 const DISC_BG_TRANSITION = 'background 400ms ease-in-out'
 
@@ -83,8 +74,7 @@ const V1_DISC_SHADOW = '0 6px 24px var(--color-border-soft)'
 const V2_DISC_SHADOW = 'none'
 const V2_HALO_OPACITY = 0.16
 
-// Phase 38 D-03: OrbShape is the sole shape — it now owns the idle null-return
-// guard that BreathingShape's dispatcher used to own (pre-Phase-38 D-04).
+// OrbShape is the sole shape — it owns the idle null-return guard.
 export function OrbShape({
   frame,
   leadInDigit,
@@ -143,9 +133,8 @@ export function OrbShape({
   )
 }
 
-// Spike 010 CheckMarker (index.html L1006-1014): 32x32 / 24-viewBox /
-// 2.4-stroke check polyline. Inherits on-accent text color from the centre
-// disc — renders as white on the accent slate.
+// 32x32 check disc, 24 viewBox, 2.4-stroke check polyline.
+// Inherits on-accent text color from the centre disc.
 function CheckmarkGlyph() {
   return (
     <span
@@ -169,13 +158,10 @@ function CheckmarkGlyph() {
   )
 }
 
-// Spike 012 V5 Halo Flame: 5-point polygon, outer:inner ratio 2.5, point
-// straight up. Geometry locked at spike README L172-176; fill / stroke
-// tokens defined in theme.css per-theme. Reads tokens directly via inline
-// style (NOT currentColor) — the on-accent token would give #1a1d24 in
-// dark, which the spike explicitly rejects (Locked V5 values row "Star
-// fill" is #fafafe in dark). Star size = 20% of the centre disc per
-// spike L175; sized via width/height "20%" relative to the disc.
+// 5-point polygon star, outer:inner ratio 2.5, point straight up.
+// Fill/stroke tokens read via inline style (NOT currentColor) — on-accent
+// would give #1a1d24 in dark but star fill must be #fafafe in dark.
+// Star sized to 20% of the centre disc.
 function StarGlyph() {
   return (
     <span
@@ -264,10 +250,9 @@ function OrbIdle({
   variant: BreathingShapeVariant
   ringCue: RingCueStyle
 }) {
-  // Phase 50 D-07: stable WallSessionClock for useAmbientScale's rAF loop
-  // initial start capture. Constructed once per component instance via useMemo
-  // so the hook's dep array sees a stable identity. Per revision 1 Warning #8:
-  // useAmbientScale's per-tick time comes from the rAF DOMHighResTimeStamp,
+  // Stable WallSessionClock for useAmbientScale's rAF loop initial start capture.
+  // Constructed once per component instance via useMemo so the hook's dep array
+  // sees a stable identity. Per-tick time comes from the rAF DOMHighResTimeStamp,
   // not from this clock — this clock is for the initial start anchor only.
   const ambientWallClock = useMemo(() => createWallSessionClock(), [])
   const ambientScale = useAmbientScale(idleMode === 'ambient', ambientWallClock)
@@ -289,13 +274,11 @@ function OrbIdle({
   )
 }
 
-// Phase 3 D-14: the lead-in is a neutral pre-state — orb locked at MID_SCALE
-// (mirrors reduced-motion regardless of OS preference), digit rendered inside
-// the centre disc. No data-phase/data-progress: those belong to the active
-// breath loop. digit === null: Phase 31 NK locked shell — disc carries no
-// numeral (NKShape overlays the OM count); nkPhase drives the disc bg
-// (front=accent / back=accent-strong) to preserve the front/back distinction
-// previously carried by the in/out gradient crossfade.
+// Lead-in: neutral pre-state — orb locked at MID_SCALE regardless of OS
+// reduced-motion preference. No data-phase/data-progress: those belong to
+// the active breath loop. digit === null: NK shell — disc carries no numeral
+// (NKShape overlays the OM count); nkPhase drives disc bg (front=accent /
+// back=accent-strong) to preserve the front/back distinction.
 function OrbLeadIn({
   digit,
   strings,
@@ -361,14 +344,12 @@ interface OrbContainerProps {
   orbScale: number
   discBg: string
   variant: BreathingShapeVariant
-  // Phase 45 Plan 02: ring-cue style threaded from OrbShape. Only the
-  // inner-ring slot in the showRings block branches on this value; the
-  // faint outer track stays byte-identical across both cues.
+  // Ring-cue style threaded from OrbShape. Only the inner-ring slot in the
+  // showRings block branches on this value; the faint outer track is shared.
   ringCue: RingCueStyle
-  // Phase 45 Plan 02: clamped phaseProgress (0..1) — only consumed when
-  // ringCue === 'progress-arc'. Defaults to 0 for non-Running call sites
-  // (Idle / LeadIn / Complete) that pass showRings={false} and therefore
-  // never reach the arc branch.
+  // Clamped phaseProgress (0..1) — only consumed when ringCue === 'progress-arc'.
+  // Defaults to 0 for non-Running call sites (Idle / LeadIn / Complete)
+  // that pass showRings={false} and therefore never reach the arc branch.
   arcProgress?: number
   children?: React.ReactNode
 }
@@ -516,16 +497,12 @@ function OrbContainer({
   )
 }
 
-// Phase 45 Plan 02: bidirectional progress arc — verbatim TSX transcription
-// of spike-011 RingsB (index.html lines 179–229). Spike-locked values must
-// not be touched: viewBox="0 0 100 100", r = 49.7, sweep-flag 0 on the right
-// path / 1 on the left, dynamic-endpoint arc paths via .toFixed(4), no
-// stroke-dasharray + no pathLength (Chrome renders those as broken segments
-// per spike README Surprise #2). Stroke 2.5 is the spike-locked product
-// value (the spike's progressStrokeWidth runtime prop was a harness control).
+// Bidirectional progress arc. Locked geometry values: viewBox="0 0 100 100",
+// r = 49.7, sweep-flag 0 on the right path / 1 on the left, arc paths via
+// .toFixed(4), no stroke-dasharray + no pathLength (Chrome renders those as
+// broken segments). Stroke width 2.5 is the locked product value.
 // Outer track is NOT duplicated here — OrbContainer already renders the
-// faint outer <span> above this branch (shared across both ring cues and
-// both reduced-motion states).
+// faint outer <span> shared across both ring cues and both reduced-motion states.
 function ProgressArcLayer({
   phase,
   progress,
@@ -543,12 +520,12 @@ function ProgressArcLayer({
 
   if (!showArc) return null
 
-  // Spike-011 RingsB used `let rightD = ''` + `let leftD = ''` as empty
+  // The original harness used `let rightD = ''` + `let leftD = ''` as empty
   // initializers, with the `t === 0` case implicitly skipping the if/else
   // and emitting empty paths. Since the `showArc = !reducedMotion && t > 0`
   // guard above now short-circuits t === 0, both branches always assign —
   // we declare without the dead empty-string init to satisfy lint while
-  // preserving the spike's branch shape verbatim.
+  // preserving the branch shape verbatim.
   let rightD: string
   let leftD: string
   if (t >= 1) {

@@ -11,9 +11,9 @@ export interface SettingsToggleRowProps {
   disabled?: boolean
 }
 
-// Spike 010 toggle row (index.html L1870-1873): label left / iOS-style
-// switch right, py-3 / 1 px border-soft top — same row chrome as Stepper.
-// The fieldset wrapper exposes role="group" for settingGroup() queries.
+// Toggle row: label left / iOS-style switch right, py-3 / 1 px border-soft
+// top — same row chrome as Stepper. The fieldset wrapper exposes role="group"
+// for settingGroup() queries.
 export function SettingsToggleRow({
   label,
   ariaLabel,

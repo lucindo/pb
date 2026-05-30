@@ -1,12 +1,11 @@
-// Phase 3 D-05/D-06/D-07/D-10/D-17: inline icon-button toggle for the audio cues.
-// Pure presentational layer — receives props from the app view model and emits
-// a click callback. No hook calls, no AudioContext access.
+// Inline icon-button toggle for the audio cues. Pure presentational layer —
+// receives props from the app view model and emits a click callback.
+// No hook calls, no AudioContext access.
 //
-// Chrome (spike 010 MuteButton, index.html lines 455-486 — Mono Zen quieter
-// pairing): border-soft 1px + breathing-surface bg + text-soft icon stroke
-// (currentColor). Hit area 44px exact via size-11. No shadow per spike's flat
-// treatment. Hover/active drop to bg-soft; focus ring stays on accent for
-// keyboard visibility; disabled drops to 45% opacity.
+// Chrome: border-soft 1px + breathing-surface bg + text-soft icon stroke
+// (currentColor). Hit area 44px exact via size-11. No shadow (flat treatment).
+// Hover/active drop to bg-soft; focus ring stays on accent for keyboard
+// visibility; disabled drops to 45% opacity.
 
 import { RefreshIcon } from './icons/RefreshIcon'
 import { SpeakerIcon } from './icons/SpeakerIcon'
@@ -16,7 +15,7 @@ import type { UiStrings } from '../content/strings'
 export interface MuteToggleProps {
   muted: boolean
   audioAvailable: boolean
-  /** Plan 06 D-32: when true, button morphs into a resume affordance —
+  /** When true, button morphs into a resume affordance —
    *  refresh-arrow glyph + aria-label from strings.resume. Priority: audioAvailable=false
    *  outranks; muted is ignored in label and aria-pressed is undefined. */
   needsResume?: boolean
@@ -31,11 +30,10 @@ export interface MuteToggleProps {
 }
 
 export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, strings, onToggle }: MuteToggleProps) {
-  // Plan 06 D-32: label priority — unavailable > needsResume > muted/unmuted.
-  // Phase 3 D-10 'unavailable' takes highest priority and outranks needsResume because
-  // in practice the hook's audioStatus state machine makes them mutually exclusive
-  // (audioStatus='unavailable' suppresses 'needs-resume') — but the priority order
-  // is defensive against any future state surface change.
+  // Label priority: unavailable > needsResume > muted/unmuted.
+  // 'unavailable' takes highest priority and outranks needsResume — the hook's
+  // audioStatus state machine makes them mutually exclusive in practice, but this
+  // order is defensive against future state surface changes.
   const label = !audioAvailable
     ? strings.unavailable
     : needsResume

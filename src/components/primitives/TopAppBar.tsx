@@ -7,13 +7,10 @@ export interface TopAppBarProps {
 }
 
 // Page-level header: 36×36 leading slot, centered title, 36×36 trailing slot.
-// Title sizing verbatim from spike 010 PracticeTopBar / PageTopBar
-// (index.html L1020-1054): 17 px / weight 600 / tracking 0.01em / text token.
-// Empty 36×36 placeholders maintain title centering when a slot is absent
-// (mirrors spike's L1051 `<div style={{ width: 36, height: 36 }}></div>`).
+// Locked title sizing: 17 px / weight 600 / tracking 0.01em / text token.
+// Empty 36×36 placeholders maintain title centering when a slot is absent.
 // Top padding: 16 px base + safe-area inset (handles iOS PWA notch in standalone
-// mode without burning 50 px of dead space on desktop, which the spike's
-// mobile-only `paddingTop: 50` did).
+// mode without burning dead vertical space on desktop).
 export function TopAppBar({ title, leading, trailing }: TopAppBarProps) {
   return (
     <div

@@ -1,11 +1,10 @@
 import type { ReactElement } from 'react'
 
-// Spike 010 SectionHeader (index.html lines 1700-1714) — quiet uppercase
-// tracked label that groups a card below it. Used by the App Settings page
-// to label the Appearance / Language / Audio / About sections, and reusable
-// for the future Learn-page sectioning per spike sixth pass.
+// Quiet uppercase tracked label that groups a card below it. Used by the
+// App Settings page to label the Appearance / Language / Audio / About
+// sections, and on the Learn page for section eyebrows.
 //
-// Style transcribed verbatim from the spike:
+// Locked style values:
 // - fontSize 11, weight 500, letterSpacing 0.16em
 // - uppercase, color muted
 // - marginTop 24, marginBottom 8

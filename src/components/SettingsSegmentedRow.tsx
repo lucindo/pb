@@ -12,10 +12,10 @@ export interface SettingsSegmentedRowProps<T extends string> {
   disabled?: boolean
 }
 
-// Spike 010 SegmentedControl row (index.html L1527-1554): label on its own
-// line above a full-width segmented pill, with the same border-t / py-3
-// row chrome as the Stepper rows so settings sheets read as a single stack.
-// The fieldset wrapper preserves role="group" for settingGroup() queries.
+// SegmentedControl row: label on its own line above a full-width segmented
+// pill, with the same border-t / py-3 row chrome as the Stepper rows so
+// settings sheets read as a single stack. The fieldset wrapper preserves
+// role="group" for settingGroup() queries.
 export function SettingsSegmentedRow<T extends string>({
   label,
   ariaLabel,
