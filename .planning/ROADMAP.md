@@ -41,6 +41,16 @@ Behavior-preserving tech-debt paydown from the full `src/` maintainability audit
   4. Tests covering the touched files are audited: any test asserting on comment text or planning tags is deleted; no real-behavior test is weakened. `tsc` + `lint` + `build` exit 0; the curated suite passes; `dependencies` stays `react` + `react-dom`.
 **Plans**: TBD
 
+**Plans:**
+- [ ] 55-01-PLAN.md — De-archaeologize src/hooks comments (densest; useAudioCues 150 hits)
+- [ ] 55-02-PLAN.md — De-archaeologize src/audio comments (preserve iOS/TOCTOU/silent-WAV invariants)
+- [ ] 55-03-PLAN.md — De-archaeologize src/domain comments
+- [ ] 55-04-PLAN.md — De-archaeologize src/storage comments (mostly delete parity/modeling)
+- [ ] 55-05-PLAN.md — De-archaeologize src/components comments (spike-geometry provenance, keep values)
+- [ ] 55-06-PLAN.md — De-archaeologize src/app/content/styles + root (skip 12 I18N markers)
+- [ ] 55-07-PLAN.md — Strip tags in audio/components/content/domain test comments (no test deletion)
+- [ ] 55-08-PLAN.md — Strip tags in hooks/storage/app/styles + top-level test comments (no test deletion)
+
 ### Phase 56: Storage de-duplication
 **Goal**: A change to the session-record guard logic or settings-persistence shape is made in exactly one place — the three byte-identical `record*Session` and `save*Settings` families collapse to single parameterized helpers, and the scattered storage-edge predicates have one definition each. (Audit #1 + #6 helpers.)
 **Depends on**: Phase 55 (cleaner comments make the duplication and its single-source target legible); otherwise independent
