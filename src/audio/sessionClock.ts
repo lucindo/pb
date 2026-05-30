@@ -1,59 +1,51 @@
-// SessionClock — typed interface around the two time sources used by Phase 50's
-// callers (the engine's AudioContext clock and the wall clock). Zero React imports.
+// SessionClock — typed interface around the two time sources (the engine's
+// AudioContext clock and the wall clock). Zero React imports.
 //
 // Owns:
-//   - The single clock source closure for now() (D-01 / D-03 — audio-natural seconds).
+//   - The single clock source closure for now() (audio-natural seconds).
 //   - THREE subscriber Sets in createAudioSessionClock: suspendSubscribers,
-//     resumeSubscribers, closeSubscribers (revision 1 Blocker #1).
+//     resumeSubscribers, closeSubscribers.
 //
 // Invariants:
-//   - D-08 wrap-don't-construct: createAudioSessionClock ACCEPTS an AudioContext;
-//     it NEVER constructs one. The two production call sites pass their own AC
-//     (the engine's HRV AC; useNaviKriyaAudio's NK AC).
-//   - D-11 wired-real subscribers: onSuspend / onResume / onClose fan out real
-//     AudioContext statechange transitions in the audio factory.
-//     createWallSessionClock exposes them as no-op subscribers (wall clock
-//     never suspends/resumes/closes).
-//   - Phase 53: master-gain mute lives entirely in the engine (a single GainNode
-//     it owns). The clock has no setMasterGain surface — the prior D-12 stub was
-//     removed when the engine took over the master gain directly.
-//   - Revision 1 Blocker #1 — onClose preserves the byte-identical
-//     setAudioStatus('unavailable') setter at useAudioCues.ts:164-165 through
-//     the SessionClock seam (Phase 50 success criterion #3).
-//   - Revision 1 Blocker #2 — scheduleImpl is plumbed at construction
-//     (NOT reassigned post-hoc — that would violate the readonly contract on
-//     the interface). The engine passes its internal dispatch fn at Plan 50-06;
-//     useNaviKriyaAudio passes undefined and schedule() is a no-op for that AC.
-//   - Revision 2 Blocker #1 — notifySuspended is the engine-only synthetic-suspend
-//     escape hatch on the augmented factory return type
-//     (SessionClock & { notifySuspended(): void }). It is NOT a public
-//     SessionClock interface member. Only the engine's internal augmented-type
-//     reference inside createAudioEngine can call it. External consumers
-//     (useAudioCues, useSessionEngine, useNaviKriyaAudio, useAmbientScale, and
-//     the engine's own engine.clock: SessionClock member) see only the 6-member
-//     read-only interface and cannot reach notifySuspended.
+//   - createAudioSessionClock ACCEPTS an AudioContext; it NEVER constructs one.
+//     The two production call sites pass their own AC (the engine's HRV AC;
+//     useNaviKriyaAudio's NK AC).
+//   - onSuspend / onResume / onClose fan out real AudioContext statechange
+//     transitions. createWallSessionClock exposes them as no-op subscribers
+//     (wall clock never suspends/resumes/closes).
+//   - Master-gain mute lives entirely in the engine (a single GainNode it owns).
+//     The clock has no setMasterGain surface.
+//   - onClose preserves the `setAudioStatus('unavailable')` call in useAudioCues
+//     through the SessionClock seam.
+//   - scheduleImpl is plumbed at construction (NOT reassigned post-hoc — that
+//     would violate the readonly contract on the interface). The engine passes
+//     its internal dispatch fn; useNaviKriyaAudio passes undefined and
+//     schedule() is a no-op for that AC.
+//   - notifySuspended is the engine-only synthetic-suspend escape hatch on the
+//     augmented factory return type (SessionClock & { notifySuspended(): void }).
+//     It is NOT a public SessionClock interface member. Only the engine's
+//     internal augmented-type reference inside createAudioEngine can call it.
+//     External consumers see only the read-only interface and cannot reach
+//     notifySuspended.
 //
 // Zero React imports.
 //
-// Phase-level invariant (revision 1 Warning #12):
-//   Phase 50 has exactly TWO createAudioSessionClock invocations: one inside
-//   createAudioEngine (HRV AC), one inside useNaviKriyaAudio.begin() (NK AC).
-//   They wrap DIFFERENT AudioContexts and MUST NOT be conflated. The engine's
-//   `clock` member exposes only the HRV-AC clock; NK-AC's clock is local to
-//   NK's lifecycle.
+// Exactly TWO createAudioSessionClock invocations exist: one inside
+// createAudioEngine (HRV AC), one inside useNaviKriyaAudio.begin() (NK AC).
+// They wrap DIFFERENT AudioContexts and MUST NOT be conflated. The engine's
+// `clock` member exposes only the HRV-AC clock; NK-AC's clock is local to
+// NK's lifecycle.
 
 import type { TimbreId } from '../domain/settings'
 
 /**
- * Closed catalog of cue kinds the engine and any future lookahead scheduler
- * (Phase 52) can dispatch.
+ * Closed catalog of cue kinds the engine and any lookahead scheduler can dispatch.
  *
- * D-04: catalog is CLOSED at Phase 50 — adding a new kind in a later phase
- * is an interface change visible to every scheduler. The `'in'` and `'out'`
- * variants carry `timbre` + `phaseDurationSec` because the per-cue builders
- * (`scheduleInCueForTimbre`/`scheduleOutCueForTimbre`) need them; all other
- * kinds omit both fields because the engine resolves timbre from its
- * closed-over `sessionTimbre` at dispatch time (Phase 18 D-08 capture-at-start).
+ * The catalog is closed — adding a new kind is an interface change visible to
+ * every scheduler. The `'in'` and `'out'` variants carry `timbre` +
+ * `phaseDurationSec` because the per-cue builders need them; all other kinds
+ * omit both fields because the engine resolves timbre from its closed-over
+ * `sessionTimbre` at dispatch time.
  */
 export type Cue =
   | { kind: 'in'; phaseDurationSec: number; timbre: TimbreId }
@@ -68,10 +60,9 @@ export type Cue =
 /**
  * SessionClock — typed read-only interface with EXACTLY 5 members.
  *
- * Revision 2 Blocker #1: this surface is the PUBLIC contract that every
- * external consumer sees. The engine-only `notifySuspended()` escape hatch
- * is NOT a member here — it is surfaced on the augmented factory return type
- * of `createAudioSessionClock` and is inaccessible to anything typed as
+ * This is the PUBLIC contract that every external consumer sees. The engine-only
+ * `notifySuspended()` escape hatch is NOT a member here — it is surfaced on the
+ * augmented factory return type and is inaccessible to anything typed as
  * `SessionClock`.
  */
 export interface SessionClock {
@@ -79,16 +70,8 @@ export interface SessionClock {
    * Current clock value in seconds (float, audio-natural — matches
    * `audioCtx.currentTime` convention).
    *
-   * D-01 + D-03 (Option A, resolved 2026-05-27):
-   *   - `createAudioSessionClock.now()` returns `audioCtx.currentTime`.
-   *   - `createWallSessionClock.now()` returns `performance.now() / 1000`.
-   *
-   * The audio-factory shape makes Plan 50-03's substitution at
-   * `useNaviKriyaAudio.ts:75` (`audioCtx.currentTime + SAFE_LEAD_SEC` →
-   * `clock.now() + SAFE_LEAD_SEC`) byte-identical at runtime. Phase 51's
-   * work is caller-level rebase of `useSessionEngine` (capture
-   * `sessionStartCtxTime` and use `clock.now() − sessionStartCtxTime`),
-   * NOT a swap of these factory bodies.
+   * `createAudioSessionClock.now()` returns `audioCtx.currentTime`.
+   * `createWallSessionClock.now()` returns `performance.now() / 1000`.
    */
   now(): number
 
@@ -96,24 +79,19 @@ export interface SessionClock {
    * Dispatch entry. `when` is seconds-shaped on the same time-base as `now()`;
    * `cue` is the closed discriminated union catalog above.
    *
-   * D-04: catalog is closed at Phase 50.
-   *
-   * Revision 1 Blocker #2 (constructor plumbing, not post-hoc reassignment):
-   * the audio factory accepts a `scheduleImpl` constructor arg. When supplied
-   * (the engine's internal dispatch, plumbed in Plan 50-06), schedule()
-   * forwards to it. When absent (useNaviKriyaAudio's call site at Phase 50;
-   * Plan 52 may wire NK lookahead through schedule() later), schedule() is a
-   * typed no-op. The wall factory's schedule() is always a no-op
-   * (useAmbientScale only calls now()).
+   * The catalog is closed. When `scheduleImpl` is supplied (the engine's
+   * internal dispatch), schedule() forwards to it. When absent
+   * (useNaviKriyaAudio's call site), schedule() is a typed no-op. The wall
+   * factory's schedule() is always a no-op (useAmbientScale only calls now()).
    */
   schedule(when: number, cue: Cue): void
 
   /**
    * Subscribe to suspend transitions. Returns an unsubscribe function.
    *
-   * D-11: wired real in `createAudioSessionClock` via the audioCtx
-   * `'statechange'` listener. Fires when the AC enters `'suspended'` OR
-   * `'interrupted'` (the WebKit superset per Plan 06 D-37 / Phase 5.1).
+   * Wired real in `createAudioSessionClock` via the audioCtx `'statechange'`
+   * listener. Fires when the AC enters `'suspended'` OR `'interrupted'` (the
+   * WebKit-only extension for iOS lock-screen auto-suspend).
    * `createWallSessionClock` returns a no-op unsubscribe (wall clock never
    * suspends).
    */
@@ -122,21 +100,18 @@ export interface SessionClock {
   /**
    * Subscribe to resume transitions. Returns an unsubscribe function.
    *
-   * D-11: wired real in `createAudioSessionClock` via the audioCtx
-   * `'statechange'` listener. Fires when the AC enters `'running'`.
-   * `createWallSessionClock` returns a no-op unsubscribe (wall clock never
-   * resumes — it never suspended).
+   * Wired real in `createAudioSessionClock` via the audioCtx `'statechange'`
+   * listener. Fires when the AC enters `'running'`. `createWallSessionClock`
+   * returns a no-op unsubscribe (wall clock never resumes — it never suspended).
    */
   onResume(cb: () => void): () => void
 
   /**
    * Subscribe to close transitions. Returns an unsubscribe function.
    *
-   * Revision 1 Blocker #1: wired real in `createAudioSessionClock` via the
-   * audioCtx `'statechange'` listener. Fires when the AC enters `'closed'`.
-   * Preserves the byte-identical `setAudioStatus('unavailable')` setter at
-   * `useAudioCues.ts:164-165` through the SessionClock seam (Phase 50 success
-   * criterion #3 — Plan 50-04 wires `clock.onClose(() => setAudioStatus('unavailable'))`).
+   * Wired real in `createAudioSessionClock` via the audioCtx `'statechange'`
+   * listener. Fires when the AC enters `'closed'`. This is the mechanism through
+   * which useAudioCues calls `setAudioStatus('unavailable')` on AC close.
    * `createWallSessionClock` returns a no-op unsubscribe (wall clock never closes).
    */
   onClose(cb: () => void): () => void
@@ -145,52 +120,44 @@ export interface SessionClock {
 /**
  * Wrap an existing AudioContext as a SessionClock.
  *
- * D-08: this factory WRAPS an AC, it never constructs one. The two production
- * call sites pass their own AC (HRV: inside `createAudioEngine`; NK: inside
+ * This factory WRAPS an AC, it never constructs one. The two production call
+ * sites pass their own AC (HRV: inside `createAudioEngine`; NK: inside
  * `useNaviKriyaAudio.begin()`). User-gesture-chain semantics live at the AC
- * construction site (Phase 3 D-09), NOT here.
+ * construction site, NOT here.
  *
- * Revision 1 Blocker #2: the optional `scheduleImpl` parameter is plumbed at
- * construction — when supplied (the engine's internal dispatch in Plan 50-06),
- * `schedule()` forwards to it; when absent, `schedule()` is a typed no-op.
- * This avoids the post-hoc readonly reassignment that the original plan called
- * for and that would violate the `readonly` semantics on the SessionClock
- * interface.
+ * The optional `scheduleImpl` parameter is plumbed at construction — when
+ * supplied (the engine's internal dispatch), `schedule()` forwards to it;
+ * when absent, `schedule()` is a typed no-op. This avoids post-hoc readonly
+ * reassignment that would violate the `readonly` semantics on the interface.
  *
- * Revision 2 Blocker #1: returns `SessionClock & { notifySuspended(): void }`.
- * The `notifySuspended` method is an ENGINE-ONLY escape hatch — it is NOT a
- * member of the public `SessionClock` interface. External consumers that import
- * `SessionClock` cannot see `notifySuspended`. Only the engine's internal
- * augmented-type reference inside `createAudioEngine` can call it.
+ * Returns `SessionClock & { notifySuspended(): void }`. The `notifySuspended`
+ * method is an ENGINE-ONLY escape hatch — it is NOT a member of the public
+ * `SessionClock` interface. Only the engine's internal augmented-type reference
+ * inside `createAudioEngine` can call it.
  *
  * `notifySuspended()` fans the `'suspended'` event to `suspendSubscribers`
  * synchronously, as if the AC had fired a real statechange event. This is
- * required for the iOS Safari InvalidStateError recovery path
- * (audioEngine.ts L429-449 / Plan 06 D-38) where the AC was already
- * `'suspended'` before `resume()` was called, stays `'suspended'` after the
- * rejection, and no natural statechange event fires — without this escape
- * hatch the clock's listener cannot cover the case and Phase 50 success
- * criterion #3 (byte-identical end-user behavior) fails.
+ * required for the iOS Safari InvalidStateError recovery path where the AC was
+ * already `'suspended'` before `resume()` was called, stays `'suspended'` after
+ * the rejection, and no natural statechange event fires — without this escape
+ * hatch the subscriber cannot see the transition.
  */
 export function createAudioSessionClock(
   audioCtx: AudioContext,
   scheduleImpl?: (when: number, cue: Cue) => void,
 ): SessionClock & { notifySuspended(): void } {
-  // D-08: AC is wrapped, never constructed here. The user-gesture-chain
-  // invariant (Phase 3 D-09) holds at the AC construction site (engine's
-  // `createAudioEngine` / NK's `useNaviKriyaAudio.begin()`), not here.
+  // AC is wrapped, never constructed here. User-gesture-chain semantics hold at
+  // the AC construction site, not here.
 
-  // FOUR subscriber Sets. Each fan-out path iterates its own Set in registration
-  // order, mirroring the audioEngine.ts L249-256 ordering invariant.
+  // FOUR subscriber Sets. Each fan-out path iterates its own Set in registration order.
   const suspendSubscribers = new Set<() => void>()
   const resumeSubscribers = new Set<() => void>()
   const closeSubscribers = new Set<() => void>()
 
-  // Revision 2 Blocker #1: fanSuspend() is the single fan-out path. Called by
-  // the statechange listener (natural AC transition) AND by notifySuspended()
-  // (engine-only synthetic suspend for the iOS Safari InvalidStateError
-  // recovery path). Both paths produce identical observable behavior — same
-  // subscribers invoked synchronously in registration order. Factoring keeps
+  // fanSuspend() is the single fan-out path. Called by the statechange listener
+  // (natural AC transition) AND by notifySuspended() (engine-only synthetic
+  // suspend for the iOS Safari InvalidStateError recovery path). Both paths
+  // invoke subscribers synchronously in registration order — factoring keeps
   // the fan-out logic in ONE place so there is no behavior drift between the
   // natural and synthetic suspend paths.
   function fanSuspend(): void {
@@ -205,15 +172,13 @@ export function createAudioSessionClock(
     for (const cb of closeSubscribers) cb()
   }
 
-  // D-11: single statechange listener fans transitions to the four Sets.
-  // Mirrors audioEngine.ts L243-257 (the canonical statechange-listener
-  // pattern in this repo). The widened type covers WebKit's 'interrupted'
-  // superset (Plan 06 D-37 / Phase 5.1).
+  // Single statechange listener fans transitions to the four Sets.
+  // The widened type covers WebKit's 'interrupted' extension (iOS Safari).
   audioCtx.addEventListener('statechange', () => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const s = audioCtx.state as AudioContextState | 'interrupted'
     // Switch over the 4-variant union (AudioContextState 'suspended' | 'running' |
-    // 'closed' plus WebKit's 'interrupted' superset per Plan 06 D-37 / Phase 5.1).
+    // 'closed' plus WebKit's 'interrupted' extension for iOS lock-screen auto-suspend).
     // Each case fans to ONE Set; the default branch is intentionally empty.
     switch (s) {
       case 'suspended':
@@ -224,9 +189,8 @@ export function createAudioSessionClock(
         fanResume()
         break
       case 'closed':
-        // Revision 1 Blocker #1: 'closed' fans to closeSubscribers. Preserves
-        // the byte-identical setAudioStatus('unavailable') setter at
-        // useAudioCues.ts:164-165 through the SessionClock seam.
+        // 'closed' fans to closeSubscribers — triggers setAudioStatus('unavailable')
+        // in useAudioCues through the SessionClock seam.
         fanClose()
         break
     }
@@ -234,27 +198,17 @@ export function createAudioSessionClock(
 
   const clock: SessionClock & { notifySuspended(): void } = {
     now(): number {
-      // D-01 + D-03 Option A (resolved 2026-05-27): the audio-backed clock reads
-      // the AC's natural time. This makes useNaviKriyaAudio's
-      // `clock.now() + SAFE_LEAD_SEC` byte-identical to its pre-refactor
-      // `audioCtx.currentTime + SAFE_LEAD_SEC`. Phase 51's work is caller-level
-      // rebase (useSessionEngine captures sessionStartCtxTime and computes
-      // clock.now() − sessionStartCtxTime), NOT a swap of this body.
-      //
-      // Per D-09 / revision 1 Warning #5: this is the EXACTLY ONE
-      // `audioCtx.currentTime` read inside createAudioSessionClock. The
-      // drift-guard test (Plan 50-05) bans `audioCtx.currentTime` reads in the
-      // 5 caller files, not inside the factory.
+      // The audio-backed clock reads the AC's natural time. This is the EXACTLY ONE
+      // `audioCtx.currentTime` read inside createAudioSessionClock. The drift-guard
+      // test bans `audioCtx.currentTime` reads in the 5 caller files, not inside
+      // the factory.
       return audioCtx.currentTime
     },
 
     schedule(when: number, cue: Cue): void {
-      // Revision 1 Blocker #2: scheduleImpl is plumbed at construction (NOT
-      // reassigned post-hoc — that would violate readonly on the interface).
-      // The engine passes its internal dispatch fn at Plan 50-06; NK passes
-      // undefined and schedule() is a no-op for that AC (NK uses per-cue
-      // scheduler primitives directly at Phase 50; Phase 52 lookahead may
-      // wire NK through schedule() later).
+      // scheduleImpl is plumbed at construction (NOT reassigned post-hoc —
+      // that would violate readonly on the interface). When absent,
+      // schedule() is a typed no-op.
       if (scheduleImpl !== undefined) {
         scheduleImpl(when, cue)
       } else {
@@ -280,9 +234,8 @@ export function createAudioSessionClock(
     },
 
     onClose(cb: () => void): () => void {
-      // Revision 1 Blocker #1 — preserves the byte-identical
-      // setAudioStatus('unavailable') setter at useAudioCues.ts:164-165
-      // through the SessionClock seam.
+      // Preserves the setAudioStatus('unavailable') call in useAudioCues through
+      // the SessionClock seam.
       closeSubscribers.add(cb)
       return (): void => {
         closeSubscribers.delete(cb)
@@ -290,15 +243,14 @@ export function createAudioSessionClock(
     },
 
     notifySuspended(): void {
-      // Revision 2 Blocker #1 — Engine-only escape hatch. NOT a public
-      // SessionClock member. Synchronously invokes all suspendSubscribers as
-      // if the AC had fired a 'suspended' statechange event. Used by
-      // audioEngine.ts L429-449 (Plan 06 D-38 iOS Safari InvalidStateError
-      // recovery): when resume() rejects with InvalidStateError, the AC was
-      // already 'suspended' before the call and stays 'suspended' after — no
-      // natural statechange fires. The engine calls clock.notifySuspended()
-      // (via its internal augmented-type reference) so external subscribers
-      // see the 'suspended' transition synchronously.
+      // Engine-only escape hatch. NOT a public SessionClock member. Synchronously
+      // invokes all suspendSubscribers as if the AC had fired a 'suspended'
+      // statechange event. Used by audioEngine's resume() catch block for the
+      // iOS Safari InvalidStateError recovery path: when resume() rejects with
+      // InvalidStateError, the AC was already 'suspended' before the call and
+      // stays 'suspended' after — no natural statechange fires. The engine calls
+      // clock.notifySuspended() (via its internal augmented-type reference) so
+      // external subscribers see the 'suspended' transition synchronously.
       fanSuspend()
     },
   }
@@ -310,29 +262,23 @@ export function createAudioSessionClock(
  * Synthesize a SessionClock backed by `performance.now() / 1000`.
  *
  * Used by `useAmbientScale` (the idle-state ambient rAF driver — has no
- * AudioContext to wrap; D-08 still holds because the factory doesn't construct
- * one either).
+ * AudioContext to wrap; the factory doesn't construct one either).
  *
- * D-11: onSuspend / onResume / onClose are no-op subscribers — the wall clock
- * has no suspend/resume/close signals.
- *
- * Revision 2 Blocker #1: the wall clock does NOT expose `notifySuspended`.
- * The only synthetic-suspend caller is the engine for the iOS Safari
- * InvalidStateError path; the wall clock has no equivalent failure mode. Return
- * type is plain `SessionClock`, not the augmented type.
+ * onSuspend / onResume / onClose are no-op subscribers — the wall clock has no
+ * suspend/resume/close signals. Return type is plain `SessionClock` (no
+ * `notifySuspended` — the wall clock has no equivalent failure mode).
  */
 export function createWallSessionClock(): SessionClock {
   const clock: SessionClock = {
     now(): number {
-      // Per D-09 / revision 1 Warning #5: this is the EXACTLY ONE
-      // `performance.now` read inside createWallSessionClock. The drift-guard
-      // test (Plan 50-05) bans `performance.now()` reads in the 5 caller files,
+      // This is the EXACTLY ONE `performance.now` read inside createWallSessionClock.
+      // The drift-guard test bans `performance.now()` reads in the 5 caller files,
       // not inside the factory.
       return performance.now() / 1000
     },
 
     schedule(when: number, cue: Cue): void {
-      // useAmbientScale only calls now(); schedule is on the surface for D-04
+      // useAmbientScale only calls now(); schedule is on the surface for
       // closed-catalog symmetry. The wall clock has no audio graph to write
       // into, so this is a typed no-op by design.
       void when
@@ -340,8 +286,8 @@ export function createWallSessionClock(): SessionClock {
     },
 
     onSuspend(cb: () => void): () => void {
-      // D-11: wall clock never suspends. Accept the callback per the interface
-      // contract; return a no-op unsubscribe.
+      // Wall clock never suspends. Accept the callback per the interface contract;
+      // return a no-op unsubscribe.
       void cb
       return (): void => undefined
     },

@@ -1,20 +1,17 @@
 // Pure Web Audio synthesis builders for Navi Kriya cues. Zero React imports.
 //
-// NK-05 + D-05: All four cue functions read TIMBRE_PRESETS[timbre] and route
-// through the user's chosen timbre (Bowl / Bell / Sine / Flute).
+// All four cue functions read TIMBRE_PRESETS[timbre] and route through the
+// user's chosen timbre (Bowl / Bell / Sine / Flute).
 //
-// D-06 (revised Phase 31 UAT): the Front/Back markers REUSE the HRV breath
-//       cues — Front plays the inhale ('in') cue, Back the exhale ('out') cue,
-//       through the user's chosen timbre. It is the sound the user already
-//       knows from HRV, so the two practices stay congruent. (Earlier
-//       iterations — a two-tone gesture, then a pitch glide — both read as
-//       gimmicky next to the rest of the app.)
-// D-07: Per-OM tick = soft, short, barely-there tone (quiet + short duration).
-// D-08: End chord = resolved low three-note chord. Spike 005 ("Warm pad fade")
-//       gave it a strike-free pad envelope — fades in, holds, fades out (~5 s).
+// Front/Back markers REUSE the HRV breath cues — Front plays the inhale ('in')
+// cue, Back the exhale ('out') cue, through the user's chosen timbre. The same
+// sound the user already knows from HRV keeps the two practices congruent.
+// Per-OM tick = soft, short, barely-there tone (quiet + short duration).
+// End chord = resolved low three-note chord with a strike-free pad envelope —
+// fades in, holds, fades out (~5 s).
 //
-// T-31-04: Every node disconnects on its 'ended' event ({ once: true }) — no leaked
-//   nodes over a long session (375+ ticks). Same discipline as cueSynth.ts AUDIO-04.
+// Every node disconnects on its 'ended' event ({ once: true }) — no leaked
+// nodes over a long session (375+ ticks). Same discipline as cueSynth.ts.
 
 import { TIMBRE_PRESETS, type TimbrePreset } from './timbres'
 import type { TimbreId } from '../domain/settings'
@@ -28,18 +25,14 @@ const NEAR_SILENCE = 0.0001 // setTargetAtTime cannot ramp to true zero
 
 // --- NK-specific cue constants ---
 
-// D-06 (revised Phase 31): the Front/Back markers reuse the HRV breath cues
-// (scheduleInCueForTimbre / scheduleOutCueForTimbre) — no NK-specific marker
-// constants needed.
-// D-07 per-OM tick: soft and short
+// Front/Back markers reuse the HRV breath cues — no NK-specific marker constants needed.
+// Per-OM tick: soft and short
 const NK_TICK_DURATION_SEC = 0.12
 const NK_TICK_PEAK_GAIN = 0.13 // J16: bumped from 0.08 — still peripheral, slightly more audible per operator UAT
 const NK_TICK_DECAY_TAU = 0.05
-// Countdown beep: the 3-2-1 lead-in tick, shared by the HRV and Navi
-// countdowns. Spike 004 ("Crisp ping" — operator audition) retuned this from
-// the original soft 440 Hz / 0.12 s / 0.08 / 0.05 tick to a crisper, higher,
-// snappier beep that reads as more alerting without simply being louder. Kept
-// on its own constants + function so the countdown beep and the per-OM tick
+// Countdown beep: the 3-2-1 lead-in tick, shared by the HRV and Navi countdowns.
+// A crisper, higher, snappier beep that reads as more alerting without being louder.
+// Kept on its own constants + function so the countdown beep and the per-OM tick
 // stay independent — they are not semantically related.
 const COUNTDOWN_TICK_DURATION_SEC = 0.1
 const COUNTDOWN_TICK_PEAK_GAIN = 0.12
@@ -48,14 +41,11 @@ const COUNTDOWN_TICK_DECAY_TAU = 0.04
 // is 440 Hz across all timbres → 660 Hz). Expressed as a ratio so it tracks any
 // future per-timbre fundamental rather than hard-coding 660.
 const COUNTDOWN_TICK_PITCH_RATIO = 1.5
-// D-08 end chord: three tones forming a resolved low chord. This is the shared
-// practice-ending sound — both the Navi Kriya completion and the HRV session
-// completion play scheduleEndChord, so a change lands in both practices at once.
-//
-// Spike 005 ("Warm pad fade" — operator audition) retuned it from the original
-// 1.8 s percussive strike to a strike-free pad: fade in over END_CHORD_ATTACK_SEC,
-// hold, then a linear fade out over END_CHORD_RELEASE_SEC, ~5 s total. There is
-// no exponential decay any more — END_CHORD_DECAY_TAU is retired.
+// End chord: three tones forming a resolved low chord. Shared practice-ending
+// sound — both the Navi Kriya completion and the HRV session completion play
+// scheduleEndChord, so a change lands in both practices at once.
+// Strike-free pad envelope: fade in over END_CHORD_ATTACK_SEC, hold, then a
+// linear fade out over END_CHORD_RELEASE_SEC, ~5 s total.
 const END_CHORD_DURATION_SEC = 5.0
 const END_CHORD_PEAK_GAIN = 0.11
 const END_CHORD_ATTACK_SEC = 0.9 // gain ramps 0 → peak over this (the fade-in)
@@ -162,11 +152,11 @@ function buildNKToneNodes(
 // --- Exported NK cue builders ---
 
 /**
- * D-06: Front marker — the HRV inhale ('in') cue, played through the user's
- * chosen timbre. Reusing the breath cue keeps Navi Kriya congruent with HRV:
- * the same sound the user already reads as the start of an inhale. No
- * phaseDurationSec — the marker is a one-shot struck cue that decays
- * naturally, not a sustained phase cue.
+ * Front marker — the HRV inhale ('in') cue, played through the user's chosen
+ * timbre. Reusing the breath cue keeps Navi Kriya congruent with HRV: the same
+ * sound the user already reads as the start of an inhale. No phaseDurationSec —
+ * the marker is a one-shot struck cue that decays naturally, not a sustained
+ * phase cue.
  */
 export function scheduleNKFrontMarker(
   audioCtx: AudioContext,
@@ -178,10 +168,9 @@ export function scheduleNKFrontMarker(
 }
 
 /**
- * D-06: Back marker — the HRV exhale ('out') cue, played through the user's
- * chosen timbre. The exhale counterpart to scheduleNKFrontMarker; see that
- * function's note on HRV congruence and the one-shot (no phaseDurationSec)
- * decay.
+ * Back marker — the HRV exhale ('out') cue, played through the user's chosen
+ * timbre. The exhale counterpart to scheduleNKFrontMarker; see that function's
+ * note on HRV congruence and the one-shot (no phaseDurationSec) decay.
  */
 export function scheduleNKBackMarker(
   audioCtx: AudioContext,
@@ -193,7 +182,7 @@ export function scheduleNKBackMarker(
 }
 
 /**
- * D-07: Soft, barely-there short tone — anchors the OM rhythm in peripheral hearing.
+ * Soft, barely-there short tone — anchors the OM rhythm in peripheral hearing.
  * Short duration (~0.12 s) and low peak gain so it sits quietly under the chant.
  */
 export function scheduleNKTick(
@@ -215,9 +204,9 @@ export function scheduleNKTick(
     try { t.envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
-  // Phase 52 D-09: cancel() — stop oscillator + disconnect chain. Same try/catch
-  // posture as the 'ended' listener above (T-31-04 / AUDIO-04 posture). The
-  // 'ended' listener and cancel() may both fire; both must be safe (idempotent).
+  // cancel() — stop oscillator + disconnect chain. Same try/catch posture as the
+  // 'ended' listener above. The 'ended' listener and cancel() may both fire;
+  // both must be safe (idempotent).
   const cancel = (): void => {
     t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
     try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
@@ -231,12 +220,11 @@ export function scheduleNKTick(
 }
 
 /**
- * Countdown beep — the 3-2-1 lead-in tick shared by the HRV and Navi
- * countdowns. Spike 004 retuned it to "Crisp ping": a perfect fifth above the
- * timbre fundamental (~660 Hz), shorter and snappier than the per-OM tick.
- * A SEPARATE function on its own constants — the countdown beep and the per-OM
- * tick are semantically distinct, so either can change without affecting the
- * other.
+ * Countdown beep — the 3-2-1 lead-in tick shared by the HRV and Navi countdowns.
+ * A perfect fifth above the timbre fundamental (~660 Hz), shorter and snappier
+ * than the per-OM tick. A SEPARATE function on its own constants — the countdown
+ * beep and the per-OM tick are semantically distinct, so either can change without
+ * affecting the other.
  */
 export function scheduleCountdownTick(
   audioCtx: AudioContext,
@@ -257,9 +245,9 @@ export function scheduleCountdownTick(
     try { t.envelope.disconnect() } catch { /* silent */ }
   }, { once: true })
 
-  // Phase 52 D-09: cancel() — stop oscillator + disconnect chain. Same try/catch
-  // posture as the 'ended' listener above (T-31-04 / AUDIO-04 posture). The
-  // 'ended' listener and cancel() may both fire; both must be safe (idempotent).
+  // cancel() — stop oscillator + disconnect chain. Same try/catch posture as the
+  // 'ended' listener above. The 'ended' listener and cancel() may both fire;
+  // both must be safe (idempotent).
   const cancel = (): void => {
     t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
     try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
@@ -273,7 +261,7 @@ export function scheduleCountdownTick(
 }
 
 /**
- * D-08: Resolved low multi-note chord — a clear, restful session/practice-ending
+ * Resolved low multi-note chord — a clear, restful session/practice-ending
  * sound. SHARED: both the Navi Kriya completion and the HRV session completion
  * play this, so the ending sound stays identical across practices and a change
  * applies to both.
@@ -301,7 +289,7 @@ export function scheduleEndChord(
   let lastCleanupAt = 0
   let lastOsc: OscillatorNode | null = null
 
-  // Phase 52 D-09: collect voice nodes for cancel() closure.
+  // Collect voice nodes for cancel() closure.
   const voiceOscs: OscillatorNode[] = []
   const voicePartialGains: GainNode[] = []
   const voiceFilters: BiquadFilterNode[] = []
@@ -336,11 +324,10 @@ export function scheduleEndChord(
     }, { once: true })
   }
 
-  // Phase 52 D-09: cancel() — stop all voice oscillators + disconnect all nodes.
+  // cancel() — stop all voice oscillators + disconnect all nodes.
   // cancelScheduledValues on the master envelope discards pending automation.
-  // Same try/catch posture as the 'ended' listeners above (T-31-04 / AUDIO-04).
-  // The 'ended' listeners and cancel() may both fire on the same voice; both
-  // must be safe (idempotent).
+  // Same try/catch posture as the 'ended' listeners above. The 'ended' listeners
+  // and cancel() may both fire on the same voice; both must be safe (idempotent).
   const cancel = (): void => {
     masterEnvelope.gain.cancelScheduledValues(audioCtx.currentTime)
     for (const osc of voiceOscs) {

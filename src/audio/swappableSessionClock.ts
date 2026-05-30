@@ -13,23 +13,19 @@
 //     and re-subscribes every existing callback on the new source.
 //
 // Invariants:
-//   - D-03 (proxy identity): the returned `clock` object is captured ONCE at
-//     factory-call time. `setSource` never rebuilds `clock` — the same `===`
-//     reference is returned to every consumer for the lifetime of the proxy.
-//   - D-04 (subscription survival): callbacks registered via `onSuspend`,
-//     `onResume`, and `onClose` survive a source swap. `setSource` tears down
-//     the old source's subscriptions and re-subscribes all existing callbacks
-//     against the new source so no iOS-recovery subscription is silently dropped
-//     (preserves `useAudioCues.ts:296-299` subscription pattern across engine
-//     reconstruction).
-//   - D-11 (no proxy-introduced Set growth): `setSource` tears down the OLD
-//     source's subscription for each callback BEFORE re-subscribing against the
-//     new source (bounded Set growth — mirrors the teardown-before-resubscribe
-//     pattern at `useAudioCues.ts:342-350`).
-//   - Revision 2 Blocker #1 honored: the engine-only `notifySuspended` escape
-//     hatch on `createAudioSessionClock`'s augmented return type is NOT exposed
-//     on the proxy. The proxy's return type is plain
-//     `{ clock: SessionClock; setSource(next: SessionClock): void }`.
+//   - Proxy identity: the returned `clock` object is captured ONCE at factory-call
+//     time. `setSource` never rebuilds `clock` — the same `===` reference is
+//     returned to every consumer for the lifetime of the proxy. Engine hooks hold
+//     `clock` in dep arrays; swapping the source does NOT cause a re-render.
+//   - Subscription survival: callbacks registered via `onSuspend`, `onResume`, and
+//     `onClose` survive a source swap. `setSource` tears down the old source's
+//     subscriptions and re-subscribes all existing callbacks against the new source
+//     so no iOS-recovery subscription is silently dropped.
+//   - No proxy-introduced Set growth: `setSource` tears down the OLD source's
+//     subscription for each callback BEFORE re-subscribing against the new source
+//     (bounded Set growth).
+//   - The engine-only `notifySuspended` escape hatch is NOT exposed on the proxy.
+//     The proxy's return type is plain `{ clock: SessionClock; setSource(...): void }`.
 //
 // Zero React imports.
 
@@ -41,7 +37,7 @@ import type { Cue, SessionClock } from './sessionClock'
  * underlying time source (wall → audio AC clock) without changing the
  * externally visible `clock` identity.
  *
- * D-03: `clock` reference NEVER changes across `setSource` calls.
+ * `clock` reference NEVER changes across `setSource` calls.
  */
 export type SwappableSessionClock = {
   clock: SessionClock
@@ -53,12 +49,11 @@ export type SwappableSessionClock = {
  * swapped via `setSource(next)` without changing the externally-visible `clock`
  * reference.
  *
- * D-03: Proxy identity invariant — the same `clock` object (`===`) is returned
- * to consumers for the lifetime of the proxy. Engine hooks (`useSessionEngine`,
- * `useNKEngine`) hold `clock` in dep arrays; swapping the source does NOT cause
- * a re-render or rAF loop restart.
+ * Proxy identity: the same `clock` object (`===`) is returned to consumers for
+ * the lifetime of the proxy. Engine hooks hold `clock` in dep arrays; swapping
+ * the source does NOT cause a re-render or rAF loop restart.
  *
- * D-04: Subscription survival — callbacks registered via `clock.onSuspend`,
+ * Subscription survival: callbacks registered via `clock.onSuspend`,
  * `clock.onResume`, and `clock.onClose` are re-forwarded to every future source
  * on `setSource`. The proxy maintains its own subscriber Sets and three
  * per-channel unsub-tracker Maps so existing subscriptions automatically follow
@@ -92,9 +87,9 @@ export function createSwappableSessionClock(
   const resumeUnsubMap = new Map<() => void, () => void>()
   const closeUnsubMap = new Map<() => void, () => void>()
 
-  // Helper: re-subscribe all callbacks in a proxy Set (and their unsub-tracker
-  // Map) against `next`. Tears down the old source subscription first (D-11
-  // bounded-Set-growth invariant), then re-subscribes on the new source.
+  // Helper: re-subscribe all callbacks in a proxy Set (and their unsub-tracker Map)
+  // against `next`. Tears down the old source subscription first (bounded Set growth
+  // invariant), then re-subscribes on the new source.
   function resubscribeChannel(
     proxySubs: Set<() => void>,
     unsubMap: Map<() => void, () => void>,
@@ -110,16 +105,15 @@ export function createSwappableSessionClock(
     }
   }
 
-  // The stable proxy clock object. Built ONCE at factory-call time; NEVER
-  // rebuilt by setSource (D-03 proxy identity invariant).
+  // The stable proxy clock object. Built ONCE at factory-call time; NEVER rebuilt
+  // by setSource (proxy identity invariant).
   const clock: SessionClock = {
     /**
      * Returns the CURRENT source's `now()` value.
      *
-     * D-04: delegates to whichever source is current at call time.
+     * Delegates to whichever source is current at call time.
      * Before `setSource` is called, this returns the initial source's `now()`.
-     * After `setSource(audioBackedClock)`, it returns the audio clock's
-     * `audioCtx.currentTime`.
+     * After `setSource(audioBackedClock)`, it returns the audio clock's currentTime.
      */
     now(): number {
       return currentSource.now()
@@ -128,9 +122,9 @@ export function createSwappableSessionClock(
     /**
      * Forward `schedule(when, cue)` to the CURRENT source.
      *
-     * D-04: after `setSource(audioBackedClock)`, cues are scheduled against
-     * the audio clock's scheduler. Before the swap, delegates to the initial
-     * source (typically a no-op wall clock).
+     * After `setSource(audioBackedClock)`, cues are scheduled against the audio
+     * clock's scheduler. Before the swap, delegates to the initial source
+     * (typically a no-op wall clock).
      */
     schedule(when: number, cue: Cue): void {
       currentSource.schedule(when, cue)
@@ -139,11 +133,10 @@ export function createSwappableSessionClock(
     /**
      * Subscribe `cb` to suspend transitions.
      *
-     * D-04: registers `cb` in the proxy's `proxySuspendSubs` Set AND against the
-     * CURRENT source. On future `setSource` calls, `cb` is automatically
-     * re-forwarded to the new source. Returns an idempotent unsubscribe function
-     * that removes `cb` from the proxy Set and tears down the latest underlying
-     * source subscription.
+     * Registers `cb` in the proxy's `proxySuspendSubs` Set AND against the CURRENT
+     * source. On future `setSource` calls, `cb` is automatically re-forwarded to the
+     * new source. Returns an idempotent unsubscribe function that removes `cb` from
+     * the proxy Set and tears down the latest underlying source subscription.
      */
     onSuspend(cb: () => void): () => void {
       proxySuspendSubs.add(cb)
@@ -164,8 +157,8 @@ export function createSwappableSessionClock(
     /**
      * Subscribe `cb` to resume transitions.
      *
-     * D-04: same subscription-survival shape as `onSuspend`. Returns an
-     * idempotent unsubscribe function.
+     * Same subscription-survival shape as `onSuspend`. Returns an idempotent
+     * unsubscribe function.
      */
     onResume(cb: () => void): () => void {
       proxyResumeSubs.add(cb)
@@ -186,13 +179,12 @@ export function createSwappableSessionClock(
     /**
      * Subscribe `cb` to close transitions.
      *
-     * D-04: same subscription-survival shape as `onSuspend`. Returns an
-     * idempotent unsubscribe function.
+     * Same subscription-survival shape as `onSuspend`. Returns an idempotent
+     * unsubscribe function.
      *
-     * Revision 1 Blocker #1 (Phase 50 preserved): the close subscriber is the
-     * mechanism through which `useAudioCues.ts:164-165` sets audio status to
-     * `'unavailable'`. The proxy forwards it to the current (and future) source
-     * so the `setAudioStatus('unavailable')` call survives an engine swap.
+     * The close subscriber is the mechanism through which useAudioCues sets audio
+     * status to `'unavailable'`. The proxy forwards it to the current (and future)
+     * source so the `setAudioStatus('unavailable')` call survives an engine swap.
      */
     onClose(cb: () => void): () => void {
       proxyCloseSubs.add(cb)
@@ -214,12 +206,11 @@ export function createSwappableSessionClock(
   /**
    * Swap the internal source to `next`.
    *
-   * D-03: `clock` identity is UNCHANGED — only `currentSource` is updated.
-   * D-04: every existing proxy subscriber is re-forwarded to `next`. Old source
-   *   subscriptions are torn down before new ones are registered (D-11 bounded
-   *   Set growth, mirrors `useAudioCues.ts:342-350`).
-   * D-11: tear-down-then-subscribe ordering ensures underlying Sets shrink
-   *   before growing (no observer-count growth across swaps).
+   * `clock` identity is UNCHANGED — only `currentSource` is updated.
+   * Every existing proxy subscriber is re-forwarded to `next`. Old source
+   * subscriptions are torn down before new ones are registered (bounded Set growth).
+   * Tear-down-then-subscribe ordering ensures underlying Sets shrink before growing
+   * (no observer-count growth across swaps).
    *
    * @param next - The new `SessionClock` instance to delegate to.
    */

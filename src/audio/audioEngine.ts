@@ -1,23 +1,23 @@
-// Stateful audio service that composes the pure cueSynth module from Plan 01
-// into a lifecycle-aware engine. Zero React imports.
+// Stateful audio service composing the pure cueSynth module into a
+// lifecycle-aware engine. Zero React imports.
 //
 // Owns:
-//   - The single AudioContext (D-09: created from a user-gesture chain only).
-//   - A single master GainNode all cues route through; mute ramps it (Phase 53).
+//   - The single AudioContext (created from a user-gesture chain only).
+//   - A single master GainNode all cues route through; mute ramps it.
 //   - The lead-in scheduling primitive (3 ticks at +0/+1/+2 s + first In cue at +3 s).
 //   - The boundary-driven scheduleNextCue dispatch (in → scheduleInCue, out → scheduleOutCue).
-//   - close(): idempotent teardown that releases the system audio resources (D-11).
+//   - close(): idempotent teardown that releases the system audio resources.
 //
-// Mute semantics (Phase 53 — master gain):
+// Mute semantics (master gain):
 //   - All cues route through a single master GainNode (masterGain → destination).
 //   - setMuted(true): linear-ramps masterGain to 0 over 0.05 s (Safari-safe anchor
 //     via cancelAndHoldAtTime, else cancelScheduledValues + setValueAtTime).
 //   - setMuted(false): linear-ramps masterGain back to 1 over 0.05 s — INSTANT, with
 //     no boundary wait. Unmute lands on whatever cue is currently playing.
 //   - Cues KEEP being scheduled while muted (they play silently through gain=0), which
-//     is what makes unmute instant — there is no "unmute waits for boundary" anymore.
+//     is what makes unmute instant.
 //
-// AC failure (D-10):
+// AC failure:
 //   - createAudioEngine throws (rejects) when `new AudioContext()` throws. The caller
 //     (useAudioCues) catches and falls back to visuals-only mode.
 
@@ -35,8 +35,8 @@ import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
 
-// ABSTR-02: re-export SessionClock to satisfy the "audioEngine.ts exports the SessionClock interface" contract. Implementation lives in ./sessionClock per Plan 50-01.
-// The augmented factory return type `SessionClock & { notifySuspended(): void }` is NOT re-exported. notifySuspended is an engine-only escape hatch — it stays scoped to createAudioEngine's internal closure (revision 2 Blocker #1).
+// Re-export SessionClock so consumers import it from audioEngine (the public engine boundary).
+// The augmented factory return type `SessionClock & { notifySuspended(): void }` is NOT re-exported — notifySuspended is an engine-only escape hatch scoped to createAudioEngine's internal closure.
 export type { SessionClock } from './sessionClock'
 
 export interface AudioEngine {
@@ -46,187 +46,152 @@ export interface AudioEngine {
   scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null
   /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue
    *  at the given audioTime (always — muted cues route silently through masterGain).
-   *  `phaseDurationSec` is the length of the
-   *  UPCOMING phase (in / out) in seconds; cueSynth uses it to stretch the bowl
-   *  decay envelope so the cue stays audible through the entire phase at low BPM
-   *  (260510-tc9 Bug 2). The boundary scheduler in App.tsx derives this from
-   *  plan.inhaleSec / plan.exhaleSec (Phase 50-02 ms→sec cascade). */
+   *  `phaseDurationSec` is the length of the UPCOMING phase (in / out) in seconds;
+   *  cueSynth uses it to stretch the bowl decay envelope so the cue stays audible
+   *  through the entire phase at low BPM. The boundary scheduler in App.tsx derives
+   *  this from plan.inhaleSec / plan.exhaleSec. */
   scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
   /** Schedule the shared session-ending chord on this engine's AudioContext —
    *  the same sound the Navi Kriya completion plays. No-op when closed (muted cues
    *  route silently through masterGain). close() defers teardown until the chord rings. */
   playEndChord(): void
-  /** Toggle mute. Phase 53: linear-ramps the master gain to 0 (mute) or 1 (unmute)
+  /** Toggle mute. Linear-ramps the master gain to 0 (mute) or 1 (unmute)
    *  over 0.05 s. Instant; unmute lands on whatever cue is currently playing. */
   setMuted(muted: boolean): void
   /** Current mute state (mirrors what was last passed to setMuted). */
   readonly muted: boolean
   /** Capture the audioCtx.currentTime at this instant — App.tsx uses this as the t=0 anchor co-anchored with session.start(). */
   now(): number
-  /** Close the AudioContext. Idempotent. D-11 anchor. */
+  /** Close the AudioContext. Idempotent. Releases system audio resources. */
   close(): Promise<void>
   /** Resume the AudioContext if it is currently suspended (e.g., after iOS lock-screen auto-suspend).
    *  Idempotent: calling on an already-running AC resolves silently. Short-circuits on closed.
-   *  Silently absorbs rejection (D-09). Used by useAudioCues' visibilitychange listener (Phase 5.1 D-01..D-09). */
+   *  Silently absorbs rejection. Used by useAudioCues' visibilitychange listener. */
   resume(): Promise<void>
-  /** Plan 06 polish: live read of audioCtx.state. The hook's public resume() reads this AFTER
+  /** Live read of audioCtx.state. The hook's public resume() reads this AFTER
    *  `await engine.resume()` to decide whether reconstruction is required — React's audioStatus
    *  is closed-over by useCallback and may be stale within the same invocation. Reading
    *  audioCtx.state directly is the live truth. */
   readonly state: AudioContextState | 'interrupted'
-  /** Phase 52 D-04: dispatch a caller-supplied list of cues into the WebAudio scheduler.
-   *  The caller (Plan 03's walkFutureCues helper or Plan 04's force-top-up on onResume)
-   *  pre-computes the cue list; the engine just dispatches via the internal schedule()
-   *  switch. Respects the closed guard (matching scheduleNextCue posture) and applies
-   *  the callee-side SAFE_LEAD_SEC clamp on each cue's audioTime. Calls pruneExpiredCues()
-   *  before dispatching to keep activeCues bounded. */
+  /** Dispatch a caller-supplied list of cues into the WebAudio scheduler.
+   *  The caller pre-computes the cue list; the engine dispatches via the internal schedule()
+   *  switch. Respects the closed guard and applies the callee-side SAFE_LEAD_SEC clamp
+   *  on each cue's audioTime. Calls pruneExpiredCues() before dispatching to keep
+   *  activeCues bounded. */
   topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void
-  /** Phase 52 D-09 + D-10: iterate activeCues snapshot, call cancel() on every cue
-   *  with scheduledAt > audioCtx.currentTime, and remove those cues from activeCues.
-   *  In-flight cues (scheduledAt <= now) are left to ring out naturally.
-   *  Uses snapshot-iterate-then-mutate (AH-WR-07) so Set mutation during iteration is safe.
-   *  Still used by the caller's cancel-then-reschedule on each top-up. No-op when closed. */
+  /** Iterate activeCues snapshot, call cancel() on every cue with scheduledAt >
+   *  audioCtx.currentTime, and remove those cues from activeCues. In-flight cues
+   *  (scheduledAt <= now) are left to ring out naturally. Snapshot-iterate-then-mutate
+   *  so Set mutation during iteration is safe. No-op when closed. */
   cancelFutureCues(): void
-  /** Phase 50 D-11 + revision 1 Blocker #1 / ABSTR-01: SessionClock surface for external
-   *  subscribers (onSuspend / onResume / onClose) and time reads (now / schedule). The
-   *  clock is constructed once at engine construction time (see createAudioEngine).
+  /** SessionClock surface for external subscribers (onSuspend / onResume / onClose)
+   *  and time reads (now / schedule). Constructed once at engine construction time.
    *
-   *  Revision 2 Blocker #1: the engine's internal reference is typed as the AUGMENTED factory
-   *  return type `SessionClock & { notifySuspended(): void }` so the engine can invoke the
+   *  The engine's internal reference is typed as the AUGMENTED factory return type
+   *  `SessionClock & { notifySuspended(): void }` so the engine can invoke the
    *  synthetic-suspend escape hatch from the resume() InvalidStateError catch block —
-   *  preserving the iOS Safari recovery path (Plan 06 D-38) byte-identically. The public
-   *  `engine.clock` member is widened to `SessionClock` so external consumers cannot see
-   *  `notifySuspended`. The escape hatch stays scoped to createAudioEngine's internal closure. */
+   *  preserving the iOS Safari recovery path. The public `engine.clock` member is widened
+   *  to `SessionClock` so external consumers cannot see `notifySuspended`. */
   readonly clock: SessionClock
 }
 
 export interface AudioEngineOptions {
-  // Phase 50 D-11 + revision 1 Blocker #1: the prior state-change callback option is
-  // removed. External subscribers now consume `engine.clock.onSuspend(cb)` /
+  // External subscribers consume `engine.clock.onSuspend(cb)` /
   // `engine.clock.onResume(cb)` / `engine.clock.onClose(cb)`. The clock owns the single AC
-  // statechange listener (added inside createAudioSessionClock per Plan 50-01) and fans
-  // suspend/resume/close to subscribers. The iOS Safari InvalidStateError synthetic-suspend
-  // path (Plan 06 D-38) is preserved via the engine-only escape hatch on the augmented
-  // factory return type — see resume()'s catch block below and revision 2 Blocker #1.
-  /** Phase 18 D-08: timbre captured at session start; engine never re-reads prefs.
+  // statechange listener and fans suspend/resume/close to subscribers. The iOS Safari
+  // InvalidStateError synthetic-suspend path is preserved via the engine-only escape hatch
+  // on the augmented factory return type — see resume()'s catch block.
+  /** Timbre captured at session start; engine never re-reads prefs.
    *  Caller passes the snapshot from useAudioCues.start(plan, timbre). No setter
    *  is exposed — capture-at-construction is the only mutation path. */
   timbre: TimbreId
-  /** Phase 49.1 D-07: when false, skip silent-loop <audio> element construction
-   *  entirely — no `new Audio(...)`, no `.play()` call, no teardown branch needed
-   *  (existing null-guards in close() and the resume-reject catch already short-circuit
-   *  when construction was skipped).
-   *  When true or undefined, behavior is identical to Phase 49 v3 (silent-loop active).
-   *  Undefined coerces to true — keeps any pre-Phase-49.1 caller working unchanged
+  /** When false, skip silent-loop <audio> element construction entirely — no
+   *  `new Audio(...)`, no `.play()` call, no teardown branch needed (null-guards in
+   *  close() and the resume-reject catch already short-circuit when skipped).
+   *  When true or undefined, the silent-loop element is constructed.
+   *  Undefined coerces to true — omitting the field behaves identically to true
    *  (gate predicate is `!== false`, NOT `=== true`). */
   bypassSilentMode?: boolean
 }
 
-// Phase 53: master-gain mute ramp duration (seconds).
+// Master-gain mute ramp duration (seconds).
 const MUTE_RAMP_SEC = 0.05
 
-// Phase 49 D-03: silent-loop WAV data URL used to coerce iOS Safari's audio
-// session category from "ambient" to "playback" so cue audio routes through
-// the device speaker even when the silent switch is ON and no headphones are
-// connected. Format: 8 kHz mono 8-bit PCM, ~25 ms duration, ~200 samples
-// alternating between 127 and 128 — near-zero amplitude but a REAL decodable
-// track (NOT digital silence — some iOS Safari versions reject empty/silent
-// tracks for session coercion). See 49-CONTEXT.md D-03 and the canonical spec
-// at .planning/todos/2026-05-27-ios-speaker-route-audio-element-fix.md.
-// Constant is file-local (D-03 + 49-PATTERNS.md Pattern A — Task 2 stubs
-// `Audio` globally and does not need to import this).
-// Device-validation revision (Phase 49 Plan 02, 2026-05-27):
-//   v1 (Plan 01 initial): 8-bit / 8 kHz / 200 samples, alternating 127/128 — a
-//     full-amplitude 4 kHz square wave looping every 25 ms. Audible on iOS as a
-//     continuous loud buzz.
-//   v2 (Plan 02 first revision): 8-bit / 8 kHz / 200 samples, single ±1 LSB sine
-//     cycle centered at 128. Bundle footprint preserved. Less harsh, but still
-//     audible on iOS at master volume 0.0001 — different sound, not absent.
-//   v3 (this revision): the root cause is that iOS Safari ignores the
-//     HTMLMediaElement.volume attribute entirely (long-standing iOS WebKit
-//     behavior — volume is hardware-controlled). The v1/v2 element was playing
-//     at full system volume on iPhone the whole time. Attenuation must therefore
-//     be encoded into the PCM samples themselves, not via .volume. Switched to
-//     16-bit signed / 22050 Hz / 200 samples (~9 ms), generated from a single
-//     low-amplitude sine cycle that — once rounded to integer LSBs at ±1
-//     amplitude — collapses to a near-DC stepped pulse pair (~17 leading zeros,
-//     ~67 samples of +1, ~33 zero-crossing samples, ~66 samples of -1, ~17
-//     trailing zeros). Peak amplitude is 1/32768 ≈ -90 dBFS — 42 dB quieter
-//     than v2's -48 dBFS 8-bit floor — and inaudible on iPhone speakers at
-//     full system volume. Loop-continuous (sample 0 == sample 199 == 0, no
-//     boundary clicks). Not pure silence (contains 1 and -1 samples), so iOS
-//     Safari still treats it as a "real" track per D-05. File is 444 bytes /
-//     592 base64 chars (vs v1/v2's 244 / 480) — negligible bundle increase.
-//   SILENT_LOOP_VOLUME stays at 0.0001 — it's a no-op on iOS but still attenuates
-//   on Android Chrome and desktop browsers (defense in depth).
-//   See .planning/phases/49-ios-speaker-route-fix/49-02-DEVICE-VALIDATION.md.
+// Silent-loop WAV data URL: coerces iOS Safari's audio session category from
+// "ambient" to "playback" so cue audio routes through the device speaker even
+// when the silent switch is ON and no headphones are connected.
+//
+// Format: 16-bit signed / 22050 Hz / 200 samples (~9 ms), near-DC stepped
+// pulse. Peak amplitude is 1/32768 ≈ -90 dBFS — inaudible on iPhone speakers
+// at full system volume. Loop-continuous (sample 0 == sample 199 == 0, no
+// boundary clicks). NOT pure digital silence — iOS Safari rejects fully-silent
+// tracks for session coercion; this track contains ±1 samples so the browser
+// treats it as a real audio source.
+//
+// SILENT_LOOP_VOLUME stays at 0.0001 — a no-op on iOS (hardware-controlled
+// volume) but attenuates on Android Chrome and desktop (defense in depth).
+// iOS Safari ignores the HTMLMediaElement.volume attribute entirely; attenuation
+// is encoded into the PCM samples themselves, not via .volume.
 const SILENT_WAV_DATA_URL =
   'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YZABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-// Phase 49 D-05: near-zero non-zero. NOT coupled to MIN_GAIN_VALUE — separate invariants (49-PATTERNS.md Pattern A).
+// Near-zero non-zero. NOT coupled to MIN_GAIN_VALUE — separate invariants.
 const SILENT_LOOP_VOLUME = 0.0001
 
 // Lead-in: 3 ticks one second apart, then the first In cue at the start of the breath cycle.
-// WR-04: exported as the single source of truth — App.tsx and useAudioCues.ts import these
-// instead of redefining the same numbers locally (which silently drifted before).
+// Exported as the single source of truth — App.tsx and useAudioCues.ts import these
+// instead of redefining the same numbers locally.
 export const LEAD_IN_TICK_INTERVAL_SEC = 1.0
 export const LEAD_IN_DURATION_SEC = 3.0
 export const LEAD_IN_TICK_INTERVAL_MS = LEAD_IN_TICK_INTERVAL_SEC * 1000
 export const LEAD_IN_DURATION_MS = LEAD_IN_DURATION_SEC * 1000
 /** Minimum scheduling lead ahead of audioCtx.currentTime for any cue dispatch.
- *  AUDIO-02 D-03: exported as single source of truth — App.tsx imports this symbol for the
- *  caller-side clamp (Plan 02); audioEngine.scheduleNextCue uses it for the callee-side clamp.
+ *  Exported as single source of truth — App.tsx imports this symbol for the caller-side
+ *  clamp; audioEngine.scheduleNextCue uses it for the callee-side clamp.
  *  No duplicated literals; both clamp sites derive from this constant. */
 export const SAFE_LEAD_SEC = 0.005
 
-/** Phase 52 D-02: lookahead window in seconds.
- *  Locked at 6 s — the middle of the ROADMAP 5–10 s band. At any BPM ≥ 3 the
- *  seconds budget alone keeps ≥ 1 cue queued through a brief tab switch; the
- *  LOOKAHEAD_MIN_CUES floor handles the low-BPM (≤ 3 BPM) tail. */
+/** Lookahead window in seconds. Locked at 6 s — the middle of the 5–10 s recommended
+ *  band. At any BPM ≥ 3 the seconds budget alone keeps ≥ 1 cue queued through a brief
+ *  tab switch; the LOOKAHEAD_MIN_CUES floor handles the low-BPM (≤ 3 BPM) tail. */
 export const LOOKAHEAD_WINDOW_SEC = 6 as const
 
-/** Phase 52 D-03: minimum cue queue depth regardless of BPM.
- *  Always keeps the next cue + cue-after queued (next + one-ahead). At 1 BPM
- *  (60 s/breath) the floor pre-schedules ~120 s of audio; cancel cost on a
- *  settings change = at most 2 oscillator stops + node disconnects. */
+/** Minimum cue queue depth regardless of BPM. Always keeps the next cue + cue-after
+ *  queued (next + one-ahead). At 1 BPM (60 s/breath) the floor pre-schedules ~120 s
+ *  of audio; cancel cost on a settings change = at most 2 oscillator stops + node
+ *  disconnects. */
 export const LOOKAHEAD_MIN_CUES = 2 as const
 
-/** Create a new AudioContext + engine. MUST be called from a user-gesture path (D-09).
- *  Throws (rejects) if AudioContext construction fails (D-10 caller branch). */
+/** Create a new AudioContext + engine. MUST be called from a user-gesture path.
+ *  Throws (rejects) if AudioContext construction fails — caller handles the fallback. */
 export async function createAudioEngine(opts: AudioEngineOptions): Promise<AudioEngine> {
-  // D-09: AudioContext is constructed here, which is invoked synchronously from the
-  // Start session click handler in App.tsx (Plan 04). The browser autoplay policy MUST
-  // see a fresh user-gesture chain or AC will start in 'suspended'.
+  // AudioContext is constructed here, invoked synchronously from the Start session click
+  // handler. The browser autoplay policy MUST see a fresh user-gesture chain or the AC
+  // will start in 'suspended'.
   const audioCtx = new AudioContext()
 
-  // Phase 53: single master GainNode all cues route through. mute ramps it to 0,
+  // Single master GainNode all cues route through. mute ramps it to 0,
   // unmute ramps it to 1 (over MUTE_RAMP_SEC). Cues schedule silently while muted.
   const masterGain = audioCtx.createGain()
   masterGain.gain.value = 1
   masterGain.connect(audioCtx.destination)
 
-  // Phase 50 D-07: wrap the AC. D-11 + revision 1 Blocker #1: the clock owns the audioCtx
-  // 'statechange' listener and fans suspend/resume/close to subscribers via the
-  // SessionClock interface.
-  //
-  // Revision 2 Warning #6 + revision 1 Blocker #2 (Plan 50-06): the clock construction is now
-  // placed AFTER the internal `schedule` function is defined (the `const clock = ...` line
-  // appears below the schedule fn). This places the construction AFTER the schedule fn is in
-  // scope so `scheduleImpl` can be plumbed at construction time (no post-hoc readonly
-  // reassignment), and BEFORE the `engine` object literal that references `clock`. Plan 50-04
-  // placed the construction here (immediately after `new AudioContext()`) as an intermediate
-  // state — both positions pass the per-commit green-gate; the move is observationally
-  // equivalent (listener attachment, subscriber Sets, notifySuspended() escape hatch are
-  // independent of the construction-site line number).
+  // The clock wraps the AC's 'statechange' listener and fans suspend/resume/close
+  // to subscribers via the SessionClock interface. Clock construction is placed AFTER
+  // the internal `schedule` function is defined so `scheduleImpl` can be plumbed at
+  // construction time (no post-hoc readonly reassignment), and BEFORE the `engine`
+  // object literal that references `clock`.
 
-  // Phase 49 D-01/D-04/D-06: silent looping <audio> element constructed inside the engine,
-  // on the sync gesture head, BEFORE any asynchronous suspension. Coerces iOS audio session
-  // from 'ambient' to 'playback'. See 49-CONTEXT.md.
+  // Silent looping <audio> element constructed SYNCHRONOUSLY on the gesture head,
+  // BEFORE any await. This ordering is mandatory: iOS Safari ties AudioContext
+  // construction and HTMLAudioElement construction to the same user-gesture token.
+  // Constructing either after the first await breaks the gesture chain and the audio
+  // session fails to coerce from 'ambient' to 'playback'. Do NOT move these lines
+  // past the `await audioCtx.resume()` below.
   //
-  // Phase 49.1 D-07: gate on opts.bypassSilentMode. The predicate is `!== false` (NOT `=== true`)
-  // so undefined coerces to "construct" — any pre-49.1 caller that omits the field gets Phase 49
-  // v3 behavior unchanged. When bypassSilentMode === false, silentLoopElement stays null and the
-  // existing null-guards in close() and the resume-reject catch both short-circuit cleanly —
-  // no new teardown branches needed per D-07 + PATTERNS.md Pattern C.
+  // Gate: predicate is `!== false` (NOT `=== true`) so undefined coerces to
+  // "construct" — callers that omit the field get the silent-loop element.
+  // When bypassSilentMode === false, silentLoopElement stays null and the existing
+  // null-guards in close() and the resume-reject catch short-circuit cleanly.
   let silentLoopElement: HTMLAudioElement | null = null
   if (opts.bypassSilentMode !== false) {
     silentLoopElement = new Audio(SILENT_WAV_DATA_URL)
@@ -238,11 +203,10 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     silentLoopElement.loop = true
     silentLoopElement.muted = false
     silentLoopElement.volume = SILENT_LOOP_VOLUME
-    // D-09 silent-absorb: a .play() rejection (autoplay policy regression, codec issue) does NOT
-    // propagate. Session continues; iOS silent-switch users simply do not get speaker routing —
-    // no worse than pre-Phase-49. Critically different from the AC resume() reject below at
-    // L139-143, which DOES re-throw — the silent loop is sub-essential infrastructure
-    // (49-PATTERNS.md "Silent-absorb on resource-acquisition failures").
+    // A .play() rejection (autoplay policy regression, codec issue) does NOT propagate.
+    // Session continues; iOS silent-switch users simply do not get speaker routing —
+    // no worse than omitting the element entirely. The AC resume() reject below DOES
+    // re-throw — the silent loop is sub-essential infrastructure.
     //
     // Optional chain: per HTMLMediaElement spec play() returns a Promise<void>, but very old
     // browsers (Safari < 11) and the jsdom test environment return undefined. The chain absorbs
@@ -253,15 +217,13 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
   // Chrome can occasionally hand back an AC in 'suspended' even from a gesture chain
   // (race conditions during page bootstrap); resume immediately so currentTime advances.
-  // WR-06: if resume() rejects (e.g., the user agent vetoed autoplay between
-  // construction and the resume attempt), close the AC before re-throwing — otherwise
-  // the AC leaks (browsers cap concurrent ACs ~6 in Chrome).
-  // CR-01 (Phase 49 REVIEW): the silent-loop element was constructed above on the
-  // gesture head (D-04/D-06 invariant — cannot move it past the await), so this catch
-  // is ALSO the only reachable teardown path for the element when resume() rejects —
-  // engine.close() is never reached because we never return an engine handle. Tear
-  // down the element symmetrically with engine.close()'s D-08 sequence (pause →
-  // removeAttribute('src') → drop reference) BEFORE closing the AC.
+  // If resume() rejects (e.g., the user agent vetoed autoplay between construction and
+  // the resume attempt), close the AC before re-throwing — otherwise the AC leaks
+  // (browsers cap concurrent ACs at ~6).
+  // The silent-loop element was constructed above on the gesture head and cannot be
+  // reached through engine.close() if we never return an engine handle. When resume()
+  // rejects, tear down the element symmetrically (pause → removeAttribute('src') →
+  // drop reference) BEFORE closing the AC.
   if (audioCtx.state === 'suspended') {
     try {
       await audioCtx.resume()
@@ -276,31 +238,28 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     }
   }
 
-  // AudioContextState widened to include WebKit's 'interrupted' extension
-  // (D-37 / Phase 5.1). The cast documents intent even if the TS DOM lib does
-  // not require it; centralising it here keeps the eslint-disable in one place
-  // instead of repeated at every read site.
+  // AudioContextState widened to include WebKit's 'interrupted' extension (iOS Safari).
+  // The cast documents intent; centralising it here keeps the eslint-disable in one
+  // place instead of repeated at every read site.
   type ExtendedAudioContextState = AudioContextState | 'interrupted'
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const readState = (): ExtendedAudioContextState => audioCtx.state as ExtendedAudioContextState
 
-  // Revision 1 Blocker #3 (committed path): the prior local statechange listener was DELETED.
-  // The clock owns the single AC statechange listener (added by createAudioSessionClock per
-  // Plan 50-01) and fans suspend/resume/close to external subscribers (useAudioCues consumes
-  // them via engine.clock.on*). Engine internals do not observe statechange events directly;
-  // they act in their own synchronous lifecycle methods (close(), resume()). The
-  // InvalidStateError synthetic-suspend path inside resume()'s catch uses the engine-only
-  // escape hatch (revision 2 Blocker #1) — it does NOT need its own listener.
+  // The clock owns the single AC statechange listener and fans suspend/resume/close
+  // to external subscribers (useAudioCues consumes them via engine.clock.on*). Engine
+  // internals do not observe statechange events directly; they act in their own
+  // synchronous lifecycle methods (close(), resume()). The InvalidStateError
+  // synthetic-suspend path inside resume()'s catch uses the engine-only escape hatch
+  // on the augmented clock type — it does NOT need its own listener.
 
-  // WR-08: track ALL in-flight cues (lead-in ticks + In/Out bowls), not just the
-  // most recent one. Mute mid-lead-in must silence the remaining ticks too —
-  // previously only the bowl cue stored as `activeCue` was faded, leaving ticks
-  // 2 and 3 audible after the user clicked Mute.
+  // Track ALL in-flight cues (lead-in ticks + In/Out bowls). Mute mid-lead-in must
+  // silence the remaining ticks too — only tracking one handle would leave the other
+  // ticks audible after the user clicks Mute.
   const activeCues = new Set<CueHandle>()
-  let muted = false // D-07: default false (audio ON on first visit)
-  // Phase 18 D-08: capture timbre once at construction. Immutable for this
-  // engine's lifetime — no setter exposed. scheduleLeadIn + scheduleNextCue
-  // forward this value to scheduleInCueForTimbre / scheduleOutCueForTimbre.
+  let muted = false // default false (audio ON on first visit)
+  // Capture timbre once at construction. Immutable for this engine's lifetime —
+  // no setter exposed. scheduleLeadIn + scheduleNextCue forward this value to
+  // scheduleInCueForTimbre / scheduleOutCueForTimbre.
   const sessionTimbre: TimbreId = opts.timbre
   let closed = false
   // Audio-clock time at which the end-chord tail finishes. close() defers the
@@ -320,7 +279,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // avoid threading a per-handle 'done' flag through every schedule* primitive.
   function pruneExpiredCues(): void {
     const now = audioCtx.currentTime
-    // AH-WR-07: iterate a snapshot, not the live Set. Deleting from a Set during
+    // Iterate a snapshot, not the live Set. Deleting from a Set during
     // a for...of over that same Set is defined for the current element but
     // fragile, and outright unsafe if this loop body is ever extended to add().
     // The spread copy decouples iteration from mutation.
@@ -329,21 +288,17 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     }
   }
 
-  // Phase 50 D-04 / D-05: internal dispatch from a typed Cue value to the per-cue
-  // primitives in cueSynth.ts / nkCueSynth.ts. The public methods (scheduleLeadIn,
+  // Internal dispatch from a typed Cue value to the per-cue primitives in
+  // cueSynth.ts / nkCueSynth.ts. The public methods (scheduleLeadIn,
   // scheduleNextCue, playEndChord) are thin facades over this function. The closed
   // guard lives in the facades (so each facade can choose its own behavior, e.g.,
-  // scheduleNextCue clamps the time, scheduleLeadIn returns firstInCueTime). Phase 53:
-  // there is NO muted guard — cues always schedule and route through masterGain (silent
-  // at gain=0). This function assumes the facade has already gated closed; do NOT add
-  // closed/muted checks here.
+  // scheduleNextCue clamps the time, scheduleLeadIn returns firstInCueTime).
+  // There is NO muted guard — cues always schedule and route through masterGain
+  // (silent at gain=0). This function assumes the facade has already gated closed;
+  // do NOT add closed/muted checks here.
   //
-  // The Cue discriminated union is closed (Plan 50-01 D-04) — every kind has a
-  // switch arm. TypeScript exhaustiveness enforces this at compile time. NK kinds
-  // are wired but currently unused at Phase 50 (NK paths in useNaviKriyaAudio still
-  // call the per-cue scheduler primitives directly per Plan 50-03; D-05's NK
-  // migration through schedule() is documented as available but not exercised
-  // until Phase 52 lookahead).
+  // The Cue discriminated union is closed — every kind has a switch arm. TypeScript
+  // exhaustiveness enforces this at compile time.
   function schedule(when: number, cue: Cue): void {
     switch (cue.kind) {
       case 'lead-in-tick':
@@ -353,8 +308,8 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         activeCues.add(scheduleCountdownTick(audioCtx, when, masterGain, sessionTimbre))
         return
       // cue.timbre is in the type union for callers that pre-schedule cues without
-      // engine context (Phase 52 lookahead). At the engine layer, sessionTimbre is
-      // the source of truth per Phase 18 D-08 — we ignore cue.timbre here.
+      // engine context. At the engine layer, sessionTimbre (captured at construction)
+      // is the source of truth — we ignore cue.timbre here.
       case 'in':
         activeCues.add(scheduleInCueForTimbre(audioCtx, when, masterGain, sessionTimbre, cue.phaseDurationSec))
         return
@@ -382,54 +337,36 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     }
   }
 
-  // Phase 50 D-07: wrap the AC. D-11 + revision 1 Blocker #1: the clock owns the
-  // audioCtx 'statechange' listener and fans suspend/resume/close to subscribers.
+  // The clock wraps the AC. scheduleImpl is plumbed at construction (NOT post-hoc
+  // reassignment). The local clock reference is typed as the AUGMENTED factory return
+  // type `SessionClock & { notifySuspended(): void }` so the InvalidStateError catch
+  // in resume() can call clock.notifySuspended(). The engine.clock public member is
+  // widened to SessionClock at the assignment boundary — external consumers cannot
+  // call notifySuspended.
   //
-  // Revision 1 Blocker #2: scheduleImpl plumbed at construction (NOT post-hoc
-  // reassignment). The clock's schedule() forwards to the engine's internal
-  // schedule function. No readonly violation — the clock object's members are
-  // set once at construction.
-  //
-  // Revision 2 Blocker #1: the local clock reference is typed as the AUGMENTED
-  // factory return type `SessionClock & { notifySuspended(): void }` so the L445
-  // InvalidStateError catch (already in place from Plan 50-04) can call
-  // clock.notifySuspended(). The engine.clock public member is widened to
-  // SessionClock at the assignment boundary — external consumers cannot call
-  // notifySuspended.
-  //
-  // Revision 2 Warning #6: this construction site (post-schedule-function) is the
-  // FINAL position for the clock. Plan 50-04 placed it at L177 as intermediate;
-  // both positions pass the per-commit green-gate. Moving the construction line
-  // does NOT change observable behavior (listener attachment, subscribers Set
-  // lifecycle, notifySuspended escape hatch are independent of the construction
-  // site).
-  //
-  // Revision 1 Warning #12: this is THE engine clock (HRV AC); useNaviKriyaAudio
-  // constructs its own SEPARATE clock for the NK AC — they MUST NOT be conflated.
+  // This is the HRV AC clock; useNaviKriyaAudio constructs its own SEPARATE clock
+  // for the NK AC — they MUST NOT be conflated.
   const clock: SessionClock & { notifySuspended(): void } = createAudioSessionClock(audioCtx, schedule)
 
   const engine: AudioEngine = {
     scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null {
       const firstInCueTime = startAudioTime + LEAD_IN_DURATION_SEC
-      if (closed) return null // AUDIO-03: closed engine has no meaningful projection.
-      // Phase 53: cues schedule even while muted (they play silently through masterGain=0).
+      if (closed) return null // closed engine has no meaningful projection.
+      // Cues schedule even while muted (they play silently through masterGain=0).
 
-      // Plan 50-06 D-05: facade over the internal schedule(when, cue) dispatch.
-      // 3 ticks at +0/+1/+2 (D-14 lead-in) + first In cue at +3. Track each so
-      // mid-lead-in mute can fade them out (WR-08) — schedule()'s switch arms
-      // do the activeCues.add bookkeeping. Consistency: the countdown beep is
-      // the shared scheduleCountdownTick — the same beep the Navi Kriya
-      // countdown uses — and honours the session timbre.
+      // Facade over the internal schedule(when, cue) dispatch.
+      // 3 ticks at +0/+1/+2 + first In cue at +3. Track each so mid-lead-in mute
+      // can fade them out — schedule()'s switch arms do the activeCues.add
+      // bookkeeping. The countdown beep is the shared scheduleCountdownTick —
+      // the same beep the Navi Kriya countdown uses — and honours the session timbre.
       schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
-      // First In cue at +3 (numerals replaced by the In phase label at t=0; bowl strikes).
-      // 260510-tc9 Bug 2: pass the upcoming In-phase duration so the decay envelope
-      // stretches with the phase length at low BPM (App.tsx boundary scheduler does
-      // the same for every subsequent cue). Phase 50-02 (ms→sec cascade): plan.inhaleSec
-      // is already seconds-shaped at the source — no runtime `/1000` conversion.
-      // cue.timbre carries sessionTimbre for type-completeness; the engine ignores it
-      // and uses its closed-over sessionTimbre per Phase 18 D-08.
+      // First In cue at +3. Pass the upcoming In-phase duration so the decay envelope
+      // stretches with the phase length at low BPM (App.tsx boundary scheduler does the
+      // same for every subsequent cue). plan.inhaleSec is seconds-shaped at the source —
+      // no `/1000` conversion. cue.timbre carries sessionTimbre for type-completeness;
+      // the engine ignores it and uses its closed-over sessionTimbre.
       schedule(firstInCueTime, { kind: 'in', phaseDurationSec: plan.inhaleSec, timbre: sessionTimbre })
 
       return firstInCueTime
@@ -437,41 +374,35 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
     scheduleNextCue({ newPhase, audioTime, phaseDurationSec }: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void {
       if (closed) return
-      // Phase 53: schedule even while muted (silent through masterGain=0).
+      // Schedule even while muted (silent through masterGain=0).
       pruneExpiredCues()
-      // AUDIO-02 D-01/D-02 callee-side clamp. The audioCtx.currentTime read here
-      // is INSIDE the engine and OUTSIDE the drift-guard scope (which targets the
-      // 5 caller files exclusively per 50-CONTEXT.md specifics).
+      // Callee-side clamp: any audioTime in the past is clamped to currentTime + SAFE_LEAD_SEC.
       const clampedAudioTime = Math.max(audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
-      // Plan 50-06 D-05: facade over schedule(). 260510-tc9 Bug 2: phaseDurationSec
-      // flows into the 'in' / 'out' cue payload; schedule()'s arm forwards it as the
-      // 5th arg to scheduleInCueForTimbre / scheduleOutCueForTimbre.
+      // Facade over schedule(). phaseDurationSec flows into the 'in' / 'out' cue payload;
+      // schedule()'s arm forwards it to scheduleInCueForTimbre / scheduleOutCueForTimbre.
       schedule(clampedAudioTime, { kind: newPhase, phaseDurationSec, timbre: sessionTimbre })
     },
 
-    // Phase 52 D-04: lookahead dispatch facade.
-    // Follows the same posture as scheduleNextCue: closed guard at top,
+    // Lookahead dispatch facade. Same posture as scheduleNextCue: closed guard at top,
     // pruneExpiredCues() before dispatch, callee-side SAFE_LEAD_SEC clamp per cue.
-    // The cue list is pre-computed by Plan 03's walkFutureCues helper; this method
-    // only dispatches via the internal schedule() switch (no walk logic here).
+    // The cue list is pre-computed by the caller; this method only dispatches via the
+    // internal schedule() switch (no walk logic here).
     topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void {
       if (closed) return
-      // Phase 53: schedule even while muted (silent through masterGain=0).
+      // Schedule even while muted (silent through masterGain=0).
       pruneExpiredCues()
       const nowSec = audioCtx.currentTime
       for (const cue of args.cues) {
-        // GAP-52H-2 / REVIEW WR-01 — engine-layer dedup (closes the audible ~5ms boundary flam).
-        // The rAF top-up re-walks the boundary it is currently crossing; that boundary's
-        // IN-FLIGHT cue survived cancelFutureCues (scheduledAt <= now), so re-scheduling it
-        // here lands a second strike ~SAFE_LEAD_SEC after the first — the audible double-tick.
-        // Skip any requested cue whose UNCLAMPED audioTime is within SAFE_LEAD_SEC of an
-        // already-IN-FLIGHT cue's scheduledAt. Compare the unclamped time (not the SAFE_LEAD
-        // clamp below) so a boundary a few ms in the past still matches its in-flight handle.
-        // Scope to in-flight (scheduledAt <= now) ONLY: future queued cues are the caller's
-        // cancel-then-reschedule responsibility (D-10/CR-01) — deduping them could leave a
-        // stale old-settings cue in place after a BPM/timbre change. Distinct breathing cues
-        // are always >> SAFE_LEAD_SEC apart, so this never drops a genuinely separate cue.
-        // No-op after reconstruction — activeCues starts empty (WR-04).
+        // Engine-layer dedup: the rAF top-up re-walks the boundary it is currently
+        // crossing; that boundary's IN-FLIGHT cue survived cancelFutureCues
+        // (scheduledAt <= now), so re-scheduling it lands a second strike ~SAFE_LEAD_SEC
+        // after the first — an audible double-tick. Skip any requested cue whose UNCLAMPED
+        // audioTime is within SAFE_LEAD_SEC of an already-IN-FLIGHT cue's scheduledAt.
+        // Compare the unclamped time so a boundary a few ms in the past still matches its
+        // in-flight handle. Scope to in-flight (scheduledAt <= now) ONLY: future queued cues
+        // are the caller's cancel-then-reschedule responsibility — deduping them could leave
+        // a stale old-settings cue in place after a BPM/timbre change. Distinct breathing
+        // cues are always >> SAFE_LEAD_SEC apart, so this never drops a genuinely separate cue.
         let isInFlightDuplicate = false
         for (const active of activeCues) {
           if (active.scheduledAt <= nowSec && Math.abs(active.scheduledAt - cue.audioTime) < SAFE_LEAD_SEC) {
@@ -480,23 +411,22 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
           }
         }
         if (isInFlightDuplicate) continue
-        // AUDIO-02 D-01/D-02 callee-side clamp — identical posture to scheduleNextCue (L439).
+        // Callee-side clamp — identical posture to scheduleNextCue.
         const clampedAudioTime = Math.max(cue.audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
-        // schedule() adds the returned handle to activeCues internally (D-05).
-        // Engine ignores cue.timbre — uses closed-over sessionTimbre (Phase 18 D-08).
+        // schedule() adds the returned handle to activeCues internally.
+        // Engine ignores cue.timbre — uses closed-over sessionTimbre.
         schedule(clampedAudioTime, { kind: cue.kind, phaseDurationSec: cue.phaseDurationSec, timbre: sessionTimbre })
       }
     },
 
-    // Phase 52 D-09 + D-10: future-cue cancellation helper.
-    // Snapshot-iterate activeCues (AH-WR-07: spread copy decouples iteration from mutation).
-    // For each cue with scheduledAt > now: call cancel() + remove from activeCues.
-    // In-flight cues (scheduledAt <= now) are preserved to ring out naturally.
+    // Future-cue cancellation helper. Snapshot-iterate activeCues (spread copy decouples
+    // iteration from mutation). For each cue with scheduledAt > now: call cancel() +
+    // remove from activeCues. In-flight cues (scheduledAt <= now) ring out naturally.
     cancelFutureCues(): void {
       if (closed) return
       const now = audioCtx.currentTime
-      // AH-WR-07 snapshot-iterate-then-mutate: same pattern as pruneExpiredCues (L322).
-      // D-09 + D-10: cancel() stops oscillators + disconnects all nodes.
+      // Snapshot-iterate-then-mutate: same pattern as pruneExpiredCues.
+      // cancel() stops oscillators + disconnects all nodes.
       for (const cue of [...activeCues]) {
         if (cue.scheduledAt > now) {
           cue.cancel()
@@ -507,12 +437,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
 
     playEndChord(): void {
       if (closed) return
-      // Phase 53: schedule even while muted (silent through masterGain=0).
-      // Plan 50-06 D-05: facade over schedule(). The endChordTailUntil
-      // Math.max bookkeeping is preserved inside schedule()'s 'end-chord' arm
-      // (Task 1) — close() still defers teardown until the tail rings out.
-      // The audioCtx.currentTime read for `when` stays inside the engine
-      // (NOT in drift-guard scope per 50-CONTEXT.md specifics).
+      // Schedule even while muted (silent through masterGain=0).
+      // Facade over schedule(). The endChordTailUntil Math.max bookkeeping is inside
+      // schedule()'s 'end-chord' arm — close() defers teardown until the tail rings out.
       const when = audioCtx.currentTime + SAFE_LEAD_SEC
       schedule(when, { kind: 'end-chord' })
     },
@@ -520,9 +447,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     setMuted(next: boolean): void {
       muted = next
       if (closed) return
-      // Phase 53: ramp the single master gain — instant, no boundary wait. Cues keep
-      // scheduling through masterGain (silent at gain=0), so unmute lands on whatever
-      // cue is currently playing. Anchor the current value first (Safari-safe), then
+      // Ramp the single master gain — instant, no boundary wait. Cues keep scheduling
+      // through masterGain (silent at gain=0), so unmute lands on whatever cue is
+      // currently playing. Anchor the current value first (Safari-safe), then
       // linear-ramp to the target over MUTE_RAMP_SEC.
       const gainParam = masterGain.gain
       const now = audioCtx.currentTime
@@ -546,12 +473,10 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     async close(): Promise<void> {
       if (closed) return
       closed = true
-      // Revision 1 Blocker #3: prior removeEventListener removed — the local listener was
-      // deleted at the construction site (no engine-side statechange listener exists).
-      // The clock's listener is owned by the clock; its lifecycle is independent (the AC's
-      // close will fire 'closed' on the clock's listener which fans to closeSubscribers per
-      // Plan 50-01, then handleClose in useAudioCues sets audioStatus to 'unavailable' per
-      // revision 1 Blocker #1).
+      // No engine-side statechange listener to remove. The clock's listener is owned by
+      // the clock; its lifecycle is independent (the AC's close fires 'closed' on the
+      // clock's listener which fans to closeSubscribers, then handleClose in useAudioCues
+      // sets audioStatus to 'unavailable').
       // If playEndChord scheduled a session-ending chord, defer teardown until
       // its tail rings out — otherwise the disconnect loop below would sever
       // the chord mid-ring. Skipped entirely when no end chord was scheduled
@@ -573,34 +498,31 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
           setTimeout(resolve, tailRemainingSec * 1000)
         })
       }
-      // Phase 49 D-08: silent-loop element teardown. pause() + clear src releases the
-      // decoded buffer; null reference drops the closure handle for GC. Sync, no await,
-      // no try/catch — the engine owns the element exclusively (Pattern D). Inside the
-      // existing `if (closed) return` guard at the top of close() — second close()
-      // short-circuits before this runs.
+      // Silent-loop element teardown. pause() + clear src releases the decoded buffer;
+      // null reference drops the closure handle for GC. Sync, no await, no try/catch —
+      // the engine owns the element exclusively. Second close() short-circuits at the
+      // top of close() before this runs.
       if (silentLoopElement !== null) {
         silentLoopElement.pause()
         silentLoopElement.removeAttribute('src')
         silentLoopElement = null
       }
-      // AH-WR-03: node cleanup is otherwise driven entirely by the oscillator
-      // 'ended' event (AUDIO-04 explicit-disconnect contract in cueSynth). The
-      // Web Audio spec does NOT guarantee 'ended' fires for an oscillator whose
-      // stopAt is still in the future when audioCtx.close() runs — so a cue
-      // scheduled close to the close() call could leak its node chain. Before
-      // closing the context, explicitly disconnect every in-flight cue's
-      // envelope (the GainNode wired to destination — the only node the
-      // CueHandle exposes; tearing this edge severs the chain from the graph
+      // Node cleanup is otherwise driven by the oscillator 'ended' event. The Web Audio
+      // spec does NOT guarantee 'ended' fires for an oscillator whose stopAt is still
+      // in the future when audioCtx.close() runs — so a cue scheduled close to close()
+      // could leak its node chain. Before closing the context, explicitly disconnect
+      // every in-flight cue's envelope (the GainNode wired to destination — the only
+      // node the CueHandle exposes; tearing this edge severs the chain from the graph
       // output) and clear the Set so the handles become GC-able.
       for (const cue of [...activeCues]) {
         try { cue.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
       }
       activeCues.clear()
-      // Phase 53: disconnect the master gain from destination as part of teardown.
+      // Disconnect the master gain from destination as part of teardown.
       try { masterGain.disconnect() } catch { /* silent — node may already be disconnected */ }
-      // Pitfall 8: in-flight cue tails (up to ~5× decayTimeConstant) ring out via the audio
-      // thread's already-scheduled gain ramps. We close immediately and trust those ramps
-      // to drain naturally. D-11: closing AudioContext releases the system audio resources.
+      // In-flight cue tails (up to ~5× decayTimeConstant) ring out via the audio thread's
+      // already-scheduled gain ramps. We close immediately and trust those ramps to drain
+      // naturally. Closing AudioContext releases the system audio resources.
       await audioCtx.close()
     },
 
@@ -609,30 +531,24 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       try {
         await audioCtx.resume()
       } catch (err) {
-        // Plan 06 D-38: narrow the Plan 01 D-09 silent-absorb posture. The specific
-        // iOS-Safari failure mode is `DOMException { name: 'InvalidStateError' }`
-        // raised when resume() is invoked from a non-gesture context (the
-        // visibilitychange listener qualifies as non-gesture on iOS Safari per device
-        // diagnostic 05.1-UAT.md Task 2). Surface THIS error class via the state-change
-        // path so the hook can transition to 'needs-resume' and surface the
-        // user-tappable affordance (D-29). All other errors continue silent-absorb
-        // (Plan 01 D-09 preserved for unknown failure modes).
+        // iOS Safari raises `DOMException { name: 'InvalidStateError' }` when resume()
+        // is invoked from a non-gesture context (the visibilitychange listener qualifies
+        // as non-gesture on iOS Safari). Surface THIS error class via the state-change
+        // path so the hook can transition to 'needs-resume' and show the user-tappable
+        // affordance. All other errors are silently absorbed — the session continues on
+        // visuals only.
         //
-        // Revision 2 Blocker #1: the prior fan-out call (the removed callback option) was a
-        // SYNCHRONOUS state report — the AC was already 'suspended' before resume() was called, stays
-        // 'suspended' after the rejection, and no natural statechange event fires. We replace
-        // the prior call with the engine-only synthetic-suspend escape hatch on the augmented
-        // factory return type from Plan 50-01 revision 2; it synchronously fans the suspended
-        // event to suspendSubscribers via the same fanSuspend() helper used by the natural
-        // statechange listener. iOS Safari recovery flow preserved byte-identically:
-        // useAudioCues' handleSuspend subscriber sets audioStatus to 'needs-resume' when
-        // visibilityResumeAttemptedRef.current is true, exactly as it did pre-refactor.
+        // When resume() rejects with InvalidStateError the AC was ALREADY 'suspended'
+        // before the call and stays 'suspended' after — no natural statechange event fires.
+        // We use the engine-only synthetic-suspend escape hatch on the augmented factory
+        // return type; it synchronously fans the suspended event to suspendSubscribers via
+        // the same path as a natural statechange. This lets useAudioCues' handleSuspend
+        // subscriber set audioStatus to 'needs-resume' as it would on a real suspend.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if ((err as DOMException)?.name === 'InvalidStateError') {
           clock.notifySuspended()
         }
-        // Else: silent. No console.debug (discretion #4). The session continues on visuals
-        // only — same posture as Phase 3 D-10 and Phase 5 D-09.
+        // Else: silent. The session continues on visuals only.
       }
     },
 
@@ -640,10 +556,8 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       return readState()
     },
 
-    // D-11 + revision 1 Blocker #1 / ABSTR-01: expose the SessionClock surface. The
-    // assignment widens the augmented factory return type to `SessionClock` — external
-    // consumers reading `engine.clock` cannot call `notifySuspended` (revision 2 Blocker #1
-    // encapsulation boundary).
+    // Expose the SessionClock surface. The assignment widens the augmented factory
+    // return type to `SessionClock` — external consumers cannot call `notifySuspended`.
     clock,
   }
 

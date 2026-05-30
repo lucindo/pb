@@ -1,6 +1,4 @@
 // Tests for the audioEngine factory + AudioEngine interface.
-// Source: 03-02-PLAN.md <behavior> tests 1-15.
-// Engine composes the pure cueSynth module from Plan 01.
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -15,7 +13,7 @@ import * as cueSynth from './cueSynth'
 import * as nkCueSynth from './nkCueSynth'
 import type { CueHandle } from './cueSynth'
 
-// Phase 50-02 (D-02 ms→sec cascade): BreathingPlan fixture is seconds-shaped.
+// BreathingPlan fixture is seconds-shaped (plan values are in seconds, not ms).
 const samplePlan: BreathingPlan = {
   bpm: 5.5,
   ratio: '40:60',
@@ -32,8 +30,8 @@ interface MockEnvelopeFns {
   setValueAtTime: ReturnType<typeof vi.fn>
 }
 
-// Phase 53: the engine creates a master GainNode right after `new AudioContext()`
-// and calls masterGain.connect(destination). The bare-bones ProbeAC stubs below need
+// The engine creates a master GainNode right after `new AudioContext()` and calls
+// masterGain.connect(destination). The bare-bones ProbeAC stubs below need
 // createGain() to return a node with connect/disconnect + a gain AudioParam carrying
 // the automation methods setMuted() drives.
 function makeFakeGain(): GainNode {
@@ -95,7 +93,7 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('createAudioEngine rejects when AudioContext construction throws (D-10 anchor)', async () => {
+  it('createAudioEngine rejects when AudioContext construction throws', async () => {
     vi.stubGlobal(
       'AudioContext',
       // Reason: test stub — constructor-only class simulates a browser that denies AudioContext.
@@ -134,7 +132,7 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('SAFE_LEAD_SEC export equals 0.005 (D-03 single-source-of-truth)', () => {
+  it('SAFE_LEAD_SEC export equals 0.005 (single source of truth)', () => {
     expect(SAFE_LEAD_SEC).toBe(0.005)
   })
 
@@ -169,10 +167,10 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // Phase 53: master-gain mute. The engine creates exactly one master GainNode right
-  // after `new AudioContext()` (before any cue gain nodes). Spy on createGain to capture
-  // it as the FIRST-returned gain node, then assert setMuted ramps it.
-  it('Phase 53: setMuted(true) ramps the master gain toward 0, setMuted(false) toward 1', async () => {
+  // The engine creates exactly one master GainNode right after `new AudioContext()`
+  // (before any cue gain nodes). Spy on createGain to capture it as the FIRST-returned
+  // gain node, then assert setMuted ramps it.
+  it('setMuted(true) ramps the master gain toward 0, setMuted(false) toward 1', async () => {
     const createGainSpy = vi.spyOn(window.AudioContext.prototype, 'createGain')
     const engine = await createAudioEngine({ timbre: 'bowl' })
     // First createGain() call = the master gain (created before any cue scheduling).
@@ -193,9 +191,9 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // Phase 53: cues KEEP being scheduled while muted (they play silently through the
-  // master gain at 0). The old muted-skips-scheduling gates are gone.
-  it('Phase 53: scheduleNextCue + topUpLookahead STILL schedule cues while muted', async () => {
+  // Cues KEEP being scheduled while muted (they play silently through the master
+  // gain at 0).
+  it('scheduleNextCue + topUpLookahead STILL schedule cues while muted', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -234,7 +232,7 @@ describe('audioEngine', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
+      // Engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -257,7 +255,7 @@ describe('audioEngine', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
+      // Engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -299,7 +297,7 @@ describe('audioEngine', () => {
       createOscillator = vi.fn()
       createGain = vi.fn(makeFakeGain)
       createBiquadFilter = vi.fn()
-      // Plan 06: engine wires a statechange listener at construction.
+      // Engine wires a statechange listener at construction.
       addEventListener = vi.fn()
       removeEventListener = vi.fn()
     }
@@ -363,10 +361,9 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // Plan 06 polish (post-UAT bug fix): engine.state is the live read of audioCtx.state.
-  // The hook's public resume() uses it instead of React's audioStatus closure (which
-  // is stale within the useCallback invocation) to decide whether reconstruction is
-  // required after `await engine.resume()`.
+  // engine.state is the live read of audioCtx.state. The hook's public resume() uses
+  // it instead of React's audioStatus closure (which is stale within the useCallback
+  // invocation) to decide whether reconstruction is required after `await engine.resume()`.
   it('engine.state reflects live audioCtx.state including the WebKit-only "interrupted" superset', async () => {
     let probeState: AudioContextState | 'interrupted' = 'suspended'
     class ProbeAC {
@@ -387,7 +384,7 @@ describe('audioEngine', () => {
     vi.stubGlobal('AudioContext', ProbeAC)
 
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    // WR-06 path resumed the AC at construction.
+    // Suspended AC was resumed at construction.
     expect(engine.state).toBe('running')
 
     probeState = 'suspended'
@@ -401,7 +398,7 @@ describe('audioEngine', () => {
 
   // Timbre-propagation tests: construction-time `opts.timbre` flows through
   // scheduleLeadIn (first In cue) and scheduleNextCue (in/out ternary).
-  // D-08 capture-at-construction semantics: no setter, no re-read, immutable for engine lifetime.
+  // Capture-at-construction: no setter, no re-read, immutable for engine lifetime.
 
   it('createAudioEngine({ timbre: "bell" }) forwards "bell" to scheduleInCueForTimbre on the first In cue', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
@@ -450,12 +447,11 @@ describe('audioEngine', () => {
     await engineFlute.close()
   })
 
-  // Phase 49: iOS silent-loop element
-  // Tests covering D-04 (sync-construct order), D-05 (attribute wiring), D-08 (close()
-  // teardown + idempotency), and D-09 (silent-absorb on .play() reject). Element is
-  // invisible at the hook seam (D-04) — these are engine-level tests only.
+  // iOS silent-loop element tests: sync-construct order, attribute wiring, close()
+  // teardown + idempotency, and silent-absorb on .play() reject. Element is invisible
+  // at the hook seam — these are engine-level tests only.
 
-  it('createAudioEngine constructs a silent-loop <audio> element with locked attributes (D-05)', async () => {
+  it('createAudioEngine constructs a silent-loop <audio> element with locked attributes', async () => {
     const instances: SpyAudio[] = []
     class SpyAudio {
       playsInline = false
@@ -487,7 +483,7 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('engine.close() pauses the silent-loop element and clears its src (D-08 teardown)', async () => {
+  it('engine.close() pauses the silent-loop element and clears its src', async () => {
     const instances: SpyAudio[] = []
     class SpyAudio {
       playsInline = false
@@ -542,7 +538,7 @@ describe('audioEngine', () => {
     expect(el.removeAttribute).toHaveBeenCalledTimes(1)
   })
 
-  it('createAudioEngine resolves even when silent-loop element.play() rejects (D-09 silent-absorb)', async () => {
+  it('createAudioEngine resolves even when silent-loop element.play() rejects (silent-absorb)', async () => {
     class RejectingAudio {
       playsInline = false
       loop = false
@@ -556,7 +552,7 @@ describe('audioEngine', () => {
     }
     vi.stubGlobal('Audio', RejectingAudio)
 
-    // Engine MUST resolve — silent-loop failure is non-fatal (D-09 lock).
+    // Engine MUST resolve — silent-loop failure is non-fatal.
     const engine = await createAudioEngine({ timbre: 'bowl' })
     expect(engine).toBeDefined()
     expect(typeof engine.close).toBe('function')
@@ -564,7 +560,7 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('sync-construct order: new AudioContext() precedes new Audio() in createAudioEngine (D-04)', async () => {
+  it('sync-construct order: new AudioContext() precedes new Audio() in createAudioEngine', async () => {
     const callOrder: string[] = []
     class OrderedAC {
       state: AudioContextState = 'running'
@@ -605,13 +601,12 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // Phase 49.1 D-07 — bypassSilentMode option gating (ADV-04)
-  // Three tests: skip construction when false (ADV-04 success gate), construct when
-  // true (parity with Phase 49 baseline), construct when undefined (D-07 default
-  // undefined → coerces to true, backward compat).
+  // bypassSilentMode option gating: three tests — skip construction when false,
+  // construct when true, construct when undefined (undefined → coerces to true,
+  // backward compat).
 
-  describe('Phase 49.1 D-07 — bypassSilentMode option gating (ADV-04)', () => {
-    it('createAudioEngine does NOT construct the silent-loop element when bypassSilentMode=false (ADV-04 success gate)', async () => {
+  describe('bypassSilentMode option gating', () => {
+    it('createAudioEngine does NOT construct the silent-loop element when bypassSilentMode=false', async () => {
       const instances: SpyAudio[] = []
       class SpyAudio {
         playsInline = false
@@ -631,13 +626,13 @@ describe('audioEngine', () => {
 
       const engine = await createAudioEngine({ timbre: 'bowl', bypassSilentMode: false })
 
-      // ADV-04: Audio constructor must NOT be called when bypassSilentMode is false.
+      // Audio constructor must NOT be called when bypassSilentMode is false.
       expect(instances).toHaveLength(0)
       // close() null-guards must short-circuit cleanly when construction was skipped.
       await engine.close()
     })
 
-    it('createAudioEngine constructs the silent-loop element when bypassSilentMode=true (parity with Phase 49 baseline)', async () => {
+    it('createAudioEngine constructs the silent-loop element when bypassSilentMode=true', async () => {
       const instances: SpyAudio[] = []
       class SpyAudio {
         playsInline = false
@@ -660,7 +655,7 @@ describe('audioEngine', () => {
       expect(instances).toHaveLength(1)
       const [el] = instances
       if (el === undefined) throw new Error('expected a stubbed Audio instance')
-      // Attributes must match the Phase 49 v3 baseline (parity test).
+      // Attributes must match the expected locked values.
       expect(el.playsInline).toBe(true)
       expect(el.loop).toBe(true)
       expect(el.muted).toBe(false)
@@ -668,7 +663,7 @@ describe('audioEngine', () => {
       await engine.close()
     })
 
-    it('createAudioEngine constructs the silent-loop element when bypassSilentMode is undefined (D-07 default undefined → true)', async () => {
+    it('createAudioEngine constructs the silent-loop element when bypassSilentMode is undefined (undefined → true)', async () => {
       const instances: SpyAudio[] = []
       class SpyAudio {
         playsInline = false
@@ -687,8 +682,7 @@ describe('audioEngine', () => {
       vi.stubGlobal('Audio', SpyAudio)
 
       // No bypassSilentMode key in opts — undefined must coerce to "construct".
-      // Backward-compat: any pre-49.1 caller that omits the field must still
-      // get the silent-loop element (Phase 49 v3 behavior preserved).
+      // Backward-compat: callers that omit the field get the silent-loop element.
       const engine = await createAudioEngine({ timbre: 'bowl' })
 
       expect(instances).toHaveLength(1)
@@ -696,10 +690,10 @@ describe('audioEngine', () => {
     })
   })
 
-  // CR-01 (Phase 49 REVIEW): when AudioContext.resume() rejects, the silent-loop
-  // element is unreachable through engine.close() (no engine handle is returned),
-  // so the ad-hoc teardown inside the resume() catch block is the only path that
-  // can release the element. Regression-guards the leak found in code review.
+  // When AudioContext.resume() rejects, the silent-loop element is unreachable
+  // through engine.close() (no engine handle is returned), so the teardown inside
+  // the resume() catch block is the only path that can release the element.
+  // Regression-guards the AC-leak found in code review.
   it('createAudioEngine tears down silent-loop element when AudioContext.resume() rejects (CR-01)', async () => {
     const audioInstances: SuspendedRejectAudio[] = []
     class SuspendedRejectAC {
@@ -732,8 +726,7 @@ describe('audioEngine', () => {
     vi.stubGlobal('Audio', SuspendedRejectAudio)
 
     // resume() rejection MUST propagate — caller handles AC-construction failure
-    // (D-10 caller branch). The silent-loop element is the leaking-resource side
-    // effect this test guards.
+    // The silent-loop element is the leaking-resource side effect this test guards.
     await expect(createAudioEngine({ timbre: 'bowl' })).rejects.toThrow('autoplay vetoed')
 
     expect(audioInstances).toHaveLength(1)
@@ -743,17 +736,12 @@ describe('audioEngine', () => {
     expect(el.removeAttribute).toHaveBeenCalledWith('src')
   })
 
-  // Phase 50-06 D-04 / D-05 — internal schedule(when, cue) dispatch
   // The engine's internal `schedule` function is plumbed into the SessionClock at
   // construction (scheduleImpl). Calling `engine.clock.schedule(when, cue)` routes
   // through the engine's switch dispatch, exercising every Cue arm. Each arm calls
   // the corresponding per-cue primitive in cueSynth.ts / nkCueSynth.ts and adds the
   // returned handle to activeCues.
-  //
-  // Revision 1 Warning #9 — test count delta: this block adds 8 tests covering each
-  // `cue.kind` arm. Existing tests above are unchanged (the facade refactor in
-  // Task 2 is observationally transparent — same primitives, same args, same order).
-  describe('Phase 50-06 — internal schedule(when, cue) dispatch (8 Cue arms)', () => {
+  describe('internal schedule(when, cue) dispatch (8 Cue arms)', () => {
     it('schedule({ kind: "lead-in-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
       const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
       const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -789,7 +777,7 @@ describe('audioEngine', () => {
 
       expect(inSpy).toHaveBeenCalledTimes(1)
       expect(inSpy.mock.calls[0]?.[1]).toBe(3.0)
-      // Phase 18 D-08 capture-at-session-start: sessionTimbre wins over cue.timbre.
+      // Capture-at-session-start: sessionTimbre wins over cue.timbre.
       expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
       expect(inSpy.mock.calls[0]?.[4]).toBeCloseTo(4.36, 5)
 
@@ -894,36 +882,36 @@ describe('audioEngine', () => {
   })
 })
 
-// Phase 52 D-09: CueHandle.cancel contract
+// CueHandle.cancel contract
 // Tests use the real FakeAudioContext polyfill from vitest.setup.ts so that the
 // oscillator/gain/filter nodes are real fake-AC nodes with spy-compatible methods.
 // The cancel() closure must: (1) stop all oscillators at currentTime, (2) disconnect
 // every node in the chain, (3) be idempotent (calling twice must not throw).
-describe('Phase 52 D-09 CueHandle.cancel', () => {
+describe('CueHandle.cancel', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
-  it('D-09 T1: handle returned from scheduleInCueForTimbre has a cancel field that is a function', () => {
+  it('handle returned from scheduleInCueForTimbre has a cancel field that is a function', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
     expect(typeof handle.cancel).toBe('function')
   })
 
-  it('D-09 T1b: scheduleInCueForTimbre returns a handle with cancel: () => void (direct call)', () => {
+  it('scheduleInCueForTimbre returns a handle with cancel: () => void (direct call)', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
     expect(typeof handle.cancel).toBe('function')
   })
 
-  it('D-09 T1c: scheduleOutCueForTimbre returns a handle with cancel: () => void', () => {
+  it('scheduleOutCueForTimbre returns a handle with cancel: () => void', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleOutCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
     expect(typeof handle.cancel).toBe('function')
   })
 
-  it('D-09 T3: cancel() is idempotent — calling twice does not throw', () => {
+  it('cancel() is idempotent — calling twice does not throw', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
     expect(() => {
@@ -932,56 +920,56 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
     }).not.toThrow()
   })
 
-  it('D-09 T4a: scheduleInCue (bowl wrapper) handle also has a callable cancel', () => {
+  it('scheduleInCue (bowl wrapper) handle also has a callable cancel', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleInCue(audioCtx, 1, audioCtx.destination, 4)
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4b: scheduleOutCue (bowl wrapper) handle also has a callable cancel', () => {
+  it('scheduleOutCue (bowl wrapper) handle also has a callable cancel', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleOutCue(audioCtx, 1, audioCtx.destination, 4)
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4c: scheduleTick handle has a callable cancel', () => {
+  it('scheduleTick handle has a callable cancel', () => {
     const audioCtx = new AudioContext()
     const handle = cueSynth.scheduleTick(audioCtx, 1, audioCtx.destination)
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4d: scheduleNKTick handle has a callable cancel', () => {
+  it('scheduleNKTick handle has a callable cancel', () => {
     const audioCtx = new AudioContext()
     const handle = nkCueSynth.scheduleNKTick(audioCtx, 1, audioCtx.destination, 'bowl')
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4e: scheduleCountdownTick handle has a callable cancel', () => {
+  it('scheduleCountdownTick handle has a callable cancel', () => {
     const audioCtx = new AudioContext()
     const handle = nkCueSynth.scheduleCountdownTick(audioCtx, 1, audioCtx.destination, 'bowl')
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4f: scheduleNKFrontMarker handle has a callable cancel (delegates to scheduleInCueForTimbre)', () => {
+  it('scheduleNKFrontMarker handle has a callable cancel (delegates to scheduleInCueForTimbre)', () => {
     const audioCtx = new AudioContext()
     const handle = nkCueSynth.scheduleNKFrontMarker(audioCtx, 1, audioCtx.destination, 'bowl')
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4g: scheduleNKBackMarker handle has a callable cancel (delegates to scheduleOutCueForTimbre)', () => {
+  it('scheduleNKBackMarker handle has a callable cancel (delegates to scheduleOutCueForTimbre)', () => {
     const audioCtx = new AudioContext()
     const handle = nkCueSynth.scheduleNKBackMarker(audioCtx, 1, audioCtx.destination, 'bowl')
     expect(typeof handle.cancel).toBe('function')
     expect(() => { handle.cancel() }).not.toThrow()
   })
 
-  it('D-09 T4h: scheduleEndChord handle has a callable cancel', () => {
+  it('scheduleEndChord handle has a callable cancel', () => {
     const audioCtx = new AudioContext()
     const handle = nkCueSynth.scheduleEndChord(audioCtx, 1, audioCtx.destination, 'bowl')
     expect(typeof handle.cancel).toBe('function')
@@ -989,16 +977,16 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
   })
 })
 
-// Phase 52 D-04 — engine.topUpLookahead
-// The facade dispatches a caller-supplied list of cues via the internal schedule()
-// function, respecting the closed guard and the callee-side SAFE_LEAD_SEC clamp.
-describe('Phase 52 D-04 topUpLookahead', () => {
+// engine.topUpLookahead — facade dispatches a caller-supplied list of cues via
+// the internal schedule() function, respecting the closed guard and the
+// callee-side SAFE_LEAD_SEC clamp.
+describe('topUpLookahead', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
-  it('topUpLookahead calls scheduleInCueForTimbre for each "in" cue in the list (D-04)', async () => {
+  it('topUpLookahead calls scheduleInCueForTimbre for each "in" cue in the list', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
 
@@ -1057,10 +1045,9 @@ describe('Phase 52 D-04 topUpLookahead', () => {
   })
 })
 
-// Phase 52 D-09/D-10 — engine.cancelFutureCues
-// cancelFutureCues() iterates activeCues snapshot, calls cancel() on cues with
-// scheduledAt > now, removes them from activeCues; leaves in-flight cues untouched.
-describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
+// engine.cancelFutureCues — iterates activeCues snapshot, calls cancel() on cues
+// with scheduledAt > now, removes them from activeCues; leaves in-flight cues untouched.
+describe('cancelFutureCues', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -1149,19 +1136,18 @@ describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
   })
 })
 
-// Phase 52 CR-01 — cancel-then-reschedule prevents overlap doubling
+// cancel-then-reschedule prevents overlap doubling
 // Proves that calling cancelFutureCues() between two overlapping topUpLookahead calls
 // yields scheduler invocations equal to the SECOND (final) walk only, not the sum of
 // both walks. Also provides a negative-control test that proves the doubling DOES occur
-// when cancelFutureCues is omitted — locking Option A (cancel-then-reschedule) as the
-// required pattern (SCHED-05 doctrine D-10, 52-CONTEXT.md).
-describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () => {
+// when cancelFutureCues is omitted.
+describe('cancel-then-reschedule prevents overlap doubling', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
-  it('Phase 52 CR-01: cancelFutureCues() between two overlapping topUpLookahead calls yields scheduler-call-count equal to the SECOND walk only', async () => {
+  it('cancelFutureCues() between two overlapping topUpLookahead calls yields scheduler-call-count equal to the SECOND walk only', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -1201,7 +1187,7 @@ describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () =
     await engine.close()
   })
 
-  it('Phase 52 CR-01: without cancelFutureCues, second overlapping topUpLookahead double-schedules overlapping cues (proves Option A is necessary)', async () => {
+  it('without cancelFutureCues, second overlapping topUpLookahead double-schedules overlapping cues (proves cancel-first is necessary)', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -1243,13 +1229,13 @@ describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () =
   })
 })
 
-// GAP-52H-2 / REVIEW WR-01 — engine-layer dedup of the in-flight boundary cue.
+// Engine-layer dedup of the in-flight boundary cue.
 // Closes the audible ~5ms boundary flam: the rAF top-up re-walks the boundary it is
 // currently crossing, whose in-flight cue survived cancelFutureCues (scheduledAt <= now);
 // re-scheduling it lands a second strike. The dedup skips a requested cue whose unclamped
 // audioTime is within SAFE_LEAD_SEC of an IN-FLIGHT cue's scheduledAt — and ONLY in-flight
 // (future cues remain the caller's cancel-then-reschedule responsibility).
-describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
+describe('in-flight boundary-cue dedup', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -1318,27 +1304,25 @@ describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
   })
 })
 
-// Phase 52 constants — D-02/D-03/D-06
-// These tests import the SYMBOLS (not bare literals) per project memory
-// "No design locking": if a value is tuned in a later phase the tests
-// pass without edit; only the source constant changes.
-describe('Phase 52 constants', () => {
-  it('LOOKAHEAD_WINDOW_SEC resolves as a number (D-02: import does not yield undefined)', () => {
+// Lookahead constants — These tests import the SYMBOLS (not bare literals) per project
+// memory "No design locking": if a value is tuned the tests pass without edit.
+describe('lookahead constants', () => {
+  it('LOOKAHEAD_WINDOW_SEC resolves as a number (import does not yield undefined)', () => {
     expect(typeof LOOKAHEAD_WINDOW_SEC).toBe('number')
   })
 
-  it('LOOKAHEAD_MIN_CUES resolves as a number (D-03: import does not yield undefined)', () => {
+  it('LOOKAHEAD_MIN_CUES resolves as a number (import does not yield undefined)', () => {
     expect(typeof LOOKAHEAD_MIN_CUES).toBe('number')
   })
 
-  it('LOOKAHEAD_WINDOW_SEC is locked at 6 (D-02: middle of 5–10s ROADMAP band)', () => {
+  it('LOOKAHEAD_WINDOW_SEC is locked at 6 (middle of 5–10s recommended band)', () => {
     // No design locking: assertion references the imported symbol on the left-hand side.
-    // The numeric literal 6 on the right-hand side is the D-02-locked value — if this
-    // changes, update D-02 in 52-CONTEXT.md and change the literal here intentionally.
+    // The numeric literal 6 on the right-hand side is the locked value — change it
+    // intentionally if the constant is tuned.
     expect(LOOKAHEAD_WINDOW_SEC).toBe(6)
   })
 
-  it('LOOKAHEAD_MIN_CUES is locked at 2 (D-03: always queue next + cue-after)', () => {
+  it('LOOKAHEAD_MIN_CUES is locked at 2 (always queue next + cue-after)', () => {
     expect(LOOKAHEAD_MIN_CUES).toBe(2)
   })
 
