@@ -114,7 +114,7 @@ describe('NaviKriyaSettingsForm', () => {
     expect(screen.getByRole('button', { name: EN.stepper.increaseLabel(NK.frontCountLabel) })).toBeEnabled()
     // OM pace is a segmented control after J16 — assert a radio is enabled.
     expect(within(screen.getByRole('group', { name: NK.omLengthLabel })).getByRole('radio', { name: NK.omLengthFast })).toBeEnabled()
-    // D-07: the per-OM tick toggle is stale-closure-safe and must remain live.
+    // The per-OM tick toggle is stale-closure-safe and must remain live.
     expect(screen.getByRole('switch', { name: NK.perOmCueLabel })).toBeEnabled()
   })
 })

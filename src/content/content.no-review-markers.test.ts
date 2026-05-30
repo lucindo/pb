@@ -1,29 +1,16 @@
 // src/content/content.no-review-markers.test.ts
 //
-// Phase 26 D-12: marker-guard. Originally failed if "// TODO: native-speaker review" appeared
-// anywhere in src/content/. Locks the I18N-07 done-state against future regressions.
+// Marker-guard: fails if "// TODO: native-speaker review" appears in src/content/ outside
+// the allowlisted structural contexts. Locks the I18N-07 done-state against future regressions.
 //
-// Phase 48 D-18 (path a): extended with a structural allowlist for the new advanced.*
-// namespace (renamed from appearance.* in Phase 49.1 Plan 03).
-//
-// Phase 48 REVIEW WR-03 follow-up: the original allowlist matched line-shape regexes (e.g.
-// `/^\s*label:\s*'/`) that fired anywhere in a content file. Any future `label:` / `theme:`
-// key introduced outside the advanced.* / appSettings.sections.theme block would be silently
-// allowlisted. Replaced with block-scope tracking: a marker is allowed iff the value line
-// immediately below it lives inside one of two structural contexts:
+// Extended with a structural allowlist for the `advanced.*` namespace. The guard uses
+// block-scope tracking: a marker is allowed iff the value line immediately below it lives in:
 //
 //   1. Any descendant of an `advanced: {` block (covers all advanced.* PT-BR keys); or
-//   2. The `theme: ...` value line directly under `appSettings.sections` (D-01 renamed key).
+//   2. The `theme: ...` value line directly under `appSettings.sections`.
 //
-// Close-out gate: when I18N-04 (native-speaker review pass) removes the markers, this guard
+// Close-out gate: when the native-speaker review pass removes the markers, this guard
 // stays green without further code changes — the allowlist is a relaxation, not a requirement.
-//
-// References:
-//   CONTEXT.md D-18 — adaptation rationale and path selection
-//   REQUIREMENTS.md I18N-02 — PT-BR completeness requirement (marker workflow)
-//   REQUIREMENTS.md I18N-04 (future) — native-speaker review pass that closes the markers
-//   REVIEW.md WR-03 — block-scope tightening rationale
-//   Phase 49.1 Plan 03 — renamed appearance.* → advanced.* (D-10 / D-11)
 //
 // Analog: src/styles/theme.no-hardcoded-classes.test.ts (banned-pattern fs-scan guard)
 
@@ -111,7 +98,7 @@ export function findUnreviewedMarkers(text: string, file: string | null): string
     // Update stack based on this line. We only handle the canonical
     // "block open on its own line" and "block close on its own line"
     // patterns — strings.ts follows these conventions consistently
-    // (verified by Phase 26 / Phase 48 fixtures).
+    // (strings.ts follows these conventions consistently).
     const openMatch = BLOCK_OPEN_RE.exec(trimmed)
     if (openMatch?.[1]) {
       stack.push(openMatch[1])
@@ -136,7 +123,7 @@ describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
     ).toEqual([])
   })
 
-  // WR-03 regression test: a `label:` key with a marker OUTSIDE the appearance.* block
+  // Regression test: a `label:` key with a marker OUTSIDE the advanced.* block
   // must still fail the guard. The original shape-based allowlist would have allowed
   // this; the block-scope tracker correctly rejects it.
   it('flags a non-appearance label: key with a marker (WR-03 regression)', () => {
@@ -152,9 +139,8 @@ describe('src/content marker-guard (Phase 26 D-12 / I18N-07)', () => {
     expect(hits).toEqual(['<input>:3'])
   })
 
-  // WR-03 regression test: a `theme:` key with a marker OUTSIDE `appSettings.sections`
-  // must still fail the guard. Locks the second half of the original shape-based
-  // allowlist hole closed.
+  // Regression test: a `theme:` key with a marker OUTSIDE `appSettings.sections`
+  // must still fail the guard.
   it('flags a non-appSettings.sections theme: key with a marker (WR-03 regression)', () => {
     const text = [
       `export const STUFF = {`,

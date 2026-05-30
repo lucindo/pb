@@ -10,7 +10,6 @@ import type { UiStrings } from '../content/strings'
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 const EN_FORM_FIXTURE = EN_STRINGS_FIXTURE.practice.settingsForm
 
-// Phase 50-02 (D-02 ms→sec cascade): SessionFrame fields are seconds-shaped.
 // Sample frame with a non-null remainingSec for timed session scenarios.
 // 600 sec remaining → formatDuration renders "10:00".
 const sampleFrame: SessionFrame = {

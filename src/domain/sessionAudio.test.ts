@@ -6,8 +6,7 @@ import { computeBoundaryAudioOffsets, walkFutureCues, MAX_WALK_ITERATIONS } from
 import type { SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
-// Phase 50-02 (D-02 ms→sec cascade): fixture values are seconds-shaped.
-// Prior ms values 10_909 / 4_363 / 6_545 → 10.909 / 4.363 / 6.545 sec.
+// Fixture values are seconds-shaped.
 const plan: BreathingPlan = {
   bpm: 5.5,
   ratio: '40:60',
@@ -27,7 +26,7 @@ const baseFrame: SessionFrame = {
   isComplete: false,
 }
 
-// ─── Phase 52 D-01/D-11/D-14 walkFutureCues tests ───────────────────────────
+// ─── walkFutureCues tests ────────────────────────────────────────────────────
 
 // HRV fixture plan: 10 BPM (cycleSec=6, inhale=3, exhale=3)
 const hrvPlan: BreathingPlan = {
@@ -113,7 +112,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
     })
-    // D-01/D-03 floor: even though the window (6s) doesn't reach the next cycle (60s),
+    // Floor: even though the window (6s) doesn't reach the next cycle (60s),
     // the floor kicks in and returns LOOKAHEAD_MIN_CUES cues
     expect(cues.length).toBe(LOOKAHEAD_MIN_CUES)
     expect(cues[0]?.kind).toBe('in')
@@ -217,7 +216,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     for (const cue of cues) {
       expect(cue.audioTime).toBeLessThanOrEqual(anchor + 300)
     }
-    // D-14: floor does NOT override target — may return fewer than LOOKAHEAD_MIN_CUES
+    // Floor does NOT override target — may return fewer than LOOKAHEAD_MIN_CUES
     // The cycle at index 49: audioTimeRelSec = 49*6 = 294 (in), 294+3=297 (out)
     // Next cycle at 300 is exactly at targetSec — may or may not be included but must not exceed
     for (const cue of cues) {
@@ -284,7 +283,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
 
   // Test 10: constant imports — test uses LOOKAHEAD_WINDOW_SEC and LOOKAHEAD_MIN_CUES symbols
   it('constant imports: LOOKAHEAD_WINDOW_SEC and LOOKAHEAD_MIN_CUES are valid numbers', () => {
-    // Per project memory "no-design-locking": test imports symbols, not hard-coded values
+    // Test imports symbols, not hard-coded values
     expect(typeof LOOKAHEAD_WINDOW_SEC).toBe('number')
     expect(typeof LOOKAHEAD_MIN_CUES).toBe('number')
     expect(LOOKAHEAD_WINDOW_SEC).toBeGreaterThan(0)
@@ -304,10 +303,9 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
   })
 })
 
-// Phase 52 Plan 06 WR-01: hard iteration cap on walkFutureCues.
-// Verifies a degenerate plan (cycleSec > 0, targetSec=undefined, inhaleSec=0 so
-// phaseOffset for 'out' = 0 = same as 'in') terminates at MAX_WALK_ITERATIONS
-// instead of looping forever. Without the cap, 6/1e-9 = 6e9 iterations would hang.
+// Hard iteration cap on walkFutureCues: verifies a degenerate plan (cycleSec > 0,
+// targetSec=undefined, inhaleSec=0) terminates at MAX_WALK_ITERATIONS instead of looping forever.
+// Without the cap, 6/1e-9 = 6e9 iterations would hang.
 describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
   it('degenerate plan terminates within MAX_WALK_ITERATIONS cap instead of looping forever', () => {
     // cycleSec=1e-9 (near-zero positive, passes cycleSec > 0 guard).
@@ -340,7 +338,7 @@ describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
 
     // Must terminate well under 1s — the cap prevents the infinite loop
     expect(elapsed).toBeLessThan(500)
-    // Result length bounded by MAX_WALK_ITERATIONS (symbol, not literal — Tiger Style no-magic-numbers).
+    // Result length bounded by MAX_WALK_ITERATIONS (symbol, not literal).
     expect(cues.length).toBeGreaterThan(0)
     expect(cues.length).toBeLessThanOrEqual(MAX_WALK_ITERATIONS)
   })

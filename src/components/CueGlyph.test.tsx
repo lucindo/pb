@@ -1,4 +1,4 @@
-// CueGlyph.test.tsx — covers all 3 cue modes × 2 phases (CUE-03, D-03..D-09)
+// CueGlyph.test.tsx — covers all 3 cue modes × 2 phases
 import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'

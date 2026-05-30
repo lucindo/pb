@@ -200,7 +200,7 @@ describe('isValidLocale (INFRA-02 D-01)', () => {
   })
 })
 
-// STRETCH-03 (D-07) predicate tests (isValidMode is removed — these remain)
+// Stretch predicate tests (isValidMode was removed — these remain)
 
 describe('isValidWarmUp (STRETCH-03, D-07)', () => {
   it('returns true for WARMUP_MINUTES_OPTIONS members (5, 10, 15)', () => {
@@ -277,7 +277,7 @@ describe('isValidRampDuration (STRETCH-03, D-07)', () => {
   })
 })
 
-// D-01/D-02: SessionSettings is now standard-only (3 fields)
+// SessionSettings is now standard-only (3 fields)
 describe('SessionSettings and validateSettings (D-01, D-02, STRETCH-03)', () => {
   it('DEFAULT_SETTINGS has exactly bpm, ratio, durationMinutes — no mode field', () => {
     expect(DEFAULT_SETTINGS).not.toHaveProperty('mode')

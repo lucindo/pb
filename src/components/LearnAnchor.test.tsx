@@ -8,8 +8,8 @@ import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
-// CONTEXT.md D-18: the anchor's disabled-during-session behavior is unit-testable
-// in isolation via the disabled prop (derived from App's inSessionView predicate).
+// The anchor's disabled-during-session behavior is unit-testable in isolation via the
+// disabled prop (derived from App's inSessionView predicate).
 // Tests assert: (a) enabled click invokes onClick, (b) disabled click does NOT invoke
 // onClick, (c) the same DOM node persists across the enabled→disabled transition (no remount).
 
@@ -61,7 +61,7 @@ describe('LearnAnchor — disabled state (lead-in / running / D-03 disabled bran
 
 describe('LearnAnchor — no remount across enabled/disabled transition (D-18 invariant)', () => {
   it('the same DOM node persists across the enabled→disabled rerender (no unmount)', () => {
-    // D-18(d): the anchor's enabled/disabled transition is purely visual — React diffs
+    // The anchor's enabled/disabled transition is purely visual — React diffs
     // in place because the component shape is identical. The DOM node identity is preserved.
     const onClick = vi.fn()
     const { rerender } = render(<LearnAnchor disabled={false} onClick={onClick} strings={EN_STRINGS_FIXTURE.practice.topBar} />)

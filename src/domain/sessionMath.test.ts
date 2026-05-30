@@ -37,7 +37,7 @@ describe('session frame derivation', () => {
   })
 
   it('reports decreasing remaining time and completes timed sessions at total duration', () => {
-    // 125 sec elapsed of a 600 sec total → 475 sec remaining (Phase 50-02 ms→sec cascade).
+    // 125 sec elapsed of a 600 sec total → 475 sec remaining.
     expect(getSessionFrame(timedPlan, 125)).toMatchObject({
       remainingSec: 475,
       isComplete: false,

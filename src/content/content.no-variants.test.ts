@@ -1,26 +1,22 @@
 // src/content/content.no-variants.test.ts
 //
-// Phase 38 VAR-06 drift-guard.
+// Drift-guard: Square and Diamond shape variants were deleted. This guard locks that
+// done-state against future regressions.
 //
 // Scanned roots: src/components/, src/app/, src/content/, src/styles/
 //   - components/ + app/ cover all render paths.
-//   - content/ catches variant-shaped i18n copy re-entering via strings.ts
-//     before a consumer wires it back into a render path.
-//   - styles/ catches [data-variant='square'/'diamond'] CSS rules re-entering
-//     via theme.css (the WR-01 vector the original three-root scan would miss).
+//   - content/ catches variant-shaped i18n copy re-entering via strings.ts.
+//   - styles/ catches [data-variant='square'/'diamond'] CSS rules re-entering via theme.css.
 //
-// Forbidden token classes (CONTEXT D-04 / D-05):
+// Forbidden token classes:
 //   1. Plain substring (case-sensitive component/symbol names)
 //   2. Regex (persisted-value literals: variant: 'square' / variant: 'diamond')
 //   3. Regex (CSS attribute selectors: [data-variant='square'] / [data-variant='diamond'])
 //
-// WHY this file exists (CONTEXT D-06): Phase 38 deleted all forbidden variant tokens
-// from the scanned roots. This drift-guard locks that done-state against future regressions.
-// It is the lock — future re-introduction of a shape variant system is a deliberate phase
-// decision that explicitly deletes this file with rationale recorded in that phase's SUMMARY.
-// Deleting this file is the intentional unlock.
+// It is the lock — future re-introduction of a shape variant system explicitly deletes this
+// file with rationale recorded in that phase's SUMMARY. Deleting this file is the intentional unlock.
 //
-// Analog: src/content/content.no-stats-ui.test.ts (Phase 37 STATS-05)
+// Analog: src/content/content.no-stats-ui.test.ts
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -34,8 +30,8 @@ import { resolve, join } from 'node:path'
 // Collect all non-test .ts / .tsx / .css files under dir (recursive).
 // Excluding .test.ts and .test.tsx files is load-bearing — this guard file itself contains
 // the literal token strings (inside the forbidden-token list below) and must not flag itself.
-// Note: the STATS-05 analog handles .ts and .tsx only; Phase 38 must also scan .css because
-// theme.css carries the [data-variant='square'/'diamond'] CSS rules that VAR-06 polices (D-07).
+// This guard also scans .css because theme.css carries the [data-variant='square'/'diamond']
+// CSS rules that must be absent.
 function collectFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry)
@@ -66,9 +62,8 @@ const SCAN_FILES: string[] = [
   ...collectFiles(STYLES_DIR),
 ]
 
-// Forbidden token list (CONTEXT D-05 — 14 tokens total).
-// Each entry carries a human-readable label so the failure message names exactly which
-// token tripped the guard — making it immediately clear to the contributor what landed.
+// Forbidden token list (14 tokens total): each entry carries a human-readable label so
+// the failure message names exactly which token tripped the guard.
 const FORBIDDEN_TOKENS: Array<{ label: string; match: (text: string) => boolean }> = [
   // Plain substring (case-sensitive component / symbol names) — 10 entries
   { label: 'SquareShape (component name)',         match: (t) => t.includes('SquareShape') },

@@ -5,8 +5,7 @@
 // phase that re-introduces one of the removed strings explicitly deletes
 // this file with rationale recorded in that phase's commit.
 //
-// Analog: src/content/content.no-removed-themes.test.ts (Phase 39 drift-guard
-// — verbatim structural twin scanning components/, app/, content/, styles/).
+// Analog: src/content/content.no-removed-themes.test.ts (verbatim structural twin).
 //
 // WHAT IS LOCKED:
 //   - Removed i18n keys (the *key names*, not their old values — assertion is

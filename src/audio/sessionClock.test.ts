@@ -1,20 +1,15 @@
-// Tests for createAudioSessionClock + createWallSessionClock (Plan 50-01).
+// Tests for createAudioSessionClock + createWallSessionClock.
 //
 // Covers:
-//   - D-03 Option A contract: audio factory now() returns audioCtx.currentTime;
-//     wall factory now() returns performance.now() / 1000.
-//   - D-11 wired-real subscribers: onSuspend / onResume / onClose fan-out via the
-//     audioCtx 'statechange' listener.
-//   - Revision 1 Blocker #1: onClose member added; fan-out on 'closed'; unsubscribe.
-//   - Revision 1 Blocker #2: scheduleImpl forwarding when supplied; no-op when absent.
-//   - Revision 2 Blocker #1: notifySuspended() engine-only escape hatch — fan-out
-//     parity with natural statechange, trigger-source isolation, unsubscribe
-//     symmetry, absence on the wall clock.
+//   - audio factory now() returns audioCtx.currentTime; wall factory returns performance.now() / 1000.
+//   - wired-real subscribers: onSuspend / onResume / onClose fan-out via the audioCtx 'statechange' listener.
+//   - onClose member: fan-out on 'closed'; unsubscribe.
+//   - scheduleImpl forwarding when supplied; no-op when absent.
+//   - notifySuspended() engine-only escape hatch — fan-out parity with natural statechange,
+//     trigger-source isolation, unsubscribe symmetry, absence on the wall clock.
 //
-// Per the no-design-locking memory rule: tests assert dispatch BEHAVIOR
-// (callback invocations, returned-function shape, scheduleImpl forwarding,
-// notifySuspended fan-out), NOT exact Cue field tuples. The Cue catalog is
-// closed at Phase 50 (D-04) but future phases may extend per-kind payloads.
+// Tests assert dispatch BEHAVIOR (callback invocations, returned-function shape,
+// scheduleImpl forwarding, notifySuspended fan-out), NOT exact Cue field tuples.
 
 import { describe, expect, it, vi } from 'vitest'
 
@@ -354,7 +349,7 @@ describe('createWallSessionClock', () => {
     // Type-level: the return type is `SessionClock`, which has no `notifySuspended`
     // member. `@ts-expect-error` MUST match — if the method were exposed, this
     // assertion would fail at compile time.
-    // @ts-expect-error - wall clock has no notifySuspended (revision 2 Blocker #1)
+    // @ts-expect-error - wall clock has no notifySuspended
     const probe: unknown = clock.notifySuspended
     // Runtime: the property does not exist on the returned object literal.
     expect(probe).toBeUndefined()

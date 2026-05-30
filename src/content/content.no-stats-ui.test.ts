@@ -1,26 +1,22 @@
 // src/content/content.no-stats-ui.test.ts
 //
-// Phase 37 STATS-05 anti-gamification drift-guard.
+// Anti-gamification drift-guard: locks the absence of stats-UI tokens against future regressions.
 //
 // Scanned roots: src/components/, src/app/, and src/content/
-//   - components/ + app/ cover all five render paths (Idle, Running, Complete,
-//     Learn, App Settings).
-//   - content/ catches stats-shaped i18n copy re-entering via strings.ts before
-//     a consumer wires it back into a render path (the WR-01 vector the
-//     original two-root scan missed).
+//   - components/ + app/ cover all five render paths (Idle, Running, Complete, Learn, App Settings).
+//   - content/ catches stats-shaped i18n copy re-entering via strings.ts before a consumer
+//     wires it back into a render path.
 //
-// Forbidden token classes (CONTEXT D-09 / D-10):
+// Forbidden token classes:
 //   1. Plain substring (case-sensitive): 'StatsFooter', 'ResetStatsDialog'
 //   2. Regex case-insensitive: /MIN TODAY/i, /STREAK/i, /TOTAL TIME/i
 //   3. Regex required-uppercase (no i flag, word-boundary): /\bSESSIONS\b/
 //
-// WHY this file exists (CONTEXT D-11): Plans 01 + 02 deleted all forbidden stats-UI tokens
-// from the scanned roots. This drift-guard locks that done-state against future regressions.
 // It is the lock — future re-introduction of a calm stats display is a deliberate phase
-// decision that explicitly deletes this file with rationale recorded in that phase's SUMMARY
-// (see REQUIREMENTS STATSDISPLAY-01). Deleting this file is the intentional unlock.
+// decision that explicitly deletes this file with rationale recorded in that phase's SUMMARY.
+// Deleting this file is the intentional unlock.
 //
-// Analog: src/content/content.no-review-markers.test.ts (Phase 26 D-12 / I18N-07)
+// Analog: src/content/content.no-review-markers.test.ts
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -35,8 +31,7 @@ import { resolve, join } from 'node:path'
 // Excluding .test.ts and .test.tsx files is load-bearing — this guard file itself contains
 // the literal token strings (inside the forbidden-token list below) and must not flag itself.
 // Note: the analog (content.no-review-markers.test.ts) only handles .ts / .test.ts;
-// Phase 37 must scan .tsx as well because the deleted components and their App consumers
-// were TSX files.
+// this guard also scans .tsx because the deleted components and their App consumers were TSX files.
 function collectFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry)
@@ -65,9 +60,8 @@ const SCAN_FILES: string[] = [
   ...collectFiles(CONTENT_DIR),
 ]
 
-// Forbidden token list (CONTEXT D-10).
-// Each entry carries a human-readable label so the failure message names exactly which
-// token tripped the guard — making it immediately clear to the contributor what landed.
+// Forbidden token list: each entry carries a human-readable label so the failure message
+// names exactly which token tripped the guard.
 const FORBIDDEN_TOKENS: Array<{ label: string; match: (text: string) => boolean }> = [
   {
     label: 'StatsFooter (component name)',
@@ -90,9 +84,9 @@ const FORBIDDEN_TOKENS: Array<{ label: string; match: (text: string) => boolean 
     match: (t) => /TOTAL TIME/i.test(t),
   },
   {
-    // SESSIONS uses \b word-boundary without the /i flag per CONTEXT D-10:
-    // only the uppercase form is forbidden (the visual stat readout uses the uppercase form).
-    // The lowercase word "sessions" appears legitimately in other contexts (e.g. comments).
+    // SESSIONS uses \b word-boundary without the /i flag: only the uppercase form is
+    // forbidden (the visual stat readout uses the uppercase form). The lowercase word
+    // "sessions" appears legitimately in other contexts (e.g. comments).
     label: 'SESSIONS (uppercase visual stats marker)',
     match: (t) => /\bSESSIONS\b/.test(t),
   },
