@@ -1,22 +1,16 @@
 // Tests for createSwappableSessionClock.
 //
 // Covers:
-//   - Proxy clock identity is === stable across setSource calls.
-//   - now() delegates to the CURRENT source; setSource(next) immediately shifts
-//     the delegation to `next`.
-//   - Subscription survival: a callback subscribed BEFORE setSource fires when
-//     the NEW source fans an event AND no longer fires from the OLD source.
-//   - Old-source teardown: the old source's subscriber Set shrinks after setSource
-//     (no leaked subscriptions across swaps).
-//   - Idempotent unsubscribe: the () => void returned by onSuspend can be called
-//     twice with no throw and removes the callback on the first call.
-//   - schedule(when, cue) forwarding: proxy routes to the current source's
-//     schedule() and routes to the new source after setSource.
-//   - onResume + onClose channel symmetry with onSuspend (single condensed test).
+//   - proxy clock identity is === stable across setSource calls.
+//   - now() delegates to the CURRENT source; setSource(next) immediately shifts the delegation.
+//   - subscription survival: a callback subscribed BEFORE setSource fires from the NEW source.
+//   - old-source teardown: the old source's subscriber Set shrinks after setSource.
+//   - idempotent unsubscribe: the () => void returned by onSuspend can be called twice safely.
+//   - schedule(when, cue) forwarding: proxy routes to the current source and to the new source after setSource.
+//   - onResume + onClose channel symmetry with onSuspend.
 //
-// Per the no-design-locking memory rule: assertions target BEHAVIOR (callback
-// invocations, returned-function shape, forwarding to the current source) not
-// exact internal field names or Cue field tuples.
+// Assertions target BEHAVIOR (callback invocations, returned-function shape,
+// forwarding to the current source) not exact internal field names or Cue field tuples.
 
 import { describe, expect, it, vi } from 'vitest'
 

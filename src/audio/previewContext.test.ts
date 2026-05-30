@@ -14,7 +14,7 @@ afterEach(() => {
 })
 
 describe('previewContext', () => {
-  // Per-timbre dispatch correctness (natural decay lock: phaseDurationSec omitted)
+  // Per-timbre dispatch correctness.
   //
   // previewContext.ts binds scheduleInCueForTimbre at import time via a live module
   // binding. vi.doMock on './cueSynth' before importing previewContext ensures the
@@ -30,7 +30,7 @@ describe('previewContext', () => {
       const { playInhalePreview } = await import('./previewContext')
       playInhalePreview(timbre)
 
-      // Verify call count and the TimbreId argument (dispatch correctness).
+      // Verify call count and the TimbreId argument.
       expect(spy).toHaveBeenCalledTimes(1)
       const callArgs = spy.mock.calls[0] as [AudioContext, number, AudioNode, string, unknown]
       expect(callArgs[3]).toBe(timbre)
@@ -40,7 +40,7 @@ describe('previewContext', () => {
     },
   )
 
-  // Suspend → resume: ctx.resume() invoked when singleton is suspended
+  // suspend → resume: ctx.resume() is invoked when the singleton is suspended.
   //
   // Capture the FakeAudioContext instance by temporarily replacing the AudioContext
   // global with a wrapper that stores the constructed instance. This avoids the
@@ -88,7 +88,7 @@ describe('previewContext', () => {
     expect(ctx.resume).toHaveBeenCalledTimes(1)
   })
 
-  // Singleton reuse: AudioContext constructor called exactly once across N taps
+  // Singleton reuse: AudioContext constructor called exactly once across N taps.
   it('reuses the same AudioContext instance across N consecutive playInhalePreview calls', async () => {
     // Spy on AudioContext constructor BEFORE importing the module.
     const acCtor = vi.spyOn(window, 'AudioContext')
@@ -104,7 +104,7 @@ describe('previewContext', () => {
     expect(acCtor).toHaveBeenCalledTimes(1)
   })
 
-  // Synchronous-call-path contract: scheduleInCueForTimbre must be called synchronously
+  // Synchronous-call-path contract: scheduleInCueForTimbre is called in the same microtask.
   it('calls scheduleInCueForTimbre synchronously in the same microtask as playInhalePreview', async () => {
     const spy = vi.fn()
     vi.doMock('./cueSynth', () => ({

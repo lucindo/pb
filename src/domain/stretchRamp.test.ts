@@ -384,8 +384,8 @@ describe('getStretchFrame', () => {
     expect(frame2.remainingSec).toBeLessThan(frame1.remainingSec ?? Infinity)
   })
 
-  // Verifies the clamp guards only the exact endSec landing (phantom-cycle protection),
-  // NOT the whole final half-cycle (freeze removed).
+  // Regression tests: verifies the clamp guards only the exact endSec landing (phantom-cycle
+  // protection), NOT the whole final half-cycle.
 
   it('GAP-3: phaseProgress is NOT frozen during the final cycle — the orb animates the last exhale', () => {
     // Reproduce the 5-min cool-down freeze: sample the final out-phase (last exhale) and

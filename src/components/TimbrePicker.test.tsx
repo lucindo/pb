@@ -3,10 +3,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Phase 40 D-10(e/f/g) wiring: stub the preview module so the radio-click tests
-// observe playInhalePreview invocations without producing real audio. vi.mock is
-// hoisted above the TimbrePicker import so the component module evaluates against
-// the mocked previewContext.
+// Stub the preview module so the radio-click tests observe playInhalePreview invocations
+// without producing real audio. vi.mock is hoisted above the TimbrePicker import so
+// the component module evaluates against the mocked previewContext.
 vi.mock('../audio/previewContext', () => ({
   playInhalePreview: vi.fn(),
 }))
@@ -32,7 +31,7 @@ beforeEach(() => {
   window.localStorage.clear()
   // vi.restoreAllMocks() in afterEach resets vi.spyOn spies but does NOT
   // clear the vi.fn() created inside the vi.mock factory above — clear call
-  // history explicitly between tests so D-10(e/f/g) assertions stay isolated.
+  // history explicitly between tests so preview assertions stay isolated.
   vi.mocked(playInhalePreview).mockClear()
 })
 
@@ -129,7 +128,7 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     expect(fluteButton).toBeDisabled()
   })
 
-  // Phase 40 D-10(e): tap fires playInhalePreview with the new TimbreId.
+  // Tap fires playInhalePreview with the new TimbreId.
   it('clicking an option fires playInhalePreview with the new TimbreId (D-04 onClick wiring)', async () => {
     seedTimbre('bowl')
     const user = userEvent.setup()
@@ -140,7 +139,7 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     expect(playInhalePreview).toHaveBeenCalledWith('sine')
   })
 
-  // Phase 40 D-10(f): PREV-04 wiring lock — disabled button never reaches preview.
+  // Disabled button never reaches preview (wiring lock).
   it('when disabled=true, clicking a button does NOT invoke playInhalePreview (PREV-04 wiring)', async () => {
     seedTimbre('bowl')
     const user = userEvent.setup()
@@ -150,7 +149,7 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     expect(playInhalePreview).not.toHaveBeenCalled()
   })
 
-  // Phase 40 D-10(g): re-audition semantics — same-id re-tap fires the preview again.
+  // Re-audition semantics — same-id re-tap fires the preview again.
   it('tapping the currently-selected timbre fires playInhalePreview again (re-audition — D-09)', async () => {
     seedTimbre('bell')
     const user = userEvent.setup()

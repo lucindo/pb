@@ -8,10 +8,8 @@ import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
-// Sample frame for the existing-Phase-2-behavior tests. `remainingSec` is part of
-// the SessionFrame contract (src/domain/sessionMath.ts) — null for open-ended,
-// a number for timed; either is fine here since OrbBody only reads
-// phase/phaseLabel/phaseProgress. Phase 50-02 (D-02 ms→sec cascade).
+// Sample frame: `remainingSec` is null for open-ended, a number for timed;
+// either is fine here since OrbBody only reads phase/phaseLabel/phaseProgress.
 const sampleFrame: SessionFrame = {
   phase: 'in',
   phaseLabel: 'In',
@@ -214,12 +212,11 @@ describe('OrbShape — ringCue prop (Phase 45)', () => {
   })
 })
 
-// ── Phase 46: variant="spiritual-eye" (Kuthasta / Star) ──────────────────────
-// Locks the spike-012 V5 render dispatch: StarGlyph polygon during Running +
-// Idle; production accent (no star) during LeadIn + Completion (D-02);
-// CueGlyph replaced by StarGlyph during Running (open item #1 resolution);
-// per-call-site discBg references spiritual-eye token NAMES (no hex
-// assertions per [[feedback_no_design_locking]]).
+// ── variant="spiritual-eye" (Kuthasta / Star) ────────────────────────────────
+// Locks the render dispatch: StarGlyph polygon during Running + Idle;
+// production accent (no star) during LeadIn + Completion; CueGlyph replaced
+// by StarGlyph during Running; per-call-site discBg references spiritual-eye
+// token NAMES (no hex assertions).
 describe('OrbShape — variant="spiritual-eye" (Phase 46)', () => {
   // Star polygon selector — discriminates the StarGlyph SVG from sibling
   // SVGs (CueGlyph, ProgressArcLayer, CheckmarkGlyph) by its 0..100 viewBox

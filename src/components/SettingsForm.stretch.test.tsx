@@ -143,8 +143,7 @@ describe('StretchSettingsForm', () => {
   // UAT GAP 1: Duration readout shows a rounded whole-minute value (not an unrounded float)
   it('GAP 1: Duration readout shows a rounded whole-minute string, not a fractional float', () => {
     renderForm({ activePractice: 'stretch' })
-    // Phase 50-02 (D-02 ms→sec cascade): computeStretchTotalSec returns seconds;
-    // divide by 60 (not 60_000) to convert to minutes.
+    // computeStretchTotalSec returns seconds; divide by 60 to convert to minutes.
     const totalSec = computeStretchTotalSec(DEFAULT_STRETCH_SETTINGS)
     if (totalSec === null) throw new Error('Expected finite default stretch duration')
     const roundedMinutes = Math.round(totalSec / 60)
@@ -152,10 +151,9 @@ describe('StretchSettingsForm', () => {
     // The text must use the rounded integer, not the raw quotient (which may be a float)
     expect(within(duration).getByText(`${String(roundedMinutes)} min`)).toBeInTheDocument()
     // The unrounded float must NOT appear if it differs from the rounded value.
-    // Note (Phase 50-02): after the GAP-1 fix the realized total is whole-minute
-    // exact, so sec/60 is integer-clean for DEFAULT_STRETCH_SETTINGS. The
-    // structural assertion below is preserved — it remains correct, but in
-    // practice the rawFloat === roundedMinutes branch is the common path.
+    // After the GAP-1 fix the realized total is whole-minute exact, so sec/60 is
+    // integer-clean for DEFAULT_STRETCH_SETTINGS. The structural assertion below is
+    // preserved — it remains correct, but in practice rawFloat === roundedMinutes is the common path.
     const rawFloat = totalSec / 60
     if (rawFloat !== roundedMinutes) {
       expect(within(duration).queryByText(`${String(rawFloat)} min`)).not.toBeInTheDocument()
@@ -242,7 +240,7 @@ describe('Practice settings forms stay isolated by practice', () => {
 
   it('NaviKriyaSettingsForm renders no resonant or stretch knobs', () => {
     renderForm({ activePractice: 'naviKriya' })
-    // No resonant knobs in the Navi Kriya branch (D-01 structural scaffold only).
+    // No resonant knobs in the Navi Kriya branch.
     expect(screen.queryByRole('group', { name: 'BPM' })).not.toBeInTheDocument()
     for (const group of STRETCH_GROUPS) {
       expect(screen.queryByRole('group', { name: group })).not.toBeInTheDocument()

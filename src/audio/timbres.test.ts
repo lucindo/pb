@@ -4,8 +4,7 @@ import { TIMBRE_OPTIONS } from '../domain/settings'
 import { TIMBRE_PRESETS } from './timbres'
 
 // Pure-data tests — no FakeAudioContext / no Web Audio side effects.
-// Guards: A4/A3 fundamental invariant, Bowl byte-identical proof, and the
-// OscillatorType='sine' invariant.
+// Guards: fundamental invariant (A4/A3 Hz locked), Bowl byte-identical proof, OscillatorType='sine' invariant.
 
 describe('timbres', () => {
   it('exports all 4 TimbreId keys', () => {
@@ -13,7 +12,7 @@ describe('timbres', () => {
     expect(Object.keys(TIMBRE_PRESETS)).toHaveLength(4)
   })
 
-  // A4/A3 fundamental guard — catches future preset additions that drift fundamentals.
+  // Fundamental guard — catches future preset additions that drift fundamentals.
   it('every preset uses A4/A3 fundamentals (440 Hz In / 220 Hz Out)', () => {
     for (const preset of Object.values(TIMBRE_PRESETS)) {
       expect(preset.fundamentalHzIn).toBe(440)
@@ -21,7 +20,7 @@ describe('timbres', () => {
     }
   })
 
-  // Bowl preset matches the cueSynth.ts module-level constants.
+  // Bowl preset matches the cueSynth.ts module-level constants verbatim.
   // Per-field equality is the data-layer byte-identical proof.
   it('bowl preset matches verbatim cueSynth constants', () => {
     const bowl = TIMBRE_PRESETS.bowl
@@ -47,14 +46,14 @@ describe('timbres', () => {
   })
 
   // No-PeriodicWave invariant: every preset is a partial-stacked sine.
-  it('every preset uses sine oscillator (no-PeriodicWave invariant)', () => {
+  it('every preset uses sine oscillator (D-14 no-PeriodicWave invariant)', () => {
     for (const preset of Object.values(TIMBRE_PRESETS)) {
       expect(preset.oscillatorType).toBe('sine')
     }
   })
 
-  // Flute preset matches the locked winning values.
-  it('flute preset matches locked values', () => {
+  // Flute preset locked values.
+  it('flute preset matches spike-008 values (AUDIO-01)', () => {
     const flute = TIMBRE_PRESETS.flute
     expect(flute.fundamentalHzIn).toBe(440)
     expect(flute.fundamentalHzOut).toBe(220)

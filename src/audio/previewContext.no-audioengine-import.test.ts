@@ -1,18 +1,18 @@
 // src/audio/previewContext.no-audioengine-import.test.ts
 //
-// Drift-guard for PREV-03 structural lock — previewContext must not import audioEngine.
+// Drift-guard: previewContext.ts must not import audioEngine (PREV-03 structural lock).
 //
-// WHY this file exists: PREV-03 ("preview plays when muted") is satisfied
-// structurally, not by a runtime branch. `let muted` lives only inside the
-// createAudioEngine closure — no module-level export, no exported setter. Proving
-// that previewContext.ts imports neither ./audioEngine nor any module known to
-// re-export the engine's muted state proves the preview cannot be muted by setMuted.
+// WHY this file exists: preview playing when muted is satisfied structurally, not by a
+// runtime branch. `let muted` lives only inside the createAudioEngine closure — no
+// module-level export, no exported setter. Proving that previewContext.ts imports neither
+// ./audioEngine nor any module known to re-export the engine's muted state proves the
+// preview cannot be muted by setMuted.
 //
 // Future "helpfully wire engine into preview" refactors fail this test loudly.
 // Deleting this file is the intentional unlock — record the rationale in the
 // unlocking phase's SUMMARY.
 //
-// Analog: src/content/content.no-removed-themes.test.ts (structural twin).
+// Analog: src/content/content.no-removed-themes.test.ts (structural twin at the import-graph level).
 
 // Reason: node:fs and node:path are available in the Vitest jsdom test environment.
 // tsconfig.app.json has types:["vite/client"] which excludes @types/node; the triple-slash
@@ -25,11 +25,10 @@ import { resolve } from 'node:path'
 
 const PREVIEW_PATH = resolve(__dirname, 'previewContext.ts')
 
-// Forbidden import list.
-// Each entry carries a human-readable label so the failure message names
-// exactly which forbidden import tripped the guard.
+// Forbidden import list: each entry carries a human-readable label so the failure
+// message names exactly which forbidden import tripped the guard.
 const FORBIDDEN_IMPORTS: Array<{ label: string; pattern: RegExp }> = [
-  // Primary lock for PREV-03 — direct engine import.
+  // Primary lock — direct engine import.
   { label: "import from './audioEngine'", pattern: /from\s+['"]\.\/audioEngine['"]/ },
   // Cover relative-path variants in case previewContext.ts ever moves.
   { label: "import from '../audio/audioEngine'", pattern: /from\s+['"]\.\.\/audio\/audioEngine['"]/ },

@@ -112,7 +112,7 @@ describe('nkCueSynth', () => {
     expect(handle.cleanupAt - handle.scheduledAt).toBeCloseTo(END_CHORD_RINGOUT_SEC, 5)
   })
 
-  // -- Per-OM tick: soft and short (barely-there) ---------------------------
+  // -- tick is soft and short (barely-there) ---------------------------------
 
   it('scheduleNKTick returns a valid CueHandle', () => {
     const ac = createAc()
@@ -165,7 +165,7 @@ describe('nkCueSynth', () => {
     expect(countdownDuration).toBeLessThan(tickDuration)
   })
 
-  // -- Markers reuse the HRV breath cues for every timbre --
+  // -- markers reuse the HRV breath cues for every timbre -------------------
 
   it('scheduleNKFrontMarker does not throw for any TimbreId (reuses HRV in-cue)', () => {
     const ac = createAc()

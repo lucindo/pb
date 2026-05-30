@@ -8,12 +8,12 @@ import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
-// Phase 15 D-08, D-18: the anchor's disabled-during-session behavior is unit-testable
-// in isolation via the disabled prop (derived from App's inSessionView predicate).
+// The anchor's disabled-during-session behavior is unit-testable in isolation via the
+// disabled prop (derived from App's inSessionView predicate).
 // Tests assert: (a) enabled click invokes onClick, (b) disabled click does NOT invoke
 // onClick (JSX-layer no-op — no handler attached), (c) the same DOM node persists
-// across the enabled→disabled transition (no remount — D-07 invariant carry-forward).
-// D-08 disable-not-hide: tests assert toHaveAttribute('aria-disabled', 'true') and NOT the
+// across the enabled→disabled transition (no remount).
+// Disable-not-hide: tests assert toHaveAttribute('aria-disabled', 'true') and NOT the
 // HTML-disabled matcher — SettingsAnchor uses aria-disabled to keep the element in tab order.
 
 describe('SettingsAnchor — enabled state', () => {
@@ -62,7 +62,7 @@ describe('SettingsAnchor — disabled state (inSessionView=true)', () => {
 
 describe('SettingsAnchor — no remount across enabled/disabled transition', () => {
   it('the same DOM node persists across enabled→disabled rerender', () => {
-    // D-07: the anchor's enabled/disabled transition is purely visual — React diffs
+    // The anchor's enabled/disabled transition is purely visual — React diffs
     // in place because the component shape is identical. The DOM node identity is preserved.
     const onClick = vi.fn()
     const { rerender } = render(<SettingsAnchor disabled={false} onClick={onClick} strings={EN_STRINGS_FIXTURE.practice.topBar} />)

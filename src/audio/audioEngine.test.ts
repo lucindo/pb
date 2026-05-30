@@ -13,7 +13,7 @@ import * as cueSynth from './cueSynth'
 import * as nkCueSynth from './nkCueSynth'
 import type { CueHandle } from './cueSynth'
 
-// BreathingPlan fixture is seconds-shaped (plan values are in seconds, not ms).
+// BreathingPlan fixture uses seconds-shaped fields.
 const samplePlan: BreathingPlan = {
   bpm: 5.5,
   ratio: '40:60',
@@ -30,8 +30,8 @@ interface MockEnvelopeFns {
   setValueAtTime: ReturnType<typeof vi.fn>
 }
 
-// The engine creates a master GainNode right after `new AudioContext()` and calls
-// masterGain.connect(destination). The bare-bones ProbeAC stubs below need
+// The engine creates a master GainNode right after `new AudioContext()`
+// and calls masterGain.connect(destination). The bare-bones ProbeAC stubs below need
 // createGain() to return a node with connect/disconnect + a gain AudioParam carrying
 // the automation methods setMuted() drives.
 function makeFakeGain(): GainNode {
@@ -167,10 +167,10 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // The engine creates exactly one master GainNode right after `new AudioContext()`
-  // (before any cue gain nodes). Spy on createGain to capture it as the FIRST-returned
-  // gain node, then assert setMuted ramps it.
-  it('setMuted(true) ramps the master gain toward 0, setMuted(false) toward 1', async () => {
+  // Master-gain mute. The engine creates exactly one master GainNode right
+  // after `new AudioContext()` (before any cue gain nodes). Spy on createGain to capture
+  // it as the FIRST-returned gain node, then assert setMuted ramps it.
+  it('Phase 53: setMuted(true) ramps the master gain toward 0, setMuted(false) toward 1', async () => {
     const createGainSpy = vi.spyOn(window.AudioContext.prototype, 'createGain')
     const engine = await createAudioEngine({ timbre: 'bowl' })
     // First createGain() call = the master gain (created before any cue scheduling).
@@ -191,9 +191,8 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // Cues KEEP being scheduled while muted (they play silently through the master
-  // gain at 0).
-  it('scheduleNextCue + topUpLookahead STILL schedule cues while muted', async () => {
+  // Cues KEEP being scheduled while muted (they play silently through the master gain at 0).
+  it('Phase 53: scheduleNextCue + topUpLookahead STILL schedule cues while muted', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -361,9 +360,10 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // engine.state is the live read of audioCtx.state. The hook's public resume() uses
-  // it instead of React's audioStatus closure (which is stale within the useCallback
-  // invocation) to decide whether reconstruction is required after `await engine.resume()`.
+  // engine.state is the live read of audioCtx.state.
+  // The hook's public resume() uses it instead of React's audioStatus closure (which
+  // is stale within the useCallback invocation) to decide whether reconstruction is
+  // required after `await engine.resume()`.
   it('engine.state reflects live audioCtx.state including the WebKit-only "interrupted" superset', async () => {
     let probeState: AudioContextState | 'interrupted' = 'suspended'
     class ProbeAC {
@@ -384,7 +384,7 @@ describe('audioEngine', () => {
     vi.stubGlobal('AudioContext', ProbeAC)
 
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    // Suspended AC was resumed at construction.
+    // The AC is resumed at construction when suspended.
     expect(engine.state).toBe('running')
 
     probeState = 'suspended'
@@ -398,7 +398,7 @@ describe('audioEngine', () => {
 
   // Timbre-propagation tests: construction-time `opts.timbre` flows through
   // scheduleLeadIn (first In cue) and scheduleNextCue (in/out ternary).
-  // Capture-at-construction: no setter, no re-read, immutable for engine lifetime.
+  // Capture-at-construction semantics: no setter, no re-read, immutable for engine lifetime.
 
   it('createAudioEngine({ timbre: "bell" }) forwards "bell" to scheduleInCueForTimbre on the first In cue', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
@@ -447,9 +447,9 @@ describe('audioEngine', () => {
     await engineFlute.close()
   })
 
-  // iOS silent-loop element tests: sync-construct order, attribute wiring, close()
-  // teardown + idempotency, and silent-absorb on .play() reject. Element is invisible
-  // at the hook seam — these are engine-level tests only.
+  // iOS silent-loop element: tests covering sync-construct order, attribute wiring,
+  // close() teardown + idempotency, and silent-absorb on .play() reject.
+  // Element is invisible at the hook seam — these are engine-level tests only.
 
   it('createAudioEngine constructs a silent-loop <audio> element with locked attributes', async () => {
     const instances: SpyAudio[] = []
@@ -601,9 +601,8 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  // bypassSilentMode option gating: three tests — skip construction when false,
-  // construct when true, construct when undefined (undefined → coerces to true,
-  // backward compat).
+  // bypassSilentMode option gating: skip construction when false,
+  // construct when true, construct when undefined (backward compat — coerces to true).
 
   describe('bypassSilentMode option gating', () => {
     it('createAudioEngine does NOT construct the silent-loop element when bypassSilentMode=false', async () => {
@@ -655,7 +654,7 @@ describe('audioEngine', () => {
       expect(instances).toHaveLength(1)
       const [el] = instances
       if (el === undefined) throw new Error('expected a stubbed Audio instance')
-      // Attributes must match the expected locked values.
+      // Attributes must match the locked baseline.
       expect(el.playsInline).toBe(true)
       expect(el.loop).toBe(true)
       expect(el.muted).toBe(false)
@@ -682,7 +681,7 @@ describe('audioEngine', () => {
       vi.stubGlobal('Audio', SpyAudio)
 
       // No bypassSilentMode key in opts — undefined must coerce to "construct".
-      // Backward-compat: callers that omit the field get the silent-loop element.
+      // Backward-compat: callers that omit the field must still get the silent-loop element.
       const engine = await createAudioEngine({ timbre: 'bowl' })
 
       expect(instances).toHaveLength(1)
@@ -690,10 +689,9 @@ describe('audioEngine', () => {
     })
   })
 
-  // When AudioContext.resume() rejects, the silent-loop element is unreachable
-  // through engine.close() (no engine handle is returned), so the teardown inside
-  // the resume() catch block is the only path that can release the element.
-  // Regression-guards the AC-leak found in code review.
+  // When AudioContext.resume() rejects, the silent-loop element is unreachable through
+  // engine.close() (no engine handle is returned), so the ad-hoc teardown inside the
+  // resume() catch block is the only path that can release the element.
   it('createAudioEngine tears down silent-loop element when AudioContext.resume() rejects (CR-01)', async () => {
     const audioInstances: SuspendedRejectAudio[] = []
     class SuspendedRejectAC {
@@ -725,7 +723,7 @@ describe('audioEngine', () => {
     vi.stubGlobal('AudioContext', SuspendedRejectAC)
     vi.stubGlobal('Audio', SuspendedRejectAudio)
 
-    // resume() rejection MUST propagate — caller handles AC-construction failure
+    // resume() rejection MUST propagate — caller handles AC-construction failure.
     // The silent-loop element is the leaking-resource side effect this test guards.
     await expect(createAudioEngine({ timbre: 'bowl' })).rejects.toThrow('autoplay vetoed')
 
@@ -736,12 +734,12 @@ describe('audioEngine', () => {
     expect(el.removeAttribute).toHaveBeenCalledWith('src')
   })
 
-  // The engine's internal `schedule` function is plumbed into the SessionClock at
-  // construction (scheduleImpl). Calling `engine.clock.schedule(when, cue)` routes
-  // through the engine's switch dispatch, exercising every Cue arm. Each arm calls
-  // the corresponding per-cue primitive in cueSynth.ts / nkCueSynth.ts and adds the
-  // returned handle to activeCues.
-  describe('internal schedule(when, cue) dispatch (8 Cue arms)', () => {
+  // Internal schedule(when, cue) dispatch: the engine's internal `schedule` function
+  // is plumbed into the SessionClock at construction (scheduleImpl). Calling
+  // `engine.clock.schedule(when, cue)` routes through the engine's switch dispatch,
+  // exercising every Cue arm. Each arm calls the corresponding per-cue primitive in
+  // cueSynth.ts / nkCueSynth.ts and adds the returned handle to activeCues.
+  describe('Phase 50-06 — internal schedule(when, cue) dispatch (8 Cue arms)', () => {
     it('schedule({ kind: "lead-in-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
       const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
       const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -882,9 +880,8 @@ describe('audioEngine', () => {
   })
 })
 
-// CueHandle.cancel contract
-// Tests use the real FakeAudioContext polyfill from vitest.setup.ts so that the
-// oscillator/gain/filter nodes are real fake-AC nodes with spy-compatible methods.
+// CueHandle.cancel contract: tests use the real FakeAudioContext polyfill from vitest.setup.ts
+// so that oscillator/gain/filter nodes are real fake-AC nodes with spy-compatible methods.
 // The cancel() closure must: (1) stop all oscillators at currentTime, (2) disconnect
 // every node in the chain, (3) be idempotent (calling twice must not throw).
 describe('CueHandle.cancel', () => {
@@ -977,10 +974,9 @@ describe('CueHandle.cancel', () => {
   })
 })
 
-// engine.topUpLookahead — facade dispatches a caller-supplied list of cues via
-// the internal schedule() function, respecting the closed guard and the
-// callee-side SAFE_LEAD_SEC clamp.
-describe('topUpLookahead', () => {
+// engine.topUpLookahead: dispatches a caller-supplied list of cues via the internal
+// schedule() function, respecting the closed guard and the callee-side SAFE_LEAD_SEC clamp.
+describe('Phase 52 D-04 topUpLookahead', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -1045,9 +1041,9 @@ describe('topUpLookahead', () => {
   })
 })
 
-// engine.cancelFutureCues — iterates activeCues snapshot, calls cancel() on cues
-// with scheduledAt > now, removes them from activeCues; leaves in-flight cues untouched.
-describe('cancelFutureCues', () => {
+// engine.cancelFutureCues: iterates activeCues snapshot, calls cancel() on cues with
+// scheduledAt > now, removes them from activeCues; leaves in-flight cues untouched.
+describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -1136,12 +1132,11 @@ describe('cancelFutureCues', () => {
   })
 })
 
-// cancel-then-reschedule prevents overlap doubling
-// Proves that calling cancelFutureCues() between two overlapping topUpLookahead calls
-// yields scheduler invocations equal to the SECOND (final) walk only, not the sum of
-// both walks. Also provides a negative-control test that proves the doubling DOES occur
-// when cancelFutureCues is omitted.
-describe('cancel-then-reschedule prevents overlap doubling', () => {
+// cancel-then-reschedule prevents overlap doubling: proves that calling cancelFutureCues()
+// between two overlapping topUpLookahead calls yields scheduler invocations equal to the
+// SECOND (final) walk only. Also provides a negative-control that proves doubling DOES occur
+// when cancelFutureCues is omitted — locking cancel-then-reschedule as the required pattern.
+describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -1180,7 +1175,7 @@ describe('cancel-then-reschedule prevents overlap doubling', () => {
     engine.topUpLookahead({ cues: secondWalk })
 
     // Assert: combined call count equals the FINAL walk size — not 6 (sum of both walks).
-    // No design locking: assertion uses secondWalk.length, not the literal 3.
+    // Assertion uses secondWalk.length, not the literal 3.
     const secondWalkDispatchedCount = inSpy.mock.calls.length + outSpy.mock.calls.length
     expect(secondWalkDispatchedCount).toBe(secondWalk.length)
 
@@ -1229,10 +1224,9 @@ describe('cancel-then-reschedule prevents overlap doubling', () => {
   })
 })
 
-// Engine-layer dedup of the in-flight boundary cue.
-// Closes the audible ~5ms boundary flam: the rAF top-up re-walks the boundary it is
-// currently crossing, whose in-flight cue survived cancelFutureCues (scheduledAt <= now);
-// re-scheduling it lands a second strike. The dedup skips a requested cue whose unclamped
+// Engine-layer dedup of the in-flight boundary cue prevents a double-strike: the rAF
+// top-up re-walks the boundary it is currently crossing, whose in-flight cue survived
+// cancelFutureCues (scheduledAt <= now). The dedup skips a requested cue whose unclamped
 // audioTime is within SAFE_LEAD_SEC of an IN-FLIGHT cue's scheduledAt — and ONLY in-flight
 // (future cues remain the caller's cancel-then-reschedule responsibility).
 describe('in-flight boundary-cue dedup', () => {
@@ -1304,10 +1298,10 @@ describe('in-flight boundary-cue dedup', () => {
   })
 })
 
-// Lookahead constants — These tests import the SYMBOLS (not bare literals) per project
-// memory "No design locking": if a value is tuned the tests pass without edit.
-describe('lookahead constants', () => {
-  it('LOOKAHEAD_WINDOW_SEC resolves as a number (import does not yield undefined)', () => {
+// Lookahead constant guards: tests import the SYMBOLS (not bare literals) so if a
+// value is tuned the tests pass without edit; only the source constant changes.
+describe('Phase 52 constants', () => {
+  it('LOOKAHEAD_WINDOW_SEC resolves as a number (D-02: import does not yield undefined)', () => {
     expect(typeof LOOKAHEAD_WINDOW_SEC).toBe('number')
   })
 
@@ -1315,10 +1309,9 @@ describe('lookahead constants', () => {
     expect(typeof LOOKAHEAD_MIN_CUES).toBe('number')
   })
 
-  it('LOOKAHEAD_WINDOW_SEC is locked at 6 (middle of 5–10s recommended band)', () => {
-    // No design locking: assertion references the imported symbol on the left-hand side.
-    // The numeric literal 6 on the right-hand side is the locked value — change it
-    // intentionally if the constant is tuned.
+  it('LOOKAHEAD_WINDOW_SEC is locked at 6 (D-02: middle of 5–10s ROADMAP band)', () => {
+    // Assertion references the imported symbol on the left-hand side.
+    // The numeric literal 6 on the right-hand side is the locked value — change it intentionally.
     expect(LOOKAHEAD_WINDOW_SEC).toBe(6)
   })
 
