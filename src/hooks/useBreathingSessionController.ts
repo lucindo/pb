@@ -56,11 +56,9 @@ export interface UseBreathingSessionControllerArgs {
   stretchSettings: StretchSettings
   liveCue: CueStyleId
   wakeLock: UseWakeLock
-  /** Phase 49.1 D-08: optional bypass-silent-mode flag threaded from
-   *  featureFlags.bypassSilentMode (wired in Plan 03 via useAppViewModel).
-   *  Until Plan 03 supplies the value, undefined passes through to
-   *  useAudioCues.start → audioEngine → D-07 undefined-coerces-to-true
-   *  → Phase 49 v3 behavior preserved (acceptable wave-1 → wave-2 gap state). */
+  /** Optional bypass-silent-mode flag threaded from featureFlags.bypassSilentMode.
+   *  Undefined passes through to useAudioCues.start → audioEngine where it coerces
+   *  to the backward-compatible default behavior. */
   bypassSilentMode?: boolean
 }
 
@@ -89,13 +87,13 @@ export function useBreathingSessionController({
   const sessionFrameRef = useRef<SessionFrame | null>(null)
 
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number): void => {
-    // Phase 50-02 (D-02 ms→sec cascade): liveFrame.elapsedSec is seconds-shaped at
-    // the source — subtract it directly from the new audio anchor (no `/1000`).
+    // liveFrame.elapsedSec is seconds-shaped — subtract it directly from the new
+    // audio anchor (no `/1000`).
     const elapsedSec = sessionFrameRef.current?.elapsedSec ?? 0
     audioAnchorRef.current = newAudioAnchor - elapsedSec
   }, [])
 
-  // Phase 51-02 (D-10/D-11): bridge from useAudioCues.onSessionClockReanchored to
+  // Bridge from useAudioCues.onSessionClockReanchored to
   // useSessionEngine.reanchorSessionClock. Defined via a stable callback that reads
   // through sessionReanchorRef so the callback identity is fixed for useAudioCues's
   // dep tracking, even though `session` itself is created on the line below.
@@ -104,10 +102,10 @@ export function useBreathingSessionController({
     sessionReanchorRef.current?.(newClockNow)
   }, [])
 
-  // Phase 51-02: audio precedes session (D-05 hook ordering — audio.clock is the
-  // SessionClock seam useSessionEngine reads from). Today the audio-backed proxy
-  // exists from first render (initial source is a wall clock) and swaps to the
-  // AC clock inside useAudioCues.start() (D-05).
+  // Audio precedes session (hook ordering — audio.clock is the SessionClock seam
+  // useSessionEngine reads from). The audio-backed proxy exists from first render
+  // (initial source is a wall clock) and swaps to the AC clock inside
+  // useAudioCues.start().
   const audio = useAudioCues(initialMute, onAudioReanchorRequired, onSessionClockReanchored)
   const session = useSessionEngine(initialSettings, activeStretchSettings, audio.clock)
   const { state } = session
@@ -127,9 +125,9 @@ export function useBreathingSessionController({
   const audioPlayEndChord = audio.playEndChord
   const audioStatus = audio.audioStatus
   const audioResume = audio.resume
-  // audioMuted drives the mute/resume toggle (onMuteOrResumeClick). Phase 53: it no
-  // longer gates the top-up effect — cues schedule while muted and route silently
-  // through the engine's master gain.
+  // audioMuted drives the mute/resume toggle (onMuteOrResumeClick). It does NOT
+  // gate the top-up effect — cues schedule while muted and route silently through
+  // the engine's master gain.
   const audioMuted = audio.muted
   const audioSetMuted = audio.setMuted
   const wakeLockRequest = wakeLock.request
@@ -210,8 +208,8 @@ export function useBreathingSessionController({
     const plan = createBreathingPlan(state.selectedSettings)
     planRef.current = plan
     const capturedTimbre = loadPrefs().timbre
-    // Phase 49.1 D-08: pass bypassSilentMode as the 3rd arg to useAudioCues.start.
-    // It flows into createAudioEngine via bypassSilentModeRef (Task 2 of Plan 02).
+    // Pass bypassSilentMode as the 3rd arg to useAudioCues.start. It flows into
+    // createAudioEngine via bypassSilentModeRef.
     const firstInAudioTime = await audioStart(plan, capturedTimbre, bypassSilentMode)
 
     if (generation !== startGenerationRef.current) {
@@ -269,13 +267,11 @@ export function useBreathingSessionController({
     sessionEnd()
   }, [sessionEnd])
 
-  // Phase 50-02 (D-02 ms→sec cascade): CompleteSessionState.completedAtSec is
-  // seconds-shaped; storage's recordResonantSession / recordStretchSession still
-  // accept ms-shaped values (out of scope for this rename — see Plan 50-02
-  // `<acceptance_criteria>`: "Storage layer untouched"). The boundary conversion
-  // (× 1000) lives here, at the consumer-to-storage edge. This is the ONLY
-  // ms-shaped value emitted from this hook; everywhere else in the running-
-  // session chain is seconds-shaped end-to-end.
+  // CompleteSessionState.completedAtSec is seconds-shaped; storage's
+  // recordResonantSession / recordStretchSession accept ms-shaped values. The
+  // boundary conversion (× 1000) lives here, at the consumer-to-storage edge.
+  // This is the ONLY ms-shaped value emitted from this hook; everywhere else in
+  // the running-session chain is seconds-shaped end-to-end.
   const completedAtSec = state.status === 'complete' ? state.completedAtSec : null
   const runningSnapshotRefStable = session.runningSnapshotRef
   useEffect(() => {
@@ -300,9 +296,8 @@ export function useBreathingSessionController({
         isComplete && completedAtSec !== null
           ? completedAtSec - snap.startedAtSec
           : snap.lastElapsedSec
-      // Storage layer expects ms-shaped values (recordResonantSession /
-      // recordStretchSession bodies do `Math.floor(elapsedMs / 1000)` internally).
-      // Convert at this boundary only — the in-memory chain stays seconds-shaped.
+      // Storage layer expects ms-shaped values. Convert at this boundary only —
+      // the in-memory chain stays seconds-shaped.
       const elapsedMs = elapsedSec * 1000
 
       if (activePractice === 'stretch') {
@@ -324,15 +319,14 @@ export function useBreathingSessionController({
     clearCapturedSession,
   ])
 
-  // Phase 52 D-04: top-up trigger — replaces the boundary-detection effect (L325-364).
-  // On every session frame change (rAF tick), compute the next N cue audioTimes from
-  // the anchor via walkFutureCues and dispatch via engine.topUpLookahead.
-  // Preserves load-bearing patterns from the original boundary effect:
+  // Top-up trigger: on every session frame change (rAF tick), compute the next N
+  // cue audioTimes from the anchor via walkFutureCues and dispatch via
+  // engine.topUpLookahead. Load-bearing gates preserved:
   //   1. phase !== 'running' early return (guards lead-in + post-end)
-  //   2. audioAnchor === null gate (anchor is null until lead-in onComplete at L224)
-  //   3. plan === null gate (mirrors prior null guard)
-  // D-12: session stays 'running' through hidden windows — queued cues self-terminate
-  // via cueSynth envelope (cueSynth.ts L89-95, UNCHANGED).
+  //   2. audioAnchor === null gate (anchor is null until lead-in onComplete)
+  //   3. plan === null gate
+  // Session stays 'running' through hidden windows — queued cues self-terminate
+  // via cueSynth envelope.
   //
   // stretchSegmentsForTopUp: derive a dep-array-safe value by narrowing outside the
   // effect. IdleSessionState has no stretchSegments property; accessing it directly in
@@ -345,9 +339,9 @@ export function useBreathingSessionController({
   useEffect(() => {
     if (phase !== 'running') return
 
-    // Phase 53: no muted gate. The lookahead queue keeps refilling while muted so cues
-    // play silently through the master gain (gain=0); unmute is then instant with no
-    // boundary wait. Mute is purely a master-gain ramp in the engine (audioEngine.setMuted).
+    // No muted gate. The lookahead queue keeps refilling while muted so cues play
+    // silently through the master gain (gain=0); unmute is then instant with no
+    // boundary wait. Mute is purely a master-gain ramp in the engine.
 
     const frame = session.currentFrame
     if (frame === null) return
@@ -356,15 +350,15 @@ export function useBreathingSessionController({
     const plan = planRef.current
     if (audioAnchor === null || plan === null) return
 
-    // D-07: session-elapsed relative to anchor for D-14 window computation
+    // Session-elapsed relative to anchor for the lookahead window computation
     const elapsedSec = frame.elapsedSec
 
-    // Stretch sessions expose segments via state.stretchSegments (set by startStretchSession).
+    // Stretch sessions expose segments via state.stretchSegments.
     // stretchSegmentsForTopUp is derived above from the narrowed state union (safe for TS).
     const segments = stretchSegmentsForTopUp ?? undefined
 
-    // D-14: timed sessions trim the lookahead at plan.totalSec so no cue is queued
-    // past the session end. Open-ended sessions (plan.totalSec === null) use undefined.
+    // Timed sessions trim the lookahead at plan.totalSec so no cue is queued past
+    // the session end. Open-ended sessions (plan.totalSec === null) use undefined.
     const targetSec = plan.totalSec ?? undefined
 
     const cues = walkFutureCues({
@@ -379,21 +373,21 @@ export function useBreathingSessionController({
       targetSec,
     })
 
-    // CR-01-FIX Plan 05 + Plan 06: cancel-then-reschedule (SCHED-05 doctrine D-10).
-    // cancelFutureCues cancels all queued cues with scheduledAt > audioNow, preventing
-    // duplicate OscillatorNode chains from consecutive overlapping topUpLookahead walks.
+    // Cancel-then-reschedule: cancelFutureCues cancels all queued cues with
+    // scheduledAt > audioNow, preventing duplicate OscillatorNode chains from
+    // consecutive overlapping topUpLookahead walks.
     //
-    // In-flight cues (scheduledAt <= audioNow) survive cancelFutureCues and continue
-    // playing naturally. The new walk may re-generate the same boundary cue if the rAF
-    // tick fires 16–50ms after the audio clock crossed the boundary. The callee-side
-    // SAFE_LEAD_SEC clamp would schedule the duplicate at audioNow+5ms — a 5ms flam.
-    // This is a known, accepted residual artifact of the rAF-based scheduling model.
-    // The dispatch-site `audioNow + SAFE_LEAD_SEC` filter (REVIEW.md Option A) was
-    // removed because it incorrectly drops reconstruction-path cues whose audioTime
-    // can be legitimately behind audioNow due to anchor math (audioAnchor = newAC-elapsed).
-    // After reconstruction, anchor shifts produce different audioTimes so no double-strike
-    // occurs; the filter is therefore only needed for the single-tick lag case which
-    // produces the minimal 5ms flam.
+    // In-flight cues (scheduledAt <= audioNow) survive cancelFutureCues and
+    // continue playing naturally. The new walk may re-generate the same boundary
+    // cue if the rAF tick fires 16–50ms after the audio clock crossed the
+    // boundary. The callee-side SAFE_LEAD_SEC clamp would schedule the duplicate
+    // at audioNow+5ms — a 5ms flam. This is a known, accepted residual artifact
+    // of the rAF-based scheduling model. A dispatch-site filter was removed
+    // because it incorrectly drops reconstruction-path cues whose audioTime can
+    // be legitimately behind audioNow due to anchor math (audioAnchor =
+    // newAC-elapsed). After reconstruction, anchor shifts produce different
+    // audioTimes so no double-strike occurs; the filter is therefore only needed
+    // for the single-tick lag case which produces the minimal 5ms flam.
     audioCancelFutureCues()
     audioTopUpLookahead(cues)
   }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])

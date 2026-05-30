@@ -1,6 +1,5 @@
-// src/hooks/useBypassSilentModeChoice.ts — Phase 49.1 Plan 01 D-08: paste-and-rename of
-// useSwitcherIconChoice for the bypassSilentMode field (boolean type — same shape).
-// Dispatches hrv:prefs-changed with detail.key === 'bypassSilentMode' per D-08.
+// src/hooks/useBypassSilentModeChoice.ts — Picker-side hook for the bypassSilentMode prefs
+// field (boolean). Dispatches hrv:prefs-changed with detail.key === 'bypassSilentMode'.
 
 import { useCallback, useState } from 'react'
 

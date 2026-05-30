@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 
-// Phase 50-02: SessionClock is the D-09 substitute for direct wall-clock
-// reads. The audioEngine re-export (ABSTR-02) is the preferred entry point so
-// downstream callers don't reach into the audio subdirectory's internal layout.
+// SessionClock is the substitute for direct wall-clock reads. The audioEngine
+// re-export is the preferred entry point so downstream callers don't reach into
+// the audio subdirectory's internal layout.
 import type { SessionClock } from '../audio/audioEngine'
 import type { SessionFrame } from '../domain/sessionMath'
 import type { SessionSettings, StretchSettings } from '../domain/settings'
@@ -18,20 +18,18 @@ import {
 } from '../domain/sessionController'
 
 /**
- * Phase 10 HOOKS-02 (D-07): running-session snapshot exported for App-side
- * consumption. Mirrors the shape that App.tsx previously stored in its local
- * running-snapshot ref (HEAD App.tsx:179-183). The hook now owns the writer
- * (D-06) and exposes the read surface via `runningSnapshotRef`. The snapshot
- * persists across the transition out of `running` so the App-level
+ * Running-session snapshot exported for App-side consumption. The hook owns
+ * the writer and exposes the read surface via `runningSnapshotRef`. The
+ * snapshot persists across the transition out of `running` so the App-level
  * leave-running cleanup effect can compute elapsed without re-narrowing the
  * discriminated union.
  *
- * Lifetime: written once per rAF tick (from inside the setState updater, per
- * D-08) while status is `running`; persists unchanged after the transition
- * out of running (the hook does NOT null on transition because consumer
- * effects fire AFTER hook effects and need to read the snapshot). The
- * snapshot is overwritten on the next session's first rAF tick. Consumers
- * idempotently dedupe via the `key` field (= startedAtSec, post-Phase-50 sec-shaped).
+ * Lifetime: written once per rAF tick (from inside the setState updater) while
+ * status is `running`; persists unchanged after the transition out of running
+ * (the hook does NOT null on transition because consumer effects fire AFTER hook
+ * effects and need to read the snapshot). The snapshot is overwritten on the
+ * next session's first rAF tick. Consumers idempotently dedupe via the `key`
+ * field (= startedAtSec, seconds-shaped).
  */
 export interface RunningSnapshot {
   key: string
@@ -42,25 +40,24 @@ export interface RunningSnapshot {
 export interface SessionEngine {
   state: SessionState
   /**
-   * Phase 10 HOOKS-03: per-phase-stable frame identity. Same `===` reference
-   * across renders within the same `cycleIndex:phase`. Use for effects that
-   * should fire once per phase boundary — NOT for per-frame visual rendering.
+   * Per-phase-stable frame identity. Same `===` reference across renders within
+   * the same `cycleIndex:phase`. Use for effects that should fire once per phase
+   * boundary — NOT for per-frame visual rendering.
    */
   currentFrame: SessionFrame | null
   /**
-   * Phase 10 HOOKS-03: per-rAF frame value. Identity changes every animation
-   * frame; `phaseProgress` and `elapsedMs` are fresh. Use for visual rendering
-   * (BreathingShape, SessionReadout) — NOT for phase-boundary effects.
+   * Per-rAF frame value. Identity changes every animation frame; `phaseProgress`
+   * and `elapsedMs` are fresh. Use for visual rendering (BreathingShape,
+   * SessionReadout) — NOT for phase-boundary effects.
    */
   liveFrame: SessionFrame | null
   /**
-   * Phase 10 HOOKS-02 (D-06/D-07/D-08): running-session snapshot owned by the
-   * engine, written from inside the rAF tick setState updater while status is
-   * `running`. Persists unchanged across the transition out of running so
-   * consumer effects (App's leave-running cleanup) can read the last known
-   * elapsed values. Overwritten on the next session's first rAF tick.
-   * Read `.current` synchronously; refs are stable — do NOT put in effect
-   * dep arrays.
+   * Running-session snapshot owned by the engine, written from inside the rAF
+   * tick setState updater while status is `running`. Persists unchanged across
+   * the transition out of running so consumer effects (App's leave-running
+   * cleanup) can read the last known elapsed values. Overwritten on the next
+   * session's first rAF tick. Read `.current` synchronously; refs are stable —
+   * do NOT put in effect dep arrays.
    */
   runningSnapshotRef: RefObject<RunningSnapshot | null>
   setSelectedSettings(this: void, settings: SessionSettings): void
@@ -76,41 +73,39 @@ export interface SessionEngine {
    */
   extendDuration(this: void, durationMinutes: number): void
   /**
-   * Phase 51 Plan 02 (D-10 / D-11): Reanchor `startedAtSec` after an
-   * AudioContext reconstruction (Phase 5.1 iOS recovery path).
+   * Reanchor `startedAtSec` after an AudioContext reconstruction (iOS recovery
+   * path).
    *
    * When `useAudioCues.reconstructEngine` builds a new AudioContext, the new
-   * AC's `currentTime` starts near 0. The proxy's source swaps to the new
-   * clock via `setSource(newEngine.clock)` — at the next rAF tick
-   * `clock.now()` returns the new AC's currentTime. Without reanchor,
-   * `elapsed = clock.now() - startedAtSec` would compute a negative or
-   * wildly wrong value.
+   * AC's `currentTime` starts near 0. The proxy's source swaps to the new clock
+   * via `setSource(newEngine.clock)` — at the next rAF tick `clock.now()`
+   * returns the new AC's currentTime. Without reanchor, `elapsed = clock.now() -
+   * startedAtSec` would compute a negative or wildly wrong value.
    *
-   * Reanchor math (D-10):
+   * Reanchor math:
    *   `newStartedAtSec = newClockNow - lastFrame.elapsedSec`
    *
    * After reanchor, `elapsed = clock.now() - newStartedAtSec` is:
    *   `≈ newClockNow - (newClockNow - preReanchorElapsed) = preReanchorElapsed`
    * — the elapsed is preserved across the swap.
    *
-   * D-11 ordering: this method fires BEFORE `onReanchorRequired` (the
+   * Ordering invariant: this method fires BEFORE `onReanchorRequired` (the
    * audio-anchor reanchor). The caller (`useBreathingSessionController` via
    * `onSessionClockReanchored`) guarantees the ordering.
    *
    * No-op when `status !== 'running'` — reanchor on idle/complete is
    * meaningless (no elapsed to preserve).
    *
-   * Phase 50 D-02: `startedAtSec` is seconds-shaped.
+   * `startedAtSec` is seconds-shaped.
    */
   reanchorSessionClock(this: void, newClockNow: number): void
 }
 
 /**
- * Phase 50-02 (D-01/D-09): the `clock` arg is the new substitute for direct
- * wall-clock reads. Callers MUST supply either an `AudioSessionClock`
- * (when an AudioEngine exists) or a `WallSessionClock` (visuals-only fallback).
- * Phase 51 will swap the source to audioCtx.currentTime via this same SessionClock
- * seam without any further caller change.
+ * The `clock` arg is the SessionClock substitute for direct wall-clock reads.
+ * Callers MUST supply either an `AudioSessionClock` (when an AudioEngine exists)
+ * or a `WallSessionClock` (visuals-only fallback). The source can be swapped to
+ * audioCtx.currentTime via the SessionClock seam without any caller change.
  */
 export function useSessionEngine(
   initialSettings: SessionSettings = DEFAULT_SETTINGS,
@@ -122,38 +117,35 @@ export function useSessionEngine(
     selectedSettings: { ...initialSettings },
   }))
 
-  // HOOKS-02 / D-06 / D-07: hook owns the running-snapshot ref. Written from
-  // inside the rAF tick setState updater (D-08 — Pitfall 1 closure-staleness
-  // resolution). App.tsx's running-snapshot effect at HEAD lines 412-420 is
-  // DELETED in Task 3; the hook is now the single writer.
+  // Hook owns the running-snapshot ref. Written from inside the rAF tick setState
+  // updater (closure-staleness resolution). The hook is the single writer.
   const runningSnapshotRef = useRef<RunningSnapshot | null>(null)
 
-  // AH-WR-05 INVARIANT — STALE-CLOSURE TRAP: the dep array below is
-  // intentionally `[state.status, clock]` only, so this effect (and its rAF loop)
-  // is created ONCE per session (when status transitions to running) and NOT
-  // re-created on every per-frame state update. Consequently the `state` value
-  // captured in this effect's closure is FROZEN at the value it had when the
-  // session entered `running`. Every per-frame value (elapsedSec, lastFrame,
-  // cycleIndex, phaseProgress, ...) MUST be read inside the
-  // `setState((currentState) => ...)` updater via `currentState` — NEVER from
-  // the outer-closure `state`. Reading `state` (or anything derived from it)
-  // from inside `tick` would silently observe first-frame-stale data for the
-  // entire session. Any future value the loop needs must be threaded through
-  // `currentState`, not the closure. `clock` is included in the dep array per
-  // exhaustive-deps; callers thread a stable memoized instance (Phase 50-02
-  // Task 4), so the rAF loop is not re-created mid-session in practice.
+  // STALE-CLOSURE INVARIANT: the dep array below is intentionally
+  // `[state.status, clock]` only, so this effect (and its rAF loop) is created
+  // ONCE per session (when status transitions to running) and NOT re-created on
+  // every per-frame state update. Consequently the `state` value captured in
+  // this effect's closure is FROZEN at the value it had when the session entered
+  // `running`. Every per-frame value (elapsedSec, lastFrame, cycleIndex,
+  // phaseProgress, ...) MUST be read inside the `setState((currentState) => ...)`
+  // updater via `currentState` — NEVER from the outer-closure `state`. Reading
+  // `state` (or anything derived from it) from inside `tick` would silently
+  // observe first-frame-stale data for the entire session. Any future value the
+  // loop needs must be threaded through `currentState`, not the closure. `clock`
+  // is included in the dep array per exhaustive-deps; callers thread a stable
+  // memoized instance, so the rAF loop is not re-created mid-session in practice.
   useEffect(() => {
     if (state.status !== 'running') {
-      // HOOKS-02 / D-06: DO NOT null the snapshot here. Hook effects (custom-
-      // hook useEffects) run BEFORE consumer-component useEffects when both
-      // hooks are called in the same component, so nulling on transition out
-      // would clobber `runningSnapshotRef.current` BEFORE App's leave-running
-      // cleanup effect read it. The snapshot persists across the transition
-      // out of running and is overwritten on the next session's first rAF
-      // tick (the inside-updater write in `tick` below). App.tsx's
-      // `recordedSessionKeyRef` dedupes idempotently via the snapshot's
-      // `key` (= startedAtSec), so reading a stale snapshot on a subsequent
-      // idle render is safe — the stats write only fires on a fresh key.
+      // DO NOT null the snapshot here. Hook effects (custom-hook useEffects) run
+      // BEFORE consumer-component useEffects when both hooks are called in the
+      // same component, so nulling on transition out would clobber
+      // `runningSnapshotRef.current` BEFORE App's leave-running cleanup effect
+      // read it. The snapshot persists across the transition out of running and
+      // is overwritten on the next session's first rAF tick (the inside-updater
+      // write in `tick` below). App.tsx's `recordedSessionKeyRef` dedupes
+      // idempotently via the snapshot's `key` (= startedAtSec), so reading a
+      // stale snapshot on a subsequent idle render is safe — the stats write
+      // only fires on a fresh key.
       return undefined
     }
 
@@ -166,10 +158,10 @@ export function useSessionEngine(
     // cadence) so the worker path cannot accumulate queued rAF callbacks while
     // hidden.
     const advance = () => {
-      // HOOKS-04 / D-10: cancel-guard. A call that lands AFTER the effect
-      // cleanup ran (jsdom fake-timer rAF drain ordering, an in-flight worker
-      // message, or a real-browser race) becomes a no-op — never setState on a
-      // torn-down state owner.
+      // Cancel-guard. A call that lands AFTER the effect cleanup ran (jsdom
+      // fake-timer rAF drain ordering, an in-flight worker message, or a
+      // real-browser race) becomes a no-op — never setState on a torn-down state
+      // owner.
       if (cancelled) return
 
       // Single read of clock.now() — the master clock (audioCtx.currentTime via
@@ -184,10 +176,9 @@ export function useSessionEngine(
           return currentState
         }
 
-        // HOOKS-02 / D-06 / D-08: write the running-snapshot from
-        // `currentState` (NOT outer-closure `state` — RESEARCH §Pitfall 1
-        // closure staleness). Placement: AFTER the early-return narrowed
-        // `currentState` to `RunningSessionState`.
+        // Write the running-snapshot from `currentState` (NOT outer-closure
+        // `state` — see stale-closure invariant above). Placement: AFTER the
+        // early-return that narrowed `currentState` to `RunningSessionState`.
         runningSnapshotRef.current = {
           key: String(currentState.startedAtSec),
           startedAtSec: currentState.startedAtSec,
@@ -236,14 +227,12 @@ export function useSessionEngine(
     }
   }, [state.status, clock])
 
-  // HOOKS-03 / D-03: primitives-only useMemo deps. `currentFrame` identity
-  // recomputes only when `state.status`, `cycleIndex`, or `phase` change — i.e.
-  // at a phase boundary. Within a phase (same cycleIndex:phase across rAF
-  // ticks), the same `===` reference is returned, so dep-on-currentFrame
-  // effects fire once per phase instead of per rAF.
+  // currentFrame identity recomputes only when `state.status`, `cycleIndex`, or
+  // `phase` change — i.e. at a phase boundary. Within a phase (same
+  // cycleIndex:phase across rAF ticks), the same `===` reference is returned, so
+  // dep-on-currentFrame effects fire once per phase instead of per rAF.
   //
-  // Variant B (local-narrow) per CONTEXT D-03 fallback / RESEARCH A4: TypeScript
-  // strict-mode rejects the optional-chain Variant A form
+  // TypeScript strict-mode rejects the optional-chain form
   // (`state.lastFrame?.cycleIndex` in the dep array) because `lastFrame` exists
   // only on `RunningSessionState`. Local narrowing surfaces the primitives
   // (`cycleKey` / `phaseKey`) cleanly so the dep array carries only primitives
@@ -253,14 +242,14 @@ export function useSessionEngine(
   const phaseKey = state.status === 'running' ? state.lastFrame.phase : null
   const currentFrame = useMemo<SessionFrame | null>(
     () => (state.status === 'running' ? state.lastFrame : null),
-    // Reason: the useMemo body reads `state.lastFrame` only when `state.status === 'running'`; its identity is fully determined by `state.status`, `cycleIndex`, and `phase` (primitives surfaced as `cycleKey`/`phaseKey` above). Adding `state` to the dep array would defeat the per-phase-stable identity contract (D-03) by re-memoizing on every rAF tick. The Variant B local-narrowing is itself the safe-harbor; the disable is annotated per Phase 7 D-04 / Phase 10 D-19.
+    // Reason: the useMemo body reads `state.lastFrame` only when `state.status === 'running'`; its identity is fully determined by `state.status`, `cycleIndex`, and `phase` (primitives surfaced as `cycleKey`/`phaseKey` above). Adding `state` to the dep array would defeat the per-phase-stable identity contract by re-memoizing on every rAF tick. The local-narrowing is itself the safe-harbor; the disable is annotated to document the intentional deviation from the exhaustive-deps rule.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.status, cycleKey, phaseKey],
   )
 
-  // HOOKS-03 / D-04: per-rAF live frame. Identity changes every render-cycle
-  // by design — visual consumers (BreathingShape, SessionReadout) need fresh
-  // `phaseProgress`/`elapsedMs` per frame. Direct read, NO useMemo wrapper.
+  // Per-rAF live frame. Identity changes every render-cycle by design — visual
+  // consumers (BreathingShape, SessionReadout) need fresh `phaseProgress`/
+  // `elapsedMs` per frame. Direct read, NO useMemo wrapper.
   const liveFrame: SessionFrame | null = state.status === 'running' ? state.lastFrame : null
 
   const setSelectedSettings = useCallback((settings: SessionSettings) => {
@@ -291,10 +280,10 @@ export function useSessionEngine(
         return currentState
       }
 
-      // Phase 34: when a stretch settings object is wired in, start a stretch
-      // session via startStretchSession instead of the standard startSession.
-      // WR-03: pass currentState.selectedSettings as the resonant config so it is
-      // preserved through the session (startStretchSession stores it in selectedSettings,
+      // When a stretch settings object is wired in, start a stretch session via
+      // startStretchSession instead of the standard startSession. Pass
+      // currentState.selectedSettings as the resonant config so it is preserved
+      // through the session (startStretchSession stores it in selectedSettings,
       // lockedSettings carries the synthetic lead-in).
       const sSettings = stretchSettingsRef.current
       if (sSettings !== null) {
@@ -322,11 +311,10 @@ export function useSessionEngine(
       }
 
       try {
-        // DS-WR-01: pass a fresh clock reading so `extendTimedSession` recomputes
-        // `lastFrame` from `nowSec - startedAtSec`, mirroring how `startSession` is
-        // called above (`startSession(..., clock.now())`). Phase 50-02 Warning #11:
-        // comment updated post-SessionClock migration — session capture flows
-        // through the injected `clock.now()` only.
+        // Pass a fresh clock reading so `extendTimedSession` recomputes `lastFrame`
+        // from `nowSec - startedAtSec`, mirroring how `startSession` is called
+        // above (`startSession(..., clock.now())`). Session capture flows through
+        // the injected `clock.now()` only.
         return extendTimedSession(currentState, durationMinutes, clock.now())
       } catch (error) {
         if (error instanceof RangeError) {
@@ -338,9 +326,9 @@ export function useSessionEngine(
     })
   }, [clock])
 
-  // Phase 51 Plan 02 (D-10 / D-11): Reanchor startedAtSec after a proxy source
-  // swap (AudioContext reconstruction on iOS). The setState updater narrows on
-  // 'running' and rewrites startedAtSec = newClockNow - lastFrame.elapsedSec.
+  // Reanchor startedAtSec after a proxy source swap (AudioContext reconstruction
+  // on iOS). The setState updater narrows on 'running' and rewrites
+  // startedAtSec = newClockNow - lastFrame.elapsedSec.
   // Deps are `[]` — the updater reads currentState, no closure over `state`.
   const reanchorSessionClock = useCallback((newClockNow: number) => {
     setState((currentState) => {
@@ -348,7 +336,7 @@ export function useSessionEngine(
         // No-op: reanchor on idle/complete is meaningless.
         return currentState
       }
-      // D-10 reanchor math: preserve pre-reanchor elapsed across the AC swap.
+      // Reanchor math: preserve pre-reanchor elapsed across the AC swap.
       // newStartedAtSec = newClockNow - elapsedSec
       // Next tick: elapsed = clock.now() - newStartedAtSec
       //          = newClockNow - (newClockNow - preReanchorElapsed)

@@ -51,21 +51,19 @@ export function useNaviKriyaSessionController({
   muted,
   wakeLock,
 }: UseNaviKriyaSessionControllerArgs): NaviKriyaSessionController {
-  // Phase 51 D-02: naviAudio MUST be called BEFORE nkEngine because nkEngine
-  // consumes naviAudio.clock. The previous order (nkEngine → naviAudio) is
-  // flipped here per Plan 51-03 Task 2 action.
-  // Phase 51 D-01/D-02: nkClock useMemo deleted — useNKEngine now receives the
-  // audio-backed proxy clock from useNaviKriyaAudio.clock directly (D-02).
-  // Stats elapsedSec is AC-time-based when the AC constructed cleanly; wall-clock
-  // fallback when AC construction failed (D-08 mirror of HRV/Stretch).
+  // naviAudio MUST be called BEFORE nkEngine because nkEngine consumes
+  // naviAudio.clock. useNKEngine receives the audio-backed proxy clock from
+  // useNaviKriyaAudio.clock directly. Stats elapsedSec is AC-time-based when the
+  // AC constructed cleanly; wall-clock fallback when AC construction failed
+  // (mirrors HRV/Stretch).
   const naviAudio = useNaviKriyaAudio(muted)
   const naviAudioBegin = naviAudio.begin
   const naviAudioClose = naviAudio.close
   const naviAudioCloseAfterEndCue = naviAudio.closeAfterEndCue
-  // D-02: naviAudio.clock is the stable proxy (wall-clock pre-begin; AC-backed
-  // during session; reverts to wall on close). useNKEngine holds this reference
-  // for clock.now() reads at start/stepOm/end — only the SOURCE changes, not
-  // the identity (D-03 proxy invariant holds).
+  // naviAudio.clock is the stable proxy (wall-clock pre-begin; AC-backed during
+  // session; reverts to wall on close). useNKEngine holds this reference for
+  // clock.now() reads at start/stepOm/end — only the SOURCE changes, not the
+  // identity (proxy identity invariant holds).
   const nkEngine = useNKEngine(naviAudio.clock)
   const { nkPhase, nkRound, nkCount, nkRunning } = nkEngine
   const nkStart = nkEngine.start
@@ -99,10 +97,9 @@ export function useNaviKriyaSessionController({
     if (recordedRef.current) return
     recordedRef.current = true
 
-    // Phase 50 D-02 storage-boundary conversion: result.elapsedSec is seconds-
-    // shaped end-to-end through the NK engine; recordNaviKriyaSession's API
-    // takes ms (storage layer untouched per Plan 50-02 invariant). Multiply
-    // at this single consumer-to-storage edge; the in-memory chain stays
+    // Storage-boundary conversion: result.elapsedSec is seconds-shaped end-to-end
+    // through the NK engine; recordNaviKriyaSession's API takes ms. Multiply at
+    // this single consumer-to-storage edge; the in-memory chain stays
     // seconds-shaped.
     const elapsedMsForStorage = result.elapsedSec * 1000
     recordNaviKriyaSession(elapsedMsForStorage, result.completedRounds, result.isComplete)

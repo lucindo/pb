@@ -9,11 +9,11 @@ interface SafariNavigator extends Navigator {
 const STANDALONE_QUERY = '(display-mode: standalone)'
 const PHONE_QUERY = '(pointer: coarse)'
 
-// CR-01: explicit iOS platform detection. The presence of `navigator.standalone`
-// is NOT a reliable iOS signal — it is undefined on iPadOS 13+ desktop-mode
-// Safari, and any future browser exposing a `standalone` property would be
-// misclassified. Detect the platform from the user-agent instead: iPhone/iPod/iPad
-// directly, plus iPadOS 13+ which reports as "Macintosh" with multi-touch support.
+// Explicit iOS platform detection. The presence of `navigator.standalone` is NOT
+// a reliable iOS signal — it is undefined on iPadOS 13+ desktop-mode Safari, and
+// any future browser exposing a `standalone` property would be misclassified.
+// Detect the platform from the user-agent instead: iPhone/iPod/iPad directly,
+// plus iPadOS 13+ which reports as "Macintosh" with multi-touch support.
 function detectIsIOS(): boolean {
   const ua = navigator.userAgent
   return (
@@ -22,9 +22,9 @@ function detectIsIOS(): boolean {
   )
 }
 
-// Reason: standalone resolution is needed at three call sites (lazy state
-// initializer, mount re-seed, MQL change listener). Extracting the OR-chain
-// keeps the iOS `navigator.standalone` fallback in one place.
+// Standalone resolution is needed at three call sites (lazy state initializer,
+// mount re-seed, MQL change listener). Extracting the OR-chain keeps the iOS
+// `navigator.standalone` fallback in one place.
 function resolveStandalone(mqlMatches: boolean): boolean {
   return mqlMatches || (navigator as SafariNavigator).standalone === true
 }
@@ -79,12 +79,10 @@ export function useIsStandaloneOrPhone(): UseIsStandaloneOrPhone {
     const mqlStandalone = window.matchMedia(STANDALONE_QUERY)
     const mqlPhone = window.matchMedia(PHONE_QUERY)
 
-    // IN-02: re-seed from live MediaQueryList on mount to close the stale-initial-state window;
-    // subsequent updates come from the change listeners (MDN canonical pattern).
-    // Reason: re-seed from live MediaQueryList on mount to close the stale-initial-state window.
+    // Re-seed from live MediaQueryList on mount to close the stale-initial-state window;
+    // subsequent updates come from the change listeners.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsStandalone(resolveStandalone(mqlStandalone.matches))
-    // Reason: re-seed from live MediaQueryList on mount to close the stale-initial-state window.
     setIsPhone(mqlPhone.matches)
 
     const onStandaloneChange = (event: MediaQueryListEvent): void => {
@@ -103,8 +101,8 @@ export function useIsStandaloneOrPhone(): UseIsStandaloneOrPhone {
     }
   }, [])
 
-  // CR-01/WR-01: iOS is a fixed platform fact for the page lifetime — compute
-  // once in lazy state initializer so it is not recomputed on every render.
+  // iOS is a fixed platform fact for the page lifetime — compute once in lazy
+  // state initializer so it is not recomputed on every render.
   const [isIOS] = useState<boolean>(detectIsIOS)
 
   return { isStandalone, isPhone, isIOS }

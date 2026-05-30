@@ -12,14 +12,14 @@ import { saveInstallDismissed } from '../storage/installDismissed'
 export interface UseBeforeInstallPrompt {
   /**
    * The deferred install prompt, or null if the browser has not yet fired
-   * `beforeinstallprompt`. Starts as null (D-08: no banner should appear until
-   * the event fires — guarantees the install button is always functional).
+   * `beforeinstallprompt`. Starts as null so no banner appears until the event
+   * fires — guarantees the install button is always functional.
    */
   deferredPrompt: BeforeInstallPromptEvent | null
   /**
    * Triggers the native Android install prompt. Must be called directly from a
    * user-gesture handler (e.g., onClick) to preserve the gesture chain required
-   * by Chrome (Pitfall 2 — calling from a useEffect or setTimeout silently fails).
+   * by Chrome — calling from a useEffect or setTimeout silently fails.
    */
   triggerInstall(this: void): Promise<void>
 }
@@ -28,9 +28,9 @@ export interface UseBeforeInstallPrompt {
  * Captures the Android `beforeinstallprompt` window event and exposes a
  * `triggerInstall` function to replay it from a user gesture.
  *
- * D-07: The listener is registered at mount so the event is captured immediately
- * on page load. `deferredPrompt` starts as null and is only populated when the
- * browser fires the event, satisfying D-08 (no banner with a dead install button).
+ * The listener is registered at mount so the event is captured immediately on
+ * page load. `deferredPrompt` starts as null and is only populated when the
+ * browser fires the event (no banner with a dead install button).
  *
  * The `appinstalled` event also calls `saveInstallDismissed` to handle the path
  * where the user installs via the browser's own UI (not the banner button) — this
@@ -40,7 +40,7 @@ export function useBeforeInstallPrompt(): UseBeforeInstallPrompt {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
-    // D-07: register at mount — captures beforeinstallprompt immediately on page load
+    // Register at mount — captures beforeinstallprompt immediately on page load
     const onBeforeInstall = (e: Event): void => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
@@ -54,7 +54,7 @@ export function useBeforeInstallPrompt(): UseBeforeInstallPrompt {
     }
 
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
-    // appinstalled is absent from WindowEventMap in TS 6.0.3 — cast required (Pitfall 7)
+    // appinstalled is absent from WindowEventMap in TS 6.0.3 — cast required
     window.addEventListener('appinstalled' as keyof WindowEventMap, onInstalled)
 
     return () => {
@@ -64,7 +64,7 @@ export function useBeforeInstallPrompt(): UseBeforeInstallPrompt {
   }, [])
 
   const triggerInstall = useCallback(async (): Promise<void> => {
-    // D-08: no-op until the browser fires beforeinstallprompt (no banner with dead button)
+    // No-op until the browser fires beforeinstallprompt (no banner with dead button)
     if (deferredPrompt === null) return
     try {
       const { outcome } = await deferredPrompt.prompt()

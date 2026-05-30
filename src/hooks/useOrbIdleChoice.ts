@@ -1,4 +1,5 @@
-// src/hooks/useOrbIdleChoice.ts — Phase 47 Plan 04 (D-09): paste-and-rename of useTimbreChoice for the orbIdle field. Dispatches hrv:prefs-changed with detail.key === 'orbIdle' per D-10.
+// src/hooks/useOrbIdleChoice.ts — Picker-side hook for the orbIdle prefs field.
+// Dispatches hrv:prefs-changed with detail.key === 'orbIdle'.
 
 import { useCallback, useState } from 'react'
 
