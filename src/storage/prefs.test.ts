@@ -484,30 +484,17 @@ describe('loadPrefs / savePrefs round-trip', () => {
   })
 })
 
-describe('Phase 47 RED — new coercers exist and behave (Task 1)', () => {
-  it('exports the 4 new coercers and they have the contracted defaults', () => {
-    expect(coerceBreathingShape('junk')).toBe('orb-halo')
-    expect(coerceRingCue('junk')).toBe('progress-arc')
-    expect(coerceOrbIdle('junk')).toBe('ambient')
-    expect(coerceSwitcherIcon('junk')).toBe(false)
-  })
-
-  it('DEFAULT_PREFS includes the 5 new flag defaults sourced from featureFlags.ts', () => {
+describe('DEFAULT_PREFS shape', () => {
+  // The 9-field count guards against adding a pref field without a default. The
+  // individual coercer defaults and the kuthasta alias round-trip are covered by
+  // their own describe blocks above.
+  it('DEFAULT_PREFS has the 9 contracted fields with their defaults', () => {
     expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
     expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
     expect(DEFAULT_PREFS.switcherIcon).toBe(false)
     expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
     expect(Object.keys(DEFAULT_PREFS)).toHaveLength(9)
-  })
-
-  it('coercePrefs returns 9-field UserPrefs and uses the alias table (D-03)', () => {
-    const out = coercePrefs({ breathingShape: 'kuthasta' })
-    expect(out.breathingShape).toBe('spiritual-eye')
-    expect(out.ringCue).toBe('progress-arc')
-    expect(out.orbIdle).toBe('ambient')
-    expect(out.switcherIcon).toBe(false)
-    expect(out.bypassSilentMode).toBe(true)
   })
 })
 

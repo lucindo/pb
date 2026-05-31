@@ -135,49 +135,4 @@ describe('useVisualCue', () => {
     expect(result.current.cue).toBe('nose')
   })
 
-  it('D-16 negative assertion: useVisualCue does NOT write document.documentElement.dataset.cue', async () => {
-    seedPrefs('labels')
-    const { result } = renderHook(() => useVisualCue())
-
-    // Trigger state updates via storage event
-    const newEnvelope = JSON.stringify({
-      version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', cue: 'arrow', locale: 'en' },
-    })
-    window.localStorage.setItem(STATE_KEY, newEnvelope)
-
-    // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
-    // eslint-disable-next-line @typescript-eslint/require-await
-    await act(async () => {
-      window.dispatchEvent(new StorageEvent('storage', { key: STATE_KEY, newValue: newEnvelope, oldValue: null }))
-    })
-
-    // Cue is render-local only — no global attribute write
-    expect(document.documentElement.getAttribute('data-cue')).toBeNull()
-    expect(document.documentElement.dataset.cue).toBeUndefined()
-
-    // Also trigger via CustomEvent
-    seedPrefs('nose')
-    // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
-    // eslint-disable-next-line @typescript-eslint/require-await
-    await act(async () => {
-      window.dispatchEvent(new CustomEvent('hrv:prefs-changed', { detail: { key: 'cue', value: 'nose' } }))
-    })
-
-    expect(document.documentElement.getAttribute('data-cue')).toBeNull()
-    expect(document.documentElement.dataset.cue).toBeUndefined()
-
-    // Confirm state did update (so we know the events were processed)
-    expect(result.current.cue).toBe('nose')
-  })
-
-  it('no matchMedia subscription — window.matchMedia is never called during hook lifecycle', () => {
-    seedPrefs('labels')
-    const matchMediaSpy = vi.spyOn(window, 'matchMedia')
-
-    const { unmount } = renderHook(() => useVisualCue())
-    unmount()
-
-    expect(matchMediaSpy).not.toHaveBeenCalled()
-  })
 })

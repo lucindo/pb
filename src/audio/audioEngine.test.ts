@@ -931,66 +931,46 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
     vi.restoreAllMocks()
   })
 
-  it('D-09 T1: handle returned from scheduleInCueForTimbre has a cancel field that is a function', () => {
+  // The contract that matters: cancel() stops the oscillators and tears down the node
+  // chain (so a cancelled cue cannot keep ringing). Asserted once on the real fake nodes,
+  // then a callable+idempotent smoke across every builder entry point.
+  it('D-09: cancel() stops every oscillator and disconnects the envelope', () => {
     const audioCtx = new AudioContext()
+    const oscillators: OscillatorNode[] = []
+    const realCreate = audioCtx.createOscillator.bind(audioCtx)
+    vi.spyOn(audioCtx, 'createOscillator').mockImplementation(() => {
+      const osc = realCreate()
+      oscillators.push(osc)
+      return osc
+    })
     const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
-    expect(typeof handle.cancel).toBe('function')
+    expect(oscillators.length).toBeGreaterThan(0)
+
+    handle.cancel()
+
+    for (const osc of oscillators) {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(osc.stop as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalled()
+    }
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(handle.envelope.disconnect as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalled()
   })
 
-  it('D-09 T1b: scheduleInCueForTimbre returns a handle with cancel: () => void (direct call)', () => {
-    const audioCtx = new AudioContext()
-    const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
-    expect(typeof handle.cancel).toBe('function')
-  })
+  const cueBuilders: Array<[string, (ac: AudioContext) => CueHandle]> = [
+    ['scheduleInCueForTimbre', (ac) => cueSynth.scheduleInCueForTimbre(ac, 1, ac.destination, 'bowl', 4)],
+    ['scheduleOutCueForTimbre', (ac) => cueSynth.scheduleOutCueForTimbre(ac, 1, ac.destination, 'bowl', 4)],
+    ['scheduleNKTick', (ac) => nkCueSynth.scheduleNKTick(ac, 1, ac.destination, 'bowl')],
+    ['scheduleCountdownTick', (ac) => nkCueSynth.scheduleCountdownTick(ac, 1, ac.destination, 'bowl')],
+    ['scheduleNKFrontMarker', (ac) => nkCueSynth.scheduleNKFrontMarker(ac, 1, ac.destination, 'bowl')],
+    ['scheduleNKBackMarker', (ac) => nkCueSynth.scheduleNKBackMarker(ac, 1, ac.destination, 'bowl')],
+    ['scheduleEndChord', (ac) => nkCueSynth.scheduleEndChord(ac, 1, ac.destination, 'bowl')],
+  ]
 
-  it('D-09 T1c: scheduleOutCueForTimbre returns a handle with cancel: () => void', () => {
+  it.each(cueBuilders)('D-09: %s returns a cancel() that is callable and idempotent', (_name, build) => {
     const audioCtx = new AudioContext()
-    const handle = cueSynth.scheduleOutCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
+    const handle = build(audioCtx)
     expect(typeof handle.cancel).toBe('function')
-  })
-
-  it('D-09 T3: cancel() is idempotent — calling twice does not throw', () => {
-    const audioCtx = new AudioContext()
-    const handle = cueSynth.scheduleInCueForTimbre(audioCtx, 1, audioCtx.destination, 'bowl', 4)
-    expect(() => {
-      handle.cancel()
-      handle.cancel()
-    }).not.toThrow()
-  })
-
-  it('D-09 T4d: scheduleNKTick handle has a callable cancel', () => {
-    const audioCtx = new AudioContext()
-    const handle = nkCueSynth.scheduleNKTick(audioCtx, 1, audioCtx.destination, 'bowl')
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
-  })
-
-  it('D-09 T4e: scheduleCountdownTick handle has a callable cancel', () => {
-    const audioCtx = new AudioContext()
-    const handle = nkCueSynth.scheduleCountdownTick(audioCtx, 1, audioCtx.destination, 'bowl')
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
-  })
-
-  it('D-09 T4f: scheduleNKFrontMarker handle has a callable cancel (delegates to scheduleInCueForTimbre)', () => {
-    const audioCtx = new AudioContext()
-    const handle = nkCueSynth.scheduleNKFrontMarker(audioCtx, 1, audioCtx.destination, 'bowl')
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
-  })
-
-  it('D-09 T4g: scheduleNKBackMarker handle has a callable cancel (delegates to scheduleOutCueForTimbre)', () => {
-    const audioCtx = new AudioContext()
-    const handle = nkCueSynth.scheduleNKBackMarker(audioCtx, 1, audioCtx.destination, 'bowl')
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
-  })
-
-  it('D-09 T4h: scheduleEndChord handle has a callable cancel', () => {
-    const audioCtx = new AudioContext()
-    const handle = nkCueSynth.scheduleEndChord(audioCtx, 1, audioCtx.destination, 'bowl')
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
+    expect(() => { handle.cancel(); handle.cancel() }).not.toThrow()
   })
 })
 

@@ -407,58 +407,14 @@ function createAcForTimbre(): AudioContext {
 }
 
 describe('scheduleInCueForTimbre (all timbres)', () => {
+  // Per-timbre oscillator count catches a wrong-partials regression. Kind-routing
+  // (fundamentalHzIn/decayTauIn vs Out) is covered by the bowl tests above; the preset
+  // values themselves by timbres.test — no need to re-derive them per timbre here.
   it.each(TIMBRE_OPTIONS)('%s: oscillator count equals preset.partials.length', (timbre) => {
     const ac = createAcForTimbre()
     const oscSpy = vi.spyOn(ac, 'createOscillator')
     scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
     expect(oscSpy).toHaveBeenCalledTimes(TIMBRE_PRESETS[timbre].partials.length)
-  })
-
-  it.each(TIMBRE_OPTIONS)('%s: first oscillator frequency matches preset.fundamentalHzIn', (timbre) => {
-    const ac = createAcForTimbre()
-    const oscillators: OscillatorNode[] = []
-    const realCreate = ac.createOscillator.bind(ac)
-    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
-      const osc = realCreate()
-      oscillators.push(osc)
-      return osc
-    })
-
-    scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
-
-    const preset = TIMBRE_PRESETS[timbre]
-    expect(oscillators).toHaveLength(preset.partials.length)
-    // Reason: length asserted above; index 0 is safe.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(oscillators[0]!.frequency.value).toBeCloseTo(preset.fundamentalHzIn, 5)
-  })
-
-  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain (strike → setValueAtTime; soft-attack → linearRampToValueAtTime)', (timbre) => {
-    const ac = createAcForTimbre()
-    const handle: CueHandle = scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
-    const preset = TIMBRE_PRESETS[timbre]
-    if (preset.attackSec > 0) {
-      // Soft-attack path: peakGain is the ramp target
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
-      expect(linearRamp).toHaveBeenCalledWith(preset.peakGain, expect.any(Number))
-    } else {
-      // Strike path: peakGain is set immediately
-      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
-      expect(setValue).toHaveBeenCalledWith(preset.peakGain, 1.0)
-    }
-  })
-
-  it.each(TIMBRE_OPTIONS)('%s: decay time constant matches preset.decayTauIn', (timbre) => {
-    const ac = createAcForTimbre()
-    const handle: CueHandle = scheduleInCueForTimbre(ac, 1.0, ac.destination, timbre)
-    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
-    const decayCall = setTarget.mock.calls[0] as [number, number, number]
-    expect(decayCall[2]).toBeCloseTo(TIMBRE_PRESETS[timbre].decayTauIn, 5)
   })
 })
 
@@ -468,52 +424,5 @@ describe('scheduleOutCueForTimbre (all timbres)', () => {
     const oscSpy = vi.spyOn(ac, 'createOscillator')
     scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
     expect(oscSpy).toHaveBeenCalledTimes(TIMBRE_PRESETS[timbre].partials.length)
-  })
-
-  it.each(TIMBRE_OPTIONS)('%s: first oscillator frequency matches preset.fundamentalHzOut', (timbre) => {
-    const ac = createAcForTimbre()
-    const oscillators: OscillatorNode[] = []
-    const realCreate = ac.createOscillator.bind(ac)
-    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
-      const osc = realCreate()
-      oscillators.push(osc)
-      return osc
-    })
-
-    scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
-
-    const preset = TIMBRE_PRESETS[timbre]
-    expect(oscillators).toHaveLength(preset.partials.length)
-    // Reason: length asserted above; index 0 is safe.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(oscillators[0]!.frequency.value).toBeCloseTo(preset.fundamentalHzOut, 5)
-  })
-
-  it.each(TIMBRE_OPTIONS)('%s: envelope peak gain matches preset.peakGain (strike → setValueAtTime; soft-attack → linearRampToValueAtTime)', (timbre) => {
-    const ac = createAcForTimbre()
-    const handle: CueHandle = scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
-    const preset = TIMBRE_PRESETS[timbre]
-    if (preset.attackSec > 0) {
-      // Soft-attack path: peakGain is the ramp target
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
-      expect(linearRamp).toHaveBeenCalledWith(preset.peakGain, expect.any(Number))
-    } else {
-      // Strike path: peakGain is set immediately
-      // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
-      expect(setValue).toHaveBeenCalledWith(preset.peakGain, 1.0)
-    }
-  })
-
-  it.each(TIMBRE_OPTIONS)('%s: decay time constant matches preset.decayTauOut', (timbre) => {
-    const ac = createAcForTimbre()
-    const handle: CueHandle = scheduleOutCueForTimbre(ac, 1.0, ac.destination, timbre)
-    // Reason: vi.fn mock accessed for test assertion; unbound-method suppressed because mock does not use 'this'.
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
-    const decayCall = setTarget.mock.calls[0] as [number, number, number]
-    expect(decayCall[2]).toBeCloseTo(TIMBRE_PRESETS[timbre].decayTauOut, 5)
   })
 })
