@@ -1,5 +1,5 @@
 import { LOCALE_OPTIONS, type LocaleId } from '../domain'
-import { useLocaleChoice } from '../hooks/useLocaleChoice'
+import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
 import { LOCALE_DISPLAY_NAMES } from '../content/strings'
 import { SegmentedField } from './primitives/SegmentedField'
 
@@ -10,7 +10,7 @@ export interface LanguagePickerProps {
 }
 
 export function LanguagePicker({ disabled, sectionLabel, sectionLabelHidden }: LanguagePickerProps) {
-  const { locale, setLocale } = useLocaleChoice()
+  const [locale, setLocale] = usePreferenceChoice('locale')
   const options = LOCALE_OPTIONS.map((id) => ({ id, label: LOCALE_DISPLAY_NAMES[id] }))
   return (
     <SegmentedField<LocaleId>

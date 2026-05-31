@@ -1,0 +1,70 @@
+# Plan — Test-Quality Remediation
+
+Goal: trim ~1,500 lines of design-locking + bloat and add ~8 behavioral tests so the
+suite protects behavior and survives refactors. Source: full-codebase test-quality audit.
+
+## Roadmap
+
+### 0. Source-code changes (refactors — gate dependent test cleanup)
+
+Production-code edits, not test edits. Kept separate so the test work stays pure-test.
+Each must leave the full suite green on its own before the dependent test cleanup runs.
+
+- [x] `useTimbreChoice` / `useLocaleChoice` folded onto `usePreferenceChoice` (`TimbrePicker`/`LanguagePicker` now call it directly); both clone hooks + test files deleted; behavior unchanged, suite green (1341)
+  - `useCueChoice` deliberately NOT folded — it sources `cue` from `useVisualCue` for live external/cross-tab reflection; `usePreferenceChoice` is local-state-only, so folding would change behavior. Hook + test kept.
+
+### 1. Close critical test gaps (safety-relevant — do first)
+
+- [ ] Muted session is proven silent — no cue synthesis fires while muted (`App.audio.test.tsx:300,313`; assert `scheduleInCueForTimbre`/`scheduleOutCueForTimbre` stop, or gain=0 routing)
+- [ ] close() defers AC teardown until the end-chord tail finishes (`audioEngine.ts:429-434`; fake timers — `audioCtx.close` not called before timer, called after; replaces hollow `audioEngine.test.ts:786-829`)
+- [ ] close() disconnects in-flight cue envelopes (node-leak guard, `audioEngine.ts:445-454`; seed in-flight cue → close() → `envelope.disconnect()` ran)
+- [ ] resume() iOS `InvalidStateError` triggers `clock.notifySuspended()` at the engine level (`audioEngine.ts:457-481`; assert `onSuspend` fires; NotAllowedError does NOT)
+- [ ] setMuted Safari fallback path exercised (`audioEngine.ts:390-395`; master gain lacking `cancelAndHoldAtTime` still ramps to 0/1)
+- [ ] storage write fails open when the inner version re-read throws (`storage.ts:242`; inner `getItem` throws + `setItem` succeeds → payload lands)
+- [ ] lead-in→running audioAnchor handoff pins dispatched cue times to `firstInAudioTime` (`useBreathingSessionController.ts:200-220`, re-anchor math line 93)
+
+### 2. Fix missing edge cases on risky logic
+
+- [ ] `getNaviKriyaBackCount` throws on non-multiple-of-4 / ≤0 / non-finite frontCount (`naviKriyaSession.ts:15`)
+- [ ] `estimateNaviKriyaDurationSec` seconds-level formula covered with a non-default fixture (`naviKriyaSession.ts:36`)
+- [ ] targetSec trim wins over the `minCues` floor — assert cue count, not just ≤target (`sessionAudio.ts:138`; elapsed=298/target=300)
+- [ ] cue `phaseDurationSec === 3×τ` boundary asserted (`cueSynth.ts:106-118`; catches `>`→`>=` regression)
+- [ ] mid-ramp `getStretchFrame` interior-segment BPM/stage asserted (`stretchRamp.ts`)
+- [ ] `useBeforeInstallPrompt` prompt()-rejection catch clears `deferredPrompt` (`useBeforeInstallPrompt.ts:77-82`)
+- [ ] `useFavicon` idempotent no-replace-when-unchanged branch covered (`useFavicon.ts:41-52`)
+- [ ] open-ended elapsed counts up over time (`App.session.test.tsx:59`)
+- [ ] NK sub-threshold early-end skips recording (`App.session.test.tsx`; NK equivalent of resonant 30s floor)
+- [ ] mute survives a remount (persist + restore in one flow)
+
+### 3. Rewrite or delete design-locking tests
+
+- [ ] Delete call-count/order/construction-order locks: `audioEngine.test.ts:1114-1153` (double-schedule control), `:563-602` (construct order), `:1232-1261` (LOOKAHEAD constant + type pins), `sessionClock.test.ts:279-287` (listener count)
+- [ ] Delete add/remove-listener bookkeeping tests: `useTheme.test.ts:95-115`, `useBeforeInstallPrompt.test.ts:54-81 & 185-195`, `useIsStandaloneOrPhone.test.ts:88-116`, `usePrefersReducedMotion.test.ts:34-55`
+- [ ] Rewrite `useWakeLock.test.tsx:226-355` against behavior (final sentinel released, `request` fired ≤once); drop generation-counter/`addEventListener` negative asserts
+- [ ] Rewrite `useAudioCues.test.tsx` white-box tests against the interface: `:790-902` (generation counter), `:580-622` & `:905-937` (`_listeners`/prototype-spy), `:155-179`/`:1835-1851`/`:948-963` (spy-arg / call-count / union-array); delete callback-identity block `:1080-1174`
+- [ ] Rewrite `App.audio.test.tsx:404-443,491-524` to drop AudioContext construction-count; keep label outcome
+- [ ] Strip DOM/SVG geometry pins: `OrbShape.test.tsx:155-170,201-212,225-239`; `App.session.test.tsx:404,417` (checkmark polyline); `MuteToggle.test.tsx:70-105`; `CueGlyph.test.tsx:66-137`
+- [ ] Delete VM-shape assertions in `appViewModel.test.ts` (keep only genuine branching, if any); keep `sessionPresentation.test.ts:117-166`
+- [ ] Relax enum/option-array snapshots to membership/sortedness: `settings.test.ts:175-181`, `breathingPlan.test.ts:20-46`; delete bare `STATE_VERSION===3` pins (`storage.test.ts:294-296,361-366`) and orphan-key assertion (`strings.test.ts:200-203`)
+
+### 4. Delete weak tests
+
+- [ ] Collapse CueHandle.cancel suite to one behavior + one idempotency test (`audioEngine.test.ts:843-903`)
+- [ ] Collapse nkCueSynth "doesn't throw"/shape-repeat tests to one parametrized smoke (`nkCueSynth.test.ts:96-182`)
+- [ ] Delete tautological math tests: `stretchRamp.test.ts:148`, `settings.test.ts:329-334` (wrong unit, never calls the fn), `sessionAudio.test.ts:285`
+- [ ] Fix/replace weak clock asserts: `useSessionEngine.test.tsx:469-489` (assert tracks mock clock), `:262-306` (assert frame frozen post-unmount instead of console-spy)
+- [ ] Delete tautologies-against-non-existent-features: `useVisualCue.test.ts:138-182`; `MuteToggle.test.tsx:27`; parametrize `OrbShape.test.tsx:37-47`
+
+### 5. Cut bloat
+
+- [ ] `useAudioCues.test.tsx` → ~600-800 lines: hoist the ~6× duplicated `SpyableAC` mock, force-top-up 7→2 tests (`:1588-1851`), merge WR-04/WR-05 (`:2052-2181`)
+- [ ] `stretchRamp.test.ts` 716→~450: collapse 4 GAP-3 orb-freeze tests to one parametrized, dedupe 6 `computeStretchTotalSec` GAP-1 tests to one+null, delete `not.toBeCloseTo(0.167)` dead-bug anchor
+- [ ] Content tests: delete literal-copy change-detectors (`lockedCopy.test.ts` bulk, `learnContent.test.ts:35-88,136-158`, `strings.test.ts:157-199`); keep invariant guards (clinical-verbs, URL-scheme, cross-locale URL identity, non-empty exhaustiveness loops)
+- [x] Delete the timbre/locale clone test files — done in §0; `usePreferenceChoice.test.ts` is sole owner of the contract (`useCueChoice.test.ts` retained — hook not folded)
+- [ ] De-fragment App.* suite (2:1): consolidate "end timed session" (3 files→1), "start session" (3→1), "open-ended skips modal" (3→1); remove `App.test.tsx` CUE-01 duplication
+- [ ] `cueSynth.test.ts:383-493` per-timbre explosion → one "every timbre → N oscillators, doesn't throw"
+- [ ] `prefs.test.ts`: delete "Phase 47 RED" scaffold (`:487-512`), dedupe triplicated `kuthasta` alias (keep one)
+
+### 6. Verify
+
+- [ ] Full suite green after each section; net test LOC down ~1,500; ratio moved off the 1.5:1 smell line

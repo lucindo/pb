@@ -1,5 +1,5 @@
 import { TIMBRE_OPTIONS, type TimbreId } from '../domain'
-import { useTimbreChoice } from '../hooks/useTimbreChoice'
+import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
 import { playInhalePreview } from '../audio/previewContext'
 import type { UiStrings } from '../content/strings'
 import { PickerCardGrid } from './primitives/PickerCardGrid'
@@ -20,7 +20,7 @@ const TIMBRE_GLYPH: Record<TimbreId, string> = {
 }
 
 export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerProps) {
-  const { timbre, setTimbre } = useTimbreChoice()
+  const [timbre, setTimbre] = usePreferenceChoice('timbre')
   const onChange = (id: TimbreId): void => {
     setTimbre(id)
     playInhalePreview(id)
