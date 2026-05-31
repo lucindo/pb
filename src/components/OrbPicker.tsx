@@ -1,6 +1,6 @@
 import type { BreathingShapeVariant } from '../featureFlags'
-import { useBreathingShapeChoice } from '../hooks/useBreathingShapeChoice'
-import { SegmentedControl } from './primitives/SegmentedControl'
+import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
+import { SegmentedField } from './primitives/SegmentedField'
 
 export interface OrbPickerProps {
   disabled: boolean
@@ -10,30 +10,20 @@ export interface OrbPickerProps {
 }
 
 export function OrbPicker({ disabled, sectionLabel, sectionLabelHidden, strings }: OrbPickerProps) {
-  const { breathingShape, setBreathingShape } = useBreathingShapeChoice()
+  const [breathingShape, setBreathingShape] = usePreferenceChoice('breathingShape')
   const options = [
     { id: 'orb-halo' as const, label: strings.halo },
     { id: 'minimal-rings' as const, label: strings.minimal },
     { id: 'spiritual-eye' as const, label: strings.kuthasta },
   ]
   return (
-    <div>
-      <p
-        className={
-          sectionLabelHidden
-            ? 'sr-only'
-            : 'mb-2 text-sm font-semibold text-[var(--color-breathing-accent-strong)]'
-        }
-      >
-        {sectionLabel}
-      </p>
-      <SegmentedControl<BreathingShapeVariant>
-        options={options}
-        value={breathingShape}
-        onChange={setBreathingShape}
-        ariaLabel={sectionLabel}
-        disabled={disabled}
-      />
-    </div>
+    <SegmentedField<BreathingShapeVariant>
+      sectionLabel={sectionLabel}
+      sectionLabelHidden={sectionLabelHidden}
+      options={options}
+      value={breathingShape}
+      onChange={setBreathingShape}
+      disabled={disabled}
+    />
   )
 }

@@ -11,7 +11,7 @@
 
 import { coerceSettings } from './settings'
 import { coerceStats, COUNT_THRESHOLD_MS, type PersistedStats } from './stats'
-import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
+import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 import type { SessionSettings } from '../domain/settings'
 import {
   DEFAULT_STRETCH_SETTINGS,
@@ -42,15 +42,6 @@ export interface PracticeMap {
   resonant: PracticeSlice<SessionSettings>
   stretch: PracticeSlice<StretchSettings>
   naviKriya: PracticeSlice<NaviKriyaSettings>
-}
-
-// Prototype-pollution-safe object guard: only treat `raw` as a record
-// when it is a plain non-array object; otherwise hand back an empty record so
-// every named-key read falls through to a default.
-function asRecord(raw: unknown): Record<string, unknown> {
-  return raw !== null && typeof raw === 'object' && !Array.isArray(raw)
-    ? raw as Record<string, unknown>
-    : {}
 }
 
 export function coerceActivePractice(raw: unknown): PracticeId {
@@ -206,204 +197,106 @@ export function saveActivePractice(id: PracticeId, deps: StorageDeps = {}): void
   writeEnvelope({ ...env, activePractice: coerceActivePractice(id) }, deps)
 }
 
-export function saveResonantSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
+// Writes a single practice slice's settings. Spreads the RAW on-disk practices
+// map so the OTHER two slices (and any forward-compatible unknown sub-keys in
+// them) survive untouched — only the target slice is rewritten. `settings` is
+// opaque here; it is typed at each public wrapper's boundary below.
+function writeSliceSettings(key: PracticeId, settings: unknown, deps: StorageDeps): void {
   const env = readEnvelope(deps)
-  // Spread the RAW on-disk practices map so the stretch and naviKriya slices
-  // (and any forward-compatible unknown sub-keys in them) survive untouched.
-  // Only the resonant slice is coerced + rewritten.
   const rawPractices = rawPracticesMap(env.practices)
-  const rawResonant = asRecord(rawPractices.resonant)
+  const rawSlice = asRecord(rawPractices[key])
   writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...rawPractices,
-        resonant: { ...rawResonant, settings },
-      },
-    },
+    { ...env, practices: { ...rawPractices, [key]: { ...rawSlice, settings } } },
     deps,
   )
+}
+
+export function saveResonantSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
+  writeSliceSettings('resonant', settings, deps)
 }
 
 export function saveNaviKriyaSettings(settings: NaviKriyaSettings, deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  const rawPractices = rawPracticesMap(env.practices)
-  const rawNaviKriya = asRecord(rawPractices.naviKriya)
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...rawPractices,
-        naviKriya: { ...rawNaviKriya, settings },
-      },
-    },
-    deps,
-  )
+  writeSliceSettings('naviKriya', settings, deps)
 }
 
-// Spreads the raw practices map then overrides only the stretch slice — the
-// resonant and naviKriya slices are passed through as their raw on-disk shape.
 export function saveStretchSettings(settings: StretchSettings, deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  const rawPractices = rawPracticesMap(env.practices)
-  const rawStretch = asRecord(rawPractices.stretch)
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...rawPractices,
-        stretch: { ...rawStretch, settings },
-      },
-    },
-    deps,
-  )
+  writeSliceSettings('stretch', settings, deps)
 }
 
-// Reads from and writes to practices.resonant.stats — a completed session is
-// attributed to the correct practice subtree. Return value is the IN-MEMORY
-// projection; writeEnvelope is fire-and-forget (quota / ITP / private mode /
-// future-version short-circuit all silently swallow the write). Callers treat
-// the return as RAM-authoritative — UI updates immediately.
+// Records a completed/early-ended session into ONE practice slice's stats and
+// returns the IN-MEMORY projection. The other slices are passed through as their
+// raw on-disk shape (rawPractices spread) so unknown forward-compatible sub-keys
+// survive (slice-isolation guarantee). writeEnvelope is fire-and-forget (quota /
+// ITP / private mode / future-version short-circuit all silently swallow the
+// write); callers treat the return as RAM-authoritative — UI updates immediately.
+//
+// roundsCompleted is NK-only: when provided it accumulates across sessions and is
+// added to the stats. When omitted (resonant / stretch) the field stays ABSENT
+// from the returned stats — matching coerceStats' "undefined, not 0" posture so a
+// non-NK record never carries roundsCompleted. An early end (isComplete false)
+// still records its completed rounds + partial minutes the same way.
+function recordPracticeSession(
+  key: PracticeId,
+  elapsedMs: number,
+  isComplete: boolean,
+  deps: StorageDeps,
+  roundsCompleted?: number,
+): PersistedStats {
+  const env = readEnvelope(deps)
+  // Read the target slice's stats through the coercer (the arithmetic below needs
+  // a guaranteed-numeric stats object). The OTHER slices stay raw — see
+  // rawPracticesMap for the rationale.
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawSlice = asRecord(rawPractices[key])
+  const stats = coerceStats(rawSlice.stats)
+  // Reject NaN/Infinity/negative elapsedMs up front so a bad frame cannot
+  // poison totalElapsedSeconds.
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    return stats
+  }
+  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
+    return stats
+  }
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const now = deps.now ?? Date.now
+  const next: PersistedStats = {
+    totalSessions: stats.totalSessions + 1,
+    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
+    lastSessionAtMs: now(),
+    lastSessionDurationSeconds: elapsedSeconds,
+    ...(roundsCompleted !== undefined
+      ? { roundsCompleted: (stats.roundsCompleted ?? 0) + roundsCompleted }
+      : {}),
+  }
+  writeEnvelope(
+    { ...env, practices: { ...rawPractices, [key]: { ...rawSlice, stats: next } } },
+    deps,
+  )
+  return next
+}
+
 export function recordResonantSession(
   elapsedMs: number,
   isComplete: boolean,
   deps: StorageDeps = {},
 ): PersistedStats {
-  const env = readEnvelope(deps)
-  // Read the target slice's stats through the coercer (the arithmetic below
-  // needs a guaranteed-numeric stats object). The OTHER slices stay as their
-  // raw on-disk shape — see rawPracticesMap helper for the rationale.
-  const rawPractices = rawPracticesMap(env.practices)
-  const rawResonant = asRecord(rawPractices.resonant)
-  const stats = coerceStats(rawResonant.stats)
-  // Reject NaN/Infinity/negative elapsedMs up front so a bad frame cannot
-  // poison totalElapsedSeconds.
-  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
-    return stats
-  }
-  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
-  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
-    return stats
-  }
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
-  const now = deps.now ?? Date.now
-  const next: PersistedStats = {
-    totalSessions: stats.totalSessions + 1,
-    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
-    lastSessionAtMs: now(),
-    lastSessionDurationSeconds: elapsedSeconds,
-  }
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...rawPractices,
-        resonant: { ...rawResonant, stats: next },
-      },
-    },
-    deps,
-  )
-  return next
+  return recordPracticeSession('resonant', elapsedMs, isComplete, deps)
 }
 
-// Reads from / writes to practices.stretch.stats ONLY — resonant and naviKriya
-// slices are passed through untouched (isolation guarantee). No `roundsCompleted`
-// arg — Stretch does not count rounds (unlike NaviKriya).
-//
-// Return value is the IN-MEMORY projection per the same fire-and-forget posture
-// as recordResonantSession.
 export function recordStretchSession(
   elapsedMs: number,
   isComplete: boolean,
   deps: StorageDeps = {},
 ): PersistedStats {
-  const env = readEnvelope(deps)
-  const rawPractices = rawPracticesMap(env.practices)
-  const rawStretch = asRecord(rawPractices.stretch)
-  const stats = coerceStats(rawStretch.stats)
-  // Reject NaN/Infinity/negative elapsedMs up front so a bad frame cannot
-  // poison totalElapsedSeconds.
-  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
-    return stats
-  }
-  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
-  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
-    return stats
-  }
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
-  const now = deps.now ?? Date.now
-  const next: PersistedStats = {
-    totalSessions: stats.totalSessions + 1,
-    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
-    lastSessionAtMs: now(),
-    lastSessionDurationSeconds: elapsedSeconds,
-  }
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...rawPractices,
-        stretch: { ...rawStretch, stats: next },
-      },
-    },
-    deps,
-  )
-  return next
+  return recordPracticeSession('stretch', elapsedMs, isComplete, deps)
 }
 
-// Navi Kriya analogue of recordResonantSession. Reads from and writes to
-// practices.naviKriya.stats ONLY — the resonant slice is passed through untouched.
-//
-// When isComplete is false (early end) the roundsCompleted argument carries only
-// the fully-completed rounds and elapsedMs the partial elapsed time — both are
-// recorded the same way, so an early-ended session still adds its completed rounds
-// and minutes to the NK history.
-//
-// Return value is the IN-MEMORY projection per the same fire-and-forget posture
-// as recordResonantSession.
 export function recordNaviKriyaSession(
   elapsedMs: number,
   roundsCompleted: number,
   isComplete: boolean,
   deps: StorageDeps = {},
 ): PersistedStats {
-  const env = readEnvelope(deps)
-  const rawPractices = rawPracticesMap(env.practices)
-  const rawNaviKriya = asRecord(rawPractices.naviKriya)
-  const stats = coerceStats(rawNaviKriya.stats)
-  // Reject NaN/Infinity/negative elapsedMs so a bad frame cannot
-  // poison totalElapsedSeconds.
-  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
-    return stats
-  }
-  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
-  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
-    return stats
-  }
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
-  const now = deps.now ?? Date.now
-  const next: PersistedStats = {
-    ...stats,
-    totalSessions: stats.totalSessions + 1,
-    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
-    lastSessionAtMs: now(),
-    lastSessionDurationSeconds: elapsedSeconds,
-    // Accumulate rounds across sessions. Spread stats above keeps any
-    // pre-existing fields; this line explicitly updates roundsCompleted.
-    roundsCompleted: (stats.roundsCompleted ?? 0) + roundsCompleted,
-  }
-  // Write ONLY the naviKriya slice — resonant and stretch are passed through
-  // as their raw on-disk shape (rawPractices spread) so unknown forward-compatible
-  // sub-keys and partial-corruption fields are preserved.
-  writeEnvelope(
-    {
-      ...env,
-      practices: {
-        ...rawPractices,
-        naviKriya: { ...rawNaviKriya, stats: next },
-      },
-    },
-    deps,
-  )
-  return next
+  return recordPracticeSession('naviKriya', elapsedMs, isComplete, deps, roundsCompleted)
 }

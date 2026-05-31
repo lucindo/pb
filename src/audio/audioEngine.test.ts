@@ -136,7 +136,7 @@ describe('audioEngine', () => {
     expect(SAFE_LEAD_SEC).toBe(0.005)
   })
 
-  it('scheduleNextCue with newPhase=in calls scheduleInCue at the requested audioTime', async () => {
+  it('scheduleNextCue with newPhase=in calls scheduleInCueForTimbre at the requested audioTime', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
@@ -145,7 +145,7 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('scheduleNextCue with newPhase=out calls scheduleOutCue at the requested audioTime', async () => {
+  it('scheduleNextCue with newPhase=out calls scheduleOutCueForTimbre at the requested audioTime', async () => {
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.scheduleNextCue({ newPhase: 'out', audioTime: 5.5, phaseDurationSec: 6.54 })
@@ -765,28 +765,27 @@ describe('audioEngine', () => {
       await engine.close()
     })
 
-    it('schedule({ kind: "in", phaseDurationSec, timbre }) calls scheduleInCueForTimbre with sessionTimbre (ignores cue.timbre)', async () => {
+    it('schedule({ kind: "in", phaseDurationSec }) calls scheduleInCueForTimbre with the session timbre', async () => {
       const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
       // Engine is constructed with timbre: 'bell' — that is sessionTimbre and the source of truth.
       const engine = await createAudioEngine({ timbre: 'bell' })
 
-      // cue.timbre is 'flute' (intentionally different) — the engine ignores it and uses sessionTimbre.
-      engine.clock.schedule(3.0, { kind: 'in', phaseDurationSec: 4.36, timbre: 'flute' })
+      engine.clock.schedule(3.0, { kind: 'in', phaseDurationSec: 4.36 })
 
       expect(inSpy).toHaveBeenCalledTimes(1)
       expect(inSpy.mock.calls[0]?.[1]).toBe(3.0)
-      // Capture-at-session-start: sessionTimbre wins over cue.timbre.
+      // Engine routes the session timbre to the cue builder.
       expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
       expect(inSpy.mock.calls[0]?.[4]).toBeCloseTo(4.36, 5)
 
       await engine.close()
     })
 
-    it('schedule({ kind: "out", phaseDurationSec, timbre }) calls scheduleOutCueForTimbre with sessionTimbre (ignores cue.timbre)', async () => {
+    it('schedule({ kind: "out", phaseDurationSec }) calls scheduleOutCueForTimbre with the session timbre', async () => {
       const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
       const engine = await createAudioEngine({ timbre: 'sine' })
 
-      engine.clock.schedule(5.5, { kind: 'out', phaseDurationSec: 6.54, timbre: 'bowl' })
+      engine.clock.schedule(5.5, { kind: 'out', phaseDurationSec: 6.54 })
 
       expect(outSpy).toHaveBeenCalledTimes(1)
       expect(outSpy.mock.calls[0]?.[1]).toBe(5.5)
@@ -915,27 +914,6 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
       handle.cancel()
       handle.cancel()
     }).not.toThrow()
-  })
-
-  it('D-09 T4a: scheduleInCue (bowl wrapper) handle also has a callable cancel', () => {
-    const audioCtx = new AudioContext()
-    const handle = cueSynth.scheduleInCue(audioCtx, 1, audioCtx.destination, 4)
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
-  })
-
-  it('D-09 T4b: scheduleOutCue (bowl wrapper) handle also has a callable cancel', () => {
-    const audioCtx = new AudioContext()
-    const handle = cueSynth.scheduleOutCue(audioCtx, 1, audioCtx.destination, 4)
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
-  })
-
-  it('D-09 T4c: scheduleTick handle has a callable cancel', () => {
-    const audioCtx = new AudioContext()
-    const handle = cueSynth.scheduleTick(audioCtx, 1, audioCtx.destination)
-    expect(typeof handle.cancel).toBe('function')
-    expect(() => { handle.cancel() }).not.toThrow()
   })
 
   it('D-09 T4d: scheduleNKTick handle has a callable cancel', () => {

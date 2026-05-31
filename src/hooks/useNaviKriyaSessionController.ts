@@ -43,6 +43,9 @@ export interface UseNaviKriyaSessionControllerArgs {
   initialSettings: NaviKriyaSettings
   muted: boolean
   wakeLock: UseWakeLock
+  /** Threaded from featureFlags.bypassSilentMode (default true). Routes NK cues
+   *  through the iOS speaker with the hardware silent switch on — same as breathing. */
+  bypassSilentMode?: boolean
 }
 
 export function useNaviKriyaSessionController({
@@ -50,13 +53,14 @@ export function useNaviKriyaSessionController({
   initialSettings,
   muted,
   wakeLock,
+  bypassSilentMode,
 }: UseNaviKriyaSessionControllerArgs): NaviKriyaSessionController {
   // naviAudio MUST be called BEFORE nkEngine because nkEngine consumes
   // naviAudio.clock. useNKEngine receives the audio-backed proxy clock from
   // useNaviKriyaAudio.clock directly. Stats elapsedSec is AC-time-based when the
   // AC constructed cleanly; wall-clock fallback when AC construction failed
   // (mirrors HRV/Stretch).
-  const naviAudio = useNaviKriyaAudio(muted)
+  const naviAudio = useNaviKriyaAudio(muted, bypassSilentMode)
   const naviAudioBegin = naviAudio.begin
   const naviAudioClose = naviAudio.close
   const naviAudioCloseAfterEndCue = naviAudio.closeAfterEndCue

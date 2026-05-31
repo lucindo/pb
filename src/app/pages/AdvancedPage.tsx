@@ -9,9 +9,7 @@ import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { SectionCard } from '../../components/primitives/SectionCard'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
-import { useBypassSilentModeChoice } from '../../hooks/useBypassSilentModeChoice'
-import { useOrbIdleChoice } from '../../hooks/useOrbIdleChoice'
-import { useSwitcherIconChoice } from '../../hooks/useSwitcherIconChoice'
+import { usePreferenceChoice } from '../../hooks/usePreferenceChoice'
 import { useUiStrings } from '../../hooks/useUiStringsContext'
 
 export interface AdvancedPageProps {
@@ -23,9 +21,9 @@ export interface AdvancedPageProps {
  *  chevron on mount. Changes apply live across the app via the choice-hook setters. */
 export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
   const strings = useUiStrings().advanced
-  const { orbIdle, setOrbIdle } = useOrbIdleChoice()
-  const { switcherIcon, setSwitcherIcon } = useSwitcherIconChoice()
-  const { bypassSilentMode, setBypassSilentMode } = useBypassSilentModeChoice()
+  const [orbIdle, setOrbIdle] = usePreferenceChoice('orbIdle')
+  const [switcherIcon, setSwitcherIcon] = usePreferenceChoice('switcherIcon')
+  const [bypassSilentMode, setBypassSilentMode] = usePreferenceChoice('bypassSilentMode')
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {

@@ -10,7 +10,7 @@ import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
-// Helper: seed localStorage with a known theme so useThemeChoice reads it on mount.
+// Helper: seed localStorage with a known theme so usePreferenceChoice reads it on mount.
 function seedTheme(theme: ThemeId): void {
   const envelope = {
     version: 1,
@@ -55,7 +55,7 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
     }
   })
 
-  it('clicking an option writes the new theme to disk (savePrefs via useThemeChoice)', async () => {
+  it('clicking an option writes the new theme to disk (savePrefs via usePreferenceChoice)', async () => {
     seedTheme('light')
     const user = userEvent.setup()
     render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)

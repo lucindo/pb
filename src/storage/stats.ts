@@ -6,7 +6,7 @@
 //   - reset wipes ONLY stats (settings + mute survive)
 //   - now() injected for deterministic testing
 
-import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
+import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 export const COUNT_THRESHOLD_MS = 30_000  // count threshold: 30 s or completion
 
@@ -64,9 +64,7 @@ function isFiniteNonNegativeIntOrNull(v: unknown): v is number | null {
 }
 
 export function coerceStats(raw: unknown): PersistedStats {
-  const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
-    ? raw as Record<string, unknown>
-    : {}
+  const r = asRecord(raw)
   return {
     totalSessions:              isFiniteNonNegativeInt(r.totalSessions)                 ? r.totalSessions             : 0,
     totalElapsedSeconds:        isFiniteNonNegativeInt(r.totalElapsedSeconds)           ? r.totalElapsedSeconds       : 0,

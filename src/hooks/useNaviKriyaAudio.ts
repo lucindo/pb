@@ -10,6 +10,7 @@ import {
   scheduleNKTick,
 } from '../audio/nkCueSynth'
 import { createAudioSessionClock, createWallSessionClock, type SessionClock } from '../audio/sessionClock'
+import { createSilentLoopBypass, type SilentLoopBypass } from '../audio/silentLoopBypass'
 import { createSwappableSessionClock } from '../audio/swappableSessionClock'
 import type { TimbreId } from '../domain/settings'
 import type { NKAudioCallbacks } from './useNKEngine'
@@ -69,8 +70,15 @@ function createOptionalAudioContext(): AudioContext | null {
   }
 }
 
-export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
+export function useNaviKriyaAudio(
+  muted: boolean,
+  bypassSilentMode = true,
+): NaviKriyaAudioController {
   const audioCtxRef = useRef<AudioContext | null>(null)
+  // Silent-loop bypass handle for the active NK AudioContext (iOS hardware
+  // silent-switch). Constructed on the gesture head in begin() when enabled; torn
+  // down alongside the AC in close/closeAfterEndCue/unmount. Null when disabled.
+  const silentBypassRef = useRef<SilentLoopBypass | null>(null)
 
   // Stable proxy clock reference — created exactly once per hook instance via
   // useMemo (empty deps). The proxy always starts delegating to a wall clock;
@@ -99,6 +107,14 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
         callbacks: NOOP_AUDIO_CALLBACKS,
         countdownTick: () => undefined,
       }
+    }
+
+    // Silent-loop bypass — constructed SYNCHRONOUSLY here on the gesture head (begin()
+    // runs inside the Start-click handler, no await) so iOS Safari coerces the audio
+    // session to 'playback'. Default-true param mirrors createAudioEngine's
+    // undefined-coerces-to-construct posture.
+    if (bypassSilentMode) {
+      silentBypassRef.current = createSilentLoopBypass()
     }
 
     // Wrap the AC immediately after construction. The audioCtx is the source of
@@ -141,12 +157,14 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
       },
       countdownTick,
     }
-  }, [proxy])
+  }, [proxy, bypassSilentMode])
 
   const close = useCallback((): void => {
     const audioCtx = audioCtxRef.current
     audioCtxRef.current = null
     if (audioCtx !== null) {
+      silentBypassRef.current?.teardown()
+      silentBypassRef.current = null
       closeAudioContext(audioCtx)
       // Revert posture: proxy reverts to wall clock after AC teardown so any
       // post-close clock.now() reads (e.g. from useNKEngine.end()) get a sensible
@@ -158,13 +176,19 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
   const closeAfterEndCue = useCallback((): void => {
     const audioCtx = audioCtxRef.current
     audioCtxRef.current = null
+    const silentBypass = silentBypassRef.current
+    silentBypassRef.current = null
     if (audioCtx !== null) {
       // Proxy revert is SYNCHRONOUS — not inside the setTimeout callback.
       // Post-end stats reads from useNKEngine.end()'s onComplete chain fire
       // before the AC actually closes; they must read a sensible clock value.
-      // The AC teardown itself is deferred for ring-out.
+      // The AC teardown AND the silent-loop teardown are deferred for ring-out so
+      // the end chord stays routed through the speaker until it finishes.
       proxy.setSource(createWallSessionClock())
-      window.setTimeout(() => { closeAudioContext(audioCtx) }, END_CHORD_RINGOUT_MS)
+      window.setTimeout(() => {
+        closeAudioContext(audioCtx)
+        silentBypass?.teardown()
+      }, END_CHORD_RINGOUT_MS)
     }
   }, [proxy])
 
@@ -172,6 +196,8 @@ export function useNaviKriyaAudio(muted: boolean): NaviKriyaAudioController {
     return () => {
       const audioCtx = audioCtxRef.current
       audioCtxRef.current = null
+      silentBypassRef.current?.teardown()
+      silentBypassRef.current = null
       if (audioCtx !== null) {
         closeAudioContext(audioCtx)
         // Defensive revert on unmount: a stray clock.now() read in the same

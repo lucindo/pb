@@ -1,6 +1,6 @@
 import type { RingCueStyle } from '../featureFlags'
-import { useRingCueChoice } from '../hooks/useRingCueChoice'
-import { SegmentedControl } from './primitives/SegmentedControl'
+import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
+import { SegmentedField } from './primitives/SegmentedField'
 
 export interface RingCuePickerProps {
   disabled: boolean
@@ -10,29 +10,19 @@ export interface RingCuePickerProps {
 }
 
 export function RingCuePicker({ disabled, sectionLabel, sectionLabelHidden, strings }: RingCuePickerProps) {
-  const { ringCue, setRingCue } = useRingCueChoice()
+  const [ringCue, setRingCue] = usePreferenceChoice('ringCue')
   const options = [
     { id: 'progress-arc' as const, label: strings.arc },
     { id: 'outer-inner' as const, label: strings.rings },
   ]
   return (
-    <div>
-      <p
-        className={
-          sectionLabelHidden
-            ? 'sr-only'
-            : 'mb-2 text-sm font-semibold text-[var(--color-breathing-accent-strong)]'
-        }
-      >
-        {sectionLabel}
-      </p>
-      <SegmentedControl<RingCueStyle>
-        options={options}
-        value={ringCue}
-        onChange={setRingCue}
-        ariaLabel={sectionLabel}
-        disabled={disabled}
-      />
-    </div>
+    <SegmentedField<RingCueStyle>
+      sectionLabel={sectionLabel}
+      sectionLabelHidden={sectionLabelHidden}
+      options={options}
+      value={ringCue}
+      onChange={setRingCue}
+      disabled={disabled}
+    />
   )
 }

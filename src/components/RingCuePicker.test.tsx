@@ -10,7 +10,7 @@ import type { RingCueStyle } from '../featureFlags'
 
 const STRINGS = { arc: 'Arc', rings: 'Rings' } as const
 
-// Helper: seed localStorage with a known ringCue so useRingCueChoice reads it on mount.
+// Helper: seed localStorage with a known ringCue so usePreferenceChoice reads it on mount.
 function seedRingCue(value: RingCueStyle): void {
   const envelope = {
     version: 1,

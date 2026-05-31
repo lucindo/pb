@@ -2,12 +2,7 @@
 //
 // Bowl preset DSP recipes live in src/audio/timbres.ts (TIMBRE_PRESETS.bowl).
 // cueSynth dispatches per-timbre via scheduleInCueForTimbre / scheduleOutCueForTimbre,
-// which look up TIMBRE_PRESETS[timbre] and call the parameterized scheduleBowlCue. The
-// scheduleInCue / scheduleOutCue exports are preserved as Bowl-only thin wrappers for
-// signature stability.
-//
-// Tick:   1200 Hz square wave, ~80 ms (perceptually distinct from bowl cues;
-//         fixed across all timbres — countdown role requires a distinct sound).
+// which look up TIMBRE_PRESETS[timbre] and call the parameterized scheduleBowlCue.
 //
 // All audio is generated entirely via Web Audio API — no bundled or external assets.
 
@@ -49,18 +44,6 @@ const SUSTAIN_FLOOR_RATIO = 0.15 // ≈ -16 dB below peak — quiet but clearly 
 const PHASE_END_FADE_OUT_TAU = 0.05 // setTargetAtTime τ for the boundary fade (≈ 150 ms perceptual)
 const PHASE_END_FADE_OUT_LEAD_SEC = 0.2 // start fade this many seconds before phase end
 const NEAR_SILENCE = 0.0001 // setTargetAtTime can't ramp to true zero
-
-// Tick (lead-in): perceptually distinct from bowl cues.
-// Square wave through a low-pass filter, very short envelope.
-// The tick is FIXED across all timbres — the countdown role requires a
-// perceptually distinct sound from phase cues.
-const TICK_FUNDAMENTAL_HZ = 1200
-const TICK_FILTER_FREQ_HZ = 2400
-const TICK_FILTER_Q = 1.5
-const TICK_DECAY_TIME_CONSTANT = 0.04
-const TICK_TOTAL_DURATION_SEC = 0.08
-const TICK_PEAK_GAIN = 0.12 // slightly softer than bowl cues
-const TICK_CLEANUP_PADDING_SEC = 0.05
 
 export interface CueHandle {
   envelope: GainNode // exposed for mute fade-out
@@ -234,79 +217,3 @@ export function scheduleOutCueForTimbre(
   return scheduleBowlCue(audioCtx, when, destination, preset, 'out', phaseDurationSec)
 }
 
-// Bowl-only thin wrappers preserved for signature stability. Delegates to the
-// per-timbre dispatch with the locked 'bowl' TimbreId.
-
-export function scheduleInCue(
-  audioCtx: AudioContext,
-  when: number,
-  destination: AudioNode,
-  phaseDurationSec?: number,
-): CueHandle {
-  return scheduleInCueForTimbre(audioCtx, when, destination, 'bowl', phaseDurationSec)
-}
-
-export function scheduleOutCue(
-  audioCtx: AudioContext,
-  when: number,
-  destination: AudioNode,
-  phaseDurationSec?: number,
-): CueHandle {
-  return scheduleOutCueForTimbre(audioCtx, when, destination, 'bowl', phaseDurationSec)
-}
-
-export function scheduleTick(
-  audioCtx: AudioContext,
-  when: number,
-  destination: AudioNode,
-): CueHandle {
-  // Single square-wave oscillator — perceptually distinct from sine-stack bowl cues.
-  // Tick stays fixed across all timbres (countdown role requires a distinct sound).
-  const osc = audioCtx.createOscillator()
-  osc.type = 'square'
-  osc.frequency.value = TICK_FUNDAMENTAL_HZ
-
-  const filter = audioCtx.createBiquadFilter()
-  filter.type = 'lowpass'
-  filter.frequency.value = TICK_FILTER_FREQ_HZ
-  filter.Q.value = TICK_FILTER_Q
-
-  const envelope = audioCtx.createGain()
-  envelope.gain.setValueAtTime(TICK_PEAK_GAIN, when)
-  envelope.gain.setTargetAtTime(0.0001, when + 0.001, TICK_DECAY_TIME_CONSTANT)
-
-  osc.connect(filter)
-  filter.connect(envelope)
-  envelope.connect(destination)
-
-  osc.start(when)
-  osc.stop(when + TICK_TOTAL_DURATION_SEC)
-
-  // AUDIO-04: every schedule* primitive must disconnect its chain on 'ended'.
-  // Without this, Safari is known to retain references to disconnected-but-not-
-  // explicitly-disconnected nodes, slowly leaking osc + filter + envelope per
-  // tick over a long session.
-  osc.addEventListener('ended', () => {
-    try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { filter.disconnect() } catch { /* silent */ }
-    try { envelope.disconnect() } catch { /* silent */ }
-  }, { once: true })
-
-  // cancel() — stop oscillator + disconnect chain. Same try/catch posture as the
-  // 'ended' listener above. The 'ended' listener and cancel() may both fire;
-  // both must be safe (idempotent).
-  const cancel = (): void => {
-    envelope.gain.cancelScheduledValues(audioCtx.currentTime)
-    try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
-    try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { filter.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
-  }
-
-  return {
-    envelope,
-    scheduledAt: when,
-    cleanupAt: when + TICK_TOTAL_DURATION_SEC + TICK_CLEANUP_PADDING_SEC,
-    cancel,
-  }
-}

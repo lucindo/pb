@@ -36,20 +36,17 @@
 // `clock` member exposes only the HRV-AC clock; NK-AC's clock is local to
 // NK's lifecycle.
 
-import type { TimbreId } from '../domain/settings'
-
 /**
  * Closed catalog of cue kinds the engine and any lookahead scheduler can dispatch.
  *
  * The catalog is closed — adding a new kind is an interface change visible to
- * every scheduler. The `'in'` and `'out'` variants carry `timbre` +
- * `phaseDurationSec` because the per-cue builders need them; all other kinds
- * omit both fields because the engine resolves timbre from its closed-over
- * `sessionTimbre` at dispatch time.
+ * every scheduler. The `'in'` and `'out'` variants carry `phaseDurationSec`
+ * because the per-cue builders need it; timbre is NOT a cue field — the engine
+ * resolves it from its closed-over `sessionTimbre` at dispatch time.
  */
 export type Cue =
-  | { kind: 'in'; phaseDurationSec: number; timbre: TimbreId }
-  | { kind: 'out'; phaseDurationSec: number; timbre: TimbreId }
+  | { kind: 'in'; phaseDurationSec: number }
+  | { kind: 'out'; phaseDurationSec: number }
   | { kind: 'lead-in-tick' }
   | { kind: 'end-chord' }
   | { kind: 'nk-front' }

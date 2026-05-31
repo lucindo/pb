@@ -1,11 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  scheduleInCue,
   scheduleInCueForTimbre,
-  scheduleOutCue,
   scheduleOutCueForTimbre,
-  scheduleTick,
   type CueHandle,
 } from './cueSynth'
 import { TIMBRE_OPTIONS } from '../domain/settings'
@@ -14,6 +11,16 @@ import { TIMBRE_PRESETS } from './timbres'
 // Test helper: relies on FakeAudioContext polyfill installed by vitest.setup.ts.
 function createAc(): AudioContext {
   return new AudioContext()
+}
+
+// Bowl-default shorthands over the production per-timbre entry points. The dead
+// scheduleInCue / scheduleOutCue exports were removed from cueSynth (L1); these keep
+// the scheduleBowlCue DSP assertions below exercising the live 'bowl' path.
+function scheduleInCue(ac: AudioContext, when: number, destination: AudioNode, phaseDurationSec?: number): CueHandle {
+  return scheduleInCueForTimbre(ac, when, destination, 'bowl', phaseDurationSec)
+}
+function scheduleOutCue(ac: AudioContext, when: number, destination: AudioNode, phaseDurationSec?: number): CueHandle {
+  return scheduleOutCueForTimbre(ac, when, destination, 'bowl', phaseDurationSec)
 }
 
 describe('cueSynth', () => {
@@ -112,35 +119,6 @@ describe('cueSynth', () => {
     expect(setTarget).toHaveBeenCalledWith(0.0001, 1.005, 1.8)
   })
 
-  // -- scheduleTick ----------------------------------------------------------
-
-  it('scheduleTick uses square wave (distinct timbre from bowl cues)', () => {
-    const ac = createAc()
-    const oscillators: OscillatorNode[] = []
-    const realCreate = ac.createOscillator.bind(ac)
-    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
-      const osc = realCreate()
-      oscillators.push(osc)
-      return osc
-    })
-
-    scheduleTick(ac, 1.0, ac.destination)
-
-    expect(oscillators).toHaveLength(1)
-    // Reason: length asserted by toHaveLength(1) immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(oscillators[0]!.type).toBe('square')
-  })
-
-  it('scheduleTick is much shorter than bowl cues', () => {
-    const ac = createAc()
-    const handle = scheduleTick(ac, 1.0, ac.destination)
-    expect(handle.cleanupAt - handle.scheduledAt).toBeLessThan(0.2)
-
-    const bowlHandle = scheduleInCue(ac, 1.0, ac.destination)
-    expect(bowlHandle.cleanupAt - bowlHandle.scheduledAt).toBeGreaterThan(7)
-  })
-
   // -- shared CueHandle contract --------------------------------------------
 
   it('all builders return a CueHandle with envelope GainNode', () => {
@@ -148,7 +126,6 @@ describe('cueSynth', () => {
     const handles: CueHandle[] = [
       scheduleInCue(ac, 2.0, ac.destination),
       scheduleOutCue(ac, 2.0, ac.destination),
-      scheduleTick(ac, 2.0, ac.destination),
     ]
     for (const handle of handles) {
       expect(handle.envelope).toBeDefined()

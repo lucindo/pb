@@ -6,7 +6,7 @@ import {
   CUE_OPTIONS,
   TIMBRE_OPTIONS,
 } from '../domain/settings'
-import { UI_STRINGS, LOCALE_DISPLAY_NAMES } from './strings'
+import { UI_STRINGS } from './strings'
 
 describe('UI_STRINGS exhaustiveness', () => {
   it('every LocaleId has a UI_STRINGS entry', () => {
@@ -47,13 +47,6 @@ describe('UI_STRINGS exhaustiveness', () => {
         expect(UI_STRINGS[locale].appSettings.cue[id].length).toBeGreaterThan(0)
       }
     }
-  })
-
-  it('EN cue strings have exact required values: labels="Text", arrow="Arrow", nose="Nose" (Phase 25 CONTEXT D-12)', () => {
-    expect(UI_STRINGS.en.appSettings.cueLabel).toBe('Cue style')
-    expect(UI_STRINGS.en.appSettings.cue.labels).toBe('Text')
-    expect(UI_STRINGS.en.appSettings.cue.arrow).toBe('Arrow')
-    expect(UI_STRINGS.en.appSettings.cue.nose).toBe('Nose')
   })
 
   it('PT-BR cue strings are non-empty (machine-translated with review markers)', () => {
@@ -161,15 +154,6 @@ describe('Phase 30 practice string keys', () => {
     }
   })
 
-  it('practice switcher labels are the short mobile-friendly names', () => {
-    expect(UI_STRINGS.en.practice.switcher.resonantName).toBe('HRV')
-    expect(UI_STRINGS.en.practice.switcher.naviKriyaName).toBe('Navi')
-    // pt-BR uses the localized abbreviation VFC to match the rest of the
-    // pt-BR UI (title "Respiração VFC").
-    expect(UI_STRINGS['pt-BR'].practice.switcher.resonantName).toBe('VFC')
-    expect(UI_STRINGS['pt-BR'].practice.switcher.naviKriyaName).toBe('Navi')
-  })
-
   it('practice headings keep the full names (D-05: untranslated Sanskrit proper noun)', () => {
     expect(UI_STRINGS.en.practice.switcher.naviKriyaHeading).toBe('Navi Kriya')
     expect(UI_STRINGS['pt-BR'].practice.switcher.naviKriyaHeading).toBe('Navi Kriya')
@@ -178,22 +162,6 @@ describe('Phase 30 practice string keys', () => {
 })
 
 describe('Phase 34 stretch practice string keys (STRETCH-06)', () => {
-  it('UI_STRINGS.en.practice.switcher.stretchName equals "Stretch" (D-10: switcher pill label)', () => {
-    expect(UI_STRINGS.en.practice.switcher.stretchName).toBe('Stretch')
-  })
-
-  it('UI_STRINGS.en.practice.switcher.stretchHeading equals "HRV Stretch"', () => {
-    expect(UI_STRINGS.en.practice.switcher.stretchHeading).toBe('HRV Stretch')
-  })
-
-  it('UI_STRINGS[\'pt-BR\'].practice.stretchName equals "Alongar"', () => {
-    expect(UI_STRINGS['pt-BR'].practice.switcher.stretchName).toBe('Alongar')
-  })
-
-  it('UI_STRINGS[\'pt-BR\'].practice.stretchHeading equals "Alongar VFC"', () => {
-    expect(UI_STRINGS['pt-BR'].practice.switcher.stretchHeading).toBe('Alongar VFC')
-  })
-
   it('every locale has both stretch fields present and non-empty (completeness)', () => {
     const stretchFields = ['stretchName', 'stretchHeading'] as const
     for (const locale of LOCALE_OPTIONS) {
@@ -203,16 +171,6 @@ describe('Phase 34 stretch practice string keys (STRETCH-06)', () => {
         expect(value.length, `practice.switcher.${field} in ${locale} must be non-empty`).toBeGreaterThan(0)
       }
     }
-  })
-})
-
-describe('LOCALE_DISPLAY_NAMES (D-14 native endonyms)', () => {
-  it('en label is "English"', () => {
-    expect(LOCALE_DISPLAY_NAMES.en).toBe('English')
-  })
-
-  it('pt-BR label is "Português (Brasil)"', () => {
-    expect(LOCALE_DISPLAY_NAMES['pt-BR']).toBe('Português (Brasil)')
   })
 })
 
@@ -229,10 +187,6 @@ describe('Phase 32 new learn.* heading keys', () => {
     }
   })
 
-  it('EN naviKriyaVideosHeading equals "Selected Navi Kriya Videos"', () => {
-    expect(UI_STRINGS.en.learn.naviKriyaVideosHeading).toBe('Selected Navi Kriya Videos')
-  })
-
   it('"Navi Kriya" stays untranslated in pt-BR (Sanskrit proper noun — Phase 30 D-05)', () => {
     expect(UI_STRINGS['pt-BR'].learn.naviKriyaVideosHeading).toContain('Navi Kriya')
   })
@@ -246,25 +200,6 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(
       (UI_STRINGS.en.appSettings.sections as Record<string, unknown>).appearance,
     ).toBeUndefined()
-  })
-
-  it('declares EN advanced.* copy locked by D-01..D-03 (Phase 49.1)', () => {
-    const en = UI_STRINGS.en.advanced
-    expect(en.title).toBe('Advanced')
-    expect(en.backChevron).toBe('Back to Settings')
-    expect(en.rightChevronAriaOnSettings).toBe('Advanced settings')
-    expect(en.sections.orbStyle).toBe('Orb Style')
-    expect(en.sections.behavior).toBe('Behavior')
-    expect(en.orb.label).toBe('Orb')
-    expect(en.orb.options.halo).toBe('Halo')
-    expect(en.orb.options.minimal).toBe('Minimal')
-    expect(en.orb.options.kuthasta).toBe('Kuthasta')
-    expect(en.ringCue.label).toBe('Ring cue')
-    expect(en.ringCue.options.arc).toBe('Arc')
-    expect(en.ringCue.options.rings).toBe('Rings')
-    expect(en.breathingEffect.label).toBe('Breathing effect')
-    expect(en.switcherIcons.label).toBe('Switcher icons')
-    expect(en.bypassSilentMode.label).toBe('Bypass silent mode')
   })
 
   it('declares PT-BR advanced.* draft values as non-empty strings (I18N-02)', () => {

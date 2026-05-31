@@ -1,5 +1,5 @@
 import { THEME_OPTIONS, type ThemeId } from '../domain'
-import { useThemeChoice } from '../hooks/useThemeChoice'
+import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
 import type { UiStrings } from '../content/strings'
 import { PickerCardGrid } from './primitives/PickerCardGrid'
 
@@ -20,7 +20,7 @@ const SWATCH_STYLE: Record<ThemeId, React.CSSProperties> = {
 }
 
 export function ThemePicker({ disabled, strings, sectionLabel, sectionLabelHidden }: ThemePickerProps) {
-  const { theme, setTheme } = useThemeChoice()
+  const [theme, setTheme] = usePreferenceChoice('theme')
   return (
     <PickerCardGrid<ThemeId>
       sectionLabel={sectionLabel}

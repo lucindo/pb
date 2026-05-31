@@ -16,12 +16,10 @@ import {
   type SessionSettings,
 } from '../domain/settings'
 
-import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
+import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 export function coerceSettings(raw: unknown): SessionSettings {
-  const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
-    ? raw as Record<string, unknown>
-    : {}
+  const r = asRecord(raw)
   return {
     bpm:             isValidBpm(r.bpm)           ? r.bpm             : DEFAULT_SETTINGS.bpm,
     ratio:           isValidRatio(r.ratio)       ? r.ratio           : DEFAULT_SETTINGS.ratio,

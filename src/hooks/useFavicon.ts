@@ -15,7 +15,7 @@
 //     detail.key === 'theme'.
 //
 // useFavicon returns void — App.tsx calls it bare (no destructure).
-// It does NOT call savePrefs — picker-side useThemeChoice owns that path.
+// It does NOT call savePrefs — picker-side usePreferenceChoice('theme') owns that path.
 
 import { useEffect, useState } from 'react'
 
@@ -138,7 +138,7 @@ export function useFavicon(): void {
 
   // Effect D: Same-tab 'hrv:prefs-changed' CustomEvent listener (empty deps).
   // The native 'storage' event does NOT fire in the writing tab.
-  // The favicon rides the existing 'theme' key dispatched by useThemeChoice.
+  // The favicon rides the existing 'theme' key dispatched by usePreferenceChoice('theme').
   // No new 'favicon' event key is introduced here.
   // Forward-compat: undefined/null detail (broadcast-all) treated as re-read all prefs.
   useEffect(() => {

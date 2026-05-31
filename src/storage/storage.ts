@@ -72,6 +72,16 @@ export interface Envelope {
 
 const EMPTY_ENVELOPE: Envelope = { version: STATE_VERSION }
 
+// Prototype-pollution-safe object guard: only treat `raw` as a record when it is
+// a plain non-array object; otherwise hand back an empty record so every named-key
+// read falls through to a default. Shared by the per-field coercers in
+// settings.ts / prefs.ts / practices.ts.
+export function asRecord(raw: unknown): Record<string, unknown> {
+  return raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+    ? raw as Record<string, unknown>
+    : {}
+}
+
 /**
  * Explicit migrate-on-read seam.
  *

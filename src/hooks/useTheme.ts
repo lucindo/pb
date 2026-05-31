@@ -14,7 +14,7 @@
 //     key === 'theme'. Closes the gap the native 'storage' event leaves open (fires only in
 //     other tabs).
 //
-// useTheme does NOT call savePrefs — the picker-side useThemeChoice owns that path.
+// useTheme does NOT call savePrefs — the picker-side usePreferenceChoice('theme') owns that path.
 
 import { useEffect, useState } from 'react'
 
@@ -71,7 +71,7 @@ export function useTheme(): { theme: ThemeId; setTheme: (next: ThemeId) => void 
 
   // Effect 4: Same-tab 'hrv:prefs-changed' CustomEvent listener (empty deps).
   // The native 'storage' event does NOT fire in the writing tab, so this custom event is the
-  // sole same-tab sync primitive from useThemeChoice back to App-side useTheme.
+  // sole same-tab sync primitive from usePreferenceChoice('theme') back to App-side useTheme.
   // Forward-compat: a payload without 'key' (undefined/null) is treated as "re-read all prefs"
   // (other hooks dispatch different keys for variant/timbre/locale on the same event name).
   useEffect(() => {

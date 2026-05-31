@@ -10,7 +10,7 @@ import type { BreathingShapeVariant } from '../featureFlags'
 
 const STRINGS = { halo: 'Halo', minimal: 'Minimal', kuthasta: 'Kuthasta' } as const
 
-// Helper: seed localStorage with a known breathingShape so useBreathingShapeChoice reads it on mount.
+// Helper: seed localStorage with a known breathingShape so usePreferenceChoice reads it on mount.
 function seedBreathingShape(value: BreathingShapeVariant): void {
   const envelope = {
     version: 1,

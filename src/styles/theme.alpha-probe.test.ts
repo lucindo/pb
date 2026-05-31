@@ -38,17 +38,4 @@ describe('D-02 alpha-modifier probe (upstream sanity)', () => {
     expect(value).not.toBe('')
     expect(value).toMatch(/^#[0-9a-fA-F]{3,8}$/)
   })
-
-  it('--color-breathing-surface rgb(from ...) fallback syntax is well-formed (Path B)', () => {
-    // The Path B fallback (inline style) uses CSS-native rgb(from var(...) r g b / 0.7).
-    // We can't run a real browser parser here, but we CAN assert the string shape is
-    // syntactically the form we documented above — so future grep audits hit this file.
-    const pathBFallback = 'rgb(from var(--color-breathing-surface) r g b / 0.7)'
-    // Syntactic sanity: the fallback contains "rgb(from", the surface token reference,
-    // and a /N alpha. Future migration plans (04, 05) grep this file for the canonical
-    // form before adopting Path B.
-    expect(pathBFallback).toContain('rgb(from')
-    expect(pathBFallback).toContain('var(--color-breathing-surface)')
-    expect(pathBFallback).toContain('/ 0.7')
-  })
 })

@@ -29,7 +29,7 @@ import {
   type LocaleId,
 } from '../domain/settings'
 
-import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
+import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 import {
   BREATHING_SHAPE_FLAG,
@@ -150,11 +150,9 @@ export function coerceBypassSilentMode(raw: unknown): boolean {
 }
 
 export function coercePrefs(raw: unknown): UserPrefs {
-  // Prototype-pollution mitigation: we only read nine known keys from `r`;
-  // `raw` is never spread into a prototype-accessible object.
-  const r = (raw !== null && typeof raw === 'object' && !Array.isArray(raw))
-    ? raw as Record<string, unknown>
-    : {}
+  // Prototype-pollution mitigation: we only read nine known keys from the
+  // guarded record; `raw` is never spread into a prototype-accessible object.
+  const r = asRecord(raw)
   return {
     theme:            coerceTheme(r.theme),
     timbre:           coerceTimbre(r.timbre),

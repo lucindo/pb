@@ -5,7 +5,7 @@
 //   - The single AudioContext (created from a user-gesture chain only).
 //   - A single master GainNode all cues route through; mute ramps it.
 //   - The lead-in scheduling primitive (3 ticks at +0/+1/+2 s + first In cue at +3 s).
-//   - The boundary-driven scheduleNextCue dispatch (in → scheduleInCue, out → scheduleOutCue).
+//   - The boundary-driven scheduleNextCue dispatch (in → scheduleInCueForTimbre, out → scheduleOutCueForTimbre).
 //   - close(): idempotent teardown that releases the system audio resources.
 //
 // Mute semantics (master gain):
@@ -31,6 +31,7 @@ import {
   scheduleNKTick,
 } from './nkCueSynth'
 import { createAudioSessionClock, type SessionClock, type Cue } from './sessionClock'
+import { createSilentLoopBypass, type SilentLoopBypass } from './silentLoopBypass'
 import type { TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
@@ -117,26 +118,6 @@ export interface AudioEngineOptions {
 // Master-gain mute ramp duration (seconds).
 const MUTE_RAMP_SEC = 0.05
 
-// Silent-loop WAV data URL: coerces iOS Safari's audio session category from
-// "ambient" to "playback" so cue audio routes through the device speaker even
-// when the silent switch is ON and no headphones are connected.
-//
-// Format: 16-bit signed / 22050 Hz / 200 samples (~9 ms), near-DC stepped
-// pulse. Peak amplitude is 1/32768 ≈ -90 dBFS — inaudible on iPhone speakers
-// at full system volume. Loop-continuous (sample 0 == sample 199 == 0, no
-// boundary clicks). NOT pure digital silence — iOS Safari rejects fully-silent
-// tracks for session coercion; this track contains ±1 samples so the browser
-// treats it as a real audio source.
-//
-// SILENT_LOOP_VOLUME stays at 0.0001 — a no-op on iOS (hardware-controlled
-// volume) but attenuates on Android Chrome and desktop (defense in depth).
-// iOS Safari ignores the HTMLMediaElement.volume attribute entirely; attenuation
-// is encoded into the PCM samples themselves, not via .volume.
-const SILENT_WAV_DATA_URL =
-  'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YZABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-// Near-zero non-zero. NOT coupled to MIN_GAIN_VALUE — separate invariants.
-const SILENT_LOOP_VOLUME = 0.0001
-
 // Lead-in: 3 ticks one second apart, then the first In cue at the start of the breath cycle.
 // Exported as the single source of truth — App.tsx and useAudioCues.ts import these
 // instead of redefining the same numbers locally.
@@ -182,38 +163,15 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // object literal that references `clock`.
 
   // Silent looping <audio> element constructed SYNCHRONOUSLY on the gesture head,
-  // BEFORE any await. This ordering is mandatory: iOS Safari ties AudioContext
-  // construction and HTMLAudioElement construction to the same user-gesture token.
-  // Constructing either after the first await breaks the gesture chain and the audio
-  // session fails to coerce from 'ambient' to 'playback'. Do NOT move these lines
-  // past the `await audioCtx.resume()` below.
+  // BEFORE any await (the createSilentLoopBypass gesture-token constraint — see that
+  // module). Do NOT move this past the `await audioCtx.resume()` below.
   //
   // Gate: predicate is `!== false` (NOT `=== true`) so undefined coerces to
-  // "construct" — callers that omit the field get the silent-loop element.
-  // When bypassSilentMode === false, silentLoopElement stays null and the existing
+  // "construct" — callers that omit the field get the silent-loop element. When
+  // bypassSilentMode === false, silentBypass stays null and the `?.teardown()`
   // null-guards in close() and the resume-reject catch short-circuit cleanly.
-  let silentLoopElement: HTMLAudioElement | null = null
-  if (opts.bypassSilentMode !== false) {
-    silentLoopElement = new Audio(SILENT_WAV_DATA_URL)
-    // Reason: `playsInline` is typed only on HTMLVideoElement in lib.dom.d.ts, but
-    // iOS Safari honors the property on HTMLMediaElement (the trick lifted from
-    // Howler.js). The runtime assignment is correct; the cast documents the
-    // type-vs-runtime gap.
-    ;(silentLoopElement as HTMLMediaElement & { playsInline: boolean }).playsInline = true
-    silentLoopElement.loop = true
-    silentLoopElement.muted = false
-    silentLoopElement.volume = SILENT_LOOP_VOLUME
-    // A .play() rejection (autoplay policy regression, codec issue) does NOT propagate.
-    // Session continues; iOS silent-switch users simply do not get speaker routing —
-    // no worse than omitting the element entirely. The AC resume() reject below DOES
-    // re-throw — the silent loop is sub-essential infrastructure.
-    //
-    // Optional chain: per HTMLMediaElement spec play() returns a Promise<void>, but very old
-    // browsers (Safari < 11) and the jsdom test environment return undefined. The chain absorbs
-    // that variant under the same silent-absorb posture.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    void silentLoopElement.play()?.catch(() => undefined)
-  }
+  const silentBypass: SilentLoopBypass | null =
+    opts.bypassSilentMode !== false ? createSilentLoopBypass() : null
 
   // Chrome can occasionally hand back an AC in 'suspended' even from a gesture chain
   // (race conditions during page bootstrap); resume immediately so currentTime advances.
@@ -222,17 +180,12 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // (browsers cap concurrent ACs at ~6).
   // The silent-loop element was constructed above on the gesture head and cannot be
   // reached through engine.close() if we never return an engine handle. When resume()
-  // rejects, tear down the element symmetrically (pause → removeAttribute('src') →
-  // drop reference) BEFORE closing the AC.
+  // rejects, tear it down BEFORE closing the AC.
   if (audioCtx.state === 'suspended') {
     try {
       await audioCtx.resume()
     } catch (err) {
-      if (silentLoopElement !== null) {
-        silentLoopElement.pause()
-        silentLoopElement.removeAttribute('src')
-        silentLoopElement = null
-      }
+      silentBypass?.teardown()
       await audioCtx.close().catch(() => undefined)
       throw err
     }
@@ -307,9 +260,8 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       case 'countdown-tick':
         activeCues.add(scheduleCountdownTick(audioCtx, when, masterGain, sessionTimbre))
         return
-      // cue.timbre is in the type union for callers that pre-schedule cues without
-      // engine context. At the engine layer, sessionTimbre (captured at construction)
-      // is the source of truth — we ignore cue.timbre here.
+      // Timbre is NOT a cue field — sessionTimbre (captured at construction) is the
+      // source of truth at the engine layer.
       case 'in':
         activeCues.add(scheduleInCueForTimbre(audioCtx, when, masterGain, sessionTimbre, cue.phaseDurationSec))
         return
@@ -365,9 +317,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // First In cue at +3. Pass the upcoming In-phase duration so the decay envelope
       // stretches with the phase length at low BPM (App.tsx boundary scheduler does the
       // same for every subsequent cue). plan.inhaleSec is seconds-shaped at the source —
-      // no `/1000` conversion. cue.timbre carries sessionTimbre for type-completeness;
-      // the engine ignores it and uses its closed-over sessionTimbre.
-      schedule(firstInCueTime, { kind: 'in', phaseDurationSec: plan.inhaleSec, timbre: sessionTimbre })
+      // no `/1000` conversion. Timbre is not a cue field — schedule() resolves it
+      // from the closed-over sessionTimbre.
+      schedule(firstInCueTime, { kind: 'in', phaseDurationSec: plan.inhaleSec })
 
       return firstInCueTime
     },
@@ -380,7 +332,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       const clampedAudioTime = Math.max(audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
       // Facade over schedule(). phaseDurationSec flows into the 'in' / 'out' cue payload;
       // schedule()'s arm forwards it to scheduleInCueForTimbre / scheduleOutCueForTimbre.
-      schedule(clampedAudioTime, { kind: newPhase, phaseDurationSec, timbre: sessionTimbre })
+      schedule(clampedAudioTime, { kind: newPhase, phaseDurationSec })
     },
 
     // Lookahead dispatch facade. Same posture as scheduleNextCue: closed guard at top,
@@ -414,8 +366,8 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         // Callee-side clamp — identical posture to scheduleNextCue.
         const clampedAudioTime = Math.max(cue.audioTime, audioCtx.currentTime + SAFE_LEAD_SEC)
         // schedule() adds the returned handle to activeCues internally.
-        // Engine ignores cue.timbre — uses closed-over sessionTimbre.
-        schedule(clampedAudioTime, { kind: cue.kind, phaseDurationSec: cue.phaseDurationSec, timbre: sessionTimbre })
+        // Timbre is resolved from the closed-over sessionTimbre, not the cue.
+        schedule(clampedAudioTime, { kind: cue.kind, phaseDurationSec: cue.phaseDurationSec })
       }
     },
 
@@ -498,15 +450,9 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
           setTimeout(resolve, tailRemainingSec * 1000)
         })
       }
-      // Silent-loop element teardown. pause() + clear src releases the decoded buffer;
-      // null reference drops the closure handle for GC. Sync, no await, no try/catch —
-      // the engine owns the element exclusively. Second close() short-circuits at the
-      // top of close() before this runs.
-      if (silentLoopElement !== null) {
-        silentLoopElement.pause()
-        silentLoopElement.removeAttribute('src')
-        silentLoopElement = null
-      }
+      // Silent-loop element teardown. Idempotent; no-op when bypass was skipped.
+      // Second close() short-circuits at the top of close() before this runs.
+      silentBypass?.teardown()
       // Node cleanup is otherwise driven by the oscillator 'ended' event. The Web Audio
       // spec does NOT guarantee 'ended' fires for an oscillator whose stopAt is still
       // in the future when audioCtx.close() runs — so a cue scheduled close to close()

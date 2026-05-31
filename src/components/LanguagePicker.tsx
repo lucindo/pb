@@ -1,7 +1,7 @@
 import { LOCALE_OPTIONS, type LocaleId } from '../domain'
 import { useLocaleChoice } from '../hooks/useLocaleChoice'
 import { LOCALE_DISPLAY_NAMES } from '../content/strings'
-import { SegmentedControl } from './primitives/SegmentedControl'
+import { SegmentedField } from './primitives/SegmentedField'
 
 export interface LanguagePickerProps {
   disabled: boolean
@@ -13,23 +13,13 @@ export function LanguagePicker({ disabled, sectionLabel, sectionLabelHidden }: L
   const { locale, setLocale } = useLocaleChoice()
   const options = LOCALE_OPTIONS.map((id) => ({ id, label: LOCALE_DISPLAY_NAMES[id] }))
   return (
-    <div>
-      <p
-        className={
-          sectionLabelHidden
-            ? 'sr-only'
-            : 'mb-2 text-sm font-semibold text-[var(--color-breathing-accent-strong)]'
-        }
-      >
-        {sectionLabel}
-      </p>
-      <SegmentedControl<LocaleId>
-        options={options}
-        value={locale}
-        onChange={setLocale}
-        ariaLabel={sectionLabel}
-        disabled={disabled}
-      />
-    </div>
+    <SegmentedField<LocaleId>
+      sectionLabel={sectionLabel}
+      sectionLabelHidden={sectionLabelHidden}
+      options={options}
+      value={locale}
+      onChange={setLocale}
+      disabled={disabled}
+    />
   )
 }
