@@ -28,14 +28,9 @@ export const FAVICON_SVG_TEMPLATE =
   + '<circle cx="16" cy="16" r="10" fill="__FILL__" fill-opacity="0.50"/>'
   + '<circle cx="16" cy="16" r="8" fill="__FILL__"/></svg>'
 
-// Module-load drift guard: the recolour pipeline relies on at least one
-// `__FILL__` placeholder. The stale comment "three places" (already
-// outdated when the J16 update bumped to four) showed this template can
-// drift undetected — a future edit that hardcodes a hex and forgets to
-// revert would silently emit a fixed-colour favicon. Failing at import
-// time is loud and unmistakable; runtime checks after replaceAll cannot
-// distinguish "no placeholders left, all replaced" from "no placeholders
-// to begin with".
+// Fail at import if the template lost its `__FILL__` placeholders — a hardcoded
+// hex would otherwise silently ship a fixed-colour favicon. A post-replaceAll
+// check can't catch this (it can't tell "all replaced" from "none to replace").
 const FAVICON_FILL_PLACEHOLDER_COUNT =
   (FAVICON_SVG_TEMPLATE.match(/__FILL__/g) ?? []).length
 if (FAVICON_FILL_PLACEHOLDER_COUNT === 0) {

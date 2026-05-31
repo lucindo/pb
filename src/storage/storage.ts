@@ -5,39 +5,16 @@
 // in-memory defaults. No warn/log in production; gate on `import.meta.env.DEV`
 // if you add logging.
 
-// Dual-versioning convention.
+// Dual-versioning convention:
+//   - STATE_KEY suffix (':v1') — bump only for breaking shape changes where old
+//     data is unmigratable; it gets orphaned and the user sees defaults.
+//   - STATE_VERSION (in-envelope) — bump for migrate-on-read schema changes
+//     handled by migrateEnvelope + per-field coercers; the user keeps their data.
 //
-// Two parallel version markers cover different schema-evolution scenarios:
-//
-//   1. STATE_KEY = 'hrv:state:v1'        — the localStorage KEY's :v1 suffix.
-//   2. STATE_VERSION = 1 (in envelope)   — a version field INSIDE the JSON.
-//
-// When to bump which:
-//   - Bump STATE_VERSION (in-envelope) for in-place, migrate-on-read schema
-//     changes that are reachable from v1 data via per-field coercion +
-//     readEnvelope-time migration logic. The user keeps their data; the
-//     storage adapter migrates it.
-//   - Bump STATE_KEY suffix (:v2) for breaking shape changes where v1 data is
-//     unreadable / unmigratable. v2-aware code reads the new key; v1 data is
-//     orphaned (not user-data-loss because we never had cloud sync — they would
-//     just see defaults on first load of the new code).
-//
-// STATE_VERSION is bumped 1→2 when `migrateEnvelope` gains a v1→v2 ladder that
-// folds a returning user's flat `settings`/`stats` into the per-practice
-// `practices.resonant` subtree. STATE_KEY is deliberately unchanged — v1 data
-// is fully migratable.
-//
-// Tests should NOT depend on the literal STATE_KEY string; assert through the
-// public load*/save* API where possible. Tests that DO use STATE_KEY directly
-// are seeding fixtures (App.persistence.test.tsx, storage.test.ts) — those are
-// expected to migrate together with the constant if it changes.
-// SYNC WITH index.html FOUC SCRIPT — when bumping the :v1 suffix, update the
-// hardcoded 'hrv:state:v1' string in index.html's <head> theme-resolve script.
-// The FOUC script also hardcodes the `prefs.theme` JSON path; if the prefs
-// subtree ever moves (e.g. under `practices.appearance.prefs`), update the
-// FOUC script's `JSON.parse(raw).prefs` lookup too — otherwise every returning
-// user gets a data-theme="light" flash on every load. Nothing in the build
-// catches this desync; the link is hand-maintained.
+// SYNC WITH index.html FOUC SCRIPT: it hardcodes both 'hrv:state:v1' and the
+// `JSON.parse(raw).prefs.theme` path. If the key suffix bumps or the prefs
+// subtree moves, update the FOUC script too — nothing in the build catches the
+// desync, and returning users get a theme flash on every load.
 export const STATE_KEY = 'hrv:state:v1'
 // STATE_VERSION bumped 2→3: migrateEnvelope seeds the practices.stretch slice
 // from the resonant blob and zeroes stretch stats.
@@ -190,42 +167,15 @@ export function readEnvelope(deps: StorageDeps = {}): Envelope {
 export function writeEnvelope(env: Envelope, deps: StorageDeps = {}): void {
   const storage = deps.storage ?? window.localStorage
   try {
-    // Inline re-read guards against the cross-tab race where another tab running
-    // a NEWER build wrote a future-schema envelope between this tab's read and
-    // this write. The guard refuses to silently downgrade by overwriting that
-    // envelope with older data, which would corrupt the newer tab's view on its
-    // next read.
+    // Cross-tab downgrade guard: if another tab running a NEWER build wrote a
+    // future-schema envelope, refuse to overwrite it with this older build's
+    // data (which would corrupt the newer tab's next read). Best-effort, not
+    // transactional — a residual TOCTOU window between the inner getItem and the
+    // outer setItem remains; closing it needs the Web Locks API (deferred).
     //
-    // Silent refusal — no warn, no DEV-mode branch, no toast. A debugging
-    // developer cannot distinguish refusal from a quota failure; both yield
-    // "RAM state authoritative, disk may not have synced" semantics.
-    //
-    // Scope: addresses the CROSS-tab newer-version race only. The in-tab
-    // concurrent recordSession race is documented v1.x debt — the storage-event
-    // listener in App.tsx handles only the UI consistency half of cross-tab sync.
-    //
-    // Residual TOCTOU window: the inner re-read narrows but does NOT close the
-    // cross-tab race. Between the inner storage.getItem (below) and the outer
-    // storage.setItem, another tab running a newer build can still commit a
-    // future-schema envelope; this tab's stale currentVersion read returns the
-    // older number, the guard does not fire, and the older payload overwrites the
-    // newer envelope. Closing this fully would require BroadcastChannel-coordinated
-    // locking or the Web Locks API (deferred). The guard is best-effort, not
-    // transactional.
-    //
-    // User-facing failure mode: an older build loaded after a newer build has
-    // written a future-version envelope (browser cache, stale SW, bfcache)
-    // short-circuits at the currentVersion > STATE_VERSION check below — every
-    // user action that calls a save*/record* function is silently discarded.
-    // QA/UAT should clear localStorage between builds when downgrading. A
-    // DEV-only console.warn at the short-circuit site signals the situation to
-    // developers; production stays silent.
-    //
-    // The inner re-read MUST live in its OWN nested try/catch. If the inner
-    // getItem throws (Safari ITP / private mode) and we let the outer catch
-    // swallow it, the entire write is silently skipped — wrong outcome. The guard
-    // must be fail-open: when we cannot read the disk version, assume STATE_VERSION
-    // and proceed with the write.
+    // The inner re-read MUST be fail-open in its own try/catch: if getItem throws
+    // (Safari ITP / private mode) assume STATE_VERSION and still write, rather
+    // than letting the outer catch swallow the whole write.
     let currentVersion: number = STATE_VERSION
     try {
       const raw = storage.getItem(STATE_KEY)

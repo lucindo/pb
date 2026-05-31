@@ -191,23 +191,16 @@ export function createAudioSessionClock(
 
   const clock: SessionClock & { notifySuspended(): void } = {
     now(): number {
-      // The audio-backed clock reads the AC's natural time. This is the EXACTLY ONE
-      // `audioCtx.currentTime` read inside createAudioSessionClock. The drift-guard
-      // test bans `audioCtx.currentTime` reads in the 5 caller files, not inside
-      // the factory.
+      // The one audioCtx.currentTime read the drift-guard test allows (it bans
+      // the read in the 5 caller files, not inside the factory).
       return audioCtx.currentTime
     },
 
     schedule(when: number, cue: Cue): void {
-      // scheduleImpl is plumbed at construction (NOT reassigned post-hoc —
-      // that would violate readonly on the interface). When absent,
-      // schedule() is a typed no-op.
       if (scheduleImpl !== undefined) {
         scheduleImpl(when, cue)
       } else {
-        // Typed no-op: explicit void to silence unused-parameter lints without
-        // adding eslint disables here.
-        void when
+        void when // typed no-op — the NK call site passes no scheduleImpl
         void cue
       }
     },
@@ -236,14 +229,8 @@ export function createAudioSessionClock(
     },
 
     notifySuspended(): void {
-      // Engine-only escape hatch. NOT a public SessionClock member. Synchronously
-      // invokes all suspendSubscribers as if the AC had fired a 'suspended'
-      // statechange event. Used by audioEngine's resume() catch block for the
-      // iOS Safari InvalidStateError recovery path: when resume() rejects with
-      // InvalidStateError, the AC was already 'suspended' before the call and
-      // stays 'suspended' after — no natural statechange fires. The engine calls
-      // clock.notifySuspended() (via its internal augmented-type reference) so
-      // external subscribers see the 'suspended' transition synchronously.
+      // See the factory doc above — synthetic 'suspended' fan-out for the iOS
+      // resume() InvalidStateError path, where no natural statechange fires.
       fanSuspend()
     },
   }
@@ -264,9 +251,8 @@ export function createAudioSessionClock(
 export function createWallSessionClock(): SessionClock {
   const clock: SessionClock = {
     now(): number {
-      // This is the EXACTLY ONE `performance.now` read inside createWallSessionClock.
-      // The drift-guard test bans `performance.now()` reads in the 5 caller files,
-      // not inside the factory.
+      // The one performance.now() read the drift-guard test allows (it bans the
+      // read in the 5 caller files, not inside the factory).
       return performance.now() / 1000
     },
 

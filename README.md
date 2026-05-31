@@ -60,7 +60,7 @@ A pill switcher at the top of the page moves between three practices; each keeps
 
 ### Everything else
 
-- A single calm visual guide — `OrbShape` with two render variants (`orb-halo`, `minimal-rings`) for the breathing practices, plus `NKShape` for Navi Kriya's OM-count guide.
+- A single calm visual guide — `OrbShape` with three render variants (`orb-halo`, `minimal-rings`, `spiritual-eye`) for the breathing practices, plus `NKShape` for Navi Kriya's OM-count guide.
 - Light / Dark / System theme switching — single "Mono Zen" palette tuned in both light and dark, with a matching favicon.
 - EN / PT-BR language switching — the full interface, including the Learn explainer, is available in English and Brazilian Portuguese.
 - Configurable cue style — `labels` (synchronized In / Out text), `arrow`, or `nose` indicator — picked from the settings panel.
@@ -83,12 +83,12 @@ A pill switcher at the top of the page moves between three practices; each keeps
 
 - React 19 + TypeScript, built with Vite.
 - Tailwind CSS v4 via `@tailwindcss/vite`.
-- Vitest + Testing Library for unit + behavior tests (1283 tests across the codebase).
+- Vitest + Testing Library for unit + behavior tests.
 - ESLint (TypeScript + React Hooks + React Refresh rule packs).
 - Web APIs: `<dialog>` (top-layer modals), `AudioContext` (generated cues), Page Visibility / Wake Lock (resume / screen-on), `localStorage` (settings + stats).
 - Installable PWA via `vite-plugin-pwa` (Workbox `generateSW`, auto-update) — offline-capable once cached.
 - No backend, no telemetry, no analytics, no third-party scripts.
-- Multi-version hosting on GitHub Pages — each tagged release is built into its own subpath (`/hrv/<tag>/`), with `versions.json` driving the `official` redirect at the project root and a `latest/` alias for the newest tag.
+- Multi-version hosting on GitHub Pages — each tagged release is built into its own subpath (`/hrv/<tag>/`), with `versions.json` driving the `official` build served at the project root.
 
 ---
 
@@ -120,9 +120,10 @@ Open the URL Vite prints (typically `http://localhost:5173`) and the app is read
 Runtime feature flags can be set with query parameters:
 
 - `switcherIcon` (default `off`) — show icons on the practice switcher pills
-- `breathingShape` (`orb-halo` | `minimal-rings`) — breathing-guide render variant
+- `breathingShape` (`orb-halo` | `minimal-rings` | `spiritual-eye`) — breathing-guide render variant
 - `orbIdle` (`still` | `ambient`) — orb idle behavior between sessions
 - `ringCue` (`outer-inner` | `progress-arc`) — per-breath ring-cue style
+- `bypassSilentMode` (default `on`) — keep cues audible when the device is in silent/ring mode
 
 Boolean flags accept `1` / `on` / `true` / `yes` / `enable` (true) and `0` / `off` / `false` / `no` / `disable` (false). String-valued flags fall back to their default when the value isn't recognized. See `src/featureFlags.ts` for the canonical parsers.
 
@@ -138,8 +139,8 @@ src/
                   (BreathingSessionSurface, NaviKriyaSessionSurface)
                   and the LearnPage route
   components/     PracticeToggle (the practice switcher); the breathing
-                  guide (OrbShape with `orb-halo` / `minimal-rings`
-                  variants) plus the Navi Kriya guide (NKShape);
+                  guide (OrbShape with `orb-halo` / `minimal-rings` /
+                  `spiritual-eye` variants) plus the Navi Kriya guide (NKShape);
                   SessionReadout / NKSessionReadout, SessionActionRow,
                   SettingsFormShell + ResonantSettingsForm /
                   StretchSettingsForm / NaviKriyaSettingsForm,
@@ -167,9 +168,8 @@ src/
                   prefs, practices, and install-banner dismissal
   styles/         theme palette CSS + favicon palette sync
   featureFlags.ts Query-parameter feature flags (switcherIcon,
-                  breathingShape, orbIdle, ringCue)
-.planning/        Planning artifacts (specs, phases, ROADMAP) — see
-                  PROJECT.md if you want to dive into the design history
+                  breathingShape, orbIdle, ringCue, bypassSilentMode)
+.project/         PROJECT.md — design history and project map
 ```
 
 ---

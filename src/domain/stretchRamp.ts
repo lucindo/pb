@@ -160,29 +160,14 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
 
   // Step 3: cool-down hold at targetBpm.
   if (coolDownMinutes === 'open-ended') {
-    // Open-ended: unbounded final segment — no residual absorption needed.
+    // Unbounded final segment — no residual absorption needed.
     segments.push(makeSegment(targetBpm, Infinity, 'hold-target'))
   } else {
-    // Bounded cool-down: the final segment absorbs the accumulated cycle-snapping
-    // residual from Steps 1–2 so the realized total equals the requested whole-minute
-    // total exactly (operator decision — honor the exact total, plan 34-10 UAT GAP 1).
-    //
-    // The cool-down span is set to requestedTotalSec - cursorSec rather than being
-    // snapped to a whole number of targetBpm cycles. This is produced through
-    // makeSegment with { snap: false } so the segment shape, cycleSec/inhaleSec/
-    // exhaleSec ratio math, and cursorSec/cumulativeCycles bookkeeping all stay
-    // owned by a single code path (no hand-rolled duplicate of makeSegment).
-    //
-    // makeSegment's snap:false branch floors the span at one whole cycle
-    // (Math.max(cycleSec, requestedSec)) so the cool-down span can never be zero or
-    // negative even when the upward snapping residual from prior segments exceeds
-    // the requested cool-down span. The cycleSec field retains the true
-    // breath-cycle length (60 / targetBpm) so getStretchFrame's
-    //   Math.floor(elapsedInSec / cycleSec)
-    // phase math is completely unchanged — only the span shifts; the cycle length does not.
-    //
-    // cycleBaseIndex = cumulativeCycles (the running total from all prior segments)
-    // keeps the absolute monotonic cycleIndex intact.
+    // Bounded cool-down: span = requestedTotalSec - cursorSec absorbs the
+    // cycle-snapping residual from Steps 1–2 so the realized total equals the
+    // requested whole-minute total exactly. snap:false uses the span verbatim
+    // (floored at one cycle) while keeping the true 60/targetBpm cycleSec, so
+    // getStretchFrame's phase math is unchanged. Rationale in the docstring above.
     const requestedTotalSec = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60
     segments.push(makeSegment(targetBpm, requestedTotalSec - cursorSec, 'hold-target', { snap: false }))
   }
