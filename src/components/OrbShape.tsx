@@ -88,9 +88,6 @@ export function OrbShape({
   ringCue = 'progress-arc',
   children,
 }: OrbShapeProps) {
-  if (process.env.NODE_ENV !== 'production' && nkPhase != null && frame != null) {
-    console.warn('OrbShape: nkPhase + frame both provided; frame ignored')
-  }
   if (nkPhase != null) {
     return (
       <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant} ringCue={ringCue}>

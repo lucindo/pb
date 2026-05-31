@@ -23,13 +23,7 @@
 
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
-import {
-  scheduleCountdownTick,
-  scheduleEndChord,
-  scheduleNKFrontMarker,
-  scheduleNKBackMarker,
-  scheduleNKTick,
-} from './nkCueSynth'
+import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
 import { createAudioSessionClock, type SessionClock, type Cue } from './sessionClock'
 import { createSilentLoopBypass, type SilentLoopBypass } from './silentLoopBypass'
 import type { TimbreId } from '../domain/settings'
@@ -257,9 +251,6 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       case 'lead-in-tick':
         activeCues.add(scheduleCountdownTick(audioCtx, when, masterGain, sessionTimbre))
         return
-      case 'countdown-tick':
-        activeCues.add(scheduleCountdownTick(audioCtx, when, masterGain, sessionTimbre))
-        return
       // Timbre is NOT a cue field — sessionTimbre (captured at construction) is the
       // source of truth at the engine layer.
       case 'in':
@@ -277,15 +268,6 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
         endChordTailUntil = Math.max(endChordTailUntil, c.cleanupAt)
         return
       }
-      case 'nk-front':
-        activeCues.add(scheduleNKFrontMarker(audioCtx, when, masterGain, sessionTimbre))
-        return
-      case 'nk-back':
-        activeCues.add(scheduleNKBackMarker(audioCtx, when, masterGain, sessionTimbre))
-        return
-      case 'nk-tick':
-        activeCues.add(scheduleNKTick(audioCtx, when, masterGain, sessionTimbre))
-        return
     }
   }
 

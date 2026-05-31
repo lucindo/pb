@@ -49,10 +49,6 @@ export type Cue =
   | { kind: 'out'; phaseDurationSec: number }
   | { kind: 'lead-in-tick' }
   | { kind: 'end-chord' }
-  | { kind: 'nk-front' }
-  | { kind: 'nk-back' }
-  | { kind: 'nk-tick' }
-  | { kind: 'countdown-tick' }
 
 /**
  * SessionClock — typed read-only interface with EXACTLY 5 members.
@@ -146,7 +142,7 @@ export function createAudioSessionClock(
   // AC is wrapped, never constructed here. User-gesture-chain semantics hold at
   // the AC construction site, not here.
 
-  // FOUR subscriber Sets. Each fan-out path iterates its own Set in registration order.
+  // Three subscriber Sets. Each fan-out path iterates its own Set in registration order.
   const suspendSubscribers = new Set<() => void>()
   const resumeSubscribers = new Set<() => void>()
   const closeSubscribers = new Set<() => void>()
@@ -169,7 +165,7 @@ export function createAudioSessionClock(
     for (const cb of closeSubscribers) cb()
   }
 
-  // Single statechange listener fans transitions to the four Sets.
+  // Single statechange listener fans transitions to the three Sets.
   // The widened type covers WebKit's 'interrupted' extension (iOS Safari).
   audioCtx.addEventListener('statechange', () => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion

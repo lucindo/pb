@@ -8,9 +8,7 @@ import {
   SWITCHER_ICON_FLAG,
   parseQueryBoolean,
   readFeatureFlags,
-  readQueryFeatureFlag,
   type FeatureFlags,
-  type QueryFeatureFlagSpec,
 } from './featureFlags'
 
 // Snapshot of production defaults — used as the second arg to the 2-arg
@@ -237,19 +235,5 @@ describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
     expect(RING_CUE_FLAG.queryParam).toBe('ringCue')
     expect(RING_CUE_FLAG.defaultValue).toBe('progress-arc')
     expect(RING_CUE_FLAG.parse('south')).toBe('progress-arc')
-  })
-})
-
-describe('readQueryFeatureFlag', () => {
-  it('supports adding non-boolean query flags with custom parsers', () => {
-    const densityFlag = {
-      queryParam: 'density',
-      defaultValue: 'comfortable',
-      parse: (rawValue: string): 'compact' | 'comfortable' | null =>
-        rawValue === 'compact' || rawValue === 'comfortable' ? rawValue : null,
-    } satisfies QueryFeatureFlagSpec<'compact' | 'comfortable'>
-
-    expect(readQueryFeatureFlag('?density=compact', densityFlag)).toBe('compact')
-    expect(readQueryFeatureFlag('?density=unknown', densityFlag)).toBe('comfortable')
   })
 })

@@ -47,13 +47,12 @@ const STACK_LAYOUT =
  *  visual posture (card buttons, selected/unselected styling, a11y wiring)
  *  and the layout grid.
  *
- *  `labelId` is explicit (not auto-generated via useId) so existing tests
- *  that assert on specific id strings (e.g. CuePicker.test.tsx checks
- *  `getElementById('cue-picker-label')`) keep passing without rewrite.
+ *  `labelId` is explicit (not auto-generated via useId) so callers control the
+ *  `aria-labelledby` id.
  *
- *  `optionLayout='stack'` adds `flex flex-col items-center gap-1` to each
- *  button — used by CuePicker to stack the CueGlyph swatch above the label.
- *  Default `'inline'` matches the other three pickers' single-line layout. */
+ *  `optionLayout='stack'` switches each button to STACK_LAYOUT (glyph stacked
+ *  above the label) — used by CuePicker. Default `'inline'` matches the other
+ *  three pickers' single-line layout. */
 export function PickerCardGrid<T extends string>({
   sectionLabel,
   labelId,

@@ -244,7 +244,6 @@ export function useAppViewModel(): AppViewModel {
   return {
     activePractice,
     appTitle: getPracticeTitle(activePractice, uiStrings),
-    workspaceCompact: breathing.inSessionView,
     controlsDisabled,
     practiceSession,
     practiceSettings,

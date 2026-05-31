@@ -49,24 +49,6 @@ export function parseQueryBoolean(rawValue: string): boolean | null {
   return null
 }
 
-// Public extensibility surface — no in-app caller today; the production flag pipeline
-// uses `readFeatureFlags` (which routes through the private `readQueryFeatureFlagOrNull`
-// so it can fall through to the persisted snapshot). Kept exported so ad-hoc /
-// experimental / non-flag query parameters can be parsed with the same spec contract
-// without owning their own URLSearchParams plumbing — exercised by the
-// 'supports adding non-boolean query flags with custom parsers' test.
-// If a future audit confirms no consumer wants the default-falling-back behaviour,
-// this export and its test can be dropped together.
-export function readQueryFeatureFlag<T>(
-  search: string,
-  spec: QueryFeatureFlagSpec<T>,
-): T {
-  const rawValue = new URLSearchParams(search).get(spec.queryParam)
-  if (rawValue === null) return spec.defaultValue
-
-  return spec.parse(rawValue) ?? spec.defaultValue
-}
-
 // Returns `null` for absent OR unparseable query values so the resolver's `??` chain
 // falls through to the persisted snapshot (not to the production default). Private
 // helper — only `readFeatureFlags` consumes it.

@@ -22,7 +22,7 @@ import { useEffect, useState } from 'react'
 import { loadPrefs } from '../storage/prefs'
 import { STATE_KEY } from '../storage'
 import type { ThemeId } from '../domain/settings'
-import { buildFaviconDataUri, FAVICON_COLORS } from '../styles/faviconPalette'
+import { buildFaviconDataUri } from '../styles/faviconPalette'
 
 // matchMedia query for system theme resolution — same query as useTheme.ts.
 const MQL_QUERY = '(prefers-color-scheme: dark)'
@@ -74,10 +74,6 @@ function applyFavicon(theme: ThemeId): void {
     // so we reassign directly (theme is already the correct subtype at this point in control flow).
     resolved = theme
   }
-
-  // Verify the resolved theme is in FAVICON_COLORS before building the URI.
-  // This is always true by type (Exclude<ThemeId,'system'>), but guard defensively.
-  if (!(resolved in FAVICON_COLORS)) return
 
   const dataUri = buildFaviconDataUri(resolved)
   replaceFaviconLink(dataUri)

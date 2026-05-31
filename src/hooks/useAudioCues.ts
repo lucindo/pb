@@ -218,19 +218,13 @@ export function useAudioCues(
   //     is in flight for this cycle (the resume-attempt gate).
   //   - handleClose: sets unavailable when the AC transitions to closed.
   const handleResume = useCallback((): void => {
-    // Defensive null-gate at top — protects future branches that read
-    // engineRef.current and preserves the prior handleStateChange null-gate posture.
-    const engine = engineRef.current
-    if (engine === null) return
-    void engine
+    if (engineRef.current === null) return
     visibilityResumeAttemptedRef.current = false
     setAudioStatus('ok')
   }, [])
 
   const handleSuspend = useCallback((): void => {
-    const engine = engineRef.current
-    if (engine === null) return
-    void engine
+    if (engineRef.current === null) return
     // Resume-attempt gate: only flip to 'needs-resume' when a prior visibility-driven
     // resume attempt is in flight for this suspend cycle. Startup-time transient
     // suspended → running transitions are intentionally ignored.
@@ -242,9 +236,7 @@ export function useAudioCues(
   const handleClose = useCallback((): void => {
     // engine.clock.onClose fires this when the AC transitions to 'closed' — whether
     // via stop()/reconstructEngine paths OR an unexpected browser-side AC kill.
-    const engine = engineRef.current
-    if (engine === null) return
-    void engine
+    if (engineRef.current === null) return
     setAudioStatus('unavailable')
   }, [])
 

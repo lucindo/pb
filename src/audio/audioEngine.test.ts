@@ -739,7 +739,7 @@ describe('audioEngine', () => {
   // `engine.clock.schedule(when, cue)` routes through the engine's switch dispatch,
   // exercising every Cue arm. Each arm calls the corresponding per-cue primitive in
   // cueSynth.ts / nkCueSynth.ts and adds the returned handle to activeCues.
-  describe('Phase 50-06 — internal schedule(when, cue) dispatch (8 Cue arms)', () => {
+  describe('Phase 50-06 — internal schedule(when, cue) dispatch (4 Cue arms)', () => {
     it('schedule({ kind: "lead-in-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
       const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
       const engine = await createAudioEngine({ timbre: 'bowl' })
@@ -749,18 +749,6 @@ describe('audioEngine', () => {
       expect(tickSpy).toHaveBeenCalledTimes(1)
       expect(tickSpy.mock.calls[0]?.[1]).toBe(1.5)
       expect(tickSpy.mock.calls[0]?.[3]).toBe('bowl')
-
-      await engine.close()
-    })
-
-    it('schedule({ kind: "countdown-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
-      const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
-      const engine = await createAudioEngine({ timbre: 'bowl' })
-
-      engine.clock.schedule(2.0, { kind: 'countdown-tick' })
-
-      expect(tickSpy).toHaveBeenCalledTimes(1)
-      expect(tickSpy.mock.calls[0]?.[1]).toBe(2.0)
 
       await engine.close()
     })
@@ -838,43 +826,6 @@ describe('audioEngine', () => {
       // The setTimeout call inside close() uses tailRemainingSec * 1000 = 0.02 * 1000 = 20.
       const deferralCall = setTimeoutSpy.mock.calls.find(([, ms]) => ms === 20)
       expect(deferralCall).toBeDefined()
-    })
-
-    it('schedule({ kind: "nk-front" }) calls scheduleNKFrontMarker and adds to activeCues', async () => {
-      const nkSpy = vi.spyOn(nkCueSynth, 'scheduleNKFrontMarker')
-      const engine = await createAudioEngine({ timbre: 'bowl' })
-
-      engine.clock.schedule(7.0, { kind: 'nk-front' })
-
-      expect(nkSpy).toHaveBeenCalledTimes(1)
-      expect(nkSpy.mock.calls[0]?.[1]).toBe(7.0)
-      expect(nkSpy.mock.calls[0]?.[3]).toBe('bowl')
-
-      await engine.close()
-    })
-
-    it('schedule({ kind: "nk-back" }) calls scheduleNKBackMarker and adds to activeCues', async () => {
-      const nkSpy = vi.spyOn(nkCueSynth, 'scheduleNKBackMarker')
-      const engine = await createAudioEngine({ timbre: 'bowl' })
-
-      engine.clock.schedule(8.0, { kind: 'nk-back' })
-
-      expect(nkSpy).toHaveBeenCalledTimes(1)
-      expect(nkSpy.mock.calls[0]?.[1]).toBe(8.0)
-
-      await engine.close()
-    })
-
-    it('schedule({ kind: "nk-tick" }) calls scheduleNKTick and adds to activeCues', async () => {
-      const nkSpy = vi.spyOn(nkCueSynth, 'scheduleNKTick')
-      const engine = await createAudioEngine({ timbre: 'bowl' })
-
-      engine.clock.schedule(9.0, { kind: 'nk-tick' })
-
-      expect(nkSpy).toHaveBeenCalledTimes(1)
-      expect(nkSpy.mock.calls[0]?.[1]).toBe(9.0)
-
-      await engine.close()
     })
   })
 })

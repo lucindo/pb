@@ -3,15 +3,8 @@
 // Dismissal persistence for the phone install banner. Raw boolean key, no
 // Envelope wrapper, no per-field coercion (no FOUC dependency, no cross-tab
 // sync, no schema). Write failures and read failures are both silent.
-//
-// StorageDeps is opt-in (defaults to window.localStorage) for parity with
-// every other module in the storage layer. The standalone posture is about
-// avoiding the Envelope wrapper and the version/coercion machinery — not
-// about refusing the dependency-injection seam itself. Accepting `deps.storage`
-// costs nothing at the
-// default call site (existing callers need no change) and lets tests and
-// future "swap the backend" work happen through the same idiom used
-// elsewhere.
+// StorageDeps is opt-in (defaults to window.localStorage) for parity with the
+// rest of the storage layer.
 
 import type { StorageDeps } from './storage'
 
