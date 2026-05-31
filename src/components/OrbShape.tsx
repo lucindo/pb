@@ -331,9 +331,9 @@ function OrbLeadIn({
 // disc. The halo region branches per variant: V1 renders 3 organic-puddle
 // halos, V2 renders a single full-bleed accent halo.
 interface OrbContainerProps {
-  role?: 'img'
-  ariaLabel?: string
-  dataPhase?: 'in' | 'out'
+  role?: 'img' | undefined
+  ariaLabel?: string | undefined
+  dataPhase?: 'in' | 'out' | undefined
   dataProgress?: string
   showRings: boolean
   innerRingPhase?: 'in' | 'out'

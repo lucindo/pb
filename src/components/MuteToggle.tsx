@@ -18,13 +18,13 @@ export interface MuteToggleProps {
   /** When true, button morphs into a resume affordance —
    *  refresh-arrow glyph + aria-label from strings.resume. Priority: audioAvailable=false
    *  outranks; muted is ignored in label and aria-pressed is undefined. */
-  needsResume?: boolean
+  needsResume?: boolean | undefined
   /** A11Y-01: id of the App-level aria-live resume-hint region. When needsResume
    *  is true AND this id is provided, aria-describedby is set so screen readers
    *  announce the hint text. When needsResume is false (or the id is omitted —
    *  e.g. the navi audio VM has no resume flow), aria-describedby is omitted
    *  to avoid empty-content announcements. */
-  resumeHintId?: string
+  resumeHintId?: string | undefined
   strings: UiStrings['practice']['mute']
   onToggle(this: void): void
 }

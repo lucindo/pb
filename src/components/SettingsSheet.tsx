@@ -12,7 +12,7 @@ export interface SettingsSheetProps {
   open: boolean
   onClose(this: void): void
   title: string
-  subtitle?: string
+  subtitle?: string | undefined
   closeLabel: string
   children: ReactNode
 }

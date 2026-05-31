@@ -19,7 +19,7 @@ export interface PersistedStats {
   // undefined. Omitting it from ZERO_STATS is intentional — the optional field
   // may be absent and coerceStats returns undefined (not 0) so an existing
   // resonant stats record stays byte-shaped as before (backward-compatible).
-  roundsCompleted?: number
+  roundsCompleted?: number | undefined
 }
 
 // Exported so reset flows can update React state optimistically (without

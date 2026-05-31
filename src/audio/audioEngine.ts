@@ -106,7 +106,7 @@ export interface AudioEngineOptions {
    *  When true or undefined, the silent-loop element is constructed.
    *  Undefined coerces to true — omitting the field behaves identically to true
    *  (gate predicate is `!== false`, NOT `=== true`). */
-  bypassSilentMode?: boolean
+  bypassSilentMode?: boolean | undefined
 }
 
 // Master-gain mute ramp duration (seconds).

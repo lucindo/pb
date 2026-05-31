@@ -11,11 +11,11 @@ export interface PickerCardGridProps<T extends string> {
   renderOption(this: void, option: T): ReactNode
   columns: 2 | 3 | 4
   disabled?: boolean
-  optionLayout?: PickerCardLayout
+  optionLayout?: PickerCardLayout | undefined
   // When true, the `<p>` sublabel is rendered sr-only — visible label duty has
   // moved to an enclosing SettingsSectionHeader, but the radiogroup's
   // `aria-labelledby` link stays intact for screen readers.
-  sectionLabelHidden?: boolean
+  sectionLabelHidden?: boolean | undefined
 }
 
 const COLUMNS_CLASS: Record<2 | 3 | 4, string> = {

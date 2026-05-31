@@ -11,7 +11,7 @@ export interface SegmentedFieldProps<T extends string> {
   // When true the `<p>` sublabel renders sr-only — visible label duty has moved to
   // an enclosing SettingsSectionHeader, but SegmentedControl's `ariaLabel` link
   // stays intact for screen readers.
-  sectionLabelHidden?: boolean
+  sectionLabelHidden?: boolean | undefined
 }
 
 /** Section-labelled SegmentedControl. Shared chrome behind OrbPicker /

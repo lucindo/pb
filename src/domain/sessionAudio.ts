@@ -58,10 +58,10 @@ export function walkFutureCues(args: {
   fromCycleIndex: number
   fromPhase: 'in' | 'out'
   plan: BreathingPlan
-  segments?: StretchSegment[]
+  segments?: StretchSegment[] | undefined
   lookaheadWindowSec: number
   minCues: number
-  targetSec?: number
+  targetSec?: number | undefined
 }): FutureCue[] {
   const {
     audioAnchor,
