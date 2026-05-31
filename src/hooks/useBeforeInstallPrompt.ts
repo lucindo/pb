@@ -43,6 +43,9 @@ export function useBeforeInstallPrompt(): UseBeforeInstallPrompt {
     // Register at mount — captures beforeinstallprompt immediately on page load
     const onBeforeInstall = (e: Event): void => {
       e.preventDefault()
+      // Verify the richer interface is actually present before the cast — a real
+      // beforeinstallprompt event carries prompt(); anything else is not one.
+      if (!('prompt' in e) || typeof (e as { prompt?: unknown }).prompt !== 'function') return
       setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
 
