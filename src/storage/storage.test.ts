@@ -78,6 +78,25 @@ describe('writeEnvelope', () => {
     expect(() => { writeEnvelope({ version: STATE_VERSION, mute: true }) }).not.toThrow()
   })
 
+  it('fails OPEN and still writes when the inner version re-read throws (Safari ITP)', () => {
+    // The version guard must distinguish "disk holds a newer schema" from "cannot read
+    // the disk version". When the inner getItem throws, it must assume STATE_VERSION and
+    // proceed — NOT let the throw skip the write. Asserted via the setItem spy because a
+    // throwing getItem makes reading the value back impossible.
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError')
+    })
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+
+    writeEnvelope({ version: STATE_VERSION, settings: { bpm: 6 } })
+
+    expect(setItemSpy).toHaveBeenCalledTimes(1)
+    const [key, payload] = setItemSpy.mock.calls[0] ?? []
+    expect(key).toBe(STATE_KEY)
+    expect(JSON.parse(payload ?? '{}') as unknown)
+      .toMatchObject({ version: STATE_VERSION, settings: { bpm: 6 } })
+  })
+
   it('preserves on-disk version when reading; stamps STATE_VERSION on write', () => {
     // Seed a v4 envelope (simulates a future schema written by a newer build
     // in another tab). Must be > STATE_VERSION (3) to exercise the future-version

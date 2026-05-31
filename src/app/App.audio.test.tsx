@@ -309,10 +309,20 @@ describe('App — audio cues (Phase 3)', () => {
     expect(muteButton()).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // -- Test 14: mute toggle during running session updates aria-pressed -------
-  it('mute toggle click during a running session updates the audio mute state', async () => {
+  // -- Test 14: mute toggle during a running session actually silences --------
+  // The audible contract of mute is the master gain ramping to 0 (cues keep
+  // scheduling, but route through the silenced master gain). Assert the real
+  // silence end-to-end from the UI button, not just the aria-pressed state.
+  it('mute toggle during a running session drives the master gain to silence and back', async () => {
+    const createGainSpy = vi.spyOn(window.AudioContext.prototype, 'createGain')
     render(<App />)
     await startAndAdvancePastLeadIn()
+
+    // First createGain() after AC construction = the engine's master gain.
+    const masterGain = createGainSpy.mock.results[0]?.value as GainNode
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const ramp = vi.mocked(masterGain.gain.linearRampToValueAtTime)
+    ramp.mockClear() // ignore any construction/lead-in automation; isolate the mute ramps
 
     const mute = muteButton()
     expect(mute).toHaveAttribute('aria-pressed', 'false')
@@ -321,6 +331,15 @@ describe('App — audio cues (Phase 3)', () => {
     await flushMicrotasks()
 
     expect(muteButton()).toHaveAttribute('aria-pressed', 'true')
+    expect(ramp).toHaveBeenCalledTimes(1)
+    expect(ramp.mock.calls[0]?.[0]).toBe(0) // silence
+
+    fireEvent.click(muteButton())
+    await flushMicrotasks()
+
+    expect(muteButton()).toHaveAttribute('aria-pressed', 'false')
+    expect(ramp).toHaveBeenCalledTimes(2)
+    expect(ramp.mock.calls[1]?.[0]).toBe(1) // restore
   })
 
   // -- AUDIO-02 caller-side clamp coverage moved to audioEngine.test.ts -------

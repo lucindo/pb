@@ -454,3 +454,68 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     unmount()
   })
 })
+
+// audioAnchor handoff: when lead-in completes, the controller sets audioAnchorRef to the
+// firstInAudioTime returned by audio.start(), and the top-up effect must place dispatched
+// cues on THAT timeline. A broken handoff would either null-gate the effect (no dispatch)
+// or anchor cues near 0 (wall/zero timeline) instead of at the AC clock's first-In time.
+describe('useBreathingSessionController — lead-in→running audioAnchor handoff', () => {
+  beforeEach(() => { vi.useFakeTimers() })
+  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+
+  it('anchors dispatched cues at the firstInAudioTime returned by audio.start()', async () => {
+    const FIRST_IN_AUDIO_TIME = 5.0 // distinctive, well above any near-zero elapsed
+    const topUpLookahead = vi.fn()
+    const wallClock = createWallSessionClock()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeAudio: any = {
+      status: 'idle' as const,
+      audioAvailable: true,
+      muted: false,
+      clock: wallClock,
+      start: vi.fn(() => Promise.resolve(FIRST_IN_AUDIO_TIME as number | null)),
+      stop: vi.fn(() => Promise.resolve()),
+      setMuted: vi.fn(),
+      notifyPhaseBoundary: vi.fn(),
+      topUpLookahead,
+      cancelFutureCues: vi.fn(),
+      audioNow: vi.fn(() => 0),
+      playEndChord: vi.fn(),
+      audioStatus: 'ok' as const,
+      resume: vi.fn(() => Promise.resolve()),
+    }
+    vi.spyOn(useAudioCuesModule, 'useAudioCues')
+      .mockReturnValue(fakeAudio as ReturnType<typeof useAudioCuesModule.useAudioCues>)
+
+    const { result, unmount } = renderHook(() =>
+      useBreathingSessionController({
+        initialSettings: DEFAULT_SETTINGS,
+        activePractice: 'resonant',
+        stretchSettings: DEFAULT_STRETCH_SETTINGS,
+        liveCue: 'labels',
+        wakeLock: makeWakeLock(),
+      }),
+    )
+
+    await act(async () => {
+      await result.current.startOrCancel()
+      await Promise.resolve()
+      await Promise.resolve()
+      vi.advanceTimersByTime(3100) // past the 3s lead-in → running + sessionStart()
+    })
+
+    expect(result.current.phase).toBe('running')
+    // Handoff fired: cues dispatched (anchor non-null, effect not gated out).
+    expect(topUpLookahead.mock.calls.length).toBeGreaterThanOrEqual(1)
+
+    // The earliest dispatched cue is the first In, which sits AT the anchor
+    // (audioTime = audioAnchor + 0). A broken handoff would cluster cues near 0.
+    const firstCues = topUpLookahead.mock.calls[0]?.[0] as Array<{ audioTime: number }>
+    expect(firstCues.length).toBeGreaterThan(0)
+    const earliest = Math.min(...firstCues.map((c) => c.audioTime))
+    expect(earliest).toBeGreaterThanOrEqual(FIRST_IN_AUDIO_TIME)
+    expect(earliest).toBeLessThan(FIRST_IN_AUDIO_TIME + 1)
+
+    unmount()
+  })
+})

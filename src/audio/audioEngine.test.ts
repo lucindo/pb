@@ -216,6 +216,136 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
+  // setMuted Safari fallback: when the master gain lacks cancelAndHoldAtTime (older
+  // WebKit), the anchor path uses cancelScheduledValues + setValueAtTime before the ramp.
+  it('setMuted anchors via cancelScheduledValues + setValueAtTime when cancelAndHoldAtTime is absent (Safari fallback)', async () => {
+    function makeFallbackGain(): GainNode {
+      return {
+        connect: vi.fn().mockReturnThis(),
+        disconnect: vi.fn(),
+        gain: {
+          value: 1,
+          setValueAtTime: vi.fn(),
+          linearRampToValueAtTime: vi.fn(),
+          cancelScheduledValues: vi.fn(),
+          // cancelAndHoldAtTime intentionally ABSENT — forces the else branch.
+        },
+      } as unknown as GainNode
+    }
+    const createGainSpy = vi.fn(makeFallbackGain)
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      resume = vi.fn(async () => {})
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = createGainSpy
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    // First createGain() = the master gain (created before any cue scheduling).
+    const masterGain = createGainSpy.mock.results[0]?.value as GainNode
+    /* eslint-disable @typescript-eslint/unbound-method */
+    const cancelScheduled = vi.mocked(masterGain.gain.cancelScheduledValues)
+    const setValueAt = vi.mocked(masterGain.gain.setValueAtTime)
+    const ramp = vi.mocked(masterGain.gain.linearRampToValueAtTime)
+    /* eslint-enable @typescript-eslint/unbound-method */
+
+    engine.setMuted(true)
+
+    expect(cancelScheduled).toHaveBeenCalledTimes(1)
+    expect(setValueAt).toHaveBeenCalledWith(1, 0) // anchor current value (1) at now (0)
+    expect(ramp).toHaveBeenCalledTimes(1)
+    expect(ramp.mock.calls[0]?.[0]).toBe(0)
+
+    await engine.close()
+  })
+
+  // Node-leak guard: the Web Audio spec does not guarantee 'ended' fires for a cue whose
+  // stopAt is still in the future when the AC closes, so close() explicitly disconnects
+  // every in-flight cue envelope before tearing down. Seed one in-flight cue and assert it.
+  it('close() disconnects in-flight cue envelopes so the node chain cannot leak', async () => {
+    const disconnectSpy = vi.fn()
+    const inFlight: CueHandle = {
+      envelope: { gain: { value: 0.18 }, disconnect: disconnectSpy } as unknown as GainNode,
+      scheduledAt: 0,
+      cleanupAt: 999, // tail still in the future at close()
+      cancel: vi.fn(),
+    }
+    vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(inFlight)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
+
+    await engine.close()
+
+    expect(disconnectSpy).toHaveBeenCalledTimes(1)
+  })
+
+  // iOS Safari raises InvalidStateError when resume() runs off a gesture; the AC stays
+  // suspended and fires no natural statechange, so the engine synthesises a suspend via
+  // clock.notifySuspended() — the only path that lets the hook show the needs-resume affordance.
+  it('resume() fans onSuspend when audioCtx.resume() rejects with InvalidStateError', async () => {
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      resume = vi.fn(() =>
+        Promise.reject(Object.assign(new Error('non-gesture'), { name: 'InvalidStateError' })),
+      )
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn(makeFakeGain)
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    const onSuspend = vi.fn()
+    engine.clock.onSuspend(onSuspend)
+
+    await engine.resume()
+
+    expect(onSuspend).toHaveBeenCalledTimes(1)
+    await engine.close()
+  })
+
+  it('resume() absorbs a non-InvalidStateError rejection silently — no onSuspend, no throw', async () => {
+    class ProbeAC {
+      state: AudioContextState = 'running'
+      sampleRate = 44100
+      destination = {}
+      currentTime = 0
+      resume = vi.fn(() =>
+        Promise.reject(Object.assign(new Error('autoplay vetoed'), { name: 'NotAllowedError' })),
+      )
+      close = vi.fn(async () => {})
+      createOscillator = vi.fn()
+      createGain = vi.fn(makeFakeGain)
+      createBiquadFilter = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+    }
+    vi.stubGlobal('AudioContext', ProbeAC)
+
+    const engine = await createAudioEngine({ timbre: 'bowl' })
+    const onSuspend = vi.fn()
+    engine.clock.onSuspend(onSuspend)
+
+    await expect(engine.resume()).resolves.toBeUndefined()
+    expect(onSuspend).not.toHaveBeenCalled()
+    await engine.close()
+  })
+
   it('close() calls audioCtx.close exactly once', async () => {
     // Spy on a Probe AudioContext whose close is observable (the generic FakeAudioContext
     // close is shared across instances and gets noisy if other tests in the same describe
@@ -788,13 +918,14 @@ describe('audioEngine', () => {
       // for close()). We assert via the close() defer-path observable: scheduling
       // an end-chord whose cleanupAt is in the future causes close() to wait.
       const probeNow = 0
+      const acCloseSpy = vi.fn(async () => {})
       class ProbeAC {
         state: AudioContextState = 'running'
         sampleRate = 44100
         destination = {}
         get currentTime() { return probeNow }
         resume = vi.fn(async () => {})
-        close = vi.fn(async () => {})
+        close = acCloseSpy
         createOscillator = vi.fn()
         createGain = vi.fn(makeFakeGain)
         createBiquadFilter = vi.fn()
@@ -819,13 +950,19 @@ describe('audioEngine', () => {
       expect(endChordSpy).toHaveBeenCalledTimes(1)
       expect(endChordSpy.mock.calls[0]?.[1]).toBe(0)
 
-      // close() must defer for the recorded tail — observable via the setTimeout call
-      // path (we spy on setTimeout to assert the deferral length).
+      // close() must DEFER teardown until the tail rings out. The synchronous prefix of
+      // close() runs before its first await, so audioCtx.close() must NOT have fired yet
+      // when close() returns its pending promise — if the deferral await were removed,
+      // close() would tear down synchronously and this assertion would fail.
       const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
-      await engine.close()
+      const closing = engine.close()
+      expect(acCloseSpy).not.toHaveBeenCalled()
       // The setTimeout call inside close() uses tailRemainingSec * 1000 = 0.02 * 1000 = 20.
       const deferralCall = setTimeoutSpy.mock.calls.find(([, ms]) => ms === 20)
       expect(deferralCall).toBeDefined()
+      await closing
+      // Only after the tail elapses does the AC actually close.
+      expect(acCloseSpy).toHaveBeenCalledTimes(1)
     })
   })
 })

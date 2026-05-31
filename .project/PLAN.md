@@ -13,15 +13,15 @@ Each must leave the full suite green on its own before the dependent test cleanu
 - [x] `useTimbreChoice` / `useLocaleChoice` folded onto `usePreferenceChoice` (`TimbrePicker`/`LanguagePicker` now call it directly); both clone hooks + test files deleted; behavior unchanged, suite green (1341)
   - `useCueChoice` deliberately NOT folded — it sources `cue` from `useVisualCue` for live external/cross-tab reflection; `usePreferenceChoice` is local-state-only, so folding would change behavior. Hook + test kept.
 
-### 1. Close critical test gaps (safety-relevant — do first)
+### 1. Close critical test gaps (safety-relevant — do first) — DONE (+6 tests, 1347 green)
 
-- [ ] Muted session is proven silent — no cue synthesis fires while muted (`App.audio.test.tsx:300,313`; assert `scheduleInCueForTimbre`/`scheduleOutCueForTimbre` stop, or gain=0 routing)
-- [ ] close() defers AC teardown until the end-chord tail finishes (`audioEngine.ts:429-434`; fake timers — `audioCtx.close` not called before timer, called after; replaces hollow `audioEngine.test.ts:786-829`)
-- [ ] close() disconnects in-flight cue envelopes (node-leak guard, `audioEngine.ts:445-454`; seed in-flight cue → close() → `envelope.disconnect()` ran)
-- [ ] resume() iOS `InvalidStateError` triggers `clock.notifySuspended()` at the engine level (`audioEngine.ts:457-481`; assert `onSuspend` fires; NotAllowedError does NOT)
-- [ ] setMuted Safari fallback path exercised (`audioEngine.ts:390-395`; master gain lacking `cancelAndHoldAtTime` still ramps to 0/1)
-- [ ] storage write fails open when the inner version re-read throws (`storage.ts:242`; inner `getItem` throws + `setItem` succeeds → payload lands)
-- [ ] lead-in→running audioAnchor handoff pins dispatched cue times to `firstInAudioTime` (`useBreathingSessionController.ts:200-220`, re-anchor math line 93)
+- [x] Muted session proven silent — mute button drives master gain → 0 and back to 1 (App.audio Test 14 strengthened; the true silence mechanism, since cues keep scheduling by design)
+- [x] close() defers AC teardown until the end-chord tail finishes — end-chord test now asserts `audioCtx.close` not called before the deferral await, called after (deleting the await fails it)
+- [x] close() disconnects in-flight cue envelopes (node-leak guard) — seed in-flight cue → close() → `envelope.disconnect()` ran
+- [x] resume() iOS `InvalidStateError` fans `onSuspend` at the engine level; NotAllowedError does NOT and does not throw
+- [x] setMuted Safari fallback — master gain lacking `cancelAndHoldAtTime` anchors via cancelScheduledValues + setValueAtTime, ramps to 0
+- [x] storage write fails open when the inner version re-read throws — inner `getItem` throws + `setItem` still fires with the right payload
+- [x] lead-in→running audioAnchor handoff — dispatched cues anchored at the `firstInAudioTime` returned by `audio.start()` (earliest cue sits at the anchor, not near 0)
 
 ### 2. Fix missing edge cases on risky logic
 
