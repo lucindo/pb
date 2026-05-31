@@ -37,15 +37,19 @@ jobs:
           echo "Read package.json version: $PKG_VERSION (short: $PKG_VERSION_SHORT)"
       - name: Verify tag matches package.json version
         if: github.event_name == 'push'
+        # Context values pass through env, never inlined into the script body:
+        # a tag name (github.ref_name) can contain shell metacharacters, so
+        # `ACTUAL_TAG="${{ github.ref_name }}"` would be a script-injection sink.
+        env:
+          EXPECTED_TAG: ${{ steps.read.outputs.pkg_version_short }}
+          ACTUAL_TAG: ${{ github.ref_name }}
+          PKG_VERSION: ${{ steps.read.outputs.pkg_version }}
         run: |
           # Compare the pushed tag (short form like `v2.0`) against the short
           # form derived from package.json.version (`2.0.0` → `v2.0`). The
           # short form is the project's tag + versioned-subpath convention
           # (see versions.json schema regex). package.json stays full SemVer
           # for npm compatibility.
-          EXPECTED_TAG="${{ steps.read.outputs.pkg_version_short }}"
-          ACTUAL_TAG="${{ github.ref_name }}"
-          PKG_VERSION="${{ steps.read.outputs.pkg_version }}"
           if [ "$ACTUAL_TAG" != "$EXPECTED_TAG" ]; then
             echo "ERROR: pushed tag '$ACTUAL_TAG' does not match short form '$EXPECTED_TAG' derived from package.json.version '$PKG_VERSION'" >&2
             echo "Adjust package.json.version (its first two segments form the tag) or re-tag before pushing." >&2
@@ -98,7 +102,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build current tag at versioned subpath
-        run: npx vite build --base=/hrv/${{ needs.validate-version.outputs.pkg_version_short }}/
+        # pkg_version_short derives from package.json.version at the checked-out
+        # ref; pass via env so it cannot break out of the build command.
+        env:
+          PKG_VERSION_SHORT: ${{ needs.validate-version.outputs.pkg_version_short }}
+        run: npx vite build --base="/hrv/${PKG_VERSION_SHORT}/"
       - uses: actions/upload-artifact@v4
         with:
           name: build-current
@@ -173,6 +181,10 @@ jobs:
         with:
           path: artifacts
       - name: Assemble site (root + archives + current)
+        # pkg_version_short via env, not inlined — keeps a crafted version string
+        # out of the shell.
+        env:
+          PKG_VERSION_SHORT: ${{ needs.validate-version.outputs.pkg_version_short }}
         run: |
           set -e
           # Copy root build (official tag) to site/ root.
@@ -193,7 +205,7 @@ jobs:
           done
           # Copy current tag (push event only) into site/<pkg_version_short>/.
           if [ -d artifacts/build-current ]; then
-            SHORT="${{ needs.validate-version.outputs.pkg_version_short }}"
+            SHORT="$PKG_VERSION_SHORT"
             mkdir -p "site/$SHORT"
             cp -R artifacts/build-current/. "site/$SHORT/"
             echo "Copied build-current → site/$SHORT/"
@@ -227,11 +239,16 @@ jobs:
         with:
           node-version: 20
       - name: Append pushed tag to versions.json
+        # github.ref_name (the pushed tag) is read from process.env inside the
+        # Node script — git ref names may contain quotes/`$`/backticks, so
+        # inlining `'${{ github.ref_name }}'` into the -e body is an RCE sink.
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           node -e "
             const fs = require('fs');
             const v = JSON.parse(fs.readFileSync('versions.json', 'utf8'));
-            const t = '${{ github.ref_name }}';
+            const t = process.env.TAG;
             if (!v.versions.includes(t)) {
               v.versions.push(t);
               v.versions.sort();
@@ -239,13 +256,16 @@ jobs:
             fs.writeFileSync('versions.json', JSON.stringify(v, null, 2) + '\n');
           "
       - name: Commit and push if changed
+        # TAG via env, not inlined into the shell — same injection guard.
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           if git diff --quiet versions.json; then
-            echo "versions.json unchanged (tag '${{ github.ref_name }}' already in list) — nothing to commit"
+            echo "versions.json unchanged (tag '$TAG' already in list) — nothing to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add versions.json
-          git commit -m "chore(release): record ${{ github.ref_name }} in versions.json [skip ci]"
+          git commit -m "chore(release): record $TAG in versions.json [skip ci]"
           git push origin main
