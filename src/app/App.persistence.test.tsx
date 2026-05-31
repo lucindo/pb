@@ -107,6 +107,24 @@ describe('LOCL-01 — persistence on change', () => {
     expect(readRawEnvelope()).toMatchObject({ mute: true })
   })
 
+  it('mute survives a remount — toggle, unmount, fresh App reads the persisted state (D-14)', async () => {
+    // The real user behavior ("I muted, reloaded, still muted") — round-trips the toggle
+    // through storage, which the separate persist-on-toggle and restore-on-mount tests
+    // never exercise together.
+    const first = render(<App />)
+    expect(screen.getByRole('button', { name: 'Mute audio cues' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mute audio cues' }))
+    await act(async () => { await Promise.resolve() })
+    expect(readRawEnvelope()).toMatchObject({ mute: true })
+
+    // Simulate a reload: tear down the app and mount a fresh one against the same storage.
+    first.unmount()
+    render(<App />)
+
+    expect(screen.getByRole('button', { name: 'Unmute audio cues' })).toBeInTheDocument()
+  })
+
   it('persists settings change to the resonant practice slice (LOCL-01 / CR-01)', async () => {
     render(<App />)
     // Click the BPM decrease button — default is 5.5 BPM; decrease goes to 5 BPM.

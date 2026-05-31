@@ -224,6 +224,26 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
+  // Test 6b: the trim must WIN over the minCues floor — at the session end only the cue
+  // AT targetSec fits, so the walk emits fewer than the floor (1 < LOOKAHEAD_MIN_CUES).
+  // Guards against two regressions Test 6 misses: emitting zero cues, and the floor
+  // re-inflating the walk past targetSec.
+  it('targetSec trim caps the walk below the minCues floor at the session end', () => {
+    const cues = walkFutureCues({
+      audioAnchor: 0,
+      elapsedSec: 300, // at the very end of a 5-min session
+      fromCycleIndex: 50, // 50 * cycleSec(6) = 300s
+      fromPhase: 'in',
+      plan: { ...hrvPlan, totalSec: 300 },
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+      targetSec: 300,
+    })
+    expect(cues.length).toBe(1) // only the cue at targetSec — fewer than the floor of 2
+    expect(LOOKAHEAD_MIN_CUES).toBeGreaterThan(1) // sanity: the floor really is above 1
+    expect(cues[0]?.audioTime).toBe(300)
+  })
+
   // Test 7: targetSec=undefined (open-ended) — no end trim
   it('targetSec=undefined (open-ended): emits up to max(floor,window) cues with no trim', () => {
     const cues = walkFutureCues({

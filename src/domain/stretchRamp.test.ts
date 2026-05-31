@@ -283,6 +283,28 @@ describe('getStretchFrame', () => {
     expect(getStretchFrame(segs, 0).currentBpm).toBe(baseSettings.initialBpm)
   })
 
+  // Every other getStretchFrame test samples t=0 (warm-up) or the cool-down. The
+  // interior of the ramp — the per-segment BPM lookup that is the core engine behavior —
+  // was never directly asserted. Sample inside a middle ramp segment.
+  it('reports stage="ramp" and an interior BPM strictly between initial and target mid-ramp', () => {
+    const segs = buildStretchSegments(baseSettings)
+    const rampSegs = segs.filter(s => s.stage === 'ramp')
+    expect(rampSegs.length).toBeGreaterThan(1)
+    const mid = requireValue(
+      rampSegs[Math.floor(rampSegs.length / 2)],
+      'Expected a middle ramp segment',
+    )
+    const sampleSec = (mid.startSec + mid.endSec) / 2 // interior, away from boundaries
+
+    const frame = getStretchFrame(segs, sampleSec)
+
+    expect(frame.stage).toBe('ramp')
+    expect(frame.currentBpm).toBe(mid.bpm) // reads the active segment's BPM
+    expect(frame.currentBpm).toBeGreaterThan(baseSettings.targetBpm)
+    expect(frame.currentBpm).toBeLessThan(baseSettings.initialBpm)
+    expect(frame.isComplete).toBe(false)
+  })
+
   it('stage at elapsedSec 0 is "hold-initial" (warm-up is always first)', () => {
     const segs = buildStretchSegments(baseSettings)
     expect(getStretchFrame(segs, 0).stage).toBe('hold-initial')

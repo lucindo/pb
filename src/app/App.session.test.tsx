@@ -56,7 +56,7 @@ describe('running session display', () => {
     expect(within(readout).getByText('10:00')).toBeVisible()
   })
 
-  it('shows elapsed time for open-ended sessions', async () => {
+  it('shows elapsed time counting up for open-ended sessions', async () => {
     render(<App />)
 
     const duration = settingGroup('Duration')
@@ -66,8 +66,17 @@ describe('running session display', () => {
     }
     await startAndAdvancePastLeadIn()
 
-    const readout = sessionReadout()
-    expect(within(readout).getByText('0:00')).toBeVisible()
+    // Starts at 0:00 (elapsed, not remaining — open-ended has no countdown).
+    expect(within(sessionReadout()).getByText('0:00')).toBeVisible()
+
+    // Elapsed must COUNT UP — the one thing that distinguishes it from a frozen clock
+    // or a remaining-time countdown. Advance 5 s and assert it ticked into single-digit
+    // seconds (exact second is left loose — the final rAF tick floors just under 5 s).
+    await act(async () => {
+      vi.advanceTimersByTime(5000)
+      await Promise.resolve()
+    })
+    expect(within(sessionReadout()).getByText(/^0:0[1-9]$/)).toBeVisible()
   })
 })
 
@@ -490,6 +499,32 @@ describe('Navi Kriya session integration (Phase 31)', () => {
     expect(practiceStatsOf(env, 'naviKriya')?.['totalSessions']).toBe(1)
     expect(practiceStatsOf(env, 'naviKriya')?.['roundsCompleted']).toBe(1)
     expect((practiceStatsOf(env, 'resonant')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+  })
+
+  it('ending early BEFORE the 30s threshold records nothing (NK sub-threshold, D-13 parity)', async () => {
+    seedNK({ frontCount: 100, omLength: 'fast', rounds: 1 })
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    // Past the 3-2-1 countdown into round 1, but only ~2s of session — well under the
+    // 30s recording threshold, and zero rounds complete.
+    await act(async () => {
+      await Promise.resolve()
+      vi.advanceTimersByTime(NK_COUNTDOWN + 2_000)
+    })
+
+    // End early via the confirmation dialog.
+    fireEvent.click(screen.getByRole('button', { name: 'End' }))
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'End this session?' }))
+        .getByRole('button', { name: 'End' }),
+    )
+    await act(async () => { await Promise.resolve() })
+
+    const env = readStoredEnvelope()
+    // Sub-threshold early end → nothing recorded (parity with the resonant 30s floor).
+    expect((practiceStatsOf(env, 'naviKriya')?.['totalSessions'] as number | undefined) ?? 0).toBe(0)
+    expect((practiceStatsOf(env, 'naviKriya')?.['roundsCompleted'] as number | undefined) ?? 0).toBe(0)
   })
 })
 

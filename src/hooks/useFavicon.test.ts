@@ -208,6 +208,27 @@ describe('useFavicon', () => {
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
   })
 
+  it('re-applying the SAME theme does NOT replace the <link> element (Chrome flicker guard)', async () => {
+    seedPrefs('dark')
+    renderHook(() => { useFavicon() })
+    const linkBefore = document.querySelector('link[rel="icon"]')
+    const hrefBefore = linkBefore?.getAttribute('href')
+
+    // Re-fire with the SAME theme (disk unchanged). replaceFaviconLink must no-op — the
+    // existing <link> already points at this data-URI, so it is not removed/re-appended.
+    // Without the idempotency guard, rapid same-value swaps can flicker the tab icon.
+    // eslint-disable-next-line @typescript-eslint/require-await
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'dark' } }),
+      )
+    })
+
+    const linkAfter = document.querySelector('link[rel="icon"]')
+    expect(linkAfter).toBe(linkBefore) // SAME node — the guard short-circuited
+    expect(linkAfter?.getAttribute('href')).toBe(hrefBefore)
+  })
+
   it('does not throw when document has no <link rel="icon"> element', () => {
     // Remove the injected link element for this test
     const link = document.querySelector('link[rel="icon"]')

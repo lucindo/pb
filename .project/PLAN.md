@@ -23,18 +23,18 @@ Each must leave the full suite green on its own before the dependent test cleanu
 - [x] storage write fails open when the inner version re-read throws — inner `getItem` throws + `setItem` still fires with the right payload
 - [x] lead-in→running audioAnchor handoff — dispatched cues anchored at the `firstInAudioTime` returned by `audio.start()` (earliest cue sits at the anchor, not near 0)
 
-### 2. Fix missing edge cases on risky logic
+### 2. Fix missing edge cases on risky logic — DONE (+15 tests, 1362 green)
 
-- [ ] `getNaviKriyaBackCount` throws on non-multiple-of-4 / ≤0 / non-finite frontCount (`naviKriyaSession.ts:15`)
-- [ ] `estimateNaviKriyaDurationSec` seconds-level formula covered with a non-default fixture (`naviKriyaSession.ts:36`)
-- [ ] targetSec trim wins over the `minCues` floor — assert cue count, not just ≤target (`sessionAudio.ts:138`; elapsed=298/target=300)
-- [ ] cue `phaseDurationSec === 3×τ` boundary asserted (`cueSynth.ts:106-118`; catches `>`→`>=` regression)
-- [ ] mid-ramp `getStretchFrame` interior-segment BPM/stage asserted (`stretchRamp.ts`)
-- [ ] `useBeforeInstallPrompt` prompt()-rejection catch clears `deferredPrompt` (`useBeforeInstallPrompt.ts:77-82`)
-- [ ] `useFavicon` idempotent no-replace-when-unchanged branch covered (`useFavicon.ts:41-52`)
-- [ ] open-ended elapsed counts up over time (`App.session.test.tsx:59`)
-- [ ] NK sub-threshold early-end skips recording (`App.session.test.tsx`; NK equivalent of resonant 30s floor)
-- [ ] mute survives a remount (persist + restore in one flow)
+- [x] `getNaviKriyaBackCount` throws on non-multiple-of-4 / 0 / negative / non-integer / NaN / Infinity (it.each)
+- [x] `estimateNaviKriyaDurationSec` seconds formula pinned on a non-default fixture (200/slow/2 → 1526s)
+- [x] targetSec trim wins over the `minCues` floor — caps the walk below the floor (1 < 2) at the session end
+- [x] cue `phaseDurationSec === 3×τ` boundary: at exactly 3×τ stays strike (1 call); just past → sustain (2 calls)
+- [x] mid-ramp `getStretchFrame` — interior ramp segment reports stage="ramp" and BPM strictly between initial/target
+- [x] `useBeforeInstallPrompt` prompt()-rejection clears `deferredPrompt`, no throw, no dismissal saved
+- [x] `useFavicon` re-applying the same theme does NOT replace the `<link>` node (flicker guard)
+- [x] open-ended elapsed counts up over time (advances into 0:01–0:09; exact second left loose)
+- [x] NK sub-threshold early-end records nothing (parity with resonant 30s floor)
+- [x] mute survives a remount — toggle → unmount → fresh App reads persisted mute
 
 ### 3. Rewrite or delete design-locking tests
 

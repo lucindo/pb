@@ -226,6 +226,32 @@ describe('cueSynth', () => {
     expect(fadeCall[2]).toBeCloseTo(0.05, 5)
   })
 
+  // Boundary: needsSustain uses a STRICT `>` (phase > 3×τ = naturalSilenceAt). At EXACTLY
+  // the boundary the cue must stay on the strike path (one decay call, target ≈ 0, no
+  // phase-end fade-out). A regression to `>=` flips it into sustain mode — the call count
+  // and decay target catch it. The boundary is derived, not hardcoded.
+  it('scheduleInCue at EXACTLY 3×τ stays on the strike path (boundary is strict >)', () => {
+    const ac = createAc()
+    const boundary = IN_DEFAULT_TAU * 3 // naturalSilenceAt for In = 4.2 s
+    const handle = scheduleInCue(ac, 1.0, ac.destination, boundary)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    expect(setTarget).toHaveBeenCalledTimes(1) // strike: decay only, no fade-out
+    const decayCall = setTarget.mock.calls[0] as [number, number, number]
+    expect(decayCall[0]).toBeCloseTo(0.0001, 5) // NEAR_SILENCE, not the sustain floor
+  })
+
+  it('scheduleInCue just past 3×τ switches into sustain mode (boundary discriminates)', () => {
+    const ac = createAc()
+    const justOver = IN_DEFAULT_TAU * 3 + 0.01
+    const handle = scheduleInCue(ac, 1.0, ac.destination, justOver)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setTarget = handle.envelope.gain.setTargetAtTime as ReturnType<typeof vi.fn>
+    expect(setTarget).toHaveBeenCalledTimes(2) // sustain: decay-to-floor + phase-end fade-out
+    const decayCall = setTarget.mock.calls[0] as [number, number, number]
+    expect(decayCall[0]).toBeCloseTo(SUSTAIN_FLOOR, 5)
+  })
+
   it('scheduleBowlCue / scheduleInCue attaches once: true ended listeners that disconnect each osc + partialGain exactly once (AUDIO-04)', () => {
     const ac = createAc()
     const oscillators: OscillatorNode[] = []

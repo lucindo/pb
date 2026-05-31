@@ -147,6 +147,32 @@ describe('useBeforeInstallPrompt', () => {
     expect(saveInstallDismissed).not.toHaveBeenCalled()
   })
 
+  it('Test 5b: when prompt() rejects (InvalidStateError/AbortError), deferredPrompt clears, no throw, no dismissal saved', async () => {
+    // prompt() is one-shot; a rejection must still clear the stale ref so a retry click
+    // cannot re-reject. Not saving dismissal is correct — the user never accepted.
+    const promptFn = vi.fn().mockRejectedValue(
+      Object.assign(new Error('already shown'), { name: 'InvalidStateError' }),
+    )
+
+    const { result } = renderHook(() => useBeforeInstallPrompt())
+
+    act(() => {
+      window.dispatchEvent(
+        Object.assign(new Event('beforeinstallprompt'), {
+          preventDefault: vi.fn(),
+          prompt: promptFn,
+        }),
+      )
+    })
+
+    await act(async () => {
+      await expect(result.current.triggerInstall()).resolves.toBeUndefined()
+    })
+
+    expect(result.current.deferredPrompt).toBeNull()
+    expect(saveInstallDismissed).not.toHaveBeenCalled()
+  })
+
   it('Test 6: an appinstalled event clears deferredPrompt to null and calls saveInstallDismissed (INSTALL-02)', () => {
     const { result } = renderHook(() => useBeforeInstallPrompt())
 
