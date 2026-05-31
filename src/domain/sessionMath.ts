@@ -22,6 +22,21 @@ export interface SessionFrame {
 
 export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): SessionFrame {
   const safeElapsedSec = Math.max(0, elapsedSec)
+  // Degenerate-plan guard: a non-positive cycle length makes the cycleIndex
+  // division Infinity and the modulo NaN, poisoning the frame. Valid plans always
+  // have cycleSec > 0 (createBreathingPlan validates), so this only shields a
+  // direct caller passing an unvalidated plan — mirrors walkFutureCues' guard.
+  if (plan.cycleSec <= 0) {
+    return {
+      phase: 'in',
+      phaseLabel: 'In',
+      elapsedSec: safeElapsedSec,
+      remainingSec: plan.totalSec === null ? null : Math.max(0, plan.totalSec - safeElapsedSec),
+      phaseProgress: 0,
+      cycleIndex: 0,
+      isComplete: false,
+    }
+  }
   const cycleIndex = Math.floor(safeElapsedSec / plan.cycleSec)
   const cycleElapsedSec = safeElapsedSec % plan.cycleSec
   const isInPhase = cycleElapsedSec < plan.inhaleSec
