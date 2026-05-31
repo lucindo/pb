@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { LOOKAHEAD_MIN_CUES, LOOKAHEAD_WINDOW_SEC } from '../audio/audioEngine'
 import type { BreathingPlan } from './breathingPlan'
-import { computeBoundaryAudioOffsets, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
+import { computeBoundaryAudioOffsets, resolveTargetSec, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
 import { getCompletionSec, type SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
@@ -380,6 +380,46 @@ describe('session-end boundary trim: held-open final breath plays, no end-chord 
     expect(cues).toContainEqual({ audioTime: 24, phaseDurationSec: 6, kind: 'out' })
     // The next cycle's inhale (audioTimeRelSec 30) is past the end and must be dropped.
     expect(cues.every(c => c.audioTime < 25)).toBe(true)
+  })
+})
+
+// resolveTargetSec is the lookahead trim boundary the controller feeds walkFutureCues.
+// These pin the wiring that the bug lived in: it MUST source the true completion
+// boundary (HRV: getCompletionSec; Stretch: finalSegment.endSec), never plan.totalSec.
+describe('resolveTargetSec', () => {
+  it('HRV timed: returns the rounded completion boundary, not the raw totalSec', () => {
+    // 14s cycle, 300s total → ceil(300/14)*14 = 308 (held-open final cycle).
+    const plan: BreathingPlan = { bpm: 60 / 14, ratio: '50:50', cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
+    expect(resolveTargetSec(plan, undefined)).toBe(308)
+  })
+
+  it('HRV open-ended: returns undefined (no trim)', () => {
+    expect(resolveTargetSec(hrvPlan, undefined)).toBeUndefined() // hrvPlan.totalSec === null
+  })
+
+  it('Stretch bounded: returns the final segment endSec', () => {
+    const segs: StretchSegment[] = [
+      { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
+    ]
+    expect(resolveTargetSec(hrvPlan, segs)).toBe(25)
+  })
+
+  it('Stretch open-ended (endSec Infinity): returns undefined (no trim)', () => {
+    const segs: StretchSegment[] = [
+      { startSec: 0, endSec: Infinity, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
+    ]
+    expect(resolveTargetSec(hrvPlan, segs)).toBeUndefined()
+  })
+
+  it('Stretch takes precedence over the (resonant) plan — the regression guard', () => {
+    // A timed resonant plan AND stretch segments: the trim must use the segment end
+    // (25), NOT the resonant plan.totalSec (300). Reverting to plan.totalSec here is
+    // exactly what silenced a stretch session's final minutes.
+    const timedResonant: BreathingPlan = { bpm: 6, ratio: '50:50', cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
+    const segs: StretchSegment[] = [
+      { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
+    ]
+    expect(resolveTargetSec(timedResonant, segs)).toBe(25)
   })
 })
 

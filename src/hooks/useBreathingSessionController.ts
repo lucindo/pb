@@ -5,9 +5,9 @@ import {
   LOOKAHEAD_WINDOW_SEC,
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
-import { walkFutureCues } from '../domain/sessionAudio'
+import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
-import { getCompletionSec, getSessionFrame, type SessionFrame } from '../domain/sessionMath'
+import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
 import { buildStretchSegments, getStretchFrame } from '../domain/stretchRamp'
 import {
@@ -357,20 +357,10 @@ export function useBreathingSessionController({
     // stretchSegmentsForTopUp is derived above from the narrowed state union (safe for TS).
     const segments = stretchSegmentsForTopUp ?? undefined
 
-    // Trim the lookahead at the session's TRUE completion boundary — the same end
-    // the domain reports complete at — so the held-open final cycle's cues still
-    // play and the boundary cue (where the end chord fires) is dropped by the >=
-    // trim in walkFutureCues. Using plan.totalSec here would (HRV) silence the
-    // rounded-up final cycle, and (Stretch) trim at the unrelated resonant-tab
-    // duration instead of the ramp's own end (finalSegment.endSec — the source
-    // getStretchFrame uses for isComplete). Open-ended ends (Infinity / null) → undefined.
-    let targetSec: number | undefined
-    if (segments !== undefined) {
-      const finalEndSec = segments.at(-1)?.endSec
-      targetSec = finalEndSec === undefined || finalEndSec === Infinity ? undefined : finalEndSec
-    } else {
-      targetSec = getCompletionSec(plan) ?? undefined
-    }
+    // Trim the lookahead at the session's TRUE completion boundary (see
+    // resolveTargetSec) so the held-open final cycle's cues play and the boundary
+    // cue — where the end chord fires — is dropped by walkFutureCues' >= trim.
+    const targetSec = resolveTargetSec(plan, segments)
 
     const cues = walkFutureCues({
       audioAnchor,
