@@ -98,8 +98,8 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
     // Leave the resonant blob untouched — orphan fields are fine (v1→v2 precedent).
     // CRITICAL: Do NOT import ZERO_STATS from stats.ts — stats.ts imports from storage.ts,
     //           creating a circular dep. Use the inline literal instead.
-    const existingPractices = (out.practices ?? {}) as Record<string, unknown>
-    const resonantSlice = (existingPractices['resonant'] ?? {}) as Record<string, unknown>
+    const existingPractices = asRecord(out.practices)
+    const resonantSlice = asRecord(existingPractices['resonant'])
     const resonantSettings = resonantSlice['settings']  // unknown — coerceStretchSettings validates downstream
     out = {
       ...out,
