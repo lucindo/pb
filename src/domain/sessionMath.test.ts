@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createBreathingPlan } from './breathingPlan'
-import { getSessionFrame, formatDuration } from './sessionMath'
+import { getCompletionSec, getSessionFrame, formatDuration } from './sessionMath'
 import { DEFAULT_SETTINGS } from './settings'
 
 const timedPlan = createBreathingPlan({ ...DEFAULT_SETTINGS, bpm: 5, ratio: '40:60', durationMinutes: 10 })
@@ -80,6 +80,39 @@ describe('session frame derivation', () => {
       phase: 'in',
       phaseProgress: 0,
     })
+  })
+})
+
+describe('getCompletionSec', () => {
+  it('rounds the configured total UP to the next cycle boundary (held-open final cycle)', () => {
+    // 14s cycle, 300s total → ceil(300/14)*14 = 308. The final cycle finishes
+    // before the session reports complete.
+    const plan = { bpm: 60 / 14, ratio: '50:50' as const, cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
+    expect(getCompletionSec(plan)).toBe(308)
+  })
+
+  it('returns totalSec unchanged when it is already a whole-cycle multiple', () => {
+    // 10s cycle, 300s total → already aligned, boundary === totalSec.
+    const plan = { bpm: 6, ratio: '50:50' as const, cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
+    expect(getCompletionSec(plan)).toBe(300)
+  })
+
+  it('returns null for open-ended plans', () => {
+    expect(getCompletionSec(openEndedPlan)).toBeNull()
+  })
+
+  it('returns null for degenerate plans (cycleSec <= 0 never complete)', () => {
+    const plan = { bpm: 0, ratio: '50:50' as const, cycleSec: 0, inhaleSec: 0, exhaleSec: 0, totalSec: 300 }
+    expect(getCompletionSec(plan)).toBeNull()
+  })
+
+  it('agrees with getSessionFrame.isComplete at the boundary', () => {
+    const boundary = getCompletionSec(timedPlan)
+    expect(boundary).not.toBeNull()
+    if (boundary !== null) {
+      expect(getSessionFrame(timedPlan, boundary - 0.001).isComplete).toBe(false)
+      expect(getSessionFrame(timedPlan, boundary).isComplete).toBe(true)
+    }
   })
 })
 

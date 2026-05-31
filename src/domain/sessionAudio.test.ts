@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { LOOKAHEAD_MIN_CUES, LOOKAHEAD_WINDOW_SEC } from '../audio/audioEngine'
 import type { BreathingPlan } from './breathingPlan'
 import { computeBoundaryAudioOffsets, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
-import type { SessionFrame } from './sessionMath'
+import { getCompletionSec, type SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
 // Fixture values are seconds-shaped.
@@ -224,24 +224,24 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
-  // Test 6b: the trim must WIN over the minCues floor — at the session end only the cue
-  // AT targetSec fits, so the walk emits fewer than the floor (1 < LOOKAHEAD_MIN_CUES).
-  // Guards against two regressions Test 6 misses: emitting zero cues, and the floor
-  // re-inflating the walk past targetSec.
-  it('targetSec trim caps the walk below the minCues floor at the session end', () => {
+  // Test 6b: the boundary is EXCLUSIVE — a cue starting exactly at targetSec is the
+  // onset of the next cycle and must NOT be emitted. For cycle-aligned durations that
+  // instant is where the end chord plays; emitting it overlaps the breath cue with the
+  // session-end sound (regression: the inhale cue used to fire on top of the end chord).
+  // The trim wins over the minCues floor: the walk emits zero cues, not the floor of 2.
+  it('targetSec trim excludes the cue at the session end (no overlap with end chord)', () => {
     const cues = walkFutureCues({
       audioAnchor: 0,
       elapsedSec: 300, // at the very end of a 5-min session
-      fromCycleIndex: 50, // 50 * cycleSec(6) = 300s
+      fromCycleIndex: 50, // 50 * cycleSec(6) = 300s — inhale onset exactly at targetSec
       fromPhase: 'in',
       plan: { ...hrvPlan, totalSec: 300 },
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
     })
-    expect(cues.length).toBe(1) // only the cue at targetSec — fewer than the floor of 2
+    expect(cues).toEqual([]) // the cue at targetSec is excluded — floor does not re-inflate
     expect(LOOKAHEAD_MIN_CUES).toBeGreaterThan(1) // sanity: the floor really is above 1
-    expect(cues[0]?.audioTime).toBe(300)
   })
 
   // Test 7: targetSec=undefined (open-ended) — no end trim
@@ -301,6 +301,86 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
+})
+
+// Regression: the lookahead must trim at the session's TRUE completion boundary
+// (HRV: getCompletionSec — totalSec rounded UP to the cycle; Stretch: the final
+// segment's endSec), NOT the raw plan.totalSec. Trimming at totalSec silenced the
+// held-open final cycle's breath cues; the >= trim then drops the boundary cue so
+// it never overlaps the end chord.
+describe('session-end boundary trim: held-open final breath plays, no end-chord overlap', () => {
+  // HRV non-aligned: 5-min (300s) session on a 14s cycle (in7/out7). The domain
+  // holds completion to ceil(300/14)*14 = 308s, so the final cycle 21 (294→308)
+  // animates past 300. Trimming at totalSec=300 silenced its out cue (301>300);
+  // trimming at the completion boundary (308) keeps the final out audible while
+  // dropping the inhale that starts exactly at 308 (where the end chord plays).
+  it('HRV: final held-open exhale plays, inhale at the completion boundary is dropped', () => {
+    const nonAlignedPlan: BreathingPlan = {
+      bpm: 60 / 14,
+      ratio: '50:50',
+      cycleSec: 14,
+      inhaleSec: 7,
+      exhaleSec: 7,
+      totalSec: 300,
+    }
+    const targetSec = getCompletionSec(nonAlignedPlan) // 308 — the controller's new source
+    expect(targetSec).toBe(308)
+
+    const cues = walkFutureCues({
+      audioAnchor: 0,
+      elapsedSec: 301, // start of the final exhale (cycle 21 out: 294 + 7)
+      fromCycleIndex: 21,
+      fromPhase: 'out',
+      plan: nonAlignedPlan,
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+      targetSec: targetSec ?? undefined,
+    })
+
+    // The held-open final exhale is audible (regression: it used to be trimmed at 300).
+    expect(cues).toContainEqual({ audioTime: 301, phaseDurationSec: 7, kind: 'out' })
+    // No cue is emitted at or past the completion boundary (308 = where the end chord plays).
+    expect(cues.every(c => c.audioTime < 308)).toBe(true)
+  })
+
+  // Stretch: a bounded segment whose span is NOT a whole-cycle multiple, so the
+  // final cycle is partial and ends mid-out (stretchRamp deliberately allows this).
+  // The trim must use the segment's endSec — the source getStretchFrame's isComplete
+  // uses — not the unrelated resonant-tab plan.totalSec. seg span 25s, cycleSec 10
+  // (in4/out6): final cycle 20→30 is cut at 25 (mid-exhale).
+  it('Stretch: final partial-cycle cues play, nothing emitted at or past the segment end', () => {
+    const boundedSeg: StretchSegment = {
+      startSec: 0,
+      endSec: 25, // partial final cycle (20→30 cut at 25)
+      bpm: 6,
+      cycleSec: 10,
+      inhaleSec: 4,
+      exhaleSec: 6,
+      stage: 'hold-target',
+      cycleBaseIndex: 0,
+    }
+    const segments = [boundedSeg]
+    const targetSec = segments.at(-1)?.endSec // 25 — the controller's new stretch source
+    expect(targetSec).toBe(25)
+
+    const cues = walkFutureCues({
+      audioAnchor: 0,
+      elapsedSec: 20, // start of the final (partial) cycle
+      fromCycleIndex: 2, // 2 * 10 = 20s
+      fromPhase: 'in',
+      plan: hrvPlan, // plan is ignored for phase durations when segments are provided
+      segments,
+      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+      minCues: LOOKAHEAD_MIN_CUES,
+      targetSec,
+    })
+
+    // Both phases of the partial final cycle are audible: in@20 and out@24 (< endSec 25).
+    expect(cues).toContainEqual({ audioTime: 20, phaseDurationSec: 4, kind: 'in' })
+    expect(cues).toContainEqual({ audioTime: 24, phaseDurationSec: 6, kind: 'out' })
+    // The next cycle's inhale (audioTimeRelSec 30) is past the end and must be dropped.
+    expect(cues.every(c => c.audioTime < 25)).toBe(true)
+  })
 })
 
 // Hard iteration cap on walkFutureCues: verifies a degenerate plan (cycleSec > 0,

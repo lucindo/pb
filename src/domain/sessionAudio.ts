@@ -134,8 +134,13 @@ export function walkFutureCues(args: {
 
     const audioTime = audioAnchor + audioTimeRelSec
 
-    // Timed-session trim: never emit cues past targetSec — overrides floor
-    if (targetSec !== undefined && audioTimeRelSec > targetSec) {
+    // Timed-session trim: never emit a cue at or past targetSec — overrides floor.
+    // The boundary is EXCLUSIVE: a cue starting exactly at targetSec is the onset of
+    // the next cycle (the session occupies [0, targetSec)). For cycle-aligned
+    // durations that instant is also where the end chord plays, so emitting it would
+    // overlap the breath cue with the session-end sound and start an inhale the
+    // screen immediately cuts.
+    if (targetSec !== undefined && audioTimeRelSec >= targetSec) {
       break
     }
 

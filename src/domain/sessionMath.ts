@@ -44,13 +44,8 @@ export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): Sessio
   const phaseDurationSec = isInPhase ? plan.inhaleSec : plan.exhaleSec
   const phaseProgress = phaseDurationSec === 0 ? 0 : phaseElapsedSec / phaseDurationSec
   const remainingSec = plan.totalSec === null ? null : Math.max(0, plan.totalSec - safeElapsedSec)
-  // Completion holds until the current cycle finishes so audio cues and the visual
-  // orb are never cut mid-In/mid-Out. The configured total is rounded up to the next
-  // cycle boundary; isComplete fires only at that boundary.
-  const completionSec =
-    plan.totalSec === null
-      ? null
-      : Math.ceil(plan.totalSec / plan.cycleSec) * plan.cycleSec
+  // Completion holds until the current cycle finishes (see getCompletionSec).
+  const completionSec = getCompletionSec(plan)
 
   return {
     phase: isInPhase ? 'in' : 'out',
@@ -61,6 +56,24 @@ export function getSessionFrame(plan: BreathingPlan, elapsedSec: number): Sessio
     cycleIndex,
     isComplete: completionSec !== null && safeElapsedSec >= completionSec,
   }
+}
+
+/**
+ * The elapsed-seconds boundary at which a timed session reports complete.
+ *
+ * Completion is held to the END of the in-progress cycle so audio cues and the
+ * orb are never cut mid-In/mid-Out: the configured total is rounded UP to the
+ * next cycle boundary. This is the SAME value getSessionFrame's isComplete check
+ * uses — exposed so cue scheduling can trim the lookahead at the TRUE session end
+ * (the rounded boundary) instead of the raw `plan.totalSec`. Trimming at totalSec
+ * would silence the held-open final cycle's breath cues.
+ *
+ * Returns null for open-ended plans (totalSec === null) and for degenerate plans
+ * (cycleSec <= 0, which never complete — mirrors getSessionFrame's guard).
+ */
+export function getCompletionSec(plan: BreathingPlan): number | null {
+  if (plan.totalSec === null || plan.cycleSec <= 0) return null
+  return Math.ceil(plan.totalSec / plan.cycleSec) * plan.cycleSec
 }
 
 // `formatDuration` consumes seconds-shaped values; param `sec` makes the unit
