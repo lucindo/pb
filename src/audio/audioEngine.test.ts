@@ -3,12 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { BreathingPlan } from '../domain/breathingPlan'
-import {
-  createAudioEngine,
-  SAFE_LEAD_SEC,
-  LOOKAHEAD_WINDOW_SEC,
-  LOOKAHEAD_MIN_CUES,
-} from './audioEngine'
+import { createAudioEngine, SAFE_LEAD_SEC } from './audioEngine'
 import * as cueSynth from './cueSynth'
 import * as nkCueSynth from './nkCueSynth'
 import type { CueHandle } from './cueSynth'
@@ -690,47 +685,6 @@ describe('audioEngine', () => {
     await engine.close()
   })
 
-  it('sync-construct order: new AudioContext() precedes new Audio() in createAudioEngine (D-04)', async () => {
-    const callOrder: string[] = []
-    class OrderedAC {
-      state: AudioContextState = 'running'
-      sampleRate = 44100
-      destination = {}
-      currentTime = 0
-      resume = vi.fn(async () => {})
-      close = vi.fn(async () => {})
-      createOscillator = vi.fn()
-      createGain = vi.fn(makeFakeGain)
-      createBiquadFilter = vi.fn()
-      addEventListener = vi.fn()
-      removeEventListener = vi.fn()
-      constructor() {
-        callOrder.push('AudioContext')
-      }
-    }
-    class OrderedAudio {
-      playsInline = false
-      loop = false
-      muted = true
-      volume = 1
-      pause = vi.fn()
-      removeAttribute = vi.fn()
-      play = vi.fn(async () => {})
-      // Reason: constructor mirrors HTMLAudioElement(src?); body pushes to callOrder so NOT useless.
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      constructor(_src?: string) {
-        callOrder.push('Audio')
-      }
-    }
-    vi.stubGlobal('AudioContext', OrderedAC)
-    vi.stubGlobal('Audio', OrderedAudio)
-
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-    expect(callOrder).toEqual(['AudioContext', 'Audio'])
-
-    await engine.close()
-  })
-
   // bypassSilentMode option gating: skip construction when false,
   // construct when true, construct when undefined (backward compat — coerces to true).
 
@@ -1248,46 +1202,6 @@ describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () =
     await engine.close()
   })
 
-  it('Phase 52 CR-01: without cancelFutureCues, second overlapping topUpLookahead double-schedules overlapping cues (proves Option A is necessary)', async () => {
-    const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
-    const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
-    const engine = await createAudioEngine({ timbre: 'bowl' })
-
-    // First walk: cues at audioTimes A, B, C
-    const firstWalk = [
-      { audioTime: 5, phaseDurationSec: 4, kind: 'in' as const },
-      { audioTime: 9, phaseDurationSec: 4, kind: 'out' as const },
-      { audioTime: 13, phaseDurationSec: 4, kind: 'in' as const },
-    ]
-    engine.topUpLookahead({ cues: firstWalk })
-    inSpy.mockClear()
-    outSpy.mockClear()
-
-    // Second walk overlaps B and C — same cues, plus D new
-    const secondWalk = [
-      { audioTime: 9, phaseDurationSec: 4, kind: 'out' as const },   // B — overlaps
-      { audioTime: 13, phaseDurationSec: 4, kind: 'in' as const },   // C — overlaps
-      { audioTime: 17, phaseDurationSec: 4, kind: 'out' as const },  // D — new
-    ]
-
-    // No cancel: dispatch second walk directly over the first — overlapping cues are doubled
-    engine.topUpLookahead({ cues: secondWalk })
-
-    // Negative control: WITHOUT cancel, the overlapping cues get scheduled a second time.
-    // Combined count equals secondWalk.length (the engine's pruneExpiredCues filters only
-    // EXPIRED cues, not future duplicates — so all 3 cues in secondWalk are dispatched).
-    // The sum across BOTH walks from the spy perspective is firstWalk.length + secondWalk.length
-    // BUT: since we cleared spies before the second call, this assert proves secondWalk.length
-    // cues were dispatched on the second call regardless of cancel (they always are).
-    // The real regression is that activeCues now holds BOTH sets of future cues — verified
-    // by confirming the count is secondWalk.length (second dispatch happened, not skipped).
-    // This negative-control test documents that the SKIPPING of future-cue dedup is the
-    // engine's correct behavior; Option A (cancel first) is required at the caller layer.
-    const secondWalkDispatchedCount = inSpy.mock.calls.length + outSpy.mock.calls.length
-    expect(secondWalkDispatchedCount).toBe(secondWalk.length)
-
-    await engine.close()
-  })
 })
 
 // Engine-layer dedup of the in-flight boundary cue prevents a double-strike: the rAF
@@ -1366,34 +1280,3 @@ describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
 
 // Lookahead constant guards: tests import the SYMBOLS (not bare literals) so if a
 // value is tuned the tests pass without edit; only the source constant changes.
-describe('Phase 52 constants', () => {
-  it('LOOKAHEAD_WINDOW_SEC resolves as a number (D-02: import does not yield undefined)', () => {
-    expect(typeof LOOKAHEAD_WINDOW_SEC).toBe('number')
-  })
-
-  it('LOOKAHEAD_MIN_CUES resolves as a number (D-03: import does not yield undefined)', () => {
-    expect(typeof LOOKAHEAD_MIN_CUES).toBe('number')
-  })
-
-  it('LOOKAHEAD_WINDOW_SEC is locked at 6 (D-02: middle of 5–10s ROADMAP band)', () => {
-    // Assertion references the imported symbol on the left-hand side.
-    // The numeric literal 6 on the right-hand side is the locked value — change it intentionally.
-    expect(LOOKAHEAD_WINDOW_SEC).toBe(6)
-  })
-
-  it('LOOKAHEAD_MIN_CUES is locked at 2 (D-03: always queue next + cue-after)', () => {
-    expect(LOOKAHEAD_MIN_CUES).toBe(2)
-  })
-
-  it('LOOKAHEAD_WINDOW_SEC is typed as a literal 6 (satisfies type assertion)', () => {
-    // TypeScript compile-time assertion: the const must have a literal type of `6`.
-    // If the constant is widened to `number`, this line fails tsc.
-    const _typeCheck: 6 = LOOKAHEAD_WINDOW_SEC
-    expect(_typeCheck).toBe(LOOKAHEAD_WINDOW_SEC)
-  })
-
-  it('LOOKAHEAD_MIN_CUES is typed as a literal 2 (satisfies type assertion)', () => {
-    const _typeCheck: 2 = LOOKAHEAD_MIN_CUES
-    expect(_typeCheck).toBe(LOOKAHEAD_MIN_CUES)
-  })
-})

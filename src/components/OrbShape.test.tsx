@@ -152,7 +152,7 @@ describe('OrbShape — ringCue prop (Phase 45)', () => {
     expect(arcSvg).toBeNull()
   })
 
-  it('ringCue="progress-arc" renders exactly 2 path elements with spike-locked stroke values', () => {
+  it('ringCue="progress-arc" renders the arc layer (track + progress path)', () => {
     const { container } = render(
       <OrbShape
         frame={partialFrame}
@@ -160,14 +160,12 @@ describe('OrbShape — ringCue prop (Phase 45)', () => {
         strings={EN_STRINGS_FIXTURE.practice.breathing}
       />,
     )
+    // Two paths = the faint track + the progress arc. Stroke color/width are visual
+    // tokens (asserted nowhere — they belong to the design layer, not behavior).
     const paths = container.querySelectorAll(
       'svg[aria-hidden="true"][viewBox="0 0 100 100"] path',
     )
     expect(paths.length).toBe(2)
-    paths.forEach((p) => {
-      expect(p.getAttribute('stroke')).toBe('var(--color-breathing-accent)')
-      expect(p.getAttribute('stroke-width')).toBe('2.5')
-    })
   })
 
   it('ringCue="progress-arc" + reduced-motion suppresses the arc layer (outer track still rendered)', () => {
@@ -224,7 +222,7 @@ describe('OrbShape — variant="spiritual-eye" (Phase 46)', () => {
   // matchable attribute on the element itself.
   const starPolygonSelector = 'svg[viewBox="0 0 100 100"] polygon'
 
-  it('Test A — Running renders StarGlyph polygon with exactly 10 vertices', () => {
+  it('Test A — Running renders the StarGlyph polygon', () => {
     const { container } = render(
       <OrbShape
         frame={sampleFrame}
@@ -232,11 +230,9 @@ describe('OrbShape — variant="spiritual-eye" (Phase 46)', () => {
         strings={EN_STRINGS_FIXTURE.practice.breathing}
       />,
     )
-    const polygon = container.querySelector(starPolygonSelector)
-    expect(polygon).not.toBeNull()
-    const points = polygon?.getAttribute('points') ?? ''
-    // 10 alternating outer/inner vertices, comma-separated "x,y" pairs.
-    expect(points.trim().split(/\s+/).length).toBe(10)
+    // The star glyph renders for the spiritual-eye variant. The exact vertex count is
+    // the glyph's geometry (a visual detail), not a behavior worth pinning.
+    expect(container.querySelector(starPolygonSelector)).not.toBeNull()
   })
 
   it('Test B — Running with spiritual-eye does NOT render the CueGlyph phaseLabel text', () => {

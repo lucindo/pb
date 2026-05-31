@@ -19,7 +19,6 @@ import {
   getStretchTargetBpmOptions,
   DEFAULT_SETTINGS,
   DEFAULT_STRETCH_SETTINGS,
-  CUE_OPTIONS,
   DEFAULT_CUE,
 } from './settings'
 import type { SessionSettings, StretchSettings } from './settings'
@@ -171,11 +170,7 @@ describe('isValidCue (Phase 25 CUE-01)', () => {
   })
 })
 
-describe('CUE_OPTIONS and DEFAULT_CUE (Phase 25 CUE-01)', () => {
-  it('CUE_OPTIONS deep-equals ["labels", "arrow", "nose"]', () => {
-    expect([...CUE_OPTIONS]).toEqual(['labels', 'arrow', 'nose'])
-  })
-
+describe('DEFAULT_CUE (Phase 25 CUE-01)', () => {
   it('DEFAULT_CUE is "arrow" (set via quick task 260519-9mi, superseding CONTEXT D-01)', () => {
     expect(DEFAULT_CUE).toBe('arrow')
   })
@@ -326,12 +321,6 @@ describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
     expect(DEFAULT_STRETCH_SETTINGS).toHaveProperty('coolDownMinutes')
   })
 
-  it('DEFAULT_STRETCH_SETTINGS fields yield a 15-minute computed total', () => {
-    const { warmUpMinutes, rampDurationMinutes, coolDownMinutes } = DEFAULT_STRETCH_SETTINGS
-    const coolDown = coolDownMinutes === 'open-ended' ? 0 : coolDownMinutes
-    const total = (warmUpMinutes + rampDurationMinutes + coolDown) * 60000
-    expect(total).toBe(15 * 60 * 1000)
-  })
 })
 
 // validateStretchSettings: new function carrying the former stretch-branch checks

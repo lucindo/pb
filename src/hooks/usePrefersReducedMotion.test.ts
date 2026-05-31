@@ -31,29 +31,6 @@ describe('usePrefersReducedMotion', () => {
     expect(result.current).toBe(true)
   })
 
-  it('subscribes via addEventListener("change", ...) and cleans up on unmount', () => {
-    const addSpy = vi.fn()
-    const removeSpy = vi.fn()
-    // Reason: cast documents the intended stub shape; vi.spyOn types accept the original type internally.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    vi.spyOn(window, 'matchMedia').mockReturnValue({
-      matches: false,
-      media: '(prefers-reduced-motion: reduce)',
-      onchange: null,
-      addEventListener: addSpy,
-      removeEventListener: removeSpy,
-      addListener: () => {},
-      removeListener: () => {},
-      dispatchEvent: () => false,
-    } as unknown as MediaQueryList)
-
-    const { unmount } = renderHook(() => usePrefersReducedMotion())
-    expect(addSpy).toHaveBeenCalledWith('change', expect.any(Function))
-
-    unmount()
-    expect(removeSpy).toHaveBeenCalledWith('change', expect.any(Function))
-  })
-
   it('re-syncs against mql.matches inside the mount effect (IN-02)', () => {
     // Simulate the (rare) drift case: useState initializer captured matches=false,
     // but by the time the effect runs the OS preference has flipped to matches=true.

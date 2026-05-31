@@ -63,16 +63,6 @@ describe('CueGlyph — arrow mode (candidate F)', () => {
     expect(screen.getByText('Out')).toBeInTheDocument()
   })
 
-  it('SVG contains a path element (chevron fill path)', () => {
-    const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" />)
-    expect(container.querySelector('svg path')).not.toBeNull()
-  })
-
-  it('SVG has no animation classes or elements (static glyph, D-08)', () => {
-    const { container } = render(<CueGlyph cue="arrow" phase="in" phaseLabel="In" />)
-    expect(container.querySelector('animate')).toBeNull()
-    expect(container.querySelector('[class*="animate-"]')).toBeNull()
-  })
 })
 
 // ── nose mode ────────────────────────────────────────────────────────────────
@@ -114,27 +104,6 @@ describe('CueGlyph — nose mode (candidate D2)', () => {
     expect(screen.getByText('Out')).toBeInTheDocument()
   })
 
-  it('SVG contains path elements (nose outline paths)', () => {
-    const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" />)
-    expect(container.querySelectorAll('svg path').length).toBeGreaterThan(0)
-  })
-
-  it('SVG has no animation elements (static glyph, D-08)', () => {
-    const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" />)
-    expect(container.querySelector('animate')).toBeNull()
-    expect(container.querySelector('[class*="animate-"]')).toBeNull()
-  })
-
-  it('nose is stroked (svg has fill="none" and stroke="currentColor" — uses stroke, not fill)', () => {
-    const { container } = render(<CueGlyph cue="nose" phase="in" phaseLabel="In" />)
-    const svg = container.querySelector('svg')
-    expect(svg).not.toBeNull()
-    // The nose SVG root carries fill="none" and stroke="currentColor"
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(svg!.getAttribute('fill')).toBe('none')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(svg!.getAttribute('stroke')).toBe('currentColor')
-  })
 })
 
 // ── preview mode (picker swatch) ─────────────────────────────────────────────

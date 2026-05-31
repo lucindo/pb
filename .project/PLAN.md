@@ -36,16 +36,23 @@ Each must leave the full suite green on its own before the dependent test cleanu
 - [x] NK sub-threshold early-end records nothing (parity with resonant 30s floor)
 - [x] mute survives a remount — toggle → unmount → fresh App reads persisted mute
 
-### 3. Rewrite or delete design-locking tests
+### 3. Rewrite or delete design-locking tests — SAFE GROUP DONE (−25 tests, 1337 green)
 
-- [ ] Delete call-count/order/construction-order locks: `audioEngine.test.ts:1114-1153` (double-schedule control), `:563-602` (construct order), `:1232-1261` (LOOKAHEAD constant + type pins), `sessionClock.test.ts:279-287` (listener count)
-- [ ] Delete add/remove-listener bookkeeping tests: `useTheme.test.ts:95-115`, `useBeforeInstallPrompt.test.ts:54-81 & 185-195`, `useIsStandaloneOrPhone.test.ts:88-116`, `usePrefersReducedMotion.test.ts:34-55`
-- [ ] Rewrite `useWakeLock.test.tsx:226-355` against behavior (final sentinel released, `request` fired ≤once); drop generation-counter/`addEventListener` negative asserts
-- [ ] Rewrite `useAudioCues.test.tsx` white-box tests against the interface: `:790-902` (generation counter), `:580-622` & `:905-937` (`_listeners`/prototype-spy), `:155-179`/`:1835-1851`/`:948-963` (spy-arg / call-count / union-array); delete callback-identity block `:1080-1174`
-- [ ] Rewrite `App.audio.test.tsx:404-443,491-524` to drop AudioContext construction-count; keep label outcome
-- [ ] Strip DOM/SVG geometry pins: `OrbShape.test.tsx:155-170,201-212,225-239`; `App.session.test.tsx:404,417` (checkmark polyline); `MuteToggle.test.tsx:70-105`; `CueGlyph.test.tsx:66-137`
-- [ ] Delete VM-shape assertions in `appViewModel.test.ts` (keep only genuine branching, if any); keep `sessionPresentation.test.ts:117-166`
-- [ ] Relax enum/option-array snapshots to membership/sortedness: `settings.test.ts:175-181`, `breathingPlan.test.ts:20-46`; delete bare `STATE_VERSION===3` pins (`storage.test.ts:294-296,361-366`) and orphan-key assertion (`strings.test.ts:200-203`)
+Done (behavior covered elsewhere, verified green):
+- [x] Deleted call-count/order/construction-order locks: audioEngine double-schedule negative-control (own comment admitted it proved nothing), sync-construct-order, the 6-test "Phase 52 constants" LOOKAHEAD+typeof+literal-type describe; sessionClock "exactly one statechange listener"
+- [x] Deleted add/remove-listener bookkeeping: useTheme (named-theme non-subscribe + unmount cleanup), useBeforeInstallPrompt Test 8, useIsStandaloneOrPhone Test 6, usePrefersReducedMotion subscribe/cleanup
+- [x] Stripped DOM/SVG geometry pins: OrbShape stroke color/width + star vertex-count (kept arc-renders / polygon-renders / reduced-motion); App.session checkmark polyline → "Session complete" headline; MuteToggle "renders a button" + icon element-counts; CueGlyph path-count/animation-absence/fill-stroke (kept aria-hidden + phaseLabel parity)
+- [x] Deleted tautologies: sessionAudio "constants are numbers"; settings.test duration `*60000` (never called the fn); redundant `CUE_OPTIONS` deep-equal (isValidCue covers membership)
+
+Kept by decision (domain contracts, NOT design-locking — pushed back on audit):
+- breathingPlan `BPM_OPTIONS`/`RATIO_OPTIONS`/`DURATION_OPTIONS` and `DEFAULT_CUE` — input-domain/default contracts; a change is a real product change worth a red test
+
+Deferred — delicate, reviewed pass needed (coverage/scope risk):
+- [ ] Rewrite `useAudioCues.test.tsx` white-box tests against the interface (generation counter, `_listeners`/prototype-spy, spy-arg/call-count/union-array, callback-identity block)
+- [ ] Rewrite `useWakeLock.test.tsx` WAKELOCK-01 against behavior (sentinel released, request ≤once)
+- [ ] Rewrite `App.audio.test.tsx` D-42 to drop AudioContext construction-count; keep label outcome
+- [ ] Review `appViewModel.test.ts` VM-shape assertions (audit says delete bulk — wholesale file delete needs a look)
+- [ ] `storage.test.ts` bare `STATE_VERSION===3` pins + `strings.test.ts:200-203` orphan-key — minor, revisit with §5 content pass
 
 ### 4. Delete weak tests
 

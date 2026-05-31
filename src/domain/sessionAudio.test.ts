@@ -301,26 +301,6 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
-  // Test 10: constant imports — test uses LOOKAHEAD_WINDOW_SEC and LOOKAHEAD_MIN_CUES symbols
-  it('constant imports: LOOKAHEAD_WINDOW_SEC and LOOKAHEAD_MIN_CUES are valid numbers', () => {
-    // Test imports symbols, not hard-coded values
-    expect(typeof LOOKAHEAD_WINDOW_SEC).toBe('number')
-    expect(typeof LOOKAHEAD_MIN_CUES).toBe('number')
-    expect(LOOKAHEAD_WINDOW_SEC).toBeGreaterThan(0)
-    expect(LOOKAHEAD_MIN_CUES).toBeGreaterThan(0)
-
-    // Verify behavior with the imported constants (no hard-coded 6 or 2)
-    const cues = walkFutureCues({
-      audioAnchor: 0,
-      elapsedSec: 0,
-      fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: hrvPlan,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-    })
-    expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-  })
 })
 
 // Hard iteration cap on walkFutureCues: verifies a degenerate plan (cycleSec > 0,

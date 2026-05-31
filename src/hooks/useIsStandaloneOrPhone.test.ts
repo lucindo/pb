@@ -85,36 +85,6 @@ describe('useIsStandaloneOrPhone', () => {
     expect(result.current.isStandalone).toBe(false)
   })
 
-  it('Test 6: hook subscribes via addEventListener on both MediaQueryLists and removes both on unmount', () => {
-    const standaloneAdd = vi.fn()
-    const standaloneRemove = vi.fn()
-    const phoneAdd = vi.fn()
-    const phoneRemove = vi.fn()
-
-    vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => {
-      if (query === '(display-mode: standalone)') {
-        return makeMql(false, query, {
-          addEventListener: standaloneAdd,
-          removeEventListener: standaloneRemove,
-        })
-      }
-      return makeMql(false, query, {
-        addEventListener: phoneAdd,
-        removeEventListener: phoneRemove,
-      })
-    })
-
-    const { unmount } = renderHook(() => useIsStandaloneOrPhone())
-
-    expect(standaloneAdd).toHaveBeenCalledWith('change', expect.any(Function))
-    expect(phoneAdd).toHaveBeenCalledWith('change', expect.any(Function))
-
-    unmount()
-
-    expect(standaloneRemove).toHaveBeenCalledWith('change', expect.any(Function))
-    expect(phoneRemove).toHaveBeenCalledWith('change', expect.any(Function))
-  })
-
   it('updates isPhone when the phone MediaQueryList change event fires', () => {
     let capturedPhoneListener: ((event: MediaQueryListEvent) => void) | null = null
 

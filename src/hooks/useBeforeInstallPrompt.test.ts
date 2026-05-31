@@ -207,16 +207,4 @@ describe('useBeforeInstallPrompt', () => {
       }),
     ).resolves.toBeUndefined()
   })
-
-  it('Test 8: both window listeners (beforeinstallprompt and appinstalled) are removed on unmount', () => {
-    const removeSpy = vi.spyOn(window, 'removeEventListener')
-
-    const { unmount } = renderHook(() => useBeforeInstallPrompt())
-    unmount()
-
-    // Check beforeinstallprompt listener is removed
-    const calls = removeSpy.mock.calls.map((c) => c[0])
-    expect(calls).toContain('beforeinstallprompt')
-    expect(calls).toContain('appinstalled')
-  })
 })

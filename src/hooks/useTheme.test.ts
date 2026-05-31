@@ -92,28 +92,6 @@ describe('useTheme', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  it('does NOT attach matchMedia listener when initial theme is a named theme', () => {
-    seedPrefs('dark')
-    const addSpy = vi.fn()
-    vi.spyOn(window, 'matchMedia').mockReturnValue(
-      makeMqlMock(false, { addEventListener: addSpy }),
-    )
-    renderHook(() => useTheme())
-    // The mql listener should never be attached for a named theme (S-04 gate)
-    expect(addSpy).not.toHaveBeenCalledWith('change', expect.any(Function))
-  })
-
-  it('cleans up matchMedia listener on unmount when theme is system', () => {
-    seedPrefs('system')
-    const removeSpy = vi.fn()
-    vi.spyOn(window, 'matchMedia').mockReturnValue(
-      makeMqlMock(false, { removeEventListener: removeSpy }),
-    )
-    const { unmount } = renderHook(() => useTheme())
-    unmount()
-    expect(removeSpy).toHaveBeenCalledWith('change', expect.any(Function))
-  })
-
   it('updates state via cross-tab storage event with key === STATE_KEY', async () => {
     seedPrefs('dark')
     const { result } = renderHook(() => useTheme())

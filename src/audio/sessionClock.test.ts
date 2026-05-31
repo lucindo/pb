@@ -276,15 +276,6 @@ describe('createAudioSessionClock', () => {
     expect(typeof publicClock.now).toBe('function')
   })
 
-  it('wires exactly one statechange listener on the AC (D-11 single-listener invariant)', () => {
-    const audioCtx = makeFakeAudioCtx()
-    createAudioSessionClock(asAudioCtx(audioCtx))
-
-    // The Fake's addEventListener is a vi.fn; assert called once with 'statechange'.
-    const addEventListenerMock = audioCtx.addEventListener as unknown as ReturnType<typeof vi.fn>
-    expect(addEventListenerMock).toHaveBeenCalledTimes(1)
-    expect(addEventListenerMock).toHaveBeenCalledWith('statechange', expect.any(Function))
-  })
 })
 
 describe('createWallSessionClock', () => {

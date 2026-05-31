@@ -24,11 +24,6 @@ function renderToggle(props: Partial<MuteToggleProps> = {}) {
 }
 
 describe('MuteToggle', () => {
-  it('renders a button (role="button")', () => {
-    renderToggle()
-    expect(screen.getByRole('button')).toBeInTheDocument()
-  })
-
   it('when muted=false and audioAvailable=true, aria-pressed is "false" and accessible name is "Mute audio cues"', () => {
     renderToggle({ muted: false, audioAvailable: true })
     const button = screen.getByRole('button', { name: 'Mute audio cues' })
@@ -67,41 +62,11 @@ describe('MuteToggle', () => {
     expect(onToggle).not.toHaveBeenCalled()
   })
 
-  it('renders a speaker SVG when muted=false (3 path elements) and a speaker-with-slash SVG when muted=true (2 line elements)', () => {
-    const { container: containerOn, unmount: unmountOn } = render(
-      <MuteToggle muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.practice.mute} onToggle={vi.fn()} />,
-    )
-    const svgOn = containerOn.querySelector('svg')
-    expect(svgOn).not.toBeNull()
-    expect(containerOn.querySelectorAll('svg path').length).toBe(3)
-    unmountOn()
-
-    const { container: containerOff } = render(
-      <MuteToggle muted={true} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.practice.mute} onToggle={vi.fn()} />,
-    )
-    const svgOff = containerOff.querySelector('svg')
-    expect(svgOff).not.toBeNull()
-    expect(containerOff.querySelectorAll('svg line').length).toBe(2)
-  })
-
   // Resume-audio accessible-name tests:
   it('when needsResume=true and audioAvailable=true, accessible name is "Resume audio" and aria-pressed is absent', () => {
     renderToggle({ needsResume: true, muted: false, audioAvailable: true })
     const button = screen.getByRole('button', { name: 'Resume audio' })
     expect(button.hasAttribute('aria-pressed')).toBe(false)
-  })
-
-  it('renders a refresh-arrow ResumeIcon (1 path + 1 polyline) when needsResume=true', () => {
-    const { container } = render(
-      <MuteToggle needsResume={true} muted={false} audioAvailable={true} resumeHintId="mute-toggle-resume-hint" strings={EN_STRINGS_FIXTURE.practice.mute} onToggle={vi.fn()} />,
-    )
-    const svg = container.querySelector('svg')
-    expect(svg).not.toBeNull()
-    // Reason: svg non-null asserted by expect().not.toBeNull() immediately above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(svg!.querySelectorAll('path').length).toBe(1)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(svg!.querySelectorAll('polyline').length).toBe(1)
   })
 
   it('needsResume=true takes priority over muted in the accessible name (Plan 06 D-32 priority)', () => {
