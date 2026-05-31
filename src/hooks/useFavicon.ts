@@ -140,8 +140,12 @@ export function useFavicon(): void {
   useEffect(() => {
     const onPrefsChanged = (e: Event): void => {
       if (!(e instanceof CustomEvent)) return
-      const detail = e.detail as { key?: string } | null
-      if (!detail || detail.key === 'theme' || detail.key === undefined) {
+      const detail: unknown = e.detail
+      const key =
+        typeof detail === 'object' && detail !== null
+          ? (detail as { key?: unknown }).key
+          : undefined
+      if (key === undefined || key === 'theme') {
         setTheme(loadPrefs().theme)
       }
     }

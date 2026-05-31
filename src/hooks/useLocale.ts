@@ -50,8 +50,12 @@ export function useLocale(): { locale: LocaleId; uiStrings: UiStrings } {
   useEffect(() => {
     const onPrefsChanged = (e: Event): void => {
       if (!(e instanceof CustomEvent)) return
-      const detail = e.detail as { key?: string } | null
-      if (!detail || detail.key === 'locale' || detail.key === undefined) {
+      const detail: unknown = e.detail
+      const key =
+        typeof detail === 'object' && detail !== null
+          ? (detail as { key?: unknown }).key
+          : undefined
+      if (key === undefined || key === 'locale') {
         setLocale(loadPrefs().locale)
       }
     }

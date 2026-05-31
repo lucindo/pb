@@ -73,15 +73,18 @@ export function useFeatureFlags(): FeatureFlags {
   useEffect(() => {
     const onPrefsChanged = (e: Event): void => {
       if (!(e instanceof CustomEvent)) return
-      const detail = e.detail as { key?: string } | null
+      const detail: unknown = e.detail
+      const key =
+        typeof detail === 'object' && detail !== null
+          ? (detail as { key?: unknown }).key
+          : undefined
       if (
-        !detail ||
-        detail.key === undefined ||
-        detail.key === 'breathingShape' ||
-        detail.key === 'ringCue' ||
-        detail.key === 'orbIdle' ||
-        detail.key === 'switcherIcon' ||
-        detail.key === 'bypassSilentMode'
+        key === undefined ||
+        key === 'breathingShape' ||
+        key === 'ringCue' ||
+        key === 'orbIdle' ||
+        key === 'switcherIcon' ||
+        key === 'bypassSilentMode'
       ) {
         setPersisted(loadPrefs())
       }
