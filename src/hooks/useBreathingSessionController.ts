@@ -5,7 +5,7 @@ import {
   LOOKAHEAD_WINDOW_SEC,
 } from '../audio/audioEngine'
 import { createBreathingPlan } from '../domain/breathingPlan'
-import { walkFutureCues } from '../domain/sessionAudio'
+import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
 import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
@@ -357,9 +357,10 @@ export function useBreathingSessionController({
     // stretchSegmentsForTopUp is derived above from the narrowed state union (safe for TS).
     const segments = stretchSegmentsForTopUp ?? undefined
 
-    // Timed sessions trim the lookahead at plan.totalSec so no cue is queued past
-    // the session end. Open-ended sessions (plan.totalSec === null) use undefined.
-    const targetSec = plan.totalSec ?? undefined
+    // Trim the lookahead at the session's TRUE completion boundary (see
+    // resolveTargetSec) so the held-open final cycle's cues play and the boundary
+    // cue — where the end chord fires — is dropped by walkFutureCues' >= trim.
+    const targetSec = resolveTargetSec(plan, segments)
 
     const cues = walkFutureCues({
       audioAnchor,

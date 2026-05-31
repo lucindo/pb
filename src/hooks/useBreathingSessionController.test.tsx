@@ -196,8 +196,10 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     unmount()
   })
 
-  // Test 6: timed completion trim — targetSec sourced from plan.totalSec
-  it('timed session: controller sources targetSec from plan.totalSec (D-14 trim behavioral)', () => {
+  // Test 6: timed session renders cleanly through the top-up effect. The trim
+  // boundary itself (completion boundary for HRV, segment endSec for Stretch) is
+  // covered behaviorally in sessionAudio.test.ts; this is a render smoke test.
+  it('timed session: controller renders through the top-up effect without error', () => {
     const timedSettings = { ...DEFAULT_SETTINGS, durationMinutes: 5 as const }
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({

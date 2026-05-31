@@ -1,5 +1,5 @@
 import type { BreathingPlan } from './breathingPlan'
-import type { SessionFrame } from './sessionMath'
+import { getCompletionSec, type SessionFrame } from './sessionMath'
 import type { StretchSegment } from './stretchRamp'
 
 export interface BoundaryAudioOffsets {
@@ -134,8 +134,13 @@ export function walkFutureCues(args: {
 
     const audioTime = audioAnchor + audioTimeRelSec
 
-    // Timed-session trim: never emit cues past targetSec — overrides floor
-    if (targetSec !== undefined && audioTimeRelSec > targetSec) {
+    // Timed-session trim: never emit a cue at or past targetSec — overrides floor.
+    // The boundary is EXCLUSIVE: a cue starting exactly at targetSec is the onset of
+    // the next cycle (the session occupies [0, targetSec)). For cycle-aligned
+    // durations that instant is also where the end chord plays, so emitting it would
+    // overlap the breath cue with the session-end sound and start an inhale the
+    // screen immediately cuts.
+    if (targetSec !== undefined && audioTimeRelSec >= targetSec) {
       break
     }
 
@@ -157,6 +162,33 @@ export function walkFutureCues(args: {
   }
 
   return result
+}
+
+/**
+ * The lookahead trim boundary for a session — the elapsed-seconds instant past
+ * which no cue may be scheduled. It is the session's TRUE completion boundary
+ * (the same end the domain reports complete at), so the held-open final cycle's
+ * cues still play while walkFutureCues' `>=` trim drops the cue at the boundary
+ * (where the end chord fires).
+ *
+ *   - Stretch (segments present): the final segment's endSec — the source
+ *     getStretchFrame.isComplete uses. Infinity (open-ended cool-down) → undefined.
+ *   - HRV (no segments): getCompletionSec(plan) — totalSec rounded up to the cycle.
+ *     Open-ended (totalSec === null) → undefined.
+ *
+ * Returning `plan.totalSec` here instead would (HRV) silence the rounded-up final
+ * cycle and (Stretch) trim at the unrelated resonant-tab duration rather than the
+ * ramp's own end. `undefined` means "no trim" (open-ended sessions never complete).
+ */
+export function resolveTargetSec(
+  plan: BreathingPlan,
+  segments: StretchSegment[] | undefined,
+): number | undefined {
+  if (segments !== undefined) {
+    const finalEndSec = segments.at(-1)?.endSec
+    return finalEndSec === undefined || finalEndSec === Infinity ? undefined : finalEndSec
+  }
+  return getCompletionSec(plan) ?? undefined
 }
 
 export function computeBoundaryAudioOffsets(
