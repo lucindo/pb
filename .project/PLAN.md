@@ -54,24 +54,27 @@ Deferred — delicate, reviewed pass needed (coverage/scope risk):
 - [ ] Review `appViewModel.test.ts` VM-shape assertions (audit says delete bulk — wholesale file delete needs a look)
 - [ ] `storage.test.ts` bare `STATE_VERSION===3` pins + `strings.test.ts:200-203` orphan-key — minor, revisit with §5 content pass
 
-### 4. Delete weak tests
+### 4. Delete weak tests — mostly DONE
 
-- [ ] Collapse CueHandle.cancel suite to one behavior + one idempotency test (`audioEngine.test.ts:843-903`)
-- [ ] Collapse nkCueSynth "doesn't throw"/shape-repeat tests to one parametrized smoke (`nkCueSynth.test.ts:96-182`)
-- [ ] Delete tautological math tests: `stretchRamp.test.ts:148`, `settings.test.ts:329-334` (wrong unit, never calls the fn), `sessionAudio.test.ts:285`
-- [ ] Fix/replace weak clock asserts: `useSessionEngine.test.tsx:469-489` (assert tracks mock clock), `:262-306` (assert frame frozen post-unmount instead of console-spy)
-- [ ] Delete tautologies-against-non-existent-features: `useVisualCue.test.ts:138-182`; `MuteToggle.test.tsx:27`; parametrize `OrbShape.test.tsx:37-47`
+- [x] Collapse CueHandle.cancel suite → 1 real teardown test + 1 parametrized callable/idempotent smoke
+- [x] Collapse nkCueSynth "doesn't throw"/shape-repeat → 2 parametrized it.each (kept 4 relationship tests)
+- [x] Delete tautological math tests: stretchRamp numSteps-recompute, settings duration `*60000`, sessionAudio constant-import (done across §2/§3/§4)
+- [x] Delete tautologies-against-non-existent-features: useVisualCue data-cue/matchMedia; MuteToggle "renders a button"
+- [ ] DEFERRED: `useSessionEngine.test.tsx` weak clock asserts (`:469-489`, `:262-306`) — reanchor-adjacent, near the iOS reconstruction path; left alone out of caution
+- [ ] DEFERRED: parametrize `OrbShape.test.tsx:37-47` lead-in digits 3/2/1 (minor)
 
-### 5. Cut bloat
+### 5. Cut bloat — partial
 
-- [ ] `useAudioCues.test.tsx` → ~600-800 lines: hoist the ~6× duplicated `SpyableAC` mock, force-top-up 7→2 tests (`:1588-1851`), merge WR-04/WR-05 (`:2052-2181`)
-- [ ] `stretchRamp.test.ts` 716→~450: collapse 4 GAP-3 orb-freeze tests to one parametrized, dedupe 6 `computeStretchTotalSec` GAP-1 tests to one+null, delete `not.toBeCloseTo(0.167)` dead-bug anchor
-- [ ] Content tests: delete literal-copy change-detectors (`lockedCopy.test.ts` bulk, `learnContent.test.ts:35-88,136-158`, `strings.test.ts:157-199`); keep invariant guards (clinical-verbs, URL-scheme, cross-locale URL identity, non-empty exhaustiveness loops)
-- [x] Delete the timbre/locale clone test files — done in §0; `usePreferenceChoice.test.ts` is sole owner of the contract (`useCueChoice.test.ts` retained — hook not folded)
-- [ ] De-fragment App.* suite (2:1): consolidate "end timed session" (3 files→1), "start session" (3→1), "open-ended skips modal" (3→1); remove `App.test.tsx` CUE-01 duplication
-- [ ] `cueSynth.test.ts:383-493` per-timbre explosion → one "every timbre → N oscillators, doesn't throw"
-- [ ] `prefs.test.ts`: delete "Phase 47 RED" scaffold (`:487-512`), dedupe triplicated `kuthasta` alias (keep one)
+- [x] `cueSynth.test.ts` per-timbre explosion → oscillator-count only (dropped freq/gain/tau re-derivations) — −24 tests
+- [x] `prefs.test.ts` "Phase 47 RED" scaffold deleted; triplicated `kuthasta` deduped (kept DEFAULT_PREFS shape)
+- [x] timbre/locale clone test files deleted in §0
+- [ ] CANCELLED (operator): `useAudioCues.test.tsx` SpyableAC/force-top-up/WR dedup — iOS reconstruction file, off-limits [[feedback_ios_reconstruction_tests_off_limits]]
+- [ ] DEFERRED: `stretchRamp.test.ts` 716→~450 — GAP-3/GAP-1 tests overlap but several encode distinct anti-regression intent (monotonic remainingSec, phantom-cycle, open-ended, reworked-table freeze guard); the `not.toBeCloseTo(0.167)` dead-bug anchor is the clear delete. Needs careful per-test merge, not a mechanical sweep.
+- [ ] RECONSIDERED — KEEP: `lockedCopy.test.ts` is a deliberately FROZEN legal/attribution snapshot (medical-advice + affiliation disclaimers); byte-exact pinning is an intentional safety guard, not a change-detector. Audit was wrong here.
+- [ ] DEFERRED (operator review): `learnContent`/`strings` literal-label pins — genuine change-detectors, but content cutting is nuanced (legal vs display copy, invariant vs literal) and the audit proved unreliable on `lockedCopy`. Review before cutting.
+- [ ] DEFERRED: App.* de-fragmentation — requires confirming each kept test fully covers the deleted dup; moderate risk, do carefully
 
 ### 6. Verify
 
-- [ ] Full suite green after each section; net test LOC down ~1,500; ratio moved off the 1.5:1 smell line
+- [x] Full suite green after every batch (currently 1305); tsc + eslint clean throughout
+- Net so far: +21 behavioral tests (real-break coverage), ~−60 design-locking/redundant tests removed or collapsed
