@@ -1,7 +1,7 @@
 import type { LEARN_CONTENT } from '../content/learnContent'
 import type { LOCKED_COPY } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
-import type { AppScreen } from './useAppNavigation'
+import type { AppScreen, ReturningFrom } from './useAppNavigation'
 import type { AudioStatusFlag } from '../audio/audioStatus'
 import type {
   BreathingSessionPhase,
@@ -46,8 +46,7 @@ export interface AppEndSessionDialogViewModel {
 
 export interface AppNavigationViewModel {
   appScreen: AppScreen
-  returningFromAdvanced: boolean
-  returningFromStats: boolean
+  returningFrom: ReturningFrom
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
   onAdvancedOpen(this: void): void

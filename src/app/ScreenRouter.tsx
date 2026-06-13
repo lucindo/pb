@@ -37,8 +37,7 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           onBack={vm.navigation.onBackToPractice}
           onAdvancedOpen={vm.navigation.onAdvancedOpen}
           onStatsOpen={vm.navigation.onStatsOpen}
-          returningFromAdvanced={vm.navigation.returningFromAdvanced}
-          returningFromStats={vm.navigation.returningFromStats}
+          returningFrom={vm.navigation.returningFrom}
         />
       )
     case 'advanced':

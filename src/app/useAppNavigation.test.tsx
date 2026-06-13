@@ -112,7 +112,7 @@ describe('useAppNavigation', () => {
     })
 
     expect(result.current.appScreen).toBe('appSettings')
-    expect(result.current.returningFromAdvanced).toBe(true)
+    expect(result.current.returningFrom).toBe('advanced')
   })
 
   it('subsequent navigation clears returningFromAdvanced', () => {
@@ -127,13 +127,13 @@ describe('useAppNavigation', () => {
     act(() => {
       result.current.onBackFromAdvanced()
     })
-    expect(result.current.returningFromAdvanced).toBe(true)
+    expect(result.current.returningFrom).toBe('advanced')
 
     act(() => {
       result.current.onBackToPractice()
     })
 
-    expect(result.current.returningFromAdvanced).toBe(false)
+    expect(result.current.returningFrom).toBe(null)
   })
 
   it('closeOnSessionView forces advanced → practice', () => {
@@ -176,19 +176,19 @@ describe('useAppNavigation', () => {
     act(() => {
       result.current.onBackFromAdvanced()
     })
-    expect(result.current.returningFromAdvanced).toBe(true)
+    expect(result.current.returningFrom).toBe('advanced')
     expect(result.current.appScreen).toBe('appSettings')
 
     // Now closeOnSessionView=true must both route to practice AND
-    // clear the sentinel. Without the setReturningFromAdvanced(false)
-    // line in the effect, this assertion would fail.
+    // clear the sentinel. Without the setReturningFrom(null) line in the
+    // effect, this assertion would fail.
     rerender({
       controlsDisabled: false,
       closeOnSessionView: true,
     })
 
     expect(result.current.appScreen).toBe('practice')
-    expect(result.current.returningFromAdvanced).toBe(false)
+    expect(result.current.returningFrom).toBe(null)
   })
 
   it('navigates to stats via onStatsOpen and back to appSettings with returningFromStats=true', () => {
@@ -206,7 +206,7 @@ describe('useAppNavigation', () => {
       result.current.onBackFromStats()
     })
     expect(result.current.appScreen).toBe('appSettings')
-    expect(result.current.returningFromStats).toBe(true)
+    expect(result.current.returningFrom).toBe('stats')
   })
 
   it('onStatsOpen is gated by controlsDisabled (no leaving mid-session)', () => {
@@ -233,11 +233,11 @@ describe('useAppNavigation', () => {
     act(() => {
       result.current.onBackFromStats()
     })
-    expect(result.current.returningFromStats).toBe(true)
+    expect(result.current.returningFrom).toBe('stats')
 
     act(() => {
       result.current.onSettingsOpen()
     })
-    expect(result.current.returningFromStats).toBe(false)
+    expect(result.current.returningFrom).toBe(null)
   })
 })

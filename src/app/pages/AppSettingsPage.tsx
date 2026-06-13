@@ -6,6 +6,7 @@ import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
 import { useUiStrings } from '../../hooks/useUiStringsContext'
+import type { ReturningFrom } from '../useAppNavigation'
 
 export interface AppSettingsPageProps {
   isIOS: boolean
@@ -15,8 +16,7 @@ export interface AppSettingsPageProps {
   onBack(this: void): void
   onAdvancedOpen(this: void): void
   onStatsOpen(this: void): void
-  returningFromAdvanced: boolean
-  returningFromStats: boolean
+  returningFrom: ReturningFrom
 }
 
 /** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron
@@ -24,7 +24,7 @@ export interface AppSettingsPageProps {
  *  SettingsPanelBody. `inSessionView` is hard-coded false: navigation to this
  *  page is gated by `controlsDisabled` in useAppNavigation, so the user can
  *  only be here when no session is active. Focuses the back button on mount
- *  (fresh entry) or the right-chevron (returningFromAdvanced=true). */
+ *  (fresh entry) or the right-chevron (returningFrom='advanced'). */
 export function AppSettingsPage({
   isIOS,
   isStandalone,
@@ -33,8 +33,7 @@ export function AppSettingsPage({
   onBack,
   onAdvancedOpen,
   onStatsOpen,
-  returningFromAdvanced,
-  returningFromStats,
+  returningFrom,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
   // Memoize the subset wrapper so SettingsPanelBody and any future React.memo
@@ -52,20 +51,20 @@ export function AppSettingsPage({
   const statsRowRef = useRef<HTMLButtonElement>(null)
 
   // Assumption: ScreenRouter unmounts/remounts this page on every navigation, so
-  // this effect only fires on fresh mount with a stable `returningFromAdvanced`
-  // value — it does not steal focus mid-session. If the router is ever changed to
-  // keep this page mounted across the appearance ↔ appSettings transition, this
+  // this effect only fires on fresh mount with a stable `returningFrom` value —
+  // it does not steal focus mid-session. If the router is ever changed to keep
+  // this page mounted across the appearance ↔ appSettings transition, this
   // effect needs a one-shot ref guard (track whether the focus call has already
   // fired this mount, and skip subsequent re-runs).
   useEffect(() => {
-    if (returningFromStats) {
+    if (returningFrom === 'stats') {
       statsRowRef.current?.focus({ preventScroll: true })
-    } else if (returningFromAdvanced) {
+    } else if (returningFrom === 'advanced') {
       chevronButtonRef.current?.focus({ preventScroll: true })
     } else {
       backButtonRef.current?.focus({ preventScroll: true })
     }
-  }, [returningFromAdvanced, returningFromStats])
+  }, [returningFrom])
 
   return (
     <PageShell>

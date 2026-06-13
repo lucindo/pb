@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { UI_STRINGS } from '../../content/strings'
 import { UiStringsProvider } from '../../hooks/useUiStringsContext'
 import { AppSettingsPage } from './AppSettingsPage'
+import type { ReturningFrom } from '../useAppNavigation'
 
 function renderPage(
   props: Partial<{
@@ -16,16 +17,14 @@ function renderPage(
     onInstall: () => Promise<void>
     onAdvancedOpen: () => void
     onStatsOpen: () => void
-    returningFromAdvanced: boolean
-    returningFromStats: boolean
+    returningFrom: ReturningFrom
   }> = {},
 ) {
   const onBack = props.onBack ?? vi.fn()
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
   const onAdvancedOpen = props.onAdvancedOpen ?? vi.fn()
   const onStatsOpen = props.onStatsOpen ?? vi.fn()
-  const returningFromAdvanced = props.returningFromAdvanced ?? false
-  const returningFromStats = props.returningFromStats ?? false
+  const returningFrom = props.returningFrom ?? null
   const utils = render(
     <UiStringsProvider value={UI_STRINGS.en}>
       <AppSettingsPage
@@ -36,8 +35,7 @@ function renderPage(
         onBack={onBack}
         onAdvancedOpen={onAdvancedOpen}
         onStatsOpen={onStatsOpen}
-        returningFromAdvanced={returningFromAdvanced}
-        returningFromStats={returningFromStats}
+        returningFrom={returningFrom}
       />
     </UiStringsProvider>,
   )
@@ -93,13 +91,13 @@ describe('AppSettingsPage', () => {
     expect(screen.getByText(UI_STRINGS.en.install.settingsLabel)).toBeInTheDocument()
   })
 
-  it('focuses the back button on mount when returningFromAdvanced=false', () => {
-    renderPage({ returningFromAdvanced: false })
+  it('focuses the back button on mount when returningFrom=null', () => {
+    renderPage({ returningFrom: null })
     expect(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close })).toHaveFocus()
   })
 
-  it('focuses the right-chevron on mount when returningFromAdvanced=true', () => {
-    renderPage({ returningFromAdvanced: true })
+  it('focuses the right-chevron on mount when returningFrom=advanced', () => {
+    renderPage({ returningFrom: 'advanced' })
     expect(
       screen.getByRole('button', { name: UI_STRINGS.en.advanced.rightChevronAriaOnSettings }),
     ).toHaveFocus()

@@ -2,10 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 
 export type AppScreen = 'practice' | 'learn' | 'appSettings' | 'advanced' | 'stats'
 
+// Which sub-page the user backed out of, so AppSettings can restore focus to the
+// originating row. null = fresh entry (focus the back button). A single
+// discriminator — the back-from-advanced and back-from-stats states are
+// mutually exclusive by construction.
+export type ReturningFrom = 'advanced' | 'stats' | null
+
 export interface AppNavigation {
   appScreen: AppScreen
-  returningFromAdvanced: boolean
-  returningFromStats: boolean
+  returningFrom: ReturningFrom
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
   onAdvancedOpen(this: void): void
@@ -30,8 +35,12 @@ export function useAppNavigation({
   closeOnSessionView,
 }: UseAppNavigationArgs): AppNavigation {
   const [appScreen, setAppScreen] = useState<AppScreen>('practice')
-  const [returningFromAdvanced, setReturningFromAdvanced] = useState<boolean>(false)
-  const [returningFromStats, setReturningFromStats] = useState<boolean>(false)
+  const [returningFrom, setReturningFrom] = useState<ReturningFrom>(null)
+
+  const goTo = useCallback((screen: AppScreen, from: ReturningFrom = null): void => {
+    setAppScreen(screen)
+    setReturningFrom(from)
+  }, [])
 
   useEffect(() => {
     if (!closeOnSessionView) return
@@ -39,63 +48,47 @@ export function useAppNavigation({
     // setState inside effect is intentional — the session-start signal owns this transition.
     /* eslint-disable react-hooks/set-state-in-effect */
     setAppScreen('practice')
-    setReturningFromAdvanced(false)
-    setReturningFromStats(false)
+    setReturningFrom(null)
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [closeOnSessionView])
 
   const onLearnOpen = useCallback((): void => {
     if (controlsDisabled) return
-    setAppScreen('learn')
-    setReturningFromAdvanced(false)
-    setReturningFromStats(false)
-  }, [controlsDisabled])
+    goTo('learn')
+  }, [controlsDisabled, goTo])
 
   const onSettingsOpen = useCallback((): void => {
     if (controlsDisabled) return
-    setAppScreen('appSettings')
-    setReturningFromAdvanced(false)
-    setReturningFromStats(false)
-  }, [controlsDisabled])
+    goTo('appSettings')
+  }, [controlsDisabled, goTo])
 
   const onAdvancedOpen = useCallback((): void => {
     if (controlsDisabled) return
-    setAppScreen('advanced')
-    setReturningFromAdvanced(false)
-    setReturningFromStats(false)
-  }, [controlsDisabled])
+    goTo('advanced')
+  }, [controlsDisabled, goTo])
 
   const onStatsOpen = useCallback((): void => {
     if (controlsDisabled) return
-    setAppScreen('stats')
-    setReturningFromAdvanced(false)
-    setReturningFromStats(false)
-  }, [controlsDisabled])
+    goTo('stats')
+  }, [controlsDisabled, goTo])
 
   const onBackToPractice = useCallback((): void => {
-    setAppScreen('practice')
-    setReturningFromAdvanced(false)
-    setReturningFromStats(false)
-  }, [])
+    goTo('practice')
+  }, [goTo])
 
   const onBackFromAdvanced = useCallback((): void => {
-    setAppScreen('appSettings')
-    setReturningFromAdvanced(true)
-    setReturningFromStats(false)
-  }, [])
+    goTo('appSettings', 'advanced')
+  }, [goTo])
 
   // Mirrors onBackFromAdvanced: Stats is a sibling sub-page of App Settings, so
-  // backing out returns there with the focus flag set to restore the Stats row.
+  // backing out returns there with the sentinel set to restore the Stats row.
   const onBackFromStats = useCallback((): void => {
-    setAppScreen('appSettings')
-    setReturningFromStats(true)
-    setReturningFromAdvanced(false)
-  }, [])
+    goTo('appSettings', 'stats')
+  }, [goTo])
 
   return {
     appScreen,
-    returningFromAdvanced,
-    returningFromStats,
+    returningFrom,
     onLearnOpen,
     onSettingsOpen,
     onAdvancedOpen,

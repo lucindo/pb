@@ -27,7 +27,7 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
   return {
     navigation: {
       appScreen,
-      returningFromAdvanced: false,
+      returningFrom: null,
       onLearnOpen: () => {},
       onSettingsOpen: () => {},
       onAdvancedOpen: () => {},
