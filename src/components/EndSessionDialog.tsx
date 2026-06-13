@@ -64,13 +64,21 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
       ref={dialogRef}
       aria-labelledby="end-session-title"
       onClick={handleBackdropClick}
-      className="modal-fade m-auto max-w-sm rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-breathing-surface)] p-0 shadow-[0_30px_80px_rgba(0,0,0,0.35)] backdrop:bg-[var(--color-modal-backdrop)]"
+      className="modal-fade m-0 mt-auto mb-0 max-h-[85vh] w-full max-w-full overflow-y-auto rounded-t-3xl rounded-b-none border-t border-[var(--color-border-soft)] bg-[var(--color-breathing-surface)] p-0 shadow-[0_-10px_30px_rgba(0,0,0,0.10)] backdrop:bg-[var(--color-modal-backdrop)] sm:m-auto sm:max-h-[82vh] sm:w-auto sm:max-w-sm sm:rounded-2xl sm:border sm:shadow-[0_16px_48px_rgba(0,0,0,0.22)]"
     >
-      <div className="grid gap-5 p-6 sm:p-7">
+      <div className="p-6 pb-7 sm:p-7">
+        {/* Mobile grabber — mirrors the settings sheet so the early-end prompt
+            reads as a native bottom sheet on phones, not a floating web card. */}
+        <div
+          aria-hidden="true"
+          className="mx-auto mb-4 h-1 w-11 rounded-full sm:hidden"
+          style={{ background: 'var(--color-border-soft)' }}
+        />
+        <div className="grid gap-5">
         <h2
           id="end-session-title"
-          style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' }}
-          className="text-[var(--color-breathing-text)]"
+          style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.01em' }}
+          className="text-center text-[var(--color-breathing-text)]"
         >
           {strings.title}
         </h2>
@@ -85,17 +93,18 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
             ref={cancelButtonRef}
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-[var(--color-border-soft)] bg-transparent px-5 py-3 text-[15px] font-medium tracking-[0.04em] text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="rounded-xl border border-[var(--color-border-soft)] bg-transparent px-5 py-3 text-[15px] font-medium text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.cancel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-full bg-[var(--color-breathing-accent)] px-5 py-3 text-[15px] font-semibold tracking-[0.06em] text-[var(--color-breathing-on-accent)] transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="rounded-xl bg-[var(--color-breathing-accent)] px-5 py-3 text-[15px] font-semibold text-[var(--color-breathing-on-accent)] transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.confirm}
           </button>
+        </div>
         </div>
       </div>
     </dialog>
