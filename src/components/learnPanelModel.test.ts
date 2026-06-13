@@ -34,15 +34,15 @@ describe('getLearnPanelModel', () => {
     expect(model.showNativeApps).toBe(false)
   })
 
-  it('falls stretch back to resonant content without showing native app links', () => {
+  it('uses its own stretch content with the HRV video heading and no native app links', () => {
     const model = getLearnPanelModel({
       activePractice: 'stretch',
       learnContent: EN_CONTENT,
       strings: EN_STRINGS,
     })
 
-    expect(model.practiceContentKey).toBe('resonant')
-    expect(model.practiceContent).toBe(EN_CONTENT.practices.resonant)
+    expect(model.practiceContentKey).toBe('stretch')
+    expect(model.practiceContent).toBe(EN_CONTENT.practices.stretch)
     expect(model.videosHeading).toBe(EN_STRINGS.videosHeading)
     expect(model.showNativeApps).toBe(false)
   })

@@ -11,16 +11,14 @@ export interface LearnPanelModel {
   showNativeApps: boolean
 }
 
-function getPracticeContentKey(activePractice: PracticeId): LearnPracticeContentKey {
-  return activePractice === 'naviKriya' ? 'naviKriya' : 'resonant'
-}
-
 export function getLearnPanelModel(input: {
   activePractice: PracticeId
   learnContent: LearnContent
   strings: UiStrings['learn']
 }): LearnPanelModel {
-  const practiceContentKey = getPracticeContentKey(input.activePractice)
+  // PracticeId and LearnPracticeContentKey are now the same set — each practice
+  // has its own learn content (Stretch starts as an HRV copy plus its adaptation).
+  const practiceContentKey: LearnPracticeContentKey = input.activePractice
 
   return {
     practiceContentKey,

@@ -69,6 +69,18 @@ export function LearnPanel({
         <p className={BODY_CLASSES}>{practiceContent.description.section2.body}</p>
       </SectionCard>
 
+      {practiceContent.adaptation && (
+        <>
+          <SettingsSectionHeader label={practiceContent.adaptation.title} />
+          <SectionCard>
+            <p className={BODY_CLASSES}>{practiceContent.adaptation.body}</p>
+            <p className={`${BODY_CLASSES} mt-3 border-l-2 border-[var(--color-border-soft)] pl-3 text-xs italic`}>
+              {practiceContent.adaptation.note}
+            </p>
+          </SectionCard>
+        </>
+      )}
+
       <SettingsSectionHeader label={videosHeading} />
       <SectionCard>
         <div className="grid gap-2">

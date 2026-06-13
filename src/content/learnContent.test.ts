@@ -21,6 +21,20 @@ for (const locale of LOCALE_OPTIONS) {
       expect(LEARN_CONTENT[locale].practices.resonant.description.section2.body.length).toBeGreaterThan(0)
     })
 
+    it(`[${locale}] practices.stretch exists with non-empty description sections`, () => {
+      expect(LEARN_CONTENT[locale].practices.stretch.description.section1.title.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.stretch.description.section1.body.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.stretch.description.section2.title.length).toBeGreaterThan(0)
+      expect(LEARN_CONTENT[locale].practices.stretch.description.section2.body.length).toBeGreaterThan(0)
+    })
+
+    it(`[${locale}] practices.stretch carries the adaptation block (difference + warning)`, () => {
+      const adaptation = LEARN_CONTENT[locale].practices.stretch.adaptation
+      expect(adaptation?.title.length).toBeGreaterThan(0)
+      expect(adaptation?.body.length).toBeGreaterThan(0)
+      expect(adaptation?.note.length).toBeGreaterThan(0)
+    })
+
     it(`[${locale}] practices.naviKriya exists with non-empty description sections`, () => {
       expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.title.length).toBeGreaterThan(0)
       expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.body.length).toBeGreaterThan(0)
@@ -116,6 +130,11 @@ for (const locale of LOCALE_OPTIONS) {
 
     it(`[${locale}] resonant section2 body has no forbidden clinical verbs`, () => {
       expect(LEARN_CONTENT[locale].practices.resonant.description.section2.body).not.toMatch(clinicalVerbs)
+    })
+
+    it(`[${locale}] stretch adaptation body + note have no forbidden clinical verbs`, () => {
+      expect(LEARN_CONTENT[locale].practices.stretch.adaptation?.body).not.toMatch(clinicalVerbs)
+      expect(LEARN_CONTENT[locale].practices.stretch.adaptation?.note).not.toMatch(clinicalVerbs)
     })
 
     it(`[${locale}] naviKriya section1 body has no forbidden clinical verbs`, () => {

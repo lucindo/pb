@@ -43,6 +43,19 @@ describe('LearnPanel', () => {
     expect(screen.queryByText(UI_STRINGS.en.learn.nativeAppsHeading)).not.toBeInTheDocument()
   })
 
+  it('renders the Stretch adaptation block (title + warning note) for stretch', () => {
+    renderPanel('stretch')
+    const adaptation = LEARN_CONTENT.en.practices.stretch.adaptation
+    expect(screen.getByText(adaptation?.title ?? '')).toBeInTheDocument()
+    expect(screen.getByText(adaptation?.note ?? '')).toBeInTheDocument()
+  })
+
+  it('omits the adaptation block for resonant (HRV has no adaptation)', () => {
+    renderPanel('resonant')
+    const adaptation = LEARN_CONTENT.en.practices.stretch.adaptation
+    expect(screen.queryByText(adaptation?.title ?? '')).not.toBeInTheDocument()
+  })
+
   it('renders the locked affiliation micro-line + inspiredByForrest tagline', () => {
     renderPanel()
     expect(screen.getByText(LOCKED_COPY.en.inspiredByForrest)).toBeInTheDocument()
