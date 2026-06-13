@@ -741,3 +741,76 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     expect(computeStretchTotalSec(openEndedSettings)).toBeNull()
   })
 })
+
+describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-10)', () => {
+  // inhale fraction of a segment, derived from its inhale/cycle seconds.
+  const inhaleFraction = (seg: StretchSegment): number => seg.inhaleSec / seg.cycleSec
+
+  it('FR-9: targetRatio === ratio gives a uniform inhale fraction across all stages', () => {
+    const segs = buildStretchSegments({
+      ratio: '40:60',
+      targetRatio: '40:60',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    })
+    for (const seg of segs) {
+      expect(inhaleFraction(seg)).toBeCloseTo(0.4, 10)
+    }
+  })
+
+  it('FR-10: warm-up holds start, ramp shifts monotonically by step, cool-down holds target', () => {
+    const segs = buildStretchSegments({
+      ratio: '50:50',     // 50% inhale
+      targetRatio: '20:80', // 20% inhale
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    })
+    const warmUp = segs[0] as StretchSegment
+    const ramp = segs.filter((s) => s.stage === 'ramp')
+    const coolDown = segs[segs.length - 1] as StretchSegment
+
+    expect(warmUp.stage).toBe('hold-initial')
+    expect(inhaleFraction(warmUp)).toBeCloseTo(0.5, 10)
+    expect(inhaleFraction(coolDown)).toBeCloseTo(0.2, 10)
+
+    // First ramp step equals the start ratio (i=0); subsequent steps strictly
+    // decrease and stay within the [target, start] band.
+    expect(inhaleFraction(ramp[0] as StretchSegment)).toBeCloseTo(0.5, 10)
+    for (let i = 1; i < ramp.length; i++) {
+      const prev = inhaleFraction(ramp[i - 1] as StretchSegment)
+      const cur = inhaleFraction(ramp[i] as StretchSegment)
+      expect(cur).toBeLessThan(prev)
+      expect(cur).toBeGreaterThanOrEqual(0.2)
+      expect(cur).toBeLessThanOrEqual(0.5)
+    }
+  })
+
+  it('FR-11: a target ratio with MORE inhale than start walks the inhale fraction upward', () => {
+    const segs = buildStretchSegments({
+      ratio: '20:80',     // 20% inhale
+      targetRatio: '50:50', // 50% inhale
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    })
+    const warmUp = segs[0] as StretchSegment
+    const coolDown = segs[segs.length - 1] as StretchSegment
+    const ramp = segs.filter((s) => s.stage === 'ramp')
+
+    expect(inhaleFraction(warmUp)).toBeCloseTo(0.2, 10)
+    expect(inhaleFraction(coolDown)).toBeCloseTo(0.5, 10)
+    for (let i = 1; i < ramp.length; i++) {
+      expect(inhaleFraction(ramp[i] as StretchSegment)).toBeGreaterThan(
+        inhaleFraction(ramp[i - 1] as StretchSegment),
+      )
+    }
+  })
+})

@@ -91,8 +91,14 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
   if (!(targetBpm < initialBpm)) {
     throw new RangeError('targetBpm must be strictly below initialBpm')
   }
-  // ratio is read from settings.ratio internally
-  const ratioParts = RATIO_PARTS[settings.ratio]
+  // The breath ratio is stretched alongside the BPM: warm-up holds the start
+  // ratio, the ramp interpolates the inhale fraction toward the target across the
+  // same numSteps as the BPM walk, and cool-down holds the target ratio. When
+  // targetRatio === ratio the interpolation is a no-op (every segment gets the
+  // start inhale%), so the table is identical to the single-ratio behavior.
+  // exhale% is derived as 100 - inhale% — true for all four RATIO_PARTS labels.
+  const startInhalePct = RATIO_PARTS[settings.ratio].inhale
+  const targetInhalePct = RATIO_PARTS[settings.targetRatio].inhale
   const segments: StretchSegment[] = []
   let cursorSec = 0
   let cumulativeCycles = 0
@@ -101,12 +107,13 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     bpm: number,
     requestedSec: number,
     stage: StretchStage,
+    inhalePct: number,
     opts?: { snap?: boolean },
   ): StretchSegment {
     const snap = opts?.snap ?? true
     const cycleSec = 60 / bpm
-    const inhaleSec = cycleSec * (ratioParts.inhale / 100)
-    const exhaleSec = cycleSec * (ratioParts.exhale / 100)
+    const inhaleSec = cycleSec * (inhalePct / 100)
+    const exhaleSec = cycleSec * ((100 - inhalePct) / 100)
     const isOpenEnded = requestedSec === Infinity
     // Snap the requested duration to a whole number of cycles so the segment
     // boundary lands on an Out→In transition (mid-cycle BPM-step bug fix).
@@ -139,9 +146,10 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     return seg
   }
 
-  // Step 1: warm-up hold at initialBpm (always present — minimum 5 min).
+  // Step 1: warm-up hold at initialBpm (always present — minimum 2 min).
   // Snapped to whole cycles so the warm-up boundary lands on an Out→In transition.
-  segments.push(makeSegment(initialBpm, warmUpMinutes * 60, 'hold-initial'))
+  // Holds the start ratio's inhale fraction.
+  segments.push(makeSegment(initialBpm, warmUpMinutes * 60, 'hold-initial', startInhalePct))
 
   // Step 2: ramp — each step is strictly < 0.5 BPM by construction.
   // Every ramp step is also snapped to whole cycles for the same Out→In boundary reason.
@@ -155,13 +163,17 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
 
   for (let i = 0; i < numSteps; i++) {
     const stepBpm = initialBpm - i * (bpmSpan / numSteps)
-    segments.push(makeSegment(stepBpm, stepRequestedSec, 'ramp'))
+    // The inhale fraction walks from start toward target on the same step grid as
+    // the BPM. Like the BPM, the last ramp step sits one step short of target;
+    // the target ratio is reached at the cool-down hold below.
+    const stepInhalePct = startInhalePct - i * ((startInhalePct - targetInhalePct) / numSteps)
+    segments.push(makeSegment(stepBpm, stepRequestedSec, 'ramp', stepInhalePct))
   }
 
   // Step 3: cool-down hold at targetBpm.
   if (coolDownMinutes === 'open-ended') {
     // Unbounded final segment — no residual absorption needed.
-    segments.push(makeSegment(targetBpm, Infinity, 'hold-target'))
+    segments.push(makeSegment(targetBpm, Infinity, 'hold-target', targetInhalePct))
   } else {
     // Bounded cool-down: span = requestedTotalSec - cursorSec absorbs the
     // cycle-snapping residual from Steps 1–2 so the realized total equals the
@@ -169,7 +181,7 @@ export function buildStretchSegments(settings: StretchSettings): StretchSegment[
     // (floored at one cycle) while keeping the true 60/targetBpm cycleSec, so
     // getStretchFrame's phase math is unchanged. Rationale in the docstring above.
     const requestedTotalSec = (warmUpMinutes + rampDurationMinutes + coolDownMinutes) * 60
-    segments.push(makeSegment(targetBpm, requestedTotalSec - cursorSec, 'hold-target', { snap: false }))
+    segments.push(makeSegment(targetBpm, requestedTotalSec - cursorSec, 'hold-target', targetInhalePct, { snap: false }))
   }
 
   return segments
