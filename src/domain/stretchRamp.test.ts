@@ -771,9 +771,9 @@ describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-1
       rampDurationMinutes: 5,
       coolDownMinutes: 5,
     })
-    const warmUp = segs[0] as StretchSegment
+    const warmUp = requireValue(segs[0], 'Expected warm-up segment')
     const ramp = segs.filter((s) => s.stage === 'ramp')
-    const coolDown = segs[segs.length - 1] as StretchSegment
+    const coolDown = lastSegment(segs)
 
     expect(warmUp.stage).toBe('hold-initial')
     expect(inhaleFraction(warmUp)).toBeCloseTo(0.5, 10)
@@ -801,8 +801,8 @@ describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-1
       rampDurationMinutes: 5,
       coolDownMinutes: 5,
     })
-    const warmUp = segs[0] as StretchSegment
-    const coolDown = segs[segs.length - 1] as StretchSegment
+    const warmUp = requireValue(segs[0], 'Expected warm-up segment')
+    const coolDown = lastSegment(segs)
     const ramp = segs.filter((s) => s.stage === 'ramp')
 
     expect(inhaleFraction(warmUp)).toBeCloseTo(0.2, 10)
