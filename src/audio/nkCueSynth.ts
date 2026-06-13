@@ -149,6 +149,18 @@ function buildNKToneNodes(
   return { osc, partialGain, filter, envelope, stopAt, cleanupAt }
 }
 
+// Disconnect a built tone's four nodes. Wrapped per-node so a node already
+// disconnected (by a prior 'ended' or cancel()) doesn't abort the rest — the
+// 'ended' listener and cancel() may both fire and both must be idempotent.
+function disconnectToneNodes(
+  t: { osc: OscillatorNode; partialGain: GainNode; filter: BiquadFilterNode; envelope: GainNode },
+): void {
+  try { t.osc.disconnect() } catch { /* silent */ }
+  try { t.partialGain.disconnect() } catch { /* silent */ }
+  try { t.filter.disconnect() } catch { /* silent */ }
+  try { t.envelope.disconnect() } catch { /* silent */ }
+}
+
 // --- Exported NK cue builders ---
 
 /**
@@ -197,12 +209,7 @@ export function scheduleNKTick(
     destination, preset, NK_TICK_PEAK_GAIN, NK_TICK_DECAY_TAU,
   )
   // Disconnect tick nodes on 'ended'
-  t.osc.addEventListener('ended', () => {
-    try { t.osc.disconnect() } catch { /* silent */ }
-    try { t.partialGain.disconnect() } catch { /* silent */ }
-    try { t.filter.disconnect() } catch { /* silent */ }
-    try { t.envelope.disconnect() } catch { /* silent */ }
-  }, { once: true })
+  t.osc.addEventListener('ended', () => { disconnectToneNodes(t) }, { once: true })
 
   // cancel() — stop oscillator + disconnect chain. Same try/catch posture as the
   // 'ended' listener above. The 'ended' listener and cancel() may both fire;
@@ -210,10 +217,7 @@ export function scheduleNKTick(
   const cancel = (): void => {
     t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
     try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
-    try { t.osc.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { t.partialGain.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { t.filter.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { t.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+    disconnectToneNodes(t)
   }
 
   return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt, cancel }
@@ -238,12 +242,7 @@ export function scheduleCountdownTick(
     destination, preset, COUNTDOWN_TICK_PEAK_GAIN, COUNTDOWN_TICK_DECAY_TAU,
   )
   // Disconnect the tick nodes on 'ended' (mirrors scheduleNKTick).
-  t.osc.addEventListener('ended', () => {
-    try { t.osc.disconnect() } catch { /* silent */ }
-    try { t.partialGain.disconnect() } catch { /* silent */ }
-    try { t.filter.disconnect() } catch { /* silent */ }
-    try { t.envelope.disconnect() } catch { /* silent */ }
-  }, { once: true })
+  t.osc.addEventListener('ended', () => { disconnectToneNodes(t) }, { once: true })
 
   // cancel() — stop oscillator + disconnect chain. Same try/catch posture as the
   // 'ended' listener above. The 'ended' listener and cancel() may both fire;
@@ -251,10 +250,7 @@ export function scheduleCountdownTick(
   const cancel = (): void => {
     t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
     try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
-    try { t.osc.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { t.partialGain.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { t.filter.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { t.envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+    disconnectToneNodes(t)
   }
 
   return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt, cancel }
@@ -302,12 +298,7 @@ export function scheduleEndChord(
       { attackSec: END_CHORD_ATTACK_SEC, releaseSec: END_CHORD_RELEASE_SEC },
     )
     // Disconnect each chord tone's nodes on 'ended'
-    t.osc.addEventListener('ended', () => {
-      try { t.osc.disconnect() } catch { /* silent */ }
-      try { t.partialGain.disconnect() } catch { /* silent */ }
-      try { t.filter.disconnect() } catch { /* silent */ }
-      try { t.envelope.disconnect() } catch { /* silent */ }
-    }, { once: true })
+    t.osc.addEventListener('ended', () => { disconnectToneNodes(t) }, { once: true })
     voiceOscs.push(t.osc)
     voicePartialGains.push(t.partialGain)
     voiceFilters.push(t.filter)
