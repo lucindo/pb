@@ -3,16 +3,16 @@ export type DurationOption = number | 'open-ended'
 
 // Stretch stage durations are minute-based: Warm-up (initial-BPM hold), Ramp
 // (the BPM walk-down), and Cool-down (target-BPM hold). The structural minimum
-// total is 5 + 5 + 5 = 15 min, so no separate "session long enough" gate is needed.
-export type WarmUpMinutes = 5 | 10 | 15
+// total is 2 + 2 + 2 = 6 min, so no separate "session long enough" gate is needed.
+export type WarmUpMinutes = 2 | 3 | 4 | 5 | 10
 
-export const WARMUP_MINUTES_OPTIONS = [5, 10, 15] as const satisfies readonly WarmUpMinutes[]
+export const WARMUP_MINUTES_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly WarmUpMinutes[]
 
-export type CoolDownMinutes = 5 | 10 | 15 | 20 | 'open-ended'
+export type CoolDownMinutes = 2 | 3 | 4 | 5 | 10 | 15 | 20 | 25 | 30 | 'open-ended'
 
-export const COOLDOWN_OPTIONS = [5, 10, 15, 20, 'open-ended'] as const satisfies readonly CoolDownMinutes[]
+export const COOLDOWN_OPTIONS = [2, 3, 4, 5, 10, 15, 20, 25, 30, 'open-ended'] as const satisfies readonly CoolDownMinutes[]
 
-export const RAMP_DURATION_OPTIONS = [5, 10, 15, 20] as const satisfies readonly number[]
+export const RAMP_DURATION_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly number[]
 
 // SessionSettings is standard-only — 3 fields (bpm, ratio, durationMinutes).
 export interface SessionSettings {
@@ -25,6 +25,7 @@ export interface SessionSettings {
 // durationMinutes is NOT stored here (it is computed from the ramp table).
 export interface StretchSettings {
   ratio: RatioLabel
+  targetRatio: RatioLabel
   initialBpm: number
   targetBpm: number
   warmUpMinutes: WarmUpMinutes
@@ -92,6 +93,7 @@ export const DEFAULT_SETTINGS: SessionSettings = {
 // ratio is consumed by buildStretchSegments internally.
 export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
   ratio: '40:60',
+  targetRatio: '40:60',
   initialBpm: 5.5,
   targetBpm: 4.5,
   warmUpMinutes: 5,
@@ -244,6 +246,13 @@ export function validateStretchSettings(settings: StretchSettings): StretchSetti
     // is preserved verbatim so the runtime string remains correct.
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
+  }
+
+  // targetRatio has no ordering constraint relative to the start ratio — it may
+  // carry more, less, or equal inhale weight. Only the label itself is validated.
+  if (!isValidRatio(settings.targetRatio)) {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    throw new RangeError(`Unsupported targetRatio: ${settings.targetRatio}`)
   }
 
   if (!isValidBpm(settings.initialBpm)) {

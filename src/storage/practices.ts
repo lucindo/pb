@@ -130,8 +130,13 @@ export function coerceStretchSettings(raw: unknown): StretchSettings {
     initialBpm = DEFAULT_STRETCH_SETTINGS.initialBpm
     targetBpm  = DEFAULT_STRETCH_SETTINGS.targetBpm
   }
+  // Coerce the start ratio first so a missing/invalid targetRatio can fall back to
+  // the SAME value (FR-13) — a pre-targetRatio persisted slice then behaves exactly
+  // as it did (target == start == no ratio transition).
+  const ratio = isValidRatio(r.ratio) ? r.ratio : DEFAULT_STRETCH_SETTINGS.ratio
   return {
-    ratio:               isValidRatio(r.ratio)                       ? r.ratio               : DEFAULT_STRETCH_SETTINGS.ratio,
+    ratio,
+    targetRatio:         isValidRatio(r.targetRatio)                 ? r.targetRatio         : ratio,
     initialBpm,
     targetBpm,
     warmUpMinutes:       isValidWarmUp(r.warmUpMinutes)              ? r.warmUpMinutes       : DEFAULT_STRETCH_SETTINGS.warmUpMinutes,

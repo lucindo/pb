@@ -81,6 +81,8 @@ export interface UiStrings {
       readonly initialBpmShortLabel: string
       readonly targetBpmLabel: string
       readonly targetBpmShortLabel: string
+      readonly startRatioLabel: string
+      readonly targetRatioLabel: string
       readonly holdInitialLabel: string
       readonly holdTargetLabel: string
       readonly rampDurationLabel: string
@@ -282,6 +284,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         initialBpmShortLabel: 'Start',
         targetBpmLabel: 'Target BPM',
         targetBpmShortLabel: 'Target',
+        startRatioLabel: 'Start Ratio',
+        targetRatioLabel: 'Target Ratio',
         holdInitialLabel: 'Warm-up',
         holdTargetLabel: 'Settle',
         rampDurationLabel: 'Stretch',
@@ -459,6 +463,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         initialBpmShortLabel: 'Inicial',
         targetBpmLabel: 'RPM alvo',
         targetBpmShortLabel: 'Alvo',
+        startRatioLabel: 'Proporção Inicial',
+        targetRatioLabel: 'Proporção Alvo',
         holdInitialLabel: 'Aquecimento',
         holdTargetLabel: 'Estabilizar',
         rampDurationLabel: 'Progressão',

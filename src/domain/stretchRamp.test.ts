@@ -15,6 +15,7 @@ import type { StretchSettings } from './settings'
 // Base stretch settings fixture (valid, finite): warm-up 5 + ramp 20 + cool-down 5 = 30 min.
 const baseSettings: StretchSettings = {
   ratio: '40:60',
+  targetRatio: '40:60',
   initialBpm: 6,
   targetBpm: 4,
   warmUpMinutes: 5,
@@ -201,9 +202,10 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
   it('WR-01: wide slow ramp — cool-down span stays positive and cycleIndex is monotonic', () => {
     const wideSlowSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 14,
       targetBpm: 1.5,
-      warmUpMinutes: 15,
+      warmUpMinutes: 10,
       rampDurationMinutes: 5,
       coolDownMinutes: 5,
     }
@@ -324,6 +326,7 @@ describe('getStretchFrame', () => {
     // Drift-prone config: non-integer cycle counts in every segment.
     const driftSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 5.5,
       targetBpm: 4.5,
       warmUpMinutes: 5,
@@ -598,6 +601,7 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     // DEFAULT_STRETCH_SETTINGS is the same 5.5→4.5 BPM, 5/5/5 fixture.
     const minSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 5.5,
       targetBpm: 4.5,
       warmUpMinutes: 5,
@@ -627,6 +631,7 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     // whole-minute total exactly — previously the snapped total differed from the raw minute sum.
     const driftSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 5.5,
       targetBpm: 4,
       warmUpMinutes: 5,
@@ -734,5 +739,78 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     expect(coolDown.stage).toBe('hold-target')
     expect(coolDown.endSec).toBe(Infinity)
     expect(computeStretchTotalSec(openEndedSettings)).toBeNull()
+  })
+})
+
+describe('ratio transition — start ratio walks toward target ratio (FR-9, FR-10)', () => {
+  // inhale fraction of a segment, derived from its inhale/cycle seconds.
+  const inhaleFraction = (seg: StretchSegment): number => seg.inhaleSec / seg.cycleSec
+
+  it('FR-9: targetRatio === ratio gives a uniform inhale fraction across all stages', () => {
+    const segs = buildStretchSegments({
+      ratio: '40:60',
+      targetRatio: '40:60',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    })
+    for (const seg of segs) {
+      expect(inhaleFraction(seg)).toBeCloseTo(0.4, 10)
+    }
+  })
+
+  it('FR-10: warm-up holds start, ramp shifts monotonically by step, cool-down holds target', () => {
+    const segs = buildStretchSegments({
+      ratio: '50:50',     // 50% inhale
+      targetRatio: '20:80', // 20% inhale
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    })
+    const warmUp = requireValue(segs[0], 'Expected warm-up segment')
+    const ramp = segs.filter((s) => s.stage === 'ramp')
+    const coolDown = lastSegment(segs)
+
+    expect(warmUp.stage).toBe('hold-initial')
+    expect(inhaleFraction(warmUp)).toBeCloseTo(0.5, 10)
+    expect(inhaleFraction(coolDown)).toBeCloseTo(0.2, 10)
+
+    // First ramp step equals the start ratio (i=0); subsequent steps strictly
+    // decrease and stay within the [target, start] band.
+    expect(inhaleFraction(ramp[0] as StretchSegment)).toBeCloseTo(0.5, 10)
+    for (let i = 1; i < ramp.length; i++) {
+      const prev = inhaleFraction(ramp[i - 1] as StretchSegment)
+      const cur = inhaleFraction(ramp[i] as StretchSegment)
+      expect(cur).toBeLessThan(prev)
+      expect(cur).toBeGreaterThanOrEqual(0.2)
+      expect(cur).toBeLessThanOrEqual(0.5)
+    }
+  })
+
+  it('FR-11: a target ratio with MORE inhale than start walks the inhale fraction upward', () => {
+    const segs = buildStretchSegments({
+      ratio: '20:80',     // 20% inhale
+      targetRatio: '50:50', // 50% inhale
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 5,
+      rampDurationMinutes: 5,
+      coolDownMinutes: 5,
+    })
+    const warmUp = requireValue(segs[0], 'Expected warm-up segment')
+    const coolDown = lastSegment(segs)
+    const ramp = segs.filter((s) => s.stage === 'ramp')
+
+    expect(inhaleFraction(warmUp)).toBeCloseTo(0.2, 10)
+    expect(inhaleFraction(coolDown)).toBeCloseTo(0.5, 10)
+    for (let i = 1; i < ramp.length; i++) {
+      expect(inhaleFraction(ramp[i] as StretchSegment)).toBeGreaterThan(
+        inhaleFraction(ramp[i - 1] as StretchSegment),
+      )
+    }
   })
 })

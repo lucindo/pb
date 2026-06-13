@@ -64,6 +64,13 @@ export function StretchSettingsForm({
             onChange={updateInitialBpm}
             strings={strings.stepper}
           />
+          <SettingsSegmentedRow<RatioLabel>
+            label={strings.startRatioLabel}
+            ariaLabel={strings.stepper.fieldAriaLabel(strings.startRatioLabel)}
+            value={settings.ratio}
+            options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
+            onChange={(ratio) => { updateStretchSettings({ ratio }) }}
+          />
           <SettingsStepper
             label={strings.targetBpmLabel}
             value={settings.targetBpm}
@@ -73,11 +80,11 @@ export function StretchSettingsForm({
             strings={strings.stepper}
           />
           <SettingsSegmentedRow<RatioLabel>
-            label={strings.ratioLabel}
-            ariaLabel={strings.stepper.fieldAriaLabel(strings.ratioLabel)}
-            value={settings.ratio}
+            label={strings.targetRatioLabel}
+            ariaLabel={strings.stepper.fieldAriaLabel(strings.targetRatioLabel)}
+            value={settings.targetRatio}
             options={RATIO_OPTIONS.map((id) => ({ id, label: id }))}
-            onChange={(ratio) => { updateStretchSettings({ ratio }) }}
+            onChange={(targetRatio) => { updateStretchSettings({ targetRatio }) }}
           />
           <SettingsStepper<WarmUpMinutes>
             label={strings.holdInitialLabel}

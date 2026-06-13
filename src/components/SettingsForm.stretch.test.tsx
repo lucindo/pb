@@ -178,8 +178,9 @@ describe('StretchSettingsForm', () => {
     for (const group of STRETCH_GROUPS) {
       expect(screen.queryByRole('group', { name: group })).not.toBeInTheDocument()
     }
-    // The Ratio and Duration groups must also be absent
-    expect(screen.queryByRole('group', { name: 'Ratio' })).not.toBeInTheDocument()
+    // The ratio and Duration groups must also be absent
+    expect(screen.queryByRole('group', { name: 'Start Ratio' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Target Ratio' })).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Duration' })).not.toBeInTheDocument()
   })
 
@@ -189,22 +190,35 @@ describe('StretchSettingsForm', () => {
     for (const group of STRETCH_GROUPS) {
       expect(screen.getByRole('group', { name: group })).toBeInTheDocument()
     }
-    expect(screen.getByRole('group', { name: 'Ratio' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Start Ratio' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Target Ratio' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Duration' })).toBeInTheDocument()
   })
 
-  it('changing ratio calls onStretchSettingsChange with updated ratio', async () => {
+  it('changing start ratio calls onStretchSettingsChange with updated ratio', async () => {
     const user = userEvent.setup()
     const { onStretchSettingsChange } = renderForm({
       activePractice: 'stretch',
       stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, ratio: '40:60' },
     })
-    // J16: ratio is now a segmented control (radio buttons) inside the
+    // Ratio is a segmented control (radio buttons) inside the
     // SettingsSegmentedRow fieldset, not a +/- stepper.
-    const ratioGroup = screen.getByRole('group', { name: 'Ratio' })
+    const ratioGroup = screen.getByRole('group', { name: 'Start Ratio' })
     await user.click(within(ratioGroup).getByRole('radio', { name: '50:50' }))
     expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
     expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).ratio).toBe('50:50')
+  })
+
+  it('changing target ratio calls onStretchSettingsChange with updated targetRatio', async () => {
+    const user = userEvent.setup()
+    const { onStretchSettingsChange } = renderForm({
+      activePractice: 'stretch',
+      stretchSettings: { ...DEFAULT_STRETCH_SETTINGS, targetRatio: '40:60' },
+    })
+    const targetRatioGroup = screen.getByRole('group', { name: 'Target Ratio' })
+    await user.click(within(targetRatioGroup).getByRole('radio', { name: '20:80' }))
+    expect(onStretchSettingsChange).toHaveBeenCalledTimes(1)
+    expect((onStretchSettingsChange.mock.calls[0]?.[0] as StretchSettings).targetRatio).toBe('20:80')
   })
 })
 
