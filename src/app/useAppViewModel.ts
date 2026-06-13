@@ -16,8 +16,10 @@ import { useWakeLock } from '../hooks/useWakeLock'
 import {
   loadActivePractice,
   loadPractices,
+  resetPracticeStats,
   saveActivePractice,
   saveStretchSettings,
+  ZERO_STATS,
   type PracticeId,
   type PracticeMap,
 } from '../storage'
@@ -30,6 +32,7 @@ import {
   createPracticeSettingsViewModel,
   type AppEndSessionDialogViewModel,
   type AppViewModel,
+  type PracticeStatsMap,
 } from './appViewModel'
 import {
   getBreathingPrimaryAction,
@@ -37,6 +40,14 @@ import {
 } from './sessionPresentation'
 import { useAppNavigation } from './useAppNavigation'
 import { getPracticeTitle, getPracticeToggleStrings } from './practiceCopy'
+
+function snapshotStats(practices: PracticeMap): PracticeStatsMap {
+  return {
+    resonant: practices.resonant.stats,
+    stretch: practices.stretch.stats,
+    naviKriya: practices.naviKriya.stats,
+  }
+}
 
 export function useAppViewModel(): AppViewModel {
   const initialPractices = useMemo<PracticeMap>(() => loadPractices(), [])
@@ -76,6 +87,22 @@ export function useAppViewModel(): AppViewModel {
     controlsDisabled,
     closeOnSessionView: controlsDisabled,
   })
+
+  // Stats are written to disk by the session controllers but not mirrored into
+  // this state, so re-read on Stats-page entry to reflect the latest session.
+  // The page is unreachable mid-session, so a read-on-open is sufficient.
+  const [stats, setStats] = useState<PracticeStatsMap>(() => snapshotStats(initialPractices))
+  const navOnStatsOpen = appNavigation.onStatsOpen
+  const onStatsOpen = useCallback((): void => {
+    setStats(snapshotStats(loadPractices()))
+    navOnStatsOpen()
+  }, [navOnStatsOpen])
+  const onResetPracticeStats = useCallback((practice: PracticeId): void => {
+    resetPracticeStats(practice)
+    // Optimistic RAM update — the disk write is fire-and-forget (quota / ITP).
+    setStats((prev) => ({ ...prev, [practice]: { ...ZERO_STATS } }))
+  }, [])
+
   const breathingResetSession = breathing.resetSession
   const naviClearCompletion = navi.clearCompletion
   const breathingStartOrCancel = breathing.startOrCancel
@@ -243,6 +270,7 @@ export function useAppViewModel(): AppViewModel {
 
   return {
     activePractice,
+    locale,
     appTitle: getPracticeTitle(activePractice, uiStrings),
     controlsDisabled,
     practiceSession,
@@ -255,8 +283,10 @@ export function useAppViewModel(): AppViewModel {
     practiceToggleStrings: getPracticeToggleStrings(uiStrings),
     featureFlags,
     install,
-    navigation: appNavigation,
+    navigation: { ...appNavigation, onStatsOpen },
     dialogs: { endSessionDialogs },
+    stats,
+    onResetPracticeStats,
     onSwitchPractice,
   }
 }

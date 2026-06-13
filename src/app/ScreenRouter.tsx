@@ -4,6 +4,7 @@ import type { AppViewModel } from './appViewModel'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { AppSettingsPage } from './pages/AppSettingsPage'
 import { LearnPage } from './pages/LearnPage'
+import { StatsPage } from './pages/StatsPage'
 import { PracticeScreen } from './PracticeScreen'
 
 export interface ScreenRouterProps {
@@ -35,11 +36,28 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           onInstall={vm.install.onInstall}
           onBack={vm.navigation.onBackToPractice}
           onAdvancedOpen={vm.navigation.onAdvancedOpen}
+          onStatsOpen={vm.navigation.onStatsOpen}
           returningFromAdvanced={vm.navigation.returningFromAdvanced}
+          returningFromStats={vm.navigation.returningFromStats}
         />
       )
     case 'advanced':
       return <AdvancedPage onBack={vm.navigation.onBackFromAdvanced} />
+    case 'stats':
+      return (
+        <StatsPage
+          strings={vm.uiStrings.stats}
+          practiceNames={{
+            resonant: vm.uiStrings.practice.switcher.resonantName,
+            stretch: vm.uiStrings.practice.switcher.stretchName,
+            naviKriya: vm.uiStrings.practice.switcher.naviKriyaName,
+          }}
+          stats={vm.stats}
+          locale={vm.locale}
+          onResetPracticeStats={vm.onResetPracticeStats}
+          onBack={vm.navigation.onBackFromStats}
+        />
+      )
     case 'practice':
     default:
       return <PracticeScreen vm={vm} />

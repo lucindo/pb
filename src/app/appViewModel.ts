@@ -7,6 +7,7 @@ import type {
   BreathingSessionPhase,
   CueStyleId,
   LeadInDigit,
+  LocaleId,
   NaviKriyaSettings,
   NaviLeadInDigit,
   SessionFrame,
@@ -15,7 +16,7 @@ import type {
   StretchSettings,
 } from '../domain'
 import type { FeatureFlags } from '../featureFlags'
-import type { PracticeId } from '../storage'
+import type { PersistedStats, PracticeId } from '../storage'
 import type { getPracticeToggleStrings } from './practiceCopy'
 import {
   getBreathingPresentation,
@@ -46,11 +47,14 @@ export interface AppEndSessionDialogViewModel {
 export interface AppNavigationViewModel {
   appScreen: AppScreen
   returningFromAdvanced: boolean
+  returningFromStats: boolean
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
   onAdvancedOpen(this: void): void
+  onStatsOpen(this: void): void
   onBackToPractice(this: void): void
   onBackFromAdvanced(this: void): void
+  onBackFromStats(this: void): void
 }
 
 export interface AppDialogsViewModel {
@@ -120,8 +124,13 @@ export type AppPracticeSettingsViewModel =
       onChange(this: void, settings: NaviKriyaSettings): void
     }
 
+// Per-practice stats snapshot held in app state and surfaced on the Stats page.
+// Refreshed from disk when the page opens and updated optimistically on reset.
+export type PracticeStatsMap = Readonly<Record<PracticeId, PersistedStats>>
+
 export interface AppViewModel {
   activePractice: PracticeId
+  locale: LocaleId
   appTitle: string
   controlsDisabled: boolean
   practiceSession: AppPracticeSessionViewModel
@@ -136,6 +145,8 @@ export interface AppViewModel {
   install: AppInstallViewModel
   navigation: AppNavigationViewModel
   dialogs: AppDialogsViewModel
+  stats: PracticeStatsMap
+  onResetPracticeStats(this: void, practice: PracticeId): void
   onSwitchPractice(this: void, next: PracticeId): void
 }
 

@@ -15,13 +15,17 @@ function renderPage(
     installable: boolean
     onInstall: () => Promise<void>
     onAdvancedOpen: () => void
+    onStatsOpen: () => void
     returningFromAdvanced: boolean
+    returningFromStats: boolean
   }> = {},
 ) {
   const onBack = props.onBack ?? vi.fn()
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
   const onAdvancedOpen = props.onAdvancedOpen ?? vi.fn()
+  const onStatsOpen = props.onStatsOpen ?? vi.fn()
   const returningFromAdvanced = props.returningFromAdvanced ?? false
+  const returningFromStats = props.returningFromStats ?? false
   const utils = render(
     <UiStringsProvider value={UI_STRINGS.en}>
       <AppSettingsPage
@@ -31,11 +35,13 @@ function renderPage(
         onInstall={onInstall}
         onBack={onBack}
         onAdvancedOpen={onAdvancedOpen}
+        onStatsOpen={onStatsOpen}
         returningFromAdvanced={returningFromAdvanced}
+        returningFromStats={returningFromStats}
       />
     </UiStringsProvider>,
   )
-  return { ...utils, onBack, onInstall, onAdvancedOpen }
+  return { ...utils, onBack, onInstall, onAdvancedOpen, onStatsOpen }
 }
 
 describe('AppSettingsPage', () => {
@@ -54,6 +60,13 @@ describe('AppSettingsPage', () => {
     const { onBack } = renderPage()
     await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close }))
     expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('Statistics row invokes onStatsOpen', async () => {
+    const user = userEvent.setup()
+    const { onStatsOpen } = renderPage()
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.statsRow }))
+    expect(onStatsOpen).toHaveBeenCalledTimes(1)
   })
 
   it('renders all four picker radiogroups (Theme / Cue / Timbre / Language)', () => {

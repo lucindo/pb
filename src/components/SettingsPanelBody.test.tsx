@@ -13,9 +13,11 @@ function renderBody(
     isStandalone: boolean
     installable: boolean
     onInstall: () => Promise<void>
+    onStatsOpen: () => void
   }> = {},
 ) {
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
+  const onStatsOpen = props.onStatsOpen ?? vi.fn()
   return {
     ...render(
       <SettingsPanelBody
@@ -25,9 +27,11 @@ function renderBody(
         isStandalone={props.isStandalone ?? false}
         installable={props.installable ?? false}
         onInstall={onInstall}
+        onStatsOpen={onStatsOpen}
       />,
     ),
     onInstall,
+    onStatsOpen,
   }
 }
 
@@ -79,6 +83,20 @@ describe('SettingsPanelBody — J14 sectioning', () => {
     for (const rg of screen.getAllByRole('radiogroup')) {
       expect(rg).toHaveAttribute('aria-disabled', 'true')
     }
+  })
+})
+
+describe('SettingsPanelBody — Statistics row', () => {
+  it('renders a Statistics row that fires onStatsOpen when clicked', async () => {
+    const user = userEvent.setup()
+    const { onStatsOpen } = renderBody()
+    await user.click(screen.getByRole('button', { name: EN.statsRow }))
+    expect(onStatsOpen).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables the Statistics row when inSessionView=true', () => {
+    renderBody({ inSessionView: true })
+    expect(screen.getByRole('button', { name: EN.statsRow })).toBeDisabled()
   })
 })
 

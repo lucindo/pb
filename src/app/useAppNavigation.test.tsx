@@ -190,4 +190,54 @@ describe('useAppNavigation', () => {
     expect(result.current.appScreen).toBe('practice')
     expect(result.current.returningFromAdvanced).toBe(false)
   })
+
+  it('navigates to stats via onStatsOpen and back to appSettings with returningFromStats=true', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onStatsOpen()
+    })
+    expect(result.current.appScreen).toBe('stats')
+
+    act(() => {
+      result.current.onBackFromStats()
+    })
+    expect(result.current.appScreen).toBe('appSettings')
+    expect(result.current.returningFromStats).toBe(true)
+  })
+
+  it('onStatsOpen is gated by controlsDisabled (no leaving mid-session)', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: true,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onStatsOpen()
+    })
+    expect(result.current.appScreen).toBe('practice')
+  })
+
+  it('subsequent navigation clears returningFromStats', () => {
+    const { result } = renderNavigation({
+      controlsDisabled: false,
+      closeOnSessionView: false,
+    })
+
+    act(() => {
+      result.current.onStatsOpen()
+    })
+    act(() => {
+      result.current.onBackFromStats()
+    })
+    expect(result.current.returningFromStats).toBe(true)
+
+    act(() => {
+      result.current.onSettingsOpen()
+    })
+    expect(result.current.returningFromStats).toBe(false)
+  })
 })

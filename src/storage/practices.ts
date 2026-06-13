@@ -10,7 +10,7 @@
 // keys are read from a guarded Record (ASVS V5).
 
 import { coerceSettings } from './settings'
-import { coerceStats, COUNT_THRESHOLD_MS, type PersistedStats } from './stats'
+import { coerceStats, COUNT_THRESHOLD_MS, ZERO_STATS, type PersistedStats } from './stats'
 import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 import type { SessionSettings } from '../domain/settings'
 import {
@@ -279,6 +279,20 @@ function recordPracticeSession(
     deps,
   )
   return next
+}
+
+// Wipes ONE practice slice's stats back to zero; the other slices, this slice's
+// settings, and any forward-compatible unknown sub-keys all survive (same
+// slice-isolation / raw-spread posture as recordPracticeSession). Fire-and-forget
+// write — callers treat their optimistic ZERO update as RAM-authoritative.
+export function resetPracticeStats(key: PracticeId, deps: StorageDeps = {}): void {
+  const env = readEnvelope(deps)
+  const rawPractices = rawPracticesMap(env.practices)
+  const rawSlice = asRecord(rawPractices[key])
+  writeEnvelope(
+    { ...env, practices: { ...rawPractices, [key]: { ...rawSlice, stats: { ...ZERO_STATS } } } },
+    deps,
+  )
 }
 
 export function recordResonantSession(

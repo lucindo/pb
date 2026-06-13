@@ -1,6 +1,7 @@
-import { useState, type ReactElement, type ReactNode } from 'react'
+import { useState, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import type { UiStrings } from '../content/strings'
+import { ChevronRightIcon } from './icons'
 import { CuePicker } from './CuePicker'
 import { IosInstallSteps } from './IosInstallSteps'
 import { LanguagePicker } from './LanguagePicker'
@@ -27,6 +28,9 @@ export interface SettingsPanelBodyProps {
   isStandalone: boolean
   installable: boolean
   onInstall(this: void): Promise<void>
+  onStatsOpen(this: void): void
+  // Focused when returning from the Stats sub-page (a11y focus restoration).
+  statsRowRef?: Ref<HTMLButtonElement>
 }
 
 function SettingsInstallSection({
@@ -106,10 +110,31 @@ export function SettingsPanelBody({
   isStandalone,
   installable,
   onInstall,
+  onStatsOpen,
+  statsRowRef,
 }: SettingsPanelBodyProps): ReactElement {
   const showInstallRow = installable && !isStandalone
   return (
     <div>
+      {/* Statistics — opens the dedicated stats sub-page */}
+      <SettingsSectionHeader label={strings.appSettings.sections.statistics} />
+      <SectionCard padding="4px 8px">
+        <button
+          ref={statsRowRef}
+          type="button"
+          disabled={inSessionView}
+          onClick={onStatsOpen}
+          className="flex min-h-[44px] w-full items-center justify-between rounded-2xl px-2 text-left transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          <span className="text-sm font-medium text-[var(--color-breathing-text)]">
+            {strings.appSettings.statsRow}
+          </span>
+          <span aria-hidden="true" className="text-[var(--color-breathing-muted)]">
+            <ChevronRightIcon />
+          </span>
+        </button>
+      </SectionCard>
+
       {/* Appearance */}
       <SettingsSectionHeader label={strings.appSettings.sections.theme} />
       <SectionCard padding="16px">

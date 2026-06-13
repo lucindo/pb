@@ -136,11 +136,13 @@ export interface UiStrings {
   readonly appSettings: {
     readonly title: string
     readonly close: string
+    readonly statsRow: string
     readonly themeLabel: string
     readonly cueLabel: string
     readonly timbreLabel: string
     readonly languageLabel: string
     readonly sections: {
+      readonly statistics: string
       readonly theme: string
       readonly language: string
       readonly audio: string
@@ -208,6 +210,27 @@ export interface UiStrings {
     readonly videosHeading: string
     readonly nativeAppsHeading: string
     readonly naviKriyaVideosHeading: string
+  }
+  readonly stats: {
+    readonly title: string
+    readonly back: string
+    readonly fields: {
+      readonly sessions: string
+      readonly totalTime: string
+      readonly lastSession: string
+      readonly rounds: string
+    }
+    // Coarse total-time format past 72h: e.g. ≈15 days (365h).
+    readonly totalTimeDays: (days: number, hours: number) => string
+    readonly empty: string
+    readonly reset: string
+    readonly resetConfirm: {
+      readonly title: (practice: string) => string
+      readonly body: string
+      readonly confirm: string
+      readonly cancel: string
+    }
+    readonly privacyNote: string
   }
   readonly install: {
     readonly installButton: string
@@ -339,11 +362,13 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     appSettings: {
       title: 'Settings',
       close: 'Close',
+      statsRow: 'View Practices Statistics',
       themeLabel: 'Theme',
       cueLabel: 'Cue style',
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
       sections: {
+        statistics: 'Statistics',
         theme: 'Theme',
         language: 'Language',
         audio: 'Feedback',
@@ -389,6 +414,27 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       videosHeading: 'Selected HRV Breathing Videos',
       nativeAppsHeading: 'Resonant Breathing app',
       naviKriyaVideosHeading: 'Selected Navi Kriya Videos',
+    },
+    stats: {
+      title: 'Statistics',
+      back: 'Back to Settings',
+      fields: {
+        sessions: 'Sessions',
+        totalTime: 'Total time',
+        lastSession: 'Last session',
+        rounds: 'Rounds',
+      },
+      totalTimeDays: (days, hours) => `≈${String(days)} days (${String(hours)}h)`,
+      empty: '—',
+      reset: 'Reset',
+      resetConfirm: {
+        title: (practice) => `Reset ${practice} stats?`,
+        body: "This clears this practice's saved history. It can't be undone.",
+        confirm: 'Reset',
+        cancel: 'Keep',
+      },
+      privacyNote:
+        'This app has no account and tracks nothing. These stats live only in this browser, on this device — clearing site data, switching browsers, or private browsing resets them.',
     },
     install: {
       installButton: 'Install',
@@ -518,12 +564,14 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     appSettings: {
       title: 'Configurações',
       close: 'Fechar',
+      statsRow: 'Ver Estatísticas das Práticas',
       themeLabel: 'Tema',
       cueLabel: 'Estilo de guia',
       timbreLabel: 'Timbre',
       languageLabel: 'Idioma',
       sections: {
         // TODO: native-speaker review
+        statistics: 'Estatísticas',
         theme: 'Tema',
         language: 'Idioma',
         audio: 'Feedback',
@@ -600,6 +648,27 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
       naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya',
+    },
+    stats: {
+      title: 'Estatísticas',
+      back: 'Voltar para Configurações',
+      fields: {
+        sessions: 'Sessões',
+        totalTime: 'Tempo total',
+        lastSession: 'Última sessão',
+        rounds: 'Rodadas',
+      },
+      totalTimeDays: (days, hours) => `≈${String(days)} dias (${String(hours)}h)`,
+      empty: '—',
+      reset: 'Zerar',
+      resetConfirm: {
+        title: (practice) => `Zerar estatísticas de ${practice}?`,
+        body: 'Isso apaga o histórico salvo desta prática. Não dá para desfazer.',
+        confirm: 'Zerar',
+        cancel: 'Manter',
+      },
+      privacyNote:
+        'Este app não tem conta e não rastreia nada. Estas estatísticas vivem apenas neste navegador, neste dispositivo — limpar os dados do site, trocar de navegador ou usar uma janela anônima zera tudo.',
     },
     install: {
       installButton: 'Instalar',

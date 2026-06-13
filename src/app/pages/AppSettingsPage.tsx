@@ -14,7 +14,9 @@ export interface AppSettingsPageProps {
   onInstall(this: void): Promise<void>
   onBack(this: void): void
   onAdvancedOpen(this: void): void
+  onStatsOpen(this: void): void
   returningFromAdvanced: boolean
+  returningFromStats: boolean
 }
 
 /** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron
@@ -30,7 +32,9 @@ export function AppSettingsPage({
   onInstall,
   onBack,
   onAdvancedOpen,
+  onStatsOpen,
   returningFromAdvanced,
+  returningFromStats,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
   // Memoize the subset wrapper so SettingsPanelBody and any future React.memo
@@ -45,6 +49,7 @@ export function AppSettingsPage({
   )
   const backButtonRef = useRef<HTMLButtonElement>(null)
   const chevronButtonRef = useRef<HTMLButtonElement>(null)
+  const statsRowRef = useRef<HTMLButtonElement>(null)
 
   // Assumption: ScreenRouter unmounts/remounts this page on every navigation, so
   // this effect only fires on fresh mount with a stable `returningFromAdvanced`
@@ -53,12 +58,14 @@ export function AppSettingsPage({
   // effect needs a one-shot ref guard (track whether the focus call has already
   // fired this mount, and skip subsequent re-runs).
   useEffect(() => {
-    if (returningFromAdvanced) {
+    if (returningFromStats) {
+      statsRowRef.current?.focus({ preventScroll: true })
+    } else if (returningFromAdvanced) {
       chevronButtonRef.current?.focus({ preventScroll: true })
     } else {
       backButtonRef.current?.focus({ preventScroll: true })
     }
-  }, [returningFromAdvanced])
+  }, [returningFromAdvanced, returningFromStats])
 
   return (
     <PageShell>
@@ -89,6 +96,8 @@ export function AppSettingsPage({
           isStandalone={isStandalone}
           installable={installable}
           onInstall={onInstall}
+          onStatsOpen={onStatsOpen}
+          statsRowRef={statsRowRef}
         />
       </div>
     </PageShell>

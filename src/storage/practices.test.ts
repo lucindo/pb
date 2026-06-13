@@ -14,6 +14,7 @@ import {
   recordResonantSession,
   recordNaviKriyaSession,
   recordStretchSession,
+  resetPracticeStats,
 } from './practices'
 import { coerceSettings } from './settings'
 import { ZERO_STATS, type PersistedStats } from './stats'
@@ -559,5 +560,22 @@ describe('STATS-04 record-and-persist regression (CONTEXT D-05 / D-08)', () => {
     expect(map.naviKriya.stats.roundsCompleted).toBe(3)
     expect(map.resonant.stats).toEqual(ZERO_STATS)
     expect(map.stretch.stats).toEqual(ZERO_STATS)
+  })
+})
+
+describe('resetPracticeStats — per-practice isolation', () => {
+  it('zeroes only the target slice; sibling stats and settings survive', () => {
+    saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4 })
+    recordResonantSession(40_000, true, { now: () => 1_700_000_000_000 })
+    recordNaviKriyaSession(60_000, 3, true, { now: () => 1_700_000_000_000 })
+
+    resetPracticeStats('naviKriya')
+
+    const map = loadPractices()
+    expect(map.naviKriya.stats).toEqual(ZERO_STATS)
+    // Sibling stats untouched.
+    expect(map.resonant.stats.totalSessions).toBe(1)
+    // Target slice keeps its settings — reset wipes stats only.
+    expect(map.resonant.settings.bpm).toBe(4)
   })
 })
