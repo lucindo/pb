@@ -1,12 +1,10 @@
 // src/storage/stats.ts
 //
-// Stats aggregator:
-//   - count when elapsed >= 30s OR isComplete
-//   - aggregate actual elapsed in seconds
-//   - reset wipes ONLY stats (settings + mute survive)
-//   - now() injected for deterministic testing
+// Persisted-stats shape (PersistedStats / ZERO_STATS) and per-field, non-throwing
+// coercion (coerceStats). Recording + reset live in the per-practice slices in
+// practices.ts; this module holds only the shape and validation they share.
 
-import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
+import { asRecord } from './storage'
 
 export const COUNT_THRESHOLD_MS = 30_000  // count threshold: 30 s or completion
 
@@ -35,10 +33,10 @@ export const ZERO_STATS: PersistedStats = {
 }
 
 // lastSessionAtMs uses the looser finite-non-negative-number check (no
-// Number.isInteger) so a fractional now() injection survives the round trip.
-// Tests may use performance.now() (sub-ms floats) — the integer-only check
-// would silently coerce fractional timestamps to null on the next loadStats(),
-// breaking the recordSession -> loadStats round-trip invariant.
+// Number.isInteger) so a fractional now() injection survives a coerceStats
+// round trip. Tests may use performance.now() (sub-ms floats) — the integer-only
+// check would silently coerce fractional timestamps to null, breaking the
+// record -> coerce round-trip invariant.
 //
 // totalSessions and totalElapsedSeconds keep the integer check — those fields
 // are genuinely integer-only (count + floor(ms/1000) seconds).
@@ -82,62 +80,4 @@ export function coerceStats(raw: unknown): PersistedStats {
     // slot; consumers MUST NOT rely on it being absent for resonant/stretch.
     roundsCompleted:            isFiniteNonNegativeInt(r.roundsCompleted) ? r.roundsCompleted : undefined,
   }
-}
-
-export function loadStats(deps: StorageDeps = {}): PersistedStats {
-  return coerceStats(readEnvelope(deps).stats)
-}
-
-/**
- * Records a session and returns the IN-MEMORY projection of stats.
- *
- * The returned value is what stats SHOULD BE after the write, not proof that
- * the write succeeded. writeEnvelope is fire-and-forget (quota / ITP / private
- * mode / future-version short-circuit all silently swallow the write). Callers
- * treat the return as RAM-authoritative — UI updates immediately, and a
- * subsequent loadStats may return a different value if the disk write failed.
- *
- * If a caller needs to know whether disk reflects RAM, it must re-read via
- * loadStats and compare; that pattern is not currently required anywhere in
- * the app.
- */
-export function recordSession(
-  elapsedMs: number,
-  isComplete: boolean,
-  deps: StorageDeps = {},
-): PersistedStats {
-  // Single envelope read: collapsing two reads (one from loadStats, one before
-  // write) into one closes the in-tab cross-tab race window where a second tab
-  // could write between them. Cross-tab concurrent ends still lose one increment
-  // — the storage-event listener in App.tsx handles UI consistency for that case.
-  const env = readEnvelope(deps)
-  const stats = coerceStats(env.stats)
-  // Reject NaN/Infinity/negative elapsedMs up front. `elapsedMs <
-  // COUNT_THRESHOLD_MS` is `false` for NaN/Infinity, so a bad frame would
-  // otherwise fall through, count, and poison totalElapsedSeconds —
-  // which the next loadStats() silently coerces to 0, losing the entire
-  // cumulative total. Return stats unchanged on a bad reading.
-  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
-    return stats
-  }
-  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
-  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
-    return stats
-  }
-  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
-  const now = deps.now ?? Date.now
-  const next: PersistedStats = {
-    totalSessions: stats.totalSessions + 1,
-    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
-    lastSessionAtMs: now(),
-    lastSessionDurationSeconds: elapsedSeconds,
-  }
-  writeEnvelope({ ...env, stats: next }, deps)
-  return next
-}
-
-export function resetStats(deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  // Wipe ONLY the stats subtree. Settings + mute survive.
-  writeEnvelope({ ...env, stats: { ...ZERO_STATS } }, deps)
 }

@@ -253,6 +253,11 @@ describe('recordResonantSession (Pitfall 3 / T-30-08)', () => {
     expect(loadPractices().resonant.stats.totalSessions).toBe(0)
   })
 
+  it('does NOT count 29.999s but counts exactly 30.000s (boundary inclusive — D-01)', () => {
+    expect(recordResonantSession(29_999, false, { now: () => 1 }).totalSessions).toBe(0)
+    expect(recordResonantSession(30_000, false, { now: () => 1 }).totalSessions).toBe(1)
+  })
+
   it('counts a sub-threshold session when isComplete is true', () => {
     const next = recordResonantSession(5_000, true, { now: () => 1_700_000_000_000 })
     expect(next.totalSessions).toBe(1)
