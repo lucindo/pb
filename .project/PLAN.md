@@ -9,4 +9,4 @@ Source: `.project/SPEC.md`
 - [x] Ramp engine interpolates the inhale split — warm-up holds start, ramp steps linearly by `numSteps`, cool-down holds target; identical output when target = start. (FR-9, FR-10, FR-5, FR-6)
 - [x] Storage coercer updated — removed phase values fall back to default 5, preserved values kept; missing/invalid `targetRatio` falls back to coerced start ratio. (FR-4, FR-13)
 - [x] Stretch label strings added (EN + pt-BR) — "Start BPM", "Start Ratio", "Target Ratio"; shared `ratioLabel` untouched. (FR-16)
-- [ ] Stretch settings form reordered (Start BPM · Start Ratio · Target BPM · Target Ratio · Warm-up · Ramp · Cool-down · Duration) with a Target Ratio segmented control. (FR-14, FR-15)
+- [x] Stretch settings form reordered (Start BPM · Start Ratio · Target BPM · Target Ratio · Warm-up · Ramp · Cool-down · Duration) with a Target Ratio segmented control. (FR-14, FR-15)
