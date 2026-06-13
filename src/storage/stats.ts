@@ -34,10 +34,6 @@ export const ZERO_STATS: PersistedStats = {
   lastSessionDurationSeconds: null,
 }
 
-function isFiniteNonNegativeInt(v: unknown): v is number {
-  return typeof v === 'number' && Number.isFinite(v) && v >= 0 && Number.isInteger(v)
-}
-
 // lastSessionAtMs uses the looser finite-non-negative-number check (no
 // Number.isInteger) so a fractional now() injection survives the round trip.
 // Tests may use performance.now() (sub-ms floats) — the integer-only check
@@ -48,6 +44,10 @@ function isFiniteNonNegativeInt(v: unknown): v is number {
 // are genuinely integer-only (count + floor(ms/1000) seconds).
 function isFiniteNonNegativeNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && v >= 0
+}
+
+function isFiniteNonNegativeInt(v: unknown): v is number {
+  return isFiniteNonNegativeNumber(v) && Number.isInteger(v)
 }
 
 function isFiniteNonNegativeNumberOrNull(v: unknown): v is number | null {
