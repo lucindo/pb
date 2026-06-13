@@ -327,6 +327,7 @@ describe('DEFAULT_STRETCH_SETTINGS (D-01, D-02, STRETCH-03)', () => {
 describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
   const validStretch: StretchSettings = {
     ratio: '40:60',
+    targetRatio: '40:60',
     initialBpm: 6,
     targetBpm: 4,
     warmUpMinutes: 5,
@@ -372,5 +373,17 @@ describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
   it('throws RangeError for invalid ratio', () => {
     const bad: StretchSettings = { ...validStretch, ratio: '99:01' as never }
     expect(() => validateStretchSettings(bad)).toThrow(RangeError)
+  })
+
+  it('throws RangeError for invalid targetRatio', () => {
+    const bad: StretchSettings = { ...validStretch, targetRatio: '99:01' as never }
+    expect(() => validateStretchSettings(bad)).toThrow(RangeError)
+  })
+
+  it('accepts a targetRatio that differs from the start ratio in either direction (no ordering constraint, FR-11)', () => {
+    const moreExhale: StretchSettings = { ...validStretch, ratio: '50:50', targetRatio: '20:80' }
+    expect(() => validateStretchSettings(moreExhale)).not.toThrow()
+    const moreInhale: StretchSettings = { ...validStretch, ratio: '20:80', targetRatio: '50:50' }
+    expect(() => validateStretchSettings(moreInhale)).not.toThrow()
   })
 })

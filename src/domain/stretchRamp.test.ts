@@ -15,6 +15,7 @@ import type { StretchSettings } from './settings'
 // Base stretch settings fixture (valid, finite): warm-up 5 + ramp 20 + cool-down 5 = 30 min.
 const baseSettings: StretchSettings = {
   ratio: '40:60',
+  targetRatio: '40:60',
   initialBpm: 6,
   targetBpm: 4,
   warmUpMinutes: 5,
@@ -201,6 +202,7 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
   it('WR-01: wide slow ramp — cool-down span stays positive and cycleIndex is monotonic', () => {
     const wideSlowSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 14,
       targetBpm: 1.5,
       warmUpMinutes: 10,
@@ -324,6 +326,7 @@ describe('getStretchFrame', () => {
     // Drift-prone config: non-integer cycle counts in every segment.
     const driftSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 5.5,
       targetBpm: 4.5,
       warmUpMinutes: 5,
@@ -598,6 +601,7 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     // DEFAULT_STRETCH_SETTINGS is the same 5.5→4.5 BPM, 5/5/5 fixture.
     const minSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 5.5,
       targetBpm: 4.5,
       warmUpMinutes: 5,
@@ -627,6 +631,7 @@ describe('computeStretchTotalSec (StretchSettings — D-02)', () => {
     // whole-minute total exactly — previously the snapped total differed from the raw minute sum.
     const driftSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 5.5,
       targetBpm: 4,
       warmUpMinutes: 5,

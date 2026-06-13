@@ -25,6 +25,7 @@ export interface SessionSettings {
 // durationMinutes is NOT stored here (it is computed from the ramp table).
 export interface StretchSettings {
   ratio: RatioLabel
+  targetRatio: RatioLabel
   initialBpm: number
   targetBpm: number
   warmUpMinutes: WarmUpMinutes
@@ -92,6 +93,7 @@ export const DEFAULT_SETTINGS: SessionSettings = {
 // ratio is consumed by buildStretchSegments internally.
 export const DEFAULT_STRETCH_SETTINGS: StretchSettings = {
   ratio: '40:60',
+  targetRatio: '40:60',
   initialBpm: 5.5,
   targetBpm: 4.5,
   warmUpMinutes: 5,
@@ -244,6 +246,13 @@ export function validateStretchSettings(settings: StretchSettings): StretchSetti
     // is preserved verbatim so the runtime string remains correct.
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)
+  }
+
+  // targetRatio has no ordering constraint relative to the start ratio — it may
+  // carry more, less, or equal inhale weight. Only the label itself is validated.
+  if (!isValidRatio(settings.targetRatio)) {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    throw new RangeError(`Unsupported targetRatio: ${settings.targetRatio}`)
   }
 
   if (!isValidBpm(settings.initialBpm)) {

@@ -123,6 +123,7 @@ describe('startSession standard-only (D-01)', () => {
 describe('startStretchSession (D-01, D-02)', () => {
   const stretchSettings: StretchSettings = {
     ratio: '40:60',
+    targetRatio: '40:60',
     initialBpm: 6,
     targetBpm: 4,
     warmUpMinutes: 10,
@@ -219,6 +220,7 @@ describe('extendTimedSession — no mode check (D-01)', () => {
   it('throws RangeError for a stretch session (stretchSegments !== null gate)', () => {
     const stretchSettings: StretchSettings = {
       ratio: '40:60',
+      targetRatio: '40:60',
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 10,

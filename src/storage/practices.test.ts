@@ -350,6 +350,7 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
   it('preserves a fully valid StretchSettings object', () => {
     const valid: StretchSettings = {
       ratio: '30:70',
+      targetRatio: '30:70',
       initialBpm: 6,
       targetBpm: 4,
       warmUpMinutes: 10,
@@ -375,6 +376,48 @@ describe('coerceStretchSettings (Phase 34 T-34-02)', () => {
     expect(result.warmUpMinutes).toBe(10)
     expect(result.rampDurationMinutes).toBe(10)
     expect(result.coolDownMinutes).toBe(10)
+  })
+
+  it('falls back a missing targetRatio to the coerced start ratio (FR-13 backward-compat)', () => {
+    // A pre-targetRatio persisted slice has no targetRatio key — it must adopt the
+    // (coerced) start ratio so the session behaves exactly as it did before.
+    const result = coerceStretchSettings({
+      ratio: '30:70',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 10,
+      rampDurationMinutes: 10,
+      coolDownMinutes: 10,
+    })
+    expect(result.targetRatio).toBe('30:70')
+  })
+
+  it('falls back an invalid targetRatio to the coerced start ratio (FR-13)', () => {
+    const result = coerceStretchSettings({
+      ratio: '20:80',
+      targetRatio: 'garbage',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 10,
+      rampDurationMinutes: 10,
+      coolDownMinutes: 10,
+    })
+    expect(result.targetRatio).toBe('20:80')
+  })
+
+  it('coerces a removed phase value (warmUp 15, ramp 20) to the default (FR-4)', () => {
+    const result = coerceStretchSettings({
+      ratio: '40:60',
+      targetRatio: '40:60',
+      initialBpm: 6,
+      targetBpm: 4,
+      warmUpMinutes: 15,  // no longer an option
+      rampDurationMinutes: 20,  // no longer an option
+      coolDownMinutes: 10,
+    })
+    expect(result.warmUpMinutes).toBe(DEFAULT_STRETCH_SETTINGS.warmUpMinutes)
+    expect(result.rampDurationMinutes).toBe(DEFAULT_STRETCH_SETTINGS.rampDurationMinutes)
+    expect(result.coolDownMinutes).toBe(10)  // still a valid option — preserved
   })
 
   it('rejects prototype-polluting __proto__ object and returns defaults (asRecord guard)', () => {
@@ -424,6 +467,7 @@ describe('saveStretchSettings / loadPractices round-trip (Phase 34 T-34-02)', ()
   it('saveStretchSettings → loadPractices().stretch.settings round-trips the value', () => {
     const settings: StretchSettings = {
       ratio: '30:70',
+      targetRatio: '30:70',
       initialBpm: 6,
       targetBpm: 4.5,
       warmUpMinutes: 10,
