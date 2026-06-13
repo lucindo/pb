@@ -8,11 +8,10 @@
 
 import { TIMBRE_PRESETS, type TimbrePreset } from './timbres'
 import type { TimbreId } from '../domain/settings'
+import { CLEANUP_PADDING_SEC, NEAR_SILENCE, STRIKE_RAMP_OFFSET } from './audioConstants'
 
-const STRIKE_RAMP_OFFSET = 0.005 // when + 0.005 — instant attack with a tiny ramp lead
 const TAIL_MULTIPLIER = 5 // stop oscillators after ~5*timeConstant
 const TAIL_PADDING_SEC = 0.1 // tiny extra to avoid asymptote clip
-const CLEANUP_PADDING_SEC = 0.2 // extra wallclock margin before nodes are GC-able
 
 // 260510-tc9 Bug 2 — sustain-to-floor envelope for long phases.
 //
@@ -43,7 +42,6 @@ const PERCEPTUAL_SILENCE_TAU_MULT = 3 // 3×τ ≈ -26 dB ≈ perceptual silence
 const SUSTAIN_FLOOR_RATIO = 0.15 // ≈ -16 dB below peak — quiet but clearly audible
 const PHASE_END_FADE_OUT_TAU = 0.05 // setTargetAtTime τ for the boundary fade (≈ 150 ms perceptual)
 const PHASE_END_FADE_OUT_LEAD_SEC = 0.2 // start fade this many seconds before phase end
-const NEAR_SILENCE = 0.0001 // setTargetAtTime can't ramp to true zero
 
 export interface CueHandle {
   envelope: GainNode // exposed for mute fade-out

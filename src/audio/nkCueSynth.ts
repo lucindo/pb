@@ -16,12 +16,9 @@
 import { TIMBRE_PRESETS, type TimbrePreset } from './timbres'
 import type { TimbreId } from '../domain/settings'
 import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
+import { CLEANUP_PADDING_SEC, NEAR_SILENCE, STRIKE_RAMP_OFFSET } from './audioConstants'
 
 // --- Timing constants ---
-
-const STRIKE_RAMP_OFFSET = 0.005 // when + 0.005 — instant attack with tiny ramp lead
-const CLEANUP_PADDING_SEC = 0.2 // extra wallclock margin before nodes are GC-able
-const NEAR_SILENCE = 0.0001 // setTargetAtTime cannot ramp to true zero
 
 // --- NK-specific cue constants ---
 
