@@ -78,7 +78,7 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
         <h2
           id="end-session-title"
           style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-0.01em' }}
-          className="text-center text-[var(--color-breathing-text)]"
+          className="text-center text-[var(--color-breathing-text)] sm:text-left"
         >
           {strings.title}
         </h2>
@@ -88,19 +88,19 @@ export function EndSessionDialog({ open, onConfirm, onCancel, strings, body }: E
         {/* F2: column order matches DOM order on mobile (Keep going on top, End
             below) so the destructive action doesn't sit above the safe one. On
             desktop the row places primary action (End) right of Keep going. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             ref={cancelButtonRef}
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-[var(--color-border-soft)] bg-transparent px-5 py-3 text-[15px] font-medium text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="rounded-xl border border-[var(--color-border-soft)] bg-transparent px-5 py-3 sm:flex-1 text-[15px] font-medium text-[var(--color-breathing-text)] transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.cancel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-xl bg-[var(--color-breathing-accent)] px-5 py-3 text-[15px] font-semibold text-[var(--color-breathing-on-accent)] transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+            className="rounded-xl bg-[var(--color-breathing-accent)] px-5 py-3 sm:flex-1 text-[15px] font-semibold text-[var(--color-breathing-on-accent)] transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
           >
             {strings.confirm}
           </button>
