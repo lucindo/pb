@@ -482,7 +482,13 @@ function OrbContainer({
             height: `${String(DISC_PCT * 100)}%`,
             borderRadius: '50%',
             background: discBg,
-            color: 'var(--color-breathing-on-accent)',
+            // spiritual-eye disc is a dark blue gradient in both themes, so its
+            // inherited content (NK numeral, lead-in digit) needs the light star
+            // token — on-accent flips to near-black in dark and would vanish.
+            color:
+              variant === 'spiritual-eye'
+                ? 'var(--color-orb-star-fill-spiritual-eye)'
+                : 'var(--color-breathing-on-accent)',
             boxShadow: discShadow,
             transition: DISC_BG_TRANSITION,
           }}
