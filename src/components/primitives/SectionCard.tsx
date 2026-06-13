@@ -2,11 +2,8 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 
 // Card chrome — border-soft 1px + surface bg + 20px radius.
 // Padding varies per section content; callers supply via the `padding` prop.
-// Shared across SettingsPanelBody and AdvancedPage to keep chrome consistent.
-//
-// NOTE: `LearnPanel.tsx` has a structurally different `SectionCard`
-// (different signature, no `padding` prop) — intentionally NOT consolidated
-// here; the variants serve distinct surfaces.
+// Shared across SettingsPanelBody, AdvancedPage, and LearnPanel (via its local
+// Card delegate) to keep chrome consistent.
 
 export interface SectionCardProps {
   padding: CSSProperties['padding']

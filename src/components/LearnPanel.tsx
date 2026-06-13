@@ -6,6 +6,7 @@ import type { UiStrings } from '../content/strings'
 import type { PracticeId } from '../storage'
 import { getLearnPanelModel } from './learnPanelModel'
 import { SettingsSectionHeader } from './SettingsSectionHeader'
+import { SectionCard } from './primitives/SectionCard'
 
 // Body of the "About this practice" surface. Consumed by LearnPage.
 // Each existing learn-content section title is hoisted to a
@@ -20,22 +21,9 @@ export interface LearnPanelProps {
   activePractice: PracticeId
 }
 
-// Card chrome — 1px border-soft + surface bg + 20 px radius.
-// Mirrors the SectionCard primitive for visual consistency between Learn
-// + AppSettings pages. Kept separate as the signature differs (no `padding` prop).
-function SectionCard({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <div
-      style={{
-        background: 'var(--color-breathing-surface)',
-        border: '1px solid var(--color-border-soft)',
-        borderRadius: 20,
-        padding: '16px 18px',
-      }}
-    >
-      {children}
-    </div>
-  )
+// Every Learn card shares one padding; chrome lives in the SectionCard primitive.
+function Card({ children }: { children: ReactNode }): ReactElement {
+  return <SectionCard padding="16px 18px">{children}</SectionCard>
 }
 
 const LINK_CLASSES =
@@ -60,29 +48,29 @@ export function LearnPanel({
   return (
     <div>
       <SettingsSectionHeader label={practiceContent.description.section1.title} />
-      <SectionCard>
+      <Card>
         <p className={BODY_CLASSES}>{practiceContent.description.section1.body}</p>
-      </SectionCard>
+      </Card>
 
       <SettingsSectionHeader label={practiceContent.description.section2.title} />
-      <SectionCard>
+      <Card>
         <p className={BODY_CLASSES}>{practiceContent.description.section2.body}</p>
-      </SectionCard>
+      </Card>
 
       {practiceContent.adaptation && (
         <>
           <SettingsSectionHeader label={practiceContent.adaptation.title} />
-          <SectionCard>
+          <Card>
             <p className={BODY_CLASSES}>{practiceContent.adaptation.body}</p>
             <p className={`${BODY_CLASSES} mt-3 border-l-2 border-[var(--color-border-soft)] pl-3 text-xs italic`}>
               {practiceContent.adaptation.note}
             </p>
-          </SectionCard>
+          </Card>
         </>
       )}
 
       <SettingsSectionHeader label={videosHeading} />
-      <SectionCard>
+      <Card>
         <div className="grid gap-2">
           {practiceContent.videos.map((video) => (
             <a
@@ -96,17 +84,17 @@ export function LearnPanel({
             </a>
           ))}
         </div>
-      </SectionCard>
+      </Card>
 
       <SettingsSectionHeader label={explainer.forrest.title} />
-      <SectionCard>
+      <Card>
         {explainer.forrest.body.split('\n\n').map((paragraph) => (
           <p key={paragraph} className={`${BODY_CLASSES} [&:not(:first-of-type)]:mt-2`}>{paragraph}</p>
         ))}
-      </SectionCard>
+      </Card>
 
       <SettingsSectionHeader label={strings.resourcesHeading} />
-      <SectionCard>
+      <Card>
         <div className="grid gap-2">
           <a href={links.youtubeChannel.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
             {links.youtubeChannel.label}
@@ -121,12 +109,12 @@ export function LearnPanel({
             {links.patreon.label}
           </a>
         </div>
-      </SectionCard>
+      </Card>
 
       {showNativeApps && (
         <>
           <SettingsSectionHeader label={strings.nativeAppsHeading} />
-          <SectionCard>
+          <Card>
             <div className="grid gap-2">
               <a href={links.appStoreIos.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
                 {links.appStoreIos.label}
@@ -135,7 +123,7 @@ export function LearnPanel({
                 {links.googlePlayAndroid.label}
               </a>
             </div>
-          </SectionCard>
+          </Card>
         </>
       )}
 
