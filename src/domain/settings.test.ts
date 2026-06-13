@@ -198,16 +198,16 @@ describe('isValidLocale (INFRA-02 D-01)', () => {
 // Stretch predicate tests (isValidMode was removed — these remain)
 
 describe('isValidWarmUp (STRETCH-03, D-07)', () => {
-  it('returns true for WARMUP_MINUTES_OPTIONS members (5, 10, 15)', () => {
+  it('returns true for WARMUP_MINUTES_OPTIONS members (2, 3, 4, 5, 10)', () => {
+    expect(isValidWarmUp(2)).toBe(true)
     expect(isValidWarmUp(5)).toBe(true)
     expect(isValidWarmUp(10)).toBe(true)
-    expect(isValidWarmUp(15)).toBe(true)
   })
 
-  it('returns false for non-option numbers (0, 7, 20, -1)', () => {
+  it('returns false for non-option numbers (0, 7, 15, -1)', () => {
     expect(isValidWarmUp(0)).toBe(false)
     expect(isValidWarmUp(7)).toBe(false)
-    expect(isValidWarmUp(20)).toBe(false)
+    expect(isValidWarmUp(15)).toBe(false)
     expect(isValidWarmUp(-1)).toBe(false)
   })
 
@@ -223,21 +223,21 @@ describe('isValidWarmUp (STRETCH-03, D-07)', () => {
 })
 
 describe('isValidCoolDown (STRETCH-03, D-07, D-11)', () => {
-  it('returns true for COOLDOWN_OPTIONS numeric members (5, 10, 15, 20)', () => {
+  it('returns true for COOLDOWN_OPTIONS numeric members (2, 5, 15, 30)', () => {
+    expect(isValidCoolDown(2)).toBe(true)
     expect(isValidCoolDown(5)).toBe(true)
-    expect(isValidCoolDown(10)).toBe(true)
     expect(isValidCoolDown(15)).toBe(true)
-    expect(isValidCoolDown(20)).toBe(true)
+    expect(isValidCoolDown(30)).toBe(true)
   })
 
   it('returns true for "open-ended" sentinel (D-11)', () => {
     expect(isValidCoolDown('open-ended')).toBe(true)
   })
 
-  it('returns false for non-option numbers (0, 7, 25) and arbitrary strings ("foo")', () => {
+  it('returns false for non-option numbers (0, 7, 11) and arbitrary strings ("foo")', () => {
     expect(isValidCoolDown(0)).toBe(false)
     expect(isValidCoolDown(7)).toBe(false)
-    expect(isValidCoolDown(25)).toBe(false)
+    expect(isValidCoolDown(11)).toBe(false)
     expect(isValidCoolDown('foo')).toBe(false)
   })
 
@@ -248,17 +248,17 @@ describe('isValidCoolDown (STRETCH-03, D-07, D-11)', () => {
 })
 
 describe('isValidRampDuration (STRETCH-03, D-07)', () => {
-  it('returns true for RAMP_DURATION_OPTIONS members (5, 10, 15, 20)', () => {
+  it('returns true for RAMP_DURATION_OPTIONS members (2, 3, 4, 5, 10)', () => {
+    expect(isValidRampDuration(2)).toBe(true)
     expect(isValidRampDuration(5)).toBe(true)
     expect(isValidRampDuration(10)).toBe(true)
-    expect(isValidRampDuration(15)).toBe(true)
-    expect(isValidRampDuration(20)).toBe(true)
   })
 
-  it('returns false for non-option numbers (7, 0, 25)', () => {
+  it('returns false for non-option numbers (7, 0, 15, 20)', () => {
     expect(isValidRampDuration(7)).toBe(false)
     expect(isValidRampDuration(0)).toBe(false)
-    expect(isValidRampDuration(25)).toBe(false)
+    expect(isValidRampDuration(15)).toBe(false)
+    expect(isValidRampDuration(20)).toBe(false)
   })
 
   it('returns false for "open-ended" and other strings', () => {
@@ -331,7 +331,7 @@ describe('validateStretchSettings (D-01, D-02, STRETCH-03)', () => {
     targetBpm: 4,
     warmUpMinutes: 5,
     coolDownMinutes: 5,
-    rampDurationMinutes: 20,
+    rampDurationMinutes: 10,
   }
 
   it('accepts a valid StretchSettings object', () => {

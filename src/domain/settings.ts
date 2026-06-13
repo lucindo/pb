@@ -3,16 +3,16 @@ export type DurationOption = number | 'open-ended'
 
 // Stretch stage durations are minute-based: Warm-up (initial-BPM hold), Ramp
 // (the BPM walk-down), and Cool-down (target-BPM hold). The structural minimum
-// total is 5 + 5 + 5 = 15 min, so no separate "session long enough" gate is needed.
-export type WarmUpMinutes = 5 | 10 | 15
+// total is 2 + 2 + 2 = 6 min, so no separate "session long enough" gate is needed.
+export type WarmUpMinutes = 2 | 3 | 4 | 5 | 10
 
-export const WARMUP_MINUTES_OPTIONS = [5, 10, 15] as const satisfies readonly WarmUpMinutes[]
+export const WARMUP_MINUTES_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly WarmUpMinutes[]
 
-export type CoolDownMinutes = 5 | 10 | 15 | 20 | 'open-ended'
+export type CoolDownMinutes = 2 | 3 | 4 | 5 | 10 | 15 | 20 | 25 | 30 | 'open-ended'
 
-export const COOLDOWN_OPTIONS = [5, 10, 15, 20, 'open-ended'] as const satisfies readonly CoolDownMinutes[]
+export const COOLDOWN_OPTIONS = [2, 3, 4, 5, 10, 15, 20, 25, 30, 'open-ended'] as const satisfies readonly CoolDownMinutes[]
 
-export const RAMP_DURATION_OPTIONS = [5, 10, 15, 20] as const satisfies readonly number[]
+export const RAMP_DURATION_OPTIONS = [2, 3, 4, 5, 10] as const satisfies readonly number[]
 
 // SessionSettings is standard-only — 3 fields (bpm, ratio, durationMinutes).
 export interface SessionSettings {

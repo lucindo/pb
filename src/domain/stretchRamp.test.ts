@@ -203,7 +203,7 @@ describe('buildStretchSegments (single-arg, StretchSettings — D-02)', () => {
       ratio: '40:60',
       initialBpm: 14,
       targetBpm: 1.5,
-      warmUpMinutes: 15,
+      warmUpMinutes: 10,
       rampDurationMinutes: 5,
       coolDownMinutes: 5,
     }
