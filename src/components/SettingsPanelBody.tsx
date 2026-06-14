@@ -188,22 +188,20 @@ export function SettingsPanelBody({
               {[__APP_VERSION__, __APP_BUILD_SHA__, __APP_BUILD_DATE__]
                 .filter((v) => typeof v === 'string' && v.length > 0)
                 .join(' · ') || 'unknown'}
+              {' · '}
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
+                style={{
+                  color: 'var(--color-breathing-accent-strong)',
+                  fontWeight: 600,
+                }}
+              >
+                {strings.appSettings.about.sourceLinkText} →
+              </a>
             </span>
-          </AboutRow>
-          <AboutRow label={strings.appSettings.about.sourceLabel}>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2"
-              style={{
-                color: 'var(--color-breathing-accent-strong)',
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-            >
-              {strings.appSettings.about.sourceLinkText} →
-            </a>
           </AboutRow>
           {showInstallRow && (
             <div

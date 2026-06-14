@@ -150,7 +150,6 @@ export interface UiStrings {
     }
     readonly about: {
       readonly versionLabel: string
-      readonly sourceLabel: string
       readonly sourceLinkText: string
     }
     readonly themes: {
@@ -376,8 +375,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       about: {
         versionLabel: 'Version',
-        sourceLabel: 'Source',
-        sourceLinkText: 'GitHub',
+        sourceLinkText: 'Source',
       },
       themes: {
         light: 'Light',
@@ -579,8 +577,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       about: {
         versionLabel: 'Versão',
-        sourceLabel: 'Código-fonte',
-        sourceLinkText: 'GitHub',
+        sourceLinkText: 'Código-fonte',
       },
       themes: {
         light: 'Claro',

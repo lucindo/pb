@@ -112,10 +112,9 @@ describe('SettingsPanelBody — About section', () => {
     ).toBeVisible()
   })
 
-  it('renders the Source row with a GitHub link (external, rel=noopener)', () => {
+  it('renders the source link inside the version row (external, rel=noopener)', () => {
     renderBody()
-    expect(screen.getByText(EN.about.sourceLabel)).toBeVisible()
-    const link = screen.getByRole('link', { name: /GitHub/ })
+    const link = screen.getByRole('link', { name: new RegExp(EN.about.sourceLinkText) })
     expect(link).toBeVisible()
     expect(link).toHaveAttribute('href', 'https://github.com/lucindo/hrv')
     expect(link).toHaveAttribute('target', '_blank')
