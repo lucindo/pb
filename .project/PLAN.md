@@ -109,8 +109,11 @@ over the tree (excl. `.project/`) returns nothing. All gates green (`tsc -b`, `e
 still the resonance timer under the new name — pattern-breathing *functionality* is not
 implemented.
 
-**Next** — Trim is complete. Awaiting the pattern-breathing spec / functionality (still
-undefined; user will provide). Tree clean, safe to clear.
+User UAT-confirmed the ring refactor working. The strip-to-pattern-breathing branch is
+being merged into `main` (this is the last trim work).
+
+**Next** — Trim is complete and merged. Awaiting the pattern-breathing spec / functionality
+(still undefined; user will provide). Tree clean, safe to clear.
 
 **Open questions**
 - Pattern-breathing spec still undefined (user will provide).
