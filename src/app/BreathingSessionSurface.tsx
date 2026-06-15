@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
 import type { UiStrings } from '../content/strings'
-import { OrbShape } from '../components/OrbShape'
+import { BreathingRing } from '../components/BreathingRing'
 import { SessionReadout } from '../components/SessionReadout'
 import type { BreathingPresentation } from './sessionPresentation'
 
@@ -20,7 +20,7 @@ export function BreathingSessionSurface({
 }: BreathingSessionSurfaceProps): ReactElement {
   return (
     <>
-      <OrbShape
+      <BreathingRing
         frame={presentation.shape.frame}
         leadInDigit={presentation.shape.leadInDigit}
         strings={breathingStrings}

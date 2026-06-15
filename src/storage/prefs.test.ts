@@ -67,7 +67,7 @@ describe('coercePrefs (D-10 / D-17)', () => {
     // A returning user with a pre-v2.0 persisted envelope carrying `variant: 'square' | 'diamond'`
     // must read through coercePrefs as a clean UserPrefs with NO `variant` property —
     // the unknown key is silently dropped on read (envelope tolerance). No STATE_VERSION bump
-    // needed; the render path is always OrbShape.
+    // needed; the render path is always BreathingRing.
     const legacySquareEnvelope: unknown = { theme: 'system', timbre: 'bowl', locale: 'en', variant: 'square' }
     const coercedSquare = coercePrefs(legacySquareEnvelope)
     expect(coercedSquare).toEqual({ ...DEFAULT_PREFS, theme: 'system', timbre: 'bowl', locale: 'en' })

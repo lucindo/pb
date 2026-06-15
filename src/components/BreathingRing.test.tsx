@@ -2,14 +2,14 @@ import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { OrbShape } from './OrbShape'
+import { BreathingRing } from './BreathingRing'
 import type { SessionFrame } from '../domain'
 import { UI_STRINGS } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
 
 // Sample frame: `remainingSec` is null for open-ended, a number for timed;
-// either is fine here since OrbBody only reads phase/phaseLabel/phaseProgress.
+// either is fine here since RingBody only reads phase/phaseLabel/phaseProgress.
 const sampleFrame: SessionFrame = {
   phase: 'in',
   phaseLabel: 'In',
@@ -20,34 +20,34 @@ const sampleFrame: SessionFrame = {
   isComplete: false,
 }
 
-describe('OrbShape', () => {
-  it('renders the OrbBody when frame is provided and leadInDigit is null', () => {
-    render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+describe('BreathingRing', () => {
+  it('renders the RingBody when frame is provided and leadInDigit is null', () => {
+    render(<BreathingRing frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     // EN: strings.breathingShapeAriaLabel = 'Breathing shape', strings.inhale = 'In'
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 
   it('renders the lead-in digit in the orb area when leadInDigit is set (3)', () => {
-    render(<OrbShape frame={null} leadInDigit={3} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={null} leadInDigit={3} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     // EN: strings.leadInAriaLabel(3) = 'Lead-in 3'
     expect(screen.getByRole('img', { name: 'Lead-in 3' })).toBeVisible()
     expect(screen.getByText('3')).toBeVisible()
   })
 
   it('renders the lead-in digit 2', () => {
-    render(<OrbShape frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={null} leadInDigit={2} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByRole('img', { name: 'Lead-in 2' })).toBeVisible()
     expect(screen.getByText('2')).toBeVisible()
   })
 
   it('renders the lead-in digit 1', () => {
-    render(<OrbShape frame={null} leadInDigit={1} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={null} leadInDigit={1} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByRole('img', { name: 'Lead-in 1' })).toBeVisible()
     expect(screen.getByText('1')).toBeVisible()
   })
 
   it('renders lead-in when both frame and leadInDigit are set (lead-in wins)', () => {
-    render(<OrbShape frame={sampleFrame} leadInDigit={2} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={sampleFrame} leadInDigit={2} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(
       screen.queryByRole('img', { name: 'Breathing shape: In' }),
     ).not.toBeInTheDocument()
@@ -56,20 +56,20 @@ describe('OrbShape', () => {
 })
 
 // ── phase label ─────────────────────────────────────
-describe('OrbShape — phase label', () => {
+describe('BreathingRing — phase label', () => {
   it('renders the localized phaseLabel text for "in"', () => {
-    render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByText('In')).toBeVisible()
   })
 
   it('renders the localized phaseLabel text for "out"', () => {
     const outFrame: SessionFrame = { ...sampleFrame, phase: 'out', phaseLabel: 'Out' }
-    render(<OrbShape frame={outFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={outFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByText('Out')).toBeVisible()
   })
 
   it('root role=img aria-label carries the localized shape label + phaseLabel', () => {
-    render(<OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
+    render(<BreathingRing frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 })
@@ -83,7 +83,7 @@ describe('OrbShape — phase label', () => {
 // SVG selector uses viewBox="0 0 100 100" to disambiguate the arc layer from
 // other SVGs on the surface. Reduced-motion case mocks `window.matchMedia` per
 // the canonical pattern in `src/hooks/usePrefersReducedMotion.test.ts`.
-describe('OrbShape — progress arc', () => {
+describe('BreathingRing — progress arc', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -93,7 +93,7 @@ describe('OrbShape — progress arc', () => {
 
   it('renders the arc layer (track + progress path) for a running frame', () => {
     const { container } = render(
-      <OrbShape frame={partialFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+      <BreathingRing frame={partialFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
     )
     // Two paths = the faint track + the progress arc. Stroke color/width are visual
     // tokens (asserted nowhere — they belong to the design layer, not behavior).
@@ -118,7 +118,7 @@ describe('OrbShape — progress arc', () => {
     } as unknown as MediaQueryList)
 
     const { container } = render(
-      <OrbShape frame={partialFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+      <BreathingRing frame={partialFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
     )
     const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
     expect(arcSvg).toBeNull()
@@ -130,7 +130,7 @@ describe('OrbShape — progress arc', () => {
   it('at t === 0 (phase boundary) suppresses the arc layer', () => {
     // sampleFrame has phaseProgress: 0 → t = 0 → showArc = false.
     const { container } = render(
-      <OrbShape frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+      <BreathingRing frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
     )
     const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
     expect(arcSvg).toBeNull()

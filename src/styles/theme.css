@@ -18,7 +18,7 @@
   --color-modal-backdrop: rgba(58, 65, 80, 0.22);
 
   /* Non-themable layout/sizing tokens (only --color-* tokens are themable) */
-  --orb-size: clamp(180px, 50vw, 280px);
+  --ring-size: clamp(180px, 50vw, 280px);
   --shadow-breathing-card: 0 24px 80px rgb(15 118 110 / 0.12);
 
   /* v2.0 surface elevation + scrim tokens (light).
@@ -95,7 +95,7 @@ dialog.modal-fade[open]::backdrop {
   transition: background-color 200ms ease-out;
 }
 
-/* Reduced-motion: the progress arc is JS-suppressed in OrbShape
+/* Reduced-motion: the progress arc is JS-suppressed in BreathingRing
    (`usePrefersReducedMotion()` → the ring stays, the arc is skipped).
    Here only the F3 dialog modal fade is disabled (per UI-SPEC:
    "in reduced-motion, dialog appears immediately"). */
@@ -105,14 +105,14 @@ dialog.modal-fade[open]::backdrop {
   }
 }
 
-/* Desktop orb size lock: 320 px diameter on desktop (≥sm = 640 px).
+/* Desktop ring size lock: 320 px diameter on desktop (≥sm = 640 px).
    Mobile keeps the responsive
    clamp(180px, 50vw, 280px) defined in @theme above. Overrides via cascade
    on :root so the variable resolves correctly inside all components that
-   reference var(--orb-size). */
+   reference var(--ring-size). */
 @media (min-width: 640px) {
   :root {
-    --orb-size: 320px;
+    --ring-size: 320px;
   }
 }
 

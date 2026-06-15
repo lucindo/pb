@@ -2,7 +2,7 @@ import type { SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 
-export interface OrbShapeProps {
+export interface BreathingRingProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
   strings: UiStrings['practice']['breathing']
@@ -18,28 +18,28 @@ const RING_OPACITY = 0.5
 const LABEL_COLOR = 'var(--color-breathing-accent-strong)'
 const DIGIT_COLOR = 'var(--color-breathing-accent)'
 
-// OrbShape is the sole shape — a fixed-size ring (the progress arc overlays it
+// BreathingRing is the sole shape — a fixed-size ring (the progress arc overlays it
 // while running). It owns the idle null-frame guard.
-export function OrbShape({
+export function BreathingRing({
   frame,
   leadInDigit,
   strings,
   showCompletion = false,
-}: OrbShapeProps) {
+}: BreathingRingProps) {
   if (leadInDigit != null) {
-    return <OrbLeadIn digit={leadInDigit} strings={strings} />
+    return <RingLeadIn digit={leadInDigit} strings={strings} />
   }
   if (showCompletion) {
     return (
-      <OrbContainer>
+      <RingContainer>
         <CheckmarkGlyph />
-      </OrbContainer>
+      </RingContainer>
     )
   }
   if (frame === null) {
-    return <OrbContainer />
+    return <RingContainer />
   }
-  return <OrbBody frame={frame} strings={strings} />
+  return <RingBody frame={frame} strings={strings} />
 }
 
 // 32x32 check, 24 viewBox, 2.4-stroke polyline, centred in the ring.
@@ -62,18 +62,18 @@ function CheckmarkGlyph() {
   )
 }
 
-interface OrbBodyProps {
+interface RingBodyProps {
   frame: SessionFrame
   strings: UiStrings['practice']['breathing']
 }
 
-function OrbBody({ frame, strings }: OrbBodyProps) {
+function RingBody({ frame, strings }: RingBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
   const phaseLabel = frame.phase === 'in' ? strings.inhale : strings.exhale
 
   return (
-    <OrbContainer
+    <RingContainer
       role="img"
       ariaLabel={`${strings.breathingShapeAriaLabel}: ${phaseLabel}`}
       arc={
@@ -90,12 +90,12 @@ function OrbBody({ frame, strings }: OrbBodyProps) {
       >
         {phaseLabel}
       </span>
-    </OrbContainer>
+    </RingContainer>
   )
 }
 
 // Lead-in: neutral pre-state — the digit centred in the ring, no progress arc.
-function OrbLeadIn({
+function RingLeadIn({
   digit,
   strings,
 }: {
@@ -103,28 +103,28 @@ function OrbLeadIn({
   strings: UiStrings['practice']['breathing']
 }) {
   return (
-    <OrbContainer ariaLabel={strings.leadInAriaLabel(digit)} role="img">
+    <RingContainer ariaLabel={strings.leadInAriaLabel(digit)} role="img">
       <span
         className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl"
         style={{ color: DIGIT_COLOR }}
       >
         {digit}
       </span>
-    </OrbContainer>
+    </RingContainer>
   )
 }
 
-// Fixed-size outer ring at --orb-size. The progress arc (when supplied) overlays
+// Fixed-size outer ring at --ring-size. The progress arc (when supplied) overlays
 // it; centred children render above both. No scale transform — the ring never
 // grows or shrinks.
-interface OrbContainerProps {
+interface RingContainerProps {
   role?: 'img' | undefined
   ariaLabel?: string | undefined
   arc?: React.ReactNode
   children?: React.ReactNode
 }
 
-function OrbContainer({ role, ariaLabel, arc, children }: OrbContainerProps) {
+function RingContainer({ role, ariaLabel, arc, children }: RingContainerProps) {
   const rootProps = {
     ...(role != null ? { role } : {}),
     ...(ariaLabel != null ? { 'aria-label': ariaLabel } : {}),
@@ -134,7 +134,7 @@ function OrbContainer({ role, ariaLabel, arc, children }: OrbContainerProps) {
     <div
       {...rootProps}
       className="relative mx-auto my-12 grid place-items-center"
-      style={{ width: 'var(--orb-size)', height: 'var(--orb-size)' }}
+      style={{ width: 'var(--ring-size)', height: 'var(--ring-size)' }}
     >
       <span
         aria-hidden="true"
@@ -156,7 +156,7 @@ function OrbContainer({ role, ariaLabel, arc, children }: OrbContainerProps) {
 // r = 49.7, sweep-flag 0 on the right path / 1 on the left, arc paths via
 // .toFixed(4), no stroke-dasharray + no pathLength (Chrome renders those as
 // broken segments). Stroke width 2.5 is the locked product value.
-// Outer track is NOT duplicated here — OrbContainer renders the faint ring.
+// Outer track is NOT duplicated here — RingContainer renders the faint ring.
 function ProgressArcLayer({
   phase,
   progress,
