@@ -15,20 +15,6 @@
   --color-breathing-text: #3a4150;
   --color-breathing-text-soft: #6b7280;
   --color-border-soft: rgba(93, 104, 119, 0.16);
-  --color-orb-halo-1: rgba(168, 173, 183, 0.22);
-  --color-orb-halo-2: rgba(120, 128, 140, 0.32);
-  --color-orb-halo-3: rgba(93, 104, 119, 0.50);
-  /* Spike 012 V5 spiritual-eye tokens (light).
-     Source: .planning/spikes/012-spiritual-eye-orb/README.md "Locked V5 values".
-     Halo-3 reuses the existing --color-orb-halo-3 above (unchanged per spike).
-     --color-orb-disc-spiritual-eye-strong is derived (NK back-phase, ~12% HSL
-     darker per stop); operator may re-spec at UAT. */
-  --color-orb-halo-1-spiritual-eye: rgba(202, 166, 98, 0.48);
-  --color-orb-halo-2-spiritual-eye: rgba(168, 148, 116, 0.44);
-  --color-orb-disc-spiritual-eye: radial-gradient(circle at 50% 42%, #4a5a96 0%, #34406f 60%, #2a356a 100%);
-  --color-orb-disc-spiritual-eye-strong: radial-gradient(circle at 50% 42%, #36416d 0%, #202845 60%, #191f3e 100%);
-  --color-orb-star-fill-spiritual-eye: #ffffff;
-  --color-orb-star-stroke-spiritual-eye: rgba(255, 255, 255, 0.20);
   --color-modal-backdrop: rgba(58, 65, 80, 0.22);
 
   /* Non-themable layout/sizing tokens (only --color-* tokens are themable) */
@@ -76,18 +62,6 @@
   --color-breathing-text: #dde0e6;
   --color-breathing-text-soft: #8a8d95;
   --color-border-soft: rgba(168, 174, 184, 0.16);
-  --color-orb-halo-1: rgba(74, 78, 88, 0.30);
-  --color-orb-halo-2: rgba(108, 113, 124, 0.38);
-  --color-orb-halo-3: rgba(150, 156, 168, 0.52);
-  /* Spike 012 V5 spiritual-eye tokens (dark).
-     Source: .planning/spikes/012-spiritual-eye-orb/README.md "Locked V5 values".
-     Halo-3 reuses the existing --color-orb-halo-3 above (unchanged per spike). */
-  --color-orb-halo-1-spiritual-eye: rgba(206, 168, 100, 0.45);
-  --color-orb-halo-2-spiritual-eye: rgba(170, 156, 122, 0.46);
-  --color-orb-disc-spiritual-eye: radial-gradient(circle at 50% 42%, #6c7cb6 0%, #4a5a96 60%, #38477e 100%);
-  --color-orb-disc-spiritual-eye-strong: radial-gradient(circle at 50% 42%, #4c5d99 0%, #36416d 60%, #252f54 100%);
-  --color-orb-star-fill-spiritual-eye: #fafafe;
-  --color-orb-star-stroke-spiritual-eye: rgba(255, 255, 255, 0.12);
   --color-modal-backdrop: rgba(0, 0, 0, 0.65);
 
   /* v2.0 surface elevation + scrim tokens (dark). Pure-black channels for

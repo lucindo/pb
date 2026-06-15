@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  BREATHING_SHAPE_FLAG,
   BYPASS_SILENT_MODE_FLAG,
   ORB_IDLE_FLAG,
   RING_CUE_FLAG,
@@ -14,7 +13,6 @@ import {
 // readFeatureFlags(search, persisted) resolver. Because this snapshot equals
 // the production defaults, every existing single-flag assertion stays byte-identical.
 const DEFAULT_PERSISTED: FeatureFlags = {
-  breathingShape: 'orb-halo',
   orbIdle: 'ambient',
   ringCue: 'progress-arc',
   bypassSilentMode: true,
@@ -48,48 +46,10 @@ describe('parseQueryBoolean', () => {
 describe('readFeatureFlags', () => {
   it('returns defaults for empty search', () => {
     expect(readFeatureFlags('', DEFAULT_PERSISTED)).toEqual({
-      breathingShape: 'orb-halo',
       orbIdle: 'ambient',
       ringCue: 'progress-arc',
       bypassSilentMode: true,
     })
-  })
-
-  it('defaults breathingShape to orb-halo (V1)', () => {
-    expect(readFeatureFlags('', DEFAULT_PERSISTED).breathingShape).toBe('orb-halo')
-  })
-
-  it('parses minimal-rings (V2) and its aliases', () => {
-    expect(readFeatureFlags('?breathingShape=minimal-rings', DEFAULT_PERSISTED).breathingShape).toBe('minimal-rings')
-    expect(readFeatureFlags('?breathingShape=minimal', DEFAULT_PERSISTED).breathingShape).toBe('minimal-rings')
-    expect(readFeatureFlags('?breathingShape=rings', DEFAULT_PERSISTED).breathingShape).toBe('minimal-rings')
-  })
-
-  it('parses orb-halo (V1) and its aliases', () => {
-    expect(readFeatureFlags('?breathingShape=orb-halo', DEFAULT_PERSISTED).breathingShape).toBe('orb-halo')
-    expect(readFeatureFlags('?breathingShape=orb', DEFAULT_PERSISTED).breathingShape).toBe('orb-halo')
-    expect(readFeatureFlags('?breathingShape=halo', DEFAULT_PERSISTED).breathingShape).toBe('orb-halo')
-  })
-
-  it('breathingShape is case-insensitive and trims whitespace', () => {
-    expect(readFeatureFlags('?breathingShape=MINIMAL-RINGS', DEFAULT_PERSISTED).breathingShape).toBe('minimal-rings')
-    expect(readFeatureFlags('?breathingShape=%20Minimal%20', DEFAULT_PERSISTED).breathingShape).toBe('minimal-rings')
-  })
-
-  it('falls back to default for invalid breathingShape values', () => {
-    expect(readFeatureFlags('?breathingShape=junk', DEFAULT_PERSISTED).breathingShape).toBe('orb-halo')
-  })
-
-  it('parses spiritual-eye and its aliases', () => {
-    expect(readFeatureFlags('?breathingShape=spiritual-eye', DEFAULT_PERSISTED).breathingShape).toBe('spiritual-eye')
-    expect(readFeatureFlags('?breathingShape=kuthasta', DEFAULT_PERSISTED).breathingShape).toBe('spiritual-eye')
-    expect(readFeatureFlags('?breathingShape=star', DEFAULT_PERSISTED).breathingShape).toBe('spiritual-eye')
-  })
-
-  it('spiritual-eye is case-insensitive and trims whitespace', () => {
-    expect(readFeatureFlags('?breathingShape=KUTHASTA', DEFAULT_PERSISTED).breathingShape).toBe('spiritual-eye')
-    expect(readFeatureFlags('?breathingShape=Spiritual-Eye', DEFAULT_PERSISTED).breathingShape).toBe('spiritual-eye')
-    expect(readFeatureFlags('?breathingShape=%20Star%20', DEFAULT_PERSISTED).breathingShape).toBe('spiritual-eye')
   })
 
   it('defaults orbIdle to ambient', () => {
@@ -156,34 +116,34 @@ describe('readFeatureFlags', () => {
 
 describe('readFeatureFlags 4-way resolver (Phase 47 D-05/D-06/D-07)', () => {
   it('query-wins: valid query value overrides persisted', () => {
-    const persisted: FeatureFlags = { ...DEFAULT_PERSISTED, breathingShape: 'spiritual-eye' }
-    expect(readFeatureFlags('?breathingShape=minimal-rings', persisted).breathingShape)
-      .toBe('minimal-rings')
+    const persisted: FeatureFlags = { ...DEFAULT_PERSISTED, ringCue: 'outer-inner' }
+    expect(readFeatureFlags('?ringCue=progress-arc', persisted).ringCue)
+      .toBe('progress-arc')
   })
 
   it('persisted-wins: absent query falls through to persisted', () => {
-    const persisted: FeatureFlags = { ...DEFAULT_PERSISTED, breathingShape: 'spiritual-eye' }
-    expect(readFeatureFlags('', persisted).breathingShape).toBe('spiritual-eye')
+    const persisted: FeatureFlags = { ...DEFAULT_PERSISTED, ringCue: 'outer-inner' }
+    expect(readFeatureFlags('', persisted).ringCue).toBe('outer-inner')
   })
 
   it('default-wins: absent query AND default persisted yields default', () => {
-    expect(readFeatureFlags('', DEFAULT_PERSISTED).breathingShape).toBe('orb-halo')
+    expect(readFeatureFlags('', DEFAULT_PERSISTED).ringCue).toBe('progress-arc')
   })
 
   it('invalid-query-falls-through-to-persisted (D-07): unparseable query value is not silently masked', () => {
-    const persisted: FeatureFlags = { ...DEFAULT_PERSISTED, breathingShape: 'spiritual-eye' }
-    expect(readFeatureFlags('?breathingShape=junk', persisted).breathingShape).toBe('spiritual-eye')
+    const persisted: FeatureFlags = { ...DEFAULT_PERSISTED, ringCue: 'outer-inner' }
+    expect(readFeatureFlags('?ringCue=junk', persisted).ringCue).toBe('outer-inner')
   })
 
-  it('per-field independence: query override on breathingShape does not affect ringCue', () => {
+  it('per-field independence: query override on ringCue does not affect orbIdle', () => {
     const persisted: FeatureFlags = {
       ...DEFAULT_PERSISTED,
-      breathingShape: 'spiritual-eye',
       ringCue: 'outer-inner',
+      orbIdle: 'still',
     }
-    const flags = readFeatureFlags('?breathingShape=minimal-rings', persisted)
-    expect(flags.breathingShape).toBe('minimal-rings')
-    expect(flags.ringCue).toBe('outer-inner')
+    const flags = readFeatureFlags('?ringCue=progress-arc', persisted)
+    expect(flags.ringCue).toBe('progress-arc')
+    expect(flags.orbIdle).toBe('still')
   })
 })
 
@@ -191,14 +151,6 @@ describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
   it('BYPASS_SILENT_MODE_FLAG is exported with the production default and queryParam', () => {
     expect(BYPASS_SILENT_MODE_FLAG.queryParam).toBe('bypassSilentMode')
     expect(BYPASS_SILENT_MODE_FLAG.defaultValue).toBe(true) // default true
-  })
-
-  it('BREATHING_SHAPE_FLAG is exported with the production default + alias parser', () => {
-    expect(BREATHING_SHAPE_FLAG.queryParam).toBe('breathingShape')
-    expect(BREATHING_SHAPE_FLAG.defaultValue).toBe('orb-halo')
-    // Alias-table reuse: the prefs coercer relies on this parse method.
-    expect(BREATHING_SHAPE_FLAG.parse('kuthasta')).toBe('spiritual-eye')
-    expect(BREATHING_SHAPE_FLAG.parse('junk')).toBeNull()
   })
 
   it('ORB_IDLE_FLAG is exported with the production default and parser', () => {

@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { createWallSessionClock } from '../audio/sessionClock'
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
-import type { BreathingShapeVariant, OrbIdleBehavior, RingCueStyle } from '../featureFlags'
+import type { OrbIdleBehavior, RingCueStyle } from '../featureFlags'
 import { useAmbientScale } from '../hooks/useAmbientScale'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
@@ -19,10 +19,6 @@ export interface OrbShapeProps {
   // Wired off at Idle + Complete call sites; default true = rings show during Running.
   // OrbLeadIn's prop default is hard-set to false inside the component.
   showRings?: boolean
-  // 'orb-halo' (V1, default) = 3-layered organic-puddle halos + disc with soft shadow
-  // + rings at 0.45 opacity. 'minimal-rings' (V2) = single full-bleed accent halo at
-  // 0.16 opacity + disc with no shadow + rings at 0.5 opacity.
-  variant?: BreathingShapeVariant
   // When set AND no frame/leadIn, renders the idle orb (empty centre disc;
   // scale = MID_SCALE for 'still', breath-clock-driven for 'ambient').
   // showRings is hard-set to false on the idle path.
@@ -36,33 +32,13 @@ export interface OrbShapeProps {
   showCompletion?: boolean
 }
 
-// V1 3-layer halo geometry — asymmetric border-radii give the organic puddle feel;
-// small px shifts layer the halos with offset.
-const V1_HALOS = [
-  { token: '--color-orb-halo-1', pct: 1.0, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4, 2] },
-  { token: '--color-orb-halo-2', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [3, -2] },
-  { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1, 3] },
-] as const
-
-// Spiritual-eye halo flame: same geometry as V1_HALOS — only the halo-1 and
-// halo-2 tokens differ (gold rgba); halo-3 reuses --color-orb-halo-3 (cool
-// slate, intentionally unchanged to preserve the warm/cool contrast).
-const SPIRITUAL_EYE_HALOS = [
-  { token: '--color-orb-halo-1-spiritual-eye', pct: 1.0, radius: '48% 52% 51% 49% / 50% 49% 51% 50%', shift: [-4, 2] },
-  { token: '--color-orb-halo-2-spiritual-eye', pct: 0.86, radius: '52% 48% 49% 51% / 49% 52% 48% 51%', shift: [3, -2] },
-  { token: '--color-orb-halo-3', pct: 0.74, radius: '50% 50% 53% 47% / 51% 49% 51% 49%', shift: [-1, 3] },
-] as const
-
 const DISC_PCT = 0.62
 // 600 ms ease is the locked ring transition duration.
 const RING_TRANSITION = 'opacity 600ms ease'
 const DISC_BG_TRANSITION = 'background 400ms ease-in-out'
 
-const V1_RING_OPACITY = 0.45
-const V2_RING_OPACITY = 0.5
-const V1_DISC_SHADOW = '0 6px 24px var(--color-border-soft)'
-const V2_DISC_SHADOW = 'none'
-const V2_HALO_OPACITY = 0.16
+const RING_OPACITY = 0.5
+const HALO_OPACITY = 0.16
 
 // OrbShape is the sole shape — it owns the idle null-return guard.
 export function OrbShape({
@@ -71,13 +47,12 @@ export function OrbShape({
   strings,
   cue = 'labels',
   showRings = true,
-  variant = 'orb-halo',
   idleMode,
   showCompletion = false,
   ringCue = 'progress-arc',
 }: OrbShapeProps) {
   if (leadInDigit != null) {
-    return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} ringCue={ringCue} />
+    return <OrbLeadIn digit={leadInDigit} strings={strings} ringCue={ringCue} />
   }
   if (showCompletion) {
     return (
@@ -86,7 +61,6 @@ export function OrbShape({
         reducedMotion={false}
         orbScale={MID_SCALE}
         discBg="var(--color-breathing-accent)"
-        variant={variant}
         ringCue={ringCue}
       >
         <CheckmarkGlyph />
@@ -95,7 +69,7 @@ export function OrbShape({
   }
   if (frame === null) {
     if (idleMode != null) {
-      return <OrbIdle idleMode={idleMode} variant={variant} ringCue={ringCue} />
+      return <OrbIdle idleMode={idleMode} ringCue={ringCue} />
     }
     return null
   }
@@ -105,7 +79,6 @@ export function OrbShape({
       strings={strings}
       cue={cue}
       showRings={showRings}
-      variant={variant}
       ringCue={ringCue}
     />
   )
@@ -136,44 +109,15 @@ function CheckmarkGlyph() {
   )
 }
 
-// 5-point polygon star, outer:inner ratio 2.5, point straight up.
-// Fill/stroke tokens read via inline style (NOT currentColor) — on-accent
-// would give #1a1d24 in dark but star fill must be #fafafe in dark.
-// Star sized to 20% of the centre disc.
-function StarGlyph() {
-  return (
-    <span
-      aria-hidden="true"
-      className="relative z-10 flex items-center justify-center"
-      style={{ width: '20%', height: '20%' }}
-    >
-      <svg
-        viewBox="0 0 100 100"
-        width="100%"
-        height="100%"
-        style={{
-          fill: 'var(--color-orb-star-fill-spiritual-eye)',
-          stroke: 'var(--color-orb-star-stroke-spiritual-eye)',
-          strokeWidth: 0.5,
-          strokeLinejoin: 'round',
-        }}
-      >
-        <polygon points="50,10 57.05,33.78 81.02,33.78 61.99,48.22 69.04,72.00 50,57.55 30.96,72.00 38.01,48.22 18.98,33.78 42.95,33.78" />
-      </svg>
-    </span>
-  )
-}
-
 interface OrbBodyProps {
   frame: SessionFrame
   strings: UiStrings['practice']['breathing']
   cue: CueStyleId
   showRings: boolean
-  variant: BreathingShapeVariant
   ringCue: RingCueStyle
 }
 
-function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyProps) {
+function OrbBody({ frame, strings, cue, showRings, ringCue }: OrbBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -185,11 +129,6 @@ function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyPr
 
   const phaseLabel = frame.phase === 'in' ? strings.inhale : strings.exhale
 
-  const discBg =
-    variant === 'spiritual-eye'
-      ? 'var(--color-orb-disc-spiritual-eye)'
-      : 'var(--color-breathing-accent)'
-
   return (
     <OrbContainer
       role="img"
@@ -200,16 +139,11 @@ function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyPr
       innerRingPhase={frame.phase}
       reducedMotion={reducedMotion}
       orbScale={orbScale}
-      discBg={discBg}
-      variant={variant}
+      discBg="var(--color-breathing-accent)"
       ringCue={ringCue}
       arcProgress={progress}
     >
-      {variant === 'spiritual-eye' ? (
-        <StarGlyph />
-      ) : (
-        <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
-      )}
+      <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
     </OrbContainer>
   )
 }
@@ -221,11 +155,9 @@ function OrbBody({ frame, strings, cue, showRings, variant, ringCue }: OrbBodyPr
 // reducedMotion gate at false — moot when showRings=false anyway.
 function OrbIdle({
   idleMode,
-  variant,
   ringCue,
 }: {
   idleMode: OrbIdleBehavior
-  variant: BreathingShapeVariant
   ringCue: RingCueStyle
 }) {
   // Stable WallSessionClock for useAmbientScale's rAF loop initial start capture.
@@ -234,21 +166,14 @@ function OrbIdle({
   // not from this clock — this clock is for the initial start anchor only.
   const ambientWallClock = useMemo(() => createWallSessionClock(), [])
   const ambientScale = useAmbientScale(idleMode === 'ambient', ambientWallClock)
-  const discBg =
-    variant === 'spiritual-eye'
-      ? 'var(--color-orb-disc-spiritual-eye)'
-      : 'var(--color-breathing-accent)'
   return (
     <OrbContainer
       showRings={false}
       reducedMotion={false}
       orbScale={ambientScale}
-      discBg={discBg}
-      variant={variant}
+      discBg="var(--color-breathing-accent)"
       ringCue={ringCue}
-    >
-      {variant === 'spiritual-eye' ? <StarGlyph /> : null}
-    </OrbContainer>
+    />
   )
 }
 
@@ -258,19 +183,12 @@ function OrbIdle({
 function OrbLeadIn({
   digit,
   strings,
-  variant,
   ringCue,
 }: {
   digit: 1 | 2 | 3
   strings: UiStrings['practice']['breathing']
-  variant: BreathingShapeVariant
   ringCue: RingCueStyle
 }) {
-  const discBg =
-    variant === 'spiritual-eye'
-      ? 'var(--color-orb-disc-spiritual-eye)'
-      : 'var(--color-breathing-accent)'
-
   return (
     <OrbContainer
       ariaLabel={strings.leadInAriaLabel(digit)}
@@ -278,8 +196,7 @@ function OrbLeadIn({
       showRings={false}
       reducedMotion={false}
       orbScale={MID_SCALE}
-      discBg={discBg}
-      variant={variant}
+      discBg="var(--color-breathing-accent)"
       ringCue={ringCue}
     >
       <span className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl">
@@ -291,9 +208,8 @@ function OrbLeadIn({
 
 // Shared layout: outer container at --orb-size, optional ring layers, then
 // the breathing-scale wrapper (`.orb` class kept for `will-change: transform`
-// GPU promotion — see theme.css comment) containing the halo region + centre
-// disc. The halo region branches per variant: V1 renders 3 organic-puddle
-// halos, V2 renders a single full-bleed accent halo.
+// GPU promotion — see theme.css comment) containing a single full-bleed accent
+// halo + centre disc.
 interface OrbContainerProps {
   role?: 'img' | undefined
   ariaLabel?: string | undefined
@@ -304,7 +220,6 @@ interface OrbContainerProps {
   reducedMotion: boolean
   orbScale: number
   discBg: string
-  variant: BreathingShapeVariant
   // Ring-cue style threaded from OrbShape. Only the inner-ring slot in the
   // showRings block branches on this value; the faint outer track is shared.
   ringCue: RingCueStyle
@@ -325,7 +240,6 @@ function OrbContainer({
   reducedMotion,
   orbScale,
   discBg,
-  variant,
   ringCue,
   arcProgress = 0,
   children,
@@ -339,8 +253,6 @@ function OrbContainer({
 
   const innerVisible = innerRingPhase === 'out' ? 1 : 0
   const innerSizePct = `${(MIN_SCALE * 100).toFixed(2)}%`
-  const ringOpacity = variant === 'minimal-rings' ? V2_RING_OPACITY : V1_RING_OPACITY
-  const discShadow = variant === 'minimal-rings' ? V2_DISC_SHADOW : V1_DISC_SHADOW
 
   return (
     <div
@@ -358,7 +270,7 @@ function OrbContainer({
               inset: 0,
               border: '1.5px solid var(--color-breathing-accent)',
               borderRadius: '50%',
-              opacity: ringOpacity,
+              opacity: RING_OPACITY,
             }}
           />
           {ringCue === 'progress-arc' ? (
@@ -380,7 +292,7 @@ function OrbContainer({
                   transform: 'translate(-50%, -50%)',
                   border: '1.5px solid var(--color-breathing-accent)',
                   borderRadius: '50%',
-                  opacity: innerVisible * ringOpacity,
+                  opacity: innerVisible * RING_OPACITY,
                   transition: RING_TRANSITION,
                 }}
               />
@@ -397,48 +309,16 @@ function OrbContainer({
           transform: `translate3d(0,0,0) scale(${String(orbScale)})`,
         }}
       >
-        {variant === 'minimal-rings' ? (
-          <div
-            aria-hidden="true"
-            className="absolute"
-            style={{
-              inset: 0,
-              borderRadius: '50%',
-              background: 'var(--color-breathing-accent)',
-              opacity: V2_HALO_OPACITY,
-            }}
-          />
-        ) : variant === 'spiritual-eye' ? (
-          SPIRITUAL_EYE_HALOS.map((h) => (
-            <div
-              key={h.token}
-              aria-hidden="true"
-              className="absolute"
-              style={{
-                width: `${String(h.pct * 100)}%`,
-                height: `${String(h.pct * 100)}%`,
-                borderRadius: h.radius,
-                background: `var(${h.token})`,
-                transform: `translate(${String(h.shift[0])}px, ${String(h.shift[1])}px)`,
-              }}
-            />
-          ))
-        ) : (
-          V1_HALOS.map((h) => (
-            <div
-              key={h.token}
-              aria-hidden="true"
-              className="absolute"
-              style={{
-                width: `${String(h.pct * 100)}%`,
-                height: `${String(h.pct * 100)}%`,
-                borderRadius: h.radius,
-                background: `var(${h.token})`,
-                transform: `translate(${String(h.shift[0])}px, ${String(h.shift[1])}px)`,
-              }}
-            />
-          ))
-        )}
+        <div
+          aria-hidden="true"
+          className="absolute"
+          style={{
+            inset: 0,
+            borderRadius: '50%',
+            background: 'var(--color-breathing-accent)',
+            opacity: HALO_OPACITY,
+          }}
+        />
         <div
           className="absolute flex items-center justify-center"
           style={{
@@ -446,14 +326,7 @@ function OrbContainer({
             height: `${String(DISC_PCT * 100)}%`,
             borderRadius: '50%',
             background: discBg,
-            // spiritual-eye disc is a dark blue gradient in both themes, so its
-            // inherited content (the lead-in digit) needs the light star token —
-            // on-accent flips to near-black in dark and would vanish.
-            color:
-              variant === 'spiritual-eye'
-                ? 'var(--color-orb-star-fill-spiritual-eye)'
-                : 'var(--color-breathing-on-accent)',
-            boxShadow: discShadow,
+            color: 'var(--color-breathing-on-accent)',
             transition: DISC_BG_TRANSITION,
           }}
         >

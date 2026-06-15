@@ -6,7 +6,6 @@ import {
   coerceTimbre,
   coerceCue,
   coerceLocale,
-  coerceBreathingShape,
   coerceRingCue,
   coerceOrbIdle,
   coerceBypassSilentMode,
@@ -179,45 +178,6 @@ describe('coerceTheme / coerceTimbre / coerceCue / coerceLocale (D-10 per-field)
   })
 })
 
-describe('coerceBreathingShape (Phase 47 D-03 — alias reuse)', () => {
-  // Proves alias-table single-source-of-truth: the persisted coercer delegates
-  // to BREATHING_SHAPE_FLAG.parse from featureFlags.ts. Adding an alias there
-  // automatically extends coverage to persisted envelopes.
-  it("accepts all canonical BreathingShapeVariant values verbatim", () => {
-    expect(coerceBreathingShape('orb-halo')).toBe('orb-halo')
-    expect(coerceBreathingShape('minimal-rings')).toBe('minimal-rings')
-    expect(coerceBreathingShape('spiritual-eye')).toBe('spiritual-eye')
-  })
-
-  it("coerces orb-halo aliases ('orb' / 'halo') to canonical", () => {
-    expect(coerceBreathingShape('orb')).toBe('orb-halo')
-    expect(coerceBreathingShape('halo')).toBe('orb-halo')
-  })
-
-  it("coerces minimal-rings aliases ('minimal' / 'rings') to canonical", () => {
-    expect(coerceBreathingShape('minimal')).toBe('minimal-rings')
-    expect(coerceBreathingShape('rings')).toBe('minimal-rings')
-  })
-
-  it("coerces spiritual-eye aliases ('kuthasta' / 'star') to canonical — D-03 proof", () => {
-    expect(coerceBreathingShape('kuthasta')).toBe('spiritual-eye')
-    expect(coerceBreathingShape('star')).toBe('spiritual-eye')
-  })
-
-  it("normalizes case + trim via the shared parser ('  KUTHASTA  ' → 'spiritual-eye')", () => {
-    expect(coerceBreathingShape('  KUTHASTA  ')).toBe('spiritual-eye')
-  })
-
-  it("falls back to BREATHING_SHAPE_FLAG.defaultValue for garbage / null / numbers / objects", () => {
-    expect(coerceBreathingShape('junk')).toBe('orb-halo')
-    expect(coerceBreathingShape(null)).toBe('orb-halo')
-    expect(coerceBreathingShape(undefined)).toBe('orb-halo')
-    expect(coerceBreathingShape(0)).toBe('orb-halo')
-    expect(coerceBreathingShape({})).toBe('orb-halo')
-    expect(coerceBreathingShape([])).toBe('orb-halo')
-  })
-})
-
 describe('coerceRingCue (Phase 47 D-03 — alias reuse)', () => {
   it("accepts both canonical RingCueStyle values verbatim", () => {
     expect(coerceRingCue('outer-inner')).toBe('outer-inner')
@@ -299,35 +259,22 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
 
 describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
   // Per-field non-throwing coerce-and-fallback: a single corrupt field falls back
-  // to the per-flag default; the other 7 fields are preserved.
-  it("breathingShape: 'junk' → 'orb-halo' default; other fields preserved", () => {
-    const out = coercePrefs({
-      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      breathingShape: 'junk',
-      ringCue: 'outer-inner', orbIdle: 'still', bypassSilentMode: true,
-    })
-    expect(out.breathingShape).toBe('orb-halo')
-    expect(out.theme).toBe('dark')
-    expect(out.ringCue).toBe('outer-inner')
-    expect(out.orbIdle).toBe('still')
-    expect(out.bypassSilentMode).toBe(true)
-  })
-
+  // to the per-flag default; the other fields are preserved.
   it("ringCue: 'junk' → 'progress-arc' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      breathingShape: 'spiritual-eye', ringCue: 'junk',
+      ringCue: 'junk',
       orbIdle: 'still', bypassSilentMode: true,
     })
     expect(out.ringCue).toBe('progress-arc')
-    expect(out.breathingShape).toBe('spiritual-eye')
+    expect(out.theme).toBe('dark')
     expect(out.bypassSilentMode).toBe(true)
   })
 
   it("orbIdle: 'junk' → 'ambient' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
+      ringCue: 'outer-inner',
       orbIdle: 'junk', bypassSilentMode: true,
     })
     expect(out.orbIdle).toBe('ambient')
@@ -337,15 +284,15 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
   it("bypassSilentMode: 'junk' → true default (D-05); other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
+      ringCue: 'outer-inner',
       orbIdle: 'still', bypassSilentMode: 'junk',
     })
     expect(out.bypassSilentMode).toBe(true) // corrupt-field falls back to true (bypassSilentMode default)
     expect(out.orbIdle).toBe('still')
   })
 
-  it("pre-Phase-47 envelope (4 keys only) coerces the 4 new keys to per-flag defaults (PREFS-03)", () => {
-    // A returning user from a pre-Phase-47 build has 4 prefs keys — the 4 new
+  it("pre-flags envelope (4 keys only) coerces the new keys to per-flag defaults (PREFS-03)", () => {
+    // A returning user from a pre-flags build has 4 prefs keys — the new
     // keys are undefined and each coercer falls back to the per-flag default.
     // Returning users see the production defaults.
     const out = coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
@@ -353,24 +300,9 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
       ...DEFAULT_PREFS,
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
     })
-    expect(out.breathingShape).toBe('orb-halo')
     expect(out.ringCue).toBe('progress-arc')
     expect(out.orbIdle).toBe('ambient')
     expect(out.bypassSilentMode).toBe(true)
-  })
-})
-
-describe('coercePrefs alias-reuse — persisted kuthasta round-trips to spiritual-eye (Phase 47 D-03)', () => {
-  it("envelope { breathingShape: 'kuthasta' } coerces to UserPrefs.breathingShape === 'spiritual-eye'", () => {
-    // Integration assertion that catches alias-table drift between BREATHING_SHAPE_FLAG.parse
-    // and the persisted coercer. If a future refactor duplicates the alias table in
-    // coerceBreathingShape, this test stays green; if it duplicates the alias table OUT OF SYNC
-    // (e.g., drops 'kuthasta'), this test goes red.
-    const envelope = {
-      theme: 'system', timbre: 'bowl', cue: 'arrow', locale: 'en',
-      breathingShape: 'kuthasta',
-    }
-    expect(coercePrefs(envelope).breathingShape).toBe('spiritual-eye')
   })
 })
 
@@ -385,12 +317,11 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('round-trips an 8-field UserPrefs with the 4 new flags set to non-default values (Phase 47 + 49.1)', () => {
+  it('round-trips a 7-field UserPrefs with the flags set to non-default values (Phase 47 + 49.1)', () => {
     // Full-fidelity round-trip: every new field carries a non-default value so the
     // assertion fails if any coercer, the JSON re-hydration, or the envelope-merge drops a value.
     const fullPrefs: UserPrefs = {
       theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR',
-      breathingShape: 'spiritual-eye',
       ringCue: 'outer-inner',
       orbIdle: 'still',
       bypassSilentMode: false, // non-default (default is true)
@@ -431,15 +362,13 @@ describe('loadPrefs / savePrefs round-trip', () => {
 })
 
 describe('DEFAULT_PREFS shape', () => {
-  // The 8-field count guards against adding a pref field without a default. The
-  // individual coercer defaults and the kuthasta alias round-trip are covered by
-  // their own describe blocks above.
-  it('DEFAULT_PREFS has the 8 contracted fields with their defaults', () => {
-    expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
+  // The field count guards against adding a pref field without a default. The
+  // individual coercer defaults are covered by their own describe blocks above.
+  it('DEFAULT_PREFS has the 7 contracted fields with their defaults', () => {
     expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
     expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
-    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(8)
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(7)
   })
 })
 

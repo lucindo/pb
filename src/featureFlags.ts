@@ -4,12 +4,10 @@ export interface QueryFeatureFlagSpec<T> {
   parse(this: void, rawValue: string): T | null
 }
 
-export type BreathingShapeVariant = 'orb-halo' | 'minimal-rings' | 'spiritual-eye'
 export type OrbIdleBehavior = 'still' | 'ambient'
 export type RingCueStyle = 'outer-inner' | 'progress-arc'
 
 export interface FeatureFlags {
-  breathingShape: BreathingShapeVariant
   orbIdle: OrbIdleBehavior
   ringCue: RingCueStyle
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
@@ -60,26 +58,6 @@ function readQueryFeatureFlagOrNull<T>(
   return spec.parse(rawValue)
 }
 
-// Alias provenance — each non-canonical token is intentional and retained
-// for documented call sites; do NOT drop without auditing first.
-//   - 'orb', 'halo'        → 'orb-halo'      : UI-label tokens; share strings.ts options.orb / options.halo entries.
-//   - 'minimal', 'rings'   → 'minimal-rings' : UI-label tokens; 'rings' is dual-meaning (see RING_CUE_FLAG below).
-//   - 'kuthasta', 'star'   → 'spiritual-eye' : design-spec heritage (kuthasta = Sanskrit, star = layperson).
-// Same input string can resolve differently per query parameter — lookup is
-// per-parameter, so the dual-meaning of 'rings' across breathingShape and
-// ringCue is by design, not collision.
-export const BREATHING_SHAPE_FLAG = {
-  queryParam: 'breathingShape',
-  defaultValue: 'orb-halo' as BreathingShapeVariant,
-  parse(rawValue: string): BreathingShapeVariant | null {
-    const v = rawValue.trim().toLowerCase()
-    if (v === 'orb-halo' || v === 'orb' || v === 'halo') return 'orb-halo'
-    if (v === 'minimal-rings' || v === 'minimal' || v === 'rings') return 'minimal-rings'
-    if (v === 'spiritual-eye' || v === 'kuthasta' || v === 'star') return 'spiritual-eye'
-    return null
-  },
-} satisfies QueryFeatureFlagSpec<BreathingShapeVariant>
-
 export const ORB_IDLE_FLAG = {
   queryParam: 'orbIdle',
   defaultValue: 'ambient' as OrbIdleBehavior,
@@ -91,10 +69,8 @@ export const ORB_IDLE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
 
-// Alias provenance — every non-canonical token has a recorded origin; the
-// per-parameter scope means 'rings' here (→ outer-inner) does not conflict
-// with 'rings' on breathingShape (→ minimal-rings). Cross-file: the EN
-// strings.ts options.rings label is the UI surface for the 'outer-inner'
+// Alias provenance — every non-canonical token has a recorded origin. Cross-file:
+// the EN strings.ts options.rings label is the UI surface for the 'outer-inner'
 // variant, which is why 'rings' is accepted here as a UI-label alias.
 //   outer-inner aliases:
 //     - 'rings'      : UI-label token (strings.ts options.rings = 'Rings').
@@ -138,7 +114,6 @@ export function readFeatureFlags(
   persisted: FeatureFlags,
 ): FeatureFlags {
   return {
-    breathingShape:   readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG)    ?? persisted.breathingShape,
     orbIdle:          readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)           ?? persisted.orbIdle,
     ringCue:          readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)           ?? persisted.ringCue,
     bypassSilentMode: readQueryFeatureFlagOrNull(search, BYPASS_SILENT_MODE_FLAG) ?? persisted.bypassSilentMode,

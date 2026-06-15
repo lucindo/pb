@@ -51,9 +51,9 @@ describe('AdvancedPage', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('renders two radiogroups for Orb and Ring cue', () => {
+  it('renders one radiogroup for Ring cue', () => {
     renderPage()
-    expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
   })
 
   it('renders two switches for Breathing effect and Bypass silent mode', () => {
@@ -73,19 +73,6 @@ describe('AdvancedPage', () => {
     expect(
       screen.getByRole('button', { name: UI_STRINGS.en.advanced.backChevron }),
     ).toHaveFocus()
-  })
-
-  it('writes breathingShape to the prefs envelope when an orb option is clicked', async () => {
-    const user = userEvent.setup()
-    renderPage()
-    await user.click(
-      screen.getByRole('radio', { name: UI_STRINGS.en.advanced.orb.options.kuthasta }),
-    )
-    const raw = window.localStorage.getItem(STATE_KEY)
-    expect(raw).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
-    expect(envelope.prefs.breathingShape).toBe('spiritual-eye')
   })
 
   it('writes orbIdle=ambient to the prefs envelope when Breathing effect is toggled on', async () => {

@@ -55,13 +55,12 @@ describe('usePreferenceChoice', () => {
     expect(readPrefs().bypassSilentMode).toBe(true)
   })
 
-  it('preserves all other prefs fields — envelope merge contract (8-field UserPrefs)', () => {
+  it('preserves all other prefs fields — envelope merge contract (7-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
       cue: 'arrow',
       locale: 'pt-BR',
-      breathingShape: 'spiritual-eye',
       ringCue: 'progress-arc',
       orbIdle: 'still',
       bypassSilentMode: true,
@@ -78,7 +77,6 @@ describe('usePreferenceChoice', () => {
     expect(prefs.timbre).toBe('bell')
     expect(prefs.cue).toBe('arrow')
     expect(prefs.locale).toBe('pt-BR')
-    expect(prefs.breathingShape).toBe('spiritual-eye')
     expect(prefs.orbIdle).toBe('still')
     expect(prefs.bypassSilentMode).toBe(true)
   })

@@ -127,14 +127,6 @@ export interface UiStrings {
       readonly orbStyle: string
       readonly behavior: string
     }
-    readonly orb: {
-      readonly label: string
-      readonly options: {
-        readonly halo: string
-        readonly minimal: string
-        readonly kuthasta: string
-      }
-    }
     readonly ringCue: {
       readonly label: string
       readonly options: {
@@ -294,7 +286,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       backChevron: 'Back to Settings',
       rightChevronAriaOnSettings: 'Advanced settings',
       sections: { orbStyle: 'Orb Style', behavior: 'Behavior' },
-      orb: { label: 'Orb', options: { halo: 'Halo', minimal: 'Minimal', kuthasta: 'Kuthasta' } },
       ringCue: { label: 'Ring cue', options: { arc: 'Arc', rings: 'Rings' } },
       breathingEffect: { label: 'Breathing effect' },
       bypassSilentMode: { label: 'Bypass silent mode' },
@@ -447,18 +438,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         // TODO: native-speaker review
         orbStyle: 'Estilo do orbe',
         behavior: 'Comportamento',
-      },
-      orb: {
-        // TODO: native-speaker review
-        label: 'Orbe',
-        options: {
-          // TODO: native-speaker review
-          halo: 'Halo',
-          // TODO: native-speaker review
-          minimal: 'Mínimo',
-          // TODO: native-speaker review
-          kuthasta: 'Kuthasta',
-        },
       },
       ringCue: {
         // TODO: native-speaker review

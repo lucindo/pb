@@ -9,7 +9,7 @@ function setSearch(search: string): void {
   window.history.pushState(null, '', `${window.location.pathname}${search}`)
 }
 
-// Seed a full 8-field envelope keyed at STATE_KEY; accepts a complete UserPrefs literal
+// Seed a full envelope keyed at STATE_KEY; accepts a complete UserPrefs literal
 // so each test can override the exact field(s) it exercises.
 function seedPrefs(prefs: UserPrefs): void {
   window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 1, prefs }))
@@ -49,34 +49,32 @@ describe('useFeatureFlags', () => {
   it('seeds feature flags from loadPrefs() at mount when no query string is present (PREFS-01)', () => {
     seedPrefs({
       ...DEFAULT_PREFS,
-      breathingShape: 'spiritual-eye',
       ringCue: 'outer-inner',
       orbIdle: 'still',
     })
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('spiritual-eye')
     expect(result.current.ringCue).toBe('outer-inner')
     expect(result.current.orbIdle).toBe('still')
   })
 
   // PREFS-02 integration: query string wins over persisted when they disagree.
   it('query string wins over persisted on mount (PREFS-02)', () => {
-    seedPrefs({ ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' })
-    setSearch('?breathingShape=minimal-rings')
+    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
+    setSearch('?ringCue=progress-arc')
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('minimal-rings')
+    expect(result.current.ringCue).toBe('progress-arc')
   })
 
   // Cross-tab 'storage' event with
   // key === STATE_KEY re-reads disk; event payload is discarded.
   it('cross-tab storage event with key === STATE_KEY re-reads persisted snapshot', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
 
     // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' },
+      prefs: { ...DEFAULT_PREFS, ringCue: 'outer-inner' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -92,12 +90,12 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.breathingShape).toBe('spiritual-eye')
+    expect(result.current.ringCue).toBe('outer-inner')
   })
 
   it('cross-tab storage event with unrelated key is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -111,27 +109,11 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
   })
 
   // Same-tab 'hrv:prefs-changed' for
-  // each of the 4 keys re-reads disk; the payload's `value` is never trusted.
-  it('same-tab hrv:prefs-changed with detail.key === "breathingShape" re-reads persisted', async () => {
-    const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('orb-halo')
-
-    seedPrefs({ ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' })
-
-    // eslint-disable-next-line @typescript-eslint/require-await
-    await act(async () => {
-      window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'breathingShape', value: 'spiritual-eye' } }),
-      )
-    })
-
-    expect(result.current.breathingShape).toBe('spiritual-eye')
-  })
-
+  // each of the 3 keys re-reads disk; the payload's `value` is never trusted.
   it('same-tab hrv:prefs-changed with detail.key === "ringCue" re-reads persisted', async () => {
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.ringCue).toBe('progress-arc')
@@ -182,12 +164,12 @@ describe('useFeatureFlags', () => {
 
   // Negative: unrelated 'theme' key MUST NOT trigger a re-read.
   // The test mutates disk so the only way the assertion can hold is if the
-  // hook ignores the event (proves the 4-key filter doesn't false-positive).
+  // hook ignores the event (proves the 3-key filter doesn't false-positive).
   it('same-tab hrv:prefs-changed with detail.key === "theme" is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
 
-    seedPrefs({ ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' })
+    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -196,16 +178,16 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
   })
 
   // Same negative shape for 'timbre' — proves the unrelated-key ignore covers
   // more than just 'theme' (no single-key special-case in the filter).
   it('same-tab hrv:prefs-changed with detail.key === "timbre" is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
 
-    seedPrefs({ ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' })
+    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -214,7 +196,7 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
   })
 
   // 5th key: bypassSilentMode event triggers re-read
@@ -246,9 +228,9 @@ describe('useFeatureFlags', () => {
   // will pick up persisted changes.
   it('same-tab hrv:prefs-changed with detail.key === undefined re-reads persisted (forward-compat)', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.breathingShape).toBe('orb-halo')
+    expect(result.current.ringCue).toBe('progress-arc')
 
-    seedPrefs({ ...DEFAULT_PREFS, breathingShape: 'spiritual-eye' })
+    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -257,6 +239,6 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.breathingShape).toBe('spiritual-eye')
+    expect(result.current.ringCue).toBe('outer-inner')
   })
 })

@@ -14,8 +14,8 @@ export interface SegmentedFieldProps<T extends string> {
   sectionLabelHidden?: boolean | undefined
 }
 
-/** Section-labelled SegmentedControl. Shared chrome behind OrbPicker /
- *  RingCuePicker / LanguagePicker — each consumer becomes a thin adapter that
+/** Section-labelled SegmentedControl. Shared chrome behind RingCuePicker /
+ *  LanguagePicker — each consumer becomes a thin adapter that
  *  owns its own choice hook and option→label mapping. The primitive owns the
  *  label posture (the accent-strong sublabel `<p>`) and forwards to
  *  SegmentedControl. Parallels PickerCardGrid for the card-style pickers.

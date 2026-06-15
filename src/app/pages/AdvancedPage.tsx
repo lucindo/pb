@@ -1,7 +1,6 @@
 import { useEffect, useRef, type ReactElement } from 'react'
 
 import { ChevronBackIcon } from '../../components/icons'
-import { OrbPicker } from '../../components/OrbPicker'
 import { RingCuePicker } from '../../components/RingCuePicker'
 import { SettingsSectionHeader } from '../../components/SettingsSectionHeader'
 import { SettingsToggleRow } from '../../components/SettingsToggleRow'
@@ -45,20 +44,12 @@ export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
       <div className="w-full text-left">
         <SettingsSectionHeader label={strings.sections.orbStyle} />
         <SectionCard padding="16px">
-          <div className="grid gap-4">
-            <OrbPicker
-              disabled={false}
-              sectionLabel={strings.orb.label}
-              sectionLabelHidden={false}
-              strings={strings.orb.options}
-            />
-            <RingCuePicker
-              disabled={false}
-              sectionLabel={strings.ringCue.label}
-              sectionLabelHidden={false}
-              strings={strings.ringCue.options}
-            />
-          </div>
+          <RingCuePicker
+            disabled={false}
+            sectionLabel={strings.ringCue.label}
+            sectionLabelHidden={false}
+            strings={strings.ringCue.options}
+          />
         </SectionCard>
 
         <SettingsSectionHeader label={strings.sections.behavior} />

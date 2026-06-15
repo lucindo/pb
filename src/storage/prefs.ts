@@ -32,12 +32,10 @@ import {
 import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 import {
-  BREATHING_SHAPE_FLAG,
   RING_CUE_FLAG,
   ORB_IDLE_FLAG,
   BYPASS_SILENT_MODE_FLAG,
   parseQueryBoolean,
-  type BreathingShapeVariant,
   type RingCueStyle,
   type OrbIdleBehavior,
 } from '../featureFlags'
@@ -47,7 +45,6 @@ export interface UserPrefs {
   timbre: TimbreId
   cue: CueStyleId
   locale: LocaleId
-  breathingShape: BreathingShapeVariant
   ringCue: RingCueStyle
   orbIdle: OrbIdleBehavior
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
@@ -58,7 +55,6 @@ export const DEFAULT_PREFS: UserPrefs = {
   timbre: DEFAULT_TIMBRE,
   cue: DEFAULT_CUE,
   locale: DEFAULT_LOCALE,
-  breathingShape: BREATHING_SHAPE_FLAG.defaultValue,
   ringCue: RING_CUE_FLAG.defaultValue,
   orbIdle: ORB_IDLE_FLAG.defaultValue,
   bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // true — see UserPrefs.bypassSilentMode
@@ -103,12 +99,6 @@ export function coerceLocale(raw: unknown): LocaleId {
 }
 
 // Parser reused from featureFlags.ts so the alias table stays in one place.
-export function coerceBreathingShape(raw: unknown): BreathingShapeVariant {
-  if (typeof raw !== 'string') return BREATHING_SHAPE_FLAG.defaultValue
-  return BREATHING_SHAPE_FLAG.parse(raw) ?? BREATHING_SHAPE_FLAG.defaultValue
-}
-
-// Parser reused from featureFlags.ts so the alias table stays in one place.
 export function coerceRingCue(raw: unknown): RingCueStyle {
   if (typeof raw !== 'string') return RING_CUE_FLAG.defaultValue
   return RING_CUE_FLAG.parse(raw) ?? RING_CUE_FLAG.defaultValue
@@ -134,7 +124,7 @@ export function coerceBypassSilentMode(raw: unknown): boolean {
 }
 
 export function coercePrefs(raw: unknown): UserPrefs {
-  // Prototype-pollution mitigation: we only read eight known keys from the
+  // Prototype-pollution mitigation: we only read the known keys from the
   // guarded record; `raw` is never spread into a prototype-accessible object.
   const r = asRecord(raw)
   return {
@@ -142,7 +132,6 @@ export function coercePrefs(raw: unknown): UserPrefs {
     timbre:           coerceTimbre(r.timbre),
     cue:              coerceCue(r.cue),
     locale:           coerceLocale(r.locale),
-    breathingShape:   coerceBreathingShape(r.breathingShape),
     ringCue:          coerceRingCue(r.ringCue),
     orbIdle:          coerceOrbIdle(r.orbIdle),
     bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode),
