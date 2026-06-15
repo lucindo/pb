@@ -27,13 +27,8 @@ export interface UiStrings {
       readonly learnDisabled: string
     }
     readonly switcher: {
-      readonly toggleLabel: string
       readonly resonantName: string
-      readonly naviKriyaName: string
       readonly resonantHeading: string
-      readonly naviKriyaHeading: string
-      readonly stretchName: string
-      readonly stretchHeading: string
     }
     readonly controls: {
       readonly startSession: string
@@ -55,11 +50,6 @@ export interface UiStrings {
       readonly announcementAriaLabel: string
       readonly sessionComplete: string
       readonly takeAMoment: string
-      readonly currentBpmLabel: string
-      readonly stageLabel: string
-      readonly stageHoldInitial: string
-      readonly stageRamp: string
-      readonly stageHoldTarget: string
     }
     readonly settingsForm: {
       readonly ariaLabel: string
@@ -74,46 +64,6 @@ export interface UiStrings {
         readonly decreaseLabel: (label: string) => string
         readonly increaseLabel: (label: string) => string
       }
-      readonly sessionModeLabel: string
-      readonly modeStandard: string
-      readonly modeStretch: string
-      readonly initialBpmLabel: string
-      readonly initialBpmShortLabel: string
-      readonly targetBpmLabel: string
-      readonly targetBpmShortLabel: string
-      readonly startRatioLabel: string
-      readonly targetRatioLabel: string
-      readonly holdInitialLabel: string
-      readonly holdTargetLabel: string
-      readonly rampDurationLabel: string
-      readonly holdOpenEndedLabel: string
-    }
-    readonly nkControls: {
-      readonly roundsLabel: string
-      readonly frontCountLabel: string
-      readonly frontCountShortLabel: string
-      readonly omLengthLabel: string
-      readonly omLengthShortLabel: string
-      readonly omLengthFast: string
-      readonly omLengthMedium: string
-      readonly omLengthSlow: string
-      readonly perOmCueLabel: string
-      readonly perOmCueOn: string
-      readonly perOmCueOff: string
-      readonly estimatedDuration: (minutes: number) => string
-    }
-    readonly nkReadout: {
-      readonly statusLabel: string
-      readonly readoutAriaLabel: string
-      readonly announcementAriaLabel: string
-      readonly phaseLabel: string
-      readonly front: string
-      readonly back: string
-      readonly roundLabel: string
-      readonly countLabel: string
-      readonly roundOf: (current: number, total: number) => string
-      readonly countOf: (current: number, total: number) => string
-      readonly orbAriaLabel: (count: number, phaseLabel: string) => string
     }
     readonly mute: {
       readonly mute: string
@@ -208,7 +158,6 @@ export interface UiStrings {
     readonly resourcesHeading: string
     readonly videosHeading: string
     readonly nativeAppsHeading: string
-    readonly naviKriyaVideosHeading: string
   }
   readonly stats: {
     readonly title: string
@@ -217,7 +166,6 @@ export interface UiStrings {
       readonly sessions: string
       readonly totalTime: string
       readonly lastSession: string
-      readonly rounds: string
     }
     // Coarse total-time format past 72h: e.g. ≈15 days (365h).
     readonly totalTimeDays: (days: number, hours: number) => string
@@ -252,13 +200,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         learnDisabled: 'Learn (unavailable during session)',
       },
       switcher: {
-        toggleLabel: 'Switch practice',
         resonantName: 'HRV',
-        naviKriyaName: 'Navi',
         resonantHeading: 'HRV Breathing',
-        naviKriyaHeading: 'Navi Kriya',
-        stretchName: 'Stretch',
-        stretchHeading: 'HRV Stretch',
       },
       controls: {
         startSession: 'Start',
@@ -280,11 +223,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         announcementAriaLabel: 'Session announcement',
         sessionComplete: 'Session complete',
         takeAMoment: 'Take a moment',
-        currentBpmLabel: 'BPM',
-        stageLabel: 'Stage',
-        stageHoldInitial: 'Warm-up',
-        stageRamp: 'Stretch',
-        stageHoldTarget: 'Settle',
       },
       settingsForm: {
         ariaLabel: 'Session settings',
@@ -299,46 +237,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
           decreaseLabel: (l) => `Decrease ${l}`,
           increaseLabel: (l) => `Increase ${l}`,
         },
-        sessionModeLabel: 'Session mode',
-        modeStandard: 'Standard',
-        modeStretch: 'Stretch',
-        initialBpmLabel: 'Start BPM',
-        initialBpmShortLabel: 'Start',
-        targetBpmLabel: 'Target BPM',
-        targetBpmShortLabel: 'Target',
-        startRatioLabel: 'Start Ratio',
-        targetRatioLabel: 'Target Ratio',
-        holdInitialLabel: 'Warm-up',
-        holdTargetLabel: 'Settle',
-        rampDurationLabel: 'Stretch',
-        holdOpenEndedLabel: '∞',
-      },
-      nkControls: {
-        roundsLabel: 'Rounds',
-        frontCountLabel: 'Front OMs',
-        frontCountShortLabel: 'OMs',
-        omLengthLabel: 'OM pace',
-        omLengthShortLabel: 'Pace',
-        omLengthFast: 'Fast',
-        omLengthMedium: 'Medium',
-        omLengthSlow: 'Slow',
-        perOmCueLabel: 'OM tick',
-        perOmCueOn: 'On',
-        perOmCueOff: 'Off',
-        estimatedDuration: (m) => `~${String(m)} min`,
-      },
-      nkReadout: {
-        statusLabel: 'Status',
-        readoutAriaLabel: 'Navi Kriya session readout',
-        announcementAriaLabel: 'Navi Kriya session announcement',
-        phaseLabel: 'Phase',
-        front: 'Front',
-        back: 'Back',
-        roundLabel: 'Round',
-        countLabel: 'Count',
-        roundOf: (c, t) => `${String(c)} / ${String(t)}`,
-        countOf: (c, t) => `${String(c)} / ${String(t)}`,
-        orbAriaLabel: (c, p) => `Navi Kriya session: OM ${String(c)}, phase ${p}`,
       },
       mute: {
         mute: 'Mute audio cues',
@@ -411,7 +309,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resourcesHeading: 'Forrest Knutson Resources',
       videosHeading: 'Selected HRV Breathing Videos',
       nativeAppsHeading: 'Resonant Breathing app',
-      naviKriyaVideosHeading: 'Selected Navi Kriya Videos',
     },
     stats: {
       title: 'Statistics',
@@ -420,7 +317,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         sessions: 'Sessions',
         totalTime: 'Total time',
         lastSession: 'Last session',
-        rounds: 'Rounds',
       },
       totalTimeDays: (days, hours) => `≈${String(days)} days (${String(hours)}h)`,
       empty: '—',
@@ -453,13 +349,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         learnDisabled: 'Saiba mais (indisponível durante a sessão)',
       },
       switcher: {
-        toggleLabel: 'Trocar de prática',
         resonantName: 'VFC',
-        naviKriyaName: 'Navi',
         resonantHeading: 'Respiração VFC',
-        naviKriyaHeading: 'Navi Kriya',
-        stretchName: 'Alongar',
-        stretchHeading: 'Alongar VFC',
       },
       controls: {
         startSession: 'Iniciar',
@@ -481,11 +372,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         announcementAriaLabel: 'Anúncio da sessão',
         sessionComplete: 'Sessão concluída',
         takeAMoment: 'Respire fundo',
-        currentBpmLabel: 'RPM',
-        stageLabel: 'Fase',
-        stageHoldInitial: 'Aquecimento',
-        stageRamp: 'Progressão',
-        stageHoldTarget: 'Estabilizar',
       },
       settingsForm: {
         ariaLabel: 'Configurações da sessão',
@@ -500,46 +386,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
           decreaseLabel: (l) => `Diminuir ${l}`,
           increaseLabel: (l) => `Aumentar ${l}`,
         },
-        sessionModeLabel: 'Modo de sessão',
-        modeStandard: 'Padrão',
-        modeStretch: 'Progressivo',
-        initialBpmLabel: 'RPM inicial',
-        initialBpmShortLabel: 'Inicial',
-        targetBpmLabel: 'RPM alvo',
-        targetBpmShortLabel: 'Alvo',
-        startRatioLabel: 'Proporção Inicial',
-        targetRatioLabel: 'Proporção Alvo',
-        holdInitialLabel: 'Aquecimento',
-        holdTargetLabel: 'Estabilizar',
-        rampDurationLabel: 'Progressão',
-        holdOpenEndedLabel: '∞',
-      },
-      nkControls: {
-        roundsLabel: 'Rodadas',
-        frontCountLabel: 'OMs de frente',
-        frontCountShortLabel: 'OMs',
-        omLengthLabel: 'Ritmo do OM',
-        omLengthShortLabel: 'Ritmo',
-        omLengthFast: 'Rápido',
-        omLengthMedium: 'Médio',
-        omLengthSlow: 'Lento',
-        perOmCueLabel: 'Toque do OM',
-        perOmCueOn: 'Ligado',
-        perOmCueOff: 'Desligado',
-        estimatedDuration: (m) => `~${String(m)} min`,
-      },
-      nkReadout: {
-        statusLabel: 'Status',
-        readoutAriaLabel: 'Resumo da sessão de Navi Kriya',
-        announcementAriaLabel: 'Anúncio da sessão de Navi Kriya',
-        phaseLabel: 'Fase',
-        front: 'Frente',
-        back: 'Costas',
-        roundLabel: 'Rodada',
-        countLabel: 'Contagem',
-        roundOf: (c, t) => `${String(c)} / ${String(t)}`,
-        countOf: (c, t) => `${String(c)} / ${String(t)}`,
-        orbAriaLabel: (c, p) => `Sessão Navi Kriya: OM ${String(c)}, fase ${p}`,
       },
       mute: {
         mute: 'Silenciar sons',
@@ -644,7 +490,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       resourcesHeading: 'Recursos do Forrest Knutson',
       videosHeading: 'Vídeos selecionados de respiração VFC',
       nativeAppsHeading: 'App Resonant Breathing',
-      naviKriyaVideosHeading: 'Vídeos selecionados de Navi Kriya',
     },
     stats: {
       title: 'Estatísticas',
@@ -653,7 +498,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         sessions: 'Sessões',
         totalTime: 'Tempo total',
         lastSession: 'Última sessão',
-        rounds: 'Rodadas',
       },
       totalTimeDays: (days, hours) => `≈${String(days)} dias (${String(hours)}h)`,
       empty: '—',

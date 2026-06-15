@@ -93,56 +93,8 @@ describe('UI_STRINGS template-fn entries (D-15)', () => {
 
 })
 
-describe('Phase 22 stretch string keys EN/PT-BR parity', () => {
-  const stretchSettingsFormKeys = [
-    'sessionModeLabel',
-    'modeStandard',
-    'modeStretch',
-    'initialBpmLabel',
-    'targetBpmLabel',
-    'holdInitialLabel',
-    'holdTargetLabel',
-    'rampDurationLabel',
-    'holdOpenEndedLabel',
-  ] as const
-
-  const stretchReadoutKeys = [
-    'currentBpmLabel',
-    'stageLabel',
-    'stageHoldInitial',
-    'stageRamp',
-    'stageHoldTarget',
-  ] as const
-
-  it('every stretch settingsForm key exists and is a non-empty string in both EN and PT-BR', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      for (const key of stretchSettingsFormKeys) {
-        const value = UI_STRINGS[locale].practice.settingsForm[key]
-        expect(typeof value, `settingsForm.${key} in ${locale}`).toBe('string')
-        expect(value.length, `settingsForm.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
-      }
-    }
-  })
-
-  it('every stretch readout key exists and is a non-empty string in both EN and PT-BR', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      for (const key of stretchReadoutKeys) {
-        const value = UI_STRINGS[locale].practice.readout[key]
-        expect(typeof value, `readout.${key} in ${locale}`).toBe('string')
-        expect(value.length, `readout.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
-      }
-    }
-  })
-})
-
 describe('Phase 30 practice string keys', () => {
-  const practiceStringKeys = [
-    'toggleLabel',
-    'resonantName',
-    'naviKriyaName',
-    'resonantHeading',
-    'naviKriyaHeading',
-  ] as const
+  const practiceStringKeys = ['resonantName', 'resonantHeading'] as const
 
   it('every practice.* string key exists and is non-empty in both en and pt-BR', () => {
     for (const locale of LOCALE_OPTIONS) {
@@ -155,40 +107,7 @@ describe('Phase 30 practice string keys', () => {
   })
 
   it('practice headings keep the full names (D-05: untranslated Sanskrit proper noun)', () => {
-    expect(UI_STRINGS.en.practice.switcher.naviKriyaHeading).toBe('Navi Kriya')
-    expect(UI_STRINGS['pt-BR'].practice.switcher.naviKriyaHeading).toBe('Navi Kriya')
     expect(UI_STRINGS.en.practice.switcher.resonantHeading).toBe('HRV Breathing')
-  })
-})
-
-describe('Phase 34 stretch practice string keys (STRETCH-06)', () => {
-  it('every locale has both stretch fields present and non-empty (completeness)', () => {
-    const stretchFields = ['stretchName', 'stretchHeading'] as const
-    for (const locale of LOCALE_OPTIONS) {
-      for (const field of stretchFields) {
-        const value = UI_STRINGS[locale].practice.switcher[field]
-        expect(typeof value, `practice.switcher.${field} in ${locale}`).toBe('string')
-        expect(value.length, `practice.switcher.${field} in ${locale} must be non-empty`).toBeGreaterThan(0)
-      }
-    }
-  })
-})
-
-describe('Phase 32 new learn.* heading keys', () => {
-  const newLearnKeys = ['naviKriyaVideosHeading'] as const
-
-  it('every new learn.* key is non-empty in both EN and PT-BR', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      for (const key of newLearnKeys) {
-        const value = UI_STRINGS[locale].learn[key]
-        expect(typeof value, `learn.${key} in ${locale}`).toBe('string')
-        expect(value.length, `learn.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
-      }
-    }
-  })
-
-  it('"Navi Kriya" stays untranslated in pt-BR (Sanskrit proper noun — Phase 30 D-05)', () => {
-    expect(UI_STRINGS['pt-BR'].learn.naviKriyaVideosHeading).toContain('Navi Kriya')
   })
 })
 
@@ -234,54 +153,5 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(ptBR.switcherIcons.label.length).toBeGreaterThan(0)
     expect(typeof ptBR.bypassSilentMode.label).toBe('string')
     expect(ptBR.bypassSilentMode.label.length).toBeGreaterThan(0)
-  })
-})
-
-describe('Phase 32 nkReadout + nkControls explicit PT-BR non-empty checks', () => {
-  const nkReadoutKeys = [
-    'statusLabel',
-    'readoutAriaLabel',
-    'phaseLabel',
-    'front',
-    'back',
-    'roundLabel',
-    'countLabel',
-  ] as const
-
-  it('every nkReadout string key is non-empty in pt-BR', () => {
-    for (const key of nkReadoutKeys) {
-      const value = UI_STRINGS['pt-BR'].practice.nkReadout[key]
-      expect(typeof value, `nkReadout.${key} in pt-BR`).toBe('string')
-      expect(value.length, `nkReadout.${key} in pt-BR must be non-empty`).toBeGreaterThan(0)
-    }
-  })
-
-  it('nkReadout.roundOf and countOf template fns return non-empty strings in pt-BR', () => {
-    expect(UI_STRINGS['pt-BR'].practice.nkReadout.roundOf(1, 5).length).toBeGreaterThan(0)
-    expect(UI_STRINGS['pt-BR'].practice.nkReadout.countOf(3, 10).length).toBeGreaterThan(0)
-  })
-
-  const nkControlsKeys = [
-    'roundsLabel',
-    'frontCountLabel',
-    'omLengthLabel',
-    'omLengthFast',
-    'omLengthMedium',
-    'omLengthSlow',
-    'perOmCueLabel',
-    'perOmCueOn',
-    'perOmCueOff',
-  ] as const
-
-  it('every nkControls string key is non-empty in pt-BR', () => {
-    for (const key of nkControlsKeys) {
-      const value = UI_STRINGS['pt-BR'].practice.nkControls[key]
-      expect(typeof value, `nkControls.${key} in pt-BR`).toBe('string')
-      expect(value.length, `nkControls.${key} in pt-BR must be non-empty`).toBeGreaterThan(0)
-    }
-  })
-
-  it('nkControls.estimatedDuration template fn returns non-empty string in pt-BR', () => {
-    expect(UI_STRINGS['pt-BR'].practice.nkControls.estimatedDuration(10).length).toBeGreaterThan(0)
   })
 })

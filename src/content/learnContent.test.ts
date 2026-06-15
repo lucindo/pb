@@ -20,27 +20,6 @@ for (const locale of LOCALE_OPTIONS) {
       expect(LEARN_CONTENT[locale].practices.resonant.description.section2.title.length).toBeGreaterThan(0)
       expect(LEARN_CONTENT[locale].practices.resonant.description.section2.body.length).toBeGreaterThan(0)
     })
-
-    it(`[${locale}] practices.stretch exists with non-empty description sections`, () => {
-      expect(LEARN_CONTENT[locale].practices.stretch.description.section1.title.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].practices.stretch.description.section1.body.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].practices.stretch.description.section2.title.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].practices.stretch.description.section2.body.length).toBeGreaterThan(0)
-    })
-
-    it(`[${locale}] practices.stretch carries the adaptation block (difference + warning)`, () => {
-      const adaptation = LEARN_CONTENT[locale].practices.stretch.adaptation
-      expect(adaptation?.title.length).toBeGreaterThan(0)
-      expect(adaptation?.body.length).toBeGreaterThan(0)
-      expect(adaptation?.note.length).toBeGreaterThan(0)
-    })
-
-    it(`[${locale}] practices.naviKriya exists with non-empty description sections`, () => {
-      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.title.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.body.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section2.title.length).toBeGreaterThan(0)
-      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section2.body.length).toBeGreaterThan(0)
-    })
   })
 }
 
@@ -86,38 +65,6 @@ describe('LEARN_CONTENT resonant data preservation (Phase 32 restructure)', () =
   })
 })
 
-describe('LEARN_CONTENT naviKriya partition (D-06)', () => {
-  it('practices.naviKriya.videos has exactly 2 entries', () => {
-    expect(LEARN_CONTENT.en.practices.naviKriya.videos.length).toBe(2)
-  })
-
-  it('practices.naviKriya.videos[0] is "The Guardian In Meditation" with correct URL', () => {
-    expect(LEARN_CONTENT.en.practices.naviKriya.videos[0]?.label).toBe('The Guardian In Meditation')
-    expect(LEARN_CONTENT.en.practices.naviKriya.videos[0]?.url).toBe('https://www.youtube.com/watch?v=M3t7gY_yak8')
-  })
-
-  it('practices.naviKriya.videos[1] is "Navi Kriya Walkthrough" with correct URL', () => {
-    expect(LEARN_CONTENT.en.practices.naviKriya.videos[1]?.label).toBe('Navi Kriya Walkthrough')
-    expect(LEARN_CONTENT.en.practices.naviKriya.videos[1]?.url).toBe('https://www.youtube.com/watch?v=A4BGQCIp9fI')
-  })
-
-  it('practices.naviKriya.videos URL identity across locales (D-12)', () => {
-    for (let i = 0; i < LEARN_CONTENT.en.practices.naviKriya.videos.length; i++) {
-      expect(LEARN_CONTENT['pt-BR'].practices.naviKriya.videos[i]?.url).toBe(
-        LEARN_CONTENT.en.practices.naviKriya.videos[i]?.url,
-      )
-    }
-  })
-
-  it('practices.naviKriya.videos label identity across locales — video titles stay English (D-12)', () => {
-    for (let i = 0; i < LEARN_CONTENT.en.practices.naviKriya.videos.length; i++) {
-      expect(LEARN_CONTENT['pt-BR'].practices.naviKriya.videos[i]?.label).toBe(
-        LEARN_CONTENT.en.practices.naviKriya.videos[i]?.label,
-      )
-    }
-  })
-})
-
 for (const locale of LOCALE_OPTIONS) {
   describe(`LEARN_CONTENT[${locale}] clinical-verbs guard`, () => {
     const enClinicalVerbs = /\b(improves|treats|cures|heals|diagnoses)\b/i
@@ -130,19 +77,6 @@ for (const locale of LOCALE_OPTIONS) {
 
     it(`[${locale}] resonant section2 body has no forbidden clinical verbs`, () => {
       expect(LEARN_CONTENT[locale].practices.resonant.description.section2.body).not.toMatch(clinicalVerbs)
-    })
-
-    it(`[${locale}] stretch adaptation body + note have no forbidden clinical verbs`, () => {
-      expect(LEARN_CONTENT[locale].practices.stretch.adaptation?.body).not.toMatch(clinicalVerbs)
-      expect(LEARN_CONTENT[locale].practices.stretch.adaptation?.note).not.toMatch(clinicalVerbs)
-    })
-
-    it(`[${locale}] naviKriya section1 body has no forbidden clinical verbs`, () => {
-      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section1.body).not.toMatch(clinicalVerbs)
-    })
-
-    it(`[${locale}] naviKriya section2 body has no forbidden clinical verbs`, () => {
-      expect(LEARN_CONTENT[locale].practices.naviKriya.description.section2.body).not.toMatch(clinicalVerbs)
     })
 
     it(`[${locale}] forrest body has no forbidden clinical verbs (D-08 / LEARN-04)`, () => {

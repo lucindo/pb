@@ -16,21 +16,11 @@ export interface LearnLink {
   readonly url: string
 }
 
-// Optional block shown only on the Stretch page: how Stretch differs from plain
-// HRV, plus a small note that it's an app adaptation rather than a Forrest video
-// technique. Rendered between section2 and the videos.
-export interface AdaptationNote {
-  readonly title: string
-  readonly body: string
-  readonly note: string
-}
-
 export interface PracticeLearnContent {
   readonly description: {
     readonly section1: ExplainerSection
     readonly section2: ExplainerSection
   }
-  readonly adaptation?: AdaptationNote
   readonly videos: readonly LearnLink[]
 }
 
@@ -48,8 +38,6 @@ export interface LearnContent {
   }
   readonly practices: {
     readonly resonant: PracticeLearnContent
-    readonly stretch: PracticeLearnContent
-    readonly naviKriya: PracticeLearnContent
   }
 }
 
@@ -116,65 +104,6 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
           {
             label: 'Beginners Deep Meditation - Naturally - Clinical Mindfulness Technique',
             url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
-          },
-        ],
-      },
-      stretch: {
-        // section1 / section2 / videos are copied from resonant — Stretch starts
-        // as the HRV page and only adds the adaptation block below.
-        description: {
-          section1: {
-            title: 'What is HRV / resonance breathing',
-            body: 'HRV breathing is a calm practice of slow paced breaths, usually fewer than seven per minute. At that low rate your breath gently aligns with your heart\'s natural rhythm — a state sometimes called resonance breathing. This is a quiet practice, not a clinical procedure or a measurement of your heart.',
-          },
-          section2: {
-            title: 'How this app times your breath',
-            body: 'This app guides one continuous inhale and exhale, with no pause held between them. You choose a slow rate under seven breaths per minute, and for uneven patterns the exhale is always the longer side. The on-screen orb and the optional bowl-like tones simply mark where you are in each breath.',
-          },
-        },
-        adaptation: {
-          title: 'How Stretch differs from HRV',
-          body: 'Stretch starts at a comfortable rate and gradually slows your breathing across a warm-up, a descent, and a cool-down — easing toward slower, lower-BPM breaths over the session instead of holding one fixed rate. It\'s a gentle way to build toward resonance rates that can be hard to start at cold.',
-          note: 'Stretch isn\'t a technique Forrest directly teaches in his videos. It\'s an adaptation we added to this app to help you train gradually toward lower breathing rates.',
-        },
-        videos: [
-          {
-            label: 'The Holy Trinity of Breath Induces HRV Resonance',
-            url: 'https://www.youtube.com/watch?v=89WorFpMyY0',
-          },
-          {
-            label: 'The Meditation Magic of Sitting Very Still - SVS',
-            url: 'https://www.youtube.com/watch?v=6NpH44c34do',
-          },
-          {
-            label: '4 Proofs of Meditation',
-            url: 'https://www.youtube.com/watch?v=Kn_tQYaUO4M',
-          },
-          {
-            label: 'Beginners Deep Meditation - Naturally - Clinical Mindfulness Technique',
-            url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
-          },
-        ],
-      },
-      naviKriya: {
-        description: {
-          section1: {
-            title: 'What is Navi Kriya',
-            body: 'Navi Kriya is an OM-counting meditation practice taught by Forrest Knutson. Each repetition of OM is counted at a chosen pace across the front and back of the body. This is a quiet seated practice — not a clinical procedure and not a physical exercise.',
-          },
-          section2: {
-            title: 'How this app paces it',
-            body: 'This app counts each OM at your chosen pace and automatically advances from the front phase to the back phase at a fixed 4-to-1 ratio. You configure the number of rounds and the OM length; the app tracks your progress and sounds an optional cue on each OM so your attention stays on the practice.',
-          },
-        },
-        videos: [
-          {
-            label: 'The Guardian In Meditation',
-            url: 'https://www.youtube.com/watch?v=M3t7gY_yak8',
-          },
-          {
-            label: 'Navi Kriya Walkthrough',
-            url: 'https://www.youtube.com/watch?v=A4BGQCIp9fI',
           },
         ],
       },
@@ -246,71 +175,6 @@ export const LEARN_CONTENT: Readonly<Record<LocaleId, LearnContent>> = {
             // Video title kept in English — YouTube source is English; no PT-BR title available.
             label: 'Beginners Deep Meditation - Naturally - Clinical Mindfulness Technique',
             url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
-          },
-        ],
-      },
-      stretch: {
-        // section1 / section2 / videos copiados de resonant — Alongar começa
-        // como a página de VFC e só adiciona o bloco de adaptação abaixo.
-        description: {
-          section1: {
-            title: 'O que é VFC / respiração de ressonância',
-            body: 'A respiração VFC é uma prática calma de respirações lentas, geralmente menos de sete por minuto. Nessa frequência baixa, sua respiração se alinha suavemente com o ritmo natural do coração — um estado por vezes chamado de respiração de ressonância. Esta é uma prática tranquila, não um procedimento clínico nem uma medição do coração.',
-          },
-          section2: {
-            title: 'Como este app guia sua respiração',
-            body: 'Este app guia uma inspiração e expiração contínuas, sem pausa entre elas. Escolha uma frequência lenta de menos de sete respirações por minuto; nos padrões assimétricos, a expiração é sempre a parte mais longa. O orbe na tela e os tons opcionais de tigela marcam apenas onde você está em cada respiração.',
-          },
-        },
-        adaptation: {
-          title: 'Como o "Alongar VFC" difere do VFC',
-          body: 'A prática "Alongar" começa em uma frequência confortável e desacelera sua respiração aos poucos, ao longo de um aquecimento, uma desaceleração e uma estabilização — caminhando para respirações mais lentas e de RPM mais baixo durante a sessão, em vez de manter uma frequência fixa. É um jeito suave de chegar a frequências de ressonância difíceis de alcançar começando do zero.',
-          note: 'A prática "Alongar" não é uma técnica que o Forrest ensina diretamente nos vídeos dele. É uma adaptação que adicionamos a este app para ajudar você a treinar gradualmente frequências de respiração mais baixas.',
-        },
-        videos: [
-          {
-            // Video title kept in English — YouTube source is English; no PT-BR title available.
-            label: 'The Holy Trinity of Breath Induces HRV Resonance',
-            url: 'https://www.youtube.com/watch?v=89WorFpMyY0',
-          },
-          {
-            // Video title kept in English — YouTube source is English; no PT-BR title available.
-            label: 'The Meditation Magic of Sitting Very Still - SVS',
-            url: 'https://www.youtube.com/watch?v=6NpH44c34do',
-          },
-          {
-            // Video title kept in English — YouTube source is English; no PT-BR title available.
-            label: '4 Proofs of Meditation',
-            url: 'https://www.youtube.com/watch?v=Kn_tQYaUO4M',
-          },
-          {
-            // Video title kept in English — YouTube source is English; no PT-BR title available.
-            label: 'Beginners Deep Meditation - Naturally - Clinical Mindfulness Technique',
-            url: 'https://www.youtube.com/watch?v=gEc6RLixpVs',
-          },
-        ],
-      },
-      naviKriya: {
-        description: {
-          section1: {
-            title: 'O que é Navi Kriya',
-            body: 'Navi Kriya é uma prática de meditação com contagem de OMs ensinada por Forrest Knutson. Cada repetição do OM é contada em um ritmo escolhido ao longo da parte frontal e dorsal do corpo. Esta é uma prática silenciosa e sentada — não é um procedimento clínico nem um exercício físico.',
-          },
-          section2: {
-            title: 'Como este app guia a prática',
-            body: 'Este app conta cada OM no ritmo escolhido e avança automaticamente da fase frontal para a fase dorsal em uma proporção fixa de 4 para 1. Você configura o número de rodadas e a duração de cada OM; o app acompanha seu progresso e emite um sinal sonoro opcional a cada OM para manter sua atenção na prática.',
-          },
-        },
-        videos: [
-          {
-            // Video title kept in English — YouTube source is English; no PT-BR title available.
-            label: 'The Guardian In Meditation',
-            url: 'https://www.youtube.com/watch?v=M3t7gY_yak8',
-          },
-          {
-            // Video title kept in English — YouTube source is English; no PT-BR title available.
-            label: 'Navi Kriya Walkthrough',
-            url: 'https://www.youtube.com/watch?v=A4BGQCIp9fI',
           },
         ],
       },

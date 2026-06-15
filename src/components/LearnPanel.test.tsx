@@ -37,12 +37,6 @@ describe('LearnPanel', () => {
     expect(screen.getByText(UI_STRINGS.en.learn.nativeAppsHeading)).toBeInTheDocument()
   })
 
-  it('omits the adaptation block for resonant (HRV has no adaptation)', () => {
-    renderPanel()
-    const adaptation = LEARN_CONTENT.en.practices.stretch.adaptation
-    expect(screen.queryByText(adaptation?.title ?? '')).not.toBeInTheDocument()
-  })
-
   it('renders the locked affiliation micro-line + inspiredByForrest tagline', () => {
     renderPanel()
     expect(screen.getByText(LOCKED_COPY.en.inspiredByForrest)).toBeInTheDocument()
