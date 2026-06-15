@@ -12,8 +12,7 @@ import type { UiStrings } from '../../content/strings'
 import type { LocaleId } from '../../domain'
 import type { PersistedStats, PracticeId } from '../../storage'
 
-// Practices are listed in switcher order: HRV → Stretch → Navi Kriya.
-const PRACTICE_ORDER: readonly PracticeId[] = ['resonant', 'stretch', 'naviKriya']
+const PRACTICE_ORDER: readonly PracticeId[] = ['resonant']
 
 export interface StatsPageProps {
   strings: UiStrings['stats']
@@ -94,9 +93,6 @@ function PracticeStatsBlock({
             label={fields.lastSession}
             value={formatLastSession(stat.lastSessionAtMs, locale, empty)}
           />
-          {practice === 'naviKriya' && (
-            <StatRow label={fields.rounds} value={String(stat.roundsCompleted ?? 0)} />
-          )}
           <div
             className="flex justify-end pt-3"
             style={{ borderTop: '1px solid var(--color-border-soft)', marginTop: 4 }}

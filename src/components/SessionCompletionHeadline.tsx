@@ -14,9 +14,7 @@ export interface SessionCompletionHeadlineProps {
 }
 
 /** Centered "Session complete" headline + uppercased subtitle, role=status
- *  aria-live region. Shared by SessionReadout (breathing/stretch surface) and
- *  NaviKriyaSessionSurface (navi surface) so a future change to the
- *  completion style stays in one place. */
+ *  aria-live region. Consumed by SessionReadout. */
 export function SessionCompletionHeadline({
   ariaLabel,
   headline,

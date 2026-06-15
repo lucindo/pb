@@ -16,8 +16,10 @@
 // subtree moves, update the FOUC script too — nothing in the build catches the
 // desync, and returning users get a theme flash on every load.
 export const STATE_KEY = 'hrv:state:v1'
-// STATE_VERSION bumped 2→3: migrateEnvelope seeds the practices.stretch slice
-// from the resonant blob and zeroes stretch stats.
+// STATE_VERSION stays at 3: the v2→3 step once seeded a practices.stretch slice,
+// removed with the Stretch practice. The constant is retained (not lowered) so an
+// on-disk v3 envelope from an earlier build is not flagged as a future schema by
+// the writeEnvelope downgrade guard.
 export const STATE_VERSION = 3 as const
 
 export interface StorageDeps {
@@ -40,8 +42,8 @@ export interface Envelope {
   // in storage.test.ts. `unknown` mirrors settings/mute/stats; coercer narrows at
   // the boundary. Avoids storage→domain typed circular import.
   prefs?: unknown
-  // The v2 per-practice subtree. `practices` holds a { resonant, naviKriya } map
-  // of settings+stats slices; `activePractice` is the selected practice id.
+  // The v2 per-practice subtree. `practices` holds a { resonant } map of
+  // settings+stats slices; `activePractice` is the selected practice id.
   // Both `unknown` — coercePractices / coerceActivePractice narrow at the boundary.
   practices?: unknown
   activePractice?: unknown
@@ -73,8 +75,7 @@ export function asRecord(raw: unknown): Record<string, unknown> {
  * validate them field-by-field as always), and `activePractice` is seeded to
  * `'resonant'`. The flat `settings`/`stats` fields are deliberately NOT deleted:
  * the forward-compat spread preserves them as harmless orphans, keeping the
- * migration lossless. naviKriya is intentionally absent so coercePractices
- * supplies defaults. The ladder is idempotent — a v2 envelope skips the step.
+ * migration lossless. The ladder is idempotent — a v2 envelope skips the step.
  */
 export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
   let out: Envelope = { ...env }
@@ -82,7 +83,7 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
   if (fromVersion < 2) {
     // Coerce a flat v1 envelope into the v2 per-practice shape. out.settings /
     // out.stats are the existing resonant data (unknown — coercers validate
-    // downstream). naviKriya is omitted so coercePractices supplies defaults.
+    // downstream).
     out = {
       ...out,
       practices: {
@@ -90,33 +91,6 @@ export function migrateEnvelope(env: Envelope, fromVersion: number): Envelope {
       },
       activePractice: 'resonant',
     }
-  }
-
-  if (fromVersion < 3) {
-    // v2→v3: create the stretch slice.
-    // Seed settings from the resonant blob (still unknown — coerceStretchSettings validates downstream).
-    // Leave the resonant blob untouched — orphan fields are fine (v1→v2 precedent).
-    // CRITICAL: Do NOT import ZERO_STATS from stats.ts — stats.ts imports from storage.ts,
-    //           creating a circular dep. Use the inline literal instead.
-    const existingPractices = asRecord(out.practices)
-    const resonantSlice = asRecord(existingPractices['resonant'])
-    const resonantSettings = resonantSlice['settings']  // unknown — coerceStretchSettings validates downstream
-    out = {
-      ...out,
-      practices: {
-        ...existingPractices,
-        stretch: {
-          settings: resonantSettings,  // carries ramp fields; downstream coercer validates
-          stats: {                     // inline literal — no circular dep
-            totalSessions: 0,
-            totalElapsedSeconds: 0,
-            lastSessionAtMs: null,
-            lastSessionDurationSeconds: null,
-          },
-        },
-      },
-    }
-    // resonant slice is untouched — stretch ramp fields remain there as harmless orphans
   }
 
   return out

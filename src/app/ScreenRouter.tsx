@@ -23,7 +23,6 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
         <LearnPage
           learnContent={vm.learnContent}
           lockedCopy={vm.lockedCopy}
-          activePractice={vm.activePractice}
           onBack={vm.navigation.onBackToPractice}
         />
       )
@@ -48,8 +47,6 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           strings={vm.uiStrings.stats}
           practiceNames={{
             resonant: vm.uiStrings.practice.switcher.resonantName,
-            stretch: vm.uiStrings.practice.switcher.stretchName,
-            naviKriya: vm.uiStrings.practice.switcher.naviKriyaName,
           }}
           stats={vm.stats}
           locale={vm.locale}

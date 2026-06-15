@@ -4,11 +4,8 @@
 // files. Mirrors src/storage/index.ts.
 
 export * from './breathingPlan'
-export * from './naviKriyaSession'
-export * from './naviKriyaSettings'
 export * from './sessionAudio'
 export * from './sessionController'
 export * from './sessionLifecycle'
 export * from './sessionMath'
 export * from './settings'
-export * from './stretchRamp'

@@ -2,10 +2,8 @@ import type { BreathingPlan } from './breathingPlan'
 import { createBreathingPlan } from './breathingPlan'
 import type { SessionFrame } from './sessionMath'
 import { getSessionFrame } from './sessionMath'
-import type { DurationOption, SessionSettings, StretchSettings } from './settings'
+import type { DurationOption, SessionSettings } from './settings'
 import { DURATION_OPTIONS } from './settings'
-import type { StretchSegment } from './stretchRamp'
-import { buildStretchSegments, getStretchFrame } from './stretchRamp'
 
 export type SessionStatus = 'idle' | 'running' | 'complete'
 
@@ -19,7 +17,6 @@ export interface RunningSessionState {
   selectedSettings: SessionSettings
   lockedSettings: SessionSettings
   plan: BreathingPlan
-  stretchSegments: StretchSegment[] | null
   // startedAtSec is the seconds-shaped session-start timestamp from the
   // injected SessionClock (audioCtx.currentTime via the SessionClock seam).
   startedAtSec: number
@@ -31,7 +28,6 @@ export interface CompleteSessionState {
   selectedSettings: SessionSettings
   lockedSettings: SessionSettings
   plan: BreathingPlan
-  stretchSegments: StretchSegment[] | null
   completedAtSec: number
   message: 'Session complete'
 }
@@ -45,7 +41,6 @@ function cloneSettings(settings: SessionSettings): SessionSettings {
   return { ...settings }
 }
 
-// startSession is standard-only — no mode check, stretchSegments always null.
 export function startSession(selectedSettings: SessionSettings, nowSec: number): RunningSessionState {
   const lockedSettings = cloneSettings(selectedSettings)
   const plan = createBreathingPlan(lockedSettings)
@@ -56,39 +51,6 @@ export function startSession(selectedSettings: SessionSettings, nowSec: number):
     selectedSettings: cloneSettings(selectedSettings),
     lockedSettings,
     plan,
-    stretchSegments: null,
-    startedAtSec: nowSec,
-    lastFrame,
-  }
-}
-
-// startStretchSession: lead-in plan runs at initialBpm so cue duration matches the warm-up rate.
-// The caller's resonant selectedSettings are passed through unchanged so endSession returns
-// the resonant config (not the synthetic lead-in). The synthetic lead-in lives ONLY in
-// lockedSettings; selectedSettings carries the resonant config through the entire session.
-export function startStretchSession(
-  stretchSettings: StretchSettings,
-  selectedSettings: SessionSettings,
-  nowSec: number,
-): RunningSessionState {
-  // Lead-in plan: standard SessionSettings using initialBpm and the same ratio.
-  // Assigned only to lockedSettings — selectedSettings is the caller's resonant config.
-  const leadInSettings: SessionSettings = {
-    bpm: stretchSettings.initialBpm,
-    ratio: stretchSettings.ratio,
-    durationMinutes: 'open-ended',
-  }
-  const plan = createBreathingPlan(leadInSettings)
-  // buildStretchSegments takes a single StretchSettings arg
-  const stretchSegments = buildStretchSegments(stretchSettings)
-  const lastFrame = getStretchFrame(stretchSegments, 0)
-
-  return {
-    status: 'running',
-    selectedSettings: cloneSettings(selectedSettings),  // resonant config passes through unchanged
-    lockedSettings: leadInSettings,                      // synthetic lead-in drives the audio plan
-    plan,
-    stretchSegments,
     startedAtSec: nowSec,
     lastFrame,
   }
@@ -106,12 +68,6 @@ export function extendTimedSession(
   durationMinutes: number,
   nowSec: number,
 ): RunningSessionState {
-  // Stretch sessions cannot be extended via durationMinutes — their duration is
-  // governed by the rampDurationMinutes picker and the computed segment-table total.
-  if (state.stretchSegments !== null) {
-    throw new RangeError('Stretch sessions cannot be extended via durationMinutes')
-  }
-
   if (state.lockedSettings.durationMinutes === 'open-ended') {
     throw new RangeError('Open-ended sessions cannot be converted while running')
   }
@@ -160,9 +116,7 @@ export function completeIfNeeded(
   nowSec: number,
 ): RunningSessionState | CompleteSessionState {
   const elapsedSec = nowSec - state.startedAtSec
-  const lastFrame = state.stretchSegments !== null
-    ? getStretchFrame(state.stretchSegments, elapsedSec)
-    : getSessionFrame(state.plan, elapsedSec)
+  const lastFrame = getSessionFrame(state.plan, elapsedSec)
 
   if (!lastFrame.isComplete) {
     return {
@@ -176,7 +130,6 @@ export function completeIfNeeded(
     selectedSettings: cloneSettings(state.selectedSettings),
     lockedSettings: cloneSettings(state.lockedSettings),
     plan: state.plan,
-    stretchSegments: state.stretchSegments,
     completedAtSec: nowSec,
     message: 'Session complete',
   }

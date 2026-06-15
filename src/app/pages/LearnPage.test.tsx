@@ -16,7 +16,6 @@ function renderPage(props: Partial<{ onBack: () => void }> = {}) {
       <LearnPage
         learnContent={LEARN_CONTENT.en}
         lockedCopy={LOCKED_COPY.en}
-        activePractice="resonant"
         onBack={onBack}
       />
     </UiStringsProvider>,

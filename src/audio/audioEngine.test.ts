@@ -959,10 +959,7 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
   const cueBuilders: Array<[string, (ac: AudioContext) => CueHandle]> = [
     ['scheduleInCueForTimbre', (ac) => cueSynth.scheduleInCueForTimbre(ac, 1, ac.destination, 'bowl', 4)],
     ['scheduleOutCueForTimbre', (ac) => cueSynth.scheduleOutCueForTimbre(ac, 1, ac.destination, 'bowl', 4)],
-    ['scheduleNKTick', (ac) => nkCueSynth.scheduleNKTick(ac, 1, ac.destination, 'bowl')],
     ['scheduleCountdownTick', (ac) => nkCueSynth.scheduleCountdownTick(ac, 1, ac.destination, 'bowl')],
-    ['scheduleNKFrontMarker', (ac) => nkCueSynth.scheduleNKFrontMarker(ac, 1, ac.destination, 'bowl')],
-    ['scheduleNKBackMarker', (ac) => nkCueSynth.scheduleNKBackMarker(ac, 1, ac.destination, 'bowl')],
     ['scheduleEndChord', (ac) => nkCueSynth.scheduleEndChord(ac, 1, ac.destination, 'bowl')],
   ]
 

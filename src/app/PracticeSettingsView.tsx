@@ -1,10 +1,8 @@
 import type { ReactElement } from 'react'
 
-import { NaviKriyaSettingsForm } from '../components/NaviKriyaSettingsForm'
 import { ResonantSettingsForm } from '../components/ResonantSettingsForm'
 import { SettingsSheet } from '../components/SettingsSheet'
 import { SetupCard } from '../components/SetupCard'
-import { StretchSettingsForm } from '../components/StretchSettingsForm'
 import type { UiStrings } from '../content/strings'
 import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
@@ -19,16 +17,13 @@ interface PracticeSettingsViewProps {
   onCloseSheet(this: void): void
 }
 
-// During a running session NONE of the three practices surface a settings
-// affordance on screen — for congruence with stretch + navi, the HRV running
-// state also renders nothing here.
+// During a running session the settings affordance is not surfaced on screen.
 //
 // The extend-duration logic remains in the codebase (BreathingSessionController
-// .extendDuration + the AppPracticeSettingsViewModel.resonant.onExtendDuration
-// callback) but is intentionally not wired to any UI on the practice surface.
-// If a future design wants to bring back an extend-duration affordance during
-// running, it can plug directly into the existing callback without any domain
-// changes.
+// .extendDuration + the AppPracticeSettingsViewModel.onExtendDuration callback)
+// but is intentionally not wired to any UI on the practice surface. If a future
+// design wants to bring back an extend-duration affordance during running, it
+// can plug directly into the existing callback without any domain changes.
 export function PracticeSettingsView({
   settings,
   isSheetOpen,
@@ -68,38 +63,14 @@ export function PracticeSettingsView({
 function renderForm(
   settings: PracticeSettingsViewModel,
   practice: UiStrings['practice'],
-): ReactElement | null {
-  if (settings.kind === 'hidden') return null
-
-  if (settings.kind === 'resonant') {
-    return (
-      <ResonantSettingsForm
-        settings={settings.settings}
-        isRunning={settings.isRunning}
-        onChange={settings.onChange}
-        onExtendDuration={settings.onExtendDuration}
-        strings={practice.settingsForm}
-      />
-    )
-  }
-
-  if (settings.kind === 'stretch') {
-    return (
-      <StretchSettingsForm
-        isRunning={settings.isRunning}
-        strings={practice.settingsForm}
-        settings={settings.settings}
-        onChange={settings.onChange}
-      />
-    )
-  }
-
+): ReactElement {
   return (
-    <NaviKriyaSettingsForm
-      strings={practice.settingsForm}
+    <ResonantSettingsForm
       settings={settings.settings}
+      isRunning={settings.isRunning}
       onChange={settings.onChange}
-      nkControlsStrings={practice.nkControls}
+      onExtendDuration={settings.onExtendDuration}
+      strings={practice.settingsForm}
     />
   )
 }

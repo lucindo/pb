@@ -1,6 +1,5 @@
 import type { BreathingPlan } from './breathingPlan'
 import { getCompletionSec, type SessionFrame } from './sessionMath'
-import type { StretchSegment } from './stretchRamp'
 
 export interface BoundaryAudioOffsets {
   // boundaryStartSec is the session-elapsed seconds at the start of the upcoming
@@ -24,7 +23,7 @@ export interface BoundaryAudioOffsets {
  * the window can emit at most 6/1.7 ≈ 4 cues per window (never close to 10_000).
  * 10_000 is therefore a pure defense against degenerate/inconsistent plans
  * (negative or inconsistent phase offsets that prevent normal exit) and can
- * never be reached by any valid HRV or Stretch plan.
+ * never be reached by any valid HRV plan.
  */
 export const MAX_WALK_ITERATIONS = 10_000 as const
 
@@ -46,9 +45,6 @@ export interface FutureCue {
  * keep at least minCues cues (floor). At low BPM the floor dominates; at high BPM
  * the seconds window dominates.
  *
- * Stretch: when segments[] is provided, each cue's phaseDurationSec comes from
- * its OWN segment (linear-walk per cue, matching getStretchFrame posture in stretchRamp.ts).
- *
  * Timed-session trim: when targetSec is defined, never emit cues past
  * audioAnchor + targetSec. The trim overrides the floor for timed sessions.
  */
@@ -58,7 +54,6 @@ export function walkFutureCues(args: {
   fromCycleIndex: number
   fromPhase: 'in' | 'out'
   plan: BreathingPlan
-  segments?: StretchSegment[] | undefined
   lookaheadWindowSec: number
   minCues: number
   targetSec?: number | undefined
@@ -69,7 +64,6 @@ export function walkFutureCues(args: {
     fromCycleIndex,
     fromPhase,
     plan,
-    segments,
     lookaheadWindowSec,
     minCues,
     targetSec,
@@ -77,11 +71,6 @@ export function walkFutureCues(args: {
 
   // Defensive ASSERT: degenerate input — avoid infinite loops
   if (plan.cycleSec <= 0) return []
-  if (segments !== undefined) {
-    // Check that at least one segment has a valid cycleSec
-    const allDegenerate = segments.every(s => s.cycleSec <= 0)
-    if (allDegenerate) return []
-  }
 
   // Compute window end in elapsed-seconds space
   let windowEndElapsedSec = elapsedSec + lookaheadWindowSec
@@ -97,40 +86,14 @@ export function walkFutureCues(args: {
   // Walk loop: emit one cue per iteration.
   // MAX_WALK_ITERATIONS hard cap: a degenerate plan (cycleSec>0, inconsistent phase
   // offsets, targetSec===undefined) cannot hang the rAF tick. The cap cannot be reached by
-  // any valid HRV or Stretch plan — see MAX_WALK_ITERATIONS comment above.
+  // any valid HRV plan — see MAX_WALK_ITERATIONS comment above.
   for (let _i = 0; _i < MAX_WALK_ITERATIONS; _i++) {
-    // Compute the session-elapsed time at the start of this cue (relative to anchor=0)
-    let audioTimeRelSec: number
-    let phaseDurationSec: number
-
-    if (segments === undefined) {
-      // ── HRV branch: uniform cycleSec stride ──
-      const cycleStart = currentCycleIndex * plan.cycleSec
-      const phaseOffset = currentPhase === 'in' ? 0 : plan.inhaleSec
-      audioTimeRelSec = cycleStart + phaseOffset
-      phaseDurationSec = currentPhase === 'in' ? plan.inhaleSec : plan.exhaleSec
-    } else {
-      // ── Stretch branch: per-segment cycleSec from segment table ──
-      // Compute audioTimeRelSec from cycleIndex + phase using segment walk
-      // (mirrors getStretchFrame segment walk in stretchRamp.ts)
-      // segments is non-empty (guarded by the caller via allDegenerate check above);
-      // the last element is always present. Provide a fallback to satisfy TypeScript without
-      // a non-null assertion — this branch is unreachable with a valid segments array.
-      const lastSeg = segments[segments.length - 1]
-      if (lastSeg === undefined) return []
-      let activeSeg: StretchSegment = lastSeg
-      for (const seg of segments) {
-        if (seg.cycleBaseIndex > currentCycleIndex) break
-        activeSeg = seg
-      }
-
-      // Compute cycle position within the active segment
-      const cycleInSegment = currentCycleIndex - activeSeg.cycleBaseIndex
-      const cycleStartInSeg = cycleInSegment * activeSeg.cycleSec
-      const phaseOffset = currentPhase === 'in' ? 0 : activeSeg.inhaleSec
-      audioTimeRelSec = activeSeg.startSec + cycleStartInSeg + phaseOffset
-      phaseDurationSec = currentPhase === 'in' ? activeSeg.inhaleSec : activeSeg.exhaleSec
-    }
+    // Uniform cycleSec stride — session-elapsed time at the start of this cue
+    // (relative to anchor=0).
+    const cycleStart = currentCycleIndex * plan.cycleSec
+    const phaseOffset = currentPhase === 'in' ? 0 : plan.inhaleSec
+    const audioTimeRelSec = cycleStart + phaseOffset
+    const phaseDurationSec = currentPhase === 'in' ? plan.inhaleSec : plan.exhaleSec
 
     const audioTime = audioAnchor + audioTimeRelSec
 
@@ -171,23 +134,12 @@ export function walkFutureCues(args: {
  * cues still play while walkFutureCues' `>=` trim drops the cue at the boundary
  * (where the end chord fires).
  *
- *   - Stretch (segments present): the final segment's endSec — the source
- *     getStretchFrame.isComplete uses. Infinity (open-ended cool-down) → undefined.
- *   - HRV (no segments): getCompletionSec(plan) — totalSec rounded up to the cycle.
- *     Open-ended (totalSec === null) → undefined.
- *
- * Returning `plan.totalSec` here instead would (HRV) silence the rounded-up final
- * cycle and (Stretch) trim at the unrelated resonant-tab duration rather than the
- * ramp's own end. `undefined` means "no trim" (open-ended sessions never complete).
+ * getCompletionSec(plan) — totalSec rounded up to the cycle. Open-ended
+ * (totalSec === null) → undefined. Returning `plan.totalSec` instead would
+ * silence the rounded-up final cycle. `undefined` means "no trim" (open-ended
+ * sessions never complete).
  */
-export function resolveTargetSec(
-  plan: BreathingPlan,
-  segments: StretchSegment[] | undefined,
-): number | undefined {
-  if (segments !== undefined) {
-    const finalEndSec = segments.at(-1)?.endSec
-    return finalEndSec === undefined || finalEndSec === Infinity ? undefined : finalEndSec
-  }
+export function resolveTargetSec(plan: BreathingPlan): number | undefined {
   return getCompletionSec(plan) ?? undefined
 }
 
@@ -195,16 +147,6 @@ export function computeBoundaryAudioOffsets(
   frame: SessionFrame,
   plan: BreathingPlan,
 ): BoundaryAudioOffsets {
-  if (frame.cycleStartSec !== undefined) {
-    const inhaleSec = frame.currentInhaleSec ?? plan.inhaleSec
-    const exhaleSec = frame.currentExhaleSec ?? plan.exhaleSec
-
-    return {
-      boundaryStartSec: frame.cycleStartSec + (frame.phase === 'in' ? 0 : inhaleSec),
-      phaseDurationSec: frame.phase === 'in' ? inhaleSec : exhaleSec,
-    }
-  }
-
   return {
     boundaryStartSec: frame.cycleIndex * plan.cycleSec + (frame.phase === 'in' ? 0 : plan.inhaleSec),
     phaseDurationSec: frame.phase === 'in' ? plan.inhaleSec : plan.exhaleSec,

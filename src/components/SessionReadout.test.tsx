@@ -22,24 +22,6 @@ const sampleFrame: SessionFrame = {
   isComplete: false,
 }
 
-// Stretch-shaped frame: SessionFrame carrying the optional stretch live-state fields.
-// Prior ms fixture values (10_909 / 4_363 / 6_545) divide by 1000.
-const stretchFrame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
-  elapsedSec: 0,
-  remainingSec: 600,
-  phaseProgress: 0,
-  cycleIndex: 0,
-  isComplete: false,
-  currentBpm: 5.5,
-  stage: 'ramp',
-  cycleStartSec: 0,
-  currentCycleSec: 10.909,
-  currentInhaleSec: 4.363,
-  currentExhaleSec: 6.545,
-}
-
 interface RenderReadoutProps {
   mode?: 'lead-in' | 'session'
   frame?: SessionFrame | null
@@ -118,32 +100,9 @@ describe('SessionReadout — secondary content', () => {
     expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
   })
 
-  it('stretch frame renders live currentBpm + stage in the secondary', () => {
-    renderReadout({ frame: stretchFrame, status: 'running' })
-    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · Stretch`)).toBeInTheDocument()
-  })
-
-  it('maps each stretch stage to its localized label in the secondary', () => {
-    const cases: { stage: NonNullable<SessionFrame['stage']>; label: string }[] = [
-      { stage: 'hold-initial', label: 'Warm-up' },
-      { stage: 'ramp', label: 'Stretch' },
-      { stage: 'hold-target', label: 'Settle' },
-    ]
-    for (const { stage, label } of cases) {
-      const { unmount } = renderReadout({ frame: { ...stretchFrame, stage }, status: 'running' })
-      expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · ${label}`)).toBeInTheDocument()
-      unmount()
-    }
-  })
-
   it('a completed session renders only the headline, no time / secondary content', () => {
-    renderReadout({ frame: stretchFrame, status: 'complete', showCompletionHeadline: true })
+    renderReadout({ frame: sampleFrame, status: 'complete', showCompletionHeadline: true })
     expect(screen.queryByText('10:00')).not.toBeInTheDocument()
     expect(screen.queryByText(/5\.5/)).not.toBeInTheDocument()
-  })
-
-  it('the lead-in placeholder previews the stretch readout for a stretch frame', () => {
-    renderReadout({ mode: 'lead-in', frame: stretchFrame })
-    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · Stretch`)).toBeInTheDocument()
   })
 })

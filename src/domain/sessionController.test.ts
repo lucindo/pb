@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SessionSettings } from './settings'
-import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS } from './settings'
-import type { StretchSettings } from './settings'
+import { DEFAULT_SETTINGS } from './settings'
 import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
   startSession,
-  startStretchSession,
 } from './sessionController'
 
 const baseSettings: SessionSettings = {
@@ -105,129 +103,10 @@ describe('session lifecycle controller', () => {
   })
 })
 
-describe('startSession standard-only (D-01)', () => {
-  it('sets stretchSegments to null for standard sessions (regression guard)', () => {
-    const running = startSession(baseSettings, 1)
-    expect(running.stretchSegments).toBeNull()
-    expect(running.lastFrame.phaseLabel).toBe('In')
-    expect(running.lastFrame.currentBpm).toBeUndefined()
-  })
-
-  it('returns status running with a standard frame', () => {
+describe('startSession (D-01)', () => {
+  it('returns status running with a standard In frame', () => {
     const running = startSession(baseSettings, 0)
     expect(running.status).toBe('running')
-    expect(running.stretchSegments).toBeNull()
-  })
-})
-
-describe('startStretchSession (D-01, D-02)', () => {
-  const stretchSettings: StretchSettings = {
-    ratio: '40:60',
-    targetRatio: '40:60',
-    initialBpm: 6,
-    targetBpm: 4,
-    warmUpMinutes: 10,
-    coolDownMinutes: 15,
-    rampDurationMinutes: 20,
-  }
-
-  const resonantSettings: SessionSettings = {
-    ...DEFAULT_SETTINGS,
-    bpm: 5.5,
-    ratio: '40:60',
-    durationMinutes: 20,
-  }
-
-  it('returns status running with a non-null stretchSegments table', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 1)
-    expect(running.status).toBe('running')
-    expect(running.stretchSegments).not.toBeNull()
-    expect(running.stretchSegments?.length).toBeGreaterThan(0)
-  })
-
-  it('lastFrame is a stretch frame (has currentBpm and stage)', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 1)
-    expect(running.lastFrame.currentBpm).toBe(6)
-    expect(running.lastFrame.stage).toBe('hold-initial')
-  })
-
-  it('startedAtSec matches the provided nowSec', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 5)
-    expect(running.startedAtSec).toBe(5)
-  })
-
-  it('DEFAULT_STRETCH_SETTINGS produces a valid stretch session', () => {
-    const running = startStretchSession(DEFAULT_STRETCH_SETTINGS, resonantSettings, 0)
-    expect(running.status).toBe('running')
-    expect(running.stretchSegments).not.toBeNull()
-    expect(running.lastFrame.currentBpm).toBe(DEFAULT_STRETCH_SETTINGS.initialBpm)
-  })
-
-  it('completeIfNeeded on a stretch session dispatches to the stretch frame', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 0)
-    // 15 minutes in — mid-ramp (warm-up 10 min, ramp 10:00–30:00)
-    const next = completeIfNeeded(running, 15 * 60)
-    expect(next.status).toBe('running')
-    if (next.status !== 'running') throw new Error('Expected running state')
-    expect(next.lastFrame.stage).toBe('ramp')
-    expect(typeof next.lastFrame.currentBpm).toBe('number')
-  })
-
-  it('an open-ended stretch session never returns a complete state', () => {
-    const running = startStretchSession({ ...stretchSettings, coolDownMinutes: 'open-ended' }, resonantSettings, 0)
-    const later = completeIfNeeded(running, 5 * 60 * 60)
-    expect(later.status).toBe('running')
-    if (later.status !== 'running') throw new Error('Expected running state')
-    expect(later.lastFrame.remainingSec).toBeNull()
-  })
-
-  it('a finite stretch session completes once its computed total is reached', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 0)
-    // total = (warm-up 10 + ramp 20 + cool-down 15) min = 45 min = 2700 sec
-    const totalSec = (10 + 20 + 15) * 60
-    const atTotal = completeIfNeeded(running, totalSec + 60)
-    expect(atTotal.status).toBe('complete')
-    if (atTotal.status !== 'complete') throw new Error('Expected complete state')
-    expect(atTotal.message).toBe('Session complete')
-  })
-
-  // selectedSettings must be the caller's resonant config, NOT the synthetic lead-in.
-  // lockedSettings carries the lead-in (for the plan); selectedSettings is passed
-  // through so endSession returns the resonant config.
-  it('WR-03: selectedSettings deep-equals the passed resonant settings (NOT the lead-in)', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 0)
-    // selectedSettings must equal the resonant config (passed as second arg).
-    expect(running.selectedSettings).toEqual(resonantSettings)
-    // Verify it is NOT the synthetic lead-in shape (bpm: initialBpm, durationMinutes: 'open-ended').
-    expect(running.selectedSettings.bpm).toBe(resonantSettings.bpm)
-    expect(running.selectedSettings.durationMinutes).toBe(resonantSettings.durationMinutes)
-  })
-
-  it('WR-03: lockedSettings is the synthetic lead-in (bpm: initialBpm, durationMinutes: open-ended)', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 0)
-    expect(running.lockedSettings.bpm).toBe(stretchSettings.initialBpm)
-    expect(running.lockedSettings.durationMinutes).toBe('open-ended')
-  })
-
-  it('WR-03: endSession returns idle selectedSettings equal to the original resonant settings', () => {
-    const running = startStretchSession(stretchSettings, resonantSettings, 0)
-    const idle = endSession(running)
-    expect(idle.selectedSettings).toEqual(resonantSettings)
-  })
-})
-
-describe('extendTimedSession — no mode check (D-01)', () => {
-  it('throws RangeError for a stretch session (stretchSegments !== null gate)', () => {
-    const stretchSettings: StretchSettings = {
-      ratio: '40:60',
-      targetRatio: '40:60',
-      initialBpm: 6,
-      targetBpm: 4,
-      warmUpMinutes: 10,
-      coolDownMinutes: 15,
-      rampDurationMinutes: 20,
-    }
-    const running = startStretchSession(stretchSettings, DEFAULT_SETTINGS, 0)
-    expect(() => extendTimedSession(running, 30, 0)).toThrow(RangeError)
+    expect(running.lastFrame.phaseLabel).toBe('In')
   })
 })

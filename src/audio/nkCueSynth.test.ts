@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  END_CHORD_RINGOUT_SEC,
-  scheduleCountdownTick,
-  scheduleNKBackMarker,
-  scheduleEndChord,
-  scheduleNKFrontMarker,
-  scheduleNKTick,
-} from './nkCueSynth'
+import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
 import { TIMBRE_OPTIONS } from '../domain/settings'
 
 // Test helper: relies on FakeAudioContext polyfill installed by vitest.setup.ts.
@@ -17,10 +10,7 @@ function createAc(): AudioContext {
 
 describe('nkCueSynth', () => {
   // All builders share the (ac, when, destination, timbre) signature.
-  const builders: Array<[string, typeof scheduleNKTick]> = [
-    ['scheduleNKFrontMarker', scheduleNKFrontMarker],
-    ['scheduleNKBackMarker', scheduleNKBackMarker],
-    ['scheduleNKTick', scheduleNKTick],
+  const builders: Array<[string, typeof scheduleCountdownTick]> = [
     ['scheduleCountdownTick', scheduleCountdownTick],
     ['scheduleEndChord', scheduleEndChord],
   ]
@@ -51,47 +41,5 @@ describe('nkCueSynth', () => {
     // Warm pad fade is ~5 s; the pre-Spike-005 strike chord was 1.8 s. A span
     // well past 4 s proves the pad-length retune is in effect.
     expect(handle.cleanupAt - handle.scheduledAt).toBeGreaterThan(4)
-  })
-
-  it('END_CHORD_RINGOUT_SEC equals the scheduleEndChord handle ring-out span', () => {
-    // The Navi Kriya teardown in App.tsx defers AudioContext.close() by this
-    // many seconds. It MUST track the real chord span — a stale value cut the
-    // 5s Warm pad fade short on NK while HRV (which reads cue.cleanupAt) was
-    // fine. This guard fails if the exported constant ever drifts from the
-    // chord scheduleEndChord actually produces.
-    const ac = createAc()
-    const when = 1.0
-    const handle = scheduleEndChord(ac, when, ac.destination, 'bowl')
-    expect(handle.cleanupAt - handle.scheduledAt).toBeCloseTo(END_CHORD_RINGOUT_SEC, 5)
-  })
-
-  // -- tick is soft and short (barely-there) ---------------------------------
-
-  it('scheduleNKTick duration is shorter than scheduleEndChord duration (D-07 barely-there)', () => {
-    const ac = createAc()
-    const when = 1.0
-
-    const tickHandle = scheduleNKTick(ac, when, ac.destination, 'bowl')
-    const endHandle = scheduleEndChord(ac, when, ac.destination, 'bowl')
-
-    const tickDuration = tickHandle.cleanupAt - tickHandle.scheduledAt
-    const endDuration = endHandle.cleanupAt - endHandle.scheduledAt
-
-    expect(tickDuration).toBeLessThan(endDuration)
-  })
-
-  // -- Spike 004: countdown beep retuned to "Crisp ping" --------------------
-
-  it('countdown beep is shorter than the per-OM tick (Spike 004 — the two diverged)', () => {
-    const ac = createAc()
-    const when = 1.0
-
-    const countdownHandle = scheduleCountdownTick(ac, when, ac.destination, 'bowl')
-    const tickHandle = scheduleNKTick(ac, when, ac.destination, 'bowl')
-
-    const countdownDuration = countdownHandle.cleanupAt - countdownHandle.scheduledAt
-    const tickDuration = tickHandle.cleanupAt - tickHandle.scheduledAt
-
-    expect(countdownDuration).toBeLessThan(tickDuration)
   })
 })

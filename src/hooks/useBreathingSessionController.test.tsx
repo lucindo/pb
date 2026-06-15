@@ -6,7 +6,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DEFAULT_SETTINGS, DEFAULT_STRETCH_SETTINGS } from '../domain/settings'
+import { DEFAULT_SETTINGS } from '../domain/settings'
 import type { UseWakeLock } from './useWakeLock'
 import { useBreathingSessionController } from './useBreathingSessionController'
 import * as useAudioCuesModule from './useAudioCues'
@@ -32,8 +32,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -54,8 +52,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -79,8 +75,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -115,8 +109,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -133,8 +125,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -154,8 +144,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -169,8 +157,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -186,8 +172,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -197,15 +181,13 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   })
 
   // Test 6: timed session renders cleanly through the top-up effect. The trim
-  // boundary itself (completion boundary for HRV, segment endSec for Stretch) is
+  // boundary itself (the HRV completion boundary) is
   // covered behaviorally in sessionAudio.test.ts; this is a render smoke test.
   it('timed session: controller renders through the top-up effect without error', () => {
     const timedSettings = { ...DEFAULT_SETTINGS, durationMinutes: 5 as const }
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: timedSettings,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -257,8 +239,6 @@ describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -339,8 +319,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -396,8 +374,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -441,8 +417,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
@@ -492,8 +466,6 @@ describe('useBreathingSessionController — lead-in→running audioAnchor handof
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        activePractice: 'resonant',
-        stretchSettings: DEFAULT_STRETCH_SETTINGS,
         liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),

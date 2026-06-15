@@ -198,16 +198,17 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
       version: 3,
       practices: {
         resonant: { settings: V1_SETTINGS, stats: V1_STATS },
-        stretch: { settings: V1_SETTINGS, stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null } },
-        naviKriya: { settings: {}, stats: {} },
       },
-      activePractice: 'naviKriya',
+      // A stale on-disk practice id from an earlier build. migrateEnvelope does NOT
+      // coerce activePractice (coerceActivePractice does, at the read boundary), so
+      // it must pass through unchanged here.
+      activePractice: 'legacy',
     }
     const out = migrateEnvelope(v3Envelope, 3)
     // Both fromVersion < 2 and fromVersion < 3 guards are false — practices/activePractice
-    // pass through unchanged, including a non-default activePractice.
+    // pass through unchanged.
     expect(out.practices).toEqual(v3Envelope.practices)
-    expect(out.activePractice).toBe('naviKriya')
+    expect(out.activePractice).toBe('legacy')
   })
 
   it('populates practices.resonant when a seeded v1 envelope is read back', () => {
@@ -233,18 +234,14 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
   })
 })
 
-describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
-  // A v2 envelope representing a returning user with resonant ramp fields stored
-  // in their resonant settings blob.
-  const RESONANT_SETTINGS_WITH_RAMP = {
+describe('migrateEnvelope v2→v3', () => {
+  // A v2 envelope representing a returning user. The v2→v3 step is now a no-op:
+  // the per-practice subtree passes through untouched (STATE_VERSION stays 3 so
+  // an on-disk v3 from an earlier build is never flagged as a future schema).
+  const RESONANT_SETTINGS = {
     bpm: 5.5,
     ratio: '40:60',
     durationMinutes: 10,
-    initialBpm: 6,
-    targetBpm: 4,
-    warmUpMinutes: 5,
-    coolDownMinutes: 5,
-    rampDurationMinutes: 5,
   }
   const RESONANT_STATS = {
     totalSessions: 3,
@@ -256,44 +253,19 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
     version: 2,
     practices: {
       resonant: {
-        settings: RESONANT_SETTINGS_WITH_RAMP,
+        settings: RESONANT_SETTINGS,
         stats: RESONANT_STATS,
-      },
-      naviKriya: {
-        settings: { frontCount: 80, omLength: 'slow', rounds: 3, perOmCue: false },
-        stats: { totalSessions: 1, totalElapsedSeconds: 600, lastSessionAtMs: null, lastSessionDurationSeconds: null },
       },
     },
     activePractice: 'resonant',
   }
-
-  const ZERO_STATS_LITERAL = {
-    totalSessions: 0,
-    totalElapsedSeconds: 0,
-    lastSessionAtMs: null,
-    lastSessionDurationSeconds: null,
-  }
-
-  it('seeds practices.stretch.settings from the resonant settings blob', () => {
-    const migrated = migrateEnvelope(V2_ENVELOPE, 2)
-    const practices = migrated.practices as Record<string, unknown>
-    const stretch = practices['stretch'] as { settings: unknown; stats: unknown }
-    expect(stretch.settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
-  })
-
-  it('seeds practices.stretch.stats with ZERO stats (inline literal)', () => {
-    const migrated = migrateEnvelope(V2_ENVELOPE, 2)
-    const practices = migrated.practices as Record<string, unknown>
-    const stretch = practices['stretch'] as { settings: unknown; stats: unknown }
-    expect(stretch.stats).toEqual(ZERO_STATS_LITERAL)
-  })
 
   it('leaves practices.resonant byte-equal to its pre-migration value (untouched)', () => {
     const migrated = migrateEnvelope(V2_ENVELOPE, 2)
     const practices = migrated.practices as Record<string, { settings: unknown; stats: unknown }>
     const resonant = practices['resonant']
     if (resonant === undefined) throw new Error('Expected resonant practice after migration')
-    expect(resonant.settings).toEqual(RESONANT_SETTINGS_WITH_RAMP)
+    expect(resonant.settings).toEqual(RESONANT_SETTINGS)
     expect(resonant.stats).toEqual(RESONANT_STATS)
   })
 
@@ -305,7 +277,7 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
   })
 
   it('skips the v2→v3 step when fromVersion >= 3 (envelope returned unchanged)', () => {
-    const v3Envelope = { version: 3, practices: { stretch: { settings: {}, stats: {} } } }
+    const v3Envelope = { version: 3, practices: { resonant: { settings: {}, stats: {} } } }
     const out = migrateEnvelope(v3Envelope, 3)
     expect(out.practices).toEqual(v3Envelope.practices)
   })
@@ -317,30 +289,17 @@ describe('migrateEnvelope v2→v3 (Phase 34 STRETCH-03)', () => {
 
 describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
   // A v1 flat envelope from a returning user who has never opened the app since
-  // the v2 or v3 ladder shipped. migrateEnvelope(env, 1) must cascade BOTH
-  // ladder steps (v1→v2 then v2→v3) in a single call.
+  // the v2 ladder shipped. migrateEnvelope(env, 1) folds the flat v1 shape into
+  // the per-practice resonant slice; the v2→v3 step is a no-op.
   //
   // This block asserts only what `migrateEnvelope` actually produces —
-  // resonant + stretch + activePractice. naviKriya seeding is NOT asserted
-  // because `migrateEnvelope` does not seed naviKriya; defaults are supplied
-  // downstream by `coercePractices`.
-  // The v1→v2 analog block above also omits naviKriya assertions.
-  //
-  // The inline ZERO_STATS_LITERAL guards the circular-dep boundary called
-  // out at src/storage/storage.ts:112-113 — stats.ts imports from storage.ts,
-  // so importing ZERO_STATS from stats.ts here would create a cycle.
+  // resonant + activePractice. The v1→v2 analog block above is consistent.
   const V1_SETTINGS = { bpm: 4, ratio: '40:60', durationMinutes: 10 }
   const V1_STATS = {
     totalSessions: 7,
     totalElapsedSeconds: 4200,
     lastSessionAtMs: 1_700_000_000_000,
     lastSessionDurationSeconds: 600,
-  }
-  const ZERO_STATS_LITERAL = {
-    totalSessions: 0,
-    totalElapsedSeconds: 0,
-    lastSessionAtMs: null,
-    lastSessionDurationSeconds: null,
   }
 
   it('folds a v1 flat envelope all the way to v3 in one call', () => {
@@ -350,16 +309,11 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
     )
     const practices = migrated.practices as {
       resonant: { settings: unknown; stats: unknown }
-      stretch: { settings: unknown; stats: unknown }
     }
     // v1→v2 step: resonant slice populated losslessly from flat fields.
     expect(practices.resonant.settings).toEqual(V1_SETTINGS)
     expect(practices.resonant.stats).toEqual(V1_STATS)
     expect(migrated.activePractice).toBe('resonant')
-    // v2→v3 step: stretch slice seeded — settings carries the resonant blob
-    // (downstream coerceStretchSettings validates ramp fields), stats is ZERO.
-    expect(practices.stretch.settings).toEqual(V1_SETTINGS)
-    expect(practices.stretch.stats).toEqual(ZERO_STATS_LITERAL)
   })
 
   it('is idempotent — re-migrating the v3 output is a no-op', () => {
@@ -370,9 +324,8 @@ describe('migrateEnvelope v1→v3 chained (HOUSE-09)', () => {
     // Feed the output back through with its terminal version. STATE_VERSION (3)
     // means both fromVersion < 2 and fromVersion < 3 guards are false — the
     // returned envelope must equal `once` (modulo the `version` field, which
-    // writeEnvelope stamps, not migrateEnvelope). Catches a regression where,
-    // e.g., the v2→v3 step started overwriting an already-present `stretch`
-    // slice on a v3 input.
+    // writeEnvelope stamps, not migrateEnvelope). Catches a regression where a
+    // ladder step started rewriting an already-migrated v3 input.
     const twice = migrateEnvelope(once, STATE_VERSION)
     expect(twice).toEqual(once)
   })

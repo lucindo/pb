@@ -1,6 +1,5 @@
 import type { SetupCardItem } from '../components/SetupCard'
 import type { UiStrings } from '../content/strings'
-import type { OmLength } from '../domain'
 import type { AppPracticeSettingsViewModel } from './appViewModel'
 
 export interface BuildSetupCardSummaryArgs {
@@ -8,88 +7,39 @@ export interface BuildSetupCardSummaryArgs {
   practice: UiStrings['practice']
 }
 
-// Maps the practice-settings viewmodel into pre-formatted SetupCard items
-// using the existing per-practice form labels + units. Returns null when the
-// card should not render (navi session active → kind 'hidden'; stretch +
-// isRunning → no in-session controls per J10 OQ-2 "hide on Stretch Running").
-// Resonant + isRunning keeps the card visible to preserve the extend-duration
-// affordance (the form gates everything except the Duration stepper).
+// Maps the practice-settings viewmodel into pre-formatted SetupCard items using
+// the form labels + units. Returns null when the card should not render: hidden
+// during a running session (the extend-duration callback stays retained but
+// unwired — see PracticeSettingsView) and on Complete so the completion panel
+// reads alone.
 export function buildSetupCardSummary({
   settings,
   practice,
 }: BuildSetupCardSummaryArgs): readonly SetupCardItem[] | null {
-  if (settings.kind === 'hidden') return null
+  if (settings.isRunning || settings.isComplete) return null
 
   const f = practice.settingsForm
-
-  if (settings.kind === 'resonant') {
-    // Congruence with stretch + navi: nothing on screen during a running
-    // session. The extend-duration logic in the controller + viewmodel
-    // (settings.onExtendDuration) is intentionally retained but unwired
-    // from the practice surface — see PracticeSettingsView for the docs.
-    // Also hidden on Complete so the "Session complete" / "Take a moment"
-    // panel reads alone, matching the spike's complete state.
-    if (settings.isRunning || settings.isComplete) return null
-    const s = settings.settings
-    return [
-      { id: 'bpm', label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
-      { id: 'ratio', label: f.ratioLabel, value: s.ratio },
-      {
-        id: 'duration',
-        label: f.durationLabel,
-        value:
-          s.durationMinutes === 'open-ended'
-            ? f.openEndedLabel
-            : `${String(s.durationMinutes)} ${f.minutesUnit}`,
-      },
-    ]
-  }
-
-  if (settings.kind === 'stretch') {
-    if (settings.isRunning || settings.isComplete) return null
-    const s = settings.settings
-    // Visual summary only: 3 cells matching the HRV card shape. The actual
-    // configuration (warm-up / ramp / cool-down / ratio) stays in the
-    // SettingsSheet form. Duration = warmUp + ramp + coolDown; if coolDown is
-    // open-ended the whole total is open-ended.
-    const durationValue =
-      s.coolDownMinutes === 'open-ended'
-        ? f.openEndedLabel
-        : `${String(s.warmUpMinutes + s.rampDurationMinutes + s.coolDownMinutes)} ${f.minutesUnit}`
-    return [
-      { id: 'initialBpm', label: f.initialBpmShortLabel, value: `${String(s.initialBpm)} ${f.bpmUnit}` },
-      { id: 'targetBpm', label: f.targetBpmShortLabel, value: `${String(s.targetBpm)} ${f.bpmUnit}` },
-      { id: 'duration', label: f.durationLabel, value: durationValue },
-    ]
-  }
-
-  if (settings.isComplete) return null
-
-  const n = settings.settings
-  const nk = practice.nkControls
-  const omLengthLabel = formatOmLength(n.omLength, nk)
+  const s = settings.settings
   return [
-    { id: 'rounds', label: nk.roundsLabel, value: String(n.rounds) },
-    { id: 'frontCount', label: nk.frontCountShortLabel, value: String(n.frontCount) },
-    { id: 'omLength', label: nk.omLengthShortLabel, value: omLengthLabel },
+    { id: 'bpm', label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
+    { id: 'ratio', label: f.ratioLabel, value: s.ratio },
+    {
+      id: 'duration',
+      label: f.durationLabel,
+      value:
+        s.durationMinutes === 'open-ended'
+          ? f.openEndedLabel
+          : `${String(s.durationMinutes)} ${f.minutesUnit}`,
+    },
   ]
 }
 
-function formatOmLength(value: OmLength, nk: UiStrings['practice']['nkControls']): string {
-  if (value === 'fast') return nk.omLengthFast
-  if (value === 'slow') return nk.omLengthSlow
-  return nk.omLengthMedium
-}
-
-// Resolves the per-practice display name used for the SetupCard aria-label
-// and the SettingsSheet subtitle. Reuses the existing switcher headings so no
-// new strings are needed for the practice name itself.
+// Resolves the display name used for the SetupCard aria-label and the
+// SettingsSheet subtitle.
 export function resolveSheetPracticeName(
   settings: AppPracticeSettingsViewModel,
   switcher: UiStrings['practice']['switcher'],
 ): string | null {
-  if (settings.kind === 'resonant') return switcher.resonantHeading
-  if (settings.kind === 'stretch') return switcher.stretchHeading
-  if (settings.kind === 'naviKriya') return switcher.naviKriyaHeading
-  return null
+  void settings
+  return switcher.resonantHeading
 }

@@ -46,9 +46,9 @@ export interface AudioEngine {
    *  through the entire phase at low BPM. The boundary scheduler in App.tsx derives
    *  this from plan.inhaleSec / plan.exhaleSec. */
   scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
-  /** Schedule the shared session-ending chord on this engine's AudioContext —
-   *  the same sound the Navi Kriya completion plays. No-op when closed (muted cues
-   *  route silently through masterGain). close() defers teardown until the chord rings. */
+  /** Schedule the session-ending chord on this engine's AudioContext. No-op when
+   *  closed (muted cues route silently through masterGain). close() defers teardown
+   *  until the chord rings. */
   playEndChord(): void
   /** Toggle mute. Linear-ramps the master gain to 0 (mute) or 1 (unmute)
    *  over 0.05 s. Instant; unmute lands on whatever cue is currently playing. */
@@ -278,8 +278,6 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   // widened to SessionClock at the assignment boundary — external consumers cannot
   // call notifySuspended.
   //
-  // This is the HRV AC clock; useNaviKriyaAudio constructs its own SEPARATE clock
-  // for the NK AC — they MUST NOT be conflated.
   const clock: SessionClock & { notifySuspended(): void } = createAudioSessionClock(audioCtx, schedule)
 
   const engine: AudioEngine = {
@@ -291,8 +289,8 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       // Facade over the internal schedule(when, cue) dispatch.
       // 3 ticks at +0/+1/+2 + first In cue at +3. Track each so mid-lead-in mute
       // can fade them out — schedule()'s switch arms do the activeCues.add
-      // bookkeeping. The countdown beep is the shared scheduleCountdownTick —
-      // the same beep the Navi Kriya countdown uses — and honours the session timbre.
+      // bookkeeping. The countdown beep is scheduleCountdownTick and honours the
+      // session timbre.
       schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })

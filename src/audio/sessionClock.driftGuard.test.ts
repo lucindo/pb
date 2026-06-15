@@ -1,22 +1,17 @@
 // src/audio/sessionClock.driftGuard.test.ts
 //
-// Drift-guard for the 5 SessionClock callers.
+// Drift-guard for the SessionClock callers.
 //
-// The 5 caller files consume time EXCLUSIVELY through the SessionClock interface —
+// The caller files consume time EXCLUSIVELY through the SessionClock interface —
 // no direct `performance.now()`, `new AudioContext()`, or `audioCtx.currentTime` reads.
-// This test fs-scans those 5 files and asserts the absence of three banned tokens.
+// This test fs-scans those files and asserts the absence of three banned tokens.
 //
-// Scope: EXACTLY 5 files — useSessionEngine.ts, useAudioCues.ts,
-// useNaviKriyaAudio.ts, useNKEngine.ts, useAmbientScale.ts. This is NOT
+// Scope: EXACTLY 3 files — useSessionEngine.ts, useAudioCues.ts,
+// useAmbientScale.ts. This is NOT
 // a project-wide ban — the engine internals (`src/audio/audioEngine.ts`)
 // and the factory bodies (`src/audio/sessionClock.ts`) legitimately read
 // the underlying tokens (only factories may touch `performance.now()` /
 // `audioCtx.currentTime`; engine wires its own dispatch through `createAudioSessionClock`).
-//
-// Exemption: `useNaviKriyaAudio.ts` keeps a single `new AudioContext()`
-// inside `createOptionalAudioContext` — the NK AC ownership invariant.
-// The factory wraps that AC immediately on the next line via `createAudioSessionClock(audioCtx)`.
-// The exemption is scoped to this one file via the `exemptFiles` mechanism below.
 //
 // Adding a caller: any NEW file under `src/hooks/` that imports from
 // `src/audio/` should be added to CALLER_FILES below.
@@ -35,15 +30,13 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-// Hard-coded caller scope: exactly the 5 SessionClock-consuming hooks.
+// Hard-coded caller scope: exactly the SessionClock-consuming hooks.
 // Deliberately a fixed list (NOT a directory walk) so the drift-guard
 // scope is auditable and so adding a caller is an explicit review event.
 // The test file itself is NOT in this list — no self-match risk for the regex sources below.
 const CALLER_FILES = [
   resolve(__dirname, '..', 'hooks', 'useSessionEngine.ts'),
   resolve(__dirname, '..', 'hooks', 'useAudioCues.ts'),
-  resolve(__dirname, '..', 'hooks', 'useNaviKriyaAudio.ts'),
-  resolve(__dirname, '..', 'hooks', 'useNKEngine.ts'),
   resolve(__dirname, '..', 'hooks', 'useAmbientScale.ts'),
 ] as const
 
@@ -56,9 +49,8 @@ interface BannedPattern {
   readonly exemptFiles?: ReadonlyArray<string>
 }
 
-// Banned patterns. The `new AudioContext()` pattern carries a
-// per-file exemption for `useNaviKriyaAudio.ts` — the NK AC ownership invariant
-// requires that file to construct its own per-session AudioContext. No other file is exempt.
+// Banned patterns. No caller is exempt — all SessionClock-consuming hooks
+// must read time exclusively through the SessionClock interface.
 const BANNED: ReadonlyArray<BannedPattern> = [
   {
     name: 'performance.now() direct call',
@@ -67,10 +59,6 @@ const BANNED: ReadonlyArray<BannedPattern> = [
   {
     name: 'new AudioContext() construction',
     re: /\bnew\s+AudioContext\b/,
-    // NK AC ownership invariant — useNaviKriyaAudio.begin must construct its own
-    // per-session AudioContext via createOptionalAudioContext, then wrap it on the
-    // next line via createAudioSessionClock. The construction itself is intentional.
-    exemptFiles: ['useNaviKriyaAudio.ts'],
   },
   {
     name: 'raw audioCtx.currentTime read',
@@ -85,7 +73,7 @@ const BANNED: ReadonlyArray<BannedPattern> = [
 //
 // Known limitation (documented by the string-literal sub-case below):
 // this stripper does NOT remove string literals. Banned tokens embedded
-// in string literals would still match the regex. The 5 caller files
+// in string literals would still match the regex. The caller files
 // have been audited to contain NO such literals. If a future caller
 // introduces a banned-token string literal, the main test would flag it
 // as a false-positive — at which point the stripper would need to be extended.
@@ -94,7 +82,7 @@ function stripComments(text: string): string {
   const noBlocks = text.replace(/\/\*[\s\S]*?\*\//g, '')
   // Line comments // ...
   // The leading `(^|[^:])` excludes `://` (URL schemes) so a literal
-  // URL in a string is not partially eaten. Sufficient for the 5
+  // URL in a string is not partially eaten. Sufficient for the
   // caller files; matches the analog at content.no-review-markers.test.ts.
   const noLines = noBlocks.replace(/(^|[^:])\/\/[^\n]*/g, '$1')
   return noLines

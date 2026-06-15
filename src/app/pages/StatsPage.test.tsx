@@ -9,7 +9,7 @@ import { UI_STRINGS } from '../../content/strings'
 
 const STRINGS = UI_STRINGS.en.stats
 
-const PRACTICE_NAMES = { resonant: 'HRV', stretch: 'Stretch', naviKriya: 'Navi' } as const
+const PRACTICE_NAMES = { resonant: 'HRV' } as const
 
 const STATS: PracticeStatsMap = {
   resonant: {
@@ -17,19 +17,6 @@ const STATS: PracticeStatsMap = {
     totalElapsedSeconds: 3600,
     lastSessionAtMs: 1_700_000_000_000,
     lastSessionDurationSeconds: 120,
-  },
-  stretch: {
-    totalSessions: 0,
-    totalElapsedSeconds: 0,
-    lastSessionAtMs: null,
-    lastSessionDurationSeconds: null,
-  },
-  naviKriya: {
-    totalSessions: 5,
-    totalElapsedSeconds: 600,
-    lastSessionAtMs: 1_700_000_000_000,
-    lastSessionDurationSeconds: 90,
-    roundsCompleted: 12,
   },
 }
 
@@ -60,20 +47,6 @@ describe('StatsPage', () => {
   it('renders one block per practice', () => {
     renderPage()
     expect(screen.getByText('HRV')).toBeInTheDocument()
-    expect(screen.getByText('Stretch')).toBeInTheDocument()
-    expect(screen.getByText('Navi')).toBeInTheDocument()
-  })
-
-  it('shows the rounds field only for Navi Kriya', () => {
-    renderPage()
-    expect(screen.getAllByText(STRINGS.fields.rounds)).toHaveLength(1)
-    expect(screen.getByText('12')).toBeInTheDocument()
-  })
-
-  it('renders "—" for a practice with no sessions yet', () => {
-    renderPage()
-    // Stretch has a null last-session → one em-dash.
-    expect(screen.getAllByText(STRINGS.empty).length).toBeGreaterThanOrEqual(1)
   })
 
   it('formats total time without a trailing 0m (1h, not 1h 0m)', () => {

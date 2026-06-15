@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 
 import { createWallSessionClock } from '../audio/sessionClock'
@@ -17,10 +16,6 @@ export interface OrbShapeProps {
   // OPTIONAL, default 'labels' — zero-regression for callers that don't supply a cue.
   // OrbLeadIn does NOT receive cue.
   cue?: CueStyleId
-  // NKShape passes 'front' | 'back' to render its locked MID_SCALE shell with a
-  // phase-aware centre-disc bg (front=accent, back=accent-strong).
-  // NKShape overlays the live OM count, so the shell carries no label/digit.
-  nkPhase?: 'front' | 'back'
   // Wired off at Idle + Complete call sites; default true = rings show during Running.
   // OrbLeadIn's prop default is hard-set to false inside the component.
   showRings?: boolean
@@ -28,7 +23,7 @@ export interface OrbShapeProps {
   // + rings at 0.45 opacity. 'minimal-rings' (V2) = single full-bleed accent halo at
   // 0.16 opacity + disc with no shadow + rings at 0.5 opacity.
   variant?: BreathingShapeVariant
-  // When set AND no frame/leadIn/nkPhase, renders the idle orb (empty centre disc;
+  // When set AND no frame/leadIn, renders the idle orb (empty centre disc;
   // scale = MID_SCALE for 'still', breath-clock-driven for 'ambient').
   // showRings is hard-set to false on the idle path.
   idleMode?: OrbIdleBehavior | null
@@ -39,11 +34,6 @@ export interface OrbShapeProps {
   // Completion state — static halo orb (showRings false, scale MID) with a checkmark
   // glyph centred on the accent disc. Takes priority over the frame === null idle path.
   showCompletion?: boolean
-  // Rendered inside the centre disc — currently only consumed by the nkPhase
-  // branch, where NKShape passes the live OM count so it inherits the disc's
-  // on-accent text color (instead of overlaying as a sibling with default
-  // body color, which read as washed-out grey on Mono Zen).
-  children?: ReactNode
 }
 
 // V1 3-layer halo geometry — asymmetric border-radii give the organic puddle feel;
@@ -80,21 +70,12 @@ export function OrbShape({
   leadInDigit,
   strings,
   cue = 'labels',
-  nkPhase,
   showRings = true,
   variant = 'orb-halo',
   idleMode,
   showCompletion = false,
   ringCue = 'progress-arc',
-  children,
 }: OrbShapeProps) {
-  if (nkPhase != null) {
-    return (
-      <OrbLeadIn digit={null} nkPhase={nkPhase} strings={strings} variant={variant} ringCue={ringCue}>
-        {children}
-      </OrbLeadIn>
-    )
-  }
   if (leadInDigit != null) {
     return <OrbLeadIn digit={leadInDigit} strings={strings} variant={variant} ringCue={ringCue} />
   }
@@ -273,41 +254,27 @@ function OrbIdle({
 
 // Lead-in: neutral pre-state — orb locked at MID_SCALE regardless of OS
 // reduced-motion preference. No data-phase/data-progress: those belong to
-// the active breath loop. digit === null: NK shell — disc carries no numeral
-// (NKShape overlays the OM count); nkPhase drives disc bg (front=accent /
-// back=accent-strong) to preserve the front/back distinction.
+// the active breath loop.
 function OrbLeadIn({
   digit,
   strings,
-  nkPhase,
   variant,
   ringCue,
-  children,
 }: {
-  digit: 1 | 2 | 3 | null
+  digit: 1 | 2 | 3
   strings: UiStrings['practice']['breathing']
-  nkPhase?: 'front' | 'back'
   variant: BreathingShapeVariant
   ringCue: RingCueStyle
-  children?: ReactNode
 }) {
-  const labelProps =
-    digit != null ? { role: 'img' as const, 'aria-label': strings.leadInAriaLabel(digit) } : {}
-  const dataPhase = nkPhase != null ? (nkPhase === 'back' ? 'out' : 'in') : undefined
   const discBg =
-    nkPhase === 'back'
-      ? variant === 'spiritual-eye'
-        ? 'var(--color-orb-disc-spiritual-eye-strong)'
-        : 'var(--color-breathing-accent-strong)'
-      : nkPhase === 'front' && variant === 'spiritual-eye'
-        ? 'var(--color-orb-disc-spiritual-eye)'
-        : 'var(--color-breathing-accent)'
+    variant === 'spiritual-eye'
+      ? 'var(--color-orb-disc-spiritual-eye)'
+      : 'var(--color-breathing-accent)'
 
   return (
     <OrbContainer
-      ariaLabel={labelProps['aria-label']}
-      role={labelProps.role}
-      dataPhase={dataPhase}
+      ariaLabel={strings.leadInAriaLabel(digit)}
+      role="img"
       showRings={false}
       reducedMotion={false}
       orbScale={MID_SCALE}
@@ -315,12 +282,9 @@ function OrbLeadIn({
       variant={variant}
       ringCue={ringCue}
     >
-      {digit != null && (
-        <span className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl">
-          {digit}
-        </span>
-      )}
-      {children}
+      <span className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl">
+        {digit}
+      </span>
     </OrbContainer>
   )
 }
@@ -483,8 +447,8 @@ function OrbContainer({
             borderRadius: '50%',
             background: discBg,
             // spiritual-eye disc is a dark blue gradient in both themes, so its
-            // inherited content (NK numeral, lead-in digit) needs the light star
-            // token — on-accent flips to near-black in dark and would vanish.
+            // inherited content (the lead-in digit) needs the light star token —
+            // on-accent flips to near-black in dark and would vanish.
             color:
               variant === 'spiritual-eye'
                 ? 'var(--color-orb-star-fill-spiritual-eye)'

@@ -7,17 +7,10 @@ import type { AppViewModel } from './appViewModel'
 type AudioControls = AppViewModel['audio']
 type PracticeControlsViewModel = AppViewModel['practiceControls']
 
-/** Two audio sources by design:
- *  - `controls.audio` is the per-practice audio toggle VM (breathing's audio
- *    for resonant/stretch, a navi-specific VM with needsResume=false for navi).
- *    Drives the mute button.
- *  - `audio` is the breathing VM unconditionally and drives the global
- *    aria-live resume-hint region. Breathing's WebAudio context is the only
- *    one that needs resume hints; the live region announces audio-paused state
- *    regardless of which practice is foregrounded so screen readers always
- *    hear the hint once.
- *  Renaming would clash with existing consumers; this comment is the
- *  contract. */
+/** Two audio props:
+ *  - `controls.audio` is the audio toggle VM that drives the mute button.
+ *  - `audio` drives the global aria-live resume-hint region announcing
+ *    audio-paused state. */
 interface PracticeControlsViewProps {
   controls: PracticeControlsViewModel
   audio: AudioControls

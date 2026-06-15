@@ -2,8 +2,7 @@
 //
 // Coerces iOS Safari's audio session category from "ambient" to "playback" so cue
 // audio routes through the device speaker even when the silent switch is ON and no
-// headphones are connected. Shared by both audio paths (createAudioEngine for
-// breathing/stretch and useNaviKriyaAudio for Navi Kriya).
+// headphones are connected. Used by createAudioEngine for the breathing session.
 //
 // iOS gesture-token constraint: createSilentLoopBypass() MUST be called
 // SYNCHRONOUSLY on the user-gesture head, BEFORE any await. iOS Safari ties

@@ -11,8 +11,8 @@ export interface SettingsStepperProps<T extends string | number> {
   disabled?: boolean
   disableDecrease?: boolean
   disableIncrease?: boolean
-  /** When true, render label + value only (no +/- buttons) — read-only field
-   *  used by the Stretch sheet's derived total Duration row. */
+  /** When true, render label + value only (no +/- buttons) — a read-only
+   *  derived-value row. */
   readOnly?: boolean
   /** When true, drops the row's `border-t` divider. Used when the stepper
    *  is the sole row inside its container (e.g. the HRV-running inline

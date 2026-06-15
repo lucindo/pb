@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_NK_SETTINGS, type SessionFrame } from '../domain'
+import { type SessionFrame } from '../domain'
 import {
   getBreathingPrimaryAction,
   getBreathingPresentation,
-  getNaviKriyaPresentation,
-  getNaviKriyaPrimaryAction,
   getSessionPrimaryActionLabel,
 } from './sessionPresentation'
 import { UI_STRINGS } from '../content/strings'
@@ -64,96 +62,6 @@ describe('breathing presentation model', () => {
       frame,
       isLeadInPlaceholder: true,
     })
-  })
-})
-
-describe('Navi Kriya presentation model', () => {
-  it('models the countdown state as an orb plus a front-phase readout', () => {
-    const model = getNaviKriyaPresentation({
-      sessionActive: true,
-      starting: true,
-      leadInDigit: 2,
-      phase: 'idle',
-      round: 1,
-      count: 0,
-      running: false,
-      settings: DEFAULT_NK_SETTINGS,
-      justCompleted: false,
-      liveCue: 'labels',
-    })
-
-    expect(model.shape).toEqual({ kind: 'orb', cue: 'labels', leadInDigit: 2 })
-    expect(model.readout).toEqual({
-      phase: 'front',
-      round: 1,
-      totalRounds: DEFAULT_NK_SETTINGS.rounds,
-      count: 0,
-      target: DEFAULT_NK_SETTINGS.frontCount,
-    })
-    expect(model.showCompletionHeadline).toBe(false)
-  })
-
-  it('models a back-phase count state with the derived back target', () => {
-    const model = getNaviKriyaPresentation({
-      sessionActive: true,
-      starting: false,
-      leadInDigit: null,
-      phase: 'back',
-      round: 2,
-      count: 12,
-      running: true,
-      settings: DEFAULT_NK_SETTINGS,
-      justCompleted: false,
-      liveCue: 'labels',
-    })
-
-    expect(model.shape).toEqual({
-      kind: 'count',
-      key: 'nk-12',
-      count: 12,
-      phase: 'back',
-      isPaused: false,
-    })
-    expect(model.readout?.target).toBe(DEFAULT_NK_SETTINGS.frontCount / 4)
-  })
-
-  it('models completion without inventing a readout', () => {
-    const model = getNaviKriyaPresentation({
-      sessionActive: false,
-      starting: false,
-      leadInDigit: null,
-      phase: 'done',
-      round: 1,
-      count: 0,
-      running: false,
-      settings: DEFAULT_NK_SETTINGS,
-      justCompleted: true,
-      liveCue: 'nose',
-    })
-
-    expect(model.shape).toEqual({ kind: 'orb', cue: 'nose', leadInDigit: null })
-    expect(model.readout).toBeNull()
-    expect(model.showCompletionHeadline).toBe(true)
-  })
-})
-
-describe('Navi Kriya primary action model', () => {
-  it('prioritizes cancel during countdown, then end while active, then start while idle', () => {
-    expect(getNaviKriyaPrimaryAction({ starting: true, sessionActive: true, justCompleted: false })).toBe('cancel')
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: true, justCompleted: false })).toBe('end')
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false, justCompleted: false })).toBe('start')
-  })
-
-  it('returns done when justCompleted is true and session is inactive', () => {
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false, justCompleted: true })).toBe('done')
-  })
-
-  it('returns start when justCompleted is false and session is inactive (explicit signal)', () => {
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: false, justCompleted: false })).toBe('start')
-  })
-
-  it('returns end when sessionActive is true even if justCompleted is true (sessionActive wins)', () => {
-    expect(getNaviKriyaPrimaryAction({ starting: false, sessionActive: true, justCompleted: true })).toBe('end')
   })
 })
 

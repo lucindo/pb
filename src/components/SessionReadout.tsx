@@ -4,34 +4,20 @@ import {
   formatDuration,
   type SessionFrame,
   type SessionStatus,
-  type StretchStage,
 } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
 import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 
-// Both HRV and Stretch readouts resolve to FeedbackTime: a big remaining-time
-// number above an uppercase tracked secondary line. HRV's secondary is
-// "X BPM · ratio" (static), the stretch path's secondary is "X BPM · STAGE"
-// (currentBpm + stage from frame). Completion shows just the "Session complete"
-// headline; lead-in shows the placeholder time the upcoming session counts from.
-
-function stageText(stage: StretchStage, strings: UiStrings['practice']['readout']): string {
-  switch (stage) {
-    case 'hold-initial':
-      return strings.stageHoldInitial
-    case 'ramp':
-      return strings.stageRamp
-    case 'hold-target':
-      return strings.stageHoldTarget
-  }
-}
+// The HRV readout resolves to FeedbackTime: a big remaining-time number above an
+// uppercase tracked secondary line ("X BPM · ratio"). Completion shows just the
+// "Session complete" headline; lead-in shows the placeholder time the upcoming
+// session counts from.
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   strings: UiStrings['practice']['readout']
-  /** Resonant pace context — drives the HRV secondary line. Always provided
-   *  for HRV; the stretch path uses frame.currentBpm + frame.stage instead. */
+  /** Resonant pace context — drives the secondary line. */
   bpm: number
   ratio: string
   /** BPM unit token from settingsForm strings ("BPM" / "RPM" per locale). */
@@ -79,13 +65,8 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
 
   const primary = formatDuration(frame.remainingSec ?? frame.elapsedSec)
 
-  // Stretch path: currentBpm + stage are set on the frame. Format
-  // "{currentBpm} {bpmUnit} · {stage}" — stage label rendered uppercase by
-  // FeedbackTime's CSS.
-  // HRV path: format "{bpm} {bpmUnit} · {ratio}" using the static settings.
-  const secondary = frame.currentBpm !== undefined && frame.stage !== undefined
-    ? `${frame.currentBpm.toFixed(1)} ${bpmUnit} · ${stageText(frame.stage, strings)}`
-    : `${String(bpm)} ${bpmUnit} · ${ratio}`
+  // "{bpm} {bpmUnit} · {ratio}" using the static settings.
+  const secondary = `${String(bpm)} ${bpmUnit} · ${ratio}`
 
   return (
     <section aria-label={strings.readoutAriaLabel} className="w-full">

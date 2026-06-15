@@ -6,14 +6,13 @@ import type { RefObject } from 'react'
 // the audio subdirectory's internal layout.
 import type { SessionClock } from '../audio/audioEngine'
 import type { SessionFrame } from '../domain/sessionMath'
-import type { SessionSettings, StretchSettings } from '../domain/settings'
+import type { SessionSettings } from '../domain/settings'
 import { DEFAULT_SETTINGS } from '../domain/settings'
 import {
   completeIfNeeded,
   endSession,
   extendTimedSession,
   startSession,
-  startStretchSession,
   type SessionState,
 } from '../domain/sessionController'
 
@@ -109,7 +108,6 @@ export interface SessionEngine {
  */
 export function useSessionEngine(
   initialSettings: SessionSettings = DEFAULT_SETTINGS,
-  stretchSettings: StretchSettings | null = null,
   clock: SessionClock,
 ): SessionEngine {
   const [state, setState] = useState<SessionState>(() => ({
@@ -265,29 +263,10 @@ export function useSessionEngine(
     })
   }, [])
 
-  // Capture stretchSettings in a ref so the start callback can read the latest
-  // value without re-creating the callback every time stretchSettings changes.
-  // The start callback has an intentionally-empty dep array (same pattern as
-  // end/extendDuration); the ref indirection is the stale-closure-safe approach.
-  const stretchSettingsRef = useRef<StretchSettings | null>(stretchSettings)
-  useEffect(() => {
-    stretchSettingsRef.current = stretchSettings
-  }, [stretchSettings])
-
   const start = useCallback(() => {
     setState((currentState) => {
       if (currentState.status === 'running') {
         return currentState
-      }
-
-      // When a stretch settings object is wired in, start a stretch session via
-      // startStretchSession instead of the standard startSession. Pass
-      // currentState.selectedSettings as the resonant config so it is preserved
-      // through the session (startStretchSession stores it in selectedSettings,
-      // lockedSettings carries the synthetic lead-in).
-      const sSettings = stretchSettingsRef.current
-      if (sSettings !== null) {
-        return startStretchSession(sSettings, currentState.selectedSettings, clock.now())
       }
 
       return startSession(currentState.selectedSettings, clock.now())

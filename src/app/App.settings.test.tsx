@@ -1,16 +1,14 @@
 import '@testing-library/jest-dom/vitest'
 
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 import {
-  readStoredEnvelope as readRawEnvelope,
   settingGroup,
   startAndAdvancePastLeadIn,
 } from './appTestHarness'
-import { STATE_KEY } from '../storage'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -110,63 +108,3 @@ describe('main screen settings controls', () => {
 
 })
 
-function stretchSettingsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
-  const practices = env?.['practices'] as Record<string, unknown> | undefined
-  const stretch = practices?.['stretch'] as Record<string, unknown> | undefined
-  return stretch?.['settings'] as Record<string, unknown> | undefined
-}
-
-describe('Phase 34 — stretch settings persist across a remount', () => {
-  beforeEach(() => {
-    window.localStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('stretch settings change is persisted and survives remount', async () => {
-    // Seed a v3 envelope with stretch active and default settings
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 3,
-      activePractice: 'stretch',
-      practices: {
-        resonant: { settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 10 }, stats: null },
-        stretch: {
-          settings: {
-            ratio: '40:60',
-            initialBpm: 5.5,
-            targetBpm: 4.5,
-            warmUpMinutes: 5,
-            rampDurationMinutes: 5,
-            coolDownMinutes: 5,
-          },
-          stats: null,
-        },
-        naviKriya: { settings: null, stats: null },
-      },
-    }))
-
-    const { unmount } = render(<App />)
-
-    // Verify start BPM group is visible (stretch branch active)
-    const startBpmGroup = settingGroup('Start BPM')
-    expect(startBpmGroup).toBeInTheDocument()
-
-    // Increase warm-up duration — default is 5, increasing goes to 10 min
-    const warmUpGroup = settingGroup('Warm-up')
-    fireEvent.click(within(warmUpGroup).getByRole('button', { name: /increase warm-up/i }))
-    await act(async () => { await Promise.resolve() })
-
-    // Persisted to the stretch slice
-    const env1 = readRawEnvelope()
-    expect(stretchSettingsOf(env1)?.['warmUpMinutes']).toBe(10)
-
-    // Remount — the setting should survive
-    unmount()
-    render(<App />)
-    // Still on stretch practice; warm-up still 10 min
-    const warmUpGroup2 = settingGroup('Warm-up')
-    expect(within(warmUpGroup2).getByText('10 min')).toBeInTheDocument()
-  })
-})

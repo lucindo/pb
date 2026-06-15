@@ -425,8 +425,7 @@ export function useAudioCues(
     // any cross-session subscription state from the initial source.
     // NOTE: the unmount cleanup does NOT add a setProxyClockSource revert here —
     // the hook, useSessionEngine, and useBreathingSessionController all unmount
-    // together, so no post-unmount clock.now() read can reach the proxy. This is
-    // asymmetric with the NK path by design.
+    // together, so no post-unmount clock.now() read can reach the proxy.
     proxyMemoRef.current.setSource(createWallSessionClock())
     firstInCueTimeRef.current = null // Clear cached anchor for the next start()
     lastTopUpCuesRef.current = [] // Clear cache so fast stop()→start() cannot replay stale cues into new engine.

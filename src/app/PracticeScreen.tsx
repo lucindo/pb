@@ -3,7 +3,6 @@ import { useCallback, useState, type ReactElement } from 'react'
 import { LearnAnchor } from '../components/LearnAnchor'
 import { PageShell } from '../components/primitives/PageShell'
 import { TopAppBar } from '../components/primitives/TopAppBar'
-import { PracticeToggle } from '../components/PracticeToggle'
 import { SettingsAnchor } from '../components/SettingsAnchor'
 import type { AppViewModel } from './appViewModel'
 import { EndSessionDialogsView } from './EndSessionDialogsView'
@@ -16,10 +15,10 @@ interface PracticeScreenProps {
 }
 
 /** The practice surface — the appScreen='practice' route. Top group (top bar →
- *  switcher → orb → variable region) anchors to viewport top; flex-1 spacer absorbs
+ *  orb → variable region) anchors to viewport top; flex-1 spacer absorbs
  *  remaining vertical space; bottom group (controls → disclaimer) anchors to viewport
  *  bottom with a 16 px min-gap above Start. The orb's y-position is constant
- *  across practice × phase combinations. */
+ *  across phase combinations. */
 export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)
   const onOpenSettingsSheet = useCallback(() => { setSettingsSheetOpen(true) }, [])
@@ -55,17 +54,6 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
           />
         }
       />
-      <div className="w-full px-5 pb-4 sm:px-8">
-        <div className="mx-auto w-full sm:max-w-[400px]">
-          <PracticeToggle
-            active={vm.activePractice}
-            disabled={vm.controlsDisabled}
-            showIcons={vm.featureFlags.switcherIcon}
-            onSwitch={vm.onSwitchPractice}
-            strings={vm.practiceToggleStrings}
-          />
-        </div>
-      </div>
       <div className="flex w-full flex-col items-center px-5 pt-[18px] sm:px-8 sm:pt-7">
         <PracticeSessionView
           session={vm.practiceSession}

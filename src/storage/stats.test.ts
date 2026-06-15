@@ -41,28 +41,3 @@ describe('coerceStats per-field coercion (D-15 spirit / D-17)', () => {
     expect(out.lastSessionDurationSeconds).toBeNull()
   })
 })
-
-describe('coerceStats roundsCompleted (NK-08 / T-31-06)', () => {
-  it('preserves a valid integer roundsCompleted', () => {
-    const result = coerceStats({ totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null, roundsCompleted: 5 })
-    expect(result.roundsCompleted).toBe(5)
-  })
-
-  it('returns undefined for roundsCompleted when the field is absent', () => {
-    const result = coerceStats({ totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null })
-    expect(result.roundsCompleted).toBeUndefined()
-  })
-
-  it('returns undefined for roundsCompleted when the value is invalid (string / negative / float / NaN)', () => {
-    expect(coerceStats({ roundsCompleted: 'bad' }).roundsCompleted).toBeUndefined()
-    expect(coerceStats({ roundsCompleted: -3 }).roundsCompleted).toBeUndefined()
-    expect(coerceStats({ roundsCompleted: 1.5 }).roundsCompleted).toBeUndefined()
-    expect(coerceStats({ roundsCompleted: Number.NaN }).roundsCompleted).toBeUndefined()
-    expect(coerceStats({ roundsCompleted: Number.POSITIVE_INFINITY }).roundsCompleted).toBeUndefined()
-  })
-
-  it('preserves 0 as a valid roundsCompleted value', () => {
-    const result = coerceStats({ roundsCompleted: 0 })
-    expect(result.roundsCompleted).toBe(0)
-  })
-})

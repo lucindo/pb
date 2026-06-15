@@ -13,11 +13,6 @@ export interface PersistedStats {
   totalElapsedSeconds: number
   lastSessionAtMs: number | null
   lastSessionDurationSeconds: number | null
-  // Optional — only Navi Kriya sessions write this field; resonant always writes
-  // undefined. Omitting it from ZERO_STATS is intentional — the optional field
-  // may be absent and coerceStats returns undefined (not 0) so an existing
-  // resonant stats record stays byte-shaped as before (backward-compatible).
-  roundsCompleted?: number | undefined
 }
 
 // Exported so reset flows can update React state optimistically (without
@@ -68,16 +63,5 @@ export function coerceStats(raw: unknown): PersistedStats {
     totalElapsedSeconds:        isFiniteNonNegativeInt(r.totalElapsedSeconds)           ? r.totalElapsedSeconds       : 0,
     lastSessionAtMs:            isFiniteNonNegativeNumberOrNull(r.lastSessionAtMs)      ? r.lastSessionAtMs           : null,
     lastSessionDurationSeconds: isFiniteNonNegativeIntOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
-    // validate roundsCompleted — a corrupted value coerces to undefined (not 0)
-    // so the field stays absent for resonant records and only appears for NK
-    // records that actually wrote it. Per-field non-throwing coercion (ASVS V5).
-    //
-    // roundsCompleted is preserved for ANY input that has a valid value, including
-    // a resonant or stretch slot that "shouldn't" have it. recordResonantSession /
-    // recordStretchSession never spread ...stats, so resonant and stretch slots
-    // never carry this field on disk in practice. A hand-edited fixture or a future
-    // caller that bypasses the write helpers could surface this field on a non-NK
-    // slot; consumers MUST NOT rely on it being absent for resonant/stretch.
-    roundsCompleted:            isFiniteNonNegativeInt(r.roundsCompleted) ? r.roundsCompleted : undefined,
   }
 }

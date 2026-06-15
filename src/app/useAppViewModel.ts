@@ -2,23 +2,18 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
-import type { StretchSettings } from '../domain'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { useBreathingSessionController } from '../hooks/useBreathingSessionController'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { useFavicon } from '../hooks/useFavicon'
 import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
 import { useLocale } from '../hooks/useLocale'
-import { useNaviKriyaSessionController } from '../hooks/useNaviKriyaSessionController'
 import { useTheme } from '../hooks/useTheme'
 import { useVisualCue } from '../hooks/useVisualCue'
 import { useWakeLock } from '../hooks/useWakeLock'
 import {
-  loadActivePractice,
   loadPractices,
   resetPracticeStats,
-  saveActivePractice,
-  saveStretchSettings,
   ZERO_STATS,
   type PracticeId,
   type PracticeMap,
@@ -26,7 +21,6 @@ import {
 import {
   createAudioViewModel,
   createInstallViewModel,
-  createNaviAudioToggleViewModel,
   createPracticeControlsViewModel,
   createPracticeSessionViewModel,
   createPracticeSettingsViewModel,
@@ -34,27 +28,17 @@ import {
   type AppViewModel,
   type PracticeStatsMap,
 } from './appViewModel'
-import {
-  getBreathingPrimaryAction,
-  getNaviKriyaPrimaryAction,
-} from './sessionPresentation'
+import { getBreathingPrimaryAction } from './sessionPresentation'
 import { useAppNavigation } from './useAppNavigation'
-import { getPracticeTitle, getPracticeToggleStrings } from './practiceCopy'
 
 function snapshotStats(practices: PracticeMap): PracticeStatsMap {
   return {
     resonant: practices.resonant.stats,
-    stretch: practices.stretch.stats,
-    naviKriya: practices.naviKriya.stats,
   }
 }
 
 export function useAppViewModel(): AppViewModel {
   const initialPractices = useMemo<PracticeMap>(() => loadPractices(), [])
-  const [activePractice, setActivePractice] = useState<PracticeId>(() => loadActivePractice())
-  const [stretchSettings, setStretchSettings] = useState<StretchSettings>(
-    () => initialPractices.stretch.settings,
-  )
   const wakeLock = useWakeLock()
   useTheme()
   useFavicon()
@@ -67,28 +51,18 @@ export function useAppViewModel(): AppViewModel {
 
   const breathing = useBreathingSessionController({
     initialSettings: initialPractices.resonant.settings,
-    activePractice,
-    stretchSettings,
     liveCue,
     wakeLock,
     bypassSilentMode: featureFlags.bypassSilentMode,
   })
 
-  const navi = useNaviKriyaSessionController({
-    activePractice,
-    initialSettings: initialPractices.naviKriya.settings,
-    muted: breathing.audio.muted,
-    wakeLock,
-    bypassSilentMode: featureFlags.bypassSilentMode,
-  })
-
-  const controlsDisabled = breathing.inSessionView || navi.sessionActive
+  const controlsDisabled = breathing.inSessionView
   const appNavigation = useAppNavigation({
     controlsDisabled,
     closeOnSessionView: controlsDisabled,
   })
 
-  // Stats are written to disk by the session controllers but not mirrored into
+  // Stats are written to disk by the session controller but not mirrored into
   // this state, so re-read on Stats-page entry to reflect the latest session.
   // The page is unreachable mid-session, so a read-on-open is sufficient.
   const [stats, setStats] = useState<PracticeStatsMap>(() => snapshotStats(initialPractices))
@@ -104,17 +78,9 @@ export function useAppViewModel(): AppViewModel {
   }, [])
 
   const breathingResetSession = breathing.resetSession
-  const naviClearCompletion = navi.clearCompletion
   const breathingStartOrCancel = breathing.startOrCancel
   const breathingRequestEnd = breathing.requestEnd
-  const naviStart = navi.start
-  const naviCancelStart = navi.cancelStart
-  const naviRequestEnd = navi.requestEnd
   const { onMuteOrResumeClick } = breathing.audio
-  const onStretchSettingsChange = useCallback((next: StretchSettings): void => {
-    setStretchSettings(next)
-    saveStretchSettings(next)
-  }, [])
 
   const onMuteToggle = useCallback((): void => {
     void onMuteOrResumeClick()
@@ -126,20 +92,10 @@ export function useAppViewModel(): AppViewModel {
     audioStatus: breathing.audio.audioStatus,
     onMuteToggle,
   })
-  const naviAudio = createNaviAudioToggleViewModel({
-    muted: breathing.audio.muted,
-    audioAvailable: breathing.audio.audioAvailable,
-    onMuteToggle,
-  })
 
   const breathingAction = getBreathingPrimaryAction({
     status: breathing.session.state.status,
     inLeadIn: breathing.phase === 'lead-in',
-  })
-  const naviAction = getNaviKriyaPrimaryAction({
-    starting: navi.starting,
-    sessionActive: navi.sessionActive,
-    justCompleted: navi.justCompleted,
   })
 
   const onBreathingPrimaryClick = useCallback((): void => {
@@ -162,36 +118,13 @@ export function useAppViewModel(): AppViewModel {
     void breathingStartOrCancel()
   }, [breathingAction, breathingRequestEnd, breathingResetSession, breathingStartOrCancel])
 
-  const onNaviPrimaryClick = useCallback((): void => {
-    if (naviAction === 'cancel') {
-      naviCancelStart()
-      return
-    }
-    if (naviAction === 'end') {
-      naviRequestEnd()
-      return
-    }
-    if (naviAction === 'done') {
-      // Dismiss the completion state back to idle. clearCompletion resets
-      // justCompleted → false, causing the primary action to return to 'start'.
-      naviClearCompletion()
-      return
-    }
-    naviStart()
-  }, [naviAction, naviCancelStart, naviRequestEnd, naviClearCompletion, naviStart])
-
   const practiceControls = createPracticeControlsViewModel({
-    activePractice,
     breathingAction,
-    naviAction,
     strings: uiStrings.practice.controls,
     breathingAudio: audio,
-    naviAudio,
     onBreathingPrimaryClick,
-    onNaviPrimaryClick,
   })
   const practiceSession = createPracticeSessionViewModel({
-    activePractice,
     breathing: {
       phase: breathing.phase,
       sessionCue: breathing.sessionCue,
@@ -202,41 +135,15 @@ export function useAppViewModel(): AppViewModel {
       inSessionView: breathing.inSessionView,
       selectedSettings: breathing.session.state.selectedSettings,
     },
-    navi: {
-      sessionActive: navi.sessionActive,
-      starting: navi.starting,
-      leadInDigit: navi.leadInDigit,
-      phase: navi.phase,
-      round: navi.round,
-      count: navi.count,
-      running: navi.running,
-      settings: navi.settings,
-      justCompleted: navi.justCompleted,
-    },
     liveCue,
   })
   const isComplete = breathing.session.state.status === 'complete' && !breathing.inSessionView
   const practiceSettings = createPracticeSettingsViewModel({
-    activePractice,
-    naviSessionActive: navi.sessionActive,
-    resonant: {
-      settings: breathing.session.state.selectedSettings,
-      isRunning: breathing.inSessionView,
-      isComplete,
-      onChange: breathing.setSelectedSettings,
-      onExtendDuration: breathing.session.extendDuration,
-    },
-    stretch: {
-      settings: stretchSettings,
-      isRunning: breathing.inSessionView,
-      isComplete,
-      onChange: onStretchSettingsChange,
-    },
-    naviKriya: {
-      settings: navi.settings,
-      isComplete: navi.justCompleted,
-      onChange: navi.setSettings,
-    },
+    settings: breathing.session.state.selectedSettings,
+    isRunning: breathing.inSessionView,
+    isComplete,
+    onChange: breathing.setSelectedSettings,
+    onExtendDuration: breathing.session.extendDuration,
   })
   const endSessionDialogs: readonly AppEndSessionDialogViewModel[] = [
     {
@@ -245,21 +152,7 @@ export function useAppViewModel(): AppViewModel {
       onConfirm: breathing.confirmEnd,
       onCancel: breathing.cancelEnd,
     },
-    {
-      id: 'naviKriya',
-      open: navi.endDialogOpen,
-      onConfirm: navi.confirmEnd,
-      onCancel: navi.cancelEnd,
-    },
   ]
-
-  const onSwitchPractice = useCallback((next: PracticeId): void => {
-    if (controlsDisabled) return
-    naviClearCompletion()
-    breathingResetSession()
-    setActivePractice(next)
-    saveActivePractice(next)
-  }, [controlsDisabled, breathingResetSession, naviClearCompletion])
 
   const install = createInstallViewModel({
     isStandalone,
@@ -269,9 +162,8 @@ export function useAppViewModel(): AppViewModel {
   })
 
   return {
-    activePractice,
     locale,
-    appTitle: getPracticeTitle(activePractice, uiStrings),
+    appTitle: uiStrings.practice.title,
     controlsDisabled,
     practiceSession,
     practiceSettings,
@@ -280,13 +172,11 @@ export function useAppViewModel(): AppViewModel {
     uiStrings,
     learnContent: LEARN_CONTENT[locale],
     lockedCopy: LOCKED_COPY[locale],
-    practiceToggleStrings: getPracticeToggleStrings(uiStrings),
     featureFlags,
     install,
     navigation: { ...appNavigation, onStatsOpen },
     dialogs: { endSessionDialogs },
     stats,
     onResetPracticeStats,
-    onSwitchPractice,
   }
 }

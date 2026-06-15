@@ -1,11 +1,7 @@
 import {
-  getNaviKriyaPhaseTarget,
   type BreathingSessionPhase,
   type CueStyleId,
   type LeadInDigit,
-  type NaviKriyaPhase,
-  type NaviKriyaSettings,
-  type NaviLeadInDigit,
   type SessionFrame,
   type SessionStatus,
 } from '../domain'
@@ -20,9 +16,7 @@ export interface BreathingPresentationInput {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
-  // Resonant pace context (always present — preserved across stretch sessions so
-  // the HRV session's BPM · ratio caption stays stable). Drives the "X BPM · ratio"
-  // secondary line on HRV; the stretch path reads currentBpm + stage off the frame instead.
+  // Resonant pace context — drives the "X BPM · ratio" secondary line.
   bpm: number
   ratio: string
 }
@@ -61,114 +55,6 @@ export function getBreathingPresentation(input: BreathingPresentationInput): Bre
   }
 }
 
-export interface NaviKriyaPresentationInput {
-  sessionActive: boolean
-  starting: boolean
-  leadInDigit: NaviLeadInDigit | null
-  phase: 'idle' | 'front' | 'back' | 'done'
-  round: number
-  count: number
-  running: boolean
-  settings: NaviKriyaSettings
-  justCompleted: boolean
-  liveCue: CueStyleId
-}
-
-export type NaviKriyaShapePresentation =
-  | {
-    kind: 'orb'
-    cue: CueStyleId
-    leadInDigit: NaviLeadInDigit | null
-  }
-  | {
-    kind: 'count'
-    key: string
-    count: number
-    phase: NaviKriyaPhase
-    isPaused: boolean
-  }
-
-export interface NaviKriyaReadoutPresentation {
-  phase: NaviKriyaPhase
-  round: number
-  totalRounds: number
-  count: number
-  target: number
-}
-
-export interface NaviKriyaPresentation {
-  shape: NaviKriyaShapePresentation
-  readout: NaviKriyaReadoutPresentation | null
-  showCompletionHeadline: boolean
-}
-
-function getVisibleNaviPhase(phase: NaviKriyaPresentationInput['phase']): NaviKriyaPhase {
-  if (phase === 'front' || phase === 'back') return phase
-  // 'done' is transient: useNKEngine sets nkPhase='done' before onComplete
-  // calls nkEnd() to drop back to 'idle'. The engine reaches 'done' only after
-  // the final back phase, so reflect the last real phase ('back') rather than
-  // silently coercing to 'front'. 'idle' should never reach here per the
-  // sessionActive invariant — surface the violation explicitly.
-  if (phase === 'done') return 'back'
-  throw new Error(`getVisibleNaviPhase: unexpected phase ${phase}`)
-}
-
-export function getNaviKriyaPresentation(
-  input: NaviKriyaPresentationInput,
-): NaviKriyaPresentation {
-  if (!input.sessionActive) {
-    return {
-      shape: { kind: 'orb', cue: input.liveCue, leadInDigit: null },
-      readout: null,
-      showCompletionHeadline: input.justCompleted,
-    }
-  }
-
-  const phase = input.starting ? 'front' : getVisibleNaviPhase(input.phase)
-  const readout: NaviKriyaReadoutPresentation = {
-    phase,
-    round: input.starting ? 1 : input.round,
-    totalRounds: input.settings.rounds,
-    count: input.starting ? 0 : input.count,
-    target: input.starting
-      ? input.settings.frontCount
-      : getNaviKriyaPhaseTarget(input.settings, phase),
-  }
-
-  if (input.starting) {
-    return {
-      shape: { kind: 'orb', cue: input.liveCue, leadInDigit: input.leadInDigit },
-      readout,
-      showCompletionHeadline: false,
-    }
-  }
-
-  return {
-    shape: {
-      kind: 'count',
-      key: `nk-${String(input.count)}`,
-      count: input.count,
-      phase,
-      isPaused: !input.running,
-    },
-    readout,
-    showCompletionHeadline: false,
-  }
-}
-
-export type NaviKriyaPrimaryAction = 'cancel' | 'end' | 'start' | 'done'
-
-export function getNaviKriyaPrimaryAction(input: {
-  starting: boolean
-  sessionActive: boolean
-  justCompleted: boolean
-}): NaviKriyaPrimaryAction {
-  if (input.starting) return 'cancel'
-  if (input.sessionActive) return 'end'
-  if (input.justCompleted) return 'done'
-  return 'start'
-}
-
 export type BreathingPrimaryAction = 'cancel' | 'end' | 'start' | 'done'
 
 export function getBreathingPrimaryAction(input: {
@@ -180,7 +66,7 @@ export function getBreathingPrimaryAction(input: {
   return input.inLeadIn ? 'cancel' : 'start'
 }
 
-export type SessionPrimaryAction = BreathingPrimaryAction | NaviKriyaPrimaryAction
+export type SessionPrimaryAction = BreathingPrimaryAction
 
 export function getSessionPrimaryActionLabel(
   action: SessionPrimaryAction,

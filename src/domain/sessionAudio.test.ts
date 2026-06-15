@@ -4,7 +4,6 @@ import { LOOKAHEAD_MIN_CUES, LOOKAHEAD_WINDOW_SEC } from '../audio/audioEngine'
 import type { BreathingPlan } from './breathingPlan'
 import { computeBoundaryAudioOffsets, resolveTargetSec, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
 import { getCompletionSec, type SessionFrame } from './sessionMath'
-import type { StretchSegment } from './stretchRamp'
 
 // Fixture values are seconds-shaped.
 const plan: BreathingPlan = {
@@ -37,30 +36,6 @@ const hrvPlan: BreathingPlan = {
   exhaleSec: 3,
   totalSec: null,
 }
-
-// Two-segment Stretch fixture for boundary-crossing tests
-const stretchSegs: StretchSegment[] = [
-  {
-    startSec: 0,
-    endSec: 30,
-    bpm: 10,
-    cycleSec: 6,
-    inhaleSec: 3,
-    exhaleSec: 3,
-    stage: 'hold-initial',
-    cycleBaseIndex: 0,
-  },
-  {
-    startSec: 30,
-    endSec: Infinity,
-    bpm: 6,
-    cycleSec: 10,
-    inhaleSec: 4,
-    exhaleSec: 6,
-    stage: 'hold-target',
-    cycleBaseIndex: 5,
-  },
-]
 
 describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
   // Test 1: HRV walk basic — at 10 BPM (cycleSec=6), floor=2, window=6s
@@ -151,53 +126,6 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
-  // Test 4: Stretch walk basic — crosses the segment boundary at 30s (cue ~27s is out in seg0, cue at 30s is in seg1)
-  it('Stretch basic walk crosses segment boundary with correct per-segment phaseDuration', () => {
-    // anchor=100, fromCycleIndex=4 (cycle 4 starts at 24s in seg0), fromPhase='out'
-    // cycle 4 starts at startSec=0 + 4*6 = 24s; out phase starts at 24+3=27s
-    const anchor = 100
-    const cues = walkFutureCues({
-      audioAnchor: anchor,
-      elapsedSec: 27,  // currently at cycle 4 exhale
-      fromCycleIndex: 4,
-      fromPhase: 'out',
-      plan: { bpm: 10, ratio: '50:50', cycleSec: 6, inhaleSec: 3, exhaleSec: 3, totalSec: null },
-      segments: stretchSegs,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-    })
-    expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-    // First cue: audioTime = anchor + 27, phaseDurationSec from seg0 = 3, kind='out'
-    expect(cues[0]).toEqual({ audioTime: anchor + 27, phaseDurationSec: 3, kind: 'out' })
-    // Second cue: audioTime = anchor + 30, crosses to seg1 (inhaleSec=4), kind='in'
-    expect(cues[1]).toEqual({ audioTime: anchor + 30, phaseDurationSec: 4, kind: 'in' })
-    if (cues.length >= 3) {
-      // Third cue: audioTime = anchor + 34, seg1 exhaleSec=6, kind='out'
-      expect(cues[2]).toEqual({ audioTime: anchor + 34, phaseDurationSec: 6, kind: 'out' })
-    }
-  })
-
-  // Test 5: Stretch open-ended last segment — continues using final segment's cycleSec
-  it('Stretch open-ended last segment: walk uses final segment cycleSec for all further cues', () => {
-    const anchor = 200
-    const cues = walkFutureCues({
-      audioAnchor: anchor,
-      elapsedSec: 40,  // deep in the open-ended second segment (startSec=30, Infinity)
-      fromCycleIndex: 6,
-      fromPhase: 'in',
-      plan: { bpm: 6, ratio: '40:60', cycleSec: 10, inhaleSec: 4, exhaleSec: 6, totalSec: null },
-      segments: stretchSegs,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-    })
-    expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-    // All cues should use seg1 phaseDurations (inhale=4, exhale=6) since we're past startSec=30
-    for (const cue of cues) {
-      if (cue.kind === 'in') expect(cue.phaseDurationSec).toBe(4)
-      else expect(cue.phaseDurationSec).toBe(6)
-    }
-  })
-
   // Test 6: targetSec trim — timed session, floor does NOT override the trim
   it('targetSec trim: no cue queued past audioAnchor+targetSec even with floor', () => {
     const anchor = 0
@@ -275,39 +203,12 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     expect(cues).toEqual([])
   })
 
-  // Test 9: Stretch cycleBaseIndex invariant — crossing segment boundary preserves monotonic cycleIndex
-  it('Stretch cycleBaseIndex invariant: walk across segment boundaries uses correct activeSeg', () => {
-    // Segments: seg0 ends at cycle 5 (cycleBaseIndex=0, 5 cycles total: 0-4),
-    //           seg1 starts at cycleBaseIndex=5
-    // Walking from cycleIndex=4 (last cycle of seg0) phase='in' to seg1
-    const anchor = 50
-    const cues = walkFutureCues({
-      audioAnchor: anchor,
-      elapsedSec: 24,  // cycle 4, inhale (4*6=24)
-      fromCycleIndex: 4,
-      fromPhase: 'in',
-      plan: { bpm: 10, ratio: '50:50', cycleSec: 6, inhaleSec: 3, exhaleSec: 3, totalSec: null },
-      segments: stretchSegs,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-    })
-    // cycle 4 in: audioTimeRelSec=24, seg0 inhaleSec=3
-    expect(cues[0]).toEqual({ audioTime: anchor + 24, phaseDurationSec: 3, kind: 'in' })
-    // cycle 4 out: audioTimeRelSec=27, seg0 exhaleSec=3
-    expect(cues[1]).toEqual({ audioTime: anchor + 27, phaseDurationSec: 3, kind: 'out' })
-    // cycle 5 (seg1): audioTimeRelSec=30, seg1 inhaleSec=4
-    if (cues.length >= 3) {
-      expect(cues[2]).toEqual({ audioTime: anchor + 30, phaseDurationSec: 4, kind: 'in' })
-    }
-  })
-
 })
 
 // Regression: the lookahead must trim at the session's TRUE completion boundary
-// (HRV: getCompletionSec — totalSec rounded UP to the cycle; Stretch: the final
-// segment's endSec), NOT the raw plan.totalSec. Trimming at totalSec silenced the
-// held-open final cycle's breath cues; the >= trim then drops the boundary cue so
-// it never overlaps the end chord.
+// (getCompletionSec — totalSec rounded UP to the cycle), NOT the raw plan.totalSec.
+// Trimming at totalSec silenced the held-open final cycle's breath cues; the >= trim
+// then drops the boundary cue so it never overlaps the end chord.
 describe('session-end boundary trim: held-open final breath plays, no end-chord overlap', () => {
   // HRV non-aligned: 5-min (300s) session on a 14s cycle (in7/out7). The domain
   // holds completion to ceil(300/14)*14 = 308s, so the final cycle 21 (294→308)
@@ -343,83 +244,20 @@ describe('session-end boundary trim: held-open final breath plays, no end-chord 
     expect(cues.every(c => c.audioTime < 308)).toBe(true)
   })
 
-  // Stretch: a bounded segment whose span is NOT a whole-cycle multiple, so the
-  // final cycle is partial and ends mid-out (stretchRamp deliberately allows this).
-  // The trim must use the segment's endSec — the source getStretchFrame's isComplete
-  // uses — not the unrelated resonant-tab plan.totalSec. seg span 25s, cycleSec 10
-  // (in4/out6): final cycle 20→30 is cut at 25 (mid-exhale).
-  it('Stretch: final partial-cycle cues play, nothing emitted at or past the segment end', () => {
-    const boundedSeg: StretchSegment = {
-      startSec: 0,
-      endSec: 25, // partial final cycle (20→30 cut at 25)
-      bpm: 6,
-      cycleSec: 10,
-      inhaleSec: 4,
-      exhaleSec: 6,
-      stage: 'hold-target',
-      cycleBaseIndex: 0,
-    }
-    const segments = [boundedSeg]
-    const targetSec = segments.at(-1)?.endSec // 25 — the controller's new stretch source
-    expect(targetSec).toBe(25)
-
-    const cues = walkFutureCues({
-      audioAnchor: 0,
-      elapsedSec: 20, // start of the final (partial) cycle
-      fromCycleIndex: 2, // 2 * 10 = 20s
-      fromPhase: 'in',
-      plan: hrvPlan, // plan is ignored for phase durations when segments are provided
-      segments,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-      targetSec,
-    })
-
-    // Both phases of the partial final cycle are audible: in@20 and out@24 (< endSec 25).
-    expect(cues).toContainEqual({ audioTime: 20, phaseDurationSec: 4, kind: 'in' })
-    expect(cues).toContainEqual({ audioTime: 24, phaseDurationSec: 6, kind: 'out' })
-    // The next cycle's inhale (audioTimeRelSec 30) is past the end and must be dropped.
-    expect(cues.every(c => c.audioTime < 25)).toBe(true)
-  })
 })
 
 // resolveTargetSec is the lookahead trim boundary the controller feeds walkFutureCues.
 // These pin the wiring that the bug lived in: it MUST source the true completion
-// boundary (HRV: getCompletionSec; Stretch: finalSegment.endSec), never plan.totalSec.
+// boundary (getCompletionSec), never the raw plan.totalSec.
 describe('resolveTargetSec', () => {
-  it('HRV timed: returns the rounded completion boundary, not the raw totalSec', () => {
+  it('timed: returns the rounded completion boundary, not the raw totalSec', () => {
     // 14s cycle, 300s total → ceil(300/14)*14 = 308 (held-open final cycle).
     const plan: BreathingPlan = { bpm: 60 / 14, ratio: '50:50', cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
-    expect(resolveTargetSec(plan, undefined)).toBe(308)
+    expect(resolveTargetSec(plan)).toBe(308)
   })
 
-  it('HRV open-ended: returns undefined (no trim)', () => {
-    expect(resolveTargetSec(hrvPlan, undefined)).toBeUndefined() // hrvPlan.totalSec === null
-  })
-
-  it('Stretch bounded: returns the final segment endSec', () => {
-    const segs: StretchSegment[] = [
-      { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
-    ]
-    expect(resolveTargetSec(hrvPlan, segs)).toBe(25)
-  })
-
-  it('Stretch open-ended (endSec Infinity): returns undefined (no trim)', () => {
-    const segs: StretchSegment[] = [
-      { startSec: 0, endSec: Infinity, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
-    ]
-    expect(resolveTargetSec(hrvPlan, segs)).toBeUndefined()
-  })
-
-  it('Stretch takes precedence over the (resonant) plan — the regression guard', () => {
-    // A timed resonant plan AND stretch segments: the trim must use the segment end
-    // (25), NOT the resonant plan.totalSec (300). Reverting to plan.totalSec here is
-    // exactly what silenced a stretch session's final minutes.
-    const timedResonant: BreathingPlan = { bpm: 6, ratio: '50:50', cycleSec: 10, inhaleSec: 5, exhaleSec: 5, totalSec: 300 }
-    const segs: StretchSegment[] = [
-      { startSec: 0, endSec: 25, bpm: 6, cycleSec: 10, inhaleSec: 4, exhaleSec: 6, stage: 'hold-target', cycleBaseIndex: 0 },
-    ]
-    expect(resolveTargetSec(timedResonant, segs)).toBe(25)
+  it('open-ended: returns undefined (no trim)', () => {
+    expect(resolveTargetSec(hrvPlan)).toBeUndefined() // hrvPlan.totalSec === null
   })
 })
 
@@ -512,43 +350,5 @@ describe('computeBoundaryAudioOffsets', () => {
 
     expect(out.boundaryStartSec).toBe(3 * plan.cycleSec + plan.inhaleSec)
     expect(out.phaseDurationSec).toBe(plan.exhaleSec)
-  })
-
-  it('uses per-cycle timing carried by stretch In frames', () => {
-    const stretchFrame: SessionFrame = {
-      ...baseFrame,
-      phase: 'in',
-      cycleIndex: 5,
-      cycleStartSec: 55,
-      currentCycleSec: 10,
-      currentInhaleSec: 4,
-      currentExhaleSec: 6,
-      currentBpm: 6,
-      stage: 'ramp',
-    }
-
-    const out = computeBoundaryAudioOffsets(stretchFrame, plan)
-
-    expect(out.boundaryStartSec).toBe(55)
-    expect(out.phaseDurationSec).toBe(4)
-  })
-
-  it('uses per-cycle timing carried by stretch Out frames', () => {
-    const stretchFrame: SessionFrame = {
-      ...baseFrame,
-      phase: 'out',
-      cycleIndex: 5,
-      cycleStartSec: 55,
-      currentCycleSec: 10,
-      currentInhaleSec: 4,
-      currentExhaleSec: 6,
-      currentBpm: 6,
-      stage: 'ramp',
-    }
-
-    const out = computeBoundaryAudioOffsets(stretchFrame, plan)
-
-    expect(out.boundaryStartSec).toBe(59)
-    expect(out.phaseDurationSec).toBe(6)
   })
 })

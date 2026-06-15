@@ -8,16 +8,13 @@ import { createBreathingPlan } from '../domain/breathingPlan'
 import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
-import type { CueStyleId, SessionSettings, StretchSettings } from '../domain/settings'
-import { buildStretchSegments, getStretchFrame } from '../domain/stretchRamp'
+import type { CueStyleId, SessionSettings } from '../domain/settings'
 import {
   loadMute,
   loadPrefs,
   recordResonantSession,
-  recordStretchSession,
   saveMute,
   saveResonantSettings,
-  type PracticeId,
 } from '../storage'
 import { useAudioCues, type AudioStatusFlag } from './useAudioCues'
 import { clearScheduledTimeouts, scheduleLeadInTimeouts } from './leadInCountdown'
@@ -52,8 +49,6 @@ export interface BreathingSessionController {
 
 export interface UseBreathingSessionControllerArgs {
   initialSettings: SessionSettings
-  activePractice: PracticeId
-  stretchSettings: StretchSettings
   liveCue: CueStyleId
   wakeLock: UseWakeLock
   /** Optional bypass-silent-mode flag threaded from featureFlags.bypassSilentMode.
@@ -64,14 +59,11 @@ export interface UseBreathingSessionControllerArgs {
 
 export function useBreathingSessionController({
   initialSettings,
-  activePractice,
-  stretchSettings,
   liveCue,
   wakeLock,
   bypassSilentMode,
 }: UseBreathingSessionControllerArgs): BreathingSessionController {
   const initialMute = useMemo<boolean>(() => loadMute(), [])
-  const activeStretchSettings = activePractice === 'stretch' ? stretchSettings : null
 
   const [phase, setPhase] = useState<BreathingSessionPhase>('idle')
   const [leadInDigit, setLeadInDigit] = useState<LeadInDigit | null>(null)
@@ -107,7 +99,7 @@ export function useBreathingSessionController({
   // (initial source is a wall clock) and swaps to the AC clock inside
   // useAudioCues.start().
   const audio = useAudioCues(initialMute, onAudioReanchorRequired, onSessionClockReanchored)
-  const session = useSessionEngine(initialSettings, activeStretchSettings, audio.clock)
+  const session = useSessionEngine(initialSettings, audio.clock)
   const { state } = session
 
   useEffect(() => {
@@ -141,12 +133,8 @@ export function useBreathingSessionController({
   const leadInPlaceholderFrame = useMemo((): SessionFrame | null => {
     if (phase !== 'lead-in') return null
 
-    if (activePractice === 'stretch') {
-      return getStretchFrame(buildStretchSegments(stretchSettings), 0)
-    }
-
     return getSessionFrame(createBreathingPlan(state.selectedSettings), 0)
-  }, [phase, activePractice, stretchSettings, state.selectedSettings])
+  }, [phase, state.selectedSettings])
 
   const clearLeadInTimeouts = useCallback((): void => {
     clearScheduledTimeouts(leadInTimeoutsRef.current)
@@ -242,7 +230,7 @@ export function useBreathingSessionController({
 
   const runningNeedsConfirmation =
     state.status === 'running' &&
-    (state.lockedSettings.durationMinutes !== 'open-ended' || state.stretchSegments !== null)
+    state.lockedSettings.durationMinutes !== 'open-ended'
 
   const requestEnd = useCallback((): void => {
     if (runningNeedsConfirmation) {
@@ -268,10 +256,10 @@ export function useBreathingSessionController({
   }, [sessionEnd])
 
   // CompleteSessionState.completedAtSec is seconds-shaped; storage's
-  // recordResonantSession / recordStretchSession accept ms-shaped values. The
-  // boundary conversion (× 1000) lives here, at the consumer-to-storage edge.
-  // This is the ONLY ms-shaped value emitted from this hook; everywhere else in
-  // the running-session chain is seconds-shaped end-to-end.
+  // recordResonantSession accepts ms-shaped values. The boundary conversion
+  // (× 1000) lives here, at the consumer-to-storage edge. This is the ONLY
+  // ms-shaped value emitted from this hook; everywhere else in the
+  // running-session chain is seconds-shaped end-to-end.
   const completedAtSec = state.status === 'complete' ? state.completedAtSec : null
   const runningSnapshotRefStable = session.runningSnapshotRef
   useEffect(() => {
@@ -300,18 +288,13 @@ export function useBreathingSessionController({
       // the in-memory chain stays seconds-shaped.
       const elapsedMs = elapsedSec * 1000
 
-      if (activePractice === 'stretch') {
-        recordStretchSession(elapsedMs, isComplete)
-      } else {
-        recordResonantSession(elapsedMs, isComplete)
-      }
+      recordResonantSession(elapsedMs, isComplete)
       recordedSessionKeyRef.current = snap.key
     }
   }, [
     state.status,
     completedAtSec,
     runningSnapshotRefStable,
-    activePractice,
     audioStop,
     audioPlayEndChord,
     wakeLockRelease,
@@ -327,15 +310,6 @@ export function useBreathingSessionController({
   //   3. plan === null gate
   // Session stays 'running' through hidden windows — queued cues self-terminate
   // via cueSynth envelope.
-  //
-  // stretchSegmentsForTopUp: derive a dep-array-safe value by narrowing outside the
-  // effect. IdleSessionState has no stretchSegments property; accessing it directly in
-  // the dep array causes a TS2339 error with tsc -b. The local const is typed as
-  // StretchSegment[] | null | undefined and is stable-referentially when idle (undefined).
-  const stretchSegmentsForTopUp =
-    state.status === 'running' || state.status === 'complete'
-      ? state.stretchSegments
-      : undefined
   useEffect(() => {
     if (phase !== 'running') return
 
@@ -353,14 +327,10 @@ export function useBreathingSessionController({
     // Session-elapsed relative to anchor for the lookahead window computation
     const elapsedSec = frame.elapsedSec
 
-    // Stretch sessions expose segments via state.stretchSegments.
-    // stretchSegmentsForTopUp is derived above from the narrowed state union (safe for TS).
-    const segments = stretchSegmentsForTopUp ?? undefined
-
     // Trim the lookahead at the session's TRUE completion boundary (see
     // resolveTargetSec) so the held-open final cycle's cues play and the boundary
     // cue — where the end chord fires — is dropped by walkFutureCues' >= trim.
-    const targetSec = resolveTargetSec(plan, segments)
+    const targetSec = resolveTargetSec(plan)
 
     const cues = walkFutureCues({
       audioAnchor,
@@ -368,7 +338,6 @@ export function useBreathingSessionController({
       fromCycleIndex: frame.cycleIndex,
       fromPhase: frame.phase,
       plan,
-      segments,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec,
@@ -391,7 +360,7 @@ export function useBreathingSessionController({
     // for the single-tick lag case which produces the minimal 5ms flam.
     audioCancelFutureCues()
     audioTopUpLookahead(cues)
-  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues, stretchSegmentsForTopUp])
+  }, [phase, session.currentFrame, audioTopUpLookahead, audioCancelFutureCues])
 
   useEffect(() => {
     return () => {

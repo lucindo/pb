@@ -3,8 +3,6 @@ import type { ReactElement, ReactNode } from 'react'
 import type { LearnContent } from '../content/learnContent'
 import type { LockedCopy } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
-import type { PracticeId } from '../storage'
-import { getLearnPanelModel } from './learnPanelModel'
 import { SettingsSectionHeader } from './SettingsSectionHeader'
 import { SectionCard } from './primitives/SectionCard'
 
@@ -18,7 +16,6 @@ export interface LearnPanelProps {
   learnContent: LearnContent
   lockedCopy: LockedCopy
   strings: UiStrings['learn']
-  activePractice: PracticeId
 }
 
 // Every Learn card shares one padding; chrome lives in the SectionCard primitive.
@@ -36,14 +33,10 @@ export function LearnPanel({
   learnContent,
   lockedCopy,
   strings,
-  activePractice,
 }: LearnPanelProps): ReactElement {
   const { explainer, links } = learnContent
-  const { practiceContent, videosHeading, showNativeApps } = getLearnPanelModel({
-    activePractice,
-    learnContent,
-    strings,
-  })
+  const practiceContent = learnContent.practices.resonant
+  const videosHeading = strings.videosHeading
 
   return (
     <div>
@@ -111,21 +104,17 @@ export function LearnPanel({
         </div>
       </Card>
 
-      {showNativeApps && (
-        <>
-          <SettingsSectionHeader label={strings.nativeAppsHeading} />
-          <Card>
-            <div className="grid gap-2">
-              <a href={links.appStoreIos.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
-                {links.appStoreIos.label}
-              </a>
-              <a href={links.googlePlayAndroid.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
-                {links.googlePlayAndroid.label}
-              </a>
-            </div>
-          </Card>
-        </>
-      )}
+      <SettingsSectionHeader label={strings.nativeAppsHeading} />
+      <Card>
+        <div className="grid gap-2">
+          <a href={links.appStoreIos.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
+            {links.appStoreIos.label}
+          </a>
+          <a href={links.googlePlayAndroid.url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
+            {links.googlePlayAndroid.label}
+          </a>
+        </div>
+      </Card>
 
       <p className="mt-6 text-center text-xs font-bold italic first-letter:uppercase text-[var(--color-breathing-muted)]">{lockedCopy.inspiredByForrest}</p>
       <p className="text-center text-xs text-[var(--color-breathing-muted)]">

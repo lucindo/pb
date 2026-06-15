@@ -7,13 +7,12 @@ import { LOCKED_COPY } from '../content/lockedCopy'
 import { UI_STRINGS } from '../content/strings'
 import { LearnPanel } from './LearnPanel'
 
-function renderPanel(activePractice: 'resonant' | 'stretch' | 'naviKriya' = 'resonant') {
+function renderPanel() {
   return render(
     <LearnPanel
       learnContent={LEARN_CONTENT.en}
       lockedCopy={LOCKED_COPY.en}
       strings={UI_STRINGS.en.learn}
-      activePractice={activePractice}
     />,
   )
 }
@@ -34,24 +33,12 @@ describe('LearnPanel', () => {
   })
 
   it('renders the native-apps section for resonant (D-02 gate)', () => {
-    renderPanel('resonant')
+    renderPanel()
     expect(screen.getByText(UI_STRINGS.en.learn.nativeAppsHeading)).toBeInTheDocument()
   })
 
-  it('omits the native-apps section for naviKriya (D-02 gate)', () => {
-    renderPanel('naviKriya')
-    expect(screen.queryByText(UI_STRINGS.en.learn.nativeAppsHeading)).not.toBeInTheDocument()
-  })
-
-  it('renders the Stretch adaptation block (title + warning note) for stretch', () => {
-    renderPanel('stretch')
-    const adaptation = LEARN_CONTENT.en.practices.stretch.adaptation
-    expect(screen.getByText(adaptation?.title ?? '')).toBeInTheDocument()
-    expect(screen.getByText(adaptation?.note ?? '')).toBeInTheDocument()
-  })
-
   it('omits the adaptation block for resonant (HRV has no adaptation)', () => {
-    renderPanel('resonant')
+    renderPanel()
     const adaptation = LEARN_CONTENT.en.practices.stretch.adaptation
     expect(screen.queryByText(adaptation?.title ?? '')).not.toBeInTheDocument()
   })

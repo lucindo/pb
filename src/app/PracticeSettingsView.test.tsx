@@ -2,16 +2,12 @@ import '@testing-library/jest-dom/vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactElement } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { UI_STRINGS } from '../content/strings'
 import {
-  DEFAULT_NK_SETTINGS,
   DEFAULT_SETTINGS,
-  DEFAULT_STRETCH_SETTINGS,
-  type NaviKriyaSettings,
   type SessionSettings,
-  type StretchSettings,
 } from '../domain'
 import { UiStringsProvider } from '../hooks/useUiStringsContext'
 import type { AppPracticeSettingsViewModel } from './appViewModel'
@@ -34,32 +30,6 @@ function makeResonantVM(overrides: {
     isComplete: overrides.isComplete ?? false,
     onChange: noopChange,
     onExtendDuration: noopExtend,
-  }
-}
-
-function makeStretchVM(overrides: {
-  settings?: StretchSettings
-  isRunning?: boolean
-  isComplete?: boolean
-} = {}): AppPracticeSettingsViewModel {
-  return {
-    kind: 'stretch',
-    settings: overrides.settings ?? DEFAULT_STRETCH_SETTINGS,
-    isRunning: overrides.isRunning ?? false,
-    isComplete: overrides.isComplete ?? false,
-    onChange: noopChange,
-  }
-}
-
-function makeNaviVM(overrides: {
-  settings?: NaviKriyaSettings
-  isComplete?: boolean
-} = {}): AppPracticeSettingsViewModel {
-  return {
-    kind: 'naviKriya',
-    settings: overrides.settings ?? DEFAULT_NK_SETTINGS,
-    isComplete: overrides.isComplete ?? false,
-    onChange: noopChange,
   }
 }
 
@@ -110,81 +80,13 @@ describe('PracticeSettingsView — resonant (HRV)', () => {
     expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
   })
 
-  it('renders nothing on Running (congruent with stretch + navi running)', () => {
+  it('renders nothing on Running', () => {
     // J16: HRV running surfaces no settings UI — SetupCard, sheet, and any
     // inline stepper are all hidden. extendDuration logic stays in the
     // viewmodel + controller but is unwired here.
     renderView(makeResonantVM({ isRunning: true }))
     expect(screen.queryByRole('button', { name: /^Edit HRV Breathing settings$/ })).toBeNull()
     expect(screen.queryByRole('group', { name: EN.practice.settingsForm.durationLabel })).toBeNull()
-  })
-})
-
-describe('PracticeSettingsView — stretch', () => {
-  it('renders 3 summary cells (start, target, duration) on Idle', () => {
-    renderView(makeStretchVM())
-    const card = screen.getByRole('button', { name: /^Edit HRV Stretch settings$/ })
-    for (const label of [
-      EN.practice.settingsForm.initialBpmShortLabel,
-      EN.practice.settingsForm.targetBpmShortLabel,
-      EN.practice.settingsForm.durationLabel,
-    ]) {
-      expect(within(card).getByText(label)).toBeVisible()
-    }
-    // The card no longer surfaces ratio/warm-up/ramp/cool-down labels — those
-    // live in the SettingsSheet form only.
-    for (const label of [
-      EN.practice.settingsForm.ratioLabel,
-      EN.practice.settingsForm.holdInitialLabel,
-      EN.practice.settingsForm.rampDurationLabel,
-      EN.practice.settingsForm.holdTargetLabel,
-    ]) {
-      expect(within(card).queryByText(label)).not.toBeInTheDocument()
-    }
-  })
-
-  it('renders nothing on Running (no in-session affordance for Stretch)', () => {
-    const { container } = render(
-      <UiStringsProvider value={EN}>
-        <PracticeSettingsView
-          settings={makeStretchVM({ isRunning: true })}
-          isSheetOpen={false}
-          onOpenSheet={vi.fn()}
-          onCloseSheet={vi.fn()}
-        />
-      </UiStringsProvider>,
-    )
-    expect(container).toBeEmptyDOMElement()
-  })
-})
-
-describe('PracticeSettingsView — naviKriya', () => {
-  it('renders 3 cells (rounds, frontCount, omLength) on Idle', () => {
-    renderView(makeNaviVM())
-    const card = screen.getByRole('button', { name: /^Edit Navi Kriya settings$/ })
-    for (const label of [
-      EN.practice.nkControls.roundsLabel,
-      EN.practice.nkControls.frontCountShortLabel,
-      EN.practice.nkControls.omLengthShortLabel,
-    ]) {
-      expect(within(card).getByText(label)).toBeVisible()
-    }
-  })
-})
-
-describe('PracticeSettingsView — hidden (navi session active)', () => {
-  it('renders nothing when the viewmodel is in the hidden state', () => {
-    const { container } = render(
-      <UiStringsProvider value={EN}>
-        <PracticeSettingsView
-          settings={{ kind: 'hidden' }}
-          isSheetOpen={false}
-          onOpenSheet={vi.fn()}
-          onCloseSheet={vi.fn()}
-        />
-      </UiStringsProvider>,
-    )
-    expect(container).toBeEmptyDOMElement()
   })
 })
 
