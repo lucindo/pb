@@ -86,21 +86,25 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — On branch `refactor/strip-to-pattern-breathing`, nothing pushed. **The entire
-Settings strip-down is COMPLETE** (A1 `69e914a`, A2 `c7c6066`, A3 `c758496`, A4 `6228df9`,
-B+C `f2f8d7e`, D+E+F `9832df6`); all gates green (`tsc -b`, `eslint`, 810 vitest tests,
-`vite build`). The app is now a single-practice HRV timer with one Settings page
-(System · Sound · Statistics · About · privacy). No feature-flag system, no cue-style
-chooser, no Advanced/Stats sub-pages. (PLAN.md is the only uncommitted file.)
+**State** — On branch `refactor/strip-to-pattern-breathing`, working tree clean, nothing
+pushed. **The Settings strip-down is COMPLETE** (A1 `69e914a`, A2 `c7c6066`, A3 `c758496`,
+A4 `6228df9`, B+C `f2f8d7e`, D+E+F `9832df6`) and the app was **rebranded to "Pattern
+Breathing" + version reset to 0.0.0** (`d35120e`: app title + html `<title>`, `versions.json`
+cleared of HRV history, About source link → `lucindo/pb`). All gates green (`tsc -b`,
+`eslint`, 810 vitest tests, `vite build`). The app is now a single-practice HRV timer with
+one Settings page (System · Sound · Statistics · About · privacy) — no feature-flag system,
+no cue-style chooser, no Advanced/Stats sub-pages.
 
-**Next** — Awaiting the user's direction:
+**Next** — Awaiting the user's direction (nothing in flight; safe to clear):
 - Further removal items beyond Settings (user said they'd list more after A–F), OR
 - The pattern-breathing spec / functionality (still undefined — user will provide).
-Nothing is in flight; safe to clear the session.
 
 **Open questions**
 - Are there more removal items beyond Settings (user will list them after Phase A–F)?
 - Pattern-breathing spec still undefined (user will provide later).
+- "HRV Breathing" still appears as the breathing-*technique* name, deliberately not
+  rebranded: `practice.switcher.resonantHeading` (setup-card "Edit HRV Breathing settings",
+  locked by a strings test) + `learn.videosHeading`. Revisit when pattern-breathing lands.
 - Optional leftover: write-only `activePractice` envelope field + migration seeding
   survive for schema stability (not read in production); retire only via a dedicated
   storage-migration pass — out of scope.
