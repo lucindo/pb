@@ -106,7 +106,7 @@ jobs:
         # ref; pass via env so it cannot break out of the build command.
         env:
           PKG_VERSION_SHORT: ${{ needs.validate-version.outputs.pkg_version_short }}
-        run: npx vite build --base="/hrv/${PKG_VERSION_SHORT}/"
+        run: npx vite build --base="/pb/${PKG_VERSION_SHORT}/"
       - uses: actions/upload-artifact@v4
         with:
           name: build-current
@@ -133,7 +133,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build archive tag at versioned subpath
-        run: npx vite build --base=/hrv/${{ matrix.tag }}/
+        run: npx vite build --base=/pb/${{ matrix.tag }}/
       - uses: actions/upload-artifact@v4
         with:
           name: build-archive-${{ matrix.tag }}
@@ -156,7 +156,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build official tag at root
-        run: npx vite build --base=/hrv/
+        run: npx vite build --base=/pb/
       - uses: actions/upload-artifact@v4
         with:
           name: build-root
@@ -164,7 +164,7 @@ jobs:
 
   assemble-and-deploy:
     needs: [validate-version, read-manifest, build-current, build-archives, build-root]
-    # workflow_dispatch skips build-current (no pushed tag → nothing to build at /hrv/v{X.Y}/).
+    # workflow_dispatch skips build-current (no pushed tag → nothing to build at /pb/v{X.Y}/).
     # This `if:` allows assemble to proceed when build-current was skipped, but still
     # requires build-archives and build-root to have succeeded. This is the only `if:`
     # guard on assemble — the (now-eliminated) build-root skip case is not handled here.

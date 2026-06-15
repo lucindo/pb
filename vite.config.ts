@@ -26,7 +26,7 @@ const BUILD_DATE = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/hrv/',
+  base: '/pb/',
   define: {
     // J14: surface the package.json version to the runtime for the About
     // section. Stringified at config-time; the bundle gets a plain literal,
@@ -59,7 +59,7 @@ export default defineConfig({
         theme_color: '#1a1d24',
         background_color: '#1a1d24',
         display: 'standalone',
-        // start_url and scope intentionally omitted — auto-default to Vite base, which is now parameterized at build time via `--base` (e.g. `/hrv/`, `/hrv/v2.0/`). Each versioned build's SW auto-scopes to its own subpath; root and versioned subpaths do not collide.
+        // start_url and scope intentionally omitted — auto-default to Vite base, which is now parameterized at build time via `--base` (e.g. `/pb/`, `/pb/v2.0/`). Each versioned build's SW auto-scopes to its own subpath; root and versioned subpaths do not collide.
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
