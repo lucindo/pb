@@ -200,8 +200,7 @@ describe('migrateEnvelope v1→v2 (PRACTICE-04)', () => {
         resonant: { settings: V1_SETTINGS, stats: V1_STATS },
       },
       // A stale on-disk practice id from an earlier build. migrateEnvelope does NOT
-      // coerce activePractice (coerceActivePractice does, at the read boundary), so
-      // it must pass through unchanged here.
+      // coerce activePractice, so it must pass through unchanged here.
       activePractice: 'legacy',
     }
     const out = migrateEnvelope(v3Envelope, 3)

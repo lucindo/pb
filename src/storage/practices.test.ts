@@ -2,10 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   coercePractices,
-  coerceActivePractice,
   loadPractices,
-  loadActivePractice,
-  saveActivePractice,
   saveResonantSettings,
   recordResonantSession,
   resetPracticeStats,
@@ -33,19 +30,6 @@ function statsOf(totalSessions: number): PersistedStats {
     lastSessionDurationSeconds: 60,
   }
 }
-
-describe('coerceActivePractice (T-30-05)', () => {
-  it('returns "resonant" for the known id', () => {
-    expect(coerceActivePractice('resonant')).toBe('resonant')
-  })
-
-  it('falls back to "resonant" for garbage / null / number input', () => {
-    expect(coerceActivePractice('garbage')).toBe('resonant')
-    expect(coerceActivePractice(null)).toBe('resonant')
-    expect(coerceActivePractice(undefined)).toBe('resonant')
-    expect(coerceActivePractice(5)).toBe('resonant')
-  })
-})
 
 describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
   const defaultMap = {
@@ -76,24 +60,15 @@ describe('coercePractices (PRACTICE-02 / T-30-05)', () => {
   })
 })
 
-describe('loadPractices / loadActivePractice defaults', () => {
+describe('loadPractices defaults', () => {
   it('returns the default practice map when nothing is stored', () => {
     expect(loadPractices()).toEqual({
       resonant: { settings: coerceSettings(undefined), stats: ZERO_STATS },
     })
   })
-
-  it('returns "resonant" as the default active practice when nothing is stored', () => {
-    expect(loadActivePractice()).toBe('resonant')
-  })
 })
 
 describe('per-practice round-trips (PRACTICE-02)', () => {
-  it('saveActivePractice → loadActivePractice round-trips the id', () => {
-    saveActivePractice('resonant')
-    expect(loadActivePractice()).toBe('resonant')
-  })
-
   it('saveResonantSettings → loadPractices().resonant.settings round-trips', () => {
     const settings = { ...DEFAULT_SETTINGS, bpm: 4 }
     saveResonantSettings(settings)

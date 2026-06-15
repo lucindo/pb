@@ -43,8 +43,9 @@ export interface Envelope {
   // the boundary. Avoids storage→domain typed circular import.
   prefs?: unknown
   // The v2 per-practice subtree. `practices` holds a { resonant } map of
-  // settings+stats slices; `activePractice` is the selected practice id.
-  // Both `unknown` — coercePractices / coerceActivePractice narrow at the boundary.
+  // settings+stats slices, narrowed via coercePractices at the boundary.
+  // `activePractice` is a legacy single-practice field still seeded by migration
+  // but no longer read (kept for envelope-schema stability).
   practices?: unknown
   activePractice?: unknown
 }

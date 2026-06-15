@@ -1,8 +1,7 @@
 // src/storage/practices.ts
 //
 // Per-practice persistence layer. The v2 envelope holds a `practices` map —
-// { resonant } — carrying its settings + stats slice, plus a top-level
-// `activePractice` id.
+// { resonant } — carrying its settings + stats slice.
 //
 // Coercers are NON-THROWING and prototype-pollution-safe, mirroring
 // prefs.ts / settings.ts: a single drifted field never discards the rest of the
@@ -23,13 +22,6 @@ export interface PracticeSlice<S> {
 
 export interface PracticeMap {
   resonant: PracticeSlice<SessionSettings>
-}
-
-export function coerceActivePractice(raw: unknown): PracticeId {
-  // 'resonant' is the only practice; anything on disk (a stale 'stretch' /
-  // 'naviKriya' from an earlier build, garbage, null) collapses to it.
-  void raw
-  return 'resonant'
 }
 
 // Per-practice slice coercer: settings goes through coerceSettings, stats always
@@ -63,17 +55,6 @@ function rawPracticesMap(raw: unknown): Record<string, unknown> {
 
 export function loadPractices(deps: StorageDeps = {}): PracticeMap {
   return coercePractices(readEnvelope(deps).practices)
-}
-
-export function loadActivePractice(deps: StorageDeps = {}): PracticeId {
-  return coerceActivePractice(readEnvelope(deps).activePractice)
-}
-
-export function saveActivePractice(id: PracticeId, deps: StorageDeps = {}): void {
-  const env = readEnvelope(deps)
-  // Defensive: coerce at the write boundary so a type-unsafe caller cannot land
-  // an arbitrary string on disk.
-  writeEnvelope({ ...env, activePractice: coerceActivePractice(id) }, deps)
 }
 
 // Writes a single practice slice's settings. Spreads the RAW on-disk practices
