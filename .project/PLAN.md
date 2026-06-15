@@ -24,7 +24,12 @@ core breathing engine.
     `OrbShape`→`BreathingRing` (`4ddac9b`, `200e25f`); drop dead `nk-om-pulse`
     (`51abb3a`). Ring never grows/shrinks; In/Out fixed size; text on page bg.
   - [x] Trim COMPLETE — no further removal items
-- [ ] (Pending user input) Implement pattern-breathing functionality
+- [x] Pre-feature code-cleanup pass on branch `chore/code-cleanup` (9 commits;
+  deslop + SSOT review + comment review, all under /ds-step-mode). Collapsed the
+  remaining multi-practice scaffolding to honest single-engine shape. Decisions
+  in `.project/DECISIONS.md` (D1: presets-over-one-engine). Not yet merged.
+- [ ] (Pending user input) Implement pattern-breathing functionality —
+  **presets over one configurable engine** (D1); presets are data, not practice types
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -94,29 +99,28 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — On branch `refactor/strip-to-pattern-breathing`, working tree clean, nothing
-pushed. The HRV/Resonant/VFC/Forrest vocabulary is **fully gone** — code identifiers,
-runtime event + storage-key channels, user-facing copy, comments, tests, PWA manifest,
-package name, and deploy base path (`/hrv/` → `/pb/`). The storage envelope is **flattened**
-to a single practice (`{ version, settings?, mute?, stats?, prefs? }` at
-`pattern-breathing:state:v1`) — no `practices`/`activePractice` wrapper, no migration ladder.
-About page is one placeholder block; README is title-only. The breathing shape is now
-`BreathingRing` — a **fixed-size ring + progress arc**, no scale animation (orb disc/halo
-and all MIN/MAX/MID scale machinery removed); In/Out renders fixed-size on the page bg
-(In/Out `accent-strong`, lead-in digit `accent`). `grep -riE "hrv|resonant|forrest|vfc"`
-over the tree (excl. `.project/`) returns nothing. All gates green (`tsc -b`, `eslint`,
-739 vitest tests, `vite build`). `.project/PROJECT.md` refreshed to this shape. The app is
-still the resonance timer under the new name — pattern-breathing *functionality* is not
-implemented.
+**State** — On branch `chore/code-cleanup`, 9 commits ahead of `main`, tree clean,
+nothing pushed/merged. The strip-to-pattern-breathing trim is done and merged (prior
+branch). This branch is a pre-feature cleanup pass (deslop → SSOT review → comment
+review, all gated under /ds-step-mode): collapsed the leftover multi-practice
+scaffolding to an honest single-engine shape. Notable: dead `switcher` namespace →
+single `practice.name`; dropped the `kind: 'patternBreathing'` discriminant; flattened
+the single end-session dialog VM (renamed `EndSessionDialogsView`→`EndSessionDialogView`);
+inlined `SessionPrimaryAction`; hoisted `PREFS_CHANGED_EVENT`/`STATE_KEY` to single
+sources; stripped ~83 ceremonial/restating comments and tightened buried WHY ones.
+**Kept by decision:** the ViewModel factories (tested seam, D3) and modal class strings
+(D4). All gates green throughout (`tsc -b`, `eslint`, 739 vitest tests). The app is still
+the resonance timer under the new name — pattern-breathing *functionality* is not built.
 
-User UAT-confirmed the ring refactor working. The strip-to-pattern-breathing branch is
-being merged into `main` (this is the last trim work).
-
-**Next** — Trim is complete and merged. Awaiting the pattern-breathing spec / functionality
-(still undefined; user will provide). Tree clean, safe to clear.
+**Next** — Decide: merge `chore/code-cleanup` → `main`, then start the pattern-breathing
+feature spec (`/ds-spec`) — **presets over one configurable engine** per D1. Tree clean,
+safe to clear.
 
 **Open questions**
-- Pattern-breathing spec still undefined (user will provide).
-- "Pattern Breathing" is now used for both the app name and the breathing-*technique* name
-  (`practice.switcher.patternBreathingName/Heading`). Revisit if the technique needs its own
-  distinct label once real pattern-breathing lands.
+- Pattern-breathing spec still undefined beyond D1's shape (presets-as-data over one
+  engine; e.g. Box = 4/4/4/4). The current engine is inhale/exhale only (no holds) — real
+  patterns likely need a hold phase, a future engine change.
+- App name and the breathing-*technique* name both resolve to "Pattern Breathing"
+  (`practice.name`). The preset feature will likely surface a per-preset label on the
+  settings sheet/header; revisit then. (D2 collapsed the two identical strings to one.)
+- Decisions log: `.project/DECISIONS.md` (D1–D5).
