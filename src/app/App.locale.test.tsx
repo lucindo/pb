@@ -36,31 +36,19 @@ afterEach(() => {
   document.documentElement.lang = ''
 })
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 describe('App locale switching (Phase 19)', () => {
-  // -------------------------------------------------------------------------
-  // Test 1: writes documentElement.lang on mount with seeded EN locale
-  // -------------------------------------------------------------------------
   it('writes documentElement.lang on mount with seeded EN locale', () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     render(<App />)
     expect(document.documentElement.lang).toBe('en')
   })
 
-  // -------------------------------------------------------------------------
-  // Test 2: writes documentElement.lang on mount with seeded PT-BR locale
-  // -------------------------------------------------------------------------
   it('writes documentElement.lang on mount with seeded PT-BR locale', () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'pt-BR' })
     render(<App />)
     expect(document.documentElement.lang).toBe('pt-BR')
   })
 
-  // -------------------------------------------------------------------------
-  // Test 3: switches UI strings + documentElement.lang when LanguagePicker
-  // PT-BR is clicked on the Settings page
-  // -------------------------------------------------------------------------
   it('switches UI strings + documentElement.lang when LanguagePicker PT-BR is clicked', async () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     const user = userEvent.setup()
@@ -91,9 +79,6 @@ describe('App locale switching (Phase 19)', () => {
     ).toBeInTheDocument()
   })
 
-  // -------------------------------------------------------------------------
-  // Test 4: cross-tab storage event updates locale even without picker interaction
-  // -------------------------------------------------------------------------
   it('cross-tab storage event updates documentElement.lang to pt-BR', () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     render(<App />)
@@ -114,9 +99,6 @@ describe('App locale switching (Phase 19)', () => {
     expect(document.documentElement.lang).toBe('pt-BR')
   })
 
-  // -------------------------------------------------------------------------
-  // Test 5: locale picker buttons are disabled while inSessionView
-  // -------------------------------------------------------------------------
   it('Settings is unreachable in-session via the gear anchor being disabled', async () => {
     // The Settings page is gated by `controlsDisabled` in useAppNavigation, and
     // useAppNavigation also forces appScreen='practice' whenever inSessionView

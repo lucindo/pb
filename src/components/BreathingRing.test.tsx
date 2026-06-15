@@ -55,7 +55,6 @@ describe('BreathingRing', () => {
   })
 })
 
-// ── phase label ─────────────────────────────────────
 describe('BreathingRing — phase label', () => {
   it('renders the localized phaseLabel text for "in"', () => {
     render(<BreathingRing frame={sampleFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
@@ -74,7 +73,6 @@ describe('BreathingRing — phase label', () => {
   })
 })
 
-// ── progress arc (the sole ring cue) ────────────────────────────────
 // Locks the invariants: a running frame renders the progress-arc SVG layer
 // (2 path elements), reduced-motion suppresses the arc layer (faint outer
 // track survives), and t === 0 (phase boundary) suppresses it too per

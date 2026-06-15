@@ -35,7 +35,6 @@ describe('App — audio cues (Phase 3)', () => {
     vi.restoreAllMocks()
   })
 
-  // -- Test 1: lead-in numeral 3 visible immediately after Start click ----------
   it('shows lead-in numeral 3 in the orb after Start session click', async () => {
     render(<App />)
     await startLeadIn()
@@ -44,7 +43,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(screen.getByText('3')).toBeVisible()
   })
 
-  // -- Test 4: lead-in clears at t=3 s and the In phase appears ----------------
   it('replaces the lead-in numeral with the In phase label at t=3 s', async () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -53,7 +51,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 
-  // -- Test 5: AudioContext constructed exactly once after Start click ---------
   it('constructs AudioContext exactly once when Start session is clicked', async () => {
     const OriginalAC = window.AudioContext
     const acSpy = vi.fn(function (this: AudioContext, ...args: unknown[]) {
@@ -68,7 +65,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(acSpy).toHaveBeenCalledTimes(1)
   })
 
-  // -- Test 6: AudioContext NOT constructed before Start click (gesture gate) --
   it('does not construct AudioContext before the user clicks Start (D-09 user-gesture)', () => {
     const OriginalAC = window.AudioContext
     const acSpy = vi.fn(function (this: AudioContext, ...args: unknown[]) {
@@ -81,7 +77,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(acSpy).not.toHaveBeenCalled()
   })
 
-  // -- Test 7: schedules an Out cue at the correct audio-clock time ----
   // Per checker B2: audioAnchorRef.current is set ONLY at the t=3 s setTimeout
   // callback in App.tsx onStartClick. This test MUST advance fake timers through
   // the FULL 3 s lead-in BEFORE asserting on notifyPhaseBoundary, otherwise the
@@ -116,7 +111,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(firstCallArgs![1]).toBeGreaterThan(0)
   })
 
-  // -- Test 8: AC.close called when modal-confirm End fires (timed session) -----
   it('closes the AudioContext when the user confirms End via the EndSessionDialog (timed session)', async () => {
     const OriginalAC = window.AudioContext
     let acInstance: AudioContext | null = null
@@ -139,7 +133,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(closeMock).toHaveBeenCalled()
   })
 
-  // -- Test 9: AC.close called for open-ended session direct End (no modal) ----
   it('closes the AudioContext when an open-ended session is ended directly (no modal)', async () => {
     const OriginalAC = window.AudioContext
     let acInstance: AudioContext | null = null
@@ -167,7 +160,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(closeMock).toHaveBeenCalled()
   })
 
-  // -- Test 10: AC.close called when timed session reaches completion ----------
   it('closes the AudioContext when a timed session reaches completion automatically', async () => {
     const OriginalAC = window.AudioContext
     let acInstance: AudioContext | null = null
@@ -207,7 +199,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(closeMock).toHaveBeenCalled()
   })
 
-  // -- Test 11: cancel-during-lead-in ---------------
   // The primary button reads 'Cancel' during lead-in.
   // The cancel-behavior assertions (no dialog, numerals cleared, AC.close called) are retained.
   it('pressing the primary button during lead-in (labelled Cancel per LEAD-01) cancels back to idle without opening the EndSessionDialog', async () => {
@@ -245,7 +236,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(closeMock).toHaveBeenCalled()
   })
 
-  // -- Test 11b: lead-in label regression (EN+PT-BR) ----------------------
   it('LEAD-01 D-08: primary button shows "Cancel" (EN) during lead-in and disappears once session starts', async () => {
     render(<App />)
     // Confirm idle label before lead-in
@@ -264,7 +254,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(screen.queryByRole('button', { name: 'Start' })).not.toBeInTheDocument()
   })
 
-  // -- Test 12: AC failure path (visuals-only fallback) ------------------
   it('renders lead-in numerals visuals-only when AudioContext construction fails (D-10)', async () => {
     vi.stubGlobal(
       'AudioContext',
@@ -297,7 +286,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(screen.getByRole('img', { name: 'Breathing shape: In' })).toBeVisible()
   })
 
-  // -- Test 13: mute toggle in idle state updates aria-pressed ----------------
   it('mute toggle click in idle state updates aria-pressed', async () => {
     render(<App />)
 
@@ -310,7 +298,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(muteButton()).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // -- Test 14: mute toggle during a running session actually silences --------
   // The audible contract of mute is the master gain ramping to 0 (cues keep
   // scheduling, but route through the silenced master gain). Assert the real
   // silence end-to-end from the UI button, not just the aria-pressed state.
@@ -343,7 +330,6 @@ describe('App — audio cues (Phase 3)', () => {
     expect(ramp.mock.calls[1]?.[0]).toBe(1) // restore
   })
 
-  // -- AUDIO-02 caller-side clamp coverage moved to audioEngine.test.ts -------
   // The App-level boundary-detection effect was replaced with the engine-side
   // `topUpLookahead` facade. The clamp behavior is now exercised inside the engine
   // (see audioEngine.test.ts). The legacy `computeBoundaryAudioOffsets` and

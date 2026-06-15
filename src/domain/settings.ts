@@ -125,8 +125,6 @@ export function validateSettings(settings: SessionSettings): SessionSettings {
   if (!isValidRatio(settings.ratio)) {
     // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
     // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
-    // Reason: the user-defined predicate `isValidRatio: (v: unknown): v is RatioLabel`
-    // narrows `settings.ratio: RatioLabel` to `never` in the false branch. `${settings.ratio}`
     // is preserved verbatim so the runtime string remains correct.
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     throw new RangeError(`Unsupported ratio: ${settings.ratio}`)

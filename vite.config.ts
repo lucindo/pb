@@ -22,7 +22,7 @@ function resolveBuildSha(): string {
 }
 
 const BUILD_SHA = resolveBuildSha()
-const BUILD_DATE = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+const BUILD_DATE = new Date().toISOString().slice(0, 10)
 
 // https://vite.dev/config/
 export default defineConfig({

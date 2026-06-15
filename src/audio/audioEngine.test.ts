@@ -91,7 +91,6 @@ describe('audioEngine', () => {
   it('createAudioEngine rejects when AudioContext construction throws (D-10 anchor)', async () => {
     vi.stubGlobal(
       'AudioContext',
-      // Reason: test stub — constructor-only class simulates a browser that denies AudioContext.
       // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class {
         constructor() {
@@ -170,8 +169,6 @@ describe('audioEngine', () => {
     const engine = await createAudioEngine({ timbre: 'bowl' })
     // First createGain() call = the master gain (created before any cue scheduling).
     const masterGain = createGainSpy.mock.results[0]?.value as GainNode
-    // Reason: the FakeGainNode's gain.linearRampToValueAtTime is a field-initialized
-    // vi.fn() (not a real prototype method), so extracting it is safe here.
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const ramp = vi.mocked(masterGain.gain.linearRampToValueAtTime)
 
@@ -586,8 +583,6 @@ describe('audioEngine', () => {
       pause = vi.fn()
       removeAttribute = vi.fn()
       play = vi.fn(async () => {})
-      // Reason: constructor mirrors HTMLAudioElement(src?) signature; the body
-      // captures the instance for assertion (so the constructor is NOT useless).
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       constructor(_src?: string) {
         instances.push(this)
@@ -699,7 +694,6 @@ describe('audioEngine', () => {
         pause = vi.fn()
         removeAttribute = vi.fn()
         play = vi.fn(async () => {})
-        // Reason: constructor mirrors HTMLAudioElement(src?) signature; body captures instance for assertion — NOT useless.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         constructor(_src?: string) {
           instances.push(this)
@@ -725,7 +719,6 @@ describe('audioEngine', () => {
         pause = vi.fn()
         removeAttribute = vi.fn()
         play = vi.fn(async () => {})
-        // Reason: constructor mirrors HTMLAudioElement(src?) signature; body captures instance for assertion — NOT useless.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         constructor(_src?: string) {
           instances.push(this)
@@ -756,7 +749,6 @@ describe('audioEngine', () => {
         pause = vi.fn()
         removeAttribute = vi.fn()
         play = vi.fn(async () => {})
-        // Reason: constructor mirrors HTMLAudioElement(src?) signature; body captures instance for assertion — NOT useless.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         constructor(_src?: string) {
           instances.push(this)

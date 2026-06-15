@@ -84,21 +84,18 @@ if (typeof window.localStorage?.getItem !== 'function') {
 // HTMLDialogElement polyfill — jsdom 29.1.1 does not implement show/showModal/close.
 // Verified against github.com/jestjs/jest/issues/13010 and github.com/jsdom/jsdom/issues/3294.
 if (typeof HTMLDialogElement !== 'undefined') {
-  // Reason: jsdom may not implement showModal; guard ensures polyfill is only applied when missing.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!HTMLDialogElement.prototype.showModal) {
     HTMLDialogElement.prototype.showModal = function () {
       this.open = true
     }
   }
-  // Reason: jsdom may not implement show; guard ensures polyfill is only applied when missing.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!HTMLDialogElement.prototype.show) {
     HTMLDialogElement.prototype.show = function () {
       this.open = true
     }
   }
-  // Reason: jsdom may not implement close; guard ensures polyfill is only applied when missing.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!HTMLDialogElement.prototype.close) {
     HTMLDialogElement.prototype.close = function (returnValue?: string) {
@@ -182,7 +179,6 @@ if (!window.AudioContext) {
     get currentTime() {
       return performance.now() / 1000 - this._start
     }
-    // Reason: constructor accepts AudioContextOptions to match the real AudioContext API signature; the parameter is intentionally unused in the fake.
     // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
     constructor(_options?: AudioContextOptions) {}
     createOscillator() {
@@ -209,13 +205,11 @@ if (!window.AudioContext) {
       this.state = 'running'
       this._fireStateChange()
     })
-    // Reason: async signature matches AudioContext.suspend() API contract; no real async work in the fake.
     // eslint-disable-next-line @typescript-eslint/require-await
     suspend = vi.fn(async () => {
       this.state = 'suspended'
       this._fireStateChange()
     })
-    // Reason: async signature matches AudioContext.close() API contract; no real async work in the fake.
     // eslint-disable-next-line @typescript-eslint/require-await
     close = vi.fn(async () => {
       this.state = 'closed'
@@ -276,17 +270,14 @@ if (!('wakeLock' in navigator)) {
   class FakeWakeLockSentinel extends EventTarget {
     type: WakeLockType = 'screen'
     released = false
-    // Reason: onrelease matches the WakeLockSentinel.onrelease DOM property signature which uses any for the handler return type.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onrelease: ((this: WakeLockSentinel, ev: Event) => any) | null = null
 
-    // Reason: async signature matches WakeLockSentinel.release() API contract; no real async work in the fake.
     // eslint-disable-next-line @typescript-eslint/require-await
     async release(): Promise<void> {
       if (this.released) return
       this.released = true
       const event = new Event('release')
-      // Reason: this is cast to WakeLockSentinel to match the onrelease callback's `this` type; FakeWakeLockSentinel structurally matches.
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       if (this.onrelease) this.onrelease.call(this as unknown as WakeLockSentinel, event)
       this.dispatchEvent(event)
@@ -297,7 +288,6 @@ if (!('wakeLock' in navigator)) {
     writable: true,
     configurable: true, // allow per-test vi.stubGlobal / Object.defineProperty override (failure-path tests)
     value: {
-      // Reason: async signature matches WakeLock.request() API contract; the parameter is intentionally unused in the fake.
       // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
       request: vi.fn(async (_type?: WakeLockType) => new FakeWakeLockSentinel()),
     },

@@ -1,6 +1,3 @@
-// App-integration tests for Wake Lock wiring.
-// Mirrors the fireEvent + fake-timers idiom from App.audio.test.tsx.
-
 import '@testing-library/jest-dom/vitest'
 
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
@@ -28,7 +25,6 @@ describe('App — wake lock (Phase 5)', () => {
     vi.clearAllMocks() // clear polyfill vi.fn() call history between tests
   })
 
-  // -- Test 1: request fires once on Start session click --------------
   it('triggers navigator.wakeLock.request once on Start session click (D-01)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -38,7 +34,6 @@ describe('App — wake lock (Phase 5)', () => {
     expect(requestSpy).toHaveBeenCalledWith('screen')
   })
 
-  // -- Test 2: release on manual End for open-ended session -----------
   it('releases the wake lock when an open-ended session is ended directly (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -60,7 +55,6 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 3: release on modal-confirm End for timed session ---------
   it('releases the wake lock when the user confirms End via the EndSessionDialog (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -78,7 +72,6 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 4: release on timed completion ----------------------
   it('releases the wake lock when a timed session reaches completion automatically (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -100,7 +93,6 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 5: release on cancel-during-lead-in ----------------
   it('releases the wake lock when the user cancels during lead-in (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
     render(<App />)
@@ -127,7 +119,6 @@ describe('App — wake lock (Phase 5)', () => {
     expect(releaseSpy).toHaveBeenCalled()
   })
 
-  // -- Test 6: silent fallback when navigator.wakeLock is undefined ---
   describe('silent fallback (D-09)', () => {
     let savedWakeLock: WakeLock | undefined
 

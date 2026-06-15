@@ -56,9 +56,6 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-// ---------------------------------------------------------------------------
-// LOCL-01 — Settings + Mute restoration on mount
-// ---------------------------------------------------------------------------
 describe('LOCL-01 — restoration on mount', () => {
   it('restores persisted settings (bpm, ratio, durationMinutes) — D-15', () => {
     seedEnvelope({ settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 } })
@@ -86,9 +83,6 @@ describe('LOCL-01 — restoration on mount', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// LOCL-01 — Settings + Mute persistence on change
-// ---------------------------------------------------------------------------
 describe('LOCL-01 — persistence on change', () => {
   it('persists mute toggle to localStorage (D-14)', async () => {
     render(<App />)
@@ -129,9 +123,6 @@ describe('LOCL-01 — persistence on change', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// LOCL-02 — Stats accumulation
-// ---------------------------------------------------------------------------
 describe('LOCL-02 — stats record on each end path', () => {
   it('records a session when timed completion fires (D-01 completion bypass)', async () => {
     seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 5 } })
@@ -209,12 +200,6 @@ describe('LOCL-02 — stats record on each end path', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// PRACTICE-02 — Settings survive remount.
-//
-// Verifies that App.tsx seeds initialSettings from loadSettings() (the flat
-// envelope settings field).
-// ---------------------------------------------------------------------------
 describe('PRACTICE-02 — settings survive remount', () => {
   it('persisted settings survive a reload', () => {
     seedEnvelope({ settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 } })

@@ -52,15 +52,11 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     })
 
     expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-    // First cue at audioAnchor + 0 (cycleIndex=0, phase=in)
     expect(cues[0]).toEqual({ audioTime: anchor + 0, phaseDurationSec: 3, kind: 'in' })
-    // Second cue at audioAnchor + 3 (exhale)
     expect(cues[1]).toEqual({ audioTime: anchor + 3, phaseDurationSec: 3, kind: 'out' })
-    // Third cue at audioAnchor + 6 (next cycle inhale) — included since LOOKAHEAD_WINDOW_SEC=6
     if (cues.length >= 3) {
       expect(cues[2]).toEqual({ audioTime: anchor + 6, phaseDurationSec: 3, kind: 'in' })
     }
-    // AudioTimes must be monotonically increasing
     for (let i = 1; i < cues.length; i++) {
       const prevTime = cues[i - 1]?.audioTime ?? 0
       const currTime = cues[i]?.audioTime ?? 0
