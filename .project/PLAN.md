@@ -20,7 +20,10 @@ core breathing engine.
   - [x] Flatten storage envelope — drop `practices`/`activePractice`/migration ladder (`b345381`)
   - [x] Rename all HRV/Resonant/VFC → Pattern Breathing; Forrest already gone (`32a7475`)
   - [x] Deploy base path `/hrv/` → `/pb/` (`5025fa3`)
-  - [ ] (Pending user input) Further removal items, if any
+  - [x] Collapse orb → fixed ring + arc; drop scale animation + rename
+    `OrbShape`→`BreathingRing` (`4ddac9b`, `200e25f`); drop dead `nk-om-pulse`
+    (`51abb3a`). Ring never grows/shrinks; In/Out fixed size; text on page bg.
+  - [x] Trim COMPLETE — no further removal items
 - [ ] (Pending user input) Implement pattern-breathing functionality
 
 ## Settings strip-down plan (Phases A–F)
@@ -97,17 +100,19 @@ runtime event + storage-key channels, user-facing copy, comments, tests, PWA man
 package name, and deploy base path (`/hrv/` → `/pb/`). The storage envelope is **flattened**
 to a single practice (`{ version, settings?, mute?, stats?, prefs? }` at
 `pattern-breathing:state:v1`) — no `practices`/`activePractice` wrapper, no migration ladder.
-About page is one placeholder block; README is title-only. `grep -riE
-"hrv|resonant|forrest|vfc"` over the tree (excl. `.project/`) returns nothing. All gates
-green (`tsc -b`, `eslint`, 742 vitest tests, `vite build`). `.project/PROJECT.md` refreshed
-to this shape. The app is still the resonance timer under the new name — pattern-breathing
-*functionality* is not implemented.
+About page is one placeholder block; README is title-only. The breathing shape is now
+`BreathingRing` — a **fixed-size ring + progress arc**, no scale animation (orb disc/halo
+and all MIN/MAX/MID scale machinery removed); In/Out renders fixed-size on the page bg
+(In/Out `accent-strong`, lead-in digit `accent`). `grep -riE "hrv|resonant|forrest|vfc"`
+over the tree (excl. `.project/`) returns nothing. All gates green (`tsc -b`, `eslint`,
+739 vitest tests, `vite build`). `.project/PROJECT.md` refreshed to this shape. The app is
+still the resonance timer under the new name — pattern-breathing *functionality* is not
+implemented.
 
-**Next** — Awaiting user direction (nothing in flight; safe to clear): either more cleanup
-items, or the pattern-breathing spec / functionality (still undefined).
+**Next** — Trim is complete. Awaiting the pattern-breathing spec / functionality (still
+undefined; user will provide). Tree clean, safe to clear.
 
 **Open questions**
-- Any further removal items beyond what's done?
 - Pattern-breathing spec still undefined (user will provide).
 - "Pattern Breathing" is now used for both the app name and the breathing-*technique* name
   (`practice.switcher.patternBreathingName/Heading`). Revisit if the technique needs its own
