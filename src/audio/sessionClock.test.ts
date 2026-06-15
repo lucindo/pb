@@ -4,7 +4,7 @@
 //   - audio factory now() returns audioCtx.currentTime; wall factory returns performance.now() / 1000.
 //   - wired-real subscribers: onSuspend / onResume / onClose fan-out via the audioCtx 'statechange' listener.
 //   - onClose member: fan-out on 'closed'; unsubscribe.
-//   - scheduleImpl forwarding when supplied; no-op when absent.
+//   - scheduleImpl forwarding to the engine dispatch.
 //   - notifySuspended() engine-only escape hatch — fan-out parity with natural statechange,
 //     trigger-source isolation, unsubscribe symmetry, absence on the wall clock.
 //
@@ -59,11 +59,15 @@ function asAudioCtx(fake: FakeAudioCtxShape): AudioContext {
   return fake as unknown as AudioContext
 }
 
+// Throwaway dispatch for the lifecycle/now/notifySuspended tests that exercise
+// the clock without caring about schedule() forwarding (which has its own test).
+const noopSchedule = (): void => undefined
+
 describe('createAudioSessionClock', () => {
   it('now() returns audioCtx.currentTime (D-03 Option A — audio-natural seconds)', () => {
     const audioCtx = makeFakeAudioCtx()
     audioCtx.currentTime = 1.5
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     expect(clock.now()).toBe(1.5)
 
     audioCtx.currentTime = 2.75
@@ -73,7 +77,7 @@ describe('createAudioSessionClock', () => {
   it('now() does NOT call performance.now (D-03 anti-drift assertion)', () => {
     const audioCtx = makeFakeAudioCtx()
     audioCtx.currentTime = 3.0
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
 
     const perfSpy = vi.spyOn(performance, 'now')
     void clock.now()
@@ -84,7 +88,7 @@ describe('createAudioSessionClock', () => {
 
   it('onSuspend(cb) is invoked on the natural "suspended" statechange transition (D-11)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     clock.onSuspend(cb)
 
@@ -96,7 +100,7 @@ describe('createAudioSessionClock', () => {
 
   it('onSuspend(cb) is invoked on the WebKit "interrupted" statechange transition (D-11 / Phase 5.1)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     clock.onSuspend(cb)
 
@@ -108,7 +112,7 @@ describe('createAudioSessionClock', () => {
 
   it('onResume(cb) is invoked on "running" and NOT on "suspended" (D-11)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const resumeCb = vi.fn()
     clock.onResume(resumeCb)
 
@@ -123,7 +127,7 @@ describe('createAudioSessionClock', () => {
 
   it('onClose(cb) is invoked on "closed" and NOT onSuspend/onResume subscribers (revision 1 Blocker #1)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const suspendCb = vi.fn()
     const resumeCb = vi.fn()
     const closeCb = vi.fn()
@@ -141,7 +145,7 @@ describe('createAudioSessionClock', () => {
 
   it('onClose unsubscribe works (revision 1 Blocker #1)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     const off = clock.onClose(cb)
     off()
@@ -154,7 +158,7 @@ describe('createAudioSessionClock', () => {
 
   it('onSuspend unsubscribe works', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     const off = clock.onSuspend(cb)
     off()
@@ -167,7 +171,7 @@ describe('createAudioSessionClock', () => {
 
   it('multiple subscribers on the same channel both fire', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb1 = vi.fn()
     const cb2 = vi.fn()
     clock.onSuspend(cb1)
@@ -191,18 +195,9 @@ describe('createAudioSessionClock', () => {
     expect(impl).toHaveBeenCalledWith(1.5, { kind: 'lead-in-tick' })
   })
 
-  it('scheduleImpl absent: schedule() is a no-op and does not throw (revision 1 Blocker #2)', () => {
-    const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
-
-    expect(() => {
-      clock.schedule(0, { kind: 'lead-in-tick' })
-    }).not.toThrow()
-  })
-
   it('notifySuspended() fan-out: invokes suspend subscribers without a statechange event (revision 2 Blocker #1)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     clock.onSuspend(cb)
 
@@ -214,7 +209,7 @@ describe('createAudioSessionClock', () => {
 
   it('notifySuspended() parity with natural statechange: both trigger the same fan-out (revision 2 Blocker #1)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     clock.onSuspend(cb)
 
@@ -230,7 +225,7 @@ describe('createAudioSessionClock', () => {
 
   it('notifySuspended() does NOT trigger onResume or onClose (revision 2 Blocker #1 trigger-source isolation)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const suspendCb = vi.fn()
     const resumeCb = vi.fn()
     const closeCb = vi.fn()
@@ -247,7 +242,7 @@ describe('createAudioSessionClock', () => {
 
   it('notifySuspended() respects unsubscribe (revision 2 Blocker #1 — symmetric path with statechange)', () => {
     const audioCtx = makeFakeAudioCtx()
-    const clock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const clock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     const cb = vi.fn()
     const off = clock.onSuspend(cb)
     off()
@@ -260,7 +255,7 @@ describe('createAudioSessionClock', () => {
   it('augmented return type exposes notifySuspended but a SessionClock-widened reference does not (revision 2 Blocker #1)', () => {
     const audioCtx = makeFakeAudioCtx()
     // Augmented type — direct return shape from createAudioSessionClock.
-    const augmentedClock = createAudioSessionClock(asAudioCtx(audioCtx))
+    const augmentedClock = createAudioSessionClock(asAudioCtx(audioCtx), noopSchedule)
     expect(typeof augmentedClock.notifySuspended).toBe('function')
     // Should not throw and should perform the fan-out (covered above).
     expect(() => {

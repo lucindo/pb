@@ -8,8 +8,7 @@
 //
 // Invariants:
 //   - createAudioSessionClock ACCEPTS an AudioContext; it NEVER constructs one.
-//     The two production call sites pass their own AC (the engine's HRV AC;
-//     useNaviKriyaAudio's NK AC).
+//     The sole production call site (createAudioEngine) passes the engine's AC.
 //   - onSuspend / onResume / onClose fan out real AudioContext statechange
 //     transitions. createWallSessionClock exposes them as no-op subscribers
 //     (wall clock never suspends/resumes/closes).
@@ -19,22 +18,13 @@
 //     through the SessionClock seam.
 //   - scheduleImpl is plumbed at construction (NOT reassigned post-hoc — that
 //     would violate the readonly contract on the interface). The engine passes
-//     its internal dispatch fn; useNaviKriyaAudio passes undefined and
-//     schedule() is a no-op for that AC.
+//     its internal dispatch fn.
 //   - notifySuspended is the engine-only synthetic-suspend escape hatch on the
 //     augmented factory return type (SessionClock & { notifySuspended(): void }).
 //     It is NOT a public SessionClock interface member. Only the engine's
 //     internal augmented-type reference inside createAudioEngine can call it.
 //     External consumers see only the read-only interface and cannot reach
 //     notifySuspended.
-//
-// Zero React imports.
-//
-// Exactly TWO createAudioSessionClock invocations exist: one inside
-// createAudioEngine (HRV AC), one inside useNaviKriyaAudio.begin() (NK AC).
-// They wrap DIFFERENT AudioContexts and MUST NOT be conflated. The engine's
-// `clock` member exposes only the HRV-AC clock; NK-AC's clock is local to
-// NK's lifecycle.
 
 /**
  * Closed catalog of cue kinds the engine and any lookahead scheduler can dispatch.
@@ -72,10 +62,9 @@ export interface SessionClock {
    * Dispatch entry. `when` is seconds-shaped on the same time-base as `now()`;
    * `cue` is the closed discriminated union catalog above.
    *
-   * The catalog is closed. When `scheduleImpl` is supplied (the engine's
-   * internal dispatch), schedule() forwards to it. When absent
-   * (useNaviKriyaAudio's call site), schedule() is a typed no-op. The wall
-   * factory's schedule() is always a no-op (useAmbientScale only calls now()).
+   * The catalog is closed. `createAudioSessionClock` forwards to the engine's
+   * internal dispatch (`scheduleImpl`). The wall factory's schedule() is always
+   * a no-op (useAmbientScale only calls now()).
    */
   schedule(when: number, cue: Cue): void
 
@@ -113,14 +102,12 @@ export interface SessionClock {
 /**
  * Wrap an existing AudioContext as a SessionClock.
  *
- * This factory WRAPS an AC, it never constructs one. The two production call
- * sites pass their own AC (HRV: inside `createAudioEngine`; NK: inside
- * `useNaviKriyaAudio.begin()`). User-gesture-chain semantics live at the AC
- * construction site, NOT here.
+ * This factory WRAPS an AC, it never constructs one. The sole production call
+ * site (`createAudioEngine`) passes the engine's AC. User-gesture-chain
+ * semantics live at the AC construction site, NOT here.
  *
- * The optional `scheduleImpl` parameter is plumbed at construction — when
- * supplied (the engine's internal dispatch), `schedule()` forwards to it;
- * when absent, `schedule()` is a typed no-op. This avoids post-hoc readonly
+ * `scheduleImpl` is plumbed at construction — `schedule()` forwards to it. It is
+ * passed at construction (NOT reassigned post-hoc), which avoids a readonly
  * reassignment that would violate the `readonly` semantics on the interface.
  *
  * Returns `SessionClock & { notifySuspended(): void }`. The `notifySuspended`
@@ -137,7 +124,7 @@ export interface SessionClock {
  */
 export function createAudioSessionClock(
   audioCtx: AudioContext,
-  scheduleImpl?: (when: number, cue: Cue) => void,
+  scheduleImpl: (when: number, cue: Cue) => void,
 ): SessionClock & { notifySuspended(): void } {
   // AC is wrapped, never constructed here. User-gesture-chain semantics hold at
   // the AC construction site, not here.
@@ -197,12 +184,7 @@ export function createAudioSessionClock(
     },
 
     schedule(when: number, cue: Cue): void {
-      if (scheduleImpl !== undefined) {
-        scheduleImpl(when, cue)
-      } else {
-        void when // typed no-op — the NK call site passes no scheduleImpl
-        void cue
-      }
+      scheduleImpl(when, cue)
     },
 
     onSuspend(cb: () => void): () => void {
