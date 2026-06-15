@@ -6,7 +6,7 @@
 // PT-BR values reviewed by a native speaker.
 //
 // Refactor F5: top-level keys reorganized by SURFACE
-//   - practice.* — everything on PracticeScreen (header, controls, switcher,
+//   - practice.* — everything on PracticeScreen (header, controls,
 //     breathing visuals, readouts, settings forms, mute toggle, end-session
 //     confirmation modal, top bar anchor labels)
 //   - appSettings.* — everything on AppSettingsPage (page chrome, picker
@@ -26,10 +26,7 @@ export interface UiStrings {
       readonly learn: string
       readonly learnDisabled: string
     }
-    readonly switcher: {
-      readonly patternBreathingName: string
-      readonly patternBreathingHeading: string
-    }
+    readonly name: string
     readonly controls: {
       readonly startSession: string
       readonly endSession: string
@@ -156,10 +153,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         learn: 'Learn',
         learnDisabled: 'Learn (unavailable during session)',
       },
-      switcher: {
-        patternBreathingName: 'Pattern Breathing',
-        patternBreathingHeading: 'Pattern Breathing',
-      },
+      name: 'Pattern Breathing',
       controls: {
         startSession: 'Start',
         endSession: 'End',
@@ -282,10 +276,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         learn: 'Saiba mais',
         learnDisabled: 'Saiba mais (indisponível durante a sessão)',
       },
-      switcher: {
-        patternBreathingName: 'Pattern Breathing',
-        patternBreathingHeading: 'Pattern Breathing',
-      },
+      name: 'Pattern Breathing',
       controls: {
         startSession: 'Iniciar',
         endSession: 'Encerrar',

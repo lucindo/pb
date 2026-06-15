@@ -34,7 +34,7 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
     install: { isIOS: false, isStandalone: false, installable: false, onInstall: async () => {} },
     learnContent: {} as AppViewModel['learnContent'],
     lockedCopy: {} as AppViewModel['lockedCopy'],
-    uiStrings: { practice: { switcher: { patternBreathingName: 'Pattern Breathing' } } } as AppViewModel['uiStrings'],
+    uiStrings: { practice: { name: 'Pattern Breathing' } } as AppViewModel['uiStrings'],
     locale: 'en',
     stats: { patternBreathing: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: 0 } },
     onResetStats: () => {},

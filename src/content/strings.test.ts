@@ -78,20 +78,17 @@ describe('UI_STRINGS template-fn entries (D-15)', () => {
 })
 
 describe('Phase 30 practice string keys', () => {
-  const practiceStringKeys = ['patternBreathingName', 'patternBreathingHeading'] as const
-
-  it('every practice.* string key exists and is non-empty in both en and pt-BR', () => {
+  it('practice.name exists and is non-empty in both en and pt-BR', () => {
     for (const locale of LOCALE_OPTIONS) {
-      for (const key of practiceStringKeys) {
-        const value = UI_STRINGS[locale].practice.switcher[key]
-        expect(typeof value, `practice.switcher.${key} in ${locale}`).toBe('string')
-        expect(value.length, `practice.switcher.${key} in ${locale} must be non-empty`).toBeGreaterThan(0)
-      }
+      const value = UI_STRINGS[locale].practice.name
+      expect(typeof value, `practice.name in ${locale}`).toBe('string')
+      expect(value.length, `practice.name in ${locale} must be non-empty`).toBeGreaterThan(0)
     }
   })
 
-  it('practice headings keep the full names (D-05: untranslated Sanskrit proper noun)', () => {
-    expect(UI_STRINGS.en.practice.switcher.patternBreathingHeading).toBe('Pattern Breathing')
+  it('practice.name keeps the untranslated brand name in both locales', () => {
+    expect(UI_STRINGS.en.practice.name).toBe('Pattern Breathing')
+    expect(UI_STRINGS['pt-BR'].practice.name).toBe('Pattern Breathing')
   })
 })
 

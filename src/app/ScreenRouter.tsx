@@ -33,7 +33,7 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           onInstall={vm.install.onInstall}
           onBack={vm.navigation.onBackToPractice}
           stat={vm.stats}
-          practiceName={vm.uiStrings.practice.switcher.patternBreathingName}
+          practiceName={vm.uiStrings.practice.name}
           locale={vm.locale}
           onResetStats={vm.onResetStats}
         />

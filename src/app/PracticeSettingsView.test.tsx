@@ -90,14 +90,14 @@ describe('PracticeSettingsView — patternBreathing (Pattern Breathing)', () => 
   })
 })
 
-describe('PracticeSettingsView — sheet header reuses the switcher heading', () => {
+describe('PracticeSettingsView — sheet header reuses the practice name', () => {
   it('uses "Practice" as the title and the practice heading as the subtitle', async () => {
     const user = userEvent.setup()
     renderView(makePatternBreathingVM())
     await user.click(screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ }))
     const dialog = screen.getByRole('dialog', { name: EN.practice.settingsSheet.title })
     expect(within(dialog).getByRole('heading', { level: 2, name: EN.practice.settingsSheet.title })).toBeVisible()
-    expect(within(dialog).getByText(EN.practice.switcher.patternBreathingHeading)).toBeVisible()
+    expect(within(dialog).getByText(EN.practice.name)).toBeVisible()
   })
 
   it('the close button uses the localized close label and closes the sheet', async () => {

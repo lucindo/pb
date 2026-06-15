@@ -35,7 +35,7 @@ export function PracticeSettingsView({
   const items = buildSetupCardSummary({ settings, practice })
   if (items === null) return null
 
-  const practiceName = practice.switcher.patternBreathingHeading
+  const practiceName = practice.name
   const sheet = practice.settingsSheet
 
   return (
