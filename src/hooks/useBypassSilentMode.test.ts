@@ -76,7 +76,7 @@ describe('useBypassSilentMode', () => {
     expect(result.current.bypassSilentMode).toBe(true)
   })
 
-  it('updates state via same-tab hrv:prefs-changed CustomEvent with detail.key === "bypassSilentMode"', async () => {
+  it('updates state via same-tab pattern-breathing:prefs-changed CustomEvent with detail.key === "bypassSilentMode"', async () => {
     seedPrefs(true)
     const { result } = renderHook(() => useBypassSilentMode())
     expect(result.current.bypassSilentMode).toBe(true)
@@ -86,14 +86,14 @@ describe('useBypassSilentMode', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'bypassSilentMode', value: false } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'bypassSilentMode', value: false } }),
       )
     })
 
     expect(result.current.bypassSilentMode).toBe(false)
   })
 
-  it('ignores same-tab hrv:prefs-changed CustomEvent with an unrelated key', async () => {
+  it('ignores same-tab pattern-breathing:prefs-changed CustomEvent with an unrelated key', async () => {
     seedPrefs(true)
     const { result } = renderHook(() => useBypassSilentMode())
     expect(result.current.bypassSilentMode).toBe(true)
@@ -103,7 +103,7 @@ describe('useBypassSilentMode', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'dark' } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'theme', value: 'dark' } }),
       )
     })
 
@@ -121,7 +121,7 @@ describe('useBypassSilentMode', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: undefined } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: undefined } }),
       )
     })
 

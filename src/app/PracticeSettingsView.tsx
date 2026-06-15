@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 
-import { ResonantSettingsForm } from '../components/ResonantSettingsForm'
+import { PatternBreathingSettingsForm } from '../components/PatternBreathingSettingsForm'
 import { SettingsSheet } from '../components/SettingsSheet'
 import { SetupCard } from '../components/SetupCard'
 import type { UiStrings } from '../content/strings'
@@ -65,7 +65,7 @@ function renderForm(
   practice: UiStrings['practice'],
 ): ReactElement {
   return (
-    <ResonantSettingsForm
+    <PatternBreathingSettingsForm
       settings={settings.settings}
       isRunning={settings.isRunning}
       onChange={settings.onChange}

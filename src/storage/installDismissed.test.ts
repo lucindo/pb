@@ -36,16 +36,16 @@ describe('installDismissed storage (D-16/D-17)', () => {
   })
 
   it('Test 5: loadInstallDismissed() returns false when stored value is any string other than "true"', () => {
-    window.localStorage.setItem('hrv:install-dismissed', 'false')
+    window.localStorage.setItem('pattern-breathing:install-dismissed', 'false')
     expect(loadInstallDismissed()).toBe(false)
 
-    window.localStorage.setItem('hrv:install-dismissed', '1')
+    window.localStorage.setItem('pattern-breathing:install-dismissed', '1')
     expect(loadInstallDismissed()).toBe(false)
 
-    window.localStorage.setItem('hrv:install-dismissed', 'yes')
+    window.localStorage.setItem('pattern-breathing:install-dismissed', 'yes')
     expect(loadInstallDismissed()).toBe(false)
 
-    window.localStorage.setItem('hrv:install-dismissed', '')
+    window.localStorage.setItem('pattern-breathing:install-dismissed', '')
     expect(loadInstallDismissed()).toBe(false)
   })
 })

@@ -18,13 +18,13 @@ const EN = UI_STRINGS.en
 const noopChange = (): void => {}
 const noopExtend = (): void => {}
 
-function makeResonantVM(overrides: {
+function makePatternBreathingVM(overrides: {
   settings?: SessionSettings
   isRunning?: boolean
   isComplete?: boolean
 } = {}): AppPracticeSettingsViewModel {
   return {
-    kind: 'resonant',
+    kind: 'patternBreathing',
     settings: overrides.settings ?? DEFAULT_SETTINGS,
     isRunning: overrides.isRunning ?? false,
     isComplete: overrides.isComplete ?? false,
@@ -53,10 +53,10 @@ function renderView(vm: AppPracticeSettingsViewModel): { rerender: () => void } 
   return { rerender: () => { utils.rerender(<Host />) } }
 }
 
-describe('PracticeSettingsView — resonant (HRV)', () => {
+describe('PracticeSettingsView — patternBreathing (Pattern Breathing)', () => {
   it('renders the SetupCard with PACE / RATIO / DURATION cells from current settings', () => {
-    renderView(makeResonantVM())
-    const card = screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ })
+    renderView(makePatternBreathingVM())
+    const card = screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ })
     expect(within(card).getByText(EN.practice.settingsForm.bpmLabel)).toBeVisible()
     expect(within(card).getByText(EN.practice.settingsForm.ratioLabel)).toBeVisible()
     expect(within(card).getByText(EN.practice.settingsForm.durationLabel)).toBeVisible()
@@ -65,27 +65,27 @@ describe('PracticeSettingsView — resonant (HRV)', () => {
   })
 
   it('formats an open-ended duration with the openEndedLabel string', () => {
-    renderView(makeResonantVM({
+    renderView(makePatternBreathingVM({
       settings: { ...DEFAULT_SETTINGS, durationMinutes: 'open-ended' },
     }))
-    const card = screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ })
+    const card = screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ })
     expect(within(card).getByText(EN.practice.settingsForm.openEndedLabel)).toBeVisible()
   })
 
   it('does not render the form on Idle until the SetupCard is tapped', async () => {
     const user = userEvent.setup()
-    renderView(makeResonantVM())
+    renderView(makePatternBreathingVM())
     expect(screen.queryByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeNull()
-    await user.click(screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ }))
+    await user.click(screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ }))
     expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
   })
 
   it('renders nothing on Running', () => {
-    // J16: HRV running surfaces no settings UI — SetupCard, sheet, and any
+    // J16: Pattern Breathing running surfaces no settings UI — SetupCard, sheet, and any
     // inline stepper are all hidden. extendDuration logic stays in the
     // viewmodel + controller but is unwired here.
-    renderView(makeResonantVM({ isRunning: true }))
-    expect(screen.queryByRole('button', { name: /^Edit HRV Breathing settings$/ })).toBeNull()
+    renderView(makePatternBreathingVM({ isRunning: true }))
+    expect(screen.queryByRole('button', { name: /^Edit Pattern Breathing settings$/ })).toBeNull()
     expect(screen.queryByRole('group', { name: EN.practice.settingsForm.durationLabel })).toBeNull()
   })
 })
@@ -93,17 +93,17 @@ describe('PracticeSettingsView — resonant (HRV)', () => {
 describe('PracticeSettingsView — sheet header reuses the switcher heading', () => {
   it('uses "Practice" as the title and the practice heading as the subtitle', async () => {
     const user = userEvent.setup()
-    renderView(makeResonantVM())
-    await user.click(screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ }))
+    renderView(makePatternBreathingVM())
+    await user.click(screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ }))
     const dialog = screen.getByRole('dialog', { name: EN.practice.settingsSheet.title })
     expect(within(dialog).getByRole('heading', { level: 2, name: EN.practice.settingsSheet.title })).toBeVisible()
-    expect(within(dialog).getByText(EN.practice.switcher.resonantHeading)).toBeVisible()
+    expect(within(dialog).getByText(EN.practice.switcher.patternBreathingHeading)).toBeVisible()
   })
 
   it('the close button uses the localized close label and closes the sheet', async () => {
     const user = userEvent.setup()
-    renderView(makeResonantVM())
-    await user.click(screen.getByRole('button', { name: /^Edit HRV Breathing settings$/ }))
+    renderView(makePatternBreathingVM())
+    await user.click(screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ }))
     expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
     await user.click(screen.getByRole('button', { name: EN.practice.settingsSheet.close }))
     expect(screen.queryByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeNull()

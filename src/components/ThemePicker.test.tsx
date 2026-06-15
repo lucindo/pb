@@ -69,15 +69,15 @@ describe('ThemePicker — real radiogroup picker (Phase 16)', () => {
     expect(parsed).toBe('system')
   })
 
-  it('clicking an option dispatches hrv:prefs-changed with { key: "theme", value: id }', async () => {
+  it('clicking an option dispatches pattern-breathing:prefs-changed with { key: "theme", value: id }', async () => {
     seedTheme('light')
     const user = userEvent.setup()
     render(<ThemePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.themes} sectionLabel={EN_STRINGS_FIXTURE.appSettings.themeLabel} />)
     const spy = vi.fn()
-    window.addEventListener('hrv:prefs-changed', spy)
+    window.addEventListener('pattern-breathing:prefs-changed', spy)
     const darkButton = screen.getByRole('radio', { name: 'Dark' })
     await user.click(darkButton)
-    window.removeEventListener('hrv:prefs-changed', spy)
+    window.removeEventListener('pattern-breathing:prefs-changed', spy)
     expect(spy).toHaveBeenCalledTimes(1)
     const event = spy.mock.calls[0]?.[0] as CustomEvent<{ key: string; value: string }>
     expect(event.detail.key).toBe('theme')

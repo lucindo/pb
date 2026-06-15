@@ -8,7 +8,7 @@ export interface SettingsRowProps {
   /**
    * When true, omits the border-t divider. Used when the row is the sole
    * row inside a container that already provides visual separation (e.g. the
-   * HRV-running inline Duration card whose surrounding rounded card already
+   * Pattern Breathing-running inline Duration card whose surrounding rounded card already
    * separates the row from page content). Corresponds to SettingsStepper's
    * hideTopBorder prop.
    */

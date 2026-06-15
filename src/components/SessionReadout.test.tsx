@@ -95,7 +95,7 @@ describe('SessionReadout', () => {
 })
 
 describe('SessionReadout — secondary content', () => {
-  it('HRV frame (no currentBpm) renders "{bpm} BPM · {ratio}" in the secondary', () => {
+  it('Pattern Breathing frame (no currentBpm) renders "{bpm} BPM · {ratio}" in the secondary', () => {
     renderReadout({ frame: sampleFrame, status: 'running', bpm: 5.5, ratio: '40:60' })
     expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
   })

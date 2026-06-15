@@ -10,7 +10,7 @@
 //   - Gated mql effect (dep [theme]): attaches the matchMedia listener ONLY when
 //     state === 'system'. Re-seeds immediately on mount to close the stale-initial-state window.
 //   - Cross-tab 'storage' listener (empty deps): re-reads loadPrefs().theme on STATE_KEY writes.
-//   - Same-tab 'hrv:prefs-changed' listener (empty deps): re-reads loadPrefs().theme when
+//   - Same-tab 'pattern-breathing:prefs-changed' listener (empty deps): re-reads loadPrefs().theme when
 //     key === 'theme'. Closes the gap the native 'storage' event leaves open (fires only in
 //     other tabs).
 //
@@ -69,7 +69,7 @@ export function useTheme(): { theme: ThemeId; setTheme: (next: ThemeId) => void 
     }
   }, [])
 
-  // Effect 4: Same-tab 'hrv:prefs-changed' CustomEvent listener (empty deps).
+  // Effect 4: Same-tab 'pattern-breathing:prefs-changed' CustomEvent listener (empty deps).
   // The native 'storage' event does NOT fire in the writing tab, so this custom event is the
   // sole same-tab sync primitive from usePreferenceChoice('theme') back to App-side useTheme.
   // Forward-compat: a payload without 'key' (undefined/null) is treated as "re-read all prefs"
@@ -86,9 +86,9 @@ export function useTheme(): { theme: ThemeId; setTheme: (next: ThemeId) => void 
         setTheme(loadPrefs().theme)
       }
     }
-    window.addEventListener('hrv:prefs-changed', onPrefsChanged)
+    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     return () => {
-      window.removeEventListener('hrv:prefs-changed', onPrefsChanged)
+      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     }
   }, [])
 

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { SetupCard, type SetupCardItem } from './SetupCard'
 
-const HRV_ITEMS: readonly SetupCardItem[] = [
+const PATTERN_BREATHING_ITEMS: readonly SetupCardItem[] = [
   { id: 'pace', label: 'PACE', value: '5.5 bpm' },
   { id: 'ratio', label: 'RATIO', value: '1 : 1' },
   { id: 'duration', label: 'DURATION', value: '5 min' },
@@ -23,16 +23,16 @@ const STRETCH_ITEMS: readonly SetupCardItem[] = [
 describe('SetupCard', () => {
   it('renders as a button with the supplied aria-label', () => {
     render(
-      <SetupCard items={HRV_ITEMS} onTap={() => {}} ariaLabel="Edit HRV settings" />,
+      <SetupCard items={PATTERN_BREATHING_ITEMS} onTap={() => {}} ariaLabel="Edit Pattern Breathing settings" />,
     )
-    expect(screen.getByRole('button', { name: 'Edit HRV settings' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Edit Pattern Breathing settings' })).toBeVisible()
   })
 
-  it('renders all label/value pairs for the 3-item (HRV/Navi) shape', () => {
+  it('renders all label/value pairs for the 3-item (Pattern Breathing/Navi) shape', () => {
     render(
-      <SetupCard items={HRV_ITEMS} onTap={() => {}} ariaLabel="Edit HRV settings" />,
+      <SetupCard items={PATTERN_BREATHING_ITEMS} onTap={() => {}} ariaLabel="Edit Pattern Breathing settings" />,
     )
-    for (const it of HRV_ITEMS) {
+    for (const it of PATTERN_BREATHING_ITEMS) {
       expect(screen.getByText(it.label)).toBeInTheDocument()
       expect(screen.getByText(it.value)).toBeInTheDocument()
     }
@@ -51,8 +51,8 @@ describe('SetupCard', () => {
   it('fires onTap when clicked', async () => {
     const user = userEvent.setup()
     const onTap = vi.fn()
-    render(<SetupCard items={HRV_ITEMS} onTap={onTap} ariaLabel="Edit HRV settings" />)
-    await user.click(screen.getByRole('button', { name: 'Edit HRV settings' }))
+    render(<SetupCard items={PATTERN_BREATHING_ITEMS} onTap={onTap} ariaLabel="Edit Pattern Breathing settings" />)
+    await user.click(screen.getByRole('button', { name: 'Edit Pattern Breathing settings' }))
     expect(onTap).toHaveBeenCalledTimes(1)
   })
 
@@ -60,9 +60,9 @@ describe('SetupCard', () => {
     const user = userEvent.setup()
     const onTap = vi.fn()
     render(
-      <SetupCard items={HRV_ITEMS} onTap={onTap} ariaLabel="Edit HRV settings" disabled />,
+      <SetupCard items={PATTERN_BREATHING_ITEMS} onTap={onTap} ariaLabel="Edit Pattern Breathing settings" disabled />,
     )
-    const button = screen.getByRole('button', { name: 'Edit HRV settings' })
+    const button = screen.getByRole('button', { name: 'Edit Pattern Breathing settings' })
     expect(button).toBeDisabled()
     await user.click(button)
     expect(onTap).not.toHaveBeenCalled()
@@ -70,7 +70,7 @@ describe('SetupCard', () => {
 
   it('includes a decorative chevron SVG (aria-hidden)', () => {
     const { container } = render(
-      <SetupCard items={HRV_ITEMS} onTap={() => {}} ariaLabel="Edit HRV settings" />,
+      <SetupCard items={PATTERN_BREATHING_ITEMS} onTap={() => {}} ariaLabel="Edit Pattern Breathing settings" />,
     )
     const chevron = container.querySelector('svg[aria-hidden="true"]')
     expect(chevron).not.toBeNull()

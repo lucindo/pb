@@ -41,5 +41,5 @@ export function resolveSheetPracticeName(
   switcher: UiStrings['practice']['switcher'],
 ): string | null {
   void settings
-  return switcher.resonantHeading
+  return switcher.patternBreathingHeading
 }

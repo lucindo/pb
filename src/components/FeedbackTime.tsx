@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 
-// HRV time-based readout. Big remaining-time number above a small uppercase
+// Pattern Breathing time-based readout. Big remaining-time number above a small uppercase
 // pace caption. Pure presentation primitive: caller supplies pre-formatted
 // localized strings (no formatting logic here).
 //

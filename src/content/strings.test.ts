@@ -78,7 +78,7 @@ describe('UI_STRINGS template-fn entries (D-15)', () => {
 })
 
 describe('Phase 30 practice string keys', () => {
-  const practiceStringKeys = ['resonantName', 'resonantHeading'] as const
+  const practiceStringKeys = ['patternBreathingName', 'patternBreathingHeading'] as const
 
   it('every practice.* string key exists and is non-empty in both en and pt-BR', () => {
     for (const locale of LOCALE_OPTIONS) {
@@ -91,7 +91,7 @@ describe('Phase 30 practice string keys', () => {
   })
 
   it('practice headings keep the full names (D-05: untranslated Sanskrit proper noun)', () => {
-    expect(UI_STRINGS.en.practice.switcher.resonantHeading).toBe('HRV Breathing')
+    expect(UI_STRINGS.en.practice.switcher.patternBreathingHeading).toBe('Pattern Breathing')
   })
 })
 

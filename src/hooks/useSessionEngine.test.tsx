@@ -371,7 +371,7 @@ describe('useSessionEngine — session round-trip selectedSettings preservation'
   })
 
   it('idle selectedSettings equals the initialSettings after a session start→end round-trip', () => {
-    const resonantSettings: SessionSettings = {
+    const patternBreathingSettings: SessionSettings = {
       ...defaultSettings,
       bpm: 5.5,
       ratio: '40:60',
@@ -379,13 +379,13 @@ describe('useSessionEngine — session round-trip selectedSettings preservation'
     }
 
     const { result, unmount } = renderHook(() =>
-      useSessionEngine(resonantSettings, fakeClock),
+      useSessionEngine(patternBreathingSettings, fakeClock),
     )
 
-    // Confirm idle state starts with resonant settings
+    // Confirm idle state starts with patternBreathing settings
     expect(result.current.state.status).toBe('idle')
     if (result.current.state.status !== 'idle') throw new Error('Expected idle')
-    expect(result.current.state.selectedSettings).toEqual(resonantSettings)
+    expect(result.current.state.selectedSettings).toEqual(patternBreathingSettings)
 
     act(() => {
       result.current.start()
@@ -397,9 +397,9 @@ describe('useSessionEngine — session round-trip selectedSettings preservation'
       result.current.end()
     })
 
-    // After end, idle selectedSettings must equal the resonant settings.
+    // After end, idle selectedSettings must equal the patternBreathing settings.
     expect(result.current.state.status).toBe('idle')
-    expect(result.current.state.selectedSettings).toEqual(resonantSettings)
+    expect(result.current.state.selectedSettings).toEqual(patternBreathingSettings)
 
     unmount()
   })

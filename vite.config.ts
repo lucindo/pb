@@ -53,9 +53,9 @@ export default defineConfig({
         'pwa-maskable-512x512.png',
       ],
       manifest: {
-        name: 'HRV Breathing',
-        short_name: 'HRV Breathing',
-        description: 'Guided HRV breathing sessions — inhale, exhale, relax.',
+        name: 'Pattern Breathing',
+        short_name: 'Pattern Breathing',
+        description: 'Guided breathing sessions — inhale, exhale, relax.',
         theme_color: '#1a1d24',
         background_color: '#1a1d24',
         display: 'standalone',

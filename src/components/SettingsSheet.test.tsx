@@ -57,13 +57,13 @@ describe('SettingsSheet', () => {
   })
 
   it('renders the subtitle when provided', () => {
-    renderSheet({ subtitle: 'HRV' })
-    expect(screen.getByText('HRV')).toBeVisible()
+    renderSheet({ subtitle: 'Pattern Breathing' })
+    expect(screen.getByText('Pattern Breathing')).toBeVisible()
   })
 
   it('omits the subtitle when not provided', () => {
     renderSheet()
-    expect(screen.queryByText('HRV')).toBeNull()
+    expect(screen.queryByText('Pattern Breathing')).toBeNull()
   })
 
   it('renders children inside the dialog body', () => {

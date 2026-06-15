@@ -82,7 +82,7 @@ describe('running duration edits and completion', () => {
     vi.useRealTimers()
   })
 
-  it('surfaces no settings UI during a running HRV session (congruent with stretch + navi)', async () => {
+  it('surfaces no settings UI during a running Pattern Breathing session (congruent with stretch + navi)', async () => {
     // J16: the SetupCard + sheet + any inline Duration stepper are all hidden
     // during a running session. The BreathingSessionController.extendDuration
     // logic stays in the codebase but is intentionally unwired from any UI on
@@ -90,7 +90,7 @@ describe('running duration edits and completion', () => {
     render(<App />)
     await startAndAdvancePastLeadIn()
     expect(screen.queryByRole('group', { name: 'Duration' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^Edit HRV Breathing settings$/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Edit Pattern Breathing settings$/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /increase duration/i })).not.toBeInTheDocument()
   })
 

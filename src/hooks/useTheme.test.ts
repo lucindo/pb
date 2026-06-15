@@ -140,7 +140,7 @@ describe('useTheme', () => {
     expect(result.current.theme).toBe('dark')
   })
 
-  it('updates state via same-tab hrv:prefs-changed CustomEvent with key="theme"', async () => {
+  it('updates state via same-tab pattern-breathing:prefs-changed CustomEvent with key="theme"', async () => {
     seedPrefs('dark')
     const { result } = renderHook(() => useTheme())
     expect(result.current.theme).toBe('dark')
@@ -152,7 +152,7 @@ describe('useTheme', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'light' } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'theme', value: 'light' } }),
       )
     })
 
@@ -160,7 +160,7 @@ describe('useTheme', () => {
     expect(document.documentElement.dataset.theme).toBe('light')
   })
 
-  it('ignores same-tab hrv:prefs-changed CustomEvent with key="variant"', async () => {
+  it('ignores same-tab pattern-breathing:prefs-changed CustomEvent with key="variant"', async () => {
     seedPrefs('dark')
     const { result } = renderHook(() => useTheme())
     expect(result.current.theme).toBe('dark')
@@ -169,7 +169,7 @@ describe('useTheme', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'variant', value: 'square' } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'variant', value: 'square' } }),
       )
     })
 

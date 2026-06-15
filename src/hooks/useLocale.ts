@@ -7,7 +7,7 @@
 //     No FOUC inline script needed (unlike data-theme) — the attribute is set
 //     synchronously on first React render.
 //   Effect 2 (cross-tab storage, empty deps): 'storage' events re-read loadPrefs().locale.
-//   Effect 3 (same-tab prefs-changed, empty deps): 'hrv:prefs-changed' CustomEvents
+//   Effect 3 (same-tab prefs-changed, empty deps): 'pattern-breathing:prefs-changed' CustomEvents
 //     filtered on locale key or undefined re-read loadPrefs().locale.
 //
 // No gated mql effect (locale has no system-mode counterpart — always explicit).
@@ -42,7 +42,7 @@ export function useLocale(): { locale: LocaleId; uiStrings: UiStrings } {
     }
   }, [])
 
-  // Effect 3: Same-tab 'hrv:prefs-changed' CustomEvent listener (empty deps).
+  // Effect 3: Same-tab 'pattern-breathing:prefs-changed' CustomEvent listener (empty deps).
   // The native 'storage' event does NOT fire in the writing tab; this custom event is the
   // sole same-tab sync primitive from useLocaleChoice back to App-side useLocale.
   // Forward-compat: a payload without 'key' (undefined) is treated as "re-read all prefs"
@@ -59,9 +59,9 @@ export function useLocale(): { locale: LocaleId; uiStrings: UiStrings } {
         setLocale(loadPrefs().locale)
       }
     }
-    window.addEventListener('hrv:prefs-changed', onPrefsChanged)
+    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     return () => {
-      window.removeEventListener('hrv:prefs-changed', onPrefsChanged)
+      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     }
   }, [])
 

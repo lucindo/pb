@@ -9,7 +9,7 @@ import type { UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
 import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 
-// The HRV readout resolves to FeedbackTime: a big remaining-time number above an
+// The Pattern Breathing readout resolves to FeedbackTime: a big remaining-time number above an
 // uppercase tracked secondary line ("X BPM · ratio"). Completion shows just the
 // "Session complete" headline; lead-in shows the placeholder time the upcoming
 // session counts from.
@@ -17,7 +17,7 @@ import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   strings: UiStrings['practice']['readout']
-  /** Resonant pace context — drives the secondary line. */
+  /** Pace context — drives the secondary line. */
   bpm: number
   ratio: string
   /** BPM unit token from settingsForm strings ("BPM" / "RPM" per locale). */

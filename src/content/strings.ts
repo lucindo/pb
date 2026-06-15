@@ -27,8 +27,8 @@ export interface UiStrings {
       readonly learnDisabled: string
     }
     readonly switcher: {
-      readonly resonantName: string
-      readonly resonantHeading: string
+      readonly patternBreathingName: string
+      readonly patternBreathingHeading: string
     }
     readonly controls: {
       readonly startSession: string
@@ -157,8 +157,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         learnDisabled: 'Learn (unavailable during session)',
       },
       switcher: {
-        resonantName: 'HRV',
-        resonantHeading: 'HRV Breathing',
+        patternBreathingName: 'Pattern Breathing',
+        patternBreathingHeading: 'Pattern Breathing',
       },
       controls: {
         startSession: 'Start',
@@ -283,8 +283,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         learnDisabled: 'Saiba mais (indisponível durante a sessão)',
       },
       switcher: {
-        resonantName: 'VFC',
-        resonantHeading: 'Respiração VFC',
+        patternBreathingName: 'Pattern Breathing',
+        patternBreathingHeading: 'Pattern Breathing',
       },
       controls: {
         startSession: 'Iniciar',

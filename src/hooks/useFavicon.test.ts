@@ -172,7 +172,7 @@ describe('useFavicon', () => {
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
   })
 
-  it('updates favicon via same-tab hrv:prefs-changed CustomEvent with key="theme"', async () => {
+  it('updates favicon via same-tab pattern-breathing:prefs-changed CustomEvent with key="theme"', async () => {
     seedPrefs('dark')
     renderHook(() => { useFavicon() })
     expect(getFaviconHref()).toContain(FAVICON_COLORS.dark.replace('#', '%23').slice(1))
@@ -184,14 +184,14 @@ describe('useFavicon', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'light' } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'theme', value: 'light' } }),
       )
     })
 
     expect(getFaviconHref()).toContain(FAVICON_COLORS.light.replace('#', '%23').slice(1))
   })
 
-  it('ignores same-tab hrv:prefs-changed CustomEvent with key="variant"', async () => {
+  it('ignores same-tab pattern-breathing:prefs-changed CustomEvent with key="variant"', async () => {
     seedPrefs('dark')
     renderHook(() => { useFavicon() })
     const hrefBefore = getFaviconHref()
@@ -200,7 +200,7 @@ describe('useFavicon', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'variant', value: 'square' } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'variant', value: 'square' } }),
       )
     })
 
@@ -220,7 +220,7 @@ describe('useFavicon', () => {
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'dark' } }),
+        new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'theme', value: 'dark' } }),
       )
     })
 

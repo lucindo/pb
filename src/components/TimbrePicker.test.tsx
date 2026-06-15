@@ -82,15 +82,15 @@ describe('TimbrePicker — real radiogroup picker (Phase 18)', () => {
     expect(parsed).toBe('sine')
   })
 
-  it('clicking an option dispatches hrv:prefs-changed with { key: "timbre", value: id }', async () => {
+  it('clicking an option dispatches pattern-breathing:prefs-changed with { key: "timbre", value: id }', async () => {
     seedTimbre('bowl')
     const user = userEvent.setup()
     render(<TimbrePicker disabled={false} strings={EN_STRINGS_FIXTURE.appSettings.timbres} sectionLabel={EN_STRINGS_FIXTURE.appSettings.timbreLabel} />)
     const spy = vi.fn()
-    window.addEventListener('hrv:prefs-changed', spy)
+    window.addEventListener('pattern-breathing:prefs-changed', spy)
     const bellButton = screen.getByRole('radio', { name: 'Bell' })
     await user.click(bellButton)
-    window.removeEventListener('hrv:prefs-changed', spy)
+    window.removeEventListener('pattern-breathing:prefs-changed', spy)
     expect(spy).toHaveBeenCalledTimes(1)
     const event = spy.mock.calls[0]?.[0] as CustomEvent<{ key: string; value: string }>
     expect(event.detail.key).toBe('timbre')

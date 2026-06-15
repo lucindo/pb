@@ -14,7 +14,7 @@ import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsStepper } from './SettingsStepper'
 
-export interface ResonantSettingsFormProps {
+export interface PatternBreathingSettingsFormProps {
   settings: SessionSettings
   isRunning: boolean
   onChange(this: void, settings: SessionSettings): void
@@ -22,13 +22,13 @@ export interface ResonantSettingsFormProps {
   strings: UiStrings['practice']['settingsForm']
 }
 
-export function ResonantSettingsForm({
+export function PatternBreathingSettingsForm({
   settings,
   isRunning,
   onChange,
   onExtendDuration,
   strings,
-}: ResonantSettingsFormProps): ReactElement {
+}: PatternBreathingSettingsFormProps): ReactElement {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
   const formatDuration = (value: DurationOption): string =>
     value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`

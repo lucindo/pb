@@ -13,7 +13,7 @@ export interface BreathingPresentationInput {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
-  // Resonant pace context — drives the "X BPM · ratio" secondary line.
+  // Pace context — drives the "X BPM · ratio" secondary line.
   bpm: number
   ratio: string
 }

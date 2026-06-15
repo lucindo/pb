@@ -92,7 +92,7 @@ describe('useLocale', () => {
     expect(result.current.locale).toBe('en')
   })
 
-  it('updates locale via same-tab hrv:prefs-changed CustomEvent with detail.key === "locale"', async () => {
+  it('updates locale via same-tab pattern-breathing:prefs-changed CustomEvent with detail.key === "locale"', async () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     const { result } = renderHook(() => useLocale())
     expect(result.current.locale).toBe('en')
@@ -102,13 +102,13 @@ describe('useLocale', () => {
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
-      window.dispatchEvent(new CustomEvent('hrv:prefs-changed', { detail: { key: 'locale', value: 'pt-BR' } }))
+      window.dispatchEvent(new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'locale', value: 'pt-BR' } }))
     })
 
     expect(result.current.locale).toBe('pt-BR')
   })
 
-  it('ignores same-tab hrv:prefs-changed CustomEvent with detail.key === "theme"', async () => {
+  it('ignores same-tab pattern-breathing:prefs-changed CustomEvent with detail.key === "theme"', async () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     const { result } = renderHook(() => useLocale())
     expect(result.current.locale).toBe('en')
@@ -118,14 +118,14 @@ describe('useLocale', () => {
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
-      window.dispatchEvent(new CustomEvent('hrv:prefs-changed', { detail: { key: 'theme', value: 'dark' } }))
+      window.dispatchEvent(new CustomEvent('pattern-breathing:prefs-changed', { detail: { key: 'theme', value: 'dark' } }))
     })
 
     // locale must remain unchanged — theme key is not the locale filter
     expect(result.current.locale).toBe('en')
   })
 
-  it('updates locale via same-tab hrv:prefs-changed with detail: {} (undefined key — D-21 forward-compat)', async () => {
+  it('updates locale via same-tab pattern-breathing:prefs-changed with detail: {} (undefined key — D-21 forward-compat)', async () => {
     seedPrefs({ ...DEFAULT_FULL_PREFS, locale: 'en' })
     const { result } = renderHook(() => useLocale())
     expect(result.current.locale).toBe('en')
@@ -135,7 +135,7 @@ describe('useLocale', () => {
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
-      window.dispatchEvent(new CustomEvent('hrv:prefs-changed', { detail: {} }))
+      window.dispatchEvent(new CustomEvent('pattern-breathing:prefs-changed', { detail: {} }))
     })
 
     // undefined key branch: re-reads loadPrefs().locale unconditionally

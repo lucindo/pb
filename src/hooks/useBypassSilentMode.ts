@@ -5,7 +5,7 @@
 // createAudioEngine at engine-construction time).
 //
 // Seeds state from loadPrefs().bypassSilentMode. Subscribes to cross-tab
-// 'storage' events and same-tab 'hrv:prefs-changed' CustomEvents filtered on
+// 'storage' events and same-tab 'pattern-breathing:prefs-changed' CustomEvents filtered on
 // detail.key === 'bypassSilentMode' || undefined (same event name shared with
 // the theme/locale hooks; broadcast-all preserved for forward-compat).
 //
@@ -34,7 +34,7 @@ export function useBypassSilentMode(): { bypassSilentMode: boolean } {
     }
   }, [])
 
-  // Same-tab 'hrv:prefs-changed' CustomEvent listener.
+  // Same-tab 'pattern-breathing:prefs-changed' CustomEvent listener.
   // Native 'storage' event does NOT fire in writing tab; this is the sole same-tab sync primitive.
   useEffect(() => {
     const onPrefsChanged = (e: Event): void => {
@@ -48,9 +48,9 @@ export function useBypassSilentMode(): { bypassSilentMode: boolean } {
         setBypassSilentMode(loadPrefs().bypassSilentMode)
       }
     }
-    window.addEventListener('hrv:prefs-changed', onPrefsChanged)
+    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     return () => {
-      window.removeEventListener('hrv:prefs-changed', onPrefsChanged)
+      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     }
   }, [])
 

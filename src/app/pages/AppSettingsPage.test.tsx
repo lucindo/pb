@@ -37,7 +37,7 @@ function renderPage(
         onInstall={onInstall}
         onBack={onBack}
         stat={SAMPLE_STAT}
-        practiceName="HRV"
+        practiceName="Pattern Breathing"
         locale="en"
         onResetStats={onResetStats}
       />

@@ -26,7 +26,7 @@ const COUNTDOWN_TICK_DECAY_TAU = 0.04
 // is 440 Hz across all timbres → 660 Hz). Expressed as a ratio so it tracks any
 // future per-timbre fundamental rather than hard-coding 660.
 const COUNTDOWN_TICK_PITCH_RATIO = 1.5
-// End chord: three tones forming a resolved low chord — the HRV session-ending
+// End chord: three tones forming a resolved low chord — the Pattern Breathing session-ending
 // sound played by scheduleEndChord.
 // Strike-free pad envelope: fade in over END_CHORD_ATTACK_SEC, hold, then a
 // linear fade out over END_CHORD_RELEASE_SEC, ~5 s total.
@@ -170,7 +170,7 @@ export function scheduleCountdownTick(
 
 /**
  * Resolved low multi-note chord — a clear, restful session-ending sound played
- * at HRV completion.
+ * at Pattern Breathing completion.
  * Three tones (root, major-third, fifth) based on preset fundamentalHzOut,
  * scheduled simultaneously at `when`. Spike 005 ("Warm pad fade") gives it a
  * strike-free pad envelope — fades in, holds, fades out over ~5 s. Returns the

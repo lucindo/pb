@@ -75,17 +75,17 @@ describe('usePreferenceChoice', () => {
     expect(prefs.bypassSilentMode).toBe(true)
   })
 
-  it('dispatches hrv:prefs-changed with detail { key, value }', () => {
+  it('dispatches pattern-breathing:prefs-changed with detail { key, value }', () => {
     seedPrefs({ ...DEFAULT_PREFS, theme: 'light' })
     const spy = vi.fn()
-    window.addEventListener('hrv:prefs-changed', spy)
+    window.addEventListener('pattern-breathing:prefs-changed', spy)
 
     const { result } = renderHook(() => usePreferenceChoice('theme'))
     act(() => {
       result.current[1]('dark')
     })
 
-    window.removeEventListener('hrv:prefs-changed', spy)
+    window.removeEventListener('pattern-breathing:prefs-changed', spy)
 
     expect(spy).toHaveBeenCalledTimes(1)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

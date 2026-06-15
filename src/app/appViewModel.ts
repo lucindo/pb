@@ -65,12 +65,12 @@ export interface AppPracticeControlsViewModel {
 }
 
 export type AppPracticeSessionViewModel = {
-  kind: 'resonant'
+  kind: 'patternBreathing'
   presentation: BreathingPresentation
 }
 
 export type AppPracticeSettingsViewModel = {
-  kind: 'resonant'
+  kind: 'patternBreathing'
   settings: SessionSettings
   isRunning: boolean
   isComplete: boolean
@@ -128,7 +128,7 @@ export interface BreathingSessionViewState {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
-  // Resonant selected settings — drives the HRV pace caption (X BPM · ratio).
+  // Selected settings — drive the pace caption (X BPM · ratio).
   selectedSettings: SessionSettings
 }
 
@@ -150,7 +150,7 @@ export function createPracticeSessionViewModel({
     ratio: breathing.selectedSettings.ratio,
   })
 
-  return { kind: 'resonant', presentation }
+  return { kind: 'patternBreathing', presentation }
 }
 
 export interface PracticeSettingsSources {
@@ -165,7 +165,7 @@ export function createPracticeSettingsViewModel(
   sources: PracticeSettingsSources,
 ): AppPracticeSettingsViewModel {
   return {
-    kind: 'resonant',
+    kind: 'patternBreathing',
     settings: sources.settings,
     isRunning: sources.isRunning,
     isComplete: sources.isComplete,

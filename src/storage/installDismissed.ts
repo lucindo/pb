@@ -8,7 +8,7 @@
 
 import type { StorageDeps } from './storage'
 
-const INSTALL_DISMISSED_KEY = 'hrv:install-dismissed'
+const INSTALL_DISMISSED_KEY = 'pattern-breathing:install-dismissed'
 
 /**
  * Returns true only when the user has explicitly dismissed the install banner.

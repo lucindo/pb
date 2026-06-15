@@ -6,11 +6,11 @@ import { buildSetupCardSummary } from './setupCardSummary'
 
 const practice = UI_STRINGS.en.practice
 
-describe('buildSetupCardSummary — resonant', () => {
-  it('returns null when resonant session is complete (existing behaviour)', () => {
+describe('buildSetupCardSummary — patternBreathing', () => {
+  it('returns null when patternBreathing session is complete (existing behaviour)', () => {
     const result = buildSetupCardSummary({
       settings: {
-        kind: 'resonant',
+        kind: 'patternBreathing',
         settings: DEFAULT_SETTINGS,
         isRunning: false,
         isComplete: true,
@@ -23,10 +23,10 @@ describe('buildSetupCardSummary — resonant', () => {
     expect(result).toBeNull()
   })
 
-  it('returns summary items when resonant session is idle (existing behaviour)', () => {
+  it('returns summary items when patternBreathing session is idle (existing behaviour)', () => {
     const result = buildSetupCardSummary({
       settings: {
-        kind: 'resonant',
+        kind: 'patternBreathing',
         settings: DEFAULT_SETTINGS,
         isRunning: false,
         isComplete: false,

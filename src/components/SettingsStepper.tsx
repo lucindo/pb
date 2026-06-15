@@ -15,7 +15,7 @@ export interface SettingsStepperProps<T extends string | number> {
    *  derived-value row. */
   readOnly?: boolean
   /** When true, drops the row's `border-t` divider. Used when the stepper
-   *  is the sole row inside its container (e.g. the HRV-running inline
+   *  is the sole row inside its container (e.g. the Pattern Breathing-running inline
    *  Duration card, where the surrounding rounded card already separates
    *  the row from page content). */
   hideTopBorder?: boolean

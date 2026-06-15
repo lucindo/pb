@@ -2,7 +2,7 @@
 // clones (theme / bypassSilentMode), which differed only by key + type.
 //
 // Role: provides the picker's optimistic-UI local state plus a setter that writes
-// the merged envelope to disk and dispatches 'hrv:prefs-changed'. App-side
+// the merged envelope to disk and dispatches 'pattern-breathing:prefs-changed'. App-side
 // listeners (useTheme, useBypassSilentMode) filter on detail.key.
 //
 // Why the custom event: the browser 'storage' event does NOT fire in the writing
@@ -29,7 +29,7 @@ export function usePreferenceChoice<K extends keyof UserPrefs>(
     savePrefs(updated)
     setValue(next)
     window.dispatchEvent(
-      new CustomEvent('hrv:prefs-changed', { detail: { key, value: next } }),
+      new CustomEvent('pattern-breathing:prefs-changed', { detail: { key, value: next } }),
     )
   }, [key])
 

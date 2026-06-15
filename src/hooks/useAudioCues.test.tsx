@@ -1256,7 +1256,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     //    not re-read prefs during reconstruction — it reads timbreRef.current exclusively,
     //    which still holds 'bell'.
     window.localStorage.setItem(
-      'hrv:state:v1',
+      'pattern-breathing:state:v1',
       JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'flute', locale: 'en' } }),
     )
 

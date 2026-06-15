@@ -11,7 +11,7 @@
 //     theme === 'system'; re-seeds from live MediaQueryList on mount; attaches
 //     'change' listener for live updates.
 //   - Effect C (empty deps): cross-tab 'storage' listener — setTheme re-fires A+B.
-//   - Effect D (empty deps): same-tab 'hrv:prefs-changed' listener filtered on
+//   - Effect D (empty deps): same-tab 'pattern-breathing:prefs-changed' listener filtered on
 //     detail.key === 'theme'.
 //
 // useFavicon returns void — App.tsx calls it bare (no destructure).
@@ -132,7 +132,7 @@ export function useFavicon(): void {
     }
   }, [])
 
-  // Effect D: Same-tab 'hrv:prefs-changed' CustomEvent listener (empty deps).
+  // Effect D: Same-tab 'pattern-breathing:prefs-changed' CustomEvent listener (empty deps).
   // The native 'storage' event does NOT fire in the writing tab.
   // The favicon rides the existing 'theme' key dispatched by usePreferenceChoice('theme').
   // No new 'favicon' event key is introduced here.
@@ -149,9 +149,9 @@ export function useFavicon(): void {
         setTheme(loadPrefs().theme)
       }
     }
-    window.addEventListener('hrv:prefs-changed', onPrefsChanged)
+    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     return () => {
-      window.removeEventListener('hrv:prefs-changed', onPrefsChanged)
+      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
     }
   }, [])
 }

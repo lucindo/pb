@@ -27,8 +27,8 @@ const baseFrame: SessionFrame = {
 
 // ─── walkFutureCues tests ────────────────────────────────────────────────────
 
-// HRV fixture plan: 10 BPM (cycleSec=6, inhale=3, exhale=3)
-const hrvPlan: BreathingPlan = {
+// Pattern Breathing fixture plan: 10 BPM (cycleSec=6, inhale=3, exhale=3)
+const patternBreathingPlan: BreathingPlan = {
   bpm: 10,
   ratio: '50:50',
   cycleSec: 6,
@@ -38,15 +38,15 @@ const hrvPlan: BreathingPlan = {
 }
 
 describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
-  // Test 1: HRV walk basic — at 10 BPM (cycleSec=6), floor=2, window=6s
-  it('HRV basic walk returns ≥LOOKAHEAD_MIN_CUES cues starting at anchor+0 for fromPhase=in', () => {
+  // Test 1: Pattern Breathing walk basic — at 10 BPM (cycleSec=6), floor=2, window=6s
+  it('Pattern Breathing basic walk returns ≥LOOKAHEAD_MIN_CUES cues starting at anchor+0 for fromPhase=in', () => {
     const anchor = 100
     const cues = walkFutureCues({
       audioAnchor: anchor,
       elapsedSec: 0,
       fromCycleIndex: 0,
       fromPhase: 'in',
-      plan: hrvPlan,
+      plan: patternBreathingPlan,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
     })
@@ -68,8 +68,8 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     }
   })
 
-  // Test 2: HRV low-BPM floor — at 1 BPM (cycleSec=60), window yields 0 cues; floor returns 2
-  it('HRV low-BPM floor: 1 BPM returns exactly LOOKAHEAD_MIN_CUES cues', () => {
+  // Test 2: Pattern Breathing low-BPM floor — at 1 BPM (cycleSec=60), window yields 0 cues; floor returns 2
+  it('Pattern Breathing low-BPM floor: 1 BPM returns exactly LOOKAHEAD_MIN_CUES cues', () => {
     const lowBpmPlan: BreathingPlan = {
       bpm: 1,
       ratio: '40:60',
@@ -94,8 +94,8 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     expect(cues[1]?.kind).toBe('out')
   })
 
-  // Test 3: HRV high-BPM window-wins — at 7 BPM (cycleSec≈8.57), no duplicates, monotonic times
-  it('HRV high-BPM: no duplicate cues, monotonically increasing audioTimes', () => {
+  // Test 3: Pattern Breathing high-BPM window-wins — at 7 BPM (cycleSec≈8.57), no duplicates, monotonic times
+  it('Pattern Breathing high-BPM: no duplicate cues, monotonically increasing audioTimes', () => {
     const highBpmPlan: BreathingPlan = {
       bpm: 7,
       ratio: '40:60',
@@ -135,7 +135,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 298,
       fromCycleIndex: 49,  // approximate cycle at 298s with cycleSec=6
       fromPhase: 'in',
-      plan: { ...hrvPlan, totalSec: 300 },
+      plan: { ...patternBreathingPlan, totalSec: 300 },
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
@@ -163,7 +163,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 300, // at the very end of a 5-min session
       fromCycleIndex: 50, // 50 * cycleSec(6) = 300s — inhale onset exactly at targetSec
       fromPhase: 'in',
-      plan: { ...hrvPlan, totalSec: 300 },
+      plan: { ...patternBreathingPlan, totalSec: 300 },
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
@@ -179,7 +179,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 0,
       fromCycleIndex: 0,
       fromPhase: 'in',
-      plan: hrvPlan,
+      plan: patternBreathingPlan,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: undefined,
@@ -195,7 +195,7 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
       elapsedSec: 310,
       fromCycleIndex: 52,  // 52*6=312 > targetSec=300
       fromPhase: 'in',
-      plan: { ...hrvPlan, totalSec: 300 },
+      plan: { ...patternBreathingPlan, totalSec: 300 },
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
@@ -210,12 +210,12 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
 // Trimming at totalSec silenced the held-open final cycle's breath cues; the >= trim
 // then drops the boundary cue so it never overlaps the end chord.
 describe('session-end boundary trim: held-open final breath plays, no end-chord overlap', () => {
-  // HRV non-aligned: 5-min (300s) session on a 14s cycle (in7/out7). The domain
+  // Pattern Breathing non-aligned: 5-min (300s) session on a 14s cycle (in7/out7). The domain
   // holds completion to ceil(300/14)*14 = 308s, so the final cycle 21 (294→308)
   // animates past 300. Trimming at totalSec=300 silenced its out cue (301>300);
   // trimming at the completion boundary (308) keeps the final out audible while
   // dropping the inhale that starts exactly at 308 (where the end chord plays).
-  it('HRV: final held-open exhale plays, inhale at the completion boundary is dropped', () => {
+  it('Pattern Breathing: final held-open exhale plays, inhale at the completion boundary is dropped', () => {
     const nonAlignedPlan: BreathingPlan = {
       bpm: 60 / 14,
       ratio: '50:50',
@@ -257,7 +257,7 @@ describe('resolveTargetSec', () => {
   })
 
   it('open-ended: returns undefined (no trim)', () => {
-    expect(resolveTargetSec(hrvPlan)).toBeUndefined() // hrvPlan.totalSec === null
+    expect(resolveTargetSec(patternBreathingPlan)).toBeUndefined() // patternBreathingPlan.totalSec === null
   })
 })
 
@@ -301,7 +301,7 @@ describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
     expect(cues.length).toBeLessThanOrEqual(MAX_WALK_ITERATIONS)
   })
 
-  it('normal HRV plan output is unchanged with iteration cap (regression)', () => {
+  it('normal Pattern Breathing plan output is unchanged with iteration cap (regression)', () => {
     // Verify that a well-formed plan produces the same cue sequence as before the cap.
     // The cap must NOT affect normal operation (10 BPM, window=6s produces ~3 cues).
     const normalPlan: BreathingPlan = {

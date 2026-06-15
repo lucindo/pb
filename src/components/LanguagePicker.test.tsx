@@ -65,15 +65,15 @@ describe('LanguagePicker — real radiogroup picker (Phase 19)', () => {
     expect(parsed).toBe('pt-BR')
   })
 
-  it('clicking an enabled option dispatches hrv:prefs-changed with detail.key === "locale"', async () => {
+  it('clicking an enabled option dispatches pattern-breathing:prefs-changed with detail.key === "locale"', async () => {
     seedLocale('en')
     const user = userEvent.setup()
     render(<LanguagePicker disabled={false} sectionLabel={EN_STRINGS_FIXTURE.appSettings.languageLabel} />)
     const spy = vi.fn()
-    window.addEventListener('hrv:prefs-changed', spy)
+    window.addEventListener('pattern-breathing:prefs-changed', spy)
     const ptBRButton = screen.getByRole('radio', { name: 'Português (Brasil)' })
     await user.click(ptBRButton)
-    window.removeEventListener('hrv:prefs-changed', spy)
+    window.removeEventListener('pattern-breathing:prefs-changed', spy)
     expect(spy).toHaveBeenCalledTimes(1)
     const event = spy.mock.calls[0]?.[0] as CustomEvent<{ key: string; value: string }>
     expect(event.detail.key).toBe('locale')

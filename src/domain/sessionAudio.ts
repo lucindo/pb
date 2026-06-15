@@ -23,7 +23,7 @@ export interface BoundaryAudioOffsets {
  * the window can emit at most 6/1.7 ≈ 4 cues per window (never close to 10_000).
  * 10_000 is therefore a pure defense against degenerate/inconsistent plans
  * (negative or inconsistent phase offsets that prevent normal exit) and can
- * never be reached by any valid HRV plan.
+ * never be reached by any valid Pattern Breathing plan.
  */
 export const MAX_WALK_ITERATIONS = 10_000 as const
 
@@ -86,7 +86,7 @@ export function walkFutureCues(args: {
   // Walk loop: emit one cue per iteration.
   // MAX_WALK_ITERATIONS hard cap: a degenerate plan (cycleSec>0, inconsistent phase
   // offsets, targetSec===undefined) cannot hang the rAF tick. The cap cannot be reached by
-  // any valid HRV plan — see MAX_WALK_ITERATIONS comment above.
+  // any valid Pattern Breathing plan — see MAX_WALK_ITERATIONS comment above.
   for (let _i = 0; _i < MAX_WALK_ITERATIONS; _i++) {
     // Uniform cycleSec stride — session-elapsed time at the start of this cue
     // (relative to anchor=0).

@@ -51,12 +51,12 @@ function makeSettingsSources(): PracticeSettingsSources {
 }
 
 describe('app practice session view model', () => {
-  it('maps the resonant breathing state to its presentation contract', () => {
+  it('maps the patternBreathing breathing state to its presentation contract', () => {
     const model = createPracticeSessionViewModel({
       breathing: breathingState,
     })
 
-    expect(model.kind).toBe('resonant')
+    expect(model.kind).toBe('patternBreathing')
     expect(model.presentation.shape).toEqual({
       frame,
       leadInDigit: null,
@@ -103,11 +103,11 @@ describe('app install view model', () => {
 })
 
 describe('app practice settings view model', () => {
-  it('returns the resonant settings contract', () => {
-    const resonant = createPracticeSettingsViewModel(makeSettingsSources())
+  it('returns the patternBreathing settings contract', () => {
+    const patternBreathing = createPracticeSettingsViewModel(makeSettingsSources())
 
-    expect(resonant.kind).toBe('resonant')
-    expect(resonant.settings).toBe(DEFAULT_SETTINGS)
+    expect(patternBreathing.kind).toBe('patternBreathing')
+    expect(patternBreathing.settings).toBe(DEFAULT_SETTINGS)
   })
 })
 

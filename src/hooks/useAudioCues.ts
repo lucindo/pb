@@ -98,7 +98,7 @@ export interface UseAudioCues {
    *  underlying source is still the AC clock. */
   audioNow(this: void): number | null
   /** Play the shared session-ending chord — App.tsx calls this on a natural
-   *  HRV completion (parity with the Navi Kriya end cue). No-op if the AC is
+   *  Pattern Breathing completion (parity with the Navi Kriya end cue). No-op if the AC is
    *  unavailable or muted; the engine keeps the AC alive until it rings out. */
   playEndChord(this: void): void
   /** See AudioStatusFlag JSDoc. App view-model reads this to drive

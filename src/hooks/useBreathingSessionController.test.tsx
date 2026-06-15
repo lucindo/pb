@@ -173,7 +173,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   })
 
   // Test 6: timed session renders cleanly through the top-up effect. The trim
-  // boundary itself (the HRV completion boundary) is
+  // boundary itself (the Pattern Breathing completion boundary) is
   // covered behaviorally in sessionAudio.test.ts; this is a render smoke test.
   it('timed session: controller renders through the top-up effect without error', () => {
     const timedSettings = { ...DEFAULT_SETTINGS, durationMinutes: 5 as const }

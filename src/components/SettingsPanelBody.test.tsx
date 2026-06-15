@@ -37,7 +37,7 @@ function renderBody(
         installable={props.installable ?? false}
         onInstall={onInstall}
         stat={props.stat ?? SAMPLE_STAT}
-        practiceName="HRV"
+        practiceName="Pattern Breathing"
         locale="en"
         onResetStats={onResetStats}
       />,

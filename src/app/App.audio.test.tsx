@@ -193,7 +193,7 @@ describe('App — audio cues (Phase 3)', () => {
     expect(screen.getByText('Session complete')).toBeVisible()
     expect(acInstance).not.toBeNull()
 
-    // HRV parity with Navi: completion plays the shared end chord, and the
+    // Pattern Breathing parity with Navi: completion plays the shared end chord, and the
     // engine defers the AudioContext teardown until the chord rings out.
     // Spike 005 retuned the end chord to the ~5s "Warm pad fade", so advance
     // past that longer ring-out window before close() reaches audioCtx.close().
