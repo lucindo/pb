@@ -51,7 +51,7 @@ export interface UseBreathingSessionControllerArgs {
   initialSettings: SessionSettings
   liveCue: CueStyleId
   wakeLock: UseWakeLock
-  /** Optional bypass-silent-mode flag threaded from featureFlags.bypassSilentMode.
+  /** Optional bypass-silent-mode setting threaded from useBypassSilentMode.
    *  Undefined passes through to useAudioCues.start → audioEngine where it coerces
    *  to the backward-compatible default behavior. */
   bypassSilentMode?: boolean

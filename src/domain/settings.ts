@@ -107,6 +107,10 @@ export function isValidLocale(v: unknown): v is LocaleId {
 
 export const DEFAULT_LOCALE: LocaleId = 'en'
 
+// Audio setting: bypass the OS silent switch so cue tones play. Default true
+// preserves the no-silent-mode bypass returning users rely on.
+export const DEFAULT_BYPASS_SILENT_MODE = true
+
 export function isValidBpm(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v) && (BPM_OPTIONS as readonly number[]).includes(v)
 }

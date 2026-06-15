@@ -12,7 +12,6 @@ import type {
   SessionSettings,
   SessionStatus,
 } from '../domain'
-import type { FeatureFlags } from '../featureFlags'
 import type { PersistedStats, PracticeId } from '../storage'
 import {
   getBreathingPresentation,
@@ -99,7 +98,6 @@ export interface AppViewModel {
   uiStrings: UiStrings
   learnContent: LearnContent
   lockedCopy: LockedCopy
-  featureFlags: FeatureFlags
   install: AppInstallViewModel
   navigation: AppNavigationViewModel
   dialogs: AppDialogsViewModel

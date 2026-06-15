@@ -179,27 +179,27 @@ describe('coerceTheme / coerceTimbre / coerceCue / coerceLocale (D-10 per-field)
 describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default true)', () => {
   // Boolean coercer has THREE paths:
   //  (1) raw boolean: persisted JSON re-hydrates true/false verbatim — fast path
-  //  (2) legacy string (parseQueryBoolean): tolerates hand-edited '"true"' / '"off"' envelopes
-  //  (3) anything else: BYPASS_SILENT_MODE_FLAG.defaultValue (true)
+  //  (2) legacy string (parseBooleanString): tolerates hand-edited '"true"' / '"off"' envelopes
+  //  (3) anything else: DEFAULT_BYPASS_SILENT_MODE (true)
   it('returns raw booleans verbatim (raw-boolean fast path)', () => {
     expect(coerceBypassSilentMode(true)).toBe(true)
     expect(coerceBypassSilentMode(false)).toBe(false)
   })
 
-  it("parses legacy true-strings via parseQueryBoolean ('true' / 'on' / '1' / '')", () => {
+  it("parses legacy true-strings ('true' / 'on' / '1' / '')", () => {
     expect(coerceBypassSilentMode('true')).toBe(true)
     expect(coerceBypassSilentMode('on')).toBe(true)
     expect(coerceBypassSilentMode('1')).toBe(true)
     expect(coerceBypassSilentMode('')).toBe(true)
   })
 
-  it("parses legacy false-strings via parseQueryBoolean ('false' / 'off' / '0')", () => {
+  it("parses legacy false-strings ('false' / 'off' / '0')", () => {
     expect(coerceBypassSilentMode('false')).toBe(false)
     expect(coerceBypassSilentMode('off')).toBe(false)
     expect(coerceBypassSilentMode('0')).toBe(false)
   })
 
-  it("falls back to BYPASS_SILENT_MODE_FLAG.defaultValue (true) for unparseable strings", () => {
+  it("falls back to the default (true) for unparseable strings", () => {
     expect(coerceBypassSilentMode('bogus')).toBe(true) // default true
   })
 

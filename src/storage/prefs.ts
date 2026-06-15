@@ -19,6 +19,7 @@ import {
   DEFAULT_TIMBRE,
   DEFAULT_CUE,
   DEFAULT_LOCALE,
+  DEFAULT_BYPASS_SILENT_MODE,
   isValidTheme,
   isValidTimbre,
   isValidCue,
@@ -30,11 +31,6 @@ import {
 } from '../domain/settings'
 
 import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
-
-import {
-  BYPASS_SILENT_MODE_FLAG,
-  parseQueryBoolean,
-} from '../featureFlags'
 
 export interface UserPrefs {
   theme: ThemeId
@@ -49,7 +45,21 @@ export const DEFAULT_PREFS: UserPrefs = {
   timbre: DEFAULT_TIMBRE,
   cue: DEFAULT_CUE,
   locale: DEFAULT_LOCALE,
-  bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // true — see UserPrefs.bypassSilentMode
+  bypassSilentMode: DEFAULT_BYPASS_SILENT_MODE, // true — see UserPrefs.bypassSilentMode
+}
+
+// Boolean-ish string parser for hand-edited / legacy envelopes. Persisted JSON
+// re-hydrates real booleans (the fast path in coerceBypassSilentMode); this only
+// handles the case where the on-disk value is a string. Returns null for
+// anything unrecognized so the caller falls through to its default.
+const TRUE_STRINGS = new Set(['', '1', 'on', 't', 'true', 'y', 'yes', 'enable', 'enabled'])
+const FALSE_STRINGS = new Set(['0', 'off', 'f', 'false', 'n', 'no', 'disable', 'disabled'])
+
+function parseBooleanString(raw: string): boolean | null {
+  const normalized = raw.trim().toLowerCase()
+  if (TRUE_STRINGS.has(normalized)) return true
+  if (FALSE_STRINGS.has(normalized)) return false
+  return null
 }
 
 export function coerceTheme(raw: unknown): ThemeId {
@@ -90,17 +100,17 @@ export function coerceLocale(raw: unknown): LocaleId {
   return isValidLocale(raw) ? raw : DEFAULT_LOCALE
 }
 
-// Boolean coercer: parser reused from featureFlags.ts so the alias table stays
-// in one place. Persisted JSON re-hydrates true/false as actual booleans (fast
-// path), then falls through to parseQueryBoolean for legacy/hand-edited string
-// envelopes. Default is true — preserves the no-silent-mode bypass users rely on.
+// Boolean coercer: persisted JSON re-hydrates true/false as actual booleans
+// (fast path), then falls through to parseBooleanString for legacy/hand-edited
+// string envelopes. Default is true — preserves the no-silent-mode bypass users
+// rely on.
 export function coerceBypassSilentMode(raw: unknown): boolean {
   if (typeof raw === 'boolean') return raw
   if (typeof raw === 'string') {
-    const parsed = parseQueryBoolean(raw)
+    const parsed = parseBooleanString(raw)
     if (parsed !== null) return parsed
   }
-  return BYPASS_SILENT_MODE_FLAG.defaultValue
+  return DEFAULT_BYPASS_SILENT_MODE
 }
 
 export function coercePrefs(raw: unknown): UserPrefs {

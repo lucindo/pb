@@ -4,7 +4,7 @@ import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { useBreathingSessionController } from '../hooks/useBreathingSessionController'
-import { useFeatureFlags } from '../hooks/useFeatureFlags'
+import { useBypassSilentMode } from '../hooks/useBypassSilentMode'
 import { useFavicon } from '../hooks/useFavicon'
 import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
 import { useLocale } from '../hooks/useLocale'
@@ -47,13 +47,13 @@ export function useAppViewModel(): AppViewModel {
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt()
   const { cue: liveCue } = useVisualCue()
   const { locale, uiStrings } = useLocale()
-  const featureFlags = useFeatureFlags()
+  const { bypassSilentMode } = useBypassSilentMode()
 
   const breathing = useBreathingSessionController({
     initialSettings: initialPractices.resonant.settings,
     liveCue,
     wakeLock,
-    bypassSilentMode: featureFlags.bypassSilentMode,
+    bypassSilentMode,
   })
 
   const controlsDisabled = breathing.inSessionView
@@ -171,7 +171,6 @@ export function useAppViewModel(): AppViewModel {
     uiStrings,
     learnContent: LEARN_CONTENT[locale],
     lockedCopy: LOCKED_COPY[locale],
-    featureFlags,
     install,
     navigation: { ...appNavigation, onStatsOpen },
     dialogs: { endSessionDialogs },
