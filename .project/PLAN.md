@@ -12,28 +12,26 @@ base, then build pattern-breathing on the surviving core breathing engine.
 - [x] Collapse the 3-way practice abstraction to a single HRV practice (switcher UI gone)
 - [x] Remove dead Stretch/Navi Kriya bilingual copy + parity tests
 - [x] Refresh `.project/PROJECT.md` to current single-practice shape; drop stale Stretch `SPEC.md`
-- [ ] Collapse vestigial single-practice scaffolding (in progress, /ds-step-mode) — see Open questions
+- [x] Collapse vestigial single-practice scaffolding (5 steps under /ds-step-mode)
 - [ ] (Pending user input) Receive remaining "things to remove" toward lean state
 - [ ] (Pending user input) Implement pattern-breathing functionality
 
 ## Now
 
-**State** — On branch `refactor/strip-to-pattern-breathing`. Stretch + Navi Kriya
-fully removed; app is a single HRV/resonant timer. Two commits landed
-(`e9c3bca`, `3e9e8c1`). All gates green: `tsc -b`, `eslint`, 1009 vitest tests,
-`vite build`. Core breathing pipeline (breathingPlan → sessionMath/sessionAudio →
-useSessionEngine → useBreathingSessionController) is simplified and clean.
+**State** — On branch `refactor/strip-to-pattern-breathing`. App is a single
+HRV/resonant timer; the vestigial single-practice scaffolding is now collapsed.
+Six commits this session (`4bb8f9b` docs → `77c949b`): removed dead `switcherIcon`
+flag, collapsed the redundant audio view-model seam, renamed `nkCueSynth` →
+`boundaryCueSynth`, made `scheduleImpl` required on the audio session clock, and
+dropped the unused active-practice storage accessors. All gates green: `tsc -b`,
+`eslint`, 993 vitest tests. `.project/PROJECT.md` is current; nothing pushed.
 
-**Next** — User approved the vestigial-scaffolding collapse (PLAN item 3), to run
-under /ds-step-mode. Pattern-breathing spec is deferred (user will define later).
+**Next** — Define the pattern-breathing spec, then start implementing it on the
+lean breathing core. No spec exists yet (user to provide).
 
 **Open questions**
-- Vestigial-scaffolding collapse candidates: storage `PracticeId` single-value
-  indirection + unused `load/saveActivePractice`; rename `nkCueSynth.ts` (now HRV
-  lead-in tick + end chord only); single-use dual-AC seam in `sessionClock` with
-  stale NK comments; `PracticeControlsView` two-identical-audio-props; the
-  `switcherIcon` feature flag whose only consumer (PracticeToggle) was deleted — its
-  AdvancedPage toggle is now a no-op.
-- What is the concrete pattern-breathing spec (e.g. user-defined box/custom
-  inhale–hold–exhale–hold patterns)? Deferred — user will define later. The old
-  Stretch `SPEC.md` was removed (it specced a deleted practice, not this).
+- Concrete pattern-breathing spec — e.g. user-defined box / custom
+  inhale–hold–exhale–hold patterns? Not yet defined; user will provide.
+- Optional leftover: the write-only `activePractice` envelope field + its migration
+  seeding survive for schema stability (no longer read in production). Retire only
+  via a dedicated storage-migration pass if wanted — out of scope for the collapse.
