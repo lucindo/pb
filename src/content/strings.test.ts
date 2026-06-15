@@ -95,27 +95,19 @@ describe('Phase 30 practice string keys', () => {
   })
 })
 
-describe('Phase 48 appearance.* and theme rename', () => {
-  it('renames appSettings.sections.appearance to appSettings.sections.theme in EN and PT-BR', () => {
-    expect(UI_STRINGS.en.appSettings.sections.theme).toBe('Theme')
-    expect(UI_STRINGS['pt-BR'].appSettings.sections.theme).toBe('Tema')
-    // The old key must be fully gone from the EN catalog
-    expect(
-      (UI_STRINGS.en.appSettings.sections as Record<string, unknown>).appearance,
-    ).toBeUndefined()
+describe('consolidated settings sections', () => {
+  it('exposes the System / Sound / Statistics / About section labels in every locale', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      const sections = UI_STRINGS[locale].appSettings.sections
+      for (const key of ['system', 'sound', 'statistics', 'about'] as const) {
+        expect(sections[key].length).toBeGreaterThan(0)
+      }
+    }
   })
 
-  it('declares PT-BR advanced.* draft values as non-empty strings (I18N-02)', () => {
-    const ptBR = UI_STRINGS['pt-BR'].advanced
-    expect(typeof ptBR.title).toBe('string')
-    expect(ptBR.title.length).toBeGreaterThan(0)
-    expect(typeof ptBR.backChevron).toBe('string')
-    expect(ptBR.backChevron.length).toBeGreaterThan(0)
-    expect(typeof ptBR.rightChevronAriaOnSettings).toBe('string')
-    expect(ptBR.rightChevronAriaOnSettings.length).toBeGreaterThan(0)
-    expect(typeof ptBR.sections.behavior).toBe('string')
-    expect(ptBR.sections.behavior.length).toBeGreaterThan(0)
-    expect(typeof ptBR.bypassSilentMode.label).toBe('string')
-    expect(ptBR.bypassSilentMode.label.length).toBeGreaterThan(0)
+  it('carries the bypass-silent-mode label under appSettings in every locale', () => {
+    for (const locale of LOCALE_OPTIONS) {
+      expect(UI_STRINGS[locale].appSettings.bypassSilentMode.label.length).toBeGreaterThan(0)
+    }
   })
 })

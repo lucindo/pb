@@ -6,7 +6,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { UI_STRINGS } from '../../content/strings'
 import { UiStringsProvider } from '../../hooks/useUiStringsContext'
 import { AppSettingsPage } from './AppSettingsPage'
-import type { ReturningFrom } from '../useAppNavigation'
+import type { PersistedStats } from '../../storage'
+
+const SAMPLE_STAT: PersistedStats = {
+  totalSessions: 0,
+  totalElapsedSeconds: 0,
+  lastSessionAtMs: null,
+  lastSessionDurationSeconds: 0,
+}
 
 function renderPage(
   props: Partial<{
@@ -15,16 +22,12 @@ function renderPage(
     isStandalone: boolean
     installable: boolean
     onInstall: () => Promise<void>
-    onAdvancedOpen: () => void
-    onStatsOpen: () => void
-    returningFrom: ReturningFrom
+    onResetStats: () => void
   }> = {},
 ) {
   const onBack = props.onBack ?? vi.fn()
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
-  const onAdvancedOpen = props.onAdvancedOpen ?? vi.fn()
-  const onStatsOpen = props.onStatsOpen ?? vi.fn()
-  const returningFrom = props.returningFrom ?? null
+  const onResetStats = props.onResetStats ?? vi.fn()
   const utils = render(
     <UiStringsProvider value={UI_STRINGS.en}>
       <AppSettingsPage
@@ -33,13 +36,14 @@ function renderPage(
         installable={props.installable ?? false}
         onInstall={onInstall}
         onBack={onBack}
-        onAdvancedOpen={onAdvancedOpen}
-        onStatsOpen={onStatsOpen}
-        returningFrom={returningFrom}
+        stat={SAMPLE_STAT}
+        practiceName="HRV"
+        locale="en"
+        onResetStats={onResetStats}
       />
     </UiStringsProvider>,
   )
-  return { ...utils, onBack, onInstall, onAdvancedOpen, onStatsOpen }
+  return { ...utils, onBack, onInstall, onResetStats }
 }
 
 describe('AppSettingsPage', () => {
@@ -60,11 +64,11 @@ describe('AppSettingsPage', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('Statistics row invokes onStatsOpen', async () => {
-    const user = userEvent.setup()
-    const { onStatsOpen } = renderPage()
-    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.statsRow }))
-    expect(onStatsOpen).toHaveBeenCalledTimes(1)
+  it('renders the inline Statistics heading (no sub-page navigation)', () => {
+    renderPage()
+    expect(
+      screen.getByRole('heading', { level: 2, name: UI_STRINGS.en.appSettings.sections.statistics }),
+    ).toBeInTheDocument()
   })
 
   it('renders three picker radiogroups (Theme / Timbre / Language)', () => {
@@ -91,26 +95,8 @@ describe('AppSettingsPage', () => {
     expect(screen.getByText(UI_STRINGS.en.install.settingsLabel)).toBeInTheDocument()
   })
 
-  it('focuses the back button on mount when returningFrom=null', () => {
-    renderPage({ returningFrom: null })
+  it('focuses the back button on mount', () => {
+    renderPage()
     expect(screen.getByRole('button', { name: UI_STRINGS.en.appSettings.close })).toHaveFocus()
-  })
-
-  it('focuses the right-chevron on mount when returningFrom=advanced', () => {
-    renderPage({ returningFrom: 'advanced' })
-    expect(
-      screen.getByRole('button', { name: UI_STRINGS.en.advanced.rightChevronAriaOnSettings }),
-    ).toHaveFocus()
-  })
-
-  it('renders the right-chevron and invokes onAdvancedOpen when clicked', async () => {
-    const user = userEvent.setup()
-    const { onAdvancedOpen } = renderPage()
-    const chevron = screen.getByRole('button', {
-      name: UI_STRINGS.en.advanced.rightChevronAriaOnSettings,
-    })
-    expect(chevron).toBeInTheDocument()
-    await user.click(chevron)
-    expect(onAdvancedOpen).toHaveBeenCalledTimes(1)
   })
 })

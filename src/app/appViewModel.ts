@@ -1,7 +1,7 @@
 import type { LEARN_CONTENT } from '../content/learnContent'
 import type { LOCKED_COPY } from '../content/lockedCopy'
 import type { UiStrings } from '../content/strings'
-import type { AppScreen, ReturningFrom } from './useAppNavigation'
+import type { AppScreen } from './useAppNavigation'
 import type { AudioStatusFlag } from '../audio/audioStatus'
 import type {
   BreathingSessionPhase,
@@ -38,14 +38,9 @@ export interface AppEndSessionDialogViewModel {
 
 export interface AppNavigationViewModel {
   appScreen: AppScreen
-  returningFrom: ReturningFrom
   onLearnOpen(this: void): void
   onSettingsOpen(this: void): void
-  onAdvancedOpen(this: void): void
-  onStatsOpen(this: void): void
   onBackToPractice(this: void): void
-  onBackFromAdvanced(this: void): void
-  onBackFromStats(this: void): void
 }
 
 export interface AppDialogsViewModel {
@@ -83,8 +78,9 @@ export type AppPracticeSettingsViewModel = {
   onExtendDuration(this: void, durationMinutes: number): void
 }
 
-// Per-practice stats snapshot held in app state and surfaced on the Stats page.
-// Refreshed from disk when the page opens and updated optimistically on reset.
+// Per-practice stats snapshot held in app state and surfaced inline on the
+// Settings page. Refreshed from disk when Settings opens and updated
+// optimistically on reset.
 export type PracticeStatsMap = Readonly<Record<PracticeId, PersistedStats>>
 
 export interface AppViewModel {

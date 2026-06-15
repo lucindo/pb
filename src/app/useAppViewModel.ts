@@ -60,14 +60,15 @@ export function useAppViewModel(): AppViewModel {
   })
 
   // Stats are written to disk by the session controller but not mirrored into
-  // this state, so re-read on Stats-page entry to reflect the latest session.
-  // The page is unreachable mid-session, so a read-on-open is sufficient.
+  // this state, so re-read when Settings opens (stats render inline there) to
+  // reflect the latest session. Settings is unreachable mid-session, so a
+  // read-on-open is sufficient.
   const [stats, setStats] = useState<PracticeStatsMap>(() => snapshotStats(initialPractices))
-  const navOnStatsOpen = appNavigation.onStatsOpen
-  const onStatsOpen = useCallback((): void => {
+  const navOnSettingsOpen = appNavigation.onSettingsOpen
+  const onSettingsOpen = useCallback((): void => {
     setStats(snapshotStats(loadPractices()))
-    navOnStatsOpen()
-  }, [navOnStatsOpen])
+    navOnSettingsOpen()
+  }, [navOnSettingsOpen])
   const onResetPracticeStats = useCallback((practice: PracticeId): void => {
     resetPracticeStats(practice)
     // Optimistic RAM update — the disk write is fire-and-forget (quota / ITP).
@@ -167,7 +168,7 @@ export function useAppViewModel(): AppViewModel {
     learnContent: LEARN_CONTENT[locale],
     lockedCopy: LOCKED_COPY[locale],
     install,
-    navigation: { ...appNavigation, onStatsOpen },
+    navigation: { ...appNavigation, onSettingsOpen },
     dialogs: { endSessionDialogs },
     stats,
     onResetPracticeStats,

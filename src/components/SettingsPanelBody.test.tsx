@@ -1,10 +1,18 @@
 import '@testing-library/jest-dom/vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { UI_STRINGS } from '../content/strings'
+import type { PersistedStats } from '../storage'
 import { SettingsPanelBody } from './SettingsPanelBody'
+
+const SAMPLE_STAT: PersistedStats = {
+  totalSessions: 3,
+  totalElapsedSeconds: 3720, // 1h 2m
+  lastSessionAtMs: null,
+  lastSessionDurationSeconds: 60,
+}
 
 function renderBody(
   props: Partial<{
@@ -13,11 +21,12 @@ function renderBody(
     isStandalone: boolean
     installable: boolean
     onInstall: () => Promise<void>
-    onStatsOpen: () => void
+    onResetStats: () => void
+    stat: PersistedStats
   }> = {},
 ) {
   const onInstall = props.onInstall ?? vi.fn().mockResolvedValue(undefined)
-  const onStatsOpen = props.onStatsOpen ?? vi.fn()
+  const onResetStats = props.onResetStats ?? vi.fn()
   return {
     ...render(
       <SettingsPanelBody
@@ -27,50 +36,38 @@ function renderBody(
         isStandalone={props.isStandalone ?? false}
         installable={props.installable ?? false}
         onInstall={onInstall}
-        onStatsOpen={onStatsOpen}
+        stat={props.stat ?? SAMPLE_STAT}
+        practiceName="HRV"
+        locale="en"
+        onResetStats={onResetStats}
       />,
     ),
     onInstall,
-    onStatsOpen,
+    onResetStats,
   }
 }
 
 const EN = UI_STRINGS.en.appSettings
 
-describe('SettingsPanelBody — J14 sectioning', () => {
-  it('renders the 4 section headings (Theme / Language / Audio / About)', () => {
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+describe('SettingsPanelBody — sectioning', () => {
+  it('renders the 4 section headings (System / Sound / Statistics / About)', () => {
     renderBody()
-    expect(screen.getByRole('heading', { level: 2, name: EN.sections.theme })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: EN.sections.language })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2, name: EN.sections.audio })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.system })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.sound })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: EN.sections.statistics })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: EN.sections.about })).toBeInTheDocument()
   })
 
-  it('renders three pickers (3 radiogroups: Theme + Timbre + Language)', () => {
+  it('renders three pickers (Theme + Timbre + Language)', () => {
     renderBody()
     expect(screen.getAllByRole('radiogroup')).toHaveLength(3)
     expect(screen.getByRole('radiogroup', { name: EN.themeLabel })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: EN.timbreLabel })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: EN.languageLabel })).toBeInTheDocument()
-  })
-
-  it('keeps the Timbre sublabel visible', () => {
-    const { container } = renderBody()
-    const timbreLabel = container.querySelector('#timbre-picker-label')
-    expect(timbreLabel).not.toBeNull()
-    expect(timbreLabel).not.toHaveClass('sr-only')
-  })
-
-  it('hides Theme/Language sublabels visually (Appearance/Language are single-picker sections)', () => {
-    const { container } = renderBody()
-    const themeLabel = container.querySelector('#theme-picker-label')
-    expect(themeLabel).toHaveClass('sr-only')
-    // LanguagePicker no longer carries an id (IN-01) — locate its sublabel
-    // via the radiogroup's accessible name + DOM proximity.
-    const languageGroup = screen.getByRole('radiogroup', { name: EN.languageLabel })
-    const languageLabel = languageGroup.parentElement?.querySelector('p')
-    expect(languageLabel).not.toBeNull()
-    expect(languageLabel).toHaveClass('sr-only')
   })
 
   it('disables all picker radiogroups when inSessionView=true', () => {
@@ -81,17 +78,38 @@ describe('SettingsPanelBody — J14 sectioning', () => {
   })
 })
 
-describe('SettingsPanelBody — Statistics row', () => {
-  it('renders a Statistics row that fires onStatsOpen when clicked', async () => {
-    const user = userEvent.setup()
-    const { onStatsOpen } = renderBody()
-    await user.click(screen.getByRole('button', { name: EN.statsRow }))
-    expect(onStatsOpen).toHaveBeenCalledTimes(1)
+describe('SettingsPanelBody — Sound section', () => {
+  it('renders the Bypass silent mode toggle', () => {
+    renderBody()
+    expect(
+      screen.getByRole('switch', { name: EN.bypassSilentMode.label }),
+    ).toBeInTheDocument()
+  })
+})
+
+describe('SettingsPanelBody — Statistics section', () => {
+  it('renders the session totals from the injected stat', () => {
+    renderBody()
+    const stats = UI_STRINGS.en.stats
+    expect(screen.getByText(stats.fields.sessions)).toBeVisible()
+    expect(screen.getByText('3')).toBeVisible() // totalSessions
+    expect(screen.getByText('1h 2m')).toBeVisible() // 3720s
   })
 
-  it('disables the Statistics row when inSessionView=true', () => {
-    renderBody({ inSessionView: true })
-    expect(screen.getByRole('button', { name: EN.statsRow })).toBeDisabled()
+  it('reset asks for confirmation, and confirming fires onResetStats', async () => {
+    const user = userEvent.setup()
+    const { onResetStats } = renderBody()
+    await user.click(screen.getByRole('button', { name: UI_STRINGS.en.stats.reset }))
+    const dialog = screen.getByRole('dialog')
+    await user.click(
+      within(dialog).getByRole('button', { name: UI_STRINGS.en.stats.resetConfirm.confirm }),
+    )
+    expect(onResetStats).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders the privacy note', () => {
+    renderBody()
+    expect(screen.getByText(UI_STRINGS.en.stats.privacyNote)).toBeInTheDocument()
   })
 })
 
@@ -100,8 +118,8 @@ describe('SettingsPanelBody — About section', () => {
     renderBody()
     expect(screen.getByText(EN.about.versionLabel)).toBeVisible()
     // The version row combines `__APP_VERSION__ · __APP_BUILD_SHA__ ·
-    // __APP_BUILD_DATE__`. Use a regex anchored on the version so test stays
-    // resilient to per-build SHA / date changes.
+    // __APP_BUILD_DATE__`. Use a predicate anchored on the version so the test
+    // stays resilient to per-build SHA / date changes.
     expect(
       screen.getByText((content) => content.startsWith(`${__APP_VERSION__} · `)),
     ).toBeVisible()
@@ -117,7 +135,7 @@ describe('SettingsPanelBody — About section', () => {
   })
 })
 
-describe('SettingsPanelBody — Install affordance (now inside About)', () => {
+describe('SettingsPanelBody — Install affordance (inside About)', () => {
   it('install row absent when installable=false', () => {
     renderBody({ installable: false })
     expect(screen.queryByText(UI_STRINGS.en.install.settingsLabel)).not.toBeInTheDocument()

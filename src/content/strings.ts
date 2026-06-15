@@ -86,15 +86,16 @@ export interface UiStrings {
   readonly appSettings: {
     readonly title: string
     readonly close: string
-    readonly statsRow: string
     readonly themeLabel: string
     readonly timbreLabel: string
     readonly languageLabel: string
+    readonly bypassSilentMode: {
+      readonly label: string
+    }
     readonly sections: {
+      readonly system: string
+      readonly sound: string
       readonly statistics: string
-      readonly theme: string
-      readonly language: string
-      readonly audio: string
       readonly about: string
     }
     readonly about: {
@@ -113,17 +114,6 @@ export interface UiStrings {
       readonly flute: string
     }
   }
-  readonly advanced: {
-    readonly title: string
-    readonly backChevron: string
-    readonly rightChevronAriaOnSettings: string
-    readonly sections: {
-      readonly behavior: string
-    }
-    readonly bypassSilentMode: {
-      readonly label: string
-    }
-  }
   readonly learn: {
     readonly title: string
     readonly close: string
@@ -132,8 +122,6 @@ export interface UiStrings {
     readonly nativeAppsHeading: string
   }
   readonly stats: {
-    readonly title: string
-    readonly back: string
     readonly fields: {
       readonly sessions: string
       readonly totalTime: string
@@ -231,15 +219,14 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     appSettings: {
       title: 'Settings',
       close: 'Close',
-      statsRow: 'View Practices Statistics',
       themeLabel: 'Theme',
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
+      bypassSilentMode: { label: 'Bypass silent mode' },
       sections: {
+        system: 'System',
+        sound: 'Sound',
         statistics: 'Statistics',
-        theme: 'Theme',
-        language: 'Language',
-        audio: 'Feedback',
         about: 'About',
       },
       about: {
@@ -258,13 +245,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         flute: 'Flute',
       },
     },
-    advanced: {
-      title: 'Advanced',
-      backChevron: 'Back to Settings',
-      rightChevronAriaOnSettings: 'Advanced settings',
-      sections: { behavior: 'Behavior' },
-      bypassSilentMode: { label: 'Bypass silent mode' },
-    },
     learn: {
       title: 'About this practice',
       close: 'Close',
@@ -273,8 +253,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nativeAppsHeading: 'Resonant Breathing app',
     },
     stats: {
-      title: 'Statistics',
-      back: 'Back to Settings',
       fields: {
         sessions: 'Sessions',
         totalTime: 'Total time',
@@ -370,16 +348,15 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
     appSettings: {
       title: 'Configurações',
       close: 'Fechar',
-      statsRow: 'Ver Estatísticas das Práticas',
       themeLabel: 'Tema',
       timbreLabel: 'Timbre',
       languageLabel: 'Idioma',
+      bypassSilentMode: { label: 'Ignorar modo silencioso' },
       sections: {
         // TODO: native-speaker review
+        system: 'Sistema',
+        sound: 'Som',
         statistics: 'Estatísticas',
-        theme: 'Tema',
-        language: 'Idioma',
-        audio: 'Feedback',
         about: 'Sobre',
       },
       about: {
@@ -398,17 +375,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         flute: 'Flauta',
       },
     },
-    advanced: {
-      title: 'Avançado',
-      // TODO: native-speaker review
-      backChevron: 'Voltar para Configurações',
-      rightChevronAriaOnSettings: 'Configurações avançadas',
-      sections: {
-        // TODO: native-speaker review
-        behavior: 'Comportamento',
-      },
-      bypassSilentMode: { label: 'Ignorar modo silencioso' },
-    },
     learn: {
       title: 'Sobre esta prática',
       close: 'Fechar',
@@ -417,8 +383,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       nativeAppsHeading: 'App Resonant Breathing',
     },
     stats: {
-      title: 'Estatísticas',
-      back: 'Voltar para Configurações',
       fields: {
         sessions: 'Sessões',
         totalTime: 'Tempo total',

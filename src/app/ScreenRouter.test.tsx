@@ -14,9 +14,6 @@ vi.mock('./pages/LearnPage', () => ({
 vi.mock('./pages/AppSettingsPage', () => ({
   AppSettingsPage: () => <div data-testid="app-settings-page" />,
 }))
-vi.mock('./pages/AdvancedPage', () => ({
-  AdvancedPage: () => <div data-testid="advanced-page" />,
-}))
 
 import { ScreenRouter } from './ScreenRouter'
 
@@ -27,12 +24,9 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
   return {
     navigation: {
       appScreen,
-      returningFrom: null,
       onLearnOpen: () => {},
       onSettingsOpen: () => {},
-      onAdvancedOpen: () => {},
       onBackToPractice: () => {},
-      onBackFromAdvanced: () => {},
     },
     dialogs: {
       endSessionDialogs: [],
@@ -40,8 +34,10 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
     install: { isIOS: false, isStandalone: false, installable: false, onInstall: async () => {} },
     learnContent: {} as AppViewModel['learnContent'],
     lockedCopy: {} as AppViewModel['lockedCopy'],
-    uiStrings: {} as AppViewModel['uiStrings'],
-    activePractice: 'resonant',
+    uiStrings: { practice: { switcher: { resonantName: 'HRV' } } } as AppViewModel['uiStrings'],
+    locale: 'en',
+    stats: { resonant: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: 0 } },
+    onResetPracticeStats: () => {},
   } as unknown as AppViewModel
 }
 
@@ -65,13 +61,5 @@ describe('ScreenRouter', () => {
     expect(screen.getByTestId('app-settings-page')).toBeInTheDocument()
     expect(screen.queryByTestId('practice-screen')).not.toBeInTheDocument()
     expect(screen.queryByTestId('learn-page')).not.toBeInTheDocument()
-  })
-
-  it('renders AdvancedPage when appScreen=advanced', () => {
-    render(<ScreenRouter vm={makeVmForScreen('advanced')} />)
-    expect(screen.getByTestId('advanced-page')).toBeInTheDocument()
-    expect(screen.queryByTestId('practice-screen')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('learn-page')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('app-settings-page')).not.toBeInTheDocument()
   })
 })

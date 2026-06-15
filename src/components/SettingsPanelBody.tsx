@@ -1,35 +1,42 @@
-import { useState, type ReactElement, type ReactNode, type Ref } from 'react'
+import { useState, type ReactElement, type ReactNode } from 'react'
 
 import type { UiStrings } from '../content/strings'
-import { ChevronRightIcon } from './icons'
+import type { LocaleId } from '../domain'
+import type { PersistedStats } from '../storage'
+import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
 import { IosInstallSteps } from './IosInstallSteps'
 import { LanguagePicker } from './LanguagePicker'
 import { SectionCard } from './primitives/SectionCard'
 import { SettingsSectionHeader } from './SettingsSectionHeader'
+import { SettingsStatsSection } from './SettingsStatsSection'
+import { SettingsToggleRow } from './SettingsToggleRow'
 import { ThemePicker } from './ThemePicker'
 import { TimbrePicker } from './TimbrePicker'
 
-// Body of the Settings surface — pickers + install row + about. Consumed by
-// AppSettingsPage. Excludes the title and back affordance — those belong
-// to the surrounding page chrome (TopAppBar).
+// Body of the Settings surface — one page, four sections plus a privacy note.
+// Consumed by AppSettingsPage; excludes the title + back affordance, which
+// belong to the surrounding page chrome (TopAppBar).
 //
-// Structured into 4 sections: Appearance / Language / Audio / About.
-// Each section is a self-contained card (border-soft + surface + 20px radius).
-// Install lives inside About. The "Subtle haptics" toggle from the design
-// prototype is intentionally omitted — no haptics in the app domain.
+//   System      — Theme · Language
+//   Sound       — Timbre · Bypass silent mode
+//   Statistics  — inline session totals + reset
+//   About       — version · source · install
+//   (privacy note rendered below About)
 
 const GITHUB_URL = 'https://github.com/lucindo/hrv'
 
 export interface SettingsPanelBodyProps {
   inSessionView: boolean
-  strings: Pick<UiStrings, 'appSettings' | 'install'>
+  strings: Pick<UiStrings, 'appSettings' | 'install' | 'stats'>
   isIOS: boolean
   isStandalone: boolean
   installable: boolean
   onInstall(this: void): Promise<void>
-  onStatsOpen(this: void): void
-  // Focused when returning from the Stats sub-page (a11y focus restoration).
-  statsRowRef?: Ref<HTMLButtonElement>
+  // Inline Statistics block.
+  stat: PersistedStats
+  practiceName: string
+  locale: LocaleId
+  onResetStats(this: void): void
 }
 
 function SettingsInstallSection({
@@ -109,61 +116,62 @@ export function SettingsPanelBody({
   isStandalone,
   installable,
   onInstall,
-  onStatsOpen,
-  statsRowRef,
+  stat,
+  practiceName,
+  locale,
+  onResetStats,
 }: SettingsPanelBodyProps): ReactElement {
+  const [bypassSilentMode, setBypassSilentMode] = usePreferenceChoice('bypassSilentMode')
   const showInstallRow = installable && !isStandalone
   return (
     <div>
-      {/* Statistics — opens the dedicated stats sub-page */}
-      <SettingsSectionHeader label={strings.appSettings.sections.statistics} />
-      <SectionCard padding="4px 8px">
-        <button
-          ref={statsRowRef}
-          type="button"
-          disabled={inSessionView}
-          onClick={onStatsOpen}
-          className="flex min-h-[44px] w-full items-center justify-between rounded-2xl px-2 text-left transition hover:bg-[var(--color-breathing-bg-soft)] active:bg-[var(--color-breathing-bg-soft)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-breathing-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          <span className="text-sm font-medium text-[var(--color-breathing-text)]">
-            {strings.appSettings.statsRow}
-          </span>
-          <span aria-hidden="true" className="text-[var(--color-breathing-muted)]">
-            <ChevronRightIcon />
-          </span>
-        </button>
+      {/* System */}
+      <SettingsSectionHeader label={strings.appSettings.sections.system} />
+      <SectionCard padding="16px">
+        <div className="grid gap-4">
+          <ThemePicker
+            disabled={inSessionView}
+            strings={strings.appSettings.themes}
+            sectionLabel={strings.appSettings.themeLabel}
+          />
+          <LanguagePicker
+            disabled={inSessionView}
+            sectionLabel={strings.appSettings.languageLabel}
+          />
+        </div>
       </SectionCard>
 
-      {/* Appearance */}
-      <SettingsSectionHeader label={strings.appSettings.sections.theme} />
+      {/* Sound */}
+      <SettingsSectionHeader label={strings.appSettings.sections.sound} />
       <SectionCard padding="16px">
-        <ThemePicker
-          disabled={inSessionView}
-          strings={strings.appSettings.themes}
-          sectionLabel={strings.appSettings.themeLabel}
-          sectionLabelHidden
-        />
+        <div className="grid gap-4">
+          <TimbrePicker
+            disabled={inSessionView}
+            strings={strings.appSettings.timbres}
+            sectionLabel={strings.appSettings.timbreLabel}
+          />
+          {/* Changing this toggle mid-session does NOT rebuild the audio engine. The
+              flag is read at engine construction time (Start click / reconstruct); a
+              toggle change applies on the next engine construction. */}
+          <SettingsToggleRow
+            label={strings.appSettings.bypassSilentMode.label}
+            ariaLabel={strings.appSettings.bypassSilentMode.label}
+            checked={bypassSilentMode}
+            onChange={setBypassSilentMode}
+            disabled={inSessionView}
+          />
+        </div>
       </SectionCard>
 
-      {/* Language */}
-      <SettingsSectionHeader label={strings.appSettings.sections.language} />
-      <SectionCard padding="16px">
-        <LanguagePicker
-          disabled={inSessionView}
-          sectionLabel={strings.appSettings.languageLabel}
-          sectionLabelHidden
-        />
-      </SectionCard>
-
-      {/* Audio */}
-      <SettingsSectionHeader label={strings.appSettings.sections.audio} />
-      <SectionCard padding="16px">
-        <TimbrePicker
-          disabled={inSessionView}
-          strings={strings.appSettings.timbres}
-          sectionLabel={strings.appSettings.timbreLabel}
-        />
-      </SectionCard>
+      {/* Statistics */}
+      <SettingsStatsSection
+        sectionLabel={strings.appSettings.sections.statistics}
+        stat={stat}
+        strings={strings.stats}
+        locale={locale}
+        practiceName={practiceName}
+        onReset={onResetStats}
+      />
 
       {/* About */}
       <SettingsSectionHeader label={strings.appSettings.sections.about} />
@@ -213,6 +221,11 @@ export function SettingsPanelBody({
           )}
         </div>
       </SectionCard>
+
+      {/* Privacy note — applies to the inline stats above; sits below About. */}
+      <p className="mt-6 text-center text-xs leading-relaxed text-[var(--color-breathing-muted)]">
+        {strings.stats.privacyNote}
+      </p>
     </div>
   )
 }

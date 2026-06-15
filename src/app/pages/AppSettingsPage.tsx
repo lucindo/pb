@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, type ReactElement } from 'react'
 
-import { ChevronBackIcon, ChevronRightIcon } from '../../components/icons'
+import { ChevronBackIcon } from '../../components/icons'
 import { SettingsPanelBody } from '../../components/SettingsPanelBody'
 import { IconButton } from '../../components/primitives/IconButton'
 import { PageShell } from '../../components/primitives/PageShell'
 import { TopAppBar } from '../../components/primitives/TopAppBar'
 import { useUiStrings } from '../../hooks/useUiStringsContext'
-import type { ReturningFrom } from '../useAppNavigation'
+import type { LocaleId } from '../../domain'
+import type { PersistedStats } from '../../storage'
 
 export interface AppSettingsPageProps {
   isIOS: boolean
@@ -14,26 +15,27 @@ export interface AppSettingsPageProps {
   installable: boolean
   onInstall(this: void): Promise<void>
   onBack(this: void): void
-  onAdvancedOpen(this: void): void
-  onStatsOpen(this: void): void
-  returningFrom: ReturningFrom
+  stat: PersistedStats
+  practiceName: string
+  locale: LocaleId
+  onResetStats(this: void): void
 }
 
-/** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron
- *  in the leading slot, right-chevron in the trailing slot) + Card-wrapped
- *  SettingsPanelBody. `inSessionView` is hard-coded false: navigation to this
- *  page is gated by `controlsDisabled` in useAppNavigation, so the user can
- *  only be here when no session is active. Focuses the back button on mount
- *  (fresh entry) or the right-chevron (returningFrom='advanced'). */
+/** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron in
+ *  the leading slot) + SettingsPanelBody. `inSessionView` is hard-coded false:
+ *  navigation here is gated by `controlsDisabled` in useAppNavigation, so the
+ *  user can only be here when no session is active. Focuses the back button on
+ *  mount. */
 export function AppSettingsPage({
   isIOS,
   isStandalone,
   installable,
   onInstall,
   onBack,
-  onAdvancedOpen,
-  onStatsOpen,
-  returningFrom,
+  stat,
+  practiceName,
+  locale,
+  onResetStats,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
   // Memoize the subset wrapper so SettingsPanelBody and any future React.memo
@@ -42,29 +44,15 @@ export function AppSettingsPage({
     () => ({
       appSettings: allStrings.appSettings,
       install: allStrings.install,
-      advanced: allStrings.advanced,
+      stats: allStrings.stats,
     }),
     [allStrings],
   )
   const backButtonRef = useRef<HTMLButtonElement>(null)
-  const chevronButtonRef = useRef<HTMLButtonElement>(null)
-  const statsRowRef = useRef<HTMLButtonElement>(null)
 
-  // Assumption: ScreenRouter unmounts/remounts this page on every navigation, so
-  // this effect only fires on fresh mount with a stable `returningFrom` value —
-  // it does not steal focus mid-session. If the router is ever changed to keep
-  // this page mounted across the appearance ↔ appSettings transition, this
-  // effect needs a one-shot ref guard (track whether the focus call has already
-  // fired this mount, and skip subsequent re-runs).
   useEffect(() => {
-    if (returningFrom === 'stats') {
-      statsRowRef.current?.focus({ preventScroll: true })
-    } else if (returningFrom === 'advanced') {
-      chevronButtonRef.current?.focus({ preventScroll: true })
-    } else {
-      backButtonRef.current?.focus({ preventScroll: true })
-    }
-  }, [returningFrom])
+    backButtonRef.current?.focus({ preventScroll: true })
+  }, [])
 
   return (
     <PageShell>
@@ -78,14 +66,6 @@ export function AppSettingsPage({
             buttonRef={backButtonRef}
           />
         }
-        trailing={
-          <IconButton
-            icon={<ChevronRightIcon />}
-            label={strings.advanced.rightChevronAriaOnSettings}
-            onClick={onAdvancedOpen}
-            buttonRef={chevronButtonRef}
-          />
-        }
       />
       <div className="w-full text-left">
         <SettingsPanelBody
@@ -95,8 +75,10 @@ export function AppSettingsPage({
           isStandalone={isStandalone}
           installable={installable}
           onInstall={onInstall}
-          onStatsOpen={onStatsOpen}
-          statsRowRef={statsRowRef}
+          stat={stat}
+          practiceName={practiceName}
+          locale={locale}
+          onResetStats={onResetStats}
         />
       </div>
     </PageShell>
