@@ -118,12 +118,8 @@ export function useAudioCues(
   onReanchorRequired?: (newAudioAnchor: number) => void,
   onSessionClockReanchored?: (newClockNow: number) => void,
 ): UseAudioCues {
-  // Stable-identity proxy clock. Built ONCE per hook instance via useMemo with
-  // empty deps — the `clock` reference is NEVER rebuilt by setSource(). Store as
-  // a ref to avoid adding proxyMemo to useCallback dep arrays (proxyMemo IS
-  // stable, but adding it would surface as an exhaustive-deps warning because the
-  // rule cannot statically prove a useMemo return is stable). Using a ref as a
-  // stable handle is the cleanest posture.
+  // Stable-identity proxy clock, built once and held via a ref so it stays out of
+  // useCallback dep arrays — exhaustive-deps can't prove a useMemo return is stable.
   const proxyMemo = useMemo(() => createSwappableSessionClock(createWallSessionClock()), [])
   const proxyClock = proxyMemo.clock
   // Stable ref handle: proxyMemoRef.current is always the same useMemo-created object;

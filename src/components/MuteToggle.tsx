@@ -30,10 +30,8 @@ export interface MuteToggleProps {
 }
 
 export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, strings, onToggle }: MuteToggleProps) {
-  // Label priority: unavailable > needsResume > muted/unmuted.
-  // 'unavailable' takes highest priority and outranks needsResume — the hook's
-  // audioStatus state machine makes them mutually exclusive in practice, but this
-  // order is defensive against future state surface changes.
+  // Label priority (defensive — states are mutually exclusive in practice):
+  // unavailable > needsResume > muted/unmuted.
   const label = !audioAvailable
     ? strings.unavailable
     : needsResume

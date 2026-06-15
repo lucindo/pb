@@ -14,10 +14,9 @@ export interface UseAppNavigationArgs {
   closeOnSessionView: boolean
 }
 
-/** Surface-routing state. A single `appScreen` discriminator routed by
- *  `ScreenRouter`. Navigation away from practice is gated by `controlsDisabled`
- *  (no leaving mid-session) and forcibly reset when `closeOnSessionView` becomes
- *  true (session start yanks the user back to the practice surface). */
+/** Owns `appScreen`. Leaving practice is gated by `controlsDisabled` (no
+ *  navigating mid-session); `closeOnSessionView` forces back to 'practice' on
+ *  session start. */
 export function useAppNavigation({
   controlsDisabled,
   closeOnSessionView,
@@ -26,8 +25,7 @@ export function useAppNavigation({
 
   useEffect(() => {
     if (!closeOnSessionView) return
-    // Reason: force navigation back to the practice surface when a session starts;
-    // setState inside effect is intentional — the session-start signal owns this transition.
+    // setState-in-effect is intentional: the session-start signal owns this reset.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppScreen('practice')
   }, [closeOnSessionView])

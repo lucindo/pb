@@ -15,9 +15,8 @@ export interface LearnPageProps {
   onBack(this: void): void
 }
 
-/** Full-page "About this practice" surface. Composes PageShell + TopAppBar
- *  (back chevron in the leading slot) + Card-wrapped LearnPanel. Focuses
- *  the back button on mount so the user always has a known affordance. */
+/** Full-page "About this practice" surface. Focuses the back button on mount
+ *  for a known affordance. */
 export function LearnPage({
   learnContent,
   lockedCopy,

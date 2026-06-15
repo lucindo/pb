@@ -75,8 +75,7 @@ export type AppPracticeSettingsViewModel = {
   onExtendDuration(this: void, durationMinutes: number): void
 }
 
-// Stats snapshot held in app state and surfaced inline on the Settings page.
-// Refreshed from disk when Settings opens and updated optimistically on reset.
+// Stats snapshot: refreshed from disk when Settings opens, updated optimistically on reset.
 
 export interface AppViewModel {
   locale: LocaleId

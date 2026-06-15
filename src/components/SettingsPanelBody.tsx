@@ -150,9 +150,8 @@ export function SettingsPanelBody({
             strings={strings.appSettings.timbres}
             sectionLabel={strings.appSettings.timbreLabel}
           />
-          {/* Changing this toggle mid-session does NOT rebuild the audio engine. The
-              flag is read at engine construction time (Start click / reconstruct); a
-              toggle change applies on the next engine construction. */}
+          {/* The flag is read at engine construction; a mid-session toggle applies
+              only on the next engine construction, not immediately. */}
           <SettingsToggleRow
             label={strings.appSettings.bypassSilentMode.label}
             ariaLabel={strings.appSettings.bypassSilentMode.label}

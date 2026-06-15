@@ -21,11 +21,9 @@ export interface AppSettingsPageProps {
   onResetStats(this: void): void
 }
 
-/** Full-page Settings surface. Composes PageShell + TopAppBar (back chevron in
- *  the leading slot) + SettingsPanelBody. `inSessionView` is hard-coded false:
- *  navigation here is gated by `controlsDisabled` in useAppNavigation, so the
- *  user can only be here when no session is active. Focuses the back button on
- *  mount. */
+/** Full-page Settings surface. `inSessionView` is hard-coded false — navigation
+ *  here is gated by `controlsDisabled`, so no session can be active. Focuses the
+ *  back button on mount. */
 export function AppSettingsPage({
   isIOS,
   isStandalone,
@@ -38,8 +36,7 @@ export function AppSettingsPage({
   onResetStats,
 }: AppSettingsPageProps): ReactElement {
   const allStrings = useUiStrings()
-  // Memoize the subset wrapper so SettingsPanelBody and any future React.memo
-  // wrappers see a stable reference until the locale changes.
+  // Memoized so React.memo consumers see a stable reference until locale changes.
   const strings = useMemo(
     () => ({
       appSettings: allStrings.appSettings,

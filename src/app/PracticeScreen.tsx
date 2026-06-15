@@ -24,11 +24,8 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   const onOpenSettingsSheet = useCallback(() => { setSettingsSheetOpen(true) }, [])
   const onCloseSettingsSheet = useCallback(() => { setSettingsSheetOpen(false) }, [])
 
-  // Auto-close the sheet on the Idle→in-session edge so the modal backdrop
-  // never covers the running orb. The patternBreathing extend-duration affordance
-  // stays reachable by re-tapping the SetupCard while Running. Uses the
-  // setState-during-render pattern (React docs: storing info from previous
-  // renders) to avoid the react-hooks/set-state-in-effect anti-pattern.
+  // setState-during-render (not an effect, per React docs) closes the sheet on the
+  // Idle→in-session edge so the backdrop never covers the running orb.
   const [wasInSession, setWasInSession] = useState(vm.controlsDisabled)
   if (vm.controlsDisabled !== wasInSession) {
     setWasInSession(vm.controlsDisabled)

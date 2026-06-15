@@ -9,11 +9,9 @@ export interface ScreenRouterProps {
   vm: AppViewModel
 }
 
-/** Top-level surface router. Dispatches on `vm.navigation.appScreen`.
- *  End-session modals are rendered from PracticeScreen only; they never
- *  appear over Learn/AppSettings because the closeOnSessionView effect in
- *  useAppNavigation forces appScreen back to 'practice' whenever a session
- *  starts. */
+/** Surface router, dispatching on `vm.navigation.appScreen`. End-session modals
+ *  live on PracticeScreen only — closeOnSessionView forces 'practice' on session
+ *  start, so they never overlay Learn/AppSettings. */
 export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
   switch (vm.navigation.appScreen) {
     case 'learn':
