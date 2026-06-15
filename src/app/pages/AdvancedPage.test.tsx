@@ -56,15 +56,12 @@ describe('AdvancedPage', () => {
     expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
   })
 
-  it('renders three switches for Breathing effect, Switcher icons, and Bypass silent mode', () => {
+  it('renders two switches for Breathing effect and Bypass silent mode', () => {
     renderPage()
     const switches = screen.getAllByRole('switch')
-    expect(switches).toHaveLength(3)
+    expect(switches).toHaveLength(2)
     expect(
       screen.getByRole('switch', { name: UI_STRINGS.en.advanced.breathingEffect.label }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.switcherIcons.label }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('switch', { name: UI_STRINGS.en.advanced.bypassSilentMode.label }),
@@ -109,32 +106,14 @@ describe('AdvancedPage', () => {
     expect(envelope.prefs.orbIdle).toBe('ambient')
   })
 
-  it('writes switcherIcon=true to the prefs envelope when Switcher icons is toggled on', async () => {
-    // Seed with switcherIcon=false
-    window.localStorage.setItem(
-      STATE_KEY,
-      JSON.stringify({ version: 1, prefs: { ...DEFAULT_PREFS, switcherIcon: false } }),
-    )
-    const user = userEvent.setup()
-    renderPage()
-    await user.click(
-      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.switcherIcons.label }),
-    )
-    const raw = window.localStorage.getItem(STATE_KEY)
-    expect(raw).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
-    expect(envelope.prefs.switcherIcon).toBe(true)
-  })
-
   describe('Phase 49.1 D-03 — Bypass silent mode toggle (ADV-03)', () => {
-    it('renders Bypass silent mode toggle below the other two Behavior toggles (ADV-03 order)', () => {
+    it('renders Bypass silent mode toggle below the other Behavior toggle (ADV-03 order)', () => {
       renderPage()
       const switches = screen.getAllByRole('switch')
-      expect(switches).toHaveLength(3)
-      // ADV-03: bypass toggle is the THIRD (below breathingEffect + switcherIcons)
-      // Reason: switches[2] non-null asserted by toHaveLength(3) above.
-      expect(switches[2]).toHaveAccessibleName(UI_STRINGS.en.advanced.bypassSilentMode.label)
+      expect(switches).toHaveLength(2)
+      // ADV-03: bypass toggle is the SECOND (below breathingEffect)
+      // Reason: switches[1] non-null asserted by toHaveLength(2) above.
+      expect(switches[1]).toHaveAccessibleName(UI_STRINGS.en.advanced.bypassSilentMode.label)
     })
 
     it('Bypass silent mode defaults to ON (checked) for a fresh storage state (ADV-03)', () => {

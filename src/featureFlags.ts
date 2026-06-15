@@ -9,7 +9,6 @@ export type OrbIdleBehavior = 'still' | 'ambient'
 export type RingCueStyle = 'outer-inner' | 'progress-arc'
 
 export interface FeatureFlags {
-  switcherIcon: boolean
   breathingShape: BreathingShapeVariant
   orbIdle: OrbIdleBehavior
   ringCue: RingCueStyle
@@ -17,9 +16,9 @@ export interface FeatureFlags {
 }
 
 const TRUE_QUERY_BOOLEAN_VALUES = new Set([
-  // Bare flag (e.g. `?switcherIcon` or `?switcherIcon=`) — common CLI convention
-  // for boolean toggles. URLSearchParams.get returns '' for both forms, so they
-  // are indistinguishable here by design.
+  // Bare flag (e.g. `?bypassSilentMode` or `?bypassSilentMode=`) — common CLI
+  // convention for boolean toggles. URLSearchParams.get returns '' for both
+  // forms, so they are indistinguishable here by design.
   '',
   '1',
   'on',
@@ -60,12 +59,6 @@ function readQueryFeatureFlagOrNull<T>(
   if (rawValue === null) return null
   return spec.parse(rawValue)
 }
-
-export const SWITCHER_ICON_FLAG = {
-  queryParam: 'switcherIcon',
-  defaultValue: false,
-  parse: parseQueryBoolean,
-} satisfies QueryFeatureFlagSpec<boolean>
 
 // Alias provenance — each non-canonical token is intentional and retained
 // for documented call sites; do NOT drop without auditing first.
@@ -133,11 +126,11 @@ export const BYPASS_SILENT_MODE_FLAG = {
   parse: parseQueryBoolean,
 } satisfies QueryFeatureFlagSpec<boolean>
 
-// Per-field 5-way resolver. Resolution order for each field: query > persisted > default,
+// Per-field resolver. Resolution order for each field: query > persisted > default,
 // evaluated independently. `readQueryFeatureFlagOrNull` returns `null` for absent OR
 // unparseable values so the `??` chain falls through to `persisted.<field>` (an invalid
-// query value is not silently masked into the production default). The boolean cases
-// (switcherIcon, bypassSilentMode) are safe because the helper returns `null`, not `false`.
+// query value is not silently masked into the production default). The boolean case
+// (bypassSilentMode) is safe because the helper returns `null`, not `false`.
 // The function stays pure (no I/O) so the App-side hook (useFeatureFlags) owns
 // the storage read and supplies `persisted` from loadPrefs().
 export function readFeatureFlags(
@@ -145,7 +138,6 @@ export function readFeatureFlags(
   persisted: FeatureFlags,
 ): FeatureFlags {
   return {
-    switcherIcon:     readQueryFeatureFlagOrNull(search, SWITCHER_ICON_FLAG)      ?? persisted.switcherIcon,
     breathingShape:   readQueryFeatureFlagOrNull(search, BREATHING_SHAPE_FLAG)    ?? persisted.breathingShape,
     orbIdle:          readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)           ?? persisted.orbIdle,
     ringCue:          readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)           ?? persisted.ringCue,

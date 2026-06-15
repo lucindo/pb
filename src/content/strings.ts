@@ -145,9 +145,6 @@ export interface UiStrings {
     readonly breathingEffect: {
       readonly label: string
     }
-    readonly switcherIcons: {
-      readonly label: string
-    }
     readonly bypassSilentMode: {
       readonly label: string
     }
@@ -300,7 +297,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       orb: { label: 'Orb', options: { halo: 'Halo', minimal: 'Minimal', kuthasta: 'Kuthasta' } },
       ringCue: { label: 'Ring cue', options: { arc: 'Arc', rings: 'Rings' } },
       breathingEffect: { label: 'Breathing effect' },
-      switcherIcons: { label: 'Switcher icons' },
       bypassSilentMode: { label: 'Bypass silent mode' },
     },
     learn: {
@@ -477,10 +473,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       breathingEffect: {
         // TODO: native-speaker review
         label: 'Efeito de respiração',
-      },
-      switcherIcons: {
-        // TODO: native-speaker review
-        label: 'Ícones do alternador',
       },
       bypassSilentMode: { label: 'Ignorar modo silencioso' },
     },

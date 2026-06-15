@@ -149,8 +149,6 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(ptBR.ringCue.options.rings.length).toBeGreaterThan(0)
     expect(typeof ptBR.breathingEffect.label).toBe('string')
     expect(ptBR.breathingEffect.label.length).toBeGreaterThan(0)
-    expect(typeof ptBR.switcherIcons.label).toBe('string')
-    expect(ptBR.switcherIcons.label.length).toBeGreaterThan(0)
     expect(typeof ptBR.bypassSilentMode.label).toBe('string')
     expect(ptBR.bypassSilentMode.label.length).toBeGreaterThan(0)
   })

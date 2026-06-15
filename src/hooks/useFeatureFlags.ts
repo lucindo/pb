@@ -9,8 +9,8 @@
 //   - Cross-tab 'storage' listener (empty deps) — re-reads loadPrefs() on
 //     STATE_KEY writes (event payload discarded).
 //   - Same-tab 'hrv:prefs-changed' listener (empty deps) — re-reads loadPrefs()
-//     when detail.key is one of breathingShape/ringCue/orbIdle/switcherIcon/bypassSilentMode
-//     or undefined (5-key filter + forward-compat undefined branch).
+//     when detail.key is one of breathingShape/ringCue/orbIdle/bypassSilentMode
+//     or undefined (4-key filter + forward-compat undefined branch).
 //   - Per-field 5-way merge via readFeatureFlags(search, slim-projection) —
 //     query > persisted > default.
 //
@@ -67,7 +67,7 @@ export function useFeatureFlags(): FeatureFlags {
     }
   }, [])
 
-  // Same-tab 'hrv:prefs-changed' listener — filter on the 5-key set plus undefined
+  // Same-tab 'hrv:prefs-changed' listener — filter on the 4-key set plus undefined
   // forward-compat. Unrelated keys (theme / timbre / cue / locale) are ignored to
   // avoid spurious re-renders when those pickers fire.
   useEffect(() => {
@@ -83,7 +83,6 @@ export function useFeatureFlags(): FeatureFlags {
         key === 'breathingShape' ||
         key === 'ringCue' ||
         key === 'orbIdle' ||
-        key === 'switcherIcon' ||
         key === 'bypassSilentMode'
       ) {
         setPersisted(loadPrefs())
@@ -95,11 +94,10 @@ export function useFeatureFlags(): FeatureFlags {
     }
   }, [])
 
-  // Per-field 5-way merge: query > persisted > default. The slim projection
-  // strips UserPrefs to the 5 FeatureFlags fields. Inline projection chosen
+  // Per-field merge: query > persisted > default. The slim projection
+  // strips UserPrefs to the 4 FeatureFlags fields. Inline projection chosen
   // over Pick-typed pass-through for clarity at the single call site.
   return readFeatureFlags(search, {
-    switcherIcon:     persisted.switcherIcon,
     breathingShape:   persisted.breathingShape,
     orbIdle:          persisted.orbIdle,
     ringCue:          persisted.ringCue,

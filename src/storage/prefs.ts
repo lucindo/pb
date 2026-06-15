@@ -35,7 +35,6 @@ import {
   BREATHING_SHAPE_FLAG,
   RING_CUE_FLAG,
   ORB_IDLE_FLAG,
-  SWITCHER_ICON_FLAG,
   BYPASS_SILENT_MODE_FLAG,
   parseQueryBoolean,
   type BreathingShapeVariant,
@@ -51,7 +50,6 @@ export interface UserPrefs {
   breathingShape: BreathingShapeVariant
   ringCue: RingCueStyle
   orbIdle: OrbIdleBehavior
-  switcherIcon: boolean
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
 
@@ -63,7 +61,6 @@ export const DEFAULT_PREFS: UserPrefs = {
   breathingShape: BREATHING_SHAPE_FLAG.defaultValue,
   ringCue: RING_CUE_FLAG.defaultValue,
   orbIdle: ORB_IDLE_FLAG.defaultValue,
-  switcherIcon: SWITCHER_ICON_FLAG.defaultValue,
   bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // true — see UserPrefs.bypassSilentMode
 }
 
@@ -126,19 +123,6 @@ export function coerceOrbIdle(raw: unknown): OrbIdleBehavior {
 // Boolean coercer: parser reused from featureFlags.ts so the alias table stays
 // in one place. Persisted JSON re-hydrates true/false as actual booleans (fast
 // path), then falls through to parseQueryBoolean for legacy/hand-edited string
-// envelopes.
-export function coerceSwitcherIcon(raw: unknown): boolean {
-  if (typeof raw === 'boolean') return raw
-  if (typeof raw === 'string') {
-    const parsed = parseQueryBoolean(raw)
-    if (parsed !== null) return parsed
-  }
-  return SWITCHER_ICON_FLAG.defaultValue
-}
-
-// Boolean coercer: parser reused from featureFlags.ts so the alias table stays
-// in one place. Persisted JSON re-hydrates true/false as actual booleans (fast
-// path), then falls through to parseQueryBoolean for legacy/hand-edited string
 // envelopes. Default is true — preserves the no-silent-mode bypass users rely on.
 export function coerceBypassSilentMode(raw: unknown): boolean {
   if (typeof raw === 'boolean') return raw
@@ -150,7 +134,7 @@ export function coerceBypassSilentMode(raw: unknown): boolean {
 }
 
 export function coercePrefs(raw: unknown): UserPrefs {
-  // Prototype-pollution mitigation: we only read nine known keys from the
+  // Prototype-pollution mitigation: we only read eight known keys from the
   // guarded record; `raw` is never spread into a prototype-accessible object.
   const r = asRecord(raw)
   return {
@@ -161,7 +145,6 @@ export function coercePrefs(raw: unknown): UserPrefs {
     breathingShape:   coerceBreathingShape(r.breathingShape),
     ringCue:          coerceRingCue(r.ringCue),
     orbIdle:          coerceOrbIdle(r.orbIdle),
-    switcherIcon:     coerceSwitcherIcon(r.switcherIcon),
     bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode),
   }
 }

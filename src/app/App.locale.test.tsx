@@ -25,7 +25,6 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   breathingShape: 'orb-halo',
   ringCue: 'progress-arc',
   orbIdle: 'ambient',
-  switcherIcon: false,
   bypassSilentMode: true,
 }
 

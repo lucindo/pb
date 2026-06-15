@@ -9,7 +9,6 @@ import {
   coerceBreathingShape,
   coerceRingCue,
   coerceOrbIdle,
-  coerceSwitcherIcon,
   coerceBypassSilentMode,
   loadPrefs,
   savePrefs,
@@ -261,43 +260,6 @@ describe('coerceOrbIdle', () => {
   })
 })
 
-describe('coerceSwitcherIcon (Phase 47 — boolean coercer)', () => {
-  // Boolean coercer has THREE paths:
-  //  (1) raw boolean: persisted JSON re-hydrates true/false verbatim — fast path
-  //  (2) legacy string (parseQueryBoolean): tolerates hand-edited '"true"' / '"off"' envelopes
-  //  (3) anything else: SWITCHER_ICON_FLAG.defaultValue (false)
-  it('returns raw booleans verbatim (raw-boolean fast path)', () => {
-    expect(coerceSwitcherIcon(true)).toBe(true)
-    expect(coerceSwitcherIcon(false)).toBe(false)
-  })
-
-  it("parses legacy true-strings via parseQueryBoolean ('true' / 'on' / '1' / '')", () => {
-    expect(coerceSwitcherIcon('true')).toBe(true)
-    expect(coerceSwitcherIcon('on')).toBe(true)
-    expect(coerceSwitcherIcon('1')).toBe(true)
-    expect(coerceSwitcherIcon('')).toBe(true)
-  })
-
-  it("parses legacy false-strings via parseQueryBoolean ('false' / 'off' / '0')", () => {
-    expect(coerceSwitcherIcon('false')).toBe(false)
-    expect(coerceSwitcherIcon('off')).toBe(false)
-    expect(coerceSwitcherIcon('0')).toBe(false)
-  })
-
-  it("falls back to SWITCHER_ICON_FLAG.defaultValue (false) for unparseable strings", () => {
-    expect(coerceSwitcherIcon('bogus')).toBe(false)
-  })
-
-  it("falls back to false for non-string, non-boolean inputs (null / undefined / numbers / objects)", () => {
-    expect(coerceSwitcherIcon(null)).toBe(false)
-    expect(coerceSwitcherIcon(undefined)).toBe(false)
-    expect(coerceSwitcherIcon(0)).toBe(false)
-    expect(coerceSwitcherIcon(1)).toBe(false)
-    expect(coerceSwitcherIcon({})).toBe(false)
-    expect(coerceSwitcherIcon([])).toBe(false)
-  })
-})
-
 describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default true)', () => {
   // Boolean coercer has THREE paths:
   //  (1) raw boolean: persisted JSON re-hydrates true/false verbatim — fast path
@@ -322,7 +284,7 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
   })
 
   it("falls back to BYPASS_SILENT_MODE_FLAG.defaultValue (true) for unparseable strings", () => {
-    expect(coerceBypassSilentMode('bogus')).toBe(true) // default true (note: flipped from switcherIcon's false)
+    expect(coerceBypassSilentMode('bogus')).toBe(true) // default true
   })
 
   it("falls back to true for non-string, non-boolean inputs (null / undefined / numbers / objects)", () => {
@@ -337,18 +299,17 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
 
 describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
   // Per-field non-throwing coerce-and-fallback: a single corrupt field falls back
-  // to the per-flag default; the other 8 fields are preserved.
+  // to the per-flag default; the other 7 fields are preserved.
   it("breathingShape: 'junk' → 'orb-halo' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'junk',
-      ringCue: 'outer-inner', orbIdle: 'still', switcherIcon: true, bypassSilentMode: true,
+      ringCue: 'outer-inner', orbIdle: 'still', bypassSilentMode: true,
     })
     expect(out.breathingShape).toBe('orb-halo')
     expect(out.theme).toBe('dark')
     expect(out.ringCue).toBe('outer-inner')
     expect(out.orbIdle).toBe('still')
-    expect(out.switcherIcon).toBe(true)
     expect(out.bypassSilentMode).toBe(true)
   })
 
@@ -356,7 +317,7 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'spiritual-eye', ringCue: 'junk',
-      orbIdle: 'still', switcherIcon: true, bypassSilentMode: true,
+      orbIdle: 'still', bypassSilentMode: true,
     })
     expect(out.ringCue).toBe('progress-arc')
     expect(out.breathingShape).toBe('spiritual-eye')
@@ -367,21 +328,9 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
-      orbIdle: 'junk', switcherIcon: true, bypassSilentMode: true,
+      orbIdle: 'junk', bypassSilentMode: true,
     })
     expect(out.orbIdle).toBe('ambient')
-    expect(out.switcherIcon).toBe(true)
-    expect(out.bypassSilentMode).toBe(true)
-  })
-
-  it("switcherIcon: garbage number → false default; other fields preserved", () => {
-    const out = coercePrefs({
-      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
-      orbIdle: 'still', switcherIcon: 42, bypassSilentMode: true,
-    })
-    expect(out.switcherIcon).toBe(false)
-    expect(out.orbIdle).toBe('still')
     expect(out.bypassSilentMode).toBe(true)
   })
 
@@ -389,15 +338,14 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
       breathingShape: 'spiritual-eye', ringCue: 'outer-inner',
-      orbIdle: 'still', switcherIcon: true, bypassSilentMode: 'junk',
+      orbIdle: 'still', bypassSilentMode: 'junk',
     })
     expect(out.bypassSilentMode).toBe(true) // corrupt-field falls back to true (bypassSilentMode default)
     expect(out.orbIdle).toBe('still')
-    expect(out.switcherIcon).toBe(true)
   })
 
-  it("pre-Phase-47 envelope (4 keys only) coerces the 5 new keys to per-flag defaults (PREFS-03)", () => {
-    // A returning user from a pre-Phase-47 build has 4 prefs keys — the 5 new
+  it("pre-Phase-47 envelope (4 keys only) coerces the 4 new keys to per-flag defaults (PREFS-03)", () => {
+    // A returning user from a pre-Phase-47 build has 4 prefs keys — the 4 new
     // keys are undefined and each coercer falls back to the per-flag default.
     // Returning users see the production defaults.
     const out = coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
@@ -408,7 +356,6 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
     expect(out.breathingShape).toBe('orb-halo')
     expect(out.ringCue).toBe('progress-arc')
     expect(out.orbIdle).toBe('ambient')
-    expect(out.switcherIcon).toBe(false)
     expect(out.bypassSilentMode).toBe(true)
   })
 })
@@ -438,7 +385,7 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('round-trips a 9-field UserPrefs with the 5 new flags set to non-default values (Phase 47 + 49.1)', () => {
+  it('round-trips an 8-field UserPrefs with the 4 new flags set to non-default values (Phase 47 + 49.1)', () => {
     // Full-fidelity round-trip: every new field carries a non-default value so the
     // assertion fails if any coercer, the JSON re-hydration, or the envelope-merge drops a value.
     const fullPrefs: UserPrefs = {
@@ -446,7 +393,6 @@ describe('loadPrefs / savePrefs round-trip', () => {
       breathingShape: 'spiritual-eye',
       ringCue: 'outer-inner',
       orbIdle: 'still',
-      switcherIcon: true,
       bypassSilentMode: false, // non-default (default is true)
     }
     savePrefs(fullPrefs)
@@ -485,16 +431,15 @@ describe('loadPrefs / savePrefs round-trip', () => {
 })
 
 describe('DEFAULT_PREFS shape', () => {
-  // The 9-field count guards against adding a pref field without a default. The
+  // The 8-field count guards against adding a pref field without a default. The
   // individual coercer defaults and the kuthasta alias round-trip are covered by
   // their own describe blocks above.
-  it('DEFAULT_PREFS has the 9 contracted fields with their defaults', () => {
+  it('DEFAULT_PREFS has the 8 contracted fields with their defaults', () => {
     expect(DEFAULT_PREFS.breathingShape).toBe('orb-halo')
     expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
-    expect(DEFAULT_PREFS.switcherIcon).toBe(false)
     expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
-    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(9)
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(8)
   })
 })
 

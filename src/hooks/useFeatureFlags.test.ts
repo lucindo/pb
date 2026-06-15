@@ -27,22 +27,22 @@ describe('useFeatureFlags', () => {
   })
 
   it('reads feature flags from the current query string', () => {
-    setSearch('?switcherIcon=off')
+    setSearch('?bypassSilentMode=off')
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.switcherIcon).toBe(false)
+    expect(result.current.bypassSilentMode).toBe(false)
   })
 
   it('updates when browser history navigation changes the query string', () => {
-    setSearch('?switcherIcon=off')
+    setSearch('?bypassSilentMode=off')
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.switcherIcon).toBe(false)
+    expect(result.current.bypassSilentMode).toBe(false)
 
     act(() => {
-      setSearch('?switcherIcon=on')
+      setSearch('?bypassSilentMode=on')
       window.dispatchEvent(new PopStateEvent('popstate'))
     })
 
-    expect(result.current.switcherIcon).toBe(true)
+    expect(result.current.bypassSilentMode).toBe(true)
   })
 
   // Proves the hook seeds its persisted snapshot from loadPrefs() at mount.
@@ -52,13 +52,11 @@ describe('useFeatureFlags', () => {
       breathingShape: 'spiritual-eye',
       ringCue: 'outer-inner',
       orbIdle: 'still',
-      switcherIcon: true,
     })
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.breathingShape).toBe('spiritual-eye')
     expect(result.current.ringCue).toBe('outer-inner')
     expect(result.current.orbIdle).toBe('still')
-    expect(result.current.switcherIcon).toBe(true)
   })
 
   // PREFS-02 integration: query string wins over persisted when they disagree.
@@ -166,20 +164,20 @@ describe('useFeatureFlags', () => {
     expect(result.current.orbIdle).toBe('still')
   })
 
-  it('same-tab hrv:prefs-changed with detail.key === "switcherIcon" re-reads persisted', async () => {
+  it('same-tab hrv:prefs-changed with detail.key === "bypassSilentMode" re-reads persisted', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.switcherIcon).toBe(false)
+    expect(result.current.bypassSilentMode).toBe(true)
 
-    seedPrefs({ ...DEFAULT_PREFS, switcherIcon: true })
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'switcherIcon', value: true } }),
+        new CustomEvent('hrv:prefs-changed', { detail: { key: 'bypassSilentMode', value: false } }),
       )
     })
 
-    expect(result.current.switcherIcon).toBe(true)
+    expect(result.current.bypassSilentMode).toBe(false)
   })
 
   // Negative: unrelated 'theme' key MUST NOT trigger a re-read.

@@ -22,7 +22,6 @@ export interface AdvancedPageProps {
 export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
   const strings = useUiStrings().advanced
   const [orbIdle, setOrbIdle] = usePreferenceChoice('orbIdle')
-  const [switcherIcon, setSwitcherIcon] = usePreferenceChoice('switcherIcon')
   const [bypassSilentMode, setBypassSilentMode] = usePreferenceChoice('bypassSilentMode')
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -71,12 +70,6 @@ export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
             onChange={(next) => {
               setOrbIdle(next ? 'ambient' : 'still')
             }}
-          />
-          <SettingsToggleRow
-            label={strings.switcherIcons.label}
-            ariaLabel={strings.switcherIcons.label}
-            checked={switcherIcon}
-            onChange={setSwitcherIcon}
           />
           {/* Changing this toggle mid-session does NOT rebuild the audio engine. The flag
               is read at engine construction time (Start click / reconstruct); a toggle

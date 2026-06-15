@@ -44,18 +44,18 @@ describe('usePreferenceChoice', () => {
   })
 
   it('works for boolean-typed fields (type-erased generic, not just enum strings)', () => {
-    seedPrefs({ ...DEFAULT_PREFS, switcherIcon: false })
-    const { result } = renderHook(() => usePreferenceChoice('switcherIcon'))
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
+    const { result } = renderHook(() => usePreferenceChoice('bypassSilentMode'))
 
     act(() => {
       result.current[1](true)
     })
 
     expect(result.current[0]).toBe(true)
-    expect(readPrefs().switcherIcon).toBe(true)
+    expect(readPrefs().bypassSilentMode).toBe(true)
   })
 
-  it('preserves all other prefs fields — envelope merge contract (9-field UserPrefs)', () => {
+  it('preserves all other prefs fields — envelope merge contract (8-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
@@ -64,7 +64,6 @@ describe('usePreferenceChoice', () => {
       breathingShape: 'spiritual-eye',
       ringCue: 'progress-arc',
       orbIdle: 'still',
-      switcherIcon: true,
       bypassSilentMode: true,
     })
     const { result } = renderHook(() => usePreferenceChoice('ringCue'))
@@ -81,7 +80,6 @@ describe('usePreferenceChoice', () => {
     expect(prefs.locale).toBe('pt-BR')
     expect(prefs.breathingShape).toBe('spiritual-eye')
     expect(prefs.orbIdle).toBe('still')
-    expect(prefs.switcherIcon).toBe(true)
     expect(prefs.bypassSilentMode).toBe(true)
   })
 

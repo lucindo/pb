@@ -5,7 +5,6 @@ import {
   BYPASS_SILENT_MODE_FLAG,
   ORB_IDLE_FLAG,
   RING_CUE_FLAG,
-  SWITCHER_ICON_FLAG,
   parseQueryBoolean,
   readFeatureFlags,
   type FeatureFlags,
@@ -15,7 +14,6 @@ import {
 // readFeatureFlags(search, persisted) resolver. Because this snapshot equals
 // the production defaults, every existing single-flag assertion stays byte-identical.
 const DEFAULT_PERSISTED: FeatureFlags = {
-  switcherIcon: false,
   breathingShape: 'orb-halo',
   orbIdle: 'ambient',
   ringCue: 'progress-arc',
@@ -50,28 +48,11 @@ describe('parseQueryBoolean', () => {
 describe('readFeatureFlags', () => {
   it('returns defaults for empty search', () => {
     expect(readFeatureFlags('', DEFAULT_PERSISTED)).toEqual({
-      switcherIcon: false,
       breathingShape: 'orb-halo',
       orbIdle: 'ambient',
       ringCue: 'progress-arc',
       bypassSilentMode: true,
     })
-  })
-
-  it('enables switcher icons for on values', () => {
-    expect(readFeatureFlags('?switcherIcon=1', DEFAULT_PERSISTED).switcherIcon).toBe(true)
-    expect(readFeatureFlags('?switcherIcon=true', DEFAULT_PERSISTED).switcherIcon).toBe(true)
-    expect(readFeatureFlags('?switcherIcon=on', DEFAULT_PERSISTED).switcherIcon).toBe(true)
-  })
-
-  it('disables switcher icons for off values', () => {
-    expect(readFeatureFlags('?switcherIcon=0', DEFAULT_PERSISTED).switcherIcon).toBe(false)
-    expect(readFeatureFlags('?switcherIcon=false', DEFAULT_PERSISTED).switcherIcon).toBe(false)
-    expect(readFeatureFlags('?switcherIcon=off', DEFAULT_PERSISTED).switcherIcon).toBe(false)
-  })
-
-  it('falls back to the default for invalid switcherIcon values', () => {
-    expect(readFeatureFlags('?switcherIcon=maybe', DEFAULT_PERSISTED).switcherIcon).toBe(false)
   })
 
   it('defaults breathingShape to orb-halo (V1)', () => {
@@ -207,11 +188,6 @@ describe('readFeatureFlags 4-way resolver (Phase 47 D-05/D-06/D-07)', () => {
 })
 
 describe('exported *_FLAG specs (Phase 47 D-02/D-03 DRY)', () => {
-  it('SWITCHER_ICON_FLAG is exported with the production default and queryParam', () => {
-    expect(SWITCHER_ICON_FLAG.queryParam).toBe('switcherIcon')
-    expect(SWITCHER_ICON_FLAG.defaultValue).toBe(false)
-  })
-
   it('BYPASS_SILENT_MODE_FLAG is exported with the production default and queryParam', () => {
     expect(BYPASS_SILENT_MODE_FLAG.queryParam).toBe('bypassSilentMode')
     expect(BYPASS_SILENT_MODE_FLAG.defaultValue).toBe(true) // default true
