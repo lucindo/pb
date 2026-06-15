@@ -1,8 +1,9 @@
 # Plan — Pattern Breathing (pb)
 
-This repo is an import of the HRV breathing app, being repurposed into a
-**Pattern Breathing** app. Strategy: strip the HRV app down to a lean single-practice
-base, then build pattern-breathing on the surviving core breathing engine.
+This repo is a spinoff copy of the HRV breathing app (no shared deployment, no
+back-compat), being repurposed into a **Pattern Breathing** app. Strategy: strip the
+app down to a lean single-practice base, then build pattern-breathing on the surviving
+core breathing engine.
 
 ## Roadmap
 
@@ -15,7 +16,11 @@ base, then build pattern-breathing on the surviving core breathing engine.
 - [x] Collapse vestigial single-practice scaffolding (5 steps under /ds-step-mode)
 - [~] Strip-down toward lean state — receiving "things to remove" from user
   - [x] Settings strip-down COMPLETE (phases A1–A4, B+C, D+E+F — see below)
-  - [ ] (Pending user input) Further removal items beyond Settings
+  - [x] About page stripped to one placeholder block; README zeroed to title (`e8d9dfd`, `dc5f21c`)
+  - [x] Flatten storage envelope — drop `practices`/`activePractice`/migration ladder (`b345381`)
+  - [x] Rename all HRV/Resonant/VFC → Pattern Breathing; Forrest already gone (`32a7475`)
+  - [x] Deploy base path `/hrv/` → `/pb/` (`5025fa3`)
+  - [ ] (Pending user input) Further removal items, if any
 - [ ] (Pending user input) Implement pattern-breathing functionality
 
 ## Settings strip-down plan (Phases A–F)
@@ -87,24 +92,23 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 ## Now
 
 **State** — On branch `refactor/strip-to-pattern-breathing`, working tree clean, nothing
-pushed. **The Settings strip-down is COMPLETE** (A1 `69e914a`, A2 `c7c6066`, A3 `c758496`,
-A4 `6228df9`, B+C `f2f8d7e`, D+E+F `9832df6`) and the app was **rebranded to "Pattern
-Breathing" + version reset to 0.0.0** (`d35120e`: app title + html `<title>`, `versions.json`
-cleared of HRV history, About source link → `lucindo/pb`). All gates green (`tsc -b`,
-`eslint`, 810 vitest tests, `vite build`). The app is now a single-practice HRV timer with
-one Settings page (System · Sound · Statistics · About · privacy) — no feature-flag system,
-no cue-style chooser, no Advanced/Stats sub-pages.
+pushed. The HRV/Resonant/VFC/Forrest vocabulary is **fully gone** — code identifiers,
+runtime event + storage-key channels, user-facing copy, comments, tests, PWA manifest,
+package name, and deploy base path (`/hrv/` → `/pb/`). The storage envelope is **flattened**
+to a single practice (`{ version, settings?, mute?, stats?, prefs? }` at
+`pattern-breathing:state:v1`) — no `practices`/`activePractice` wrapper, no migration ladder.
+About page is one placeholder block; README is title-only. `grep -riE
+"hrv|resonant|forrest|vfc"` over the tree (excl. `.project/`) returns nothing. All gates
+green (`tsc -b`, `eslint`, 742 vitest tests, `vite build`). `.project/PROJECT.md` refreshed
+to this shape. The app is still the resonance timer under the new name — pattern-breathing
+*functionality* is not implemented.
 
-**Next** — Awaiting the user's direction (nothing in flight; safe to clear):
-- Further removal items beyond Settings (user said they'd list more after A–F), OR
-- The pattern-breathing spec / functionality (still undefined — user will provide).
+**Next** — Awaiting user direction (nothing in flight; safe to clear): either more cleanup
+items, or the pattern-breathing spec / functionality (still undefined).
 
 **Open questions**
-- Are there more removal items beyond Settings (user will list them after Phase A–F)?
-- Pattern-breathing spec still undefined (user will provide later).
-- "HRV Breathing" still appears as the breathing-*technique* name, deliberately not
-  rebranded: `practice.switcher.resonantHeading` (setup-card "Edit HRV Breathing settings",
-  locked by a strings test) + `learn.videosHeading`. Revisit when pattern-breathing lands.
-- Optional leftover: write-only `activePractice` envelope field + migration seeding
-  survive for schema stability (not read in production); retire only via a dedicated
-  storage-migration pass — out of scope.
+- Any further removal items beyond what's done?
+- Pattern-breathing spec still undefined (user will provide).
+- "Pattern Breathing" is now used for both the app name and the breathing-*technique* name
+  (`practice.switcher.patternBreathingName/Heading`). Revisit if the technique needs its own
+  distinct label once real pattern-breathing lands.
