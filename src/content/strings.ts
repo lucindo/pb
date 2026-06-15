@@ -152,7 +152,7 @@ export interface UiStrings {
 export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
   en: {
     practice: {
-      title: 'HRV Breathing',
+      title: 'Pattern Breathing',
       topBar: {
         settings: 'Settings',
         settingsDisabled: 'Settings (unavailable during session)',
@@ -281,7 +281,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
   },
   'pt-BR': {
     practice: {
-      title: 'Respiração VFC',
+      title: 'Pattern Breathing',
       topBar: {
         settings: 'Configurações',
         settingsDisabled: 'Configurações (indisponível durante a sessão)',

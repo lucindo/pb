@@ -8,7 +8,7 @@
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" sizes="180x180">
     <!-- iOS standalone mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="HRV Breathing">
+    <meta name="apple-mobile-web-app-title" content="Pattern Breathing">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Chrome/Android browser tab + PWA theme color -->
     <meta name="theme-color" content="#414957">
@@ -20,7 +20,7 @@
          returning user sees a data-theme="light" flash on every load (silent D-17 fallback). -->
     <!-- SYNC WITH src/styles/faviconPalette.ts FAVICON_COLORS / src/styles/theme.css --color-breathing-accent-strong -->
     <script>(function(){function favUri(h){return 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="'+h+'" fill-opacity="0.22"/><circle cx="16" cy="16" r="12" fill="'+h+'" fill-opacity="0.32"/><circle cx="16" cy="16" r="10" fill="'+h+'" fill-opacity="0.50"/><circle cx="16" cy="16" r="8" fill="'+h+'"/></svg>');}function setFav(u){var o=document.querySelector('link[rel="icon"]');var n=document.createElement('link');n.rel='icon';n.type='image/svg+xml';n.setAttribute('href',u);if(o){o.remove();}if(document.head){document.head.appendChild(n);}}try{var raw=localStorage.getItem('hrv:state:v1');var t=raw&&(JSON.parse(raw).prefs||{}).theme;if(t==='system'||!t||['light','dark'].indexOf(t)<0){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);var c={'light':'#414957','dark':'#ccd0d9'};var h=c[t]||c['light'];setFav(favUri(h));}catch(_){document.documentElement.setAttribute('data-theme','light');setFav(favUri('#414957'));}})();</script>
-    <title>HRV Breathing</title>
+    <title>Pattern Breathing</title>
   </head>
   <body>
     <div id="root"></div>

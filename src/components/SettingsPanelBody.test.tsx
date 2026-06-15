@@ -129,7 +129,7 @@ describe('SettingsPanelBody — About section', () => {
     renderBody()
     const link = screen.getByRole('link', { name: new RegExp(EN.about.sourceLinkText) })
     expect(link).toBeVisible()
-    expect(link).toHaveAttribute('href', 'https://github.com/lucindo/hrv')
+    expect(link).toHaveAttribute('href', 'https://github.com/lucindo/pb')
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noopener noreferrer')
   })

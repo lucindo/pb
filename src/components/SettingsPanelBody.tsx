@@ -23,7 +23,7 @@ import { TimbrePicker } from './TimbrePicker'
 //   About       — version · source · install
 //   (privacy note rendered below About)
 
-const GITHUB_URL = 'https://github.com/lucindo/hrv'
+const GITHUB_URL = 'https://github.com/lucindo/pb'
 
 export interface SettingsPanelBodyProps {
   inSessionView: boolean
