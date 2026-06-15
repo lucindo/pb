@@ -1,16 +1,12 @@
-import type { CueStyleId, SessionFrame } from '../domain'
+import type { SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
-import { CueGlyph } from './CueGlyph'
 
 export interface OrbShapeProps {
   frame: SessionFrame | null
   leadInDigit?: 3 | 2 | 1 | null
   strings: UiStrings['practice']['breathing']
-  // OPTIONAL, default 'labels' — zero-regression for callers that don't supply a cue.
-  // OrbLeadIn does NOT receive cue.
-  cue?: CueStyleId
   // Wired off at Idle + Complete call sites; default true = rings show during Running.
   // OrbLeadIn's prop default is hard-set to false inside the component.
   showRings?: boolean
@@ -30,7 +26,6 @@ export function OrbShape({
   frame,
   leadInDigit,
   strings,
-  cue = 'labels',
   showRings = true,
   showCompletion = false,
 }: OrbShapeProps) {
@@ -56,7 +51,6 @@ export function OrbShape({
     <OrbBody
       frame={frame}
       strings={strings}
-      cue={cue}
       showRings={showRings}
     />
   )
@@ -90,11 +84,10 @@ function CheckmarkGlyph() {
 interface OrbBodyProps {
   frame: SessionFrame
   strings: UiStrings['practice']['breathing']
-  cue: CueStyleId
   showRings: boolean
 }
 
-function OrbBody({ frame, strings, cue, showRings }: OrbBodyProps) {
+function OrbBody({ frame, strings, showRings }: OrbBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -119,7 +112,9 @@ function OrbBody({ frame, strings, cue, showRings }: OrbBodyProps) {
       discBg="var(--color-breathing-accent)"
       arcProgress={progress}
     >
-      <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
+      <span className="relative z-10 text-5xl font-semibold tracking-tight sm:text-6xl">
+        {phaseLabel}
+      </span>
     </OrbContainer>
   )
 }

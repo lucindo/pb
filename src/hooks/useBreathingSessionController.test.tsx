@@ -32,7 +32,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -52,7 +51,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -75,7 +73,6 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -109,7 +106,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -125,7 +121,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -144,7 +139,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -157,7 +151,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -172,7 +165,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -188,7 +180,6 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: timedSettings,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -239,7 +230,6 @@ describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -319,7 +309,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -374,7 +363,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -417,7 +405,6 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )
@@ -466,7 +453,6 @@ describe('useBreathingSessionController — lead-in→running audioAnchor handof
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: DEFAULT_SETTINGS,
-        liveCue: 'labels',
         wakeLock: makeWakeLock(),
       }),
     )

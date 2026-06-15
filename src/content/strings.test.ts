@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   LOCALE_OPTIONS,
   THEME_OPTIONS,
-  CUE_OPTIONS,
   TIMBRE_OPTIONS,
 } from '../domain/settings'
 import { UI_STRINGS } from './strings'
@@ -22,12 +21,11 @@ describe('UI_STRINGS exhaustiveness', () => {
     }
   })
 
-  it('every locale has non-empty settings.title, settings.close, settings.themeLabel, settings.cueLabel, settings.timbreLabel, settings.languageLabel', () => {
+  it('every locale has non-empty settings.title, settings.close, settings.themeLabel, settings.timbreLabel, settings.languageLabel', () => {
     for (const locale of LOCALE_OPTIONS) {
       expect(UI_STRINGS[locale].appSettings.title.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].appSettings.close.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].appSettings.themeLabel.length).toBeGreaterThan(0)
-      expect(UI_STRINGS[locale].appSettings.cueLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].appSettings.timbreLabel.length).toBeGreaterThan(0)
       expect(UI_STRINGS[locale].appSettings.languageLabel.length).toBeGreaterThan(0)
     }
@@ -41,20 +39,6 @@ describe('UI_STRINGS exhaustiveness', () => {
     }
   })
 
-  it('every locale has cue entries for every CUE_OPTIONS id (Phase 25 CUE-01)', () => {
-    for (const locale of LOCALE_OPTIONS) {
-      for (const id of CUE_OPTIONS) {
-        expect(UI_STRINGS[locale].appSettings.cue[id].length).toBeGreaterThan(0)
-      }
-    }
-  })
-
-  it('PT-BR cue strings are non-empty (machine-translated with review markers)', () => {
-    expect(UI_STRINGS['pt-BR'].appSettings.cueLabel.length).toBeGreaterThan(0)
-    expect(UI_STRINGS['pt-BR'].appSettings.cue.labels.length).toBeGreaterThan(0)
-    expect(UI_STRINGS['pt-BR'].appSettings.cue.arrow.length).toBeGreaterThan(0)
-    expect(UI_STRINGS['pt-BR'].appSettings.cue.nose.length).toBeGreaterThan(0)
-  })
 
   it('every locale has timbres entries for every TIMBRE_OPTIONS id', () => {
     for (const locale of LOCALE_OPTIONS) {

@@ -21,7 +21,6 @@ export function BreathingSessionSurface({
   return (
     <>
       <OrbShape
-        cue={presentation.shape.cue}
         frame={presentation.shape.frame}
         leadInDigit={presentation.shape.leadInDigit}
         strings={breathingStrings}

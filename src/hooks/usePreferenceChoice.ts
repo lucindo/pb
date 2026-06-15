@@ -3,7 +3,7 @@
 //
 // Role: provides the picker's optimistic-UI local state plus a setter that writes
 // the merged envelope to disk and dispatches 'hrv:prefs-changed'. App-side
-// listeners (useTheme, useVisualCue, useBypassSilentMode) filter on detail.key.
+// listeners (useTheme, useBypassSilentMode) filter on detail.key.
 //
 // Why the custom event: the browser 'storage' event does NOT fire in the writing
 // tab, so this is the sole same-tab sync primitive back to the App-side hooks.

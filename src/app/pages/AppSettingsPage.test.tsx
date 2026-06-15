@@ -67,10 +67,10 @@ describe('AppSettingsPage', () => {
     expect(onStatsOpen).toHaveBeenCalledTimes(1)
   })
 
-  it('renders all four picker radiogroups (Theme / Cue / Timbre / Language)', () => {
+  it('renders three picker radiogroups (Theme / Timbre / Language)', () => {
     renderPage()
     const radiogroups = screen.getAllByRole('radiogroup')
-    expect(radiogroups).toHaveLength(4)
+    expect(radiogroups).toHaveLength(3)
   })
 
   it('pickers are enabled on the page (inSessionView is always false here)', () => {

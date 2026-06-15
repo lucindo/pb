@@ -9,7 +9,6 @@ import { useFavicon } from '../hooks/useFavicon'
 import { useIsStandaloneOrPhone } from '../hooks/useIsStandaloneOrPhone'
 import { useLocale } from '../hooks/useLocale'
 import { useTheme } from '../hooks/useTheme'
-import { useVisualCue } from '../hooks/useVisualCue'
 import { useWakeLock } from '../hooks/useWakeLock'
 import {
   loadPractices,
@@ -45,13 +44,11 @@ export function useAppViewModel(): AppViewModel {
 
   const { isStandalone, isIOS } = useIsStandaloneOrPhone()
   const { deferredPrompt, triggerInstall } = useBeforeInstallPrompt()
-  const { cue: liveCue } = useVisualCue()
   const { locale, uiStrings } = useLocale()
   const { bypassSilentMode } = useBypassSilentMode()
 
   const breathing = useBreathingSessionController({
     initialSettings: initialPractices.resonant.settings,
-    liveCue,
     wakeLock,
     bypassSilentMode,
   })
@@ -127,7 +124,6 @@ export function useAppViewModel(): AppViewModel {
   const practiceSession = createPracticeSessionViewModel({
     breathing: {
       phase: breathing.phase,
-      sessionCue: breathing.sessionCue,
       leadInDigit: breathing.leadInDigit,
       leadInPlaceholderFrame: breathing.leadInPlaceholderFrame,
       liveFrame: breathing.session.liveFrame,
@@ -135,7 +131,6 @@ export function useAppViewModel(): AppViewModel {
       inSessionView: breathing.inSessionView,
       selectedSettings: breathing.session.state.selectedSettings,
     },
-    liveCue,
   })
   const isComplete = breathing.session.state.status === 'complete' && !breathing.inSessionView
   const practiceSettings = createPracticeSettingsViewModel({

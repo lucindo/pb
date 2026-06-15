@@ -41,7 +41,7 @@ const INLINE_LAYOUT =
 const STACK_LAYOUT =
   'flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-[11px] tracking-[0.04em]'
 
-/** Radiogroup-as-cards primitive. Shared shape behind CuePicker / ThemePicker /
+/** Radiogroup-as-cards primitive. Shared shape behind ThemePicker /
  *  TimbrePicker / LanguagePicker — each consumer becomes a thin adapter that
  *  owns its own choice hook and option→label mapping. The primitive owns the
  *  visual posture (card buttons, selected/unselected styling, a11y wiring)
@@ -51,8 +51,8 @@ const STACK_LAYOUT =
  *  `aria-labelledby` id.
  *
  *  `optionLayout='stack'` switches each button to STACK_LAYOUT (glyph stacked
- *  above the label) — used by CuePicker. Default `'inline'` matches the other
- *  three pickers' single-line layout. */
+ *  above the label). Default `'inline'` is the single-line layout used by the
+ *  current pickers. */
 export function PickerCardGrid<T extends string>({
   sectionLabel,
   labelId,

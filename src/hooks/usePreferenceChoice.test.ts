@@ -26,21 +26,21 @@ afterEach(() => {
 
 describe('usePreferenceChoice', () => {
   it('initial state matches loadPrefs()[key]', () => {
-    seedPrefs({ ...DEFAULT_PREFS, cue: 'arrow' })
-    const { result } = renderHook(() => usePreferenceChoice('cue'))
-    expect(result.current[0]).toBe('arrow')
+    seedPrefs({ ...DEFAULT_PREFS, timbre: 'bell' })
+    const { result } = renderHook(() => usePreferenceChoice('timbre'))
+    expect(result.current[0]).toBe('bell')
   })
 
   it('updates local state optimistically and writes to disk', () => {
-    seedPrefs({ ...DEFAULT_PREFS, cue: 'arrow' })
-    const { result } = renderHook(() => usePreferenceChoice('cue'))
+    seedPrefs({ ...DEFAULT_PREFS, timbre: 'bell' })
+    const { result } = renderHook(() => usePreferenceChoice('timbre'))
 
     act(() => {
-      result.current[1]('nose')
+      result.current[1]('flute')
     })
 
-    expect(result.current[0]).toBe('nose')
-    expect(readPrefs().cue).toBe('nose')
+    expect(result.current[0]).toBe('flute')
+    expect(readPrefs().timbre).toBe('flute')
   })
 
   it('works for boolean-typed fields (type-erased generic, not just enum strings)', () => {
@@ -55,24 +55,22 @@ describe('usePreferenceChoice', () => {
     expect(readPrefs().bypassSilentMode).toBe(true)
   })
 
-  it('preserves all other prefs fields — envelope merge contract (5-field UserPrefs)', () => {
+  it('preserves all other prefs fields — envelope merge contract (4-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
-      cue: 'arrow',
       locale: 'pt-BR',
       bypassSilentMode: true,
     })
-    const { result } = renderHook(() => usePreferenceChoice('cue'))
+    const { result } = renderHook(() => usePreferenceChoice('timbre'))
 
     act(() => {
-      result.current[1]('nose')
+      result.current[1]('flute')
     })
 
     const prefs = readPrefs()
-    expect(prefs.cue).toBe('nose')
+    expect(prefs.timbre).toBe('flute')
     expect(prefs.theme).toBe('dark')
-    expect(prefs.timbre).toBe('bell')
     expect(prefs.locale).toBe('pt-BR')
     expect(prefs.bypassSilentMode).toBe(true)
   })
@@ -98,8 +96,8 @@ describe('usePreferenceChoice', () => {
   })
 
   it('setter identity is stable across re-renders', () => {
-    seedPrefs({ ...DEFAULT_PREFS, cue: 'arrow' })
-    const { result, rerender } = renderHook(() => usePreferenceChoice('cue'))
+    seedPrefs({ ...DEFAULT_PREFS, timbre: 'bell' })
+    const { result, rerender } = renderHook(() => usePreferenceChoice('timbre'))
 
     const initialSetter = result.current[1]
     rerender()

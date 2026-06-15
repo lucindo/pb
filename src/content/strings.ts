@@ -88,7 +88,6 @@ export interface UiStrings {
     readonly close: string
     readonly statsRow: string
     readonly themeLabel: string
-    readonly cueLabel: string
     readonly timbreLabel: string
     readonly languageLabel: string
     readonly sections: {
@@ -106,11 +105,6 @@ export interface UiStrings {
       readonly light: string
       readonly dark: string
       readonly system: string
-    }
-    readonly cue: {
-      readonly labels: string
-      readonly arrow: string
-      readonly nose: string
     }
     readonly timbres: {
       readonly bowl: string
@@ -239,7 +233,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       close: 'Close',
       statsRow: 'View Practices Statistics',
       themeLabel: 'Theme',
-      cueLabel: 'Cue style',
       timbreLabel: 'Timbre',
       languageLabel: 'Language',
       sections: {
@@ -257,11 +250,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         light: 'Light',
         dark: 'Dark',
         system: 'System',
-      },
-      cue: {
-        labels: 'Text',
-        arrow: 'Arrow',
-        nose: 'Nose',
       },
       timbres: {
         bowl: 'Bowl',
@@ -384,7 +372,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       close: 'Fechar',
       statsRow: 'Ver Estatísticas das Práticas',
       themeLabel: 'Tema',
-      cueLabel: 'Estilo de guia',
       timbreLabel: 'Timbre',
       languageLabel: 'Idioma',
       sections: {
@@ -403,11 +390,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         light: 'Claro',
         dark: 'Escuro',
         system: 'Sistema',
-      },
-      cue: {
-        labels: 'Texto',
-        arrow: 'Seta',
-        nose: 'Nariz',
       },
       timbres: {
         bowl: 'Tigela',

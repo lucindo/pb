@@ -1,6 +1,5 @@
 import {
   type BreathingSessionPhase,
-  type CueStyleId,
   type LeadInDigit,
   type SessionFrame,
   type SessionStatus,
@@ -9,8 +8,6 @@ import type { UiStrings } from '../content/strings'
 
 export interface BreathingPresentationInput {
   phase: BreathingSessionPhase
-  sessionCue: CueStyleId | null
-  liveCue: CueStyleId
   leadInDigit: LeadInDigit | null
   leadInPlaceholderFrame: SessionFrame | null
   liveFrame: SessionFrame | null
@@ -23,7 +20,6 @@ export interface BreathingPresentationInput {
 
 export interface BreathingPresentation {
   shape: {
-    cue: CueStyleId
     frame: SessionFrame | null
     leadInDigit: LeadInDigit | null
   }
@@ -40,7 +36,6 @@ export interface BreathingPresentation {
 export function getBreathingPresentation(input: BreathingPresentationInput): BreathingPresentation {
   return {
     shape: {
-      cue: input.sessionCue ?? input.liveCue,
       frame: input.phase === 'running' ? input.liveFrame : null,
       leadInDigit: input.phase === 'lead-in' ? input.leadInDigit : null,
     },

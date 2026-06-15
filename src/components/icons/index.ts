@@ -4,7 +4,7 @@
 // - 1.5 stroke width (consistent across the set)
 // - Accepts SVGProps<SVGSVGElement> for size / className overrides
 //
-// Not in this set: cue/timbre glyphs (CueGlyph.tsx, OrbShape) — those are
+// Not in this set: the in-orb phase label / timbre glyphs (OrbShape) — those are
 // state-driven visual elements, not chrome icons.
 
 export { ChevronBackIcon } from './ChevronBackIcon'

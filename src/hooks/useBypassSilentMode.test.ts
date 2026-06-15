@@ -11,7 +11,7 @@ function seedPrefs(bypassSilentMode: boolean): void {
     STATE_KEY,
     JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en', bypassSilentMode },
+      prefs: { theme: 'system', timbre: 'bowl', locale: 'en', bypassSilentMode },
     }),
   )
 }
@@ -45,7 +45,7 @@ describe('useBypassSilentMode', () => {
     // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { theme: 'system', timbre: 'bowl', cue: 'labels', locale: 'en', bypassSilentMode: false },
+      prefs: { theme: 'system', timbre: 'bowl', locale: 'en', bypassSilentMode: false },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 

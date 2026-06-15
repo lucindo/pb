@@ -29,7 +29,6 @@ const frame: SessionFrame = {
 
 const breathingState: BreathingSessionViewState = {
   phase: 'running',
-  sessionCue: 'arrow',
   leadInDigit: null,
   leadInPlaceholderFrame: null,
   liveFrame: frame,
@@ -55,12 +54,10 @@ describe('app practice session view model', () => {
   it('maps the resonant breathing state to its presentation contract', () => {
     const model = createPracticeSessionViewModel({
       breathing: breathingState,
-      liveCue: 'labels',
     })
 
     expect(model.kind).toBe('resonant')
     expect(model.presentation.shape).toEqual({
-      cue: 'arrow',
       frame,
       leadInDigit: null,
     })

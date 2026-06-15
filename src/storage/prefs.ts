@@ -17,16 +17,13 @@
 import {
   DEFAULT_THEME,
   DEFAULT_TIMBRE,
-  DEFAULT_CUE,
   DEFAULT_LOCALE,
   DEFAULT_BYPASS_SILENT_MODE,
   isValidTheme,
   isValidTimbre,
-  isValidCue,
   isValidLocale,
   type ThemeId,
   type TimbreId,
-  type CueStyleId,
   type LocaleId,
 } from '../domain/settings'
 
@@ -35,7 +32,6 @@ import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './stora
 export interface UserPrefs {
   theme: ThemeId
   timbre: TimbreId
-  cue: CueStyleId
   locale: LocaleId
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
@@ -43,7 +39,6 @@ export interface UserPrefs {
 export const DEFAULT_PREFS: UserPrefs = {
   theme: DEFAULT_THEME,
   timbre: DEFAULT_TIMBRE,
-  cue: DEFAULT_CUE,
   locale: DEFAULT_LOCALE,
   bypassSilentMode: DEFAULT_BYPASS_SILENT_MODE, // true — see UserPrefs.bypassSilentMode
 }
@@ -92,10 +87,6 @@ export function coerceTimbre(raw: unknown): TimbreId {
   return isValidTimbre(raw) ? raw : DEFAULT_TIMBRE
 }
 
-export function coerceCue(raw: unknown): CueStyleId {
-  return isValidCue(raw) ? raw : DEFAULT_CUE
-}
-
 export function coerceLocale(raw: unknown): LocaleId {
   return isValidLocale(raw) ? raw : DEFAULT_LOCALE
 }
@@ -120,7 +111,6 @@ export function coercePrefs(raw: unknown): UserPrefs {
   return {
     theme:            coerceTheme(r.theme),
     timbre:           coerceTimbre(r.timbre),
-    cue:              coerceCue(r.cue),
     locale:           coerceLocale(r.locale),
     bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode),
   }

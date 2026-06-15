@@ -20,11 +20,9 @@ const frame: SessionFrame = {
 }
 
 describe('breathing presentation model', () => {
-  it('uses the session cue during a running session and hides completion while in session view', () => {
+  it('shows the running frame and hides completion while in session view', () => {
     const model = getBreathingPresentation({
       phase: 'running',
-      sessionCue: 'arrow',
-      liveCue: 'labels',
       leadInDigit: null,
       leadInPlaceholderFrame: null,
       liveFrame: frame,
@@ -34,7 +32,7 @@ describe('breathing presentation model', () => {
       ratio: '40:60',
     })
 
-    expect(model.shape).toEqual({ cue: 'arrow', frame, leadInDigit: null })
+    expect(model.shape).toEqual({ frame, leadInDigit: null })
     expect(model.readout).toMatchObject({
       frame,
       status: 'running',
@@ -43,11 +41,9 @@ describe('breathing presentation model', () => {
     })
   })
 
-  it('uses the lead-in placeholder frame and live cue before the session starts', () => {
+  it('uses the lead-in placeholder frame before the session starts', () => {
     const model = getBreathingPresentation({
       phase: 'lead-in',
-      sessionCue: null,
-      liveCue: 'nose',
       leadInDigit: 3,
       leadInPlaceholderFrame: frame,
       liveFrame: null,
@@ -57,7 +53,7 @@ describe('breathing presentation model', () => {
       ratio: '40:60',
     })
 
-    expect(model.shape).toEqual({ cue: 'nose', frame: null, leadInDigit: 3 })
+    expect(model.shape).toEqual({ frame: null, leadInDigit: 3 })
     expect(model.readout).toMatchObject({
       frame,
       isLeadInPlaceholder: true,

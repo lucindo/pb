@@ -8,7 +8,7 @@ import { createBreathingPlan } from '../domain/breathingPlan'
 import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
-import type { CueStyleId, SessionSettings } from '../domain/settings'
+import type { SessionSettings } from '../domain/settings'
 import {
   loadMute,
   loadPrefs,
@@ -36,7 +36,6 @@ export interface BreathingSessionController {
   inSessionView: boolean
   leadInDigit: LeadInDigit | null
   leadInPlaceholderFrame: SessionFrame | null
-  sessionCue: CueStyleId | null
   endDialogOpen: boolean
   audio: BreathingAudioControls
   setSelectedSettings(this: void, next: SessionSettings): void
@@ -49,7 +48,6 @@ export interface BreathingSessionController {
 
 export interface UseBreathingSessionControllerArgs {
   initialSettings: SessionSettings
-  liveCue: CueStyleId
   wakeLock: UseWakeLock
   /** Optional bypass-silent-mode setting threaded from useBypassSilentMode.
    *  Undefined passes through to useAudioCues.start → audioEngine where it coerces
@@ -59,7 +57,6 @@ export interface UseBreathingSessionControllerArgs {
 
 export function useBreathingSessionController({
   initialSettings,
-  liveCue,
   wakeLock,
   bypassSilentMode,
 }: UseBreathingSessionControllerArgs): BreathingSessionController {
@@ -67,7 +64,6 @@ export function useBreathingSessionController({
 
   const [phase, setPhase] = useState<BreathingSessionPhase>('idle')
   const [leadInDigit, setLeadInDigit] = useState<LeadInDigit | null>(null)
-  const [sessionCue, setSessionCue] = useState<CueStyleId | null>(null)
   const [endDialogOpen, setEndDialogOpen] = useState<boolean>(false)
 
   const audioAnchorRef = useRef<number | null>(null)
@@ -75,7 +71,6 @@ export function useBreathingSessionController({
   const startGenerationRef = useRef<number>(0)
   const leadInTimeoutsRef = useRef<number[]>([])
   const recordedSessionKeyRef = useRef<string | null>(null)
-  const sessionCueRef = useRef<CueStyleId | null>(null)
   const sessionFrameRef = useRef<SessionFrame | null>(null)
 
   const onAudioReanchorRequired = useCallback((newAudioAnchor: number): void => {
@@ -144,8 +139,6 @@ export function useBreathingSessionController({
   const clearCapturedSession = useCallback((): void => {
     audioAnchorRef.current = null
     planRef.current = null
-    sessionCueRef.current = null
-    setSessionCue(null)
   }, [])
 
   const setSelectedSettings = useCallback((next: SessionSettings): void => {
@@ -187,8 +180,6 @@ export function useBreathingSessionController({
     if (phase !== 'idle') return
 
     const generation = ++startGenerationRef.current
-    sessionCueRef.current = liveCue
-    setSessionCue(liveCue)
     setPhase('lead-in')
     setLeadInDigit(3)
     void wakeLockRequest()
@@ -216,7 +207,6 @@ export function useBreathingSessionController({
     })
   }, [
     phase,
-    liveCue,
     state.selectedSettings,
     audioStart,
     audioStop,
@@ -374,7 +364,6 @@ export function useBreathingSessionController({
     inSessionView,
     leadInDigit,
     leadInPlaceholderFrame,
-    sessionCue,
     endDialogOpen,
     audio: {
       muted: audio.muted,

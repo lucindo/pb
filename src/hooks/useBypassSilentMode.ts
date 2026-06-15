@@ -1,13 +1,13 @@
 // src/hooks/useBypassSilentMode.ts
 //
 // App-side orchestrator hook for the bypass-silent-mode setting.
-// Mirror of useVisualCue — a read-only pref whose value is consumed by the
-// audio path (threaded into createAudioEngine at engine-construction time).
+// A read-only pref whose value is consumed by the audio path (threaded into
+// createAudioEngine at engine-construction time).
 //
 // Seeds state from loadPrefs().bypassSilentMode. Subscribes to cross-tab
 // 'storage' events and same-tab 'hrv:prefs-changed' CustomEvents filtered on
 // detail.key === 'bypassSilentMode' || undefined (same event name shared with
-// the theme/cue/locale hooks; broadcast-all preserved for forward-compat).
+// the theme/locale hooks; broadcast-all preserved for forward-compat).
 //
 // Writes go through usePreferenceChoice('bypassSilentMode') on the Advanced page.
 

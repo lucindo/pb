@@ -46,23 +46,18 @@ describe('SettingsPanelBody — J14 sectioning', () => {
     expect(screen.getByRole('heading', { level: 2, name: EN.sections.about })).toBeInTheDocument()
   })
 
-  it('renders all four pickers (4 radiogroups: Theme + Cue + Timbre + Language)', () => {
+  it('renders three pickers (3 radiogroups: Theme + Timbre + Language)', () => {
     renderBody()
-    expect(screen.getAllByRole('radiogroup')).toHaveLength(4)
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(3)
     expect(screen.getByRole('radiogroup', { name: EN.themeLabel })).toBeInTheDocument()
-    expect(screen.getByRole('radiogroup', { name: EN.cueLabel })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: EN.timbreLabel })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: EN.languageLabel })).toBeInTheDocument()
   })
 
-  it('keeps Cue/Timbre sublabels visible (Audio multi-picker disambiguation)', () => {
+  it('keeps the Timbre sublabel visible', () => {
     const { container } = renderBody()
-    // Cue + Timbre sublabels render as visible <p> (no sr-only class).
-    const cueLabel = container.querySelector('#cue-picker-label')
     const timbreLabel = container.querySelector('#timbre-picker-label')
-    expect(cueLabel).not.toBeNull()
     expect(timbreLabel).not.toBeNull()
-    expect(cueLabel).not.toHaveClass('sr-only')
     expect(timbreLabel).not.toHaveClass('sr-only')
   })
 

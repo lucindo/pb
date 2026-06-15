@@ -5,7 +5,6 @@ import type { AppScreen, ReturningFrom } from './useAppNavigation'
 import type { AudioStatusFlag } from '../audio/audioStatus'
 import type {
   BreathingSessionPhase,
-  CueStyleId,
   LeadInDigit,
   LocaleId,
   SessionFrame,
@@ -130,7 +129,6 @@ export function createInstallViewModel({
 
 export interface BreathingSessionViewState {
   phase: BreathingSessionPhase
-  sessionCue: CueStyleId | null
   leadInDigit: LeadInDigit | null
   leadInPlaceholderFrame: SessionFrame | null
   liveFrame: SessionFrame | null
@@ -142,17 +140,13 @@ export interface BreathingSessionViewState {
 
 export interface CreatePracticeSessionViewModelArgs {
   breathing: BreathingSessionViewState
-  liveCue: CueStyleId
 }
 
 export function createPracticeSessionViewModel({
   breathing,
-  liveCue,
 }: CreatePracticeSessionViewModelArgs): AppPracticeSessionViewModel {
   const presentation = getBreathingPresentation({
     phase: breathing.phase,
-    sessionCue: breathing.sessionCue,
-    liveCue,
     leadInDigit: breathing.leadInDigit,
     leadInPlaceholderFrame: breathing.leadInPlaceholderFrame,
     liveFrame: breathing.liveFrame,

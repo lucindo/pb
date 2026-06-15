@@ -87,16 +87,6 @@ export function isValidTimbre(v: unknown): v is TimbreId {
 
 export const DEFAULT_TIMBRE: TimbreId = 'sine'
 
-export type CueStyleId = 'labels' | 'arrow' | 'nose'
-
-export const CUE_OPTIONS = ['labels', 'arrow', 'nose'] as const satisfies readonly CueStyleId[]
-
-export function isValidCue(v: unknown): v is CueStyleId {
-  return typeof v === 'string' && (CUE_OPTIONS as readonly string[]).includes(v)
-}
-
-export const DEFAULT_CUE: CueStyleId = 'arrow'
-
 export type LocaleId = 'en' | 'pt-BR'
 
 export const LOCALE_OPTIONS = ['en', 'pt-BR'] as const satisfies readonly LocaleId[]

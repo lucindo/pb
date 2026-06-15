@@ -2,7 +2,6 @@ import { useState, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import type { UiStrings } from '../content/strings'
 import { ChevronRightIcon } from './icons'
-import { CuePicker } from './CuePicker'
 import { IosInstallSteps } from './IosInstallSteps'
 import { LanguagePicker } from './LanguagePicker'
 import { SectionCard } from './primitives/SectionCard'
@@ -159,18 +158,11 @@ export function SettingsPanelBody({
       {/* Audio */}
       <SettingsSectionHeader label={strings.appSettings.sections.audio} />
       <SectionCard padding="16px">
-        <div className="grid gap-4">
-          <CuePicker
-            disabled={inSessionView}
-            strings={strings.appSettings.cue}
-            sectionLabel={strings.appSettings.cueLabel}
-          />
-          <TimbrePicker
-            disabled={inSessionView}
-            strings={strings.appSettings.timbres}
-            sectionLabel={strings.appSettings.timbreLabel}
-          />
-        </div>
+        <TimbrePicker
+          disabled={inSessionView}
+          strings={strings.appSettings.timbres}
+          sectionLabel={strings.appSettings.timbreLabel}
+        />
       </SectionCard>
 
       {/* About */}
