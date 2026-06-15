@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import type { UiStrings } from '../content/strings'
 
 import { SettingsRow } from './SettingsRow'
@@ -44,7 +45,7 @@ export function SettingsStepper<T extends string | number>({
   readOnly = false,
   hideTopBorder = false,
   strings,
-}: SettingsStepperProps<T>) {
+}: SettingsStepperProps<T>): ReactElement {
   const selectedIndex = options.indexOf(value)
   const canDecrease = selectedIndex > 0
   const canIncrease = selectedIndex >= 0 && selectedIndex < options.length - 1

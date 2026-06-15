@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { TIMBRE_OPTIONS, type TimbreId } from '../domain'
 import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
 import { playInhalePreview } from '../audio/previewContext'
@@ -19,7 +20,7 @@ const TIMBRE_GLYPH: Record<TimbreId, string> = {
   flute: '⌇',
 }
 
-export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerProps) {
+export function TimbrePicker({ disabled, strings, sectionLabel }: TimbrePickerProps): ReactElement {
   const [timbre, setTimbre] = usePreferenceChoice('timbre')
   const onChange = (id: TimbreId): void => {
     setTimbre(id)

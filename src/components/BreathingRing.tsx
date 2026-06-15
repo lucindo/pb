@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import type { SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
@@ -25,7 +26,7 @@ export function BreathingRing({
   leadInDigit,
   strings,
   showCompletion = false,
-}: BreathingRingProps) {
+}: BreathingRingProps): ReactElement {
   if (leadInDigit != null) {
     return <RingLeadIn digit={leadInDigit} strings={strings} />
   }

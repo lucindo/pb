@@ -1,6 +1,6 @@
-import type { SVGProps } from 'react'
+import type { ReactElement, SVGProps } from 'react'
 
-export function ChevronBackIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+export function ChevronBackIcon({ className, ...props }: SVGProps<SVGSVGElement>): ReactElement {
   // The glyph points left so the back affordance reads correctly in LTR.
   // In RTL locales the affordance points the other way; mirror via Tailwind's
   // `rtl:` direction variant so locale flips it automatically.

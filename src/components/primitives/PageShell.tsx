@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export type PageShellWidth = 'practice' | 'page'
 
@@ -26,7 +26,7 @@ const WIDTH_CLASS: Record<PageShellWidth, string> = {
  *  Heading contract: callers must provide a `<TopAppBar>` (or equivalent
  *  `<h1>`-bearing header) as the first child so the page satisfies the
  *  document-outline requirement. */
-export function PageShell({ children, overlays, width = 'page' }: PageShellProps) {
+export function PageShell({ children, overlays, width = 'page' }: PageShellProps): ReactElement {
   return (
     <main
       className="min-h-screen px-4 py-6 text-[var(--color-breathing-accent-strong)] sm:px-6 sm:py-8"

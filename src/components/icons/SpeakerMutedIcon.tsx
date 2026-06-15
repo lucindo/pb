@@ -1,6 +1,6 @@
-import type { SVGProps } from 'react'
+import type { ReactElement, SVGProps } from 'react'
 
-export function SpeakerMutedIcon(props: SVGProps<SVGSVGElement>) {
+export function SpeakerMutedIcon(props: SVGProps<SVGSVGElement>): ReactElement {
   return (
     <svg
       aria-hidden="true"

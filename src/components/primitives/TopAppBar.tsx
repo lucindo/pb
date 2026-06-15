@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export interface TopAppBarProps {
   title: string
@@ -11,7 +11,7 @@ export interface TopAppBarProps {
 // Empty 36×36 placeholders maintain title centering when a slot is absent.
 // Top padding: 16 px base + safe-area inset (handles iOS PWA notch in standalone
 // mode without burning dead vertical space on desktop).
-export function TopAppBar({ title, leading, trailing }: TopAppBarProps) {
+export function TopAppBar({ title, leading, trailing }: TopAppBarProps): ReactElement {
   return (
     <div
       className="flex w-full items-center justify-between px-5 pb-3 sm:px-8"

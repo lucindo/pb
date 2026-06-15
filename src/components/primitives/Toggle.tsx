@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react'
+
 export interface ToggleProps {
   checked: boolean
   onChange(this: void, next: boolean): void
@@ -23,7 +25,7 @@ export function Toggle({
   id,
   disabled = false,
   className = '',
-}: ToggleProps) {
+}: ToggleProps): ReactElement {
   return (
     <button
       type="button"

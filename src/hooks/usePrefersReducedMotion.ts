@@ -26,7 +26,7 @@ export function usePrefersReducedMotion(): boolean {
     // Reason: re-seed from live MediaQueryList on mount to close the stale-initial-state window; subsequent updates come from the change listener (MDN canonical pattern).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setReduced(mql.matches)
-    const onChange = (event: MediaQueryListEvent) => {
+    const onChange = (event: MediaQueryListEvent): void => {
       setReduced(event.matches)
     }
     mql.addEventListener('change', onChange)

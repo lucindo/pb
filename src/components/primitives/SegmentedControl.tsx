@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export interface SegmentedControlOption<T extends string> {
   id: T
@@ -29,7 +29,7 @@ export function SegmentedControl<T extends string>({
   ariaLabel,
   disabled = false,
   className = '',
-}: SegmentedControlProps<T>) {
+}: SegmentedControlProps<T>): ReactElement {
   return (
     <div
       role="radiogroup"

@@ -7,6 +7,7 @@
 // Hover/active drop to bg-soft; focus ring stays on accent for keyboard
 // visibility; disabled drops to 45% opacity.
 
+import type { ReactElement } from 'react'
 import { RefreshIcon } from './icons/RefreshIcon'
 import { SpeakerIcon } from './icons/SpeakerIcon'
 import { SpeakerMutedIcon } from './icons/SpeakerMutedIcon'
@@ -29,7 +30,7 @@ export interface MuteToggleProps {
   onToggle(this: void): void
 }
 
-export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, strings, onToggle }: MuteToggleProps) {
+export function MuteToggle({ muted, audioAvailable, needsResume, resumeHintId, strings, onToggle }: MuteToggleProps): ReactElement {
   // Label priority (defensive — states are mutually exclusive in practice):
   // unavailable > needsResume > muted/unmuted.
   const label = !audioAvailable

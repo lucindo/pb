@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { THEME_OPTIONS, type ThemeId } from '../domain'
 import { usePreferenceChoice } from '../hooks/usePreferenceChoice'
 import type { UiStrings } from '../content/strings'
@@ -19,7 +20,7 @@ const SWATCH_STYLE: Record<ThemeId, React.CSSProperties> = {
   system: { background: 'linear-gradient(90deg, #f3f5f7 0%, #f3f5f7 50%, #1a1d24 50%, #1a1d24 100%)' },
 }
 
-export function ThemePicker({ disabled, strings, sectionLabel, sectionLabelHidden }: ThemePickerProps) {
+export function ThemePicker({ disabled, strings, sectionLabel, sectionLabelHidden }: ThemePickerProps): ReactElement {
   const [theme, setTheme] = usePreferenceChoice('theme')
   return (
     <PickerCardGrid<ThemeId>

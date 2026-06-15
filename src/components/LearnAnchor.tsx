@@ -1,6 +1,7 @@
 // Persistent icon anchor labeled `Learn`, leading slot of TopAppBar.
 // Disabled (not hidden) during lead-in and running — see IconAnchor.
 
+import type { ReactElement } from 'react'
 import type { UiStrings } from '../content/strings'
 import { IconAnchor } from './IconAnchor'
 
@@ -10,7 +11,7 @@ export interface LearnAnchorProps {
   strings: UiStrings['practice']['topBar']
 }
 
-export function LearnAnchor({ disabled, onClick, strings }: LearnAnchorProps) {
+export function LearnAnchor({ disabled, onClick, strings }: LearnAnchorProps): ReactElement {
   return (
     <IconAnchor
       disabled={disabled}

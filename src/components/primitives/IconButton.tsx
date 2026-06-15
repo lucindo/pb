@@ -1,4 +1,4 @@
-import type { MouseEventHandler, Ref, ReactNode } from 'react'
+import type { MouseEventHandler, ReactElement, Ref, ReactNode } from 'react'
 
 export type IconButtonSize = 'sm' | 'md'
 
@@ -32,7 +32,7 @@ export function IconButton({
   type = 'button',
   className = '',
   buttonRef,
-}: IconButtonProps) {
+}: IconButtonProps): ReactElement {
   return (
     <button
       ref={buttonRef}

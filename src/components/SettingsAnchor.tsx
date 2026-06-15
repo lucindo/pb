@@ -1,6 +1,7 @@
 // Persistent icon anchor for the Settings page, trailing slot of TopAppBar.
 // Disabled (not hidden) during lead-in and running — see IconAnchor.
 
+import type { ReactElement } from 'react'
 import type { UiStrings } from '../content/strings'
 import { IconAnchor } from './IconAnchor'
 
@@ -10,7 +11,7 @@ export interface SettingsAnchorProps {
   strings: UiStrings['practice']['topBar']
 }
 
-export function SettingsAnchor({ disabled, onClick, strings }: SettingsAnchorProps) {
+export function SettingsAnchor({ disabled, onClick, strings }: SettingsAnchorProps): ReactElement {
   return (
     <IconAnchor
       disabled={disabled}

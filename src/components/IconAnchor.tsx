@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export interface IconAnchorProps {
   disabled: boolean
@@ -12,7 +12,7 @@ export interface IconAnchorProps {
 // slot, SettingsAnchor trailing slot). Disabled (not hidden) during lead-in and
 // running — aria-disabled + no-op click keep the element in tab order and
 // announced, rather than vanishing mid-session.
-export function IconAnchor({ disabled, onClick, label, disabledLabel, children }: IconAnchorProps) {
+export function IconAnchor({ disabled, onClick, label, disabledLabel, children }: IconAnchorProps): ReactElement {
   return (
     <button
       type="button"
