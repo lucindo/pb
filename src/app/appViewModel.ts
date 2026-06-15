@@ -60,15 +60,9 @@ export interface AppAudioToggleViewModel {
   muted: boolean
   audioAvailable: boolean
   needsResume: boolean
-  /** Id of the App-level aria-live resume-hint region. Required when
-   *  needsResume can become true (breathing audio VM); omitted when
-   *  needsResume is structurally false (navi audio VM has no resume flow). */
+  /** Id of the App-level aria-live resume-hint region. */
   resumeHintId?: string
   onMuteToggle(this: void): void
-}
-
-export interface AppAudioViewModel extends AppAudioToggleViewModel {
-  audioStatus: AudioStatusFlag
 }
 
 export interface AppPracticeControlsViewModel {
@@ -101,7 +95,6 @@ export interface AppViewModel {
   controlsDisabled: boolean
   practiceSession: AppPracticeSessionViewModel
   practiceSettings: AppPracticeSettingsViewModel
-  audio: AppAudioViewModel
   practiceControls: AppPracticeControlsViewModel
   uiStrings: UiStrings
   learnContent: LearnContent
@@ -220,11 +213,10 @@ export function createAudioViewModel(input: {
   audioAvailable: boolean
   audioStatus: AudioStatusFlag
   onMuteToggle(this: void): void
-}): AppAudioViewModel {
+}): AppAudioToggleViewModel {
   return {
     muted: input.muted,
     audioAvailable: input.audioAvailable,
-    audioStatus: input.audioStatus,
     needsResume: input.audioStatus === 'needs-resume',
     resumeHintId: AUDIO_RESUME_HINT_ID,
     onMuteToggle: input.onMuteToggle,

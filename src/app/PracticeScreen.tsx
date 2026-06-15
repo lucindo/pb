@@ -71,7 +71,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
       <div className="flex-1" />
       <div className="w-full px-5 pt-4 sm:px-8">
         <div className="mx-auto w-full sm:max-w-[400px]">
-          <PracticeControlsView controls={vm.practiceControls} audio={vm.audio} />
+          <PracticeControlsView controls={vm.practiceControls} />
         </div>
       </div>
       <p

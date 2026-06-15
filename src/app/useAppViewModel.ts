@@ -167,7 +167,6 @@ export function useAppViewModel(): AppViewModel {
     controlsDisabled,
     practiceSession,
     practiceSettings,
-    audio,
     practiceControls,
     uiStrings,
     learnContent: LEARN_CONTENT[locale],

@@ -4,21 +4,17 @@ import { SessionActionRow } from '../components/SessionActionRow'
 import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
 
-type AudioControls = AppViewModel['audio']
 type PracticeControlsViewModel = AppViewModel['practiceControls']
+type AudioToggle = PracticeControlsViewModel['audio']
 
-/** Two audio props:
- *  - `controls.audio` is the audio toggle VM that drives the mute button.
- *  - `audio` drives the global aria-live resume-hint region announcing
- *    audio-paused state. */
+/** `controls.audio` is the audio toggle VM — it drives both the mute button
+ *  and the aria-live resume-hint region announcing audio-paused state. */
 interface PracticeControlsViewProps {
   controls: PracticeControlsViewModel
-  audio: AudioControls
 }
 
 export function PracticeControlsView({
   controls,
-  audio,
 }: PracticeControlsViewProps): ReactElement {
   const mute = useUiStrings().practice.mute
   return (
@@ -29,13 +25,13 @@ export function PracticeControlsView({
         audio={controls.audio}
         muteStrings={mute}
       />
-      <AudioResumeAnnouncement audio={audio} announcement={mute.audioPausedAnnouncement} />
+      <AudioResumeAnnouncement audio={controls.audio} announcement={mute.audioPausedAnnouncement} />
     </>
   )
 }
 
 interface AudioResumeAnnouncementProps {
-  audio: AudioControls
+  audio: AudioToggle
   announcement: string
 }
 
