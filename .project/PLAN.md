@@ -124,3 +124,28 @@ safe to clear.
   (`practice.name`). The preset feature will likely surface a per-preset label on the
   settings sheet/header; revisit then. (D2 collapsed the two identical strings to one.)
 - Decisions log: `.project/DECISIONS.md` (D1–D5).
+
+## Deferred refactors (from `/ds-ts-review`, full-repo pass)
+
+All `minor`, none blocking. The repo is clean otherwise (no `any`/`enum`/`namespace`,
+no floating promises, validated storage boundaries, 739 tests green). Mechanical fixes
+already applied in `7d89ee2` (explicit `ReactElement`/`void` return types). Deferred —
+each changes structure or rests on judgment, so left for a focused pass:
+
+- **`createAudioEngine` (`src/audio/audioEngine.ts:141`, ~350 lines)** — the highest-impact
+  refactor; the one genuinely large unit. Extract the engine method group and the
+  construction/resume-failure setup into helpers. While in here, fold in the two
+  ride-along minors that live inside this function:
+  - `audioEngine.ts:474` — `(err as DOMException)?.name` casts a caught `unknown` without a
+    guard. Replace with `err instanceof DOMException && err.name === 'InvalidStateError'`.
+  - `audioEngine.ts:215` — `endChordTailUntil` lacks the file's `*Sec` unit suffix; rename
+    to `endChordTailUntilSec` (touches its in-closure refs).
+- **`scheduleBowlCue` (`src/audio/cueSynth.ts:55`, ~136 lines)** — extract the
+  envelope-shaping block and the partial-build loop into named helpers.
+- **`scheduleEndChord` (`src/audio/boundaryCueSynth.ts:179`, ~73 lines)** — collapse the
+  four parallel voice-node arrays + cancel() closure into one `voices: ToneNodes[]` array.
+- **`useAppViewModel` (`src/app/useAppViewModel.ts:33`, ~134 lines)** — mostly flat
+  declarative VM wiring; extract the audio-VM assembly, the `onBreathingPrimaryClick`
+  handler, and the session/settings VM wiring into smaller helpers.
+- **`appTestHarness.ts:61`** — `JSON.parse(raw) as Record<string, unknown>` with no runtime
+  validation (test harness, not production — lowest priority).
