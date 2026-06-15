@@ -117,9 +117,6 @@ export interface UiStrings {
   readonly learn: {
     readonly title: string
     readonly close: string
-    readonly resourcesHeading: string
-    readonly videosHeading: string
-    readonly nativeAppsHeading: string
   }
   readonly stats: {
     readonly fields: {
@@ -246,11 +243,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
     },
     learn: {
-      title: 'About this practice',
+      title: 'About Pattern Breathing',
       close: 'Close',
-      resourcesHeading: 'Forrest Knutson Resources',
-      videosHeading: 'Selected HRV Breathing Videos',
-      nativeAppsHeading: 'Resonant Breathing app',
     },
     stats: {
       fields: {
@@ -376,11 +370,8 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
     },
     learn: {
-      title: 'Sobre esta prática',
+      title: 'Sobre Pattern Breathing',
       close: 'Fechar',
-      resourcesHeading: 'Recursos do Forrest Knutson',
-      videosHeading: 'Vídeos selecionados de respiração VFC',
-      nativeAppsHeading: 'App Resonant Breathing',
     },
     stats: {
       fields: {

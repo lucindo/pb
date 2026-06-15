@@ -44,11 +44,7 @@ export function LearnPage({
         }
       />
       <div className="w-full px-5 text-left sm:px-8">
-        <LearnPanel
-          learnContent={learnContent}
-          lockedCopy={lockedCopy}
-          strings={strings}
-        />
+        <LearnPanel learnContent={learnContent} lockedCopy={lockedCopy} />
       </div>
     </PageShell>
   )

@@ -170,10 +170,10 @@ describe('WR-09 surface routing replaces dialog overlay', () => {
     // No modal <dialog> for Learn — it's a full-page route now. The Learn page
     // title is the h1 in TopAppBar.
     expect(
-      screen.queryByRole('dialog', { name: 'About this practice' }),
+      screen.queryByRole('dialog', { name: 'About Pattern Breathing' }),
     ).not.toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { level: 1, name: 'About this practice' }),
+      screen.getByRole('heading', { level: 1, name: 'About Pattern Breathing' }),
     ).toBeInTheDocument()
 
     // Practice surface is unmounted — Start button is gone.

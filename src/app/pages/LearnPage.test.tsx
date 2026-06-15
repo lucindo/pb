@@ -26,7 +26,7 @@ function renderPage(props: Partial<{ onBack: () => void }> = {}) {
 describe('LearnPage', () => {
   it('renders the page title in a TopAppBar h1', () => {
     renderPage()
-    expect(screen.getByRole('heading', { level: 1, name: 'About this practice' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'About Pattern Breathing' })).toBeInTheDocument()
   })
 
   it('renders the back button with the locked Close aria-label', () => {
@@ -41,20 +41,9 @@ describe('LearnPage', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('renders the LearnPanel body — Forrest explainer + resources', () => {
+  it('renders the LearnPanel body — section1 heading', () => {
     renderPage()
-    expect(screen.getByText(LEARN_CONTENT.en.explainer.forrest.title)).toBeInTheDocument()
-    expect(screen.getByText(UI_STRINGS.en.learn.resourcesHeading)).toBeInTheDocument()
-  })
-
-  it('every <a> in the page has target="_blank" + rel="noopener noreferrer" (D-07 preserved)', () => {
-    const { container } = renderPage()
-    const links = container.querySelectorAll('a')
-    expect(links.length).toBeGreaterThan(0)
-    links.forEach((link) => {
-      expect(link).toHaveAttribute('target', '_blank')
-      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
-    })
+    expect(screen.getByText(LEARN_CONTENT.en.section1.title)).toBeInTheDocument()
   })
 
   it('focuses the back button on mount', () => {
