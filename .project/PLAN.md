@@ -32,16 +32,27 @@ Decision: `bypassSilentMode` folds into `domain/settings.ts` (Phase B), then
 `storage/prefs.ts` is deleted entirely (Phase C).
 
 **A — Fix visual options to one value each** (one commit per item; each gates green)
-- A1 Orb style → `minimal-rings` only. Drop orb-halo + spiritual-eye branches in
-  `OrbShape.tsx`; delete `OrbPicker.tsx`; remove `breathingShape` strings + type.
-- A2 Ring cue → `progress-arc` (arc) only. Drop `outer-inner` branch in `OrbShape.tsx`
-  (keep `ProgressArcLayer`); delete `RingCuePicker.tsx`; remove ring-cue strings + type.
-- A3 Breathing effect (`orbIdle`) → removed. Drop `ambient` path in `OrbIdle`/
-  `useAmbientScale` (keep static `still`); remove the Advanced toggle + `breathingEffect`
-  strings + `OrbIdleBehavior`.
-- A4 Cue style → `labels` (Text) only. Drop arrow + nose in `CueGlyph.tsx`; delete
+- [x] A1 Orb style → `minimal-rings` only (commit `69e914a`). Dropped orb-halo +
+  spiritual-eye branches in `OrbShape.tsx`, `OrbPicker`, `breathingShape` flag/pref/
+  strings/type, + orphaned halo/spiritual-eye CSS tokens.
+- [x] A2 Ring cue → `progress-arc` only (commit `c7c6066`). Dropped `outer-inner`
+  branch (kept `ProgressArcLayer`), `RingCuePicker`, `ringCue` flag/pref/strings/type,
+  + the now-empty Orb Style section on Advanced.
+- [x] A3 Breathing effect (`orbIdle`) → removed (commit `c758496`). Deleted
+  `useAmbientScale` (hook + test); `OrbIdle` locks `orbScale` at `MID_SCALE`. Dropped
+  `OrbIdleBehavior`, `ORB_IDLE_FLAG`, `orbIdle` from FeatureFlags/UserPrefs/DEFAULT_PREFS/
+  coercePrefs; the Advanced toggle + `breathingEffect` strings. Also dropped the orphaned
+  `idleMode` prop threading down to `OrbShape` (the C-listed `idleMode` removal, pulled
+  forward since the flag that fed it is gone). `bypassSilentMode` is now the sole flag.
+- [ ] A4 Cue style → `labels` (Text) only. Drop arrow + nose in `CueGlyph.tsx`; delete
   `CuePicker.tsx`; remove `cue` from `domain/settings.ts` + `useVisualCue` (cue → const
   `'labels'`); fix session-controller cue; remove cue strings.
+
+Note (test churn): generic flag-system tests (`featureFlags.test.ts`,
+`useFeatureFlags.test.ts`, `usePreferenceChoice.test.ts`) are repointed to whichever
+flag still survives — A1→A2 moved them breathingShape→ringCue→orbIdle. A3 repointed
+them to `bypassSilentMode` (the last survivor; `usePreferenceChoice` uses `cue` for its
+string-enum exemplar). All three files get deleted in C.
 
 **B — Give `bypassSilentMode` a home.** Add `bypassSilentMode: boolean` (default true) to
 `domain/settings.ts` with a one-time migration reading the old `prefs.ts` value. Repoint
@@ -50,8 +61,7 @@ the audio path (`useAppViewModel` → `useBreathingSessionController` → `useAu
 
 **C — Delete feature-flag system.** Delete `featureFlags.ts`, `useFeatureFlags.ts`,
 `storage/prefs.ts`, `usePreferenceChoice`, the `hrv:prefs-changed` plumbing + tests.
-`variant`/`ringCue`/`idleMode` are now constants → drop those props through
-`PracticeScreen → PracticeSessionView → BreathingSessionSurface`, hardcode in `OrbShape`.
+(The `variant`/`ringCue`/`idleMode` constant props were already removed in A1/A2/A3.)
 Remove `?flag=` parsing + popstate/useSyncExternalStore flag listeners.
 
 **D — Settings restructure.** Rebuild `SettingsPanelBody.tsx`: **System** (Theme · Language),
@@ -71,17 +81,19 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — On branch `refactor/strip-to-pattern-breathing`, tree clean, nothing
-pushed. Settings strip-down is fully planned (Phases A–F above) and the one open
-decision is resolved (`bypassSilentMode` → domain settings). No code touched yet.
-Prior session left the app as a single HRV timer with all gates green
-(`tsc -b`, `eslint`, 993 vitest tests).
+**State** — On branch `refactor/strip-to-pattern-breathing`, nothing pushed.
+Settings strip-down phases A1 + A2 + A3 are done and committed (`69e914a`, `c7c6066`,
+`c758496`); all gates green (`tsc -b`, `eslint`, 928 vitest tests). Phase A is COMPLETE:
+all visual options are fixed to a single value. Advanced page now holds the single
+Behavior toggle (Bypass silent mode); `bypassSilentMode` is the sole surviving feature
+flag. (PLAN.md itself is the only uncommitted file.)
 
-**Next** — Either start Phase A1, or wait for the user to list further removal
-items so the full strip-down is sequenced in one pass. User to choose.
+**Next** — Phase B: give `bypassSilentMode` a home in `domain/settings.ts` (add the
+field with a one-time migration reading the old `prefs.ts` value; repoint the audio
+path). Then Phase C deletes the feature-flag system entirely.
 
 **Open questions**
-- Are there more removal items beyond Settings before we start executing?
+- Are there more removal items beyond Settings (user will list them after Phase A–F)?
 - Pattern-breathing spec still undefined (user will provide later).
 - Optional leftover: write-only `activePractice` envelope field + migration seeding
   survive for schema stability (not read in production); retire only via a dedicated
