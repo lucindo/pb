@@ -61,10 +61,8 @@ export function getBreathingPrimaryAction(input: {
   return input.inLeadIn ? 'cancel' : 'start'
 }
 
-export type SessionPrimaryAction = BreathingPrimaryAction
-
 export function getSessionPrimaryActionLabel(
-  action: SessionPrimaryAction,
+  action: BreathingPrimaryAction,
   strings: UiStrings['practice']['controls'],
 ): string {
   switch (action) {

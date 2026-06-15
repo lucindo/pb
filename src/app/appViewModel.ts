@@ -16,7 +16,7 @@ import {
   getBreathingPresentation,
   getSessionPrimaryActionLabel,
   type BreathingPresentation,
-  type SessionPrimaryAction,
+  type BreathingPrimaryAction,
 } from './sessionPresentation'
 
 type LearnContent = (typeof LEARN_CONTENT)[keyof typeof LEARN_CONTENT]
@@ -171,7 +171,7 @@ export function createPracticeSettingsViewModel(
 }
 
 export interface CreatePracticeControlsViewModelArgs {
-  breathingAction: SessionPrimaryAction
+  breathingAction: BreathingPrimaryAction
   strings: UiStrings['practice']['controls']
   breathingAudio: AppAudioToggleViewModel
   onBreathingPrimaryClick(this: void): void
