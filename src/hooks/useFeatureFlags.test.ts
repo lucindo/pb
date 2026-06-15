@@ -49,32 +49,30 @@ describe('useFeatureFlags', () => {
   it('seeds feature flags from loadPrefs() at mount when no query string is present (PREFS-01)', () => {
     seedPrefs({
       ...DEFAULT_PREFS,
-      ringCue: 'outer-inner',
       orbIdle: 'still',
     })
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('outer-inner')
     expect(result.current.orbIdle).toBe('still')
   })
 
   // PREFS-02 integration: query string wins over persisted when they disagree.
   it('query string wins over persisted on mount (PREFS-02)', () => {
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
-    setSearch('?ringCue=progress-arc')
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
+    setSearch('?orbIdle=ambient')
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
   })
 
   // Cross-tab 'storage' event with
   // key === STATE_KEY re-reads disk; event payload is discarded.
   it('cross-tab storage event with key === STATE_KEY re-reads persisted snapshot', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
 
     // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { ...DEFAULT_PREFS, ringCue: 'outer-inner' },
+      prefs: { ...DEFAULT_PREFS, orbIdle: 'still' },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -90,12 +88,12 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.ringCue).toBe('outer-inner')
+    expect(result.current.orbIdle).toBe('still')
   })
 
   it('cross-tab storage event with unrelated key is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -109,27 +107,11 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
   })
 
   // Same-tab 'hrv:prefs-changed' for
-  // each of the 3 keys re-reads disk; the payload's `value` is never trusted.
-  it('same-tab hrv:prefs-changed with detail.key === "ringCue" re-reads persisted', async () => {
-    const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
-
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
-
-    // eslint-disable-next-line @typescript-eslint/require-await
-    await act(async () => {
-      window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'ringCue', value: 'outer-inner' } }),
-      )
-    })
-
-    expect(result.current.ringCue).toBe('outer-inner')
-  })
-
+  // each of the 2 keys re-reads disk; the payload's `value` is never trusted.
   it('same-tab hrv:prefs-changed with detail.key === "orbIdle" re-reads persisted', async () => {
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.orbIdle).toBe('ambient')
@@ -164,12 +146,12 @@ describe('useFeatureFlags', () => {
 
   // Negative: unrelated 'theme' key MUST NOT trigger a re-read.
   // The test mutates disk so the only way the assertion can hold is if the
-  // hook ignores the event (proves the 3-key filter doesn't false-positive).
+  // hook ignores the event (proves the 2-key filter doesn't false-positive).
   it('same-tab hrv:prefs-changed with detail.key === "theme" is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
 
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -178,16 +160,16 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
   })
 
   // Same negative shape for 'timbre' — proves the unrelated-key ignore covers
   // more than just 'theme' (no single-key special-case in the filter).
   it('same-tab hrv:prefs-changed with detail.key === "timbre" is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
 
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -196,7 +178,7 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
   })
 
   // 5th key: bypassSilentMode event triggers re-read
@@ -228,9 +210,9 @@ describe('useFeatureFlags', () => {
   // will pick up persisted changes.
   it('same-tab hrv:prefs-changed with detail.key === undefined re-reads persisted (forward-compat)', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.ringCue).toBe('progress-arc')
+    expect(result.current.orbIdle).toBe('ambient')
 
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'outer-inner' })
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -239,6 +221,6 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.ringCue).toBe('outer-inner')
+    expect(result.current.orbIdle).toBe('still')
   })
 })

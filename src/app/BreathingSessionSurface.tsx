@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import type { UiStrings } from '../content/strings'
 import { OrbShape } from '../components/OrbShape'
 import { SessionReadout } from '../components/SessionReadout'
-import type { OrbIdleBehavior, RingCueStyle } from '../featureFlags'
+import type { OrbIdleBehavior } from '../featureFlags'
 import type { BreathingPresentation } from './sessionPresentation'
 
 export interface BreathingSessionSurfaceProps {
@@ -12,7 +12,6 @@ export interface BreathingSessionSurfaceProps {
   readoutStrings: UiStrings['practice']['readout']
   bpmUnit: string
   idleMode: OrbIdleBehavior
-  ringCue: RingCueStyle
 }
 
 export function BreathingSessionSurface({
@@ -21,7 +20,6 @@ export function BreathingSessionSurface({
   readoutStrings,
   bpmUnit,
   idleMode,
-  ringCue,
 }: BreathingSessionSurfaceProps): ReactElement {
   return (
     <>
@@ -31,7 +29,6 @@ export function BreathingSessionSurface({
         leadInDigit={presentation.shape.leadInDigit}
         strings={breathingStrings}
         idleMode={idleMode}
-        ringCue={ringCue}
         showCompletion={presentation.readout.showCompletionHeadline}
       />
       {presentation.readout.isLeadInPlaceholder ? (

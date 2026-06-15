@@ -32,11 +32,9 @@ import {
 import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 import {
-  RING_CUE_FLAG,
   ORB_IDLE_FLAG,
   BYPASS_SILENT_MODE_FLAG,
   parseQueryBoolean,
-  type RingCueStyle,
   type OrbIdleBehavior,
 } from '../featureFlags'
 
@@ -45,7 +43,6 @@ export interface UserPrefs {
   timbre: TimbreId
   cue: CueStyleId
   locale: LocaleId
-  ringCue: RingCueStyle
   orbIdle: OrbIdleBehavior
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
@@ -55,7 +52,6 @@ export const DEFAULT_PREFS: UserPrefs = {
   timbre: DEFAULT_TIMBRE,
   cue: DEFAULT_CUE,
   locale: DEFAULT_LOCALE,
-  ringCue: RING_CUE_FLAG.defaultValue,
   orbIdle: ORB_IDLE_FLAG.defaultValue,
   bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // true — see UserPrefs.bypassSilentMode
 }
@@ -99,12 +95,6 @@ export function coerceLocale(raw: unknown): LocaleId {
 }
 
 // Parser reused from featureFlags.ts so the alias table stays in one place.
-export function coerceRingCue(raw: unknown): RingCueStyle {
-  if (typeof raw !== 'string') return RING_CUE_FLAG.defaultValue
-  return RING_CUE_FLAG.parse(raw) ?? RING_CUE_FLAG.defaultValue
-}
-
-// Parser reused from featureFlags.ts so the alias table stays in one place.
 export function coerceOrbIdle(raw: unknown): OrbIdleBehavior {
   if (typeof raw !== 'string') return ORB_IDLE_FLAG.defaultValue
   return ORB_IDLE_FLAG.parse(raw) ?? ORB_IDLE_FLAG.defaultValue
@@ -132,7 +122,6 @@ export function coercePrefs(raw: unknown): UserPrefs {
     timbre:           coerceTimbre(r.timbre),
     cue:              coerceCue(r.cue),
     locale:           coerceLocale(r.locale),
-    ringCue:          coerceRingCue(r.ringCue),
     orbIdle:          coerceOrbIdle(r.orbIdle),
     bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode),
   }

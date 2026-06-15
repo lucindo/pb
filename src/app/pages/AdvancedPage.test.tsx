@@ -51,11 +51,6 @@ describe('AdvancedPage', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('renders one radiogroup for Ring cue', () => {
-    renderPage()
-    expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
-  })
-
   it('renders two switches for Breathing effect and Bypass silent mode', () => {
     renderPage()
     const switches = screen.getAllByRole('switch')

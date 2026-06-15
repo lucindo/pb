@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { createWallSessionClock } from '../audio/sessionClock'
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
-import type { OrbIdleBehavior, RingCueStyle } from '../featureFlags'
+import type { OrbIdleBehavior } from '../featureFlags'
 import { useAmbientScale } from '../hooks/useAmbientScale'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
@@ -23,18 +23,12 @@ export interface OrbShapeProps {
   // scale = MID_SCALE for 'still', breath-clock-driven for 'ambient').
   // showRings is hard-set to false on the idle path.
   idleMode?: OrbIdleBehavior | null
-  // Ring-cue style. Default 'progress-arc' renders the bidirectional progress arc
-  // (south-anchored, suppressed under reduced-motion; faint outer track always present).
-  // 'outer-inner' preserves the prior outer + inner ring rendering.
-  ringCue?: RingCueStyle
   // Completion state — static halo orb (showRings false, scale MID) with a checkmark
   // glyph centred on the accent disc. Takes priority over the frame === null idle path.
   showCompletion?: boolean
 }
 
 const DISC_PCT = 0.62
-// 600 ms ease is the locked ring transition duration.
-const RING_TRANSITION = 'opacity 600ms ease'
 const DISC_BG_TRANSITION = 'background 400ms ease-in-out'
 
 const RING_OPACITY = 0.5
@@ -49,10 +43,9 @@ export function OrbShape({
   showRings = true,
   idleMode,
   showCompletion = false,
-  ringCue = 'progress-arc',
 }: OrbShapeProps) {
   if (leadInDigit != null) {
-    return <OrbLeadIn digit={leadInDigit} strings={strings} ringCue={ringCue} />
+    return <OrbLeadIn digit={leadInDigit} strings={strings} />
   }
   if (showCompletion) {
     return (
@@ -61,7 +54,6 @@ export function OrbShape({
         reducedMotion={false}
         orbScale={MID_SCALE}
         discBg="var(--color-breathing-accent)"
-        ringCue={ringCue}
       >
         <CheckmarkGlyph />
       </OrbContainer>
@@ -69,7 +61,7 @@ export function OrbShape({
   }
   if (frame === null) {
     if (idleMode != null) {
-      return <OrbIdle idleMode={idleMode} ringCue={ringCue} />
+      return <OrbIdle idleMode={idleMode} />
     }
     return null
   }
@@ -79,7 +71,6 @@ export function OrbShape({
       strings={strings}
       cue={cue}
       showRings={showRings}
-      ringCue={ringCue}
     />
   )
 }
@@ -114,10 +105,9 @@ interface OrbBodyProps {
   strings: UiStrings['practice']['breathing']
   cue: CueStyleId
   showRings: boolean
-  ringCue: RingCueStyle
 }
 
-function OrbBody({ frame, strings, cue, showRings, ringCue }: OrbBodyProps) {
+function OrbBody({ frame, strings, cue, showRings }: OrbBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
 
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
@@ -136,11 +126,10 @@ function OrbBody({ frame, strings, cue, showRings, ringCue }: OrbBodyProps) {
       dataPhase={frame.phase}
       dataProgress={progress.toFixed(3)}
       showRings={showRings}
-      innerRingPhase={frame.phase}
+      arcPhase={frame.phase}
       reducedMotion={reducedMotion}
       orbScale={orbScale}
       discBg="var(--color-breathing-accent)"
-      ringCue={ringCue}
       arcProgress={progress}
     >
       <CueGlyph cue={cue} phase={frame.phase} phaseLabel={phaseLabel} />
@@ -153,13 +142,7 @@ function OrbBody({ frame, strings, cue, showRings, ringCue }: OrbBodyProps) {
 // vm.featureFlags.orbIdle). useAmbientScale handles the reduced-motion case
 // internally (returns MID_SCALE static), so the OrbContainer can leave its
 // reducedMotion gate at false — moot when showRings=false anyway.
-function OrbIdle({
-  idleMode,
-  ringCue,
-}: {
-  idleMode: OrbIdleBehavior
-  ringCue: RingCueStyle
-}) {
+function OrbIdle({ idleMode }: { idleMode: OrbIdleBehavior }) {
   // Stable WallSessionClock for useAmbientScale's rAF loop initial start capture.
   // Constructed once per component instance via useMemo so the hook's dep array
   // sees a stable identity. Per-tick time comes from the rAF DOMHighResTimeStamp,
@@ -172,7 +155,6 @@ function OrbIdle({
       reducedMotion={false}
       orbScale={ambientScale}
       discBg="var(--color-breathing-accent)"
-      ringCue={ringCue}
     />
   )
 }
@@ -183,11 +165,9 @@ function OrbIdle({
 function OrbLeadIn({
   digit,
   strings,
-  ringCue,
 }: {
   digit: 1 | 2 | 3
   strings: UiStrings['practice']['breathing']
-  ringCue: RingCueStyle
 }) {
   return (
     <OrbContainer
@@ -197,7 +177,6 @@ function OrbLeadIn({
       reducedMotion={false}
       orbScale={MID_SCALE}
       discBg="var(--color-breathing-accent)"
-      ringCue={ringCue}
     >
       <span className="relative z-10 text-7xl font-semibold tracking-tight sm:text-8xl">
         {digit}
@@ -216,16 +195,14 @@ interface OrbContainerProps {
   dataPhase?: 'in' | 'out' | undefined
   dataProgress?: string
   showRings: boolean
-  innerRingPhase?: 'in' | 'out'
+  // Breath phase driving the progress arc; defaults to 'in' for non-Running call sites.
+  arcPhase?: 'in' | 'out'
   reducedMotion: boolean
   orbScale: number
   discBg: string
-  // Ring-cue style threaded from OrbShape. Only the inner-ring slot in the
-  // showRings block branches on this value; the faint outer track is shared.
-  ringCue: RingCueStyle
-  // Clamped phaseProgress (0..1) — only consumed when ringCue === 'progress-arc'.
-  // Defaults to 0 for non-Running call sites (Idle / LeadIn / Complete)
-  // that pass showRings={false} and therefore never reach the arc branch.
+  // Clamped phaseProgress (0..1) — consumed by the progress arc. Defaults to 0
+  // for non-Running call sites (Idle / LeadIn / Complete) that pass
+  // showRings={false} and therefore never reach the arc.
   arcProgress?: number
   children?: React.ReactNode
 }
@@ -236,11 +213,10 @@ function OrbContainer({
   dataPhase,
   dataProgress,
   showRings,
-  innerRingPhase,
+  arcPhase,
   reducedMotion,
   orbScale,
   discBg,
-  ringCue,
   arcProgress = 0,
   children,
 }: OrbContainerProps) {
@@ -250,9 +226,6 @@ function OrbContainer({
     ...(dataPhase != null ? { 'data-phase': dataPhase } : {}),
     ...(dataProgress != null ? { 'data-progress': dataProgress } : {}),
   }
-
-  const innerVisible = innerRingPhase === 'out' ? 1 : 0
-  const innerSizePct = `${(MIN_SCALE * 100).toFixed(2)}%`
 
   return (
     <div
@@ -273,31 +246,11 @@ function OrbContainer({
               opacity: RING_OPACITY,
             }}
           />
-          {ringCue === 'progress-arc' ? (
-            <ProgressArcLayer
-              phase={innerRingPhase ?? 'in'}
-              progress={arcProgress}
-              reducedMotion={reducedMotion}
-            />
-          ) : (
-            !reducedMotion && (
-              <span
-                aria-hidden="true"
-                className="absolute"
-                style={{
-                  width: innerSizePct,
-                  height: innerSizePct,
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  border: '1.5px solid var(--color-breathing-accent)',
-                  borderRadius: '50%',
-                  opacity: innerVisible * RING_OPACITY,
-                  transition: RING_TRANSITION,
-                }}
-              />
-            )
-          )}
+          <ProgressArcLayer
+            phase={arcPhase ?? 'in'}
+            progress={arcProgress}
+            reducedMotion={reducedMotion}
+          />
         </>
       )}
       <div
@@ -342,7 +295,7 @@ function OrbContainer({
 // .toFixed(4), no stroke-dasharray + no pathLength (Chrome renders those as
 // broken segments). Stroke width 2.5 is the locked product value.
 // Outer track is NOT duplicated here — OrbContainer already renders the
-// faint outer <span> shared across both ring cues and both reduced-motion states.
+// faint outer <span> shared across both reduced-motion states.
 function ProgressArcLayer({
   phase,
   progress,

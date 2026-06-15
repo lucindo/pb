@@ -26,21 +26,21 @@ afterEach(() => {
 
 describe('usePreferenceChoice', () => {
   it('initial state matches loadPrefs()[key]', () => {
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'progress-arc' })
-    const { result } = renderHook(() => usePreferenceChoice('ringCue'))
-    expect(result.current[0]).toBe('progress-arc')
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'ambient' })
+    const { result } = renderHook(() => usePreferenceChoice('orbIdle'))
+    expect(result.current[0]).toBe('ambient')
   })
 
   it('updates local state optimistically and writes to disk', () => {
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'progress-arc' })
-    const { result } = renderHook(() => usePreferenceChoice('ringCue'))
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'ambient' })
+    const { result } = renderHook(() => usePreferenceChoice('orbIdle'))
 
     act(() => {
-      result.current[1]('outer-inner')
+      result.current[1]('still')
     })
 
-    expect(result.current[0]).toBe('outer-inner')
-    expect(readPrefs().ringCue).toBe('outer-inner')
+    expect(result.current[0]).toBe('still')
+    expect(readPrefs().orbIdle).toBe('still')
   })
 
   it('works for boolean-typed fields (type-erased generic, not just enum strings)', () => {
@@ -55,29 +55,27 @@ describe('usePreferenceChoice', () => {
     expect(readPrefs().bypassSilentMode).toBe(true)
   })
 
-  it('preserves all other prefs fields — envelope merge contract (7-field UserPrefs)', () => {
+  it('preserves all other prefs fields — envelope merge contract (6-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
       cue: 'arrow',
       locale: 'pt-BR',
-      ringCue: 'progress-arc',
-      orbIdle: 'still',
+      orbIdle: 'ambient',
       bypassSilentMode: true,
     })
-    const { result } = renderHook(() => usePreferenceChoice('ringCue'))
+    const { result } = renderHook(() => usePreferenceChoice('orbIdle'))
 
     act(() => {
-      result.current[1]('outer-inner')
+      result.current[1]('still')
     })
 
     const prefs = readPrefs()
-    expect(prefs.ringCue).toBe('outer-inner')
+    expect(prefs.orbIdle).toBe('still')
     expect(prefs.theme).toBe('dark')
     expect(prefs.timbre).toBe('bell')
     expect(prefs.cue).toBe('arrow')
     expect(prefs.locale).toBe('pt-BR')
-    expect(prefs.orbIdle).toBe('still')
     expect(prefs.bypassSilentMode).toBe(true)
   })
 
@@ -102,8 +100,8 @@ describe('usePreferenceChoice', () => {
   })
 
   it('setter identity is stable across re-renders', () => {
-    seedPrefs({ ...DEFAULT_PREFS, ringCue: 'progress-arc' })
-    const { result, rerender } = renderHook(() => usePreferenceChoice('ringCue'))
+    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'ambient' })
+    const { result, rerender } = renderHook(() => usePreferenceChoice('orbIdle'))
 
     const initialSetter = result.current[1]
     rerender()

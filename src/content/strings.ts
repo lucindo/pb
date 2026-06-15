@@ -124,15 +124,7 @@ export interface UiStrings {
     readonly backChevron: string
     readonly rightChevronAriaOnSettings: string
     readonly sections: {
-      readonly orbStyle: string
       readonly behavior: string
-    }
-    readonly ringCue: {
-      readonly label: string
-      readonly options: {
-        readonly arc: string
-        readonly rings: string
-      }
     }
     readonly breathingEffect: {
       readonly label: string
@@ -285,8 +277,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       title: 'Advanced',
       backChevron: 'Back to Settings',
       rightChevronAriaOnSettings: 'Advanced settings',
-      sections: { orbStyle: 'Orb Style', behavior: 'Behavior' },
-      ringCue: { label: 'Ring cue', options: { arc: 'Arc', rings: 'Rings' } },
+      sections: { behavior: 'Behavior' },
       breathingEffect: { label: 'Breathing effect' },
       bypassSilentMode: { label: 'Bypass silent mode' },
     },
@@ -436,18 +427,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       rightChevronAriaOnSettings: 'Configurações avançadas',
       sections: {
         // TODO: native-speaker review
-        orbStyle: 'Estilo do orbe',
         behavior: 'Comportamento',
-      },
-      ringCue: {
-        // TODO: native-speaker review
-        label: 'Sinal do anel',
-        options: {
-          // TODO: native-speaker review
-          arc: 'Arco',
-          // TODO: native-speaker review
-          rings: 'Anéis',
-        },
       },
       breathingEffect: {
         // TODO: native-speaker review

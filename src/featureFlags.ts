@@ -5,11 +5,9 @@ export interface QueryFeatureFlagSpec<T> {
 }
 
 export type OrbIdleBehavior = 'still' | 'ambient'
-export type RingCueStyle = 'outer-inner' | 'progress-arc'
 
 export interface FeatureFlags {
   orbIdle: OrbIdleBehavior
-  ringCue: RingCueStyle
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
 
@@ -69,33 +67,6 @@ export const ORB_IDLE_FLAG = {
   },
 } satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
 
-// Alias provenance — every non-canonical token has a recorded origin. Cross-file:
-// the EN strings.ts options.rings label is the UI surface for the 'outer-inner'
-// variant, which is why 'rings' is accepted here as a UI-label alias.
-//   outer-inner aliases:
-//     - 'rings'      : UI-label token (strings.ts options.rings = 'Rings').
-//     - 'production' : spike-branch alias (was the production default before the flip to progress-arc).
-//     - 'default'    : convenience alias for spike branches that wrote `?ringCue=default`.
-//   progress-arc aliases:
-//     - 'arc'        : UI-label token (strings.ts options.arc = 'Arc').
-//     - 'progress'   : shorthand introduced during the progress-arc spike.
-//     - 'south'      : spike-branch label ('south arc' from the early visual studies); retained because there is no cost and a removal would be observable to any bookmarked debug URL.
-// If any of the above aliases is genuinely unused at the next cleanup, drop
-// it together with its test row in featureFlags.test.ts — do not orphan one
-// side of the pair.
-export const RING_CUE_FLAG = {
-  queryParam: 'ringCue',
-  defaultValue: 'progress-arc' as RingCueStyle,
-  parse(rawValue: string): RingCueStyle | null {
-    const v = rawValue.trim().toLowerCase()
-    if (v === 'outer-inner' || v === 'production' || v === 'rings' || v === 'default')
-      return 'outer-inner'
-    if (v === 'progress-arc' || v === 'progress' || v === 'arc' || v === 'south')
-      return 'progress-arc'
-    return null
-  },
-} satisfies QueryFeatureFlagSpec<RingCueStyle>
-
 export const BYPASS_SILENT_MODE_FLAG = {
   queryParam: 'bypassSilentMode',
   defaultValue: true, // default true preserves the no-silent-mode bypass users rely on
@@ -115,7 +86,6 @@ export function readFeatureFlags(
 ): FeatureFlags {
   return {
     orbIdle:          readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)           ?? persisted.orbIdle,
-    ringCue:          readQueryFeatureFlagOrNull(search, RING_CUE_FLAG)           ?? persisted.ringCue,
     bypassSilentMode: readQueryFeatureFlagOrNull(search, BYPASS_SILENT_MODE_FLAG) ?? persisted.bypassSilentMode,
   }
 }

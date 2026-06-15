@@ -16,7 +16,6 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   timbre: 'bowl',
   cue: 'labels',
   locale: 'en',
-  ringCue: 'progress-arc',
   orbIdle: 'ambient',
   bypassSilentMode: true,
 }

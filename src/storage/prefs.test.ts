@@ -6,7 +6,6 @@ import {
   coerceTimbre,
   coerceCue,
   coerceLocale,
-  coerceRingCue,
   coerceOrbIdle,
   coerceBypassSilentMode,
   loadPrefs,
@@ -178,33 +177,6 @@ describe('coerceTheme / coerceTimbre / coerceCue / coerceLocale (D-10 per-field)
   })
 })
 
-describe('coerceRingCue (Phase 47 D-03 — alias reuse)', () => {
-  it("accepts both canonical RingCueStyle values verbatim", () => {
-    expect(coerceRingCue('outer-inner')).toBe('outer-inner')
-    expect(coerceRingCue('progress-arc')).toBe('progress-arc')
-  })
-
-  it("coerces outer-inner aliases ('production' / 'rings' / 'default') to canonical", () => {
-    expect(coerceRingCue('production')).toBe('outer-inner')
-    expect(coerceRingCue('rings')).toBe('outer-inner')
-    expect(coerceRingCue('default')).toBe('outer-inner')
-  })
-
-  it("coerces progress-arc aliases ('progress' / 'arc' / 'south') to canonical", () => {
-    expect(coerceRingCue('progress')).toBe('progress-arc')
-    expect(coerceRingCue('arc')).toBe('progress-arc')
-    expect(coerceRingCue('south')).toBe('progress-arc')
-  })
-
-  it("falls back to RING_CUE_FLAG.defaultValue for garbage / null / numbers", () => {
-    expect(coerceRingCue('junk')).toBe('progress-arc')
-    expect(coerceRingCue(null)).toBe('progress-arc')
-    expect(coerceRingCue(undefined)).toBe('progress-arc')
-    expect(coerceRingCue(42)).toBe('progress-arc')
-    expect(coerceRingCue({})).toBe('progress-arc')
-  })
-})
-
 describe('coerceOrbIdle', () => {
   it('accepts both canonical OrbIdleBehavior values verbatim', () => {
     expect(coerceOrbIdle('still')).toBe('still')
@@ -260,31 +232,19 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
 describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
   // Per-field non-throwing coerce-and-fallback: a single corrupt field falls back
   // to the per-flag default; the other fields are preserved.
-  it("ringCue: 'junk' → 'progress-arc' default; other fields preserved", () => {
-    const out = coercePrefs({
-      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      ringCue: 'junk',
-      orbIdle: 'still', bypassSilentMode: true,
-    })
-    expect(out.ringCue).toBe('progress-arc')
-    expect(out.theme).toBe('dark')
-    expect(out.bypassSilentMode).toBe(true)
-  })
-
   it("orbIdle: 'junk' → 'ambient' default; other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      ringCue: 'outer-inner',
       orbIdle: 'junk', bypassSilentMode: true,
     })
     expect(out.orbIdle).toBe('ambient')
+    expect(out.theme).toBe('dark')
     expect(out.bypassSilentMode).toBe(true)
   })
 
   it("bypassSilentMode: 'junk' → true default (D-05); other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      ringCue: 'outer-inner',
       orbIdle: 'still', bypassSilentMode: 'junk',
     })
     expect(out.bypassSilentMode).toBe(true) // corrupt-field falls back to true (bypassSilentMode default)
@@ -300,7 +260,6 @@ describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
       ...DEFAULT_PREFS,
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
     })
-    expect(out.ringCue).toBe('progress-arc')
     expect(out.orbIdle).toBe('ambient')
     expect(out.bypassSilentMode).toBe(true)
   })
@@ -317,12 +276,11 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('round-trips a 7-field UserPrefs with the flags set to non-default values (Phase 47 + 49.1)', () => {
+  it('round-trips a 6-field UserPrefs with the flags set to non-default values (Phase 47 + 49.1)', () => {
     // Full-fidelity round-trip: every new field carries a non-default value so the
     // assertion fails if any coercer, the JSON re-hydration, or the envelope-merge drops a value.
     const fullPrefs: UserPrefs = {
       theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR',
-      ringCue: 'outer-inner',
       orbIdle: 'still',
       bypassSilentMode: false, // non-default (default is true)
     }
@@ -364,11 +322,10 @@ describe('loadPrefs / savePrefs round-trip', () => {
 describe('DEFAULT_PREFS shape', () => {
   // The field count guards against adding a pref field without a default. The
   // individual coercer defaults are covered by their own describe blocks above.
-  it('DEFAULT_PREFS has the 7 contracted fields with their defaults', () => {
-    expect(DEFAULT_PREFS.ringCue).toBe('progress-arc')
+  it('DEFAULT_PREFS has the 6 contracted fields with their defaults', () => {
     expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
     expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
-    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(7)
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(6)
   })
 })
 

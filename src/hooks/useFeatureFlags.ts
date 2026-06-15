@@ -9,8 +9,8 @@
 //   - Cross-tab 'storage' listener (empty deps) — re-reads loadPrefs() on
 //     STATE_KEY writes (event payload discarded).
 //   - Same-tab 'hrv:prefs-changed' listener (empty deps) — re-reads loadPrefs()
-//     when detail.key is one of ringCue/orbIdle/bypassSilentMode
-//     or undefined (3-key filter + forward-compat undefined branch).
+//     when detail.key is one of orbIdle/bypassSilentMode
+//     or undefined (2-key filter + forward-compat undefined branch).
 //   - Per-field 5-way merge via readFeatureFlags(search, slim-projection) —
 //     query > persisted > default.
 //
@@ -67,7 +67,7 @@ export function useFeatureFlags(): FeatureFlags {
     }
   }, [])
 
-  // Same-tab 'hrv:prefs-changed' listener — filter on the 3-key set plus undefined
+  // Same-tab 'hrv:prefs-changed' listener — filter on the 2-key set plus undefined
   // forward-compat. Unrelated keys (theme / timbre / cue / locale) are ignored to
   // avoid spurious re-renders when those pickers fire.
   useEffect(() => {
@@ -80,7 +80,6 @@ export function useFeatureFlags(): FeatureFlags {
           : undefined
       if (
         key === undefined ||
-        key === 'ringCue' ||
         key === 'orbIdle' ||
         key === 'bypassSilentMode'
       ) {
@@ -98,7 +97,6 @@ export function useFeatureFlags(): FeatureFlags {
   // over Pick-typed pass-through for clarity at the single call site.
   return readFeatureFlags(search, {
     orbIdle:          persisted.orbIdle,
-    ringCue:          persisted.ringCue,
     bypassSilentMode: persisted.bypassSilentMode,
   })
 }
