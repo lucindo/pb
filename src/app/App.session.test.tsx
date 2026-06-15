@@ -310,25 +310,20 @@ describe('end-confirmation dialog gating', () => {
     vi.restoreAllMocks()
   })
 
-  // UAT GAP 3: open-ended resonant sessions still end directly (no dialog — regression guard)
-  it('GAP 3: open-ended resonant sessions still end directly without dialog (no over-trigger)', async () => {
-    // Open-ended resonant: set durationMinutes to 'open-ended' via localStorage
+  // UAT GAP 3: open-ended sessions still end directly (no dialog — regression guard)
+  it('GAP 3: open-ended sessions still end directly without dialog (no over-trigger)', async () => {
+    // Open-ended: set durationMinutes to 'open-ended' via localStorage
     window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 3,
-      activePractice: 'resonant',
-      practices: {
-        resonant: {
-          settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' },
-          stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
-        },
-      },
+      version: 1,
+      settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' },
+      stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
     }))
     render(<App />)
 
     await startAndAdvancePastLeadIn()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-    // Open-ended resonant session: dialog must NOT appear; session ends directly
+    // Open-ended session: dialog must NOT appear; session ends directly
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
   })

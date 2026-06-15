@@ -2,7 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 
 import { LEAD_IN_DURATION_MS } from '../audio/audioEngine'
-import { STATE_KEY, type PracticeId } from '../storage'
+import { STATE_KEY } from '../storage'
 
 export const APP_TEST_NOW = new Date('2026-05-09T00:00:00.000Z')
 export const APP_LEAD_IN_MS = LEAD_IN_DURATION_MS
@@ -59,13 +59,4 @@ export async function advanceTime(ms: number): Promise<void> {
 export function readStoredEnvelope(): Record<string, unknown> | null {
   const raw = window.localStorage.getItem(STATE_KEY)
   return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
-}
-
-export function practiceStatsOf(
-  env: Record<string, unknown> | null,
-  practice: PracticeId,
-): Record<string, unknown> | undefined {
-  const practices = env?.['practices'] as Record<string, unknown> | undefined
-  const slice = practices?.[practice] as Record<string, unknown> | undefined
-  return slice?.['stats'] as Record<string, unknown> | undefined
 }

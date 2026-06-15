@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
+import type { SessionSettings } from '../domain'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { useBreathingSessionController } from '../hooks/useBreathingSessionController'
 import { useBypassSilentMode } from '../hooks/useBypassSilentMode'
@@ -11,11 +12,11 @@ import { useLocale } from '../hooks/useLocale'
 import { useTheme } from '../hooks/useTheme'
 import { useWakeLock } from '../hooks/useWakeLock'
 import {
-  loadPractices,
-  resetPracticeStats,
+  loadSettings,
+  loadStats,
+  resetStats,
   ZERO_STATS,
-  type PracticeId,
-  type PracticeMap,
+  type PersistedStats,
 } from '../storage'
 import {
   createAudioViewModel,
@@ -25,19 +26,12 @@ import {
   createPracticeSettingsViewModel,
   type AppEndSessionDialogViewModel,
   type AppViewModel,
-  type PracticeStatsMap,
 } from './appViewModel'
 import { getBreathingPrimaryAction } from './sessionPresentation'
 import { useAppNavigation } from './useAppNavigation'
 
-function snapshotStats(practices: PracticeMap): PracticeStatsMap {
-  return {
-    resonant: practices.resonant.stats,
-  }
-}
-
 export function useAppViewModel(): AppViewModel {
-  const initialPractices = useMemo<PracticeMap>(() => loadPractices(), [])
+  const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
   const wakeLock = useWakeLock()
   useTheme()
   useFavicon()
@@ -48,7 +42,7 @@ export function useAppViewModel(): AppViewModel {
   const { bypassSilentMode } = useBypassSilentMode()
 
   const breathing = useBreathingSessionController({
-    initialSettings: initialPractices.resonant.settings,
+    initialSettings,
     wakeLock,
     bypassSilentMode,
   })
@@ -63,16 +57,16 @@ export function useAppViewModel(): AppViewModel {
   // this state, so re-read when Settings opens (stats render inline there) to
   // reflect the latest session. Settings is unreachable mid-session, so a
   // read-on-open is sufficient.
-  const [stats, setStats] = useState<PracticeStatsMap>(() => snapshotStats(initialPractices))
+  const [stats, setStats] = useState<PersistedStats>(() => loadStats())
   const navOnSettingsOpen = appNavigation.onSettingsOpen
   const onSettingsOpen = useCallback((): void => {
-    setStats(snapshotStats(loadPractices()))
+    setStats(loadStats())
     navOnSettingsOpen()
   }, [navOnSettingsOpen])
-  const onResetPracticeStats = useCallback((practice: PracticeId): void => {
-    resetPracticeStats(practice)
+  const onResetStats = useCallback((): void => {
+    resetStats()
     // Optimistic RAM update — the disk write is fire-and-forget (quota / ITP).
-    setStats((prev) => ({ ...prev, [practice]: { ...ZERO_STATS } }))
+    setStats({ ...ZERO_STATS })
   }, [])
 
   const breathingResetSession = breathing.resetSession
@@ -171,6 +165,6 @@ export function useAppViewModel(): AppViewModel {
     navigation: { ...appNavigation, onSettingsOpen },
     dialogs: { endSessionDialogs },
     stats,
-    onResetPracticeStats,
+    onResetStats,
   }
 }

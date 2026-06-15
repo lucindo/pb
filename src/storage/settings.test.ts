@@ -5,8 +5,8 @@ import {
   coerceMute,
   loadMute,
   saveMute,
+  savePatternBreathingSettings,
 } from './settings'
-import { saveResonantSettings } from './practices'
 import { STATE_KEY } from './storage'
 import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
 
@@ -77,28 +77,20 @@ describe('coerceSettings (D-15)', () => {
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
   })
 
-  // coerceSettings is standard-only (3 fields). Stretch ramp fields (mode, initialBpm,
-  // targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes) live in coerceStretchSettings.
-  it('returns exactly { bpm, ratio, durationMinutes } — no mode or ramp fields present', () => {
-    // A raw blob carrying old stretch fields should produce only the 3 standard fields.
-    const rawWithRampFields = {
+  // coerceSettings reads only the 3 known keys; any extra drifted fields are dropped.
+  it('returns exactly { bpm, ratio, durationMinutes } — extra fields dropped', () => {
+    const rawWithExtraFields = {
       bpm: 5.5,
       ratio: '40:60',
       durationMinutes: 10,
       mode: 'stretch',
       initialBpm: 6,
-      targetBpm: 4,
-      warmUpMinutes: 5,
-      coolDownMinutes: 5,
-      rampDurationMinutes: 5,
     }
-    const result = coerceSettings(rawWithRampFields)
-    // Only the 3 standard keys must be present.
+    const result = coerceSettings(rawWithExtraFields)
     expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'ratio'])
     expect(result.bpm).toBe(5.5)
     expect(result.ratio).toBe('40:60')
     expect(result.durationMinutes).toBe(10)
-    // Drifted/extra fields must NOT appear on the result.
     const asAny = result as unknown as Record<string, unknown>
     expect(asAny['mode']).toBeUndefined()
     expect(asAny['initialBpm']).toBeUndefined()
@@ -128,15 +120,13 @@ describe('loadMute / saveMute round-trip', () => {
     expect(loadMute()).toBe(false)
   })
 
-  it('preserves resonant settings + mute when saving mute (envelope merge)', () => {
-    saveResonantSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
+  it('preserves settings + mute when saving mute (envelope merge)', () => {
+    savePatternBreathingSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
     saveMute(true)
     // Reason: STATE_KEY is always present after saveMute; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
-    const practices = raw['practices'] as Record<string, unknown> | undefined
-    const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
-    expect(resonant?.['settings']).toMatchObject({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    expect(raw['settings']).toMatchObject({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
     expect(raw).toMatchObject({ mute: true })
   })
 })

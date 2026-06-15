@@ -37,20 +37,12 @@ function seedEnvelope(opts: SeedOpts = {}) {
   }))
 }
 
-// After the v1→v2 migration, the authoritative resonant stats live at
-// env.practices.resonant.stats — recordResonantSession writes here, not env.stats.
-function resonantStatsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
-  const practices = env?.['practices'] as Record<string, unknown> | undefined
-  const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
-  return resonant?.['stats'] as Record<string, unknown> | undefined
+function statsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
+  return env?.['stats'] as Record<string, unknown> | undefined
 }
 
-// Resonant settings persist to practices.resonant.settings via saveResonantSettings —
-// not the legacy flat env.settings write path.
-function resonantSettingsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
-  const practices = env?.['practices'] as Record<string, unknown> | undefined
-  const resonant = practices?.['resonant'] as Record<string, unknown> | undefined
-  return resonant?.['settings'] as Record<string, unknown> | undefined
+function settingsOf(env: Record<string, unknown> | null): Record<string, unknown> | undefined {
+  return env?.['settings'] as Record<string, unknown> | undefined
 }
 
 // vitest.setup.ts already clears localStorage before each test.
@@ -125,17 +117,15 @@ describe('LOCL-01 — persistence on change', () => {
     expect(screen.getByRole('button', { name: 'Unmute audio cues' })).toBeInTheDocument()
   })
 
-  it('persists settings change to the resonant practice slice (LOCL-01 / CR-01)', async () => {
+  it('persists settings change to the envelope settings field (LOCL-01 / CR-01)', async () => {
     render(<App />)
     // Click the BPM decrease button — default is 5.5 BPM; decrease goes to 5 BPM.
     const bpmGroup = settingGroup('BPM')
     fireEvent.click(within(bpmGroup).getByRole('button', { name: 'Decrease BPM' }))
     await act(async () => { await Promise.resolve() })
     const env = readRawEnvelope()
-    // CR-01: the write target is practices.resonant.settings via
-    // saveResonantSettings — the legacy flat env.settings write is no longer used.
-    expect(resonantSettingsOf(env)).toMatchObject({ bpm: 5 })
-    expect(env?.['settings']).toBeUndefined()
+    // savePatternBreathingSettings writes the flat top-level settings field.
+    expect(settingsOf(env)).toMatchObject({ bpm: 5 })
   })
 })
 
@@ -151,7 +141,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     // Advance an extra minute so the surrounding cycle finishes.
     await advanceTime(6 * 60_000)
     const env = readRawEnvelope()
-    const stats = resonantStatsOf(env)
+    const stats = statsOf(env)
     expect(stats?.['totalSessions']).toBe(1)
     // elapsed is at least 300s for a 5-min session
     expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(300)
@@ -171,7 +161,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     await act(async () => { await Promise.resolve() })
     // Open-ended: no modal. End fires directly. Stats written in cleanup effect.
     const env = readRawEnvelope()
-    const stats = resonantStatsOf(env)
+    const stats = statsOf(env)
     expect(stats?.['totalSessions']).toBe(1)
     expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(35)
   })
@@ -184,7 +174,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     await act(async () => { await Promise.resolve() })
     const env = readRawEnvelope()
-    const sessions = resonantStatsOf(env)?.['totalSessions'] as number | undefined
+    const sessions = statsOf(env)?.['totalSessions'] as number | undefined
     expect(sessions ?? 0).toBe(0)
   })
 
@@ -201,7 +191,7 @@ describe('LOCL-02 — stats record on each end path', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await advanceTime(0)
     const env = readRawEnvelope()
-    const sessions2 = resonantStatsOf(env)?.['totalSessions'] as number | undefined
+    const sessions2 = statsOf(env)?.['totalSessions'] as number | undefined
     expect(sessions2 ?? 0).toBe(0)
   })
 
@@ -215,62 +205,23 @@ describe('LOCL-02 — stats record on each end path', () => {
     // recordedSessionKeyRef prevents double-write via idempotency key.
     await advanceTime(100)
     const env = readRawEnvelope()
-    expect(resonantStatsOf(env)?.['totalSessions']).toBe(1)  // exactly one, not two
+    expect(statsOf(env)?.['totalSessions']).toBe(1)  // exactly one, not two
   })
 })
 
 // ---------------------------------------------------------------------------
-// PRACTICE-02 — Resonant settings survive remount.
+// PRACTICE-02 — Settings survive remount.
 //
-// Verifies that App.tsx seeds initialSettings from loadPractices().resonant.settings
-// (per-practice envelope), NOT the abandoned flat env.settings field.
+// Verifies that App.tsx seeds initialSettings from loadSettings() (the flat
+// envelope settings field).
 // ---------------------------------------------------------------------------
-
-// Seed a v2 envelope directly — flat env.settings is absent (fresh-v2 user).
-// version: 2 ensures migrateEnvelope skips the v1→v2 ladder so the test
-// exercises the post-fix read path directly, without relying on migration.
-function seedV2Envelope(resonantSettings: { bpm: number; ratio: string; durationMinutes: number }) {
-  window.localStorage.setItem(STATE_KEY, JSON.stringify({
-    version: 2,
-    practices: {
-      resonant: { settings: resonantSettings, stats: null },
-    },
-    activePractice: 'resonant',
-  }))
-}
-
-describe('PRACTICE-02 — resonant settings survive remount', () => {
-  it('fresh-v2 user: resonant settings from practices.resonant.settings survive reload', () => {
-    // Seed v2 envelope: practices.resonant.settings holds a non-default BPM.
-    // Flat env.settings is absent (fresh post-Phase-30 user, never had it).
-    // App.tsx must read from practices.resonant.settings, not the absent flat field.
-    seedV2Envelope({ bpm: 4, ratio: '50:50', durationMinutes: 5 })
+describe('PRACTICE-02 — settings survive remount', () => {
+  it('persisted settings survive a reload', () => {
+    seedEnvelope({ settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 } })
     render(<App />)
     expect(screen.getByText('4 BPM')).toBeInTheDocument()
     expect(screen.getByText('50:50')).toBeInTheDocument()
     expect(screen.getByText('5 min')).toBeInTheDocument()
-  })
-
-  it('v1-migrated user: practices.resonant.settings wins over stale flat env.settings on remount', () => {
-    // Simulate a user who: (1) migrated from v1 (flat env.settings = stale BPM 6),
-    // then (2) changed settings (saveResonantSettings wrote BPM 4 to practices.resonant).
-    // The flat env.settings is now a stale orphan; the read-path must prefer the
-    // The read-path must prefer the per-practice value.
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 2,
-      settings: { bpm: 6, ratio: '40:60', durationMinutes: 10 },  // stale orphan
-      practices: {
-        resonant: {
-          settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 },  // newer value
-          stats: null,
-        },
-      },
-      activePractice: 'resonant',
-    }))
-    render(<App />)
-    // Must show 4 BPM (practices subtree), NOT 6 BPM (stale flat field).
-    expect(screen.getByText('4 BPM')).toBeInTheDocument()
-    expect(screen.queryByText('6 BPM')).not.toBeInTheDocument()
   })
 })
 

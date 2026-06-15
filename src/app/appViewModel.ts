@@ -11,7 +11,7 @@ import type {
   SessionSettings,
   SessionStatus,
 } from '../domain'
-import type { PersistedStats, PracticeId } from '../storage'
+import type { PersistedStats } from '../storage'
 import {
   getBreathingPresentation,
   getSessionPrimaryActionLabel,
@@ -78,10 +78,8 @@ export type AppPracticeSettingsViewModel = {
   onExtendDuration(this: void, durationMinutes: number): void
 }
 
-// Per-practice stats snapshot held in app state and surfaced inline on the
-// Settings page. Refreshed from disk when Settings opens and updated
-// optimistically on reset.
-export type PracticeStatsMap = Readonly<Record<PracticeId, PersistedStats>>
+// Stats snapshot held in app state and surfaced inline on the Settings page.
+// Refreshed from disk when Settings opens and updated optimistically on reset.
 
 export interface AppViewModel {
   locale: LocaleId
@@ -96,8 +94,8 @@ export interface AppViewModel {
   install: AppInstallViewModel
   navigation: AppNavigationViewModel
   dialogs: AppDialogsViewModel
-  stats: PracticeStatsMap
-  onResetPracticeStats(this: void, practice: PracticeId): void
+  stats: PersistedStats
+  onResetStats(this: void): void
 }
 
 export interface CreateInstallViewModelArgs {

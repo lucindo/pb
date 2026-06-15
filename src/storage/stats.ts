@@ -1,10 +1,10 @@
 // src/storage/stats.ts
 //
-// Persisted-stats shape (PersistedStats / ZERO_STATS) and per-field, non-throwing
-// coercion (coerceStats). Recording + reset live in the per-practice slices in
-// practices.ts; this module holds only the shape and validation they share.
+// Persisted-stats shape (PersistedStats / ZERO_STATS), per-field non-throwing
+// coercion (coerceStats), and the session record/reset writes against the flat
+// envelope `stats` field.
 
-import { asRecord } from './storage'
+import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 export const COUNT_THRESHOLD_MS = 30_000  // count threshold: 30 s or completion
 
@@ -64,4 +64,47 @@ export function coerceStats(raw: unknown): PersistedStats {
     lastSessionAtMs:            isFiniteNonNegativeNumberOrNull(r.lastSessionAtMs)      ? r.lastSessionAtMs           : null,
     lastSessionDurationSeconds: isFiniteNonNegativeIntOrNull(r.lastSessionDurationSeconds) ? r.lastSessionDurationSeconds : null,
   }
+}
+
+export function loadStats(deps: StorageDeps = {}): PersistedStats {
+  return coerceStats(readEnvelope(deps).stats)
+}
+
+// Records a completed/early-ended session into the envelope's stats and returns
+// the IN-MEMORY projection. writeEnvelope is fire-and-forget (quota / ITP /
+// private mode / future-version short-circuit all silently swallow the write);
+// callers treat the return as RAM-authoritative — UI updates immediately.
+export function recordPatternBreathingSession(
+  elapsedMs: number,
+  isComplete: boolean,
+  deps: StorageDeps = {},
+): PersistedStats {
+  const env = readEnvelope(deps)
+  const stats = coerceStats(env.stats)
+  // Reject NaN/Infinity/negative elapsedMs up front so a bad frame cannot
+  // poison totalElapsedSeconds.
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    return stats
+  }
+  // Count if elapsed >= 30s OR isComplete (completion bypasses threshold).
+  if (!isComplete && elapsedMs < COUNT_THRESHOLD_MS) {
+    return stats
+  }
+  const elapsedSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const now = deps.now ?? Date.now
+  const next: PersistedStats = {
+    totalSessions: stats.totalSessions + 1,
+    totalElapsedSeconds: stats.totalElapsedSeconds + elapsedSeconds,
+    lastSessionAtMs: now(),
+    lastSessionDurationSeconds: elapsedSeconds,
+  }
+  writeEnvelope({ ...env, stats: next }, deps)
+  return next
+}
+
+// Wipes stats back to zero. Fire-and-forget write — callers treat their
+// optimistic ZERO update as RAM-authoritative.
+export function resetStats(deps: StorageDeps = {}): void {
+  const env = readEnvelope(deps)
+  writeEnvelope({ ...env, stats: { ...ZERO_STATS } }, deps)
 }

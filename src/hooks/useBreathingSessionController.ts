@@ -12,9 +12,9 @@ import type { SessionSettings } from '../domain/settings'
 import {
   loadMute,
   loadPrefs,
-  recordResonantSession,
+  recordPatternBreathingSession,
   saveMute,
-  saveResonantSettings,
+  savePatternBreathingSettings,
 } from '../storage'
 import { useAudioCues, type AudioStatusFlag } from './useAudioCues'
 import { clearScheduledTimeouts, scheduleLeadInTimeouts } from './leadInCountdown'
@@ -143,7 +143,7 @@ export function useBreathingSessionController({
 
   const setSelectedSettings = useCallback((next: SessionSettings): void => {
     sessionSetSelectedSettings(next)
-    saveResonantSettings(next)
+    savePatternBreathingSettings(next)
   }, [sessionSetSelectedSettings])
 
   const persistedSetMuted = useCallback((next: boolean): void => {
@@ -246,7 +246,7 @@ export function useBreathingSessionController({
   }, [sessionEnd])
 
   // CompleteSessionState.completedAtSec is seconds-shaped; storage's
-  // recordResonantSession accepts ms-shaped values. The boundary conversion
+  // recordPatternBreathingSession accepts ms-shaped values. The boundary conversion
   // (× 1000) lives here, at the consumer-to-storage edge. This is the ONLY
   // ms-shaped value emitted from this hook; everywhere else in the
   // running-session chain is seconds-shaped end-to-end.
@@ -278,7 +278,7 @@ export function useBreathingSessionController({
       // the in-memory chain stays seconds-shaped.
       const elapsedMs = elapsedSec * 1000
 
-      recordResonantSession(elapsedMs, isComplete)
+      recordPatternBreathingSession(elapsedMs, isComplete)
       recordedSessionKeyRef.current = snap.key
     }
   }, [

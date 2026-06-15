@@ -32,10 +32,10 @@ export function ScreenRouter({ vm }: ScreenRouterProps): ReactElement {
           installable={vm.install.installable}
           onInstall={vm.install.onInstall}
           onBack={vm.navigation.onBackToPractice}
-          stat={vm.stats.resonant}
+          stat={vm.stats}
           practiceName={vm.uiStrings.practice.switcher.resonantName}
           locale={vm.locale}
-          onResetStats={() => { vm.onResetPracticeStats('resonant') }}
+          onResetStats={vm.onResetStats}
         />
       )
     case 'practice':

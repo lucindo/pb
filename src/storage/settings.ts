@@ -3,10 +3,6 @@
 // Per-field validate-and-fallback for settings + mute. Coercers are NON-THROWING
 // (cousin to validateSettings in src/domain/settings.ts which throws). Per-field
 // policy means a single drifted field does NOT discard the rest of the envelope.
-//
-// coerceSettings covers the 3 standard fields only; stretch-specific fields
-// (initialBpm, targetBpm, warmUpMinutes, coolDownMinutes, rampDurationMinutes)
-// live in coerceStretchSettings in practices.ts.
 
 import {
   DEFAULT_SETTINGS,
@@ -25,6 +21,15 @@ export function coerceSettings(raw: unknown): SessionSettings {
     ratio:           isValidRatio(r.ratio)       ? r.ratio           : DEFAULT_SETTINGS.ratio,
     durationMinutes: isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes,
   }
+}
+
+export function loadSettings(deps: StorageDeps = {}): SessionSettings {
+  return coerceSettings(readEnvelope(deps).settings)
+}
+
+export function savePatternBreathingSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
+  const env = readEnvelope(deps)
+  writeEnvelope({ ...env, settings }, deps)
 }
 
 export function coerceMute(raw: unknown): boolean {
