@@ -56,7 +56,6 @@ describe('app practice session view model', () => {
       breathing: breathingState,
     })
 
-    expect(model.kind).toBe('patternBreathing')
     expect(model.presentation.shape).toEqual({
       frame,
       leadInDigit: null,
@@ -106,7 +105,6 @@ describe('app practice settings view model', () => {
   it('returns the patternBreathing settings contract', () => {
     const patternBreathing = createPracticeSettingsViewModel(makeSettingsSources())
 
-    expect(patternBreathing.kind).toBe('patternBreathing')
     expect(patternBreathing.settings).toBe(DEFAULT_SETTINGS)
   })
 })

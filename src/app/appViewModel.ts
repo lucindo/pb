@@ -65,12 +65,10 @@ export interface AppPracticeControlsViewModel {
 }
 
 export type AppPracticeSessionViewModel = {
-  kind: 'patternBreathing'
   presentation: BreathingPresentation
 }
 
 export type AppPracticeSettingsViewModel = {
-  kind: 'patternBreathing'
   settings: SessionSettings
   isRunning: boolean
   isComplete: boolean
@@ -150,7 +148,7 @@ export function createPracticeSessionViewModel({
     ratio: breathing.selectedSettings.ratio,
   })
 
-  return { kind: 'patternBreathing', presentation }
+  return { presentation }
 }
 
 export interface PracticeSettingsSources {
@@ -165,7 +163,6 @@ export function createPracticeSettingsViewModel(
   sources: PracticeSettingsSources,
 ): AppPracticeSettingsViewModel {
   return {
-    kind: 'patternBreathing',
     settings: sources.settings,
     isRunning: sources.isRunning,
     isComplete: sources.isComplete,

@@ -10,7 +10,6 @@ describe('buildSetupCardSummary — patternBreathing', () => {
   it('returns null when patternBreathing session is complete (existing behaviour)', () => {
     const result = buildSetupCardSummary({
       settings: {
-        kind: 'patternBreathing',
         settings: DEFAULT_SETTINGS,
         isRunning: false,
         isComplete: true,
@@ -26,7 +25,6 @@ describe('buildSetupCardSummary — patternBreathing', () => {
   it('returns summary items when patternBreathing session is idle (existing behaviour)', () => {
     const result = buildSetupCardSummary({
       settings: {
-        kind: 'patternBreathing',
         settings: DEFAULT_SETTINGS,
         isRunning: false,
         isComplete: false,

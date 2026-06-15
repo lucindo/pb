@@ -24,7 +24,6 @@ function makePatternBreathingVM(overrides: {
   isComplete?: boolean
 } = {}): AppPracticeSettingsViewModel {
   return {
-    kind: 'patternBreathing',
     settings: overrides.settings ?? DEFAULT_SETTINGS,
     isRunning: overrides.isRunning ?? false,
     isComplete: overrides.isComplete ?? false,
