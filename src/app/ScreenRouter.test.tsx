@@ -37,7 +37,7 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
     uiStrings: { practice: { switcher: { patternBreathingName: 'Pattern Breathing' } } } as AppViewModel['uiStrings'],
     locale: 'en',
     stats: { patternBreathing: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: 0 } },
-    onResetPracticeStats: () => {},
+    onResetStats: () => {},
   } as unknown as AppViewModel
 }
 

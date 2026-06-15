@@ -6,7 +6,7 @@ import { SetupCard } from '../components/SetupCard'
 import type { UiStrings } from '../content/strings'
 import { useUiStrings } from '../hooks/useUiStringsContext'
 import type { AppViewModel } from './appViewModel'
-import { buildSetupCardSummary, resolveSheetPracticeName } from './setupCardSummary'
+import { buildSetupCardSummary } from './setupCardSummary'
 
 type PracticeSettingsViewModel = AppViewModel['practiceSettings']
 
@@ -35,9 +35,7 @@ export function PracticeSettingsView({
   const items = buildSetupCardSummary({ settings, practice })
   if (items === null) return null
 
-  const practiceName = resolveSheetPracticeName(settings, practice.switcher)
-  if (practiceName === null) return null
-
+  const practiceName = practice.switcher.patternBreathingHeading
   const sheet = practice.settingsSheet
 
   return (

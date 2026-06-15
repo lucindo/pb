@@ -7,9 +7,8 @@ import { beforeEach, vi } from 'vitest'
 // that need pre-seeded data call localStorage.setItem() in their own beforeEach /
 // test body — this global clear runs first and provides a clean slate.
 beforeEach(() => {
-  // Reason: jsdom always defines window, but the guard is kept for environments where this setup may run outside jsdom.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (typeof window !== 'undefined' && typeof window.localStorage?.clear === 'function') {
+  if (typeof window.localStorage?.clear === 'function') {
     window.localStorage.clear()
   }
 })
@@ -27,9 +26,8 @@ beforeEach(() => {
 // methods read `this` to look up the per-instance Map.
 //
 // Observed in Node 25.9.0 + jsdom 29.1.1 combination.
-// Reason: jsdom always defines window, but the guard is kept for environments where this setup may run outside jsdom.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'function') {
+if (typeof window.localStorage?.getItem !== 'function') {
   const _stores = new WeakMap<object, Map<string, string>>()
 
   function storeFor(instance: object): Map<string, string> {
@@ -114,9 +112,8 @@ if (typeof HTMLDialogElement !== 'undefined') {
 // window.matchMedia polyfill — jsdom has no layout engine and does not implement matchMedia.
 // Default `matches: false` keeps the suite running under "motion ALLOWED" semantics.
 // Reduced-motion tests override with `vi.spyOn(window, 'matchMedia').mockReturnValue(...)`.
-// Reason: jsdom always defines window, but the guards are kept for environments where this setup may run outside jsdom.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-if (typeof window !== 'undefined' && !window.matchMedia) {
+if (!window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({
@@ -134,9 +131,8 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 
 // AudioContext polyfill — jsdom 29.1.1 does not implement Web Audio.
 // Verified against github.com/jsdom/jsdom/issues/2900.
-// Reason: jsdom always defines window, but the guards are kept for environments where this setup may run outside jsdom.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-if (typeof window !== 'undefined' && !window.AudioContext) {
+if (!window.AudioContext) {
   class FakeAudioParam {
     value = 0
     setValueAtTime = vi.fn()
@@ -276,7 +272,7 @@ if (typeof window !== 'undefined' && !window.AudioContext) {
 // Per-test failure paths use `vi.spyOn(navigator.wakeLock, 'request').mockRejectedValueOnce(...)`
 // and per-test API-absent paths use a per-test Object.defineProperty override on
 // navigator.wakeLock (set value to undefined) — both rely on the configurable flag below.
-if (typeof navigator !== 'undefined' && !('wakeLock' in navigator)) {
+if (!('wakeLock' in navigator)) {
   class FakeWakeLockSentinel extends EventTarget {
     type: WakeLockType = 'screen'
     released = false

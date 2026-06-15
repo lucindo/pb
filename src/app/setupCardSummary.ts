@@ -33,13 +33,3 @@ export function buildSetupCardSummary({
     },
   ]
 }
-
-// Resolves the display name used for the SetupCard aria-label and the
-// SettingsSheet subtitle.
-export function resolveSheetPracticeName(
-  settings: AppPracticeSettingsViewModel,
-  switcher: UiStrings['practice']['switcher'],
-): string | null {
-  void settings
-  return switcher.patternBreathingHeading
-}
