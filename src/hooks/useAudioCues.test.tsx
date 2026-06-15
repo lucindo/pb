@@ -8,6 +8,7 @@ import type { BreathingPlan } from '../domain/breathingPlan'
 import type { AudioStatus } from '../audio/audioEngine'
 import * as audioEngineModule from '../audio/audioEngine'
 import * as cueSynth from '../audio/cueSynth'
+import { STATE_KEY } from '../storage'
 import { useAudioCues } from './useAudioCues'
 
 // BreathingPlan fixture is seconds-shaped.
@@ -1256,7 +1257,7 @@ describe('useAudioCues — Phase 18 timbre capture + reconstruction (D-08 + D-11
     //    not re-read prefs during reconstruction — it reads timbreRef.current exclusively,
     //    which still holds 'bell'.
     window.localStorage.setItem(
-      'pattern-breathing:state:v1',
+      STATE_KEY,
       JSON.stringify({ version: 1, prefs: { theme: 'system', timbre: 'flute', locale: 'en' } }),
     )
 

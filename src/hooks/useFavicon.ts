@@ -20,7 +20,7 @@
 import { useEffect, useState } from 'react'
 
 import { loadPrefs } from '../storage/prefs'
-import { STATE_KEY } from '../storage'
+import { PREFS_CHANGED_EVENT, STATE_KEY } from '../storage'
 import type { ThemeId } from '../domain/settings'
 import { buildFaviconDataUri } from '../styles/faviconPalette'
 
@@ -149,9 +149,9 @@ export function useFavicon(): void {
         setTheme(loadPrefs().theme)
       }
     }
-    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
+    window.addEventListener(PREFS_CHANGED_EVENT, onPrefsChanged)
     return () => {
-      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
+      window.removeEventListener(PREFS_CHANGED_EVENT, onPrefsChanged)
     }
   }, [])
 }

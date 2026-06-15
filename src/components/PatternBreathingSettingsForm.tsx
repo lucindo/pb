@@ -30,7 +30,7 @@ export function PatternBreathingSettingsForm({
   strings,
 }: PatternBreathingSettingsFormProps): ReactElement {
   const formatBpm = (value: number): string => `${String(value)} ${strings.bpmUnit}`
-  const formatDuration = (value: DurationOption): string =>
+  const formatDurationOption = (value: DurationOption): string =>
     value === 'open-ended' ? strings.openEndedLabel : `${String(value)} ${strings.minutesUnit}`
 
   const updateSettings = (nextSettings: Partial<SessionSettings>): void => {
@@ -75,7 +75,7 @@ export function PatternBreathingSettingsForm({
         label={strings.durationLabel}
         value={settings.durationMinutes}
         options={DURATION_OPTIONS}
-        formatValue={formatDuration}
+        formatValue={formatDurationOption}
         onChange={updateDuration}
         disableDecrease={isRunning}
         disableIncrease={isRunning && typeof nextDuration !== 'number'}

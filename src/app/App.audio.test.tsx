@@ -14,6 +14,7 @@ import {
 } from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
 import { UI_STRINGS } from '../content/strings'
+import { STATE_KEY } from '../storage'
 
 // The MuteToggle has three possible accessible names per state — match any.
 function muteButton() {
@@ -464,7 +465,7 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
   it("D-42 (3): reconstruction preserves muted state (D-35b)", async () => {
     // Start with persisted muted=true. The persisted state lives in a single envelope
     // at 'pattern-breathing:state:v1' (see src/storage/storage.ts STATE_KEY).
-    window.localStorage.setItem('pattern-breathing:state:v1', JSON.stringify({ version: 1, mute: true }))
+    window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 1, mute: true }))
     const tracker = installTrackedAC()
     render(<App />)
     await startAndAdvancePastLeadIn()
@@ -504,7 +505,7 @@ describe('App.audio — Plan 06 needs-resume affordance + reconstruction (D-42)'
     const labelAfter = muteButton().getAttribute('aria-label')
     expect(['Mute audio cues', 'Resume audio']).toContain(labelAfter)
     tracker.restore()
-    window.localStorage.removeItem('pattern-breathing:state:v1')
+    window.localStorage.removeItem(STATE_KEY)
   })
 
   it("D-42 (4): audioAnchorRef re-anchors on reconstruction (D-35)", async () => {

@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react'
 
 import { loadPrefs } from '../storage/prefs'
-import { STATE_KEY } from '../storage'
+import { PREFS_CHANGED_EVENT, STATE_KEY } from '../storage'
 import type { LocaleId } from '../domain/settings'
 import { UI_STRINGS, type UiStrings } from '../content/strings'
 
@@ -59,9 +59,9 @@ export function useLocale(): { locale: LocaleId; uiStrings: UiStrings } {
         setLocale(loadPrefs().locale)
       }
     }
-    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
+    window.addEventListener(PREFS_CHANGED_EVENT, onPrefsChanged)
     return () => {
-      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
+      window.removeEventListener(PREFS_CHANGED_EVENT, onPrefsChanged)
     }
   }, [])
 

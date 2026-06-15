@@ -29,6 +29,10 @@ import {
 
 import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
+// Same-tab broadcast when a pref is written; App-side hooks listen to re-read.
+// Cross-tab changes ride the native 'storage' event instead.
+export const PREFS_CHANGED_EVENT = 'pattern-breathing:prefs-changed'
+
 export interface UserPrefs {
   theme: ThemeId
   timbre: TimbreId

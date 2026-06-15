@@ -13,7 +13,7 @@
 
 import { useCallback, useState } from 'react'
 
-import { loadPrefs, savePrefs, type UserPrefs } from '../storage/prefs'
+import { loadPrefs, savePrefs, PREFS_CHANGED_EVENT, type UserPrefs } from '../storage/prefs'
 
 export function usePreferenceChoice<K extends keyof UserPrefs>(
   key: K,
@@ -29,7 +29,7 @@ export function usePreferenceChoice<K extends keyof UserPrefs>(
     savePrefs(updated)
     setValue(next)
     window.dispatchEvent(
-      new CustomEvent('pattern-breathing:prefs-changed', { detail: { key, value: next } }),
+      new CustomEvent(PREFS_CHANGED_EVENT, { detail: { key, value: next } }),
     )
   }, [key])
 

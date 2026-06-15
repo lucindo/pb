@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react'
 
 import { loadPrefs } from '../storage/prefs'
-import { STATE_KEY } from '../storage'
+import { PREFS_CHANGED_EVENT, STATE_KEY } from '../storage'
 
 export function useBypassSilentMode(): { bypassSilentMode: boolean } {
   const [bypassSilentMode, setBypassSilentMode] = useState<boolean>(
@@ -48,9 +48,9 @@ export function useBypassSilentMode(): { bypassSilentMode: boolean } {
         setBypassSilentMode(loadPrefs().bypassSilentMode)
       }
     }
-    window.addEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
+    window.addEventListener(PREFS_CHANGED_EVENT, onPrefsChanged)
     return () => {
-      window.removeEventListener('pattern-breathing:prefs-changed', onPrefsChanged)
+      window.removeEventListener(PREFS_CHANGED_EVENT, onPrefsChanged)
     }
   }, [])
 
