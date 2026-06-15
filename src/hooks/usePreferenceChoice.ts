@@ -1,5 +1,5 @@
 // Generic picker-side hook for a single UserPrefs field. Replaces the per-field
-// clones (theme / orbIdle / bypassSilentMode), which differed only by key + type.
+// clones (theme / bypassSilentMode), which differed only by key + type.
 //
 // Role: provides the picker's optimistic-UI local state plus a setter that writes
 // the merged envelope to disk and dispatches 'hrv:prefs-changed'. App-side

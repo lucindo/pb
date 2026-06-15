@@ -4,10 +4,7 @@ export interface QueryFeatureFlagSpec<T> {
   parse(this: void, rawValue: string): T | null
 }
 
-export type OrbIdleBehavior = 'still' | 'ambient'
-
 export interface FeatureFlags {
-  orbIdle: OrbIdleBehavior
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
 
@@ -56,17 +53,6 @@ function readQueryFeatureFlagOrNull<T>(
   return spec.parse(rawValue)
 }
 
-export const ORB_IDLE_FLAG = {
-  queryParam: 'orbIdle',
-  defaultValue: 'ambient' as OrbIdleBehavior,
-  parse(rawValue: string): OrbIdleBehavior | null {
-    const v = rawValue.trim().toLowerCase()
-    if (v === 'still') return 'still'
-    if (v === 'ambient') return 'ambient'
-    return null
-  },
-} satisfies QueryFeatureFlagSpec<OrbIdleBehavior>
-
 export const BYPASS_SILENT_MODE_FLAG = {
   queryParam: 'bypassSilentMode',
   defaultValue: true, // default true preserves the no-silent-mode bypass users rely on
@@ -85,7 +71,6 @@ export function readFeatureFlags(
   persisted: FeatureFlags,
 ): FeatureFlags {
   return {
-    orbIdle:          readQueryFeatureFlagOrNull(search, ORB_IDLE_FLAG)           ?? persisted.orbIdle,
     bypassSilentMode: readQueryFeatureFlagOrNull(search, BYPASS_SILENT_MODE_FLAG) ?? persisted.bypassSilentMode,
   }
 }

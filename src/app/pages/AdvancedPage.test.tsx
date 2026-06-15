@@ -51,13 +51,10 @@ describe('AdvancedPage', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('renders two switches for Breathing effect and Bypass silent mode', () => {
+  it('renders a single switch for Bypass silent mode', () => {
     renderPage()
     const switches = screen.getAllByRole('switch')
-    expect(switches).toHaveLength(2)
-    expect(
-      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.breathingEffect.label }),
-    ).toBeInTheDocument()
+    expect(switches).toHaveLength(1)
     expect(
       screen.getByRole('switch', { name: UI_STRINGS.en.advanced.bypassSilentMode.label }),
     ).toBeInTheDocument()
@@ -70,34 +67,7 @@ describe('AdvancedPage', () => {
     ).toHaveFocus()
   })
 
-  it('writes orbIdle=ambient to the prefs envelope when Breathing effect is toggled on', async () => {
-    // Seed with default prefs so orbIdle starts as 'still'
-    window.localStorage.setItem(
-      STATE_KEY,
-      JSON.stringify({ version: 1, prefs: { ...DEFAULT_PREFS, orbIdle: 'still' } }),
-    )
-    const user = userEvent.setup()
-    renderPage()
-    await user.click(
-      screen.getByRole('switch', { name: UI_STRINGS.en.advanced.breathingEffect.label }),
-    )
-    const raw = window.localStorage.getItem(STATE_KEY)
-    expect(raw).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const envelope = JSON.parse(raw!) as { prefs: typeof DEFAULT_PREFS }
-    expect(envelope.prefs.orbIdle).toBe('ambient')
-  })
-
   describe('Phase 49.1 D-03 — Bypass silent mode toggle (ADV-03)', () => {
-    it('renders Bypass silent mode toggle below the other Behavior toggle (ADV-03 order)', () => {
-      renderPage()
-      const switches = screen.getAllByRole('switch')
-      expect(switches).toHaveLength(2)
-      // ADV-03: bypass toggle is the SECOND (below breathingEffect)
-      // Reason: switches[1] non-null asserted by toHaveLength(2) above.
-      expect(switches[1]).toHaveAccessibleName(UI_STRINGS.en.advanced.bypassSilentMode.label)
-    })
-
     it('Bypass silent mode defaults to ON (checked) for a fresh storage state (ADV-03)', () => {
       renderPage()
       expect(

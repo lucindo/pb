@@ -19,7 +19,6 @@ export interface AdvancedPageProps {
  *  chevron on mount. Changes apply live across the app via the choice-hook setters. */
 export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
   const strings = useUiStrings().advanced
-  const [orbIdle, setOrbIdle] = usePreferenceChoice('orbIdle')
   const [bypassSilentMode, setBypassSilentMode] = usePreferenceChoice('bypassSilentMode')
   const backButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -43,14 +42,6 @@ export function AdvancedPage({ onBack }: AdvancedPageProps): ReactElement {
       <div className="w-full text-left">
         <SettingsSectionHeader label={strings.sections.behavior} />
         <SectionCard padding="16px">
-          <SettingsToggleRow
-            label={strings.breathingEffect.label}
-            ariaLabel={strings.breathingEffect.label}
-            checked={orbIdle === 'ambient'}
-            onChange={(next) => {
-              setOrbIdle(next ? 'ambient' : 'still')
-            }}
-          />
           {/* Changing this toggle mid-session does NOT rebuild the audio engine. The flag
               is read at engine construction time (Start click / reconstruct); a toggle
               change applies on the next engine construction via bypassSilentModeRef. */}

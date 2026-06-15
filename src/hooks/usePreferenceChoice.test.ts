@@ -26,21 +26,21 @@ afterEach(() => {
 
 describe('usePreferenceChoice', () => {
   it('initial state matches loadPrefs()[key]', () => {
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'ambient' })
-    const { result } = renderHook(() => usePreferenceChoice('orbIdle'))
-    expect(result.current[0]).toBe('ambient')
+    seedPrefs({ ...DEFAULT_PREFS, cue: 'arrow' })
+    const { result } = renderHook(() => usePreferenceChoice('cue'))
+    expect(result.current[0]).toBe('arrow')
   })
 
   it('updates local state optimistically and writes to disk', () => {
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'ambient' })
-    const { result } = renderHook(() => usePreferenceChoice('orbIdle'))
+    seedPrefs({ ...DEFAULT_PREFS, cue: 'arrow' })
+    const { result } = renderHook(() => usePreferenceChoice('cue'))
 
     act(() => {
-      result.current[1]('still')
+      result.current[1]('nose')
     })
 
-    expect(result.current[0]).toBe('still')
-    expect(readPrefs().orbIdle).toBe('still')
+    expect(result.current[0]).toBe('nose')
+    expect(readPrefs().cue).toBe('nose')
   })
 
   it('works for boolean-typed fields (type-erased generic, not just enum strings)', () => {
@@ -55,26 +55,24 @@ describe('usePreferenceChoice', () => {
     expect(readPrefs().bypassSilentMode).toBe(true)
   })
 
-  it('preserves all other prefs fields — envelope merge contract (6-field UserPrefs)', () => {
+  it('preserves all other prefs fields — envelope merge contract (5-field UserPrefs)', () => {
     seedPrefs({
       theme: 'dark',
       timbre: 'bell',
       cue: 'arrow',
       locale: 'pt-BR',
-      orbIdle: 'ambient',
       bypassSilentMode: true,
     })
-    const { result } = renderHook(() => usePreferenceChoice('orbIdle'))
+    const { result } = renderHook(() => usePreferenceChoice('cue'))
 
     act(() => {
-      result.current[1]('still')
+      result.current[1]('nose')
     })
 
     const prefs = readPrefs()
-    expect(prefs.orbIdle).toBe('still')
+    expect(prefs.cue).toBe('nose')
     expect(prefs.theme).toBe('dark')
     expect(prefs.timbre).toBe('bell')
-    expect(prefs.cue).toBe('arrow')
     expect(prefs.locale).toBe('pt-BR')
     expect(prefs.bypassSilentMode).toBe(true)
   })
@@ -100,8 +98,8 @@ describe('usePreferenceChoice', () => {
   })
 
   it('setter identity is stable across re-renders', () => {
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'ambient' })
-    const { result, rerender } = renderHook(() => usePreferenceChoice('orbIdle'))
+    seedPrefs({ ...DEFAULT_PREFS, cue: 'arrow' })
+    const { result, rerender } = renderHook(() => usePreferenceChoice('cue'))
 
     const initialSetter = result.current[1]
     rerender()

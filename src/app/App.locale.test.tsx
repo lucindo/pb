@@ -22,7 +22,6 @@ const DEFAULT_FULL_PREFS: UserPrefs = {
   timbre: 'bowl',
   cue: 'labels',
   locale: 'en',
-  orbIdle: 'ambient',
   bypassSilentMode: true,
 }
 

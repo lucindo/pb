@@ -64,7 +64,7 @@ export interface SessionClock {
    *
    * The catalog is closed. `createAudioSessionClock` forwards to the engine's
    * internal dispatch (`scheduleImpl`). The wall factory's schedule() is always
-   * a no-op (useAmbientScale only calls now()).
+   * a no-op (wall-clock callers only call now()).
    */
   schedule(when: number, cue: Cue): void
 
@@ -223,8 +223,9 @@ export function createAudioSessionClock(
 /**
  * Synthesize a SessionClock backed by `performance.now() / 1000`.
  *
- * Used by `useAmbientScale` (the idle-state ambient rAF driver — has no
- * AudioContext to wrap; the factory doesn't construct one either).
+ * Used where a SessionClock is needed without an AudioContext to wrap (the
+ * factory doesn't construct one either) — e.g. the audio-cue swappable clock's
+ * initial source before the AudioContext exists.
  *
  * onSuspend / onResume / onClose are no-op subscribers — the wall clock has no
  * suspend/resume/close signals. Return type is plain `SessionClock` (no
@@ -239,7 +240,7 @@ export function createWallSessionClock(): SessionClock {
     },
 
     schedule(when: number, cue: Cue): void {
-      // useAmbientScale only calls now(); schedule is on the surface for
+      // Wall-clock callers only call now(); schedule is on the surface for
       // closed-catalog symmetry. The wall clock has no audio graph to write
       // into, so this is a typed no-op by design.
       void when

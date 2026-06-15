@@ -32,10 +32,8 @@ import {
 import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
 import {
-  ORB_IDLE_FLAG,
   BYPASS_SILENT_MODE_FLAG,
   parseQueryBoolean,
-  type OrbIdleBehavior,
 } from '../featureFlags'
 
 export interface UserPrefs {
@@ -43,7 +41,6 @@ export interface UserPrefs {
   timbre: TimbreId
   cue: CueStyleId
   locale: LocaleId
-  orbIdle: OrbIdleBehavior
   bypassSilentMode: boolean  // default true preserves the no-silent-mode bypass users rely on
 }
 
@@ -52,7 +49,6 @@ export const DEFAULT_PREFS: UserPrefs = {
   timbre: DEFAULT_TIMBRE,
   cue: DEFAULT_CUE,
   locale: DEFAULT_LOCALE,
-  orbIdle: ORB_IDLE_FLAG.defaultValue,
   bypassSilentMode: BYPASS_SILENT_MODE_FLAG.defaultValue, // true — see UserPrefs.bypassSilentMode
 }
 
@@ -94,12 +90,6 @@ export function coerceLocale(raw: unknown): LocaleId {
   return isValidLocale(raw) ? raw : DEFAULT_LOCALE
 }
 
-// Parser reused from featureFlags.ts so the alias table stays in one place.
-export function coerceOrbIdle(raw: unknown): OrbIdleBehavior {
-  if (typeof raw !== 'string') return ORB_IDLE_FLAG.defaultValue
-  return ORB_IDLE_FLAG.parse(raw) ?? ORB_IDLE_FLAG.defaultValue
-}
-
 // Boolean coercer: parser reused from featureFlags.ts so the alias table stays
 // in one place. Persisted JSON re-hydrates true/false as actual booleans (fast
 // path), then falls through to parseQueryBoolean for legacy/hand-edited string
@@ -122,7 +112,6 @@ export function coercePrefs(raw: unknown): UserPrefs {
     timbre:           coerceTimbre(r.timbre),
     cue:              coerceCue(r.cue),
     locale:           coerceLocale(r.locale),
-    orbIdle:          coerceOrbIdle(r.orbIdle),
     bypassSilentMode: coerceBypassSilentMode(r.bypassSilentMode),
   }
 }

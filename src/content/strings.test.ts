@@ -131,8 +131,6 @@ describe('Phase 48 appearance.* and theme rename', () => {
     expect(ptBR.rightChevronAriaOnSettings.length).toBeGreaterThan(0)
     expect(typeof ptBR.sections.behavior).toBe('string')
     expect(ptBR.sections.behavior.length).toBeGreaterThan(0)
-    expect(typeof ptBR.breathingEffect.label).toBe('string')
-    expect(ptBR.breathingEffect.label.length).toBeGreaterThan(0)
     expect(typeof ptBR.bypassSilentMode.label).toBe('string')
     expect(ptBR.bypassSilentMode.label.length).toBeGreaterThan(0)
   })

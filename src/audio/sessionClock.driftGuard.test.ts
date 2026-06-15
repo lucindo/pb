@@ -6,8 +6,7 @@
 // no direct `performance.now()`, `new AudioContext()`, or `audioCtx.currentTime` reads.
 // This test fs-scans those files and asserts the absence of three banned tokens.
 //
-// Scope: EXACTLY 3 files — useSessionEngine.ts, useAudioCues.ts,
-// useAmbientScale.ts. This is NOT
+// Scope: EXACTLY 2 files — useSessionEngine.ts, useAudioCues.ts. This is NOT
 // a project-wide ban — the engine internals (`src/audio/audioEngine.ts`)
 // and the factory bodies (`src/audio/sessionClock.ts`) legitimately read
 // the underlying tokens (only factories may touch `performance.now()` /
@@ -37,7 +36,6 @@ import { resolve } from 'node:path'
 const CALLER_FILES = [
   resolve(__dirname, '..', 'hooks', 'useSessionEngine.ts'),
   resolve(__dirname, '..', 'hooks', 'useAudioCues.ts'),
-  resolve(__dirname, '..', 'hooks', 'useAmbientScale.ts'),
 ] as const
 
 interface BannedPattern {

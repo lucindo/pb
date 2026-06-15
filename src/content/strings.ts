@@ -126,9 +126,6 @@ export interface UiStrings {
     readonly sections: {
       readonly behavior: string
     }
-    readonly breathingEffect: {
-      readonly label: string
-    }
     readonly bypassSilentMode: {
       readonly label: string
     }
@@ -278,7 +275,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       backChevron: 'Back to Settings',
       rightChevronAriaOnSettings: 'Advanced settings',
       sections: { behavior: 'Behavior' },
-      breathingEffect: { label: 'Breathing effect' },
       bypassSilentMode: { label: 'Bypass silent mode' },
     },
     learn: {
@@ -428,10 +424,6 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       sections: {
         // TODO: native-speaker review
         behavior: 'Comportamento',
-      },
-      breathingEffect: {
-        // TODO: native-speaker review
-        label: 'Efeito de respiração',
       },
       bypassSilentMode: { label: 'Ignorar modo silencioso' },
     },

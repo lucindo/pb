@@ -1,10 +1,5 @@
-import { useMemo } from 'react'
-
-import { createWallSessionClock } from '../audio/sessionClock'
 import type { CueStyleId, SessionFrame } from '../domain'
 import type { UiStrings } from '../content/strings'
-import type { OrbIdleBehavior } from '../featureFlags'
-import { useAmbientScale } from '../hooks/useAmbientScale'
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
 import { MIN_SCALE, MAX_SCALE, MID_SCALE } from './shapeConstants'
 import { CueGlyph } from './CueGlyph'
@@ -19,10 +14,6 @@ export interface OrbShapeProps {
   // Wired off at Idle + Complete call sites; default true = rings show during Running.
   // OrbLeadIn's prop default is hard-set to false inside the component.
   showRings?: boolean
-  // When set AND no frame/leadIn, renders the idle orb (empty centre disc;
-  // scale = MID_SCALE for 'still', breath-clock-driven for 'ambient').
-  // showRings is hard-set to false on the idle path.
-  idleMode?: OrbIdleBehavior | null
   // Completion state — static halo orb (showRings false, scale MID) with a checkmark
   // glyph centred on the accent disc. Takes priority over the frame === null idle path.
   showCompletion?: boolean
@@ -41,7 +32,6 @@ export function OrbShape({
   strings,
   cue = 'labels',
   showRings = true,
-  idleMode,
   showCompletion = false,
 }: OrbShapeProps) {
   if (leadInDigit != null) {
@@ -60,10 +50,7 @@ export function OrbShape({
     )
   }
   if (frame === null) {
-    if (idleMode != null) {
-      return <OrbIdle idleMode={idleMode} />
-    }
-    return null
+    return <OrbIdle />
   }
   return (
     <OrbBody
@@ -137,23 +124,13 @@ function OrbBody({ frame, strings, cue, showRings }: OrbBodyProps) {
   )
 }
 
-// J6: idle orb — empty centre disc, no rings, scale = MID_SCALE for 'still'
-// or breath-clock-driven for 'ambient' (gated by ?orbIdle=ambient via
-// vm.featureFlags.orbIdle). useAmbientScale handles the reduced-motion case
-// internally (returns MID_SCALE static), so the OrbContainer can leave its
-// reducedMotion gate at false — moot when showRings=false anyway.
-function OrbIdle({ idleMode }: { idleMode: OrbIdleBehavior }) {
-  // Stable WallSessionClock for useAmbientScale's rAF loop initial start capture.
-  // Constructed once per component instance via useMemo so the hook's dep array
-  // sees a stable identity. Per-tick time comes from the rAF DOMHighResTimeStamp,
-  // not from this clock — this clock is for the initial start anchor only.
-  const ambientWallClock = useMemo(() => createWallSessionClock(), [])
-  const ambientScale = useAmbientScale(idleMode === 'ambient', ambientWallClock)
+// J6: idle orb — empty centre disc, no rings, locked at MID_SCALE.
+function OrbIdle() {
   return (
     <OrbContainer
       showRings={false}
       reducedMotion={false}
-      orbScale={ambientScale}
+      orbScale={MID_SCALE}
       discBg="var(--color-breathing-accent)"
     />
   )

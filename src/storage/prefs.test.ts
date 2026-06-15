@@ -6,7 +6,6 @@ import {
   coerceTimbre,
   coerceCue,
   coerceLocale,
-  coerceOrbIdle,
   coerceBypassSilentMode,
   loadPrefs,
   savePrefs,
@@ -177,21 +176,6 @@ describe('coerceTheme / coerceTimbre / coerceCue / coerceLocale (D-10 per-field)
   })
 })
 
-describe('coerceOrbIdle', () => {
-  it('accepts both canonical OrbIdleBehavior values verbatim', () => {
-    expect(coerceOrbIdle('still')).toBe('still')
-    expect(coerceOrbIdle('ambient')).toBe('ambient')
-  })
-
-  it("falls back to ORB_IDLE_FLAG.defaultValue for garbage / null / numbers", () => {
-    expect(coerceOrbIdle('junk')).toBe('ambient')
-    expect(coerceOrbIdle(null)).toBe('ambient')
-    expect(coerceOrbIdle(undefined)).toBe('ambient')
-    expect(coerceOrbIdle(0)).toBe('ambient')
-    expect(coerceOrbIdle({})).toBe('ambient')
-  })
-})
-
 describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default true)', () => {
   // Boolean coercer has THREE paths:
   //  (1) raw boolean: persisted JSON re-hydrates true/false verbatim — fast path
@@ -232,35 +216,24 @@ describe('coerceBypassSilentMode (Phase 49.1 D-05 — boolean coercer, default t
 describe('coercePrefs corrupt-field tolerance (Phase 47 PREFS-04)', () => {
   // Per-field non-throwing coerce-and-fallback: a single corrupt field falls back
   // to the per-flag default; the other fields are preserved.
-  it("orbIdle: 'junk' → 'ambient' default; other fields preserved", () => {
-    const out = coercePrefs({
-      theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      orbIdle: 'junk', bypassSilentMode: true,
-    })
-    expect(out.orbIdle).toBe('ambient')
-    expect(out.theme).toBe('dark')
-    expect(out.bypassSilentMode).toBe(true)
-  })
-
   it("bypassSilentMode: 'junk' → true default (D-05); other fields preserved", () => {
     const out = coercePrefs({
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
-      orbIdle: 'still', bypassSilentMode: 'junk',
+      bypassSilentMode: 'junk',
     })
     expect(out.bypassSilentMode).toBe(true) // corrupt-field falls back to true (bypassSilentMode default)
-    expect(out.orbIdle).toBe('still')
+    expect(out.theme).toBe('dark')
   })
 
   it("pre-flags envelope (4 keys only) coerces the new keys to per-flag defaults (PREFS-03)", () => {
     // A returning user from a pre-flags build has 4 prefs keys — the new
-    // keys are undefined and each coercer falls back to the per-flag default.
+    // key is undefined and its coercer falls back to the per-flag default.
     // Returning users see the production defaults.
     const out = coercePrefs({ theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR' })
     expect(out).toEqual({
       ...DEFAULT_PREFS,
       theme: 'dark', timbre: 'bell', cue: 'arrow', locale: 'pt-BR',
     })
-    expect(out.orbIdle).toBe('ambient')
     expect(out.bypassSilentMode).toBe(true)
   })
 })
@@ -276,12 +249,11 @@ describe('loadPrefs / savePrefs round-trip', () => {
     expect(loadPrefs()).toEqual(next)
   })
 
-  it('round-trips a 6-field UserPrefs with the flags set to non-default values (Phase 47 + 49.1)', () => {
-    // Full-fidelity round-trip: every new field carries a non-default value so the
+  it('round-trips a 5-field UserPrefs with the flag set to a non-default value (Phase 47 + 49.1)', () => {
+    // Full-fidelity round-trip: every field carries a non-default value so the
     // assertion fails if any coercer, the JSON re-hydration, or the envelope-merge drops a value.
     const fullPrefs: UserPrefs = {
       theme: 'dark', timbre: 'bell', cue: 'nose', locale: 'pt-BR',
-      orbIdle: 'still',
       bypassSilentMode: false, // non-default (default is true)
     }
     savePrefs(fullPrefs)
@@ -322,10 +294,9 @@ describe('loadPrefs / savePrefs round-trip', () => {
 describe('DEFAULT_PREFS shape', () => {
   // The field count guards against adding a pref field without a default. The
   // individual coercer defaults are covered by their own describe blocks above.
-  it('DEFAULT_PREFS has the 6 contracted fields with their defaults', () => {
-    expect(DEFAULT_PREFS.orbIdle).toBe('ambient')
+  it('DEFAULT_PREFS has the 5 contracted fields with their defaults', () => {
     expect(DEFAULT_PREFS.bypassSilentMode).toBe(true)
-    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(6)
+    expect(Object.keys(DEFAULT_PREFS)).toHaveLength(5)
   })
 })
 

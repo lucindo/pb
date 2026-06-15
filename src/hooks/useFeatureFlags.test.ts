@@ -49,30 +49,30 @@ describe('useFeatureFlags', () => {
   it('seeds feature flags from loadPrefs() at mount when no query string is present (PREFS-01)', () => {
     seedPrefs({
       ...DEFAULT_PREFS,
-      orbIdle: 'still',
+      bypassSilentMode: false,
     })
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('still')
+    expect(result.current.bypassSilentMode).toBe(false)
   })
 
   // PREFS-02 integration: query string wins over persisted when they disagree.
   it('query string wins over persisted on mount (PREFS-02)', () => {
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
-    setSearch('?orbIdle=ambient')
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
+    setSearch('?bypassSilentMode=on')
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
   })
 
   // Cross-tab 'storage' event with
   // key === STATE_KEY re-reads disk; event payload is discarded.
   it('cross-tab storage event with key === STATE_KEY re-reads persisted snapshot', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
 
     // Write the new envelope BEFORE dispatching (handler reads disk synchronously)
     const newEnvelope = JSON.stringify({
       version: 1,
-      prefs: { ...DEFAULT_PREFS, orbIdle: 'still' },
+      prefs: { ...DEFAULT_PREFS, bypassSilentMode: false },
     })
     window.localStorage.setItem(STATE_KEY, newEnvelope)
 
@@ -88,12 +88,12 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.orbIdle).toBe('still')
+    expect(result.current.bypassSilentMode).toBe(false)
   })
 
   it('cross-tab storage event with unrelated key is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
 
     // Reason: async wrapper required to match act()'s async overload; no real awaitable work inside.
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -107,27 +107,11 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
   })
 
-  // Same-tab 'hrv:prefs-changed' for
-  // each of the 2 keys re-reads disk; the payload's `value` is never trusted.
-  it('same-tab hrv:prefs-changed with detail.key === "orbIdle" re-reads persisted', async () => {
-    const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
-
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
-
-    // eslint-disable-next-line @typescript-eslint/require-await
-    await act(async () => {
-      window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'orbIdle', value: 'still' } }),
-      )
-    })
-
-    expect(result.current.orbIdle).toBe('still')
-  })
-
+  // Same-tab 'hrv:prefs-changed' for the bypassSilentMode key re-reads disk;
+  // the payload's `value` is never trusted.
   it('same-tab hrv:prefs-changed with detail.key === "bypassSilentMode" re-reads persisted', async () => {
     const { result } = renderHook(() => useFeatureFlags())
     expect(result.current.bypassSilentMode).toBe(true)
@@ -146,12 +130,12 @@ describe('useFeatureFlags', () => {
 
   // Negative: unrelated 'theme' key MUST NOT trigger a re-read.
   // The test mutates disk so the only way the assertion can hold is if the
-  // hook ignores the event (proves the 2-key filter doesn't false-positive).
+  // hook ignores the event (proves the single-key filter doesn't false-positive).
   it('same-tab hrv:prefs-changed with detail.key === "theme" is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
 
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -160,16 +144,16 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
   })
 
   // Same negative shape for 'timbre' — proves the unrelated-key ignore covers
   // more than just 'theme' (no single-key special-case in the filter).
   it('same-tab hrv:prefs-changed with detail.key === "timbre" is ignored', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
 
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -178,24 +162,7 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.orbIdle).toBe('ambient')
-  })
-
-  // 5th key: bypassSilentMode event triggers re-read
-  it('same-tab hrv:prefs-changed with detail.key === "bypassSilentMode" re-reads persisted', async () => {
-    const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.bypassSilentMode).toBe(true) // default
-
-    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
-
-    // eslint-disable-next-line @typescript-eslint/require-await
-    await act(async () => {
-      window.dispatchEvent(
-        new CustomEvent('hrv:prefs-changed', { detail: { key: 'bypassSilentMode', value: false } }),
-      )
-    })
-
-    expect(result.current.bypassSilentMode).toBe(false)
+    expect(result.current.bypassSilentMode).toBe(true)
   })
 
   // slim projection includes bypassSilentMode field
@@ -210,9 +177,9 @@ describe('useFeatureFlags', () => {
   // will pick up persisted changes.
   it('same-tab hrv:prefs-changed with detail.key === undefined re-reads persisted (forward-compat)', async () => {
     const { result } = renderHook(() => useFeatureFlags())
-    expect(result.current.orbIdle).toBe('ambient')
+    expect(result.current.bypassSilentMode).toBe(true)
 
-    seedPrefs({ ...DEFAULT_PREFS, orbIdle: 'still' })
+    seedPrefs({ ...DEFAULT_PREFS, bypassSilentMode: false })
 
     // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
@@ -221,6 +188,6 @@ describe('useFeatureFlags', () => {
       )
     })
 
-    expect(result.current.orbIdle).toBe('still')
+    expect(result.current.bypassSilentMode).toBe(false)
   })
 })
