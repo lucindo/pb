@@ -23,13 +23,16 @@ base, then build pattern-breathing on the surviving core breathing engine.
 Goal: one Settings page — **System · Sound · Statistics · About · privacy note**.
 No Advanced page, no Stats page, no feature flags.
 
-Key fact: two separate "prefs" systems exist —
-- `src/domain/settings.ts` = real user settings (theme, timbre, locale, cue).
-- `src/storage/prefs.ts` + `src/featureFlags.ts` + `useFeatureFlags` = the
-  query-string / dev-switch layer (`breathingShape`, `orbIdle`, `ringCue`,
-  `bypassSilentMode`). This layer is what gets deleted.
-Decision: `bypassSilentMode` folds into `domain/settings.ts` (Phase B), then
-`storage/prefs.ts` is deleted entirely (Phase C).
+Key fact (CORRECTED — the original note was wrong about where settings live):
+- `src/domain/settings.ts` = **types only** (enum predicates + defaults: `DEFAULT_THEME`,
+  `DEFAULT_CUE`, … and now `DEFAULT_BYPASS_SILENT_MODE`). No persistence.
+- `src/storage/prefs.ts` (`UserPrefs`) is the **real persisted user-pref store** for
+  theme/timbre/cue/locale/bypassSilentMode, read via `loadPrefs()` in App-side hooks
+  (`useTheme`, `useVisualCue`, `useLocale`, `useBypassSilentMode`). `prefs.ts` +
+  `usePreferenceChoice` are load-bearing and STAY.
+- The deletable layer was the **feature-flag query-string machinery** — `featureFlags.ts`,
+  `useFeatureFlags.ts`, `readFeatureFlags`, `?flag=` parsing. `bypassSilentMode` was its
+  last consumer. Done in B+C (commit `f2f8d7e`).
 
 **A — Fix visual options to one value each** (one commit per item; each gates green)
 - [x] A1 Orb style → `minimal-rings` only (commit `69e914a`). Dropped orb-halo +
@@ -52,17 +55,18 @@ Note (test churn): generic flag-system tests (`featureFlags.test.ts`,
 `useFeatureFlags.test.ts`, `usePreferenceChoice.test.ts`) are repointed to whichever
 flag still survives — A1→A2 moved them breathingShape→ringCue→orbIdle. A3 repointed
 them to `bypassSilentMode` (the last survivor; `usePreferenceChoice` uses `cue` for its
-string-enum exemplar). All three files get deleted in C.
+string-enum exemplar). `featureFlags.test.ts` + `useFeatureFlags.test.ts` were deleted in
+B+C; `usePreferenceChoice.test.ts` stays (the hook is load-bearing for theme/cue).
 
-**B — Give `bypassSilentMode` a home.** Add `bypassSilentMode: boolean` (default true) to
-`domain/settings.ts` with a one-time migration reading the old `prefs.ts` value. Repoint
-the audio path (`useAppViewModel` → `useBreathingSessionController` → `useAudioCues` →
-`audioEngine`) to read it from settings.
-
-**C — Delete feature-flag system.** Delete `featureFlags.ts`, `useFeatureFlags.ts`,
-`storage/prefs.ts`, `usePreferenceChoice`, the `hrv:prefs-changed` plumbing + tests.
-(The `variant`/`ringCue`/`idleMode` constant props were already removed in A1/A2/A3.)
-Remove `?flag=` parsing + popstate/useSyncExternalStore flag listeners.
+- [x] **B+C — Decouple `bypassSilentMode`, delete the feature-flag layer** (commit
+  `f2f8d7e`). CORRECTED from the original B/C: `bypassSilentMode` was already a persisted
+  `UserPref`, so nothing moved into `domain/settings.ts` except its default
+  (`DEFAULT_BYPASS_SILENT_MODE`) and no migration was needed. Added `useBypassSilentMode`
+  (mirrors `useVisualCue`); `useAppViewModel` reads from it and `vm.featureFlags` is gone.
+  Deleted `featureFlags.ts` + `useFeatureFlags.ts` (readFeatureFlags, `?bypassSilentMode=`
+  override, popstate/useSyncExternalStore listeners). `prefs.ts` + `usePreferenceChoice`
+  KEPT (theme/timbre/cue/locale depend on them). The boolean-string coercer is inlined in
+  `prefs.ts`. Per user: the `?bypassSilentMode=` URL override was dropped.
 
 **D — Settings restructure.** Rebuild `SettingsPanelBody.tsx`: **System** (Theme · Language),
 **Sound** (Timbre · Bypass silent mode toggle). Remove old "Audio" block + Statistics chevron
@@ -81,16 +85,19 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — On branch `refactor/strip-to-pattern-breathing`, nothing pushed.
-Settings strip-down phases A1 + A2 + A3 are done and committed (`69e914a`, `c7c6066`,
-`c758496`); all gates green (`tsc -b`, `eslint`, 928 vitest tests). Phase A is COMPLETE:
-all visual options are fixed to a single value. Advanced page now holds the single
-Behavior toggle (Bypass silent mode); `bypassSilentMode` is the sole surviving feature
-flag. (PLAN.md itself is the only uncommitted file.)
+**State** — On branch `refactor/strip-to-pattern-breathing`, nothing pushed. Phases A
+(A1 `69e914a`, A2 `c7c6066`, A3 `c758496`) and B+C (`f2f8d7e`) are done; all gates green
+(`tsc -b`, `eslint`, 895 vitest tests). The feature-flag system is GONE: no `featureFlags.ts`/
+`useFeatureFlags.ts`, no `vm.featureFlags`, no `?flag=` query overrides. `bypassSilentMode`
+is now a plain user pref read via `useBypassSilentMode`. The Advanced page still holds its
+single Bypass-silent-mode toggle (written via `usePreferenceChoice`). (PLAN.md is the only
+uncommitted file.)
 
-**Next** — Phase B: give `bypassSilentMode` a home in `domain/settings.ts` (add the
-field with a one-time migration reading the old `prefs.ts` value; repoint the audio
-path). Then Phase C deletes the feature-flag system entirely.
+**Next** — Phase D: rebuild `SettingsPanelBody.tsx` into **System** (Theme · Language) +
+**Sound** (Timbre · Bypass silent mode toggle); remove the old "Audio" block + Statistics
+chevron row; add `system`/`sound` section strings. (Then E: inline Stats / drop Stats page.
+F: drop the now-near-empty Advanced page — note the bypass toggle currently lives on Advanced,
+so D must first give it a home under Sound.)
 
 **Open questions**
 - Are there more removal items beyond Settings (user will list them after Phase A–F)?
