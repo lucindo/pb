@@ -30,7 +30,6 @@ export interface AppInstallViewModel {
 }
 
 export interface AppEndSessionDialogViewModel {
-  id: 'breathing'
   open: boolean
   onConfirm(this: void): void
   onCancel(this: void): void
@@ -44,7 +43,7 @@ export interface AppNavigationViewModel {
 }
 
 export interface AppDialogsViewModel {
-  endSessionDialogs: readonly AppEndSessionDialogViewModel[]
+  endSession: AppEndSessionDialogViewModel
 }
 
 export const AUDIO_RESUME_HINT_ID = 'mute-toggle-resume-hint'

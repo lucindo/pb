@@ -29,7 +29,7 @@ function makeVmForScreen(appScreen: AppScreen): AppViewModel {
       onBackToPractice: () => {},
     },
     dialogs: {
-      endSessionDialogs: [],
+      endSession: { open: false, onConfirm: () => {}, onCancel: () => {} },
     },
     install: { isIOS: false, isStandalone: false, installable: false, onInstall: async () => {} },
     learnContent: {} as AppViewModel['learnContent'],

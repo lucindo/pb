@@ -5,7 +5,7 @@ import { PageShell } from '../components/primitives/PageShell'
 import { TopAppBar } from '../components/primitives/TopAppBar'
 import { SettingsAnchor } from '../components/SettingsAnchor'
 import type { AppViewModel } from './appViewModel'
-import { EndSessionDialogsView } from './EndSessionDialogsView'
+import { EndSessionDialogView } from './EndSessionDialogView'
 import { PracticeControlsView } from './PracticeControlsView'
 import { PracticeSessionView } from './PracticeSessionView'
 import { PracticeSettingsView } from './PracticeSettingsView'
@@ -36,7 +36,7 @@ export function PracticeScreen({ vm }: PracticeScreenProps): ReactElement {
   }
 
   return (
-    <PageShell width="practice" overlays={<EndSessionDialogsView dialogs={vm.dialogs} />}>
+    <PageShell width="practice" overlays={<EndSessionDialogView dialogs={vm.dialogs} />}>
       <TopAppBar
         title={vm.appTitle}
         leading={

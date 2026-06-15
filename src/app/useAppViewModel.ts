@@ -135,14 +135,11 @@ export function useAppViewModel(): AppViewModel {
     onChange: breathing.setSelectedSettings,
     onExtendDuration: breathing.session.extendDuration,
   })
-  const endSessionDialogs: readonly AppEndSessionDialogViewModel[] = [
-    {
-      id: 'breathing',
-      open: breathing.endDialogOpen,
-      onConfirm: breathing.confirmEnd,
-      onCancel: breathing.cancelEnd,
-    },
-  ]
+  const endSession: AppEndSessionDialogViewModel = {
+    open: breathing.endDialogOpen,
+    onConfirm: breathing.confirmEnd,
+    onCancel: breathing.cancelEnd,
+  }
 
   const install = createInstallViewModel({
     isStandalone,
@@ -163,7 +160,7 @@ export function useAppViewModel(): AppViewModel {
     lockedCopy: LOCKED_COPY[locale],
     install,
     navigation: { ...appNavigation, onSettingsOpen },
-    dialogs: { endSessionDialogs },
+    dialogs: { endSession },
     stats,
     onResetStats,
   }
