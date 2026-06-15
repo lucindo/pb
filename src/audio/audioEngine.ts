@@ -23,7 +23,7 @@
 
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
-import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
+import { scheduleCountdownTick, scheduleEndChord } from './boundaryCueSynth'
 import { createAudioSessionClock, type SessionClock, type Cue } from './sessionClock'
 import { createSilentLoopBypass, type SilentLoopBypass } from './silentLoopBypass'
 import type { TimbreId } from '../domain/settings'
@@ -236,7 +236,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
   }
 
   // Internal dispatch from a typed Cue value to the per-cue primitives in
-  // cueSynth.ts / nkCueSynth.ts. The public methods (scheduleLeadIn,
+  // cueSynth.ts / boundaryCueSynth.ts. The public methods (scheduleLeadIn,
   // scheduleNextCue, playEndChord) are thin facades over this function. The closed
   // guard lives in the facades (so each facade can choose its own behavior, e.g.,
   // scheduleNextCue clamps the time, scheduleLeadIn returns firstInCueTime).

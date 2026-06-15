@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { scheduleCountdownTick, scheduleEndChord } from './nkCueSynth'
+import { scheduleCountdownTick, scheduleEndChord } from './boundaryCueSynth'
 import { TIMBRE_OPTIONS } from '../domain/settings'
 
 // Test helper: relies on FakeAudioContext polyfill installed by vitest.setup.ts.
@@ -8,7 +8,7 @@ function createAc(): AudioContext {
   return new AudioContext()
 }
 
-describe('nkCueSynth', () => {
+describe('boundaryCueSynth', () => {
   // All builders share the (ac, when, destination, timbre) signature.
   const builders: Array<[string, typeof scheduleCountdownTick]> = [
     ['scheduleCountdownTick', scheduleCountdownTick],

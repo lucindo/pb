@@ -41,7 +41,7 @@ const END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
 // ---
 
 /**
- * Pad envelope spec — passed to buildNKToneNodes in place of a decay τ to get
+ * Pad envelope spec — passed to buildToneNodes in place of a decay τ to get
  * a strike-free fade-in / hold / fade-out shape instead of a percussive strike.
  * Used by the Spike 005 "Warm pad fade" end chord.
  */
@@ -62,7 +62,7 @@ interface PadEnvelope {
  * Strike is the original behaviour — the tick/countdown callers pass a number and
  * are byte-identical to before this overload existed.
  */
-function buildNKToneNodes(
+function buildToneNodes(
   audioCtx: AudioContext,
   freqHz: number,
   durationSec: number,
@@ -109,7 +109,7 @@ function buildNKToneNodes(
   osc.type = preset.oscillatorType
   osc.frequency.value = freqHz
 
-  // partialGain: unity — NK tones are single-partial; peakGain drives loudness
+  // partialGain: unity — these tones are single-partial; peakGain drives loudness
   const partialGain = audioCtx.createGain()
   partialGain.gain.value = 1.0
 
@@ -149,7 +149,7 @@ export function scheduleCountdownTick(
   timbre: TimbreId,
 ): CueHandle {
   const preset = TIMBRE_PRESETS[timbre]
-  const t = buildNKToneNodes(
+  const t = buildToneNodes(
     audioCtx, preset.fundamentalHzIn * COUNTDOWN_TICK_PITCH_RATIO, COUNTDOWN_TICK_DURATION_SEC, when,
     destination, preset, COUNTDOWN_TICK_PEAK_GAIN, COUNTDOWN_TICK_DECAY_TAU,
   )
@@ -202,7 +202,7 @@ export function scheduleEndChord(
   const voiceEnvelopes: GainNode[] = []
 
   for (const ratio of END_CHORD_RATIOS) {
-    const t = buildNKToneNodes(
+    const t = buildToneNodes(
       audioCtx, preset.fundamentalHzOut * ratio, END_CHORD_DURATION_SEC, when,
       masterEnvelope, preset, END_CHORD_PEAK_GAIN,
       { attackSec: END_CHORD_ATTACK_SEC, releaseSec: END_CHORD_RELEASE_SEC },

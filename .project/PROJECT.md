@@ -33,7 +33,7 @@ Installable as an offline-capable PWA.
 | `src/components/` | UI: `OrbShape` (`orb-halo` / `minimal-rings` / `spiritual-eye`) + `CueGlyph` guide, readouts, `ResonantSettingsForm` + `Settings*` form parts, `SettingsSheet`, dialogs, `Learn` anchor/panel, install steps, and Theme/Cue/Orb/Ring/Timbre/Language pickers. `primitives/`, `icons/`. |
 | `src/domain/` | Pure logic (barrel `index.ts`): `breathingPlan`, `sessionMath`, `sessionController`, `sessionLifecycle`, `sessionAudio`, `settings`. |
 | `src/hooks/` | Session engine `useSessionEngine` (rAF lookahead) + `useBreathingSessionController`; audio-cue hooks, `useWakeLock`, `useTheme`, `useVisualCue`, `useFeatureFlags`, `useLocale`, `leadInCountdown`, PWA-install hooks, `lookaheadHeartbeat.worker.ts`. |
-| `src/audio/` | Web Audio layer: `audioEngine`, `audioStatus`, `cueSynth`, `nkCueSynth` (HRV lead-in tick + end chord — name is vestigial), `timbres`, `sessionClock` (+ `swappableSessionClock`), `previewContext`, `silentLoopBypass`, `audioConstants`. |
+| `src/audio/` | Web Audio layer: `audioEngine`, `audioStatus`, `cueSynth` (per-breath in/out cues), `boundaryCueSynth` (lead-in tick + session-end chord), `timbres`, `sessionClock` (+ `swappableSessionClock`), `previewContext`, `silentLoopBypass`, `audioConstants`. |
 | `src/content/` | Typed copy: `learnContent`, `strings` (EN / PT-BR), `lockedCopy`. |
 | `src/storage/` | `localStorage` wrappers (barrel `index.ts`): `practices` (per-practice settings + stats, single `resonant` slice), `settings`, `stats`, `prefs`, `installDismissed`, `storage`. |
 | `src/styles/` | `theme.css` ("Mono Zen" palette, light/dark) + favicon palette sync (`faviconPalette.ts`). |

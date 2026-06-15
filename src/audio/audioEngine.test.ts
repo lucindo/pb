@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BreathingPlan } from '../domain/breathingPlan'
 import { createAudioEngine, SAFE_LEAD_SEC } from './audioEngine'
 import * as cueSynth from './cueSynth'
-import * as nkCueSynth from './nkCueSynth'
+import * as boundaryCueSynth from './boundaryCueSynth'
 import type { CueHandle } from './cueSynth'
 
 // BreathingPlan fixture uses seconds-shaped fields.
@@ -104,7 +104,7 @@ describe('audioEngine', () => {
 
   it('scheduleLeadIn schedules 3 ticks at t/+1/+2 and an In cue at +3', async () => {
     // Consistency: the countdown beep is the shared scheduleCountdownTick.
-    const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
+    const tickSpy = vi.spyOn(boundaryCueSynth, 'scheduleCountdownTick')
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
 
@@ -822,10 +822,10 @@ describe('audioEngine', () => {
   // is plumbed into the SessionClock at construction (scheduleImpl). Calling
   // `engine.clock.schedule(when, cue)` routes through the engine's switch dispatch,
   // exercising every Cue arm. Each arm calls the corresponding per-cue primitive in
-  // cueSynth.ts / nkCueSynth.ts and adds the returned handle to activeCues.
+  // cueSynth.ts / boundaryCueSynth.ts and adds the returned handle to activeCues.
   describe('Phase 50-06 — internal schedule(when, cue) dispatch (4 Cue arms)', () => {
     it('schedule({ kind: "lead-in-tick" }) calls scheduleCountdownTick and adds to activeCues', async () => {
-      const tickSpy = vi.spyOn(nkCueSynth, 'scheduleCountdownTick')
+      const tickSpy = vi.spyOn(boundaryCueSynth, 'scheduleCountdownTick')
       const engine = await createAudioEngine({ timbre: 'bowl' })
 
       engine.clock.schedule(1.5, { kind: 'lead-in-tick' })
@@ -896,7 +896,7 @@ describe('audioEngine', () => {
         cleanupAt: 0.02, // 20 ms tail
         cancel: vi.fn(),
       }
-      const endChordSpy = vi.spyOn(nkCueSynth, 'scheduleEndChord').mockReturnValue(fakeChord)
+      const endChordSpy = vi.spyOn(boundaryCueSynth, 'scheduleEndChord').mockReturnValue(fakeChord)
 
       const engine = await createAudioEngine({ timbre: 'bowl' })
       engine.clock.schedule(0, { kind: 'end-chord' })
@@ -959,8 +959,8 @@ describe('Phase 52 D-09 CueHandle.cancel', () => {
   const cueBuilders: Array<[string, (ac: AudioContext) => CueHandle]> = [
     ['scheduleInCueForTimbre', (ac) => cueSynth.scheduleInCueForTimbre(ac, 1, ac.destination, 'bowl', 4)],
     ['scheduleOutCueForTimbre', (ac) => cueSynth.scheduleOutCueForTimbre(ac, 1, ac.destination, 'bowl', 4)],
-    ['scheduleCountdownTick', (ac) => nkCueSynth.scheduleCountdownTick(ac, 1, ac.destination, 'bowl')],
-    ['scheduleEndChord', (ac) => nkCueSynth.scheduleEndChord(ac, 1, ac.destination, 'bowl')],
+    ['scheduleCountdownTick', (ac) => boundaryCueSynth.scheduleCountdownTick(ac, 1, ac.destination, 'bowl')],
+    ['scheduleEndChord', (ac) => boundaryCueSynth.scheduleEndChord(ac, 1, ac.destination, 'bowl')],
   ]
 
   it.each(cueBuilders)('D-09: %s returns a cancel() that is callable and idempotent', (_name, build) => {
