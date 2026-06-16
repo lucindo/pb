@@ -91,6 +91,7 @@ export function buildToneNodes(
   filter.frequency.value = preset.filterFreqHz
   filter.Q.value = preset.filterQ
 
+  const stopAt = when + durationSec
   const envelope = audioCtx.createGain()
   if (typeof envelopeSpec === 'number') {
     // Strike: instant attack, exponential decay.
@@ -103,7 +104,6 @@ export function buildToneNodes(
     // against attack alone exceeding durationSec. Skipping the redundant
     // setValueAtTime(peak, releaseStart) avoids same-instant automation events
     // whose ordering is implementation-defined across Chrome / Safari.
-    const stopAt = when + durationSec
     const releaseStart = Math.max(when, stopAt - envelopeSpec.releaseSec)
     const attackEnd = Math.min(when + envelopeSpec.attackSec, releaseStart, stopAt)
     envelope.gain.setValueAtTime(NEAR_SILENCE, when)
@@ -114,8 +114,7 @@ export function buildToneNodes(
     envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, stopAt)
   }
 
-  const stopAt = when + durationSec
-  const cleanupAt = when + durationSec + CLEANUP_PADDING_SEC
+  const cleanupAt = stopAt + CLEANUP_PADDING_SEC
 
   const osc = audioCtx.createOscillator()
   osc.type = preset.oscillatorType

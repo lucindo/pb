@@ -57,8 +57,7 @@ export function createCueStore(audioCtx: AudioContext, masterGain: GainNode, tim
       case 'exhale':
         activeCues.add(scheduleOutCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
         return
-      // Sustained hold tone (note-on at hold start, note-off at hold end). Pitch
-      // continues the adjacent strike: hold-in after the inhale, hold-out after the exhale.
+      // Sustained hold tone, pitch-matched to the adjacent strike (hold-in↔inhale, hold-out↔exhale).
       case 'hold-in':
         activeCues.add(scheduleHoldInCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
         return
