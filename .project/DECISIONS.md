@@ -78,21 +78,27 @@ exactly does a pattern look like, and how is a session bounded?
 ```ts
 type BreathPhase = 'inhale' | 'hold-in' | 'exhale' | 'hold-out'
 interface PatternSettings {
-  inhale: number; holdIn: number; exhale: number; holdOut: number  // counts; 0 ⇒ skip
-  multiplier: number            // phaseSeconds = count × multiplier (internal name)
-  rounds: number | 'open-ended'
+  // the four phase fields are DURATIONS IN SECONDS (whole seconds; holds may be 0)
+  inhale: number; holdIn: number; exhale: number; holdOut: number
+  multiplier: number            // scalar on the seconds; 1 in most cases
+  rounds: number | 'open-ended' // separate config: how many times the cycle repeats
 }
 ```
 
-- **Multiplier** scales all four phases uniformly. Kept as its own knob (not folded
-  into the counts) because it's the *progression* control — users ramp it
-  (1→2→3…) to lengthen holds while preserving the pattern. UI label deferred;
+Effective duration: `effectiveSeconds(phase) = phaseValueSeconds × multiplier`.
+
+- **The four phase values are seconds**, not abstract counts. `multiplier` is a
+  plain scalar applied to all four, and is **1 in the common case** — used only to
+  scale a whole pattern (expressing Box-4 as `1·1·1·1 ×4`) or for progressive
+  training: `1-4-2 ×1` → `×2` = 2·8·4s, same pattern, longer holds. It's kept as
+  its own knob because that progression is the point. UI label deferred;
   `multiplier` is the internal name.
 - **Presets are data** — named `PatternSettings`. Box-4 = `1·1·1·1 ×4`,
   Weiss/4-7-8 = `4·7·8·0 ×1`, 1-4-2 = `1·4·2·0 ×1`. Editing any field ⇒ "Custom".
   Surfaced via the same picker pattern as today's Ratio control.
-- **Length = rounds** (or open-ended). No time-based setting; a calculated
-  total-duration readout is display-only.
+- **Rounds is a separate setting** — the number of full-cycle repetitions (or
+  open-ended). There is no time-based length setting; total duration
+  (`Σ phase-seconds × multiplier × rounds`) is a display-only readout.
 - **Cues: one per phase**, keyed by `BreathPhase`, fired at each non-zero phase's
   start (zero-count phases fire nothing) — same shape as today's single inhale /
   exhale cue, not a start+end pair per hold. Sound/visual design deferred.
