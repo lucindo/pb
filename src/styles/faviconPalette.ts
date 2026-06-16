@@ -16,17 +16,14 @@ export const FAVICON_COLORS = {
   dark: '#ccd0d9',
 } as const satisfies Record<Exclude<ThemeId, 'system'>, string>
 
-// Recolor-only SVG template. Three concentric filled circles at decreasing opacity
-// (0.22 → 0.32 → 0.50) topped by a fully-opaque centre disc, mirroring the in-app
-// orb's 3-halo + accent-disc layout. Single-colour: __FILL__ is the only substituted
-// value, so per-theme recolouring keeps working.
+// Recolor-only SVG template. A thin progress ring (low-opacity full circle) under a
+// bold 270° accent arc — the app's in-session breathing ring. Single-colour: __FILL__
+// is the only substituted value (stroke on the root), so per-theme recolouring keeps working.
 // SYNC WITH the inline favUri() SVG in index.html and public/favicon.svg.
 export const FAVICON_SVG_TEMPLATE =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-  + '<circle cx="16" cy="16" r="14" fill="__FILL__" fill-opacity="0.22"/>'
-  + '<circle cx="16" cy="16" r="12" fill="__FILL__" fill-opacity="0.32"/>'
-  + '<circle cx="16" cy="16" r="10" fill="__FILL__" fill-opacity="0.50"/>'
-  + '<circle cx="16" cy="16" r="8" fill="__FILL__"/></svg>'
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="__FILL__" stroke-linecap="round">'
+  + '<circle cx="16" cy="16" r="10.5" stroke-width="2.5" stroke-opacity="0.3"/>'
+  + '<path d="M16 5.5A10.5 10.5 0 1 1 5.5 16" stroke-width="3.5"/></svg>'
 
 // Fail at import if the template lost its `__FILL__` placeholders — a hardcoded
 // hex would otherwise silently ship a fixed-colour favicon. A post-replaceAll
@@ -46,8 +43,8 @@ if (FAVICON_FILL_PLACEHOLDER_COUNT === 0) {
 // RFC 2397-conformant — raw `<`, `>`, `"`, and spaces are all escaped, not just the `#`.
 export function buildFaviconDataUri(theme: Exclude<ThemeId, 'system'>): string {
   const hex = FAVICON_COLORS[theme]
-  // replaceAll — the template has multiple `__FILL__` placeholders (current
-  // count guarded at module load above); replace() would recolour only one.
+  // replaceAll keeps recolouring correct if the template ever grows a second
+  // `__FILL__`; replace() would silently leave any extra placeholder behind.
   const svg = FAVICON_SVG_TEMPLATE.replaceAll('__FILL__', hex)
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
