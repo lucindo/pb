@@ -134,15 +134,17 @@ upward edges), no import cycles, sound audio sub-layering, good test seams (VM
 factories D3, swappable clock). Problems are localized god-units + one model
 coupling, not structural rot. Sequenced steps:
 
-- **Step 1 [L2] — Split `useAudioCues.ts` (658L, the largest file).** Four mixed
-  concerns (state machine / engine lifecycle + generation counter / proxy-clock seam /
-  thin null-guarded engine facade). Biggest change-amplifier and the preset feature
-  touches its scheduling facade. **Single consumer** (`useBreathingSessionController`),
-  so contained; keep the `UseAudioCues` interface byte-identical. Ready NOW
-  (behavior-preserving, not gated on the feature).
-- **Step 2 [L1] — Decompose `createAudioEngine` (audioEngine.ts:141, ~350L factory).**
-  Audio-internal; fold in the two ride-along minors (DOMException guard :474,
-  `endChordTailUntilSec` rename :215). Ready NOW.
+- **Step 1 [L2] — Split `useAudioCues.ts` (was 658L). DONE (`71688f5`).** Extracted
+  `useCueScheduler` (cue-dispatch facade — the preset touch point) + `useAudioHealth`
+  (status machine + clock-health + visibility-resume); `useAudioCues` keeps the engine
+  lifecycle + proxy clock + mute. Interface byte-identical; single consumer untouched.
+  739 tests green.
+- **Step 2 [L1] — Decompose `createAudioEngine` (was 491L). DONE (`9ae0ffa`).** Extracted
+  `cueStore` (in-flight Set + end-chord tail + schedule/prune/cancel/dedup/teardown);
+  engine methods are now thin facades. Folded in both minors: `endChordTailUntilSec`
+  rename + duck-typed `.name` guard (see note below). AC construction kept inline —
+  an awaited construction helper added a microtask hop that broke fake-timer lead-in
+  tests. 739 tests green.
 - **Step 3 [L2] — Generalize `'in'|'out'` → `BreathPhase` + `bpm`/`ratio` →
   `PatternSettings`.** The one cross-layer milestone (~16 files: domain → audio →
   hooks → components → content → storage). UNBLOCKED — model spec'd in **D6**. This
@@ -163,7 +165,9 @@ each changes structure or rests on judgment, so left for a focused pass:
   construction/resume-failure setup into helpers. While in here, fold in the two
   ride-along minors that live inside this function:
   - `audioEngine.ts:474` — `(err as DOMException)?.name` casts a caught `unknown` without a
-    guard. Replace with `err instanceof DOMException && err.name === 'InvalidStateError'`.
+    guard. Replace with a duck-typed `.name` check (NOT `instanceof DOMException` — the
+    test rejects with a plain name-tagged Error, and a real DOMException is not
+    `instanceof Error` in browsers, so instanceof breaks one side or the other).
   - `audioEngine.ts:215` — `endChordTailUntil` lacks the file's `*Sec` unit suffix; rename
     to `endChordTailUntilSec` (touches its in-closure refs).
 - **`scheduleBowlCue` (`src/audio/cueSynth.ts:55`, ~136 lines)** — extract the
