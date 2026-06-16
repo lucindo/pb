@@ -58,5 +58,10 @@ export async function advanceTime(ms: number): Promise<void> {
 
 export function readStoredEnvelope(): Record<string, unknown> | null {
   const raw = window.localStorage.getItem(STATE_KEY)
-  return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
+  if (raw === null) return null
+  const parsed: unknown = JSON.parse(raw)
+  // Guard the parsed shape before narrowing — a non-object (or array) read is null.
+  return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+    ? (parsed as Record<string, unknown>)
+    : null
 }
