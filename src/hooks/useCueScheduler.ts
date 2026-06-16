@@ -49,12 +49,8 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
    *  (~16ms); engine's SAFE_LEAD_SEC callee clamp absorbs the drift. */
   const lastTopUpCuesRef = useRef<Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>>([])
 
-  // Force-top-up handler subscribed to clock.onResume.
-  // Re-dispatches the last cues array passed to topUpLookahead so the lookahead
-  // queue refills before the next rAF tick fires (covers AC reconstruction /
-  // iOS unlock / engine swap). Cached cues may be ≤ 1 rAF stale (~16ms);
-  // engine's SAFE_LEAD_SEC callee clamp absorbs drift.
-  // Defensive gate posture: engineRef null-gate + early return.
+  // Re-dispatches the cached cues on clock.onResume so the lookahead queue refills
+  // before the next rAF tick (covers AC reconstruction / iOS unlock / engine swap).
   const handleForceTopUp = useCallback((): void => {
     const engine = engineRef.current
     if (engine === null) return
@@ -70,11 +66,7 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
     [engineRef],
   )
 
-  // Top-up facade — parallel to notifyPhaseBoundary; delegates to
-  // engine.topUpLookahead({ cues }). Caches the cues array in lastTopUpCuesRef
-  // for the clock.onResume force-top-up path (handleForceTopUp).
-  // Defensive gate pattern: read engineRef into local `engine`; early-return when
-  // null (matches handleForceTopUp and the clock-subscriber callbacks).
+  // Caches the cues for the clock.onResume force-top-up path (handleForceTopUp).
   const topUpLookahead = useCallback(
     (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void => {
       const engine = engineRef.current
@@ -85,8 +77,7 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
     [engineRef],
   )
 
-  // Cancel-future-cues facade — parallel to topUpLookahead.
-  // The controller calls this immediately before audioTopUpLookahead() on every
+  // The controller calls this immediately before topUpLookahead on every
   // session.currentFrame change (cancel-then-reschedule per the SCHED-05 doctrine).
   const cancelFutureCues = useCallback((): void => {
     const engine = engineRef.current
@@ -95,8 +86,7 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
   }, [engineRef])
 
   const audioNow = useCallback((): number | null => {
-    // Read through the SessionClock seam (engine.clock.now()) — byte-identical to
-    // the prior engineRef.current?.now() (the AC's currentTime).
+    // Read through the SessionClock seam; the underlying source is the AC clock.
     return engineRef.current?.clock.now() ?? null
   }, [engineRef])
 
