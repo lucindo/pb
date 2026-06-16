@@ -27,8 +27,50 @@ import {
   type AppEndSessionDialogViewModel,
   type AppViewModel,
 } from './appViewModel'
-import { getBreathingPrimaryAction } from './sessionPresentation'
+import { getBreathingPrimaryAction, type BreathingPrimaryAction } from './sessionPresentation'
 import { useAppNavigation } from './useAppNavigation'
+
+// Stats are written to disk by the session controller but not mirrored into this
+// state; refreshStats re-reads on Settings open (stats render inline there) to
+// reflect the latest session. Settings is unreachable mid-session, so read-on-open
+// is sufficient.
+function useStatsPanel(): { stats: PersistedStats; refreshStats: () => void; onResetStats: () => void } {
+  const [stats, setStats] = useState<PersistedStats>(() => loadStats())
+  const refreshStats = useCallback((): void => {
+    setStats(loadStats())
+  }, [])
+  const onResetStats = useCallback((): void => {
+    resetStats()
+    // Optimistic RAM update — the disk write is fire-and-forget (quota / ITP).
+    setStats({ ...ZERO_STATS })
+  }, [])
+  return { stats, refreshStats, onResetStats }
+}
+
+// Dispatch the single breathing primary button to the right controller action.
+// 'cancel' and 'start' both route through startOrCancel (it branches internally on
+// phase === 'lead-in').
+function useBreathingPrimaryClick(input: {
+  action: BreathingPrimaryAction
+  requestEnd: () => void
+  resetSession: () => void
+  startOrCancel: () => Promise<void>
+}): () => void {
+  const { action, requestEnd, resetSession, startOrCancel } = input
+  return useCallback((): void => {
+    if (action === 'end') {
+      requestEnd()
+      return
+    }
+    if (action === 'done') {
+      // Dismiss the completion state back to idle (domain endSession on
+      // CompleteSessionState yields IdleSessionState).
+      resetSession()
+      return
+    }
+    void startOrCancel()
+  }, [action, requestEnd, resetSession, startOrCancel])
+}
 
 export function useAppViewModel(): AppViewModel {
   const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
@@ -53,25 +95,13 @@ export function useAppViewModel(): AppViewModel {
     closeOnSessionView: controlsDisabled,
   })
 
-  // Stats are written to disk by the session controller but not mirrored into
-  // this state, so re-read when Settings opens (stats render inline there) to
-  // reflect the latest session. Settings is unreachable mid-session, so a
-  // read-on-open is sufficient.
-  const [stats, setStats] = useState<PersistedStats>(() => loadStats())
+  const { stats, refreshStats, onResetStats } = useStatsPanel()
   const navOnSettingsOpen = appNavigation.onSettingsOpen
   const onSettingsOpen = useCallback((): void => {
-    setStats(loadStats())
+    refreshStats()
     navOnSettingsOpen()
-  }, [navOnSettingsOpen])
-  const onResetStats = useCallback((): void => {
-    resetStats()
-    // Optimistic RAM update — the disk write is fire-and-forget (quota / ITP).
-    setStats({ ...ZERO_STATS })
-  }, [])
+  }, [refreshStats, navOnSettingsOpen])
 
-  const breathingResetSession = breathing.resetSession
-  const breathingStartOrCancel = breathing.startOrCancel
-  const breathingRequestEnd = breathing.requestEnd
   const { onMuteOrResumeClick } = breathing.audio
 
   const onMuteToggle = useCallback((): void => {
@@ -89,26 +119,12 @@ export function useAppViewModel(): AppViewModel {
     status: breathing.session.state.status,
     inLeadIn: breathing.phase === 'lead-in',
   })
-
-  const onBreathingPrimaryClick = useCallback((): void => {
-    if (breathingAction === 'end') {
-      breathingRequestEnd()
-      return
-    }
-    if (breathingAction === 'done') {
-      // Dismiss the completion state back to idle. resetSession invokes the
-      // domain endSession on CompleteSessionState which yields IdleSessionState.
-      breathingResetSession()
-      return
-    }
-    if (breathingAction === 'cancel') {
-      // startOrCancel handles the cancel path internally when phase === 'lead-in'.
-      void breathingStartOrCancel()
-      return
-    }
-    // 'start': startOrCancel transitions idle → lead-in → running.
-    void breathingStartOrCancel()
-  }, [breathingAction, breathingRequestEnd, breathingResetSession, breathingStartOrCancel])
+  const onBreathingPrimaryClick = useBreathingPrimaryClick({
+    action: breathingAction,
+    requestEnd: breathing.requestEnd,
+    resetSession: breathing.resetSession,
+    startOrCancel: breathing.startOrCancel,
+  })
 
   const practiceControls = createPracticeControlsViewModel({
     breathingAction,
