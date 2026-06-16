@@ -31,9 +31,19 @@ core breathing engine.
   extract `cueStore`), all four deferred function-length refactors, a final deslop,
   and the Pattern Breathing spec + D6 model. All behavior-preserving; 739 tests green.
   Merged to `main`.
-- [ ] Implement pattern-breathing functionality — **presets over one configurable
-  engine** (D1); model specified in **D6**, full spec in `.project/SPEC.md`. Engine
-  work = architecture-plan **Step 3** (the `BreathPhase`/`PatternSettings` migration).
+- [~] Implement pattern-breathing functionality — **presets over one configurable
+  engine** (D1); model **D6/D7**, full spec in `.project/SPEC.md`.
+  - [x] Resolve all SPEC open questions (**D7**): default Box-4 ×4 / 10 rounds;
+    labels In/Out/Hold (Puxa/Solta/Prende); Scale label; X/N readout; ∞ for
+    open-ended; rounds toggle/stepper; sustained hold cue; hold progress-bar visual.
+  - [x] **Architecture Step 3 — four-phase model migration. DONE (`a30fd53`).**
+    `PatternSettings` + `BreathPhase` across domain→audio→hooks→app→components→
+    storage→content (47 files). Extend-duration dropped. `tsc -b` + eslint + 714
+    vitest green. Holds reuse the in/out strike as a PLACEHOLDER cue.
+  - [ ] **Follow-on A — sustained hold tone** (audio): real 3rd timbre flavor per
+    timbre + note-on at hold start / note-off at hold end. Replaces the placeholder.
+  - [ ] **Follow-on B — hold progress bar** (UI): thin static track under the
+    "Hold" word, filled L→R as the hold progresses; static under reduced-motion.
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -103,24 +113,20 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — `chore/code-cleanup` is **merged to `main`**; tree clean. The branch grew
-from a deslop/SSOT/comment pass into the full pre-feature cleanup: `/ds-ts-review`
-mechanical fixes, architecture Steps 1–2 (split `useAudioCues` →
-`useCueScheduler`/`useAudioHealth`; extract `cueStore` from `createAudioEngine`), all
-four deferred function-length refactors, a final deslop, and the Pattern Breathing
-spec + D6 model. Everything behavior-preserving — `tsc -b`, `eslint`, 739 vitest tests
-green throughout. The app is still the resonance timer under the new name;
-pattern-breathing *functionality* is NOT built.
+**State** — On branch `feat/pattern-breathing`. **Architecture Step 3 (the four-phase
+model migration) is DONE and committed** (`a30fd53`, 47 files): `PatternSettings` +
+`BreathPhase` replace the resonance model across every layer; extend-duration dropped;
+storage coerces `PatternSettings`. `tsc -b` + eslint + **714 vitest green**. The app now
+runs the real Pattern Breathing engine (preset picker, per-phase steppers, Scale, rounds
+stepper→∞, X/N readout, In/Out/Hold ring). **Two follow-ons remain** — holds currently
+reuse the in/out strike as a PLACEHOLDER cue and the ring shows the "Hold" label with no
+progress bar. Branch is NOT merged.
 
-**Next** — Start the pattern-breathing feature: architecture **Step 3** — the
-`BreathPhase` + `PatternSettings` migration (~16 files: domain→audio→hooks→
-components→content→storage) against `.project/SPEC.md`. Add characterization tests at
-the domain plan/cue seam first (`/ds-tdd-mode`). All SPEC open questions resolved in
-**D7**. Concrete decisions: default Box-4 `1·1·1·1 ×4` rounds 10; labels In/Out/Hold
-(Puxa/Solta/Prende, both holds "Hold"); Scale = multiplier label; `X/N` round readout
-with open-ended as `∞`; rounds control = toggle (default on) + stepper, off / step-past-99
-⇒ open-ended; holds = **sustained** cue (note-on/off) + a 3rd timbre flavor each; hold
-visual = static-track progress bar below "Hold", static under reduced-motion.
+**Next** — Build **Follow-on A (sustained hold tone)**: give each of the 4 timbres a 3rd
+"continuous" flavor and schedule holds as a bounded sustained voice (note-on at hold
+start, note-off at hold end) instead of the placeholder strike — touch points
+`cueSynth.ts` / `cueStore.ts` (the `inhale`/`hold-in` & `exhale`/`hold-out` arms) and
+`boundaryCueSynth`/`timbres`. Then **Follow-on B (hold progress bar)** in `BreathingRing`.
 
 **Open questions**
 - ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6/D7**.
