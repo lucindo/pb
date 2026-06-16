@@ -65,6 +65,7 @@ export interface UiStrings {
       readonly holdOutLabel: string
       readonly scaleLabel: string
       readonly roundsLabel: string
+      readonly roundsLimitLabel: string
       readonly secondsUnit: string
       readonly openEndedLabel: string
       readonly stepper: {
@@ -203,6 +204,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdOutLabel: 'Hold out',
         scaleLabel: 'Scale',
         roundsLabel: 'Rounds',
+        roundsLimitLabel: 'Limit rounds',
         secondsUnit: 's',
         openEndedLabel: '∞',
         stepper: {
@@ -337,6 +339,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         holdOutLabel: 'Prende (vazio)',
         scaleLabel: 'Escala',
         roundsLabel: 'Ciclos',
+        roundsLimitLabel: 'Limitar ciclos',
         secondsUnit: 's',
         openEndedLabel: '∞',
         stepper: {

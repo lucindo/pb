@@ -1,7 +1,8 @@
-import type { ReactElement } from 'react'
+import { useRef, type ReactElement } from 'react'
 
 import type { UiStrings } from '../content/strings'
 import {
+  DEFAULT_PATTERN_SETTINGS,
   PATTERN_BOUNDS,
   PRESETS,
   applyPreset,
@@ -13,6 +14,7 @@ import {
 import { SettingsFormShell } from './SettingsFormShell'
 import { SettingsSegmentedRow } from './SettingsSegmentedRow'
 import { SettingsStepper } from './SettingsStepper'
+import { SettingsToggleRow } from './SettingsToggleRow'
 
 const range = (min: number, max: number): number[] =>
   Array.from({ length: max - min + 1 }, (_, i) => min + i)
@@ -40,6 +42,22 @@ export function PatternBreathingSettingsForm({
 }: PatternBreathingSettingsFormProps): ReactElement {
   const update = (next: Partial<PatternSettings>): void => {
     onChange({ ...settings, ...next })
+  }
+
+  // Remember the last finite rounds so toggling the limit back on restores the
+  // user's number instead of snapping to a default. Seeded from the initial
+  // settings (domain default if it opens open-ended) and tracked on each edit.
+  const lastFiniteRounds = useRef(
+    typeof settings.rounds === 'number' ? settings.rounds : (DEFAULT_PATTERN_SETTINGS.rounds as number),
+  )
+
+  const onRoundsChange = (rounds: RoundsOption): void => {
+    if (typeof rounds === 'number') lastFiniteRounds.current = rounds
+    update({ rounds })
+  }
+
+  const onRoundsLimitToggle = (limited: boolean): void => {
+    update({ rounds: limited ? lastFiniteRounds.current : 'open-ended' })
   }
 
   // Selecting a named preset applies its five fields and keeps rounds; 'custom'
@@ -108,12 +126,18 @@ export function PatternBreathingSettingsForm({
         onChange={(multiplier) => { update({ multiplier }) }}
         strings={strings.stepper}
       />
+      <SettingsToggleRow
+        label={strings.roundsLimitLabel}
+        ariaLabel={strings.roundsLimitLabel}
+        checked={settings.rounds !== 'open-ended'}
+        onChange={onRoundsLimitToggle}
+      />
       <SettingsStepper<RoundsOption>
         label={strings.roundsLabel}
         value={settings.rounds}
         options={ROUNDS_OPTIONS}
         formatValue={formatRounds}
-        onChange={(rounds) => { update({ rounds }) }}
+        onChange={onRoundsChange}
         strings={strings.stepper}
       />
     </SettingsFormShell>
