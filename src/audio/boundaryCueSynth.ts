@@ -10,10 +10,9 @@
 // Every node disconnects on its 'ended' event ({ once: true }) — no leaked
 // nodes over a long session. Same discipline as cueSynth.ts.
 
-import { TIMBRE_PRESETS, type TimbrePreset } from './timbres'
+import { TIMBRE_PRESETS } from './timbres'
 import type { TimbreId } from '../domain/settings'
-import type { CueHandle } from './cueSynth'
-import { CLEANUP_PADDING_SEC, NEAR_SILENCE, STRIKE_RAMP_OFFSET } from './audioConstants'
+import { buildToneNodes, disconnectToneNodes, type CueHandle, type ToneNodes } from './cueSynth'
 
 // --- Timing constants ---
 
@@ -39,111 +38,6 @@ const END_CHORD_RELEASE_SEC = 1.4 // gain ramps peak → 0 over the last of the 
 const END_CHORD_RATIOS = [1.0, 1.25, 1.5] as const
 
 // ---
-
-/**
- * Pad envelope spec — passed to buildToneNodes in place of a decay τ to get
- * a strike-free fade-in / hold / fade-out shape instead of a percussive strike.
- * Used by the Spike 005 "Warm pad fade" end chord.
- */
-interface PadEnvelope {
-  attackSec: number // gain ramps 0 → peak over this, starting at `when`
-  releaseSec: number // gain ramps peak → 0 over the last releaseSec of the tone
-}
-
-// One built tone's node chain + its stop/cleanup timing — the buildToneNodes
-// return shape, shared with disconnectToneNodes and the end-chord voice list.
-interface ToneNodes {
-  osc: OscillatorNode
-  partialGain: GainNode
-  filter: BiquadFilterNode
-  envelope: GainNode
-  stopAt: number
-  cleanupAt: number
-}
-
-/**
- * Private helper: build a single oscillator → partialGain → filter → envelope chain.
- * Schedules the tone at `when` for `durationSec`, connects to `destination`, and
- * returns the constructed nodes for the caller to attach cleanup listeners.
- * Caller is responsible for registering 'ended' listeners.
- *
- * `envelopeSpec` selects the gain shape:
- *   - a `number` → strike: instant attack to peak, exponential decay (τ = the number).
- *   - a `PadEnvelope` → pad: linear fade in, hold, linear fade out. No strike.
- * Strike is the original behaviour — the tick/countdown callers pass a number and
- * are byte-identical to before this overload existed.
- */
-function buildToneNodes(
-  audioCtx: AudioContext,
-  freqHz: number,
-  durationSec: number,
-  when: number,
-  destination: AudioNode,
-  preset: TimbrePreset,
-  peakGain: number,
-  envelopeSpec: number | PadEnvelope,
-): ToneNodes {
-  const filter = audioCtx.createBiquadFilter()
-  filter.type = 'lowpass'
-  filter.frequency.value = preset.filterFreqHz
-  filter.Q.value = preset.filterQ
-
-  const envelope = audioCtx.createGain()
-  if (typeof envelopeSpec === 'number') {
-    // Strike: instant attack, exponential decay (verbatim pre-Spike-005 behaviour).
-    envelope.gain.setValueAtTime(peakGain, when)
-    envelope.gain.setTargetAtTime(NEAR_SILENCE, when + STRIKE_RAMP_OFFSET, envelopeSpec)
-  } else {
-    // Pad: linear fade in → hold → linear fade out (Spike 005 "Warm pad fade").
-    // For short tones where attack + release ≥ durationSec there is no hold
-    // window: cap the ramp peak at the fade-out start so the up-ramp and
-    // down-ramp meet at a single time. Also guard against attack alone
-    // exceeding durationSec (the up-ramp would otherwise run past osc.stop).
-    // Skipping the redundant setValueAtTime(peak, releaseStart) avoids
-    // same-instant automation events whose ordering is implementation-defined
-    // across Chrome / Safari.
-    const stopAt = when + durationSec
-    const releaseStart = Math.max(when, stopAt - envelopeSpec.releaseSec)
-    const attackEnd = Math.min(when + envelopeSpec.attackSec, releaseStart, stopAt)
-    envelope.gain.setValueAtTime(NEAR_SILENCE, when)
-    envelope.gain.linearRampToValueAtTime(peakGain, attackEnd)
-    if (releaseStart > attackEnd) {
-      envelope.gain.setValueAtTime(peakGain, releaseStart)
-    }
-    envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, stopAt)
-  }
-
-  const stopAt = when + durationSec
-  const cleanupAt = when + durationSec + CLEANUP_PADDING_SEC
-
-  const osc = audioCtx.createOscillator()
-  osc.type = preset.oscillatorType
-  osc.frequency.value = freqHz
-
-  // partialGain: unity — these tones are single-partial; peakGain drives loudness
-  const partialGain = audioCtx.createGain()
-  partialGain.gain.value = 1.0
-
-  osc.connect(partialGain)
-  partialGain.connect(filter)
-  filter.connect(envelope)
-  envelope.connect(destination)
-
-  osc.start(when)
-  osc.stop(stopAt)
-
-  return { osc, partialGain, filter, envelope, stopAt, cleanupAt }
-}
-
-// Disconnect a built tone's four nodes. Wrapped per-node so a node already
-// disconnected (by a prior 'ended' or cancel()) doesn't abort the rest — the
-// 'ended' listener and cancel() may both fire and both must be idempotent.
-function disconnectToneNodes(t: ToneNodes): void {
-  try { t.osc.disconnect() } catch { /* silent */ }
-  try { t.partialGain.disconnect() } catch { /* silent */ }
-  try { t.filter.disconnect() } catch { /* silent */ }
-  try { t.envelope.disconnect() } catch { /* silent */ }
-}
 
 // --- Exported cue builders ---
 

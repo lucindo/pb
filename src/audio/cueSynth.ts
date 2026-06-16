@@ -52,6 +52,100 @@ export interface CueHandle {
   cancel(this: void): void
 }
 
+/** Pad envelope spec — passed to buildToneNodes in place of a decay τ to get a
+ *  strike-free fade-in / hold / fade-out shape instead of a percussive strike. */
+export interface PadEnvelope {
+  attackSec: number // gain ramps 0 → peak over this, starting at `when`
+  releaseSec: number // gain ramps peak → 0 over the last releaseSec of the tone
+}
+
+// One built tone's node chain + its stop/cleanup timing — the buildToneNodes
+// return shape, shared with disconnectToneNodes and the end-chord voice list.
+export interface ToneNodes {
+  osc: OscillatorNode
+  partialGain: GainNode
+  filter: BiquadFilterNode
+  envelope: GainNode
+  stopAt: number
+  cleanupAt: number
+}
+
+// Build a single oscillator → partialGain → filter → envelope chain, scheduled at
+// `when` for `durationSec`, connected to `destination`. Caller registers the
+// 'ended' cleanup listeners. `envelopeSpec` selects the gain shape:
+//   - a `number` → strike: instant attack to peak, exponential decay (τ = the number).
+//   - a `PadEnvelope` → pad: linear fade in, hold, linear fade out. No strike.
+// Shared by the hold cue (cueSynth) and the lead-in tick + end chord (boundaryCueSynth).
+export function buildToneNodes(
+  audioCtx: AudioContext,
+  freqHz: number,
+  durationSec: number,
+  when: number,
+  destination: AudioNode,
+  preset: TimbrePreset,
+  peakGain: number,
+  envelopeSpec: number | PadEnvelope,
+): ToneNodes {
+  const filter = audioCtx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.value = preset.filterFreqHz
+  filter.Q.value = preset.filterQ
+
+  const envelope = audioCtx.createGain()
+  if (typeof envelopeSpec === 'number') {
+    // Strike: instant attack, exponential decay.
+    envelope.gain.setValueAtTime(peakGain, when)
+    envelope.gain.setTargetAtTime(NEAR_SILENCE, when + STRIKE_RAMP_OFFSET, envelopeSpec)
+  } else {
+    // Pad: linear fade in → hold → linear fade out. For short tones where
+    // attack + release ≥ durationSec there is no hold window: cap the ramp peak at
+    // the fade-out start so up-ramp and down-ramp meet at a single time, and guard
+    // against attack alone exceeding durationSec. Skipping the redundant
+    // setValueAtTime(peak, releaseStart) avoids same-instant automation events
+    // whose ordering is implementation-defined across Chrome / Safari.
+    const stopAt = when + durationSec
+    const releaseStart = Math.max(when, stopAt - envelopeSpec.releaseSec)
+    const attackEnd = Math.min(when + envelopeSpec.attackSec, releaseStart, stopAt)
+    envelope.gain.setValueAtTime(NEAR_SILENCE, when)
+    envelope.gain.linearRampToValueAtTime(peakGain, attackEnd)
+    if (releaseStart > attackEnd) {
+      envelope.gain.setValueAtTime(peakGain, releaseStart)
+    }
+    envelope.gain.linearRampToValueAtTime(NEAR_SILENCE, stopAt)
+  }
+
+  const stopAt = when + durationSec
+  const cleanupAt = when + durationSec + CLEANUP_PADDING_SEC
+
+  const osc = audioCtx.createOscillator()
+  osc.type = preset.oscillatorType
+  osc.frequency.value = freqHz
+
+  // partialGain: unity — these tones are single-partial; peakGain drives loudness.
+  const partialGain = audioCtx.createGain()
+  partialGain.gain.value = 1.0
+
+  osc.connect(partialGain)
+  partialGain.connect(filter)
+  filter.connect(envelope)
+  envelope.connect(destination)
+
+  osc.start(when)
+  osc.stop(stopAt)
+
+  return { osc, partialGain, filter, envelope, stopAt, cleanupAt }
+}
+
+// Disconnect a built tone's four nodes. Wrapped per-node so a node already
+// disconnected (by a prior 'ended' or cancel()) doesn't abort the rest — the
+// 'ended' listener and cancel() may both fire and both must be idempotent.
+export function disconnectToneNodes(t: ToneNodes): void {
+  try { t.osc.disconnect() } catch { /* silent */ }
+  try { t.partialGain.disconnect() } catch { /* silent */ }
+  try { t.filter.disconnect() } catch { /* silent */ }
+  try { t.envelope.disconnect() } catch { /* silent */ }
+}
+
 // Master envelope GainNode + oscillator stop/cleanup timing.
 // Soft-attack (preset.attackSec > 0, Flute): linear ramp 0 → peakGain over
 // attackSec, then exp decay from the ramp end. Otherwise (Bowl/Bell/Sine):
@@ -144,6 +238,31 @@ function buildPartialStack(
   return { oscList, partialGainList }
 }
 
+// Stop oscillators + disconnect all chain nodes. cancelScheduledValues discards
+// pending automation so no further gain ramps fire post-cancel. Every stop() +
+// disconnect() is wrapped in try/catch — the 'ended' listener and cancel() may
+// both fire on the same cue; both must be idempotent.
+function makeCancel(
+  audioCtx: AudioContext,
+  oscList: OscillatorNode[],
+  partialGainList: GainNode[],
+  filter: BiquadFilterNode,
+  envelope: GainNode,
+): (this: void) => void {
+  return () => {
+    envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    for (const osc of oscList) {
+      try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+      try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    for (const pg of partialGainList) {
+      try { pg.disconnect() } catch { /* silent — node may already be disconnected */ }
+    }
+    try { filter.disconnect() } catch { /* silent — node may already be disconnected */ }
+    try { envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
+  }
+}
+
 function scheduleBowlCue(
   audioCtx: AudioContext,
   when: number,
@@ -177,30 +296,45 @@ function scheduleBowlCue(
   const { oscList, partialGainList } =
     buildPartialStack(audioCtx, when, stopAt, preset, fundamentalHz, filter, envelope)
 
-  // cancel() — stop oscillators + disconnect all chain nodes.
-  // cancelScheduledValues discards pending automation so no further gain ramps
-  // fire post-cancel. Every stop() + disconnect() is wrapped in try/catch — the
-  // 'ended' listener and cancel() may both fire on the same cue; both must be
-  // safe (idempotent).
-  const cancel = (): void => {
-    envelope.gain.cancelScheduledValues(audioCtx.currentTime)
-    for (const osc of oscList) {
-      try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
-      try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
-    }
-    for (const pg of partialGainList) {
-      try { pg.disconnect() } catch { /* silent — node may already be disconnected */ }
-    }
-    try { filter.disconnect() } catch { /* silent — node may already be disconnected */ }
-    try { envelope.disconnect() } catch { /* silent — node may already be disconnected */ }
-  }
-
   return {
     envelope,
     scheduledAt: when,
     cleanupAt,
-    cancel,
+    cancel: makeCancel(audioCtx, oscList, partialGainList, filter, envelope),
   }
+}
+
+// Hold cue — a SUSTAINED note, not a strike. Smooth pad tone (fade in → hold →
+// fade out), same shape as the session-end chord, so a hold reads as a calm
+// held breath rather than a struck-then-decaying cue. A single sine (NOT the
+// strike's inharmonic partial stack — sustaining those sounds rough), tinted only
+// by the timbre's low-pass filter.
+const HOLD_ATTACK_SEC = 0.8 // fade-in to the sustain plateau
+const HOLD_RELEASE_SEC = 1.1 // fade-out over the last of the hold
+const HOLD_SUSTAIN_GAIN = 0.12 // plateau level — the loudness knob; below the 0.18 strike peak since a sustained tone reads louder than a decaying strike
+
+function scheduleHoldCue(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  preset: TimbrePreset,
+  kind: 'in' | 'out',
+  phaseDurationSec: number,
+): CueHandle {
+  const fundamentalHz = kind === 'in' ? preset.fundamentalHzIn : preset.fundamentalHzOut
+  const t = buildToneNodes(
+    audioCtx, fundamentalHz, phaseDurationSec, when, destination, preset, HOLD_SUSTAIN_GAIN,
+    { attackSec: HOLD_ATTACK_SEC, releaseSec: HOLD_RELEASE_SEC },
+  )
+  t.osc.addEventListener('ended', () => { disconnectToneNodes(t) }, { once: true })
+
+  const cancel = (): void => {
+    t.envelope.gain.cancelScheduledValues(audioCtx.currentTime)
+    try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+    disconnectToneNodes(t)
+  }
+
+  return { envelope: t.envelope, scheduledAt: when, cleanupAt: t.cleanupAt, cancel }
 }
 
 // Per-timbre dispatch surface. These functions look up the preset from
@@ -227,5 +361,28 @@ export function scheduleOutCueForTimbre(
 ): CueHandle {
   const preset = TIMBRE_PRESETS[timbre]
   return scheduleBowlCue(audioCtx, when, destination, preset, 'out', phaseDurationSec)
+}
+
+// Hold cues pitch-match the adjacent breath strike: hold-in follows the inhale
+// (440 Hz), hold-out follows the exhale (220 Hz) — the sustained tone continues
+// the breath rather than introducing a new pitch.
+export function scheduleHoldInCueForTimbre(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  timbre: TimbreId,
+  phaseDurationSec: number,
+): CueHandle {
+  return scheduleHoldCue(audioCtx, when, destination, TIMBRE_PRESETS[timbre], 'in', phaseDurationSec)
+}
+
+export function scheduleHoldOutCueForTimbre(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  timbre: TimbreId,
+  phaseDurationSec: number,
+): CueHandle {
+  return scheduleHoldCue(audioCtx, when, destination, TIMBRE_PRESETS[timbre], 'out', phaseDurationSec)
 }
 
