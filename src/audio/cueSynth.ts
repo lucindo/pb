@@ -52,82 +52,63 @@ export interface CueHandle {
   cancel(this: void): void
 }
 
-function scheduleBowlCue(
+// Master envelope GainNode + oscillator stop/cleanup timing.
+// Soft-attack (preset.attackSec > 0, Flute): linear ramp 0 → peakGain over
+// attackSec, then exp decay from the ramp end. Otherwise (Bowl/Bell/Sine):
+// instant strike-and-decay.
+//
+// 260510-tc9 Bug 2: when the phase outlasts natural perceptual silence
+// (needsSustain), decay toward a non-zero sustain floor (audible until the flip)
+// and hard-fade that floor out in the last PHASE_END_FADE_OUT_LEAD_SEC so it does
+// not bleed into the next strike. Onset character (peakGain, defaultDecayTau) is
+// preserved either way.
+function buildBowlEnvelope(
   audioCtx: AudioContext,
   when: number,
-  destination: AudioNode,
   preset: TimbrePreset,
-  kind: 'in' | 'out',
-  phaseDurationSec?: number,
-): CueHandle {
-  // Per-call resolution of fundamental + decay from the preset based on kind.
-  // All other DSP parameters (partials, filter, peak gain, oscillator type)
-  // read directly from `preset` below.
-  const fundamentalHz = kind === 'in' ? preset.fundamentalHzIn : preset.fundamentalHzOut
-  const defaultDecayTau = kind === 'in' ? preset.decayTauIn : preset.decayTauOut
-
-  // 260510-tc9 Bug 2: when the phase outlasts natural perceptual silence, decay
-  // toward a non-zero sustain floor (audible until the flip) and fade that
-  // floor out in the last PHASE_END_FADE_OUT_LEAD_SEC of the phase. Onset
-  // character (preset.peakGain, defaultDecayTau) is preserved either way.
-  const naturalSilenceAt = defaultDecayTau * PERCEPTUAL_SILENCE_TAU_MULT
-  const needsSustain =
-    phaseDurationSec !== undefined && phaseDurationSec > naturalSilenceAt
-
-  // Low-pass filter — softens the partial stack and removes hiss.
-  const filter = audioCtx.createBiquadFilter()
-  filter.type = 'lowpass'
-  filter.frequency.value = preset.filterFreqHz
-  filter.Q.value = preset.filterQ
-
-  // Master envelope GainNode — optional soft-attack mode.
-  // When preset.attackSec > 0 (Flute): linear ramp 0 → peakGain over attackSec,
-  // then exp decay starting from the ramp end (when + attackSec).
-  // When preset.attackSec is 0 (Bowl/Bell/Sine): instant strike-and-decay.
-  // Strike is the default.
+  defaultDecayTau: number,
+  needsSustain: boolean,
+  phaseDurationSec: number | undefined,
+): { envelope: GainNode; stopAt: number; cleanupAt: number } {
   const envelope = audioCtx.createGain()
   const decayTarget = needsSustain ? preset.peakGain * SUSTAIN_FLOOR_RATIO : NEAR_SILENCE
   if (preset.attackSec > 0) {
-    // Soft-attack path: breath onset ramp, then exponential decay from ramp end.
     const attackEnd = when + preset.attackSec
     envelope.gain.setValueAtTime(NEAR_SILENCE, when)
     envelope.gain.linearRampToValueAtTime(preset.peakGain, attackEnd)
     envelope.gain.setTargetAtTime(decayTarget, attackEnd, defaultDecayTau)
   } else {
-    // Strike path (default): instant jump to peakGain, then exp decay.
     envelope.gain.setValueAtTime(preset.peakGain, when)
     envelope.gain.setTargetAtTime(decayTarget, when + STRIKE_RAMP_OFFSET, defaultDecayTau)
   }
 
-  let stopAt: number
-  let cleanupAt: number
-  if (needsSustain) {
-    // Hard fade-out in the last lead window so the floor does not bleed into
-    // the next phase's strike.
-    // phaseDurationSec is always defined when needsSustain is true (outer condition above).
+  if (needsSustain && phaseDurationSec !== undefined) {
     const phaseEnd = when + phaseDurationSec
     const fadeStart = phaseEnd - PHASE_END_FADE_OUT_LEAD_SEC
     envelope.gain.setTargetAtTime(NEAR_SILENCE, fadeStart, PHASE_END_FADE_OUT_TAU)
-    stopAt = phaseEnd + TAIL_PADDING_SEC
-    cleanupAt = phaseEnd + CLEANUP_PADDING_SEC
-  } else {
-    stopAt = when + defaultDecayTau * TAIL_MULTIPLIER + TAIL_PADDING_SEC
-    cleanupAt = when + defaultDecayTau * TAIL_MULTIPLIER + CLEANUP_PADDING_SEC
+    return { envelope, stopAt: phaseEnd + TAIL_PADDING_SEC, cleanupAt: phaseEnd + CLEANUP_PADDING_SEC }
   }
+  const tailEnd = when + defaultDecayTau * TAIL_MULTIPLIER
+  return { envelope, stopAt: tailEnd + TAIL_PADDING_SEC, cleanupAt: tailEnd + CLEANUP_PADDING_SEC }
+}
 
-  filter.connect(envelope)
-  envelope.connect(destination)
-
-  // AUDIO-04: explicit disconnect on osc.onended. { once: true } makes the listener self-removing.
-  // Pre-condition: osc.stop(stopAt) with stopAt > when — ensures 'ended' fires.
-  // If a future change makes stopAt < when, ended may not fire and the chain leaks.
-  //
-  // Build + wire each partial in a single loop so osc and partialGain stay as
-  // local references for the 'ended' listener — avoids parallel-array indexing
-  // and the noUncheckedIndexedAccess guard that came with it.
-  //
-  // Collect all oscillator nodes so the cancel() closure can stop + disconnect them.
-  // The partial gain nodes pair 1-to-1 with each oscillator.
+// Build + wire each partial oscillator in one loop so osc/partialGain stay local
+// for the self-removing 'ended' disconnect (avoids parallel-array indexing + the
+// noUncheckedIndexedAccess guard). All partials share stopAt, so the last
+// oscillator's 'ended' also drives the shared filter + envelope cleanup (RESEARCH
+// Assumption A3). Returns the node lists for the cancel() closure.
+//
+// AUDIO-04 pre-condition: osc.stop(stopAt) with stopAt > when ensures 'ended'
+// fires; a future change making stopAt < when would leak the chain.
+function buildPartialStack(
+  audioCtx: AudioContext,
+  when: number,
+  stopAt: number,
+  preset: TimbrePreset,
+  fundamentalHz: number,
+  filter: BiquadFilterNode,
+  envelope: GainNode,
+): { oscList: OscillatorNode[]; partialGainList: GainNode[] } {
   const oscList: OscillatorNode[] = []
   const partialGainList: GainNode[] = []
   let lastOsc: OscillatorNode | null = null
@@ -154,14 +135,47 @@ function scheduleBowlCue(
     partialGainList.push(partialGain)
     lastOsc = osc
   }
-  // Disconnect shared filter + envelope after the last partial ends (all partials share stopAt,
-  // so any single 'ended' event is safe for shared-chain cleanup — RESEARCH Assumption A3).
   if (lastOsc !== null) {
     lastOsc.addEventListener('ended', () => {
       try { filter.disconnect() } catch { /* silent */ }
       try { envelope.disconnect() } catch { /* silent */ }
     }, { once: true })
   }
+  return { oscList, partialGainList }
+}
+
+function scheduleBowlCue(
+  audioCtx: AudioContext,
+  when: number,
+  destination: AudioNode,
+  preset: TimbrePreset,
+  kind: 'in' | 'out',
+  phaseDurationSec?: number,
+): CueHandle {
+  // Per-call resolution of fundamental + decay from the preset based on kind.
+  // All other DSP parameters (partials, filter, peak gain, oscillator type)
+  // read directly from `preset`.
+  const fundamentalHz = kind === 'in' ? preset.fundamentalHzIn : preset.fundamentalHzOut
+  const defaultDecayTau = kind === 'in' ? preset.decayTauIn : preset.decayTauOut
+
+  const naturalSilenceAt = defaultDecayTau * PERCEPTUAL_SILENCE_TAU_MULT
+  const needsSustain =
+    phaseDurationSec !== undefined && phaseDurationSec > naturalSilenceAt
+
+  // Low-pass filter — softens the partial stack and removes hiss.
+  const filter = audioCtx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.value = preset.filterFreqHz
+  filter.Q.value = preset.filterQ
+
+  const { envelope, stopAt, cleanupAt } =
+    buildBowlEnvelope(audioCtx, when, preset, defaultDecayTau, needsSustain, phaseDurationSec)
+
+  filter.connect(envelope)
+  envelope.connect(destination)
+
+  const { oscList, partialGainList } =
+    buildPartialStack(audioCtx, when, stopAt, preset, fundamentalHz, filter, envelope)
 
   // cancel() — stop oscillators + disconnect all chain nodes.
   // cancelScheduledValues discards pending automation so no further gain ramps
