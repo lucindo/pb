@@ -28,8 +28,9 @@ core breathing engine.
   deslop + SSOT review + comment review, all under /ds-step-mode). Collapsed the
   remaining multi-practice scaffolding to honest single-engine shape. Decisions
   in `.project/DECISIONS.md` (D1: presets-over-one-engine). Not yet merged.
-- [ ] (Pending user input) Implement pattern-breathing functionality —
-  **presets over one configurable engine** (D1); presets are data, not practice types
+- [ ] Implement pattern-breathing functionality — **presets over one configurable
+  engine** (D1); model now specified in **D6** (4 phases + multiplier + rounds,
+  presets-as-data). Engine work = architecture-plan Step 3 below.
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -117,13 +118,38 @@ feature spec (`/ds-spec`) — **presets over one configurable engine** per D1. T
 safe to clear.
 
 **Open questions**
-- Pattern-breathing spec still undefined beyond D1's shape (presets-as-data over one
-  engine; e.g. Box = 4/4/4/4). The current engine is inhale/exhale only (no holds) — real
-  patterns likely need a hold phase, a future engine change.
+- ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6**: 4 phases
+  (inhale · hold-in · exhale · hold-out) + multiplier + rounds; one cue per phase.
+  Replaces the bpm/ratio model. Open sub-details deferred by choice: cue sound/visual
+  design and the user-facing label for `multiplier`.
 - App name and the breathing-*technique* name both resolve to "Pattern Breathing"
   (`practice.name`). The preset feature will likely surface a per-preset label on the
   settings sheet/header; revisit then. (D2 collapsed the two identical strings to one.)
 - Decisions log: `.project/DECISIONS.md` (D1–D5).
+
+## Architecture (from `/ds-architecture-plan`, full repo, max-level=3)
+
+Assessment: architecture is **healthy** — strictly layered (domain is pure, zero
+upward edges), no import cycles, sound audio sub-layering, good test seams (VM
+factories D3, swappable clock). Problems are localized god-units + one model
+coupling, not structural rot. Sequenced steps:
+
+- **Step 1 [L2] — Split `useAudioCues.ts` (658L, the largest file).** Four mixed
+  concerns (state machine / engine lifecycle + generation counter / proxy-clock seam /
+  thin null-guarded engine facade). Biggest change-amplifier and the preset feature
+  touches its scheduling facade. **Single consumer** (`useBreathingSessionController`),
+  so contained; keep the `UseAudioCues` interface byte-identical. Ready NOW
+  (behavior-preserving, not gated on the feature).
+- **Step 2 [L1] — Decompose `createAudioEngine` (audioEngine.ts:141, ~350L factory).**
+  Audio-internal; fold in the two ride-along minors (DOMException guard :474,
+  `endChordTailUntilSec` rename :215). Ready NOW.
+- **Step 3 [L2] — Generalize `'in'|'out'` → `BreathPhase` + `bpm`/`ratio` →
+  `PatternSettings`.** The one cross-layer milestone (~16 files: domain → audio →
+  hooks → components → content → storage). UNBLOCKED — model spec'd in **D6**. This
+  IS the pattern-breathing feature's first structural move, not pre-work; add
+  characterization tests at the domain plan/cue seam first (`/ds-tdd-mode`).
+- Leave alone (no symptom): VM factories (D3), modal class strings (D4), storage
+  barrel, audio sub-layering, `strings.ts`. No L3 move warranted at this scale.
 
 ## Deferred refactors (from `/ds-ts-review`, full-repo pass)
 

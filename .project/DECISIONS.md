@@ -67,3 +67,39 @@ Revisit if a third modal appears.
 
 **Rationale:** All follow from D1 (single engine, presets-as-data); the user
 opted to clear them now rather than carry dead generality into the feature work.
+
+## D6 — Pattern-breathing domain model (resolves the hold-phase open question)
+
+**Q:** D1 settled "presets over one engine" but not the engine's parameters. What
+exactly does a pattern look like, and how is a session bounded?
+
+**A:** A pattern is **four phases + a multiplier + a round count**:
+
+```ts
+type BreathPhase = 'inhale' | 'hold-in' | 'exhale' | 'hold-out'
+interface PatternSettings {
+  inhale: number; holdIn: number; exhale: number; holdOut: number  // counts; 0 ⇒ skip
+  multiplier: number            // phaseSeconds = count × multiplier (internal name)
+  rounds: number | 'open-ended'
+}
+```
+
+- **Multiplier** scales all four phases uniformly. Kept as its own knob (not folded
+  into the counts) because it's the *progression* control — users ramp it
+  (1→2→3…) to lengthen holds while preserving the pattern. UI label deferred;
+  `multiplier` is the internal name.
+- **Presets are data** — named `PatternSettings`. Box-4 = `1·1·1·1 ×4`,
+  Weiss/4-7-8 = `4·7·8·0 ×1`, 1-4-2 = `1·4·2·0 ×1`. Editing any field ⇒ "Custom".
+  Surfaced via the same picker pattern as today's Ratio control.
+- **Length = rounds** (or open-ended). No time-based setting; a calculated
+  total-duration readout is display-only.
+- **Cues: one per phase**, keyed by `BreathPhase`, fired at each non-zero phase's
+  start (zero-count phases fire nothing) — same shape as today's single inhale /
+  exhale cue, not a start+end pair per hold. Sound/visual design deferred.
+
+**Rationale:** Smallest model that expresses the named techniques and the
+progression use case. Fully **replaces** the resonance `bpm`/`ratio`/`durationMinutes`
+parameterization — there is no separate rate knob; rate is implied by the counts.
+This is the spec that unblocks architecture-plan Step 3 (`'in'|'out'` → `BreathPhase`,
+`PatternSettings` across ~16 files). New app ⇒ no storage migration; stale `bpm`/`ratio`
+envelopes fail validation and fall to defaults.
