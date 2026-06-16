@@ -112,33 +112,6 @@ jobs:
           name: build-current
           path: dist
 
-  build-archives:
-    needs: read-manifest
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Future tags get added here when the operator decides to keep archiving them.
-        # For now the matrix resolves to: ref: v1.5 — the only archive target, because
-        # every earlier v1.x tag is superseded by v1.5 itself (no user-reachable URL
-        # needs them).
-        tag: ['v1.5']
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ matrix.tag }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - name: Build archive tag at versioned subpath
-        run: npx vite build --base=/pb/${{ matrix.tag }}/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-archive-${{ matrix.tag }}
-          path: dist
-
   build-root:
     # Per plan <deviations>: ALWAYS rebuilds the official version at the root path on
     # every push (tag) and workflow_dispatch event. Idempotent against the official
@@ -163,12 +136,10 @@ jobs:
           path: dist
 
   assemble-and-deploy:
-    needs: [validate-version, read-manifest, build-current, build-archives, build-root]
+    needs: [validate-version, read-manifest, build-current, build-root]
     # workflow_dispatch skips build-current (no pushed tag → nothing to build at /pb/v{X.Y}/).
-    # This `if:` allows assemble to proceed when build-current was skipped, but still
-    # requires build-archives and build-root to have succeeded. This is the only `if:`
-    # guard on assemble — the (now-eliminated) build-root skip case is not handled here.
-    if: needs.build-archives.result == 'success' && needs.build-root.result == 'success' && (needs.build-current.result == 'success' || needs.build-current.result == 'skipped')
+    # Allow assemble to proceed when build-current was skipped, provided build-root succeeded.
+    if: needs.build-root.result == 'success' && (needs.build-current.result == 'success' || needs.build-current.result == 'skipped')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
