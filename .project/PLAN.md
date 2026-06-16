@@ -63,6 +63,13 @@ core breathing engine.
     off). Off→on restores the last finite value via a `useRef` updated in
     `onRoundsChange` (NOT during render — `react-hooks/refs` forbids it); falls back
     to the domain default (10). Strings `roundsLimitLabel` EN/PT.
+  - [x] **Pre-merge review + polish.** `/ds-deslop` (`4127f61` — deduped `stopAt`,
+    trimmed a hold-cue comment; rejected the domain "guards" as mandatory under
+    `noUncheckedIndexedAccess`). `/ds-code-review` SSOT: one real find, fixed in
+    `2130ed6` — `OPEN_ENDED_GLYPH '∞'` single-sourced in `strings.ts`, referenced by
+    the rounds stepper + `SessionReadout`. Then the last user-facing items: About-page
+    copy (`2fc49a9`), README (`74ffd46`), smaller in/out/hold label (`e66da58`), and a
+    new ring+arc app icon + favicon replacing the inherited HRV art (`48792eb`).
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -132,26 +139,26 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — On branch `feat/pattern-breathing`, **feature-complete and NOT merged**.
-The full Pattern Breathing feature has landed on top of the Step-3 model migration:
-- **Follow-on A** — smooth sustained hold tone (`eb6b712`)
-- **Follow-on B** — hold-phase ring visuals: progress bar + retained inhale arc (`0ff0159`)
-- **FR-18a** — rounds limit toggle (`a08d8ab`)
+**State** — Pattern Breathing is **DONE and shipping to `main`**. The full feature —
+engine (Step 3 model migration `a30fd53`), sustained hold tone (`eb6b712`), hold-phase
+ring visuals (`0ff0159`), rounds limit toggle (`a08d8ab`) — plus the pre-merge review
+and the final user-facing items (About page, README, smaller phase label, new ring+arc
+icon/favicon) all landed on `feat/pattern-breathing` and reviewed clean.
 
-`tsc -b` + eslint + **730 vitest green**. The four unmerged commits on this branch are
-`a30fd53` (Step 3) → `eb6b712` → `0ff0159` → `a08d8ab`. App runs the real engine: preset
-picker, per-phase steppers, Scale, rounds toggle + stepper→∞, X/N readout, In/Out/Hold
-ring with sustained hold tone and hold progress bar.
+`tsc -b` + eslint + **730 vitest green** + production build (PWA precache). App runs the
+real engine: preset picker, per-phase steppers, Scale, rounds toggle + stepper→∞, X/N
+readout, In/Out/Hold ring with sustained hold tone + hold progress bar.
 
-**Next** — **Code review, then ship.** No feature work outstanding. Run `/ds-code-review`
-(touches audio DSP `cueSynth`/`boundaryCueSynth` + UI `BreathingRing` +
-`PatternBreathingSettingsForm`); `/ds-security-review` not warranted (no input/auth/secrets).
-Then open the PR / merge to `main`. Optional manual UAT in `npm run dev`: hold tone feel,
-hold-in full-arc + progress bar, rounds toggle alongside the stepper.
+**Next** — Merging `feat/pattern-breathing` → `main`. Nothing outstanding. To cut a
+release: tag `vX.Y` (matches first two `package.json.version` segments) for the
+multi-version Pages deploy under `/pb/`. Optional final device glance: app icon on a
+light home screen, favicon in a dark tab.
 
 **Cross-session note** — the hold tone was UAT'd by ear and the volume signed off
 (`HOLD_SUSTAIN_GAIN` 0.12). The three `HOLD_*` knobs in `cueSynth.ts` are the only
-feel-tuning left if review or UAT wants adjustment.
+feel-tuning left. Icon/favicon masters live in `assets/icons/` — regenerate the PNGs
+with `rsvg-convert` if the palette changes (favicon SVG is synced across
+`faviconPalette.ts`, `index.html`, `public/favicon.svg`).
 
 **Open questions**
 - ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6/D7**.
