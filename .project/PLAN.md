@@ -82,6 +82,11 @@ core breathing engine.
   checkout→v6, setup-node→v6, upload-artifact→v7, download-artifact→v8, configure-pages→v6,
   upload-pages-artifact→v5, deploy-pages→v5. Clears the Node-20 deprecation; takes effect
   on the next tag / `workflow_dispatch`. Build `node-version: 20` input left unchanged.
+- [x] **v1.0.1 patch — 1-4-2 preset default scale 1→2** (`529c415`). One-line change in
+  `presets.ts` (`multiplier: 2`; effective 2-8-4). `package.json` 1.0.1; `versions.json`
+  unchanged (official already `v1.0`, first two segments still match). Re-pointed the `v1.0`
+  tag (`9a4c195`→`529c415`, force-pushed) — same release line, so the tag moves rather than
+  cutting `v1.1`. Tag push triggers deploy + first-exercises the Node-24 action bumps.
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -151,16 +156,15 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — **v1.0 shipped and live** at https://lucindo.github.io/pb/ (and /pb/v1.0/).
-Pattern Breathing is feature-complete, merged to `main` (`8065da6`), released as `v1.0`,
-and deployed green. CI action bumps merged on top (`fc7e426`). `main` is at `fc7e426`,
-clean working tree, **730 vitest green**. Nothing outstanding — this is a natural stopping
-point / between-features state.
+**State** — **v1.0.1 shipped** at https://lucindo.github.io/pb/ (and /pb/v1.0/). Latest
+change: 1-4-2 preset default scale 1→2 (`529c415`), released by re-pointing the `v1.0` tag.
+`main` is at `529c415`, clean working tree. Deploy triggered by the tag push — verify green
+at https://github.com/lucindo/pb/actions. Otherwise a natural between-features stopping point.
 
-**Next** — No required action. Optional: a real-device glance at the v1.0 site (app icon
-on a light home screen, favicon in a dark tab). New work starts from a fresh spec. To cut
-the next release: bump `package.json` version, set `versions.json` official to the new
-`vX.Y`, commit, tag `vX.Y`, push (tag push triggers deploy; append-versions-json records it).
+**Next** — No required action once the deploy lands green. New work starts from a fresh spec.
+To cut a *new* release line (vs. patching v1.0): bump `package.json` to `vX.Y.Z`, add `vX.Y`
+to `versions.json` (+ set official), commit, tag `vX.Y`, push. To patch the current line, as
+v1.0.1 did: bump patch, commit, move the `v1.0` tag, force-push it.
 
 **Cross-session notes**
 - Deploy gotchas are now solved but worth knowing: the deploy only triggers on `vX.Y` tag
