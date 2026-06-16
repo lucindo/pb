@@ -3,195 +3,142 @@ import { describe, expect, it } from 'vitest'
 import { LOOKAHEAD_MIN_CUES, LOOKAHEAD_WINDOW_SEC } from '../audio/audioEngine'
 import type { BreathingPlan } from './breathingPlan'
 import { computeBoundaryAudioOffsets, resolveTargetSec, walkFutureCues, MAX_WALK_ITERATIONS } from './sessionAudio'
-import { getCompletionSec, type SessionFrame } from './sessionMath'
+import type { SessionFrame } from './sessionMath'
 
-// Fixture values are seconds-shaped.
+// Symmetric inhale/exhale fixture (no holds): cycle 6s.
 const plan: BreathingPlan = {
-  bpm: 5.5,
-  ratio: '40:60',
-  cycleSec: 10.909,
-  inhaleSec: 4.363,
-  exhaleSec: 6.545,
+  phases: [
+    { phase: 'inhale', durationSec: 3 },
+    { phase: 'exhale', durationSec: 3 },
+  ],
+  cycleSec: 6,
+  rounds: 'open-ended',
   totalSec: null,
 }
 
+const timed = (totalSec: number): BreathingPlan => ({ ...plan, rounds: totalSec / plan.cycleSec, totalSec })
+
 const baseFrame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
+  phase: 'inhale',
+  phaseIndex: 0,
+  phaseProgress: 0,
+  round: 4,
+  totalRounds: 'open-ended',
   elapsedSec: 0,
   remainingSec: null,
-  phaseProgress: 0,
-  cycleIndex: 3,
   isComplete: false,
 }
 
-// ─── walkFutureCues tests ────────────────────────────────────────────────────
-
-// Pattern Breathing fixture plan: 10 BPM (cycleSec=6, inhale=3, exhale=3)
-const patternBreathingPlan: BreathingPlan = {
-  bpm: 10,
-  ratio: '50:50',
-  cycleSec: 6,
-  inhaleSec: 3,
-  exhaleSec: 3,
-  totalSec: null,
-}
-
-describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
-  // Test 1: Pattern Breathing walk basic — at 10 BPM (cycleSec=6), floor=2, window=6s
-  it('Pattern Breathing basic walk returns ≥LOOKAHEAD_MIN_CUES cues starting at anchor+0 for fromPhase=in', () => {
-    const anchor = 100
+describe('walkFutureCues', () => {
+  it('emits one cue per phase boundary from the anchor, monotonic and keyed by phase', () => {
     const cues = walkFutureCues({
-      audioAnchor: anchor,
+      audioAnchor: 100,
       elapsedSec: 0,
       fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: patternBreathingPlan,
+      fromPhaseIndex: 0,
+      plan,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
     })
-
-    expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-    expect(cues[0]).toEqual({ audioTime: anchor + 0, phaseDurationSec: 3, kind: 'in' })
-    expect(cues[1]).toEqual({ audioTime: anchor + 3, phaseDurationSec: 3, kind: 'out' })
-    if (cues.length >= 3) {
-      expect(cues[2]).toEqual({ audioTime: anchor + 6, phaseDurationSec: 3, kind: 'in' })
-    }
+    expect(cues[0]).toEqual({ audioTime: 100, phaseDurationSec: 3, kind: 'inhale' })
+    expect(cues[1]).toEqual({ audioTime: 103, phaseDurationSec: 3, kind: 'exhale' })
+    expect(cues[2]).toEqual({ audioTime: 106, phaseDurationSec: 3, kind: 'inhale' })
     for (let i = 1; i < cues.length; i++) {
-      const prevTime = cues[i - 1]?.audioTime ?? 0
-      const currTime = cues[i]?.audioTime ?? 0
-      expect(currTime).toBeGreaterThan(prevTime)
+      expect((cues[i]?.audioTime ?? 0)).toBeGreaterThan(cues[i - 1]?.audioTime ?? 0)
     }
   })
 
-  // Test 2: Pattern Breathing low-BPM floor — at 1 BPM (cycleSec=60), window yields 0 cues; floor returns 2
-  it('Pattern Breathing low-BPM floor: 1 BPM returns exactly LOOKAHEAD_MIN_CUES cues', () => {
-    const lowBpmPlan: BreathingPlan = {
-      bpm: 1,
-      ratio: '40:60',
+  it('walks a four-phase cycle including holds', () => {
+    const fourPhase: BreathingPlan = {
+      phases: [
+        { phase: 'inhale', durationSec: 4 },
+        { phase: 'hold-in', durationSec: 7 },
+        { phase: 'exhale', durationSec: 8 },
+      ],
+      cycleSec: 19,
+      rounds: 'open-ended',
+      totalSec: null,
+    }
+    const cues = walkFutureCues({
+      audioAnchor: 0,
+      elapsedSec: 0,
+      fromCycleIndex: 0,
+      fromPhaseIndex: 0,
+      plan: fourPhase,
+      lookaheadWindowSec: 20,
+      minCues: LOOKAHEAD_MIN_CUES,
+    })
+    expect(cues.slice(0, 3)).toEqual([
+      { audioTime: 0, phaseDurationSec: 4, kind: 'inhale' },
+      { audioTime: 4, phaseDurationSec: 7, kind: 'hold-in' },
+      { audioTime: 11, phaseDurationSec: 8, kind: 'exhale' },
+    ])
+  })
+
+  it('honors the minCues floor when the window reaches no boundary (long cycle)', () => {
+    const longCycle: BreathingPlan = {
+      phases: [
+        { phase: 'inhale', durationSec: 24 },
+        { phase: 'exhale', durationSec: 36 },
+      ],
       cycleSec: 60,
-      inhaleSec: 24,
-      exhaleSec: 36,
+      rounds: 'open-ended',
       totalSec: null,
     }
     const cues = walkFutureCues({
       audioAnchor: 0,
       elapsedSec: 0,
       fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: lowBpmPlan,
+      fromPhaseIndex: 0,
+      plan: longCycle,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
     })
-    // Floor: even though the window (6s) doesn't reach the next cycle (60s),
-    // the floor kicks in and returns LOOKAHEAD_MIN_CUES cues
     expect(cues.length).toBe(LOOKAHEAD_MIN_CUES)
-    expect(cues[0]?.kind).toBe('in')
-    expect(cues[1]?.kind).toBe('out')
+    expect(cues[0]?.kind).toBe('inhale')
+    expect(cues[1]?.kind).toBe('exhale')
   })
 
-  // Test 3: Pattern Breathing high-BPM window-wins — at 7 BPM (cycleSec≈8.57), no duplicates, monotonic times
-  it('Pattern Breathing high-BPM: no duplicate cues, monotonically increasing audioTimes', () => {
-    const highBpmPlan: BreathingPlan = {
-      bpm: 7,
-      ratio: '40:60',
-      cycleSec: 60 / 7,
-      inhaleSec: (60 / 7) * 0.4,
-      exhaleSec: (60 / 7) * 0.6,
-      totalSec: null,
-    }
+  // The boundary is EXCLUSIVE: a cue starting exactly at targetSec is the next
+  // cycle's onset (where the end chord plays) and must not be emitted; the trim
+  // beats the floor → zero cues.
+  it('excludes the cue at the session-end boundary and the floor does not re-inflate', () => {
     const cues = walkFutureCues({
-      audioAnchor: 50,
-      elapsedSec: 0,
-      fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: highBpmPlan,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-    })
-    expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-    // No duplicate audioTimes
-    const audioTimes = cues.map(c => c.audioTime)
-    const uniqueTimes = new Set(audioTimes)
-    expect(uniqueTimes.size).toBe(audioTimes.length)
-    // Monotonically increasing
-    for (let i = 1; i < cues.length; i++) {
-      const prevTime = cues[i - 1]?.audioTime ?? 0
-      const currTime = cues[i]?.audioTime ?? 0
-      expect(currTime).toBeGreaterThan(prevTime)
-    }
-  })
-
-  // Test 6: targetSec trim — timed session, floor does NOT override the trim
-  it('targetSec trim: no cue queued past audioAnchor+targetSec even with floor', () => {
-    const anchor = 0
-    // 5-min session (targetSec=300), current elapsed=298, window would want 6s ahead
-    const cues = walkFutureCues({
-      audioAnchor: anchor,
-      elapsedSec: 298,
-      fromCycleIndex: 49,  // approximate cycle at 298s with cycleSec=6
-      fromPhase: 'in',
-      plan: { ...patternBreathingPlan, totalSec: 300 },
+      audioAnchor: 0,
+      elapsedSec: 300,
+      fromCycleIndex: 50, // 50 × 6 = 300 = targetSec
+      fromPhaseIndex: 0,
+      plan: timed(300),
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
     })
-    // Every cue must have audioTime <= audioAnchor + targetSec
-    for (const cue of cues) {
-      expect(cue.audioTime).toBeLessThanOrEqual(anchor + 300)
-    }
-    // Floor does NOT override target — may return fewer than LOOKAHEAD_MIN_CUES
-    // The cycle at index 49: audioTimeRelSec = 49*6 = 294 (in), 294+3=297 (out)
-    // Next cycle at 300 is exactly at targetSec — may or may not be included but must not exceed
-    for (const cue of cues) {
-      expect(cue.audioTime).toBeLessThanOrEqual(300)
-    }
+    expect(cues).toEqual([])
+    expect(LOOKAHEAD_MIN_CUES).toBeGreaterThan(1)
   })
 
-  // Test 6b: the boundary is EXCLUSIVE — a cue starting exactly at targetSec is the
-  // onset of the next cycle and must NOT be emitted. For cycle-aligned durations that
-  // instant is where the end chord plays; emitting it overlaps the breath cue with the
-  // session-end sound (regression: the inhale cue used to fire on top of the end chord).
-  // The trim wins over the minCues floor: the walk emits zero cues, not the floor of 2.
-  it('targetSec trim excludes the cue at the session end (no overlap with end chord)', () => {
+  it('keeps the final phase before the boundary audible', () => {
     const cues = walkFutureCues({
       audioAnchor: 0,
-      elapsedSec: 300, // at the very end of a 5-min session
-      fromCycleIndex: 50, // 50 * cycleSec(6) = 300s — inhale onset exactly at targetSec
-      fromPhase: 'in',
-      plan: { ...patternBreathingPlan, totalSec: 300 },
+      elapsedSec: 297,
+      fromCycleIndex: 49,
+      fromPhaseIndex: 1, // final exhale starts at 49×6 + 3 = 297
+      plan: timed(300),
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
     })
-    expect(cues).toEqual([]) // the cue at targetSec is excluded — floor does not re-inflate
-    expect(LOOKAHEAD_MIN_CUES).toBeGreaterThan(1) // sanity: the floor really is above 1
+    expect(cues).toContainEqual({ audioTime: 297, phaseDurationSec: 3, kind: 'exhale' })
+    expect(cues.every((c) => c.audioTime < 300)).toBe(true)
   })
 
-  // Test 7: targetSec=undefined (open-ended) — no end trim
-  it('targetSec=undefined (open-ended): emits up to max(floor,window) cues with no trim', () => {
+  it('returns [] when the start position is already past targetSec', () => {
     const cues = walkFutureCues({
       audioAnchor: 0,
-      elapsedSec: 0,
-      fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: patternBreathingPlan,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-      targetSec: undefined,
-    })
-    // Should return at least LOOKAHEAD_MIN_CUES cues (open-ended, no trim)
-    expect(cues.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-  })
-
-  // Test 8: empty walk — fromCycleIndex already past targetSec returns []
-  it('empty walk: returns [] when start position already past targetSec', () => {
-    const cues = walkFutureCues({
-      audioAnchor: 0,
-      elapsedSec: 310,
-      fromCycleIndex: 52,  // 52*6=312 > targetSec=300
-      fromPhase: 'in',
-      plan: { ...patternBreathingPlan, totalSec: 300 },
+      elapsedSec: 312,
+      fromCycleIndex: 52, // 52 × 6 = 312 > 300
+      fromPhaseIndex: 0,
+      plan: timed(300),
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
       targetSec: 300,
@@ -199,152 +146,61 @@ describe('Phase 52 D-01/D-11/D-14 walkFutureCues', () => {
     expect(cues).toEqual([])
   })
 
-})
-
-// Regression: the lookahead must trim at the session's TRUE completion boundary
-// (getCompletionSec — totalSec rounded UP to the cycle), NOT the raw plan.totalSec.
-// Trimming at totalSec silenced the held-open final cycle's breath cues; the >= trim
-// then drops the boundary cue so it never overlaps the end chord.
-describe('session-end boundary trim: held-open final breath plays, no end-chord overlap', () => {
-  // Pattern Breathing non-aligned: 5-min (300s) session on a 14s cycle (in7/out7). The domain
-  // holds completion to ceil(300/14)*14 = 308s, so the final cycle 21 (294→308)
-  // animates past 300. Trimming at totalSec=300 silenced its out cue (301>300);
-  // trimming at the completion boundary (308) keeps the final out audible while
-  // dropping the inhale that starts exactly at 308 (where the end chord plays).
-  it('Pattern Breathing: final held-open exhale plays, inhale at the completion boundary is dropped', () => {
-    const nonAlignedPlan: BreathingPlan = {
-      bpm: 60 / 14,
-      ratio: '50:50',
-      cycleSec: 14,
-      inhaleSec: 7,
-      exhaleSec: 7,
-      totalSec: 300,
+  it('terminates at MAX_WALK_ITERATIONS for a degenerate near-zero cycle', () => {
+    const degenerate: BreathingPlan = {
+      phases: [{ phase: 'inhale', durationSec: 1e-9 }],
+      cycleSec: 1e-9,
+      rounds: 'open-ended',
+      totalSec: null,
     }
-    const targetSec = getCompletionSec(nonAlignedPlan) // 308 — the controller's new source
-    expect(targetSec).toBe(308)
-
-    const cues = walkFutureCues({
-      audioAnchor: 0,
-      elapsedSec: 301, // start of the final exhale (cycle 21 out: 294 + 7)
-      fromCycleIndex: 21,
-      fromPhase: 'out',
-      plan: nonAlignedPlan,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-      targetSec: targetSec ?? undefined,
-    })
-
-    // The held-open final exhale is audible (regression: it used to be trimmed at 300).
-    expect(cues).toContainEqual({ audioTime: 301, phaseDurationSec: 7, kind: 'out' })
-    // No cue is emitted at or past the completion boundary (308 = where the end chord plays).
-    expect(cues.every(c => c.audioTime < 308)).toBe(true)
-  })
-
-})
-
-// resolveTargetSec is the lookahead trim boundary the controller feeds walkFutureCues.
-// These pin the wiring that the bug lived in: it MUST source the true completion
-// boundary (getCompletionSec), never the raw plan.totalSec.
-describe('resolveTargetSec', () => {
-  it('timed: returns the rounded completion boundary, not the raw totalSec', () => {
-    // 14s cycle, 300s total → ceil(300/14)*14 = 308 (held-open final cycle).
-    const plan: BreathingPlan = { bpm: 60 / 14, ratio: '50:50', cycleSec: 14, inhaleSec: 7, exhaleSec: 7, totalSec: 300 }
-    expect(resolveTargetSec(plan)).toBe(308)
-  })
-
-  it('open-ended: returns undefined (no trim)', () => {
-    expect(resolveTargetSec(patternBreathingPlan)).toBeUndefined() // patternBreathingPlan.totalSec === null
-  })
-})
-
-// Hard iteration cap on walkFutureCues: verifies a degenerate plan (cycleSec > 0,
-// targetSec=undefined, inhaleSec=0) terminates at MAX_WALK_ITERATIONS instead of looping forever.
-// Without the cap, 6/1e-9 = 6e9 iterations would hang.
-describe('Phase 52 Plan 06 WR-01: walkFutureCues hard iteration cap', () => {
-  it('degenerate plan terminates within MAX_WALK_ITERATIONS cap instead of looping forever', () => {
-    // cycleSec=1e-9 (near-zero positive, passes cycleSec > 0 guard).
-    // inhaleSec=0 → phaseOffset for 'out' = inhaleSec = 0 too.
-    // audioTimeRelSec per cue = cycleIndex * 1e-9.
-    // windowEnd = elapsedSec + LOOKAHEAD_WINDOW_SEC = 0 + 6 → needs 6e9 iterations to exit normally.
-    // Without the cap this hangs the rAF tick. With the cap it returns in ≤ MAX_WALK_ITERATIONS.
-    const degeneratePlan: BreathingPlan = {
-      bpm: 1,
-      ratio: '50:50',
-      cycleSec: 1e-9,  // near-zero positive — passes cycleSec > 0 guard
-      inhaleSec: 0,
-      exhaleSec: 0,
-      totalSec: null,  // open-ended — no targetSec exit
-    }
-
-    // Must complete before the vitest test timeout (no hang)
     const start = performance.now()
     const cues = walkFutureCues({
       audioAnchor: 0,
       elapsedSec: 0,
       fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: degeneratePlan,
+      fromPhaseIndex: 0,
+      plan: degenerate,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,
-      targetSec: undefined,
     })
-    const elapsed = performance.now() - start
-
-    // Must terminate well under 1s — the cap prevents the infinite loop
-    expect(elapsed).toBeLessThan(500)
-    // Result length bounded by MAX_WALK_ITERATIONS (symbol, not literal).
-    expect(cues.length).toBeGreaterThan(0)
+    expect(performance.now() - start).toBeLessThan(500)
     expect(cues.length).toBeLessThanOrEqual(MAX_WALK_ITERATIONS)
   })
 
-  it('normal Pattern Breathing plan output is unchanged with iteration cap (regression)', () => {
-    // Verify that a well-formed plan produces the same cue sequence as before the cap.
-    // The cap must NOT affect normal operation (10 BPM, window=6s produces ~3 cues).
-    const normalPlan: BreathingPlan = {
-      bpm: 10,
-      ratio: '50:50',
-      cycleSec: 6,
-      inhaleSec: 3,
-      exhaleSec: 3,
-      totalSec: null,
-    }
+  it('returns [] for an empty-phase plan', () => {
+    expect(
+      walkFutureCues({
+        audioAnchor: 0,
+        elapsedSec: 0,
+        fromCycleIndex: 0,
+        fromPhaseIndex: 0,
+        plan: { phases: [], cycleSec: 0, rounds: 'open-ended', totalSec: null },
+        lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
+        minCues: LOOKAHEAD_MIN_CUES,
+      }),
+    ).toEqual([])
+  })
+})
 
-    const cuesWithCap = walkFutureCues({
-      audioAnchor: 100,
-      elapsedSec: 0,
-      fromCycleIndex: 0,
-      fromPhase: 'in',
-      plan: normalPlan,
-      lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
-      minCues: LOOKAHEAD_MIN_CUES,
-    })
+describe('resolveTargetSec', () => {
+  it('timed: returns the completion boundary (totalSec)', () => {
+    expect(resolveTargetSec(timed(300))).toBe(300)
+  })
 
-    // Output should be same as Test 1 in the existing suite (byte-for-byte regression)
-    expect(cuesWithCap.length).toBeGreaterThanOrEqual(LOOKAHEAD_MIN_CUES)
-    expect(cuesWithCap[0]).toEqual({ audioTime: 100 + 0, phaseDurationSec: 3, kind: 'in' })
-    expect(cuesWithCap[1]).toEqual({ audioTime: 100 + 3, phaseDurationSec: 3, kind: 'out' })
-    // Monotonically increasing times
-    for (let i = 1; i < cuesWithCap.length; i++) {
-      const prevTime = cuesWithCap[i - 1]?.audioTime ?? 0
-      const currTime = cuesWithCap[i]?.audioTime ?? 0
-      expect(currTime).toBeGreaterThan(prevTime)
-    }
+  it('open-ended: returns undefined (no trim)', () => {
+    expect(resolveTargetSec(plan)).toBeUndefined()
   })
 })
 
 describe('computeBoundaryAudioOffsets', () => {
-  it('uses constant-plan timing for standard In frames', () => {
-    const out = computeBoundaryAudioOffsets({ ...baseFrame, phase: 'in' }, plan)
-
-    expect(out.boundaryStartSec).toBe(3 * plan.cycleSec)
-    // phaseDurationSec is plan.inhaleSec directly (no `/1000`).
-    expect(out.phaseDurationSec).toBe(plan.inhaleSec)
-  })
-
-  it('uses constant-plan timing for standard Out frames', () => {
-    const out = computeBoundaryAudioOffsets({ ...baseFrame, phase: 'out' }, plan)
-
-    expect(out.boundaryStartSec).toBe(3 * plan.cycleSec + plan.inhaleSec)
-    expect(out.phaseDurationSec).toBe(plan.exhaleSec)
+  it('locates the current phase boundary by round and phase index', () => {
+    expect(computeBoundaryAudioOffsets({ ...baseFrame, phaseIndex: 0 }, plan)).toEqual({
+      boundaryStartSec: 3 * plan.cycleSec,
+      phaseDurationSec: 3,
+    })
+    expect(computeBoundaryAudioOffsets({ ...baseFrame, phaseIndex: 1 }, plan)).toEqual({
+      boundaryStartSec: 3 * plan.cycleSec + 3,
+      phaseDurationSec: 3,
+    })
   })
 })

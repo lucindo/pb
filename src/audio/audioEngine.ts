@@ -28,7 +28,7 @@ import type { BreathingPlan } from '../domain/breathingPlan'
 import { createAudioSessionClock, type SessionClock } from './sessionClock'
 import { createSilentLoopBypass, type SilentLoopBypass } from './silentLoopBypass'
 import { createCueStore } from './cueStore'
-import type { TimbreId } from '../domain/settings'
+import type { BreathPhase, TimbreId } from '../domain/settings'
 
 export type AudioStatus = 'idle' | 'lead-in' | 'failed'
 
@@ -41,13 +41,12 @@ export interface AudioEngine {
    *  Returns the audioTime of the first In cue (= startAudioTime + 3), or null when the engine
    *  is closed — AUDIO-03. */
   scheduleLeadIn(startAudioTime: number, plan: BreathingPlan): number | null
-  /** Notify of a phase boundary mid-session. Schedules the corresponding In or Out cue
-   *  at the given audioTime (always — muted cues route silently through masterGain).
-   *  `phaseDurationSec` is the length of the UPCOMING phase (in / out) in seconds;
-   *  cueSynth uses it to stretch the bowl decay envelope so the cue stays audible
-   *  through the entire phase at low BPM. The boundary scheduler in App.tsx derives
-   *  this from plan.inhaleSec / plan.exhaleSec. */
-  scheduleNextCue(args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
+  /** Notify of a phase boundary mid-session. Schedules the cue for the upcoming
+   *  BreathPhase at the given audioTime (always — muted cues route silently through
+   *  masterGain). `phaseDurationSec` is the length of the UPCOMING phase in seconds;
+   *  cueSynth uses it to stretch the decay envelope so the cue stays audible through
+   *  the whole phase. The boundary scheduler derives this from the plan's phases. */
+  scheduleNextCue(args: { newPhase: BreathPhase; audioTime: number; phaseDurationSec: number }): void
   /** Schedule the session-ending chord on this engine's AudioContext. No-op when
    *  closed (muted cues route silently through masterGain). close() defers teardown
    *  until the chord rings. */
@@ -75,7 +74,7 @@ export interface AudioEngine {
    *  switch. Respects the closed guard and applies the callee-side SAFE_LEAD_SEC clamp
    *  on each cue's audioTime. Calls pruneExpiredCues() before dispatching to keep
    *  activeCues bounded. */
-  topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void
+  topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: BreathPhase }> }): void
   /** Iterate activeCues snapshot, call cancel() on every cue with scheduledAt >
    *  audioCtx.currentTime, and remove those cues from activeCues. In-flight cues
    *  (scheduledAt <= now) are left to ring out naturally. Snapshot-iterate-then-mutate
@@ -206,18 +205,21 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
       const firstInCueTime = startAudioTime + LEAD_IN_DURATION_SEC
       if (closed) return null // closed engine has no meaningful projection.
       // Cues schedule even while muted (they play silently through masterGain=0).
-      // 3 ticks at +0/+1/+2 + first In cue at +3. plan.inhaleSec is seconds-shaped at
-      // the source — no /1000 conversion — so the decay envelope stretches with the
-      // upcoming In-phase length at low BPM.
+      // 3 ticks at +0/+1/+2 + the first phase cue at +3. The first phase is always
+      // inhale (base ≥ 1, never omitted); its effective seconds stretch the decay
+      // envelope through the phase.
       cueStore.schedule(startAudioTime + 0 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       cueStore.schedule(startAudioTime + 1 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
       cueStore.schedule(startAudioTime + 2 * LEAD_IN_TICK_INTERVAL_SEC, { kind: 'lead-in-tick' })
-      cueStore.schedule(firstInCueTime, { kind: 'in', phaseDurationSec: plan.inhaleSec })
+      const first = plan.phases[0]
+      if (first !== undefined) {
+        cueStore.schedule(firstInCueTime, { kind: first.phase, phaseDurationSec: first.durationSec })
+      }
 
       return firstInCueTime
     },
 
-    scheduleNextCue({ newPhase, audioTime, phaseDurationSec }: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void {
+    scheduleNextCue({ newPhase, audioTime, phaseDurationSec }: { newPhase: BreathPhase; audioTime: number; phaseDurationSec: number }): void {
       if (closed) return
       // Schedule even while muted (silent through masterGain=0).
       cueStore.prune()
@@ -229,7 +231,7 @@ export async function createAudioEngine(opts: AudioEngineOptions): Promise<Audio
     // Lookahead dispatch facade. Same posture as scheduleNextCue: closed guard at top,
     // prune() before dispatch, callee-side SAFE_LEAD_SEC clamp per cue. The cue list is
     // pre-computed by the caller; in-flight duplicates are skipped (cueStore.hasInFlightNear).
-    topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }> }): void {
+    topUpLookahead(args: { cues: Array<{ audioTime: number; phaseDurationSec: number; kind: BreathPhase }> }): void {
       if (closed) return
       // Schedule even while muted (silent through masterGain=0).
       cueStore.prune()

@@ -2,15 +2,18 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createWallSessionClock } from '../audio/sessionClock'
-import type { SessionSettings } from '../domain/settings'
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import type { PatternSettings } from '../domain/settings'
 import { useSessionEngine } from './useSessionEngine'
 
-const defaultSettings: SessionSettings = {
-  ...DEFAULT_SETTINGS,
-  bpm: 5.5,
-  ratio: '40:60',
-  durationMinutes: 10,
+// inhale 4s, exhale 6s (no holds) → cycle 10s; 10 rounds → total 100s. Advancing
+// ~5s crosses the inhale→exhale boundary, the timing several tests below rely on.
+const defaultSettings: PatternSettings = {
+  inhale: 4,
+  holdIn: 0,
+  exhale: 6,
+  holdOut: 0,
+  multiplier: 1,
+  rounds: 10,
 }
 
 // useSessionEngine accepts a SessionClock as its 2nd arg.
@@ -37,7 +40,7 @@ describe('useSessionEngine', () => {
     })
 
     expect(result.current.state.status).toBe('running')
-    expect(result.current.currentFrame?.phaseLabel).toBe('In')
+    expect(result.current.currentFrame?.phase).toBe('inhale')
 
     unmount()
   })
@@ -56,7 +59,7 @@ describe('useSessionEngine', () => {
       vi.advanceTimersByTime(5_100)
     })
 
-    expect(result.current.currentFrame?.phaseLabel).toBe('Out')
+    expect(result.current.currentFrame?.phase).toBe('exhale')
     // elapsedSec is seconds-shaped: 5_100 ms advanced via fake timers → at least 5 sec elapsed.
     expect(result.current.currentFrame?.elapsedSec).toBeGreaterThanOrEqual(5)
 
@@ -83,16 +86,15 @@ describe('useSessionEngine', () => {
   })
 
   it('transitions a timed session to complete with the required message', () => {
+    // 5 rounds × 10s cycle = 50s total.
     const { result, unmount } = renderHook(() =>
-      useSessionEngine({ ...defaultSettings, durationMinutes: 5 }, fakeClock),
+      useSessionEngine({ ...defaultSettings, rounds: 5 }, fakeClock),
     )
 
     act(() => {
       result.current.start()
     })
-    // Completion holds until the cycle that contains the configured duration finishes.
-    // 5 min at bpm 5.5 lands mid-cycle, so the hook only flips to 'complete' after
-    // the next cycle boundary (~305 454 ms). Advance well past it.
+    // Completion fires exactly at rounds × cycleSec (50s); advance well past it.
     act(() => {
       vi.advanceTimersByTime(6 * 60_000)
     })
@@ -105,48 +107,6 @@ describe('useSessionEngine', () => {
     expect(result.current.currentFrame).toBeNull()
 
     unmount()
-  })
-
-  it('extends only timed running sessions to greater finite durations', () => {
-    const timed = renderHook(() => useSessionEngine({ ...defaultSettings, durationMinutes: 10 }, fakeClock))
-
-    act(() => {
-      timed.result.current.start()
-    })
-    act(() => {
-      timed.result.current.extendDuration(15)
-    })
-
-    expect(timed.result.current.state.status).toBe('running')
-    if (timed.result.current.state.status !== 'running') {
-      throw new Error('Expected timed running state')
-    }
-    expect(timed.result.current.state.selectedSettings.durationMinutes).toBe(15)
-    // BreathingPlan.totalSec is seconds-shaped.
-    expect(timed.result.current.state.plan.totalSec).toBe(15 * 60)
-
-    act(() => {
-      timed.result.current.extendDuration(15)
-      timed.result.current.extendDuration(10)
-    })
-    expect(timed.result.current.state.selectedSettings.durationMinutes).toBe(15)
-    timed.unmount()
-
-    const openEnded = renderHook(() =>
-      useSessionEngine({ ...defaultSettings, durationMinutes: 'open-ended' }, fakeClock),
-    )
-    act(() => {
-      openEnded.result.current.start()
-    })
-    act(() => {
-      openEnded.result.current.extendDuration(60)
-    })
-    expect(openEnded.result.current.state.status).toBe('running')
-    if (openEnded.result.current.state.status !== 'running') {
-      throw new Error('Expected open-ended running state')
-    }
-    expect(openEnded.result.current.state.selectedSettings.durationMinutes).toBe('open-ended')
-    openEnded.unmount()
   })
 })
 
@@ -171,7 +131,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
 
     const firstFrame = result.current.currentFrame
     expect(firstFrame).not.toBeNull()
-    expect(firstFrame?.phase).toBe('in')
+    expect(firstFrame?.phase).toBe('inhale')
 
     // Advance ~1s — well under the In phase length (~4.36s at bpm 5.5, ratio 40:60).
     // Multiple rAF ticks fire but cycleIndex+phase do not change.
@@ -195,7 +155,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     })
 
     const inFrame = result.current.currentFrame
-    expect(inFrame?.phase).toBe('in')
+    expect(inFrame?.phase).toBe('inhale')
 
     // Cross into the Out phase. Inhale duration ≈ 4363ms at bpm 5.5 ratio 40:60.
     act(() => {
@@ -203,7 +163,7 @@ describe('useSessionEngine — identity contracts (Phase 10 HOOKS-03/04)', () =>
     })
 
     const outFrame = result.current.currentFrame
-    expect(outFrame?.phase).toBe('out')
+    expect(outFrame?.phase).toBe('exhale')
     // Identity changed because `phase` changed; the useMemo recomputed.
     expect(outFrame).not.toBe(inFrame)
 
@@ -371,11 +331,9 @@ describe('useSessionEngine — session round-trip selectedSettings preservation'
   })
 
   it('idle selectedSettings equals the initialSettings after a session start→end round-trip', () => {
-    const patternBreathingSettings: SessionSettings = {
+    const patternBreathingSettings: PatternSettings = {
       ...defaultSettings,
-      bpm: 5.5,
-      ratio: '40:60',
-      durationMinutes: 20,
+      rounds: 20,
     }
 
     const { result, unmount } = renderHook(() =>
@@ -608,7 +566,7 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
   // lastFrame.elapsedSec must stay frozen at its pre-suspend value, then resume cleanly.
   it('B1: AC-suspend freezes elapsed; resume continues from frozen value', () => {
     const mock = createMockSessionClock(100)
-    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const openEnded = { ...defaultSettings, rounds: 'open-ended' as const }
     const { result, unmount } = renderHook(() =>
       useSessionEngine(openEnded, mock.clock),
     )
@@ -660,8 +618,8 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
   // sub-threshold steps; completeIfNeeded fires at a cycle boundary.
   it('B2: timed session completes on AC-time, ignoring wall-time during freeze', () => {
     const mock = createMockSessionClock(0)
-    // 5-minute timed session (smallest valid DurationOption per settings.ts).
-    const timed = { ...defaultSettings, durationMinutes: 5 as const }
+    // 20 rounds × 10s cycle = 200s total — completes between 150s and 315s elapsed.
+    const timed = { ...defaultSettings, rounds: 20 as const }
     const { result, unmount } = renderHook(() =>
       useSessionEngine(timed, mock.clock),
     )
@@ -700,7 +658,7 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
   // (c) no completion fires prematurely (open-ended session).
   it('B7: foreground 5-min smoke holds elapsedSec within 100ms of AC-time', () => {
     const mock = createMockSessionClock(50)
-    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const openEnded = { ...defaultSettings, rounds: 'open-ended' as const }
     const { result, unmount } = renderHook(() =>
       useSessionEngine(openEnded, mock.clock),
     )
@@ -744,7 +702,7 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
   // B1 proves the rightmost dependency freezes; this test proves the snapshot inherits that freeze.
   it('B5/B6 (engine surface): runningSnapshotRef.lastElapsedSec inherits clock freeze (D-08 composition)', () => {
     const mock = createMockSessionClock(200)
-    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const openEnded = { ...defaultSettings, rounds: 'open-ended' as const }
     const { result, unmount } = renderHook(() =>
       useSessionEngine(openEnded, mock.clock),
     )
@@ -783,7 +741,7 @@ describe('useSessionEngine — AC-suspension semantics (Phase 51 D-07 / CLOCK-05
   it('B3 (engine surface): reanchorSessionClock preserves elapsed across an AC origin change', () => {
     // Set up: start the session under "AC #1" (mock A starting at 100).
     const mock = createMockSessionClock(100)
-    const openEnded = { ...defaultSettings, durationMinutes: 'open-ended' as const }
+    const openEnded = { ...defaultSettings, rounds: 'open-ended' as const }
     const { result, unmount, rerender } = renderHook(
       ({ clock }) => useSessionEngine(openEnded, clock),
       { initialProps: { clock: mock.clock } },

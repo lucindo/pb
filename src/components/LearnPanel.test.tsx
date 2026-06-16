@@ -13,10 +13,12 @@ function renderPanel() {
 }
 
 describe('LearnPanel', () => {
-  it('renders the section1 heading and body', () => {
+  it('renders every section heading and body', () => {
     renderPanel()
-    expect(screen.getByText(LEARN_CONTENT.en.section1.title)).toBeInTheDocument()
-    expect(screen.getByText(LEARN_CONTENT.en.section1.body)).toBeInTheDocument()
+    for (const section of LEARN_CONTENT.en.sections) {
+      expect(screen.getByText(section.title)).toBeInTheDocument()
+      expect(screen.getByText(section.body)).toBeInTheDocument()
+    }
   })
 
   it('renders the locked affiliation micro-line', () => {

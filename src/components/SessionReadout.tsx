@@ -5,23 +5,18 @@ import {
   type SessionFrame,
   type SessionStatus,
 } from '../domain'
-import type { UiStrings } from '../content/strings'
+import { OPEN_ENDED_GLYPH, type UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
 import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 
 // The Pattern Breathing readout resolves to FeedbackTime: a big remaining-time number above an
-// uppercase tracked secondary line ("X BPM · ratio"). Completion shows just the
-// "Session complete" headline; lead-in shows the placeholder time the upcoming
-// session counts from.
+// uppercase tracked secondary line — the round counter "X/N" (∞ when open-ended).
+// Completion shows just the "Session complete" headline; lead-in shows the
+// placeholder time the upcoming session counts from.
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null
   strings: UiStrings['practice']['readout']
-  /** Pace context — drives the secondary line. */
-  bpm: number
-  ratio: string
-  /** BPM unit token from settingsForm strings ("BPM" / "RPM" per locale). */
-  bpmUnit: string
 }
 
 export interface LeadInSessionReadoutProps extends SessionReadoutProps {
@@ -39,7 +34,7 @@ export type SessionReadoutModeProps =
   | ActiveSessionReadoutProps
 
 export function SessionReadout(props: SessionReadoutModeProps): ReactElement | null {
-  const { frame, strings, bpm, ratio, bpmUnit } = props
+  const { frame, strings } = props
 
   // Session complete: drop the FeedbackTime, surface a centered headline +
   // "Take a moment" subtitle. Preserves the role=region wrapper so existing
@@ -65,8 +60,9 @@ export function SessionReadout(props: SessionReadoutModeProps): ReactElement | n
 
   const primary = formatDuration(frame.remainingSec ?? frame.elapsedSec)
 
-  // "{bpm} {bpmUnit} · {ratio}" using the static settings.
-  const secondary = `${String(bpm)} ${bpmUnit} · ${ratio}`
+  // Round counter "X/N" (∞ for open-ended).
+  const total = frame.totalRounds === 'open-ended' ? OPEN_ENDED_GLYPH : String(frame.totalRounds)
+  const secondary = `${String(frame.round)}/${total}`
 
   return (
     <section aria-label={strings.readoutAriaLabel} className="w-full">

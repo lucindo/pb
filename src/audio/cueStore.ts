@@ -3,7 +3,13 @@
 // and handles pruning / cancellation / teardown. Split out from audioEngine so the
 // engine file holds only lifecycle + the public API facade.
 
-import { scheduleInCueForTimbre, scheduleOutCueForTimbre, type CueHandle } from './cueSynth'
+import {
+  scheduleInCueForTimbre,
+  scheduleOutCueForTimbre,
+  scheduleHoldInCueForTimbre,
+  scheduleHoldOutCueForTimbre,
+  type CueHandle,
+} from './cueSynth'
 import { scheduleCountdownTick, scheduleEndChord } from './boundaryCueSynth'
 import type { Cue } from './sessionClock'
 import type { TimbreId } from '../domain/settings'
@@ -45,11 +51,18 @@ export function createCueStore(audioCtx: AudioContext, masterGain: GainNode, tim
       case 'lead-in-tick':
         activeCues.add(scheduleCountdownTick(audioCtx, whenSec, masterGain, timbre))
         return
-      case 'in':
+      case 'inhale':
         activeCues.add(scheduleInCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
         return
-      case 'out':
+      case 'exhale':
         activeCues.add(scheduleOutCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
+        return
+      // Sustained hold tone, pitch-matched to the adjacent strike (hold-in↔inhale, hold-out↔exhale).
+      case 'hold-in':
+        activeCues.add(scheduleHoldInCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
+        return
+      case 'hold-out':
+        activeCues.add(scheduleHoldOutCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
         return
       case 'end-chord': {
         const c = scheduleEndChord(audioCtx, whenSec, masterGain, timbre)

@@ -1,5 +1,6 @@
 import type { BreathingPlan } from './breathingPlan'
 import { getCompletionSec, type SessionFrame } from './sessionMath'
+import type { BreathPhase } from './settings'
 
 export interface BoundaryAudioOffsets {
   // boundaryStartSec is the session-elapsed seconds at the start of the upcoming
@@ -13,46 +14,47 @@ export interface BoundaryAudioOffsets {
 // ─── walkFutureCues ───────────────────────────────────────────────────────────
 
 /**
- * Hard iteration cap for walkFutureCues.
- *
- * Derived as a safe multiple of the maximum cues a valid lookahead window can
- * emit: LOOKAHEAD_WINDOW_SEC / smallest-plausible-phase-duration + LOOKAHEAD_MIN_CUES.
- * At the minimum BPM=1 with 50:50 ratio, each phase is 30s — the window emits at most
- * 6/30 < 1 cue from the seconds budget, relying on LOOKAHEAD_MIN_CUES=2.
- * At the maximum BPM=7 with 20:80 ratio (shortest inhale), each inhale ≈ 1.7s —
- * the window can emit at most 6/1.7 ≈ 4 cues per window (never close to 10_000).
- * 10_000 is therefore a pure defense against degenerate/inconsistent plans
- * (negative or inconsistent phase offsets that prevent normal exit) and can
- * never be reached by any valid Pattern Breathing plan.
+ * Hard iteration cap for walkFutureCues — a pure defense against degenerate or
+ * inconsistent plans (non-positive phase offsets that prevent the normal window
+ * exit). No valid Pattern Breathing plan comes near it: the shortest cycle is a
+ * few seconds and the lookahead window is 6 s, so a valid walk emits a handful
+ * of cues per call.
  */
 export const MAX_WALK_ITERATIONS = 10_000 as const
 
 export interface FutureCue {
   audioTime: number
   phaseDurationSec: number
-  kind: 'in' | 'out'
+  kind: BreathPhase
+}
+
+// Session-elapsed seconds at the start of each phase within one cycle (prefix sum
+// of phase durations). offsets[i] is the time from cycle start to phase i's onset.
+function phaseStartOffsets(plan: BreathingPlan): number[] {
+  const offsets: number[] = []
+  let acc = 0
+  for (const p of plan.phases) {
+    offsets.push(acc)
+    acc += p.durationSec
+  }
+  return offsets
 }
 
 /**
- * Walk N future cues forward from the given anchor + position.
+ * Walk future cues forward from the given anchor + cycle/phase position.
  *
- * Returns an array of cue descriptors for dispatch via engine.topUpLookahead.
- * Each entry represents one upcoming phase boundary.
- *
+ * Each entry is one upcoming phase boundary (the start of a non-zero phase).
  * Pure function: no React, no I/O, no side effects.
  *
  * Hybrid window: queue any cue whose relSec ≤ windowEndElapsedSec, but always
- * keep at least minCues cues (floor). At low BPM the floor dominates; at high BPM
- * the seconds window dominates.
- *
- * Timed-session trim: when targetSec is defined, never emit cues past
- * audioAnchor + targetSec. The trim overrides the floor for timed sessions.
+ * keep at least minCues cues (floor). Timed-session trim: when targetSec is
+ * defined, never emit a cue at or past it.
  */
 export function walkFutureCues(args: {
   audioAnchor: number
   elapsedSec: number
   fromCycleIndex: number
-  fromPhase: 'in' | 'out'
+  fromPhaseIndex: number
   plan: BreathingPlan
   lookaheadWindowSec: number
   minCues: number
@@ -62,65 +64,48 @@ export function walkFutureCues(args: {
     audioAnchor,
     elapsedSec,
     fromCycleIndex,
-    fromPhase,
+    fromPhaseIndex,
     plan,
     lookaheadWindowSec,
     minCues,
     targetSec,
   } = args
 
-  // Defensive ASSERT: degenerate input — avoid infinite loops
-  if (plan.cycleSec <= 0) return []
+  // Defensive ASSERT: degenerate input — avoid infinite loops.
+  const phaseCount = plan.phases.length
+  if (plan.cycleSec <= 0 || phaseCount === 0) return []
 
-  // Compute window end in elapsed-seconds space
+  const offsets = phaseStartOffsets(plan)
+
   let windowEndElapsedSec = elapsedSec + lookaheadWindowSec
-  // If targetSec is defined, clamp the window at the session end
   if (targetSec !== undefined) {
     windowEndElapsedSec = Math.min(windowEndElapsedSec, targetSec)
   }
 
   const result: FutureCue[] = []
-  let currentCycleIndex = fromCycleIndex
-  let currentPhase: 'in' | 'out' = fromPhase
+  let cycleIndex = fromCycleIndex
+  let phaseIndex = ((fromPhaseIndex % phaseCount) + phaseCount) % phaseCount
 
-  // Walk loop: emit one cue per iteration.
-  // MAX_WALK_ITERATIONS hard cap: a degenerate plan (cycleSec>0, inconsistent phase
-  // offsets, targetSec===undefined) cannot hang the rAF tick. The cap cannot be reached by
-  // any valid Pattern Breathing plan — see MAX_WALK_ITERATIONS comment above.
+  // MAX_WALK_ITERATIONS hard cap: a degenerate plan cannot hang the rAF tick.
   for (let _i = 0; _i < MAX_WALK_ITERATIONS; _i++) {
-    // Uniform cycleSec stride — session-elapsed time at the start of this cue
-    // (relative to anchor=0).
-    const cycleStart = currentCycleIndex * plan.cycleSec
-    const phaseOffset = currentPhase === 'in' ? 0 : plan.inhaleSec
-    const audioTimeRelSec = cycleStart + phaseOffset
-    const phaseDurationSec = currentPhase === 'in' ? plan.inhaleSec : plan.exhaleSec
-
-    const audioTime = audioAnchor + audioTimeRelSec
+    const phase = plan.phases[phaseIndex]
+    if (phase === undefined) break // phaseIndex is always in range; satisfies the index guard.
+    const audioTimeRelSec = cycleIndex * plan.cycleSec + (offsets[phaseIndex] ?? 0)
 
     // Timed-session trim: never emit a cue at or past targetSec — overrides floor.
-    // The boundary is EXCLUSIVE: a cue starting exactly at targetSec is the onset of
-    // the next cycle (the session occupies [0, targetSec)). For cycle-aligned
-    // durations that instant is also where the end chord plays, so emitting it would
-    // overlap the breath cue with the session-end sound and start an inhale the
-    // screen immediately cuts.
-    if (targetSec !== undefined && audioTimeRelSec >= targetSec) {
-      break
-    }
+    // EXCLUSIVE boundary: a cue at exactly targetSec is the next cycle's onset (the
+    // session occupies [0, targetSec)), where the end chord plays.
+    if (targetSec !== undefined && audioTimeRelSec >= targetSec) break
 
-    // Hybrid stop: floor satisfied AND window exhausted → stop
-    if (result.length >= minCues && audioTimeRelSec > windowEndElapsedSec) {
-      break
-    }
+    // Hybrid stop: floor satisfied AND window exhausted → stop.
+    if (result.length >= minCues && audioTimeRelSec > windowEndElapsedSec) break
 
-    // Emit the cue
-    result.push({ audioTime, phaseDurationSec, kind: currentPhase })
+    result.push({ audioTime: audioAnchor + audioTimeRelSec, phaseDurationSec: phase.durationSec, kind: phase.phase })
 
-    // Advance to the next phase
-    if (currentPhase === 'in') {
-      currentPhase = 'out'
-    } else {
-      currentPhase = 'in'
-      currentCycleIndex += 1
+    phaseIndex += 1
+    if (phaseIndex >= phaseCount) {
+      phaseIndex = 0
+      cycleIndex += 1
     }
   }
 
@@ -128,16 +113,11 @@ export function walkFutureCues(args: {
 }
 
 /**
- * The lookahead trim boundary for a session — the elapsed-seconds instant past
- * which no cue may be scheduled. It is the session's TRUE completion boundary
- * (the same end the domain reports complete at), so the held-open final cycle's
- * cues still play while walkFutureCues' `>=` trim drops the cue at the boundary
- * (where the end chord fires).
- *
- * getCompletionSec(plan) — totalSec rounded up to the cycle. Open-ended
- * (totalSec === null) → undefined. Returning `plan.totalSec` instead would
- * silence the rounded-up final cycle. `undefined` means "no trim" (open-ended
- * sessions never complete).
+ * The lookahead trim boundary — the elapsed-seconds instant past which no cue may
+ * be scheduled. It is the session's completion boundary (getCompletionSec), so
+ * the final cycle's cues still play while the cue at the boundary (where the end
+ * chord fires) is dropped by walkFutureCues' `>=` trim. Open-ended → undefined
+ * (no trim).
  */
 export function resolveTargetSec(plan: BreathingPlan): number | undefined {
   return getCompletionSec(plan) ?? undefined
@@ -147,8 +127,11 @@ export function computeBoundaryAudioOffsets(
   frame: SessionFrame,
   plan: BreathingPlan,
 ): BoundaryAudioOffsets {
+  const offsets = phaseStartOffsets(plan)
+  const cycleIndex = frame.round - 1
+  const phase = plan.phases[frame.phaseIndex]
   return {
-    boundaryStartSec: frame.cycleIndex * plan.cycleSec + (frame.phase === 'in' ? 0 : plan.inhaleSec),
-    phaseDurationSec: frame.phase === 'in' ? plan.inhaleSec : plan.exhaleSec,
+    boundaryStartSec: cycleIndex * plan.cycleSec + (offsets[frame.phaseIndex] ?? 0),
+    phaseDurationSec: phase?.durationSec ?? 0,
   }
 }

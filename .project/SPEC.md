@@ -86,7 +86,11 @@ Out of scope (deferred, tracked in Open Questions):
   current Ratio control).
 - **FR-18**: The settings surface SHALL present editable controls for all six fields,
   each clamped to its bounds (FR-8..FR-11), with `holdIn`/`holdOut` allowing `0` and
-  `rounds` allowing open-ended.
+  `rounds` allowing open-ended. The `multiplier` control is labeled **"Scale"**.
+- **FR-18a**: The `rounds` control SHALL be a toggle (default **on**) plus a number
+  stepper: toggle on ⇒ finite rounds in `[1,99]`; toggle off ⇒ `'open-ended'`. Stepping
+  the number above the max (99) SHALL also set `'open-ended'`. Open-ended SHALL render as
+  the infinity symbol `∞` in both the control and the readout.
 
 ### Session playback
 
@@ -226,14 +230,19 @@ Out of scope (deferred, tracked in Open Questions):
 
 ## Open Questions
 
-1. **Cue sound per phase** — do hold-in / hold-out get a distinct tone, or reuse the
-   inhale/exhale primitive? (Sound design deferred; FR-20 only pins "one cue per phase".)
-2. **Multiplier UI label** — internal name is `multiplier`; the user-facing label is
-   undecided (e.g. "Scale", "Pace", keep "Multiplier").
-3. **Phase label wording** — exact EN / PT-BR strings for the four phases (e.g. both
-   holds labeled "Hold"?).
-4. **Round counter** — should the readout show "round X of N", or only elapsed/remaining?
-5. **Default `PatternSettings`** — which preset (or custom values) and default `rounds`
-   ship as the first-run default?
-6. **Long-hold UX** — effective holds can reach 300 × 15 = 4500 s; is any soft warning or
-   visual treatment wanted for extreme values, or is the bound the only guard?
+All resolved in **D7** except #2 (deferred, non-blocking). See `.project/DECISIONS.md`.
+
+1. ~~**Cue sound per phase**~~ — RESOLVED (D7): each timbre gains a 3rd, **sustained**
+   flavor for holds (note-on at hold start, note-off at hold end). Same sound for both
+   holds. This refines FR-20 — a hold is a bounded sustained voice, not a one-shot;
+   the engine schedules a note-off at the phase boundary.
+2. ~~**Multiplier UI label**~~ — RESOLVED (D7): **"Scale"** (internal name stays
+   `multiplier`).
+3. ~~**Phase label wording**~~ — RESOLVED (D7): EN In/Out/Hold, PT-BR Puxa/Solta/Prende;
+   both holds share the single "Hold" label.
+4. ~~**Round counter**~~ — RESOLVED (D7): `X/N` readout.
+5. ~~**Default `PatternSettings`**~~ — RESOLVED (D7): Box-4 (`1·1·1·1 ×4`), rounds `10`;
+   also the coercer fallback.
+6. ~~**Long-hold UX**~~ — RESOLVED (D7): the `[0,300]`×`[1,15]` bound is the only guard;
+   long holds drone flat (no fade/loop). Hold visual is a static-track progress bar below
+   the "Hold" word; static under `prefers-reduced-motion`.

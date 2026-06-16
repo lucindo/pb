@@ -7,6 +7,7 @@ import { useCallback, useRef } from 'react'
 import type { RefObject } from 'react'
 
 import type { AudioEngine } from '../audio/audioEngine'
+import type { BreathPhase } from '../domain/settings'
 
 export interface CueScheduler {
   /** Notify a phase boundary at audioTime — the engine schedules the In or Out cue.
@@ -14,11 +15,11 @@ export interface CueScheduler {
    *  the length of the UPCOMING phase (derived from plan.inhaleSec / plan.exhaleSec
    *  — ms→sec cascade); the engine forwards it to cueSynth so the
    *  bowl-cue decay envelope stretches with the phase length at low BPM. */
-  notifyPhaseBoundary(this: void, args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
+  notifyPhaseBoundary(this: void, args: { newPhase: BreathPhase; audioTime: number; phaseDurationSec: number }): void
   /** Dispatch a caller-supplied list of pre-computed cues via engine.topUpLookahead.
    *  The controller calls this on every session frame (rAF tick) with the walkFutureCues output.
    *  Facade: delegates to engine.topUpLookahead({ cues }); no-op if engine is null (before start). */
-  topUpLookahead(this: void, cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void
+  topUpLookahead(this: void, cues: Array<{ audioTime: number; phaseDurationSec: number; kind: BreathPhase }>): void
   /** Cancel all future cues in the engine's activeCues queue.
    *  The controller calls this immediately before audioTopUpLookahead() on every
    *  session.currentFrame change (cancel-then-reschedule per the SCHED-05 doctrine).
@@ -47,7 +48,7 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
    *  handleForceTopUp re-dispatches this on clock.onResume so AC reconstruction /
    *  iOS unlock force-tops up before the next rAF tick fires. Stale by ≤ 1 rAF
    *  (~16ms); engine's SAFE_LEAD_SEC callee clamp absorbs the drift. */
-  const lastTopUpCuesRef = useRef<Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>>([])
+  const lastTopUpCuesRef = useRef<Array<{ audioTime: number; phaseDurationSec: number; kind: BreathPhase }>>([])
 
   // Re-dispatches the cached cues on clock.onResume so the lookahead queue refills
   // before the next rAF tick (covers AC reconstruction / iOS unlock / engine swap).
@@ -60,7 +61,7 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
   }, [engineRef])
 
   const notifyPhaseBoundary = useCallback(
-    (args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void => {
+    (args: { newPhase: BreathPhase; audioTime: number; phaseDurationSec: number }): void => {
       engineRef.current?.scheduleNextCue(args)
     },
     [engineRef],
@@ -68,7 +69,7 @@ export function useCueScheduler(engineRef: RefObject<AudioEngine | null>): CueSc
 
   // Caches the cues for the clock.onResume force-top-up path (handleForceTopUp).
   const topUpLookahead = useCallback(
-    (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void => {
+    (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: BreathPhase }>): void => {
       const engine = engineRef.current
       if (engine === null) return
       lastTopUpCuesRef.current = cues // Cache AFTER null-gate so a pre-start call cannot poison the force-top-up cache

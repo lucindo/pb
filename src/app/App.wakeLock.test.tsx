@@ -8,7 +8,7 @@ import {
   APP_LEAD_IN_MS,
   APP_TEST_NOW,
   flushMicrotasks,
-  settingGroup,
+  seedSettings,
   startAndAdvancePastLeadIn,
 } from './appTestHarness'
 
@@ -36,11 +36,8 @@ describe('App — wake lock (Phase 5)', () => {
 
   it('releases the wake lock when an open-ended session is ended directly (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
-    // Bump duration to 'open-ended' (mirror App.audio.test.tsx:185-190)
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-    for (let i = 0; i < 11; i += 1) fireEvent.click(increase)
 
     await startAndAdvancePastLeadIn()
     expect(requestSpy).toHaveBeenCalledTimes(1)
@@ -74,11 +71,9 @@ describe('App — wake lock (Phase 5)', () => {
 
   it('releases the wake lock when a timed session reaches completion automatically (D-07)', async () => {
     const requestSpy = vi.spyOn(navigator.wakeLock, 'request')
+    // 1 round of Box-4 (16s) completes quickly.
+    seedSettings({ rounds: 1 })
     render(<App />)
-    // Use a 5-min duration (mirrors App.audio.test.tsx:215-216 — one decrease click).
-    const duration = settingGroup('Duration')
-    const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
-    fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
     // Reason: startAndAdvancePastLeadIn triggers exactly one wakeLock.request; results[0] is guaranteed populated.
@@ -86,8 +81,8 @@ describe('App — wake lock (Phase 5)', () => {
     const sentinel = await requestSpy.mock.results[0]!.value as WakeLockSentinel
     const releaseSpy = vi.spyOn(sentinel, 'release')
 
-    // Advance past 5-min duration + a 1-min cycle clearance buffer (mirrors App.audio Test 10).
-    act(() => { vi.advanceTimersByTime(6 * 60_000) })
+    // Advance well past the rounds × cycleSec completion boundary.
+    act(() => { vi.advanceTimersByTime(60_000) })
     await flushMicrotasks()
     expect(screen.getByText('Session complete')).toBeVisible()
     expect(releaseSpy).toHaveBeenCalled()

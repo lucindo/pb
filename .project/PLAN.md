@@ -31,9 +31,45 @@ core breathing engine.
   extract `cueStore`), all four deferred function-length refactors, a final deslop,
   and the Pattern Breathing spec + D6 model. All behavior-preserving; 739 tests green.
   Merged to `main`.
-- [ ] Implement pattern-breathing functionality — **presets over one configurable
-  engine** (D1); model specified in **D6**, full spec in `.project/SPEC.md`. Engine
-  work = architecture-plan **Step 3** (the `BreathPhase`/`PatternSettings` migration).
+- [x] Implement pattern-breathing functionality — **presets over one configurable
+  engine** (D1); model **D6/D7**, full spec in `.project/SPEC.md`. Engine + both
+  follow-ons + the FR-18a rounds toggle all landed; branch `feat/pattern-breathing`
+  is feature-complete and unmerged (pending code review).
+  - [x] Resolve all SPEC open questions (**D7**): default Box-4 ×4 / 10 rounds;
+    labels In/Out/Hold (Puxa/Solta/Prende); Scale label; X/N readout; ∞ for
+    open-ended; rounds toggle/stepper; sustained hold cue; hold progress-bar visual.
+  - [x] **Architecture Step 3 — four-phase model migration. DONE (`a30fd53`).**
+    `PatternSettings` + `BreathPhase` across domain→audio→hooks→app→components→
+    storage→content (47 files). Extend-duration dropped. `tsc -b` + eslint + 714
+    vitest green. Holds reuse the in/out strike as a PLACEHOLDER cue.
+  - [x] **Follow-on A — smooth sustained hold tone** (audio). DONE (`eb6b712`).
+    Holds now play a single-sine pad (fade in → hold → fade out), pitch-matched to
+    the adjacent strike (hold-in 440 / hold-out 220). Reuses the end-chord tone
+    builder: promoted `buildToneNodes`/`PadEnvelope`/`ToneNodes`/`disconnectToneNodes`
+    from `boundaryCueSynth` into the core `cueSynth` (one-way dep boundary→cueSynth);
+    `boundaryCueSynth` imports them. NOT a per-timbre partial-stack strike — sustaining
+    the inharmonic partials sounded rough. Tuning knobs in `cueSynth.ts`:
+    `HOLD_ATTACK_SEC` 0.8 / `HOLD_RELEASE_SEC` 1.1 / `HOLD_SUSTAIN_GAIN` 0.12
+    (UAT'd by ear — sits below the 0.18 strike peak since a sustained tone reads louder).
+  - [x] **Follow-on B — hold-phase ring visuals** (UI). DONE (`0ff0159`).
+    `HoldProgressBar` under the "Hold" label (faint track + accent-strong fill grown
+    L→R by `phaseProgress`; reduced-motion keeps the static track, drops the advancing
+    fill). Plus: **hold-in keeps the completed (full) inhale arc closed**; hold-out
+    shows nothing (ring drained after exhale). `ProgressArcLayer`: `hold-in` → `t=1`,
+    `hold-out` → null.
+  - [x] **Rounds limit toggle (FR-18a)** (settings). DONE (`a08d8ab`). "Limit rounds"
+    `SettingsToggleRow` above the rounds stepper. On ⇒ finite, off ⇒ open-ended;
+    `checked = rounds !== 'open-ended'` so it tracks the stepper (past-99→∞ flips it
+    off). Off→on restores the last finite value via a `useRef` updated in
+    `onRoundsChange` (NOT during render — `react-hooks/refs` forbids it); falls back
+    to the domain default (10). Strings `roundsLimitLabel` EN/PT.
+  - [x] **Pre-merge review + polish.** `/ds-deslop` (`4127f61` — deduped `stopAt`,
+    trimmed a hold-cue comment; rejected the domain "guards" as mandatory under
+    `noUncheckedIndexedAccess`). `/ds-code-review` SSOT: one real find, fixed in
+    `2130ed6` — `OPEN_ENDED_GLYPH '∞'` single-sourced in `strings.ts`, referenced by
+    the rounds stepper + `SessionReadout`. Then the last user-facing items: About-page
+    copy (`2fc49a9`), README (`74ffd46`), smaller in/out/hold label (`e66da58`), and a
+    new ring+arc app icon + favicon replacing the inherited HRV art (`48792eb`).
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -103,30 +139,34 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — `chore/code-cleanup` is **merged to `main`**; tree clean. The branch grew
-from a deslop/SSOT/comment pass into the full pre-feature cleanup: `/ds-ts-review`
-mechanical fixes, architecture Steps 1–2 (split `useAudioCues` →
-`useCueScheduler`/`useAudioHealth`; extract `cueStore` from `createAudioEngine`), all
-four deferred function-length refactors, a final deslop, and the Pattern Breathing
-spec + D6 model. Everything behavior-preserving — `tsc -b`, `eslint`, 739 vitest tests
-green throughout. The app is still the resonance timer under the new name;
-pattern-breathing *functionality* is NOT built.
+**State** — Pattern Breathing is **DONE and shipping to `main`**. The full feature —
+engine (Step 3 model migration `a30fd53`), sustained hold tone (`eb6b712`), hold-phase
+ring visuals (`0ff0159`), rounds limit toggle (`a08d8ab`) — plus the pre-merge review
+and the final user-facing items (About page, README, smaller phase label, new ring+arc
+icon/favicon) all landed on `feat/pattern-breathing` and reviewed clean.
 
-**Next** — Start the pattern-breathing feature: architecture **Step 3** — the
-`BreathPhase` + `PatternSettings` migration (~16 files: domain→audio→hooks→
-components→content→storage) against `.project/SPEC.md`. Add characterization tests at
-the domain plan/cue seam first (`/ds-tdd-mode`); answer SPEC Open Question #5 (default
-`PatternSettings` + rounds) early.
+`tsc -b` + eslint + **730 vitest green** + production build (PWA precache). App runs the
+real engine: preset picker, per-phase steppers, Scale, rounds toggle + stepper→∞, X/N
+readout, In/Out/Hold ring with sustained hold tone + hold progress bar.
+
+**Next** — Merging `feat/pattern-breathing` → `main`. Nothing outstanding. To cut a
+release: tag `vX.Y` (matches first two `package.json.version` segments) for the
+multi-version Pages deploy under `/pb/`. Optional final device glance: app icon on a
+light home screen, favicon in a dark tab.
+
+**Cross-session note** — the hold tone was UAT'd by ear and the volume signed off
+(`HOLD_SUSTAIN_GAIN` 0.12). The three `HOLD_*` knobs in `cueSynth.ts` are the only
+feel-tuning left. Icon/favicon masters live in `assets/icons/` — regenerate the PNGs
+with `rsvg-convert` if the palette changes (favicon SVG is synced across
+`faviconPalette.ts`, `index.html`, `public/favicon.svg`).
 
 **Open questions**
-- ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6**: 4 phases
-  (inhale · hold-in · exhale · hold-out) + multiplier + rounds; one cue per phase.
-  Replaces the bpm/ratio model. Open sub-details deferred by choice: cue sound/visual
-  design and the user-facing label for `multiplier`.
+- ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6/D7**.
+- ~~Multiplier UI label~~ — RESOLVED (D7): **"Scale"** (internal name `multiplier`).
 - App name and the breathing-*technique* name both resolve to "Pattern Breathing"
   (`practice.name`). The preset feature will likely surface a per-preset label on the
   settings sheet/header; revisit then. (D2 collapsed the two identical strings to one.)
-- Decisions log: `.project/DECISIONS.md` (D1–D6).
+- Decisions log: `.project/DECISIONS.md` (D1–D7).
 
 ## Architecture (from `/ds-architecture-plan`, full repo, max-level=3)
 

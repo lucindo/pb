@@ -8,7 +8,7 @@ import {
   APP_LEAD_IN_MS,
   APP_TEST_NOW,
   flushMicrotasks,
-  settingGroup,
+  seedSettings,
   startAndAdvancePastLeadIn,
   startLeadIn,
 } from './appTestHarness'
@@ -142,13 +142,8 @@ describe('App — audio cues (Phase 3)', () => {
     })
     vi.stubGlobal('AudioContext', acSpy)
 
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
-    // Bump duration to 'open-ended' before starting.
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-    for (let i = 0; i < 11; i += 1) {
-      fireEvent.click(increase)
-    }
 
     await startAndAdvancePastLeadIn()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
@@ -169,17 +164,13 @@ describe('App — audio cues (Phase 3)', () => {
     })
     vi.stubGlobal('AudioContext', acSpy)
 
+    // 1 round of Box-4 (16s) completes quickly.
+    seedSettings({ rounds: 1 })
     render(<App />)
-    // Use a 5-min duration so the clock can run out within reasonable test time.
-    const duration = settingGroup('Duration')
-    const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
-    fireEvent.click(decrease)
 
     await startAndAdvancePastLeadIn()
-    // Completion waits for the surrounding cycle to finish so cues are never cut
-    // mid-In/mid-Out. Advance an extra minute to clear the next cycle boundary.
     act(() => {
-      vi.advanceTimersByTime(6 * 60_000)
+      vi.advanceTimersByTime(60_000)
     })
     await flushMicrotasks()
 

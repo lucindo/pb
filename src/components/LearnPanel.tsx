@@ -6,7 +6,7 @@ import { SettingsSectionHeader } from './SettingsSectionHeader'
 import { SectionCard } from './primitives/SectionCard'
 
 // Body of the "About Pattern Breathing" surface. Consumed by LearnPage.
-// The section title is hoisted to a SettingsSectionHeader (eyebrow) above its
+// Each section's title is hoisted to a SettingsSectionHeader (eyebrow) above its
 // own SectionCard — same chrome pattern as the AppSettings page.
 
 export interface LearnPanelProps {
@@ -26,14 +26,16 @@ export function LearnPanel({
   learnContent,
   lockedCopy,
 }: LearnPanelProps): ReactElement {
-  const { section1 } = learnContent
-
   return (
     <div>
-      <SettingsSectionHeader label={section1.title} />
-      <Card>
-        <p className={BODY_CLASSES}>{section1.body}</p>
-      </Card>
+      {learnContent.sections.map((section) => (
+        <div key={section.title}>
+          <SettingsSectionHeader label={section.title} />
+          <Card>
+            <p className={BODY_CLASSES}>{section.body}</p>
+          </Card>
+        </div>
+      ))}
 
       <p className="mt-6 text-center text-xs text-[var(--color-breathing-muted)]">
         {lockedCopy.affiliationLine}

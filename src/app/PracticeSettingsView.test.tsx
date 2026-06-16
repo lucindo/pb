@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest'
 
 import { UI_STRINGS } from '../content/strings'
 import {
-  DEFAULT_SETTINGS,
-  type SessionSettings,
+  DEFAULT_PATTERN_SETTINGS,
+  type PatternSettings,
 } from '../domain'
 import { UiStringsProvider } from '../hooks/useUiStringsContext'
 import type { AppPracticeSettingsViewModel } from './appViewModel'
@@ -16,19 +16,17 @@ import { PracticeSettingsView } from './PracticeSettingsView'
 const EN = UI_STRINGS.en
 
 const noopChange = (): void => {}
-const noopExtend = (): void => {}
 
 function makePatternBreathingVM(overrides: {
-  settings?: SessionSettings
+  settings?: PatternSettings
   isRunning?: boolean
   isComplete?: boolean
 } = {}): AppPracticeSettingsViewModel {
   return {
-    settings: overrides.settings ?? DEFAULT_SETTINGS,
+    settings: overrides.settings ?? DEFAULT_PATTERN_SETTINGS,
     isRunning: overrides.isRunning ?? false,
     isComplete: overrides.isComplete ?? false,
     onChange: noopChange,
-    onExtendDuration: noopExtend,
   }
 }
 
@@ -53,19 +51,21 @@ function renderView(vm: AppPracticeSettingsViewModel): { rerender: () => void } 
 }
 
 describe('PracticeSettingsView — patternBreathing (Pattern Breathing)', () => {
-  it('renders the SetupCard with PACE / RATIO / DURATION cells from current settings', () => {
+  it('renders the SetupCard with PATTERN / SCALE / ROUNDS cells from current settings', () => {
     renderView(makePatternBreathingVM())
     const card = screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ })
-    expect(within(card).getByText(EN.practice.settingsForm.bpmLabel)).toBeVisible()
-    expect(within(card).getByText(EN.practice.settingsForm.ratioLabel)).toBeVisible()
-    expect(within(card).getByText(EN.practice.settingsForm.durationLabel)).toBeVisible()
-    expect(within(card).getByText('5.5 BPM')).toBeVisible()
-    expect(within(card).getByText('10 min')).toBeVisible()
+    expect(within(card).getByText(EN.practice.settingsForm.patternLabel)).toBeVisible()
+    expect(within(card).getByText(EN.practice.settingsForm.scaleLabel)).toBeVisible()
+    expect(within(card).getByText(EN.practice.settingsForm.roundsLabel)).toBeVisible()
+    // Default Box-4 (1·1·1·1 ×4), 10 rounds.
+    expect(within(card).getByText('1·1·1·1')).toBeVisible()
+    expect(within(card).getByText('×4')).toBeVisible()
+    expect(within(card).getByText('10')).toBeVisible()
   })
 
-  it('formats an open-ended duration with the openEndedLabel string', () => {
+  it('formats open-ended rounds with the openEndedLabel string', () => {
     renderView(makePatternBreathingVM({
-      settings: { ...DEFAULT_SETTINGS, durationMinutes: 'open-ended' },
+      settings: { ...DEFAULT_PATTERN_SETTINGS, rounds: 'open-ended' },
     }))
     const card = screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ })
     expect(within(card).getByText(EN.practice.settingsForm.openEndedLabel)).toBeVisible()
@@ -74,18 +74,15 @@ describe('PracticeSettingsView — patternBreathing (Pattern Breathing)', () => 
   it('does not render the form on Idle until the SetupCard is tapped', async () => {
     const user = userEvent.setup()
     renderView(makePatternBreathingVM())
-    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeNull()
+    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.presetLabel })).toBeNull()
     await user.click(screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ }))
-    expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
+    expect(screen.getByRole('group', { name: EN.practice.settingsForm.presetLabel })).toBeVisible()
   })
 
   it('renders nothing on Running', () => {
-    // J16: Pattern Breathing running surfaces no settings UI — SetupCard, sheet, and any
-    // inline stepper are all hidden. extendDuration logic stays in the
-    // viewmodel + controller but is unwired here.
     renderView(makePatternBreathingVM({ isRunning: true }))
     expect(screen.queryByRole('button', { name: /^Edit Pattern Breathing settings$/ })).toBeNull()
-    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.durationLabel })).toBeNull()
+    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.presetLabel })).toBeNull()
   })
 })
 
@@ -103,8 +100,8 @@ describe('PracticeSettingsView — sheet header reuses the practice name', () =>
     const user = userEvent.setup()
     renderView(makePatternBreathingVM())
     await user.click(screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ }))
-    expect(screen.getByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeVisible()
+    expect(screen.getByRole('group', { name: EN.practice.settingsForm.presetLabel })).toBeVisible()
     await user.click(screen.getByRole('button', { name: EN.practice.settingsSheet.close }))
-    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.bpmLabel })).toBeNull()
+    expect(screen.queryByRole('group', { name: EN.practice.settingsForm.presetLabel })).toBeNull()
   })
 })

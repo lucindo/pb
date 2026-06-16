@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   scheduleInCueForTimbre,
   scheduleOutCueForTimbre,
+  scheduleHoldInCueForTimbre,
+  scheduleHoldOutCueForTimbre,
   type CueHandle,
 } from './cueSynth'
 import { TIMBRE_OPTIONS } from '../domain/settings'
@@ -397,6 +399,98 @@ describe('cueSynth', () => {
     expect(decayCall[2]).toBeCloseTo(OUT_DEFAULT_TAU, 5) // unchanged from baseline
     // cleanupAt extends to phase end (not just τ × TAIL_MULTIPLIER).
     expect(handle.cleanupAt).toBeGreaterThan(1.0 + 30)
+  })
+})
+
+// -- hold cues (smooth single-sine pad: fade in → hold → fade out) -----------
+
+describe('scheduleHoldCue', () => {
+  // Mirrors cueSynth HOLD_* constants.
+  const HOLD_ATTACK_SEC = 0.8
+  const HOLD_RELEASE_SEC = 1.1
+  const HOLD_SUSTAIN_GAIN = 0.12
+
+  it('hold-in uses the inhale fundamental (440 Hz); hold-out uses the exhale (220 Hz)', () => {
+    const ac = createAc()
+    const oscillators: OscillatorNode[] = []
+    const realCreate = ac.createOscillator.bind(ac)
+    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
+      const osc = realCreate()
+      oscillators.push(osc)
+      return osc
+    })
+
+    scheduleHoldInCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
+    expect(oscillators[0]?.frequency.value).toBeCloseTo(440, 5)
+
+    oscillators.length = 0
+    scheduleHoldOutCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
+    expect(oscillators[0]?.frequency.value).toBeCloseTo(220, 5)
+  })
+
+  it('is a single sine, not the strike partial stack (smooth — no sustained inharmonics)', () => {
+    const ac = createAc()
+    const oscSpy = vi.spyOn(ac, 'createOscillator')
+    scheduleHoldInCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
+    expect(oscSpy).toHaveBeenCalledTimes(1) // bowl strike has 3 partials; the pad hold has 1
+  })
+
+  it('applies a pad envelope: fade in → hold → fade out, bounded by the phase', () => {
+    const ac = createAc()
+    const handle = scheduleHoldInCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
+
+    const stopAt = 1.0 + 5
+    const attackEnd = 1.0 + HOLD_ATTACK_SEC
+    const releaseStart = stopAt - HOLD_RELEASE_SEC
+    expect(setValue).toHaveBeenNthCalledWith(1, 0.0001, 1.0) // note-on near-silent
+    expect(linearRamp).toHaveBeenNthCalledWith(1, HOLD_SUSTAIN_GAIN, attackEnd) // fade in to plateau
+    expect(setValue).toHaveBeenNthCalledWith(2, HOLD_SUSTAIN_GAIN, releaseStart) // anchor plateau end
+    expect(linearRamp).toHaveBeenNthCalledWith(2, 0.0001, stopAt) // fade out to phase end
+  })
+
+  it('collapses the plateau for a short hold (attack + release ≥ duration → no anchor)', () => {
+    const ac = createAc()
+    // phase 0.5 s < attack 0.8 + release 1.1: up-ramp and down-ramp meet, no hold window.
+    const handle = scheduleHoldInCueForTimbre(ac, 1.0, ac.destination, 'bowl', 0.5)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const setValue = handle.envelope.gain.setValueAtTime as ReturnType<typeof vi.fn>
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const linearRamp = handle.envelope.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>
+    expect(setValue).toHaveBeenCalledTimes(1) // only the note-on; no plateau anchor
+    expect(linearRamp).toHaveBeenCalledTimes(2)
+    const fadeOut = linearRamp.mock.calls[1] as [number, number]
+    expect(fadeOut[1]).toBeCloseTo(1.0 + 0.5, 5) // fade-out still lands at phase end
+  })
+
+  it('returns a CueHandle whose cleanup extends past the phase end', () => {
+    const ac = createAc()
+    const handle = scheduleHoldOutCueForTimbre(ac, 2.0, ac.destination, 'bowl', 6)
+    expect(handle.scheduledAt).toBe(2.0)
+    expect(handle.cleanupAt).toBeGreaterThan(2.0 + 6)
+  })
+
+  it('stops the oscillator after the phase ends', () => {
+    const ac = createAc()
+    const oscillators: OscillatorNode[] = []
+    const realCreate = ac.createOscillator.bind(ac)
+    vi.spyOn(ac, 'createOscillator').mockImplementation(() => {
+      const osc = realCreate()
+      oscillators.push(osc)
+      return osc
+    })
+
+    scheduleHoldInCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
+
+    for (const osc of oscillators) {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const stopMock = osc.stop as unknown as ReturnType<typeof vi.fn>
+      const stopArg = stopMock.mock.calls[0]?.[0] as number
+      expect(stopArg).toBeGreaterThanOrEqual(1.0 + 5)
+    }
   })
 })
 

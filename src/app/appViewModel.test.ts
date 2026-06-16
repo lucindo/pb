@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { UI_STRINGS } from '../content/strings'
 import {
-  DEFAULT_SETTINGS,
+  DEFAULT_PATTERN_SETTINGS,
   type SessionFrame,
 } from '../domain'
 import {
@@ -18,12 +18,13 @@ import {
 
 // SessionFrame is seconds-shaped.
 const frame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
+  phase: 'inhale',
+  phaseIndex: 0,
+  phaseProgress: 0,
+  round: 1,
+  totalRounds: 10,
   elapsedSec: 0,
   remainingSec: 600,
-  phaseProgress: 0,
-  cycleIndex: 0,
   isComplete: false,
 }
 
@@ -34,7 +35,6 @@ const breathingState: BreathingSessionViewState = {
   liveFrame: frame,
   status: 'running',
   inSessionView: true,
-  selectedSettings: DEFAULT_SETTINGS,
 }
 
 const noop = (): void => undefined
@@ -42,11 +42,10 @@ const noopInstall = (): Promise<void> => Promise.resolve()
 
 function makeSettingsSources(): PracticeSettingsSources {
   return {
-    settings: DEFAULT_SETTINGS,
+    settings: DEFAULT_PATTERN_SETTINGS,
     isRunning: false,
     isComplete: false,
     onChange: noop,
-    onExtendDuration: noop,
   }
 }
 
@@ -105,7 +104,7 @@ describe('app practice settings view model', () => {
   it('returns the patternBreathing settings contract', () => {
     const patternBreathing = createPracticeSettingsViewModel(makeSettingsSources())
 
-    expect(patternBreathing.settings).toBe(DEFAULT_SETTINGS)
+    expect(patternBreathing.settings).toBe(DEFAULT_PATTERN_SETTINGS)
   })
 })
 

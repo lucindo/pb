@@ -8,13 +8,14 @@ import * as cueSynth from './cueSynth'
 import * as boundaryCueSynth from './boundaryCueSynth'
 import type { CueHandle } from './cueSynth'
 
-// BreathingPlan fixture uses seconds-shaped fields.
+// BreathingPlan fixture: inhale 4s, exhale 6s → cycle 10s, 60 rounds → 600s.
 const samplePlan: BreathingPlan = {
-  bpm: 5.5,
-  ratio: '40:60',
-  cycleSec: 60 / 5.5,
-  inhaleSec: (60 / 5.5) * 0.4,
-  exhaleSec: (60 / 5.5) * 0.6,
+  phases: [
+    { phase: 'inhale', durationSec: 4 },
+    { phase: 'exhale', durationSec: 6 },
+  ],
+  cycleSec: 10,
+  rounds: 60,
   totalSec: 600,
 }
 
@@ -133,7 +134,7 @@ describe('audioEngine', () => {
   it('scheduleNextCue with newPhase=in calls scheduleInCueForTimbre at the requested audioTime', async () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 5, phaseDurationSec: 4.36 })
     expect(inSpy).toHaveBeenCalledTimes(1)
     expect(inSpy.mock.calls[0]?.[1]).toBe(5)
     await engine.close()
@@ -142,7 +143,7 @@ describe('audioEngine', () => {
   it('scheduleNextCue with newPhase=out calls scheduleOutCueForTimbre at the requested audioTime', async () => {
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.scheduleNextCue({ newPhase: 'out', audioTime: 5.5, phaseDurationSec: 6.54 })
+    engine.scheduleNextCue({ newPhase: 'exhale', audioTime: 5.5, phaseDurationSec: 6.54 })
     expect(outSpy).toHaveBeenCalledTimes(1)
     expect(outSpy.mock.calls[0]?.[1]).toBe(5.5)
     await engine.close()
@@ -154,8 +155,8 @@ describe('audioEngine', () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre')
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
-    engine.scheduleNextCue({ newPhase: 'out', audioTime: 9.36, phaseDurationSec: 6.54 })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.scheduleNextCue({ newPhase: 'exhale', audioTime: 9.36, phaseDurationSec: 6.54 })
     expect(inSpy.mock.calls[0]?.[4]).toBeCloseTo(4.36, 5)
     expect(outSpy.mock.calls[0]?.[4]).toBeCloseTo(6.54, 5)
     await engine.close()
@@ -190,8 +191,8 @@ describe('audioEngine', () => {
     const engine = await createAudioEngine({ timbre: 'bowl' })
     engine.setMuted(true)
 
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
-    engine.topUpLookahead({ cues: [{ audioTime: 9, phaseDurationSec: 6.54, kind: 'out' }] })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.topUpLookahead({ cues: [{ audioTime: 9, phaseDurationSec: 6.54, kind: 'exhale' }] })
 
     expect(inSpy).toHaveBeenCalledTimes(1)
     expect(outSpy).toHaveBeenCalledTimes(1)
@@ -273,7 +274,7 @@ describe('audioEngine', () => {
     vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(inFlight)
 
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 5, phaseDurationSec: 4.36 })
 
     await engine.close()
 
@@ -393,7 +394,7 @@ describe('audioEngine', () => {
     const engine = await createAudioEngine({ timbre: 'bowl' })
     await engine.close()
     inSpy.mockClear()
-    expect(() => { engine.scheduleNextCue({ newPhase: 'in', audioTime: 5, phaseDurationSec: 4.36 }) }).not.toThrow()
+    expect(() => { engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 5, phaseDurationSec: 4.36 }) }).not.toThrow()
     expect(inSpy).not.toHaveBeenCalled()
   })
 
@@ -450,7 +451,7 @@ describe('audioEngine', () => {
     const { handle: stubHandle } = makeMockCueHandle()
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(stubHandle)
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 9.5, phaseDurationSec: 4 })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 9.5, phaseDurationSec: 4 })
     // audioTime 9.5 < currentTime(10) + SAFE_LEAD_SEC(0.005) → clamped to 10.005
     expect(inSpy.mock.calls[0]?.[1]).toBeCloseTo(probeTime + SAFE_LEAD_SEC, 9)
     await engine.close()
@@ -476,7 +477,7 @@ describe('audioEngine', () => {
     const { handle: stubHandle } = makeMockCueHandle()
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(stubHandle)
     const engine = await createAudioEngine({ timbre: 'bowl' })
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 12, phaseDurationSec: 4 })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 12, phaseDurationSec: 4 })
     // audioTime 12 > currentTime(10) + SAFE_LEAD_SEC(0.005) → passes verbatim
     expect(inSpy.mock.calls[0]?.[1]).toBe(12)
     await engine.close()
@@ -540,8 +541,8 @@ describe('audioEngine', () => {
     const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
     const engine = await createAudioEngine({ timbre: 'sine' })
 
-    engine.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 5 })
-    engine.scheduleNextCue({ newPhase: 'out', audioTime: 6.0, phaseDurationSec: 7 })
+    engine.scheduleNextCue({ newPhase: 'inhale', audioTime: 1.0, phaseDurationSec: 5 })
+    engine.scheduleNextCue({ newPhase: 'exhale', audioTime: 6.0, phaseDurationSec: 7 })
 
     expect(inSpy).toHaveBeenCalledTimes(1)
     expect(outSpy).toHaveBeenCalledTimes(1)
@@ -557,9 +558,9 @@ describe('audioEngine', () => {
     const engineFlute = await createAudioEngine({ timbre: 'flute' })
 
     // Bell engine schedules — must dispatch with 'bell', not 'flute' (independent capture).
-    engineBell.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
+    engineBell.scheduleNextCue({ newPhase: 'inhale', audioTime: 1.0, phaseDurationSec: 4 })
     // Flute engine schedules — must dispatch with 'flute', not 'bell'.
-    engineFlute.scheduleNextCue({ newPhase: 'in', audioTime: 1.0, phaseDurationSec: 4 })
+    engineFlute.scheduleNextCue({ newPhase: 'inhale', audioTime: 1.0, phaseDurationSec: 4 })
 
     expect(inSpy).toHaveBeenCalledTimes(2)
     expect(inSpy.mock.calls[0]?.[3]).toBe('bell')
@@ -834,7 +835,7 @@ describe('audioEngine', () => {
       // Engine is constructed with timbre: 'bell' — that is sessionTimbre and the source of truth.
       const engine = await createAudioEngine({ timbre: 'bell' })
 
-      engine.clock.schedule(3.0, { kind: 'in', phaseDurationSec: 4.36 })
+      engine.clock.schedule(3.0, { kind: 'inhale', phaseDurationSec: 4.36 })
 
       expect(inSpy).toHaveBeenCalledTimes(1)
       expect(inSpy.mock.calls[0]?.[1]).toBe(3.0)
@@ -849,7 +850,7 @@ describe('audioEngine', () => {
       const outSpy = vi.spyOn(cueSynth, 'scheduleOutCueForTimbre')
       const engine = await createAudioEngine({ timbre: 'sine' })
 
-      engine.clock.schedule(5.5, { kind: 'out', phaseDurationSec: 6.54 })
+      engine.clock.schedule(5.5, { kind: 'exhale', phaseDurationSec: 6.54 })
 
       expect(outSpy).toHaveBeenCalledTimes(1)
       expect(outSpy.mock.calls[0]?.[1]).toBe(5.5)
@@ -977,9 +978,9 @@ describe('Phase 52 D-04 topUpLookahead', () => {
 
     engine.topUpLookahead({
       cues: [
-        { audioTime: 5, phaseDurationSec: 4, kind: 'in' },
-        { audioTime: 15, phaseDurationSec: 6, kind: 'out' },
-        { audioTime: 25, phaseDurationSec: 4, kind: 'in' },
+        { audioTime: 5, phaseDurationSec: 4, kind: 'inhale' },
+        { audioTime: 15, phaseDurationSec: 6, kind: 'exhale' },
+        { audioTime: 25, phaseDurationSec: 4, kind: 'inhale' },
       ],
     })
 
@@ -995,7 +996,7 @@ describe('Phase 52 D-04 topUpLookahead', () => {
     inSpy.mockClear()
     outSpy.mockClear()
 
-    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
+    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'inhale' }] })
 
     expect(inSpy).not.toHaveBeenCalled()
     expect(outSpy).not.toHaveBeenCalled()
@@ -1023,7 +1024,7 @@ describe('Phase 52 D-04 topUpLookahead', () => {
     const engine = await createAudioEngine({ timbre: 'bowl' })
 
     // audioTime 5 < currentTime(10) + SAFE_LEAD_SEC → clamped
-    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' }] })
+    engine.topUpLookahead({ cues: [{ audioTime: 5, phaseDurationSec: 4, kind: 'inhale' }] })
 
     expect(inSpy.mock.calls[0]?.[1]).toBeCloseTo(probeTime + SAFE_LEAD_SEC, 9)
     await engine.close()
@@ -1071,8 +1072,8 @@ describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
 
     engine.topUpLookahead({
       cues: [
-        { audioTime: 3, phaseDurationSec: 4, kind: 'in' }, // inflight
-        { audioTime: 8, phaseDurationSec: 4, kind: 'in' }, // future
+        { audioTime: 3, phaseDurationSec: 4, kind: 'inhale' }, // inflight
+        { audioTime: 8, phaseDurationSec: 4, kind: 'inhale' }, // future
       ],
     })
 
@@ -1112,7 +1113,7 @@ describe('Phase 52 D-09/D-10 cancelFutureCues', () => {
     future.handle.scheduledAt = 10
 
     vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValueOnce(future.handle)
-    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'inhale' }] })
 
     // Must not throw even though cancel removes the cue from activeCues mid-iteration
     expect(() => { engine.cancelFutureCues() }).not.toThrow()
@@ -1138,9 +1139,9 @@ describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () =
 
     // First walk: cues at audioTimes A, B, C — kinds in/out/in
     const firstWalk = [
-      { audioTime: 5, phaseDurationSec: 4, kind: 'in' as const },
-      { audioTime: 9, phaseDurationSec: 4, kind: 'out' as const },
-      { audioTime: 13, phaseDurationSec: 4, kind: 'in' as const },
+      { audioTime: 5, phaseDurationSec: 4, kind: 'inhale' as const },
+      { audioTime: 9, phaseDurationSec: 4, kind: 'exhale' as const },
+      { audioTime: 13, phaseDurationSec: 4, kind: 'inhale' as const },
     ]
     engine.topUpLookahead({ cues: firstWalk })
 
@@ -1154,9 +1155,9 @@ describe('Phase 52 CR-01 cancel-then-reschedule prevents overlap doubling', () =
 
     // Second walk overlaps: B and C from the first walk overlap; D is new
     const secondWalk = [
-      { audioTime: 9, phaseDurationSec: 4, kind: 'out' as const },   // B — overlaps
-      { audioTime: 13, phaseDurationSec: 4, kind: 'in' as const },   // C — overlaps
-      { audioTime: 17, phaseDurationSec: 4, kind: 'out' as const },  // D — new
+      { audioTime: 9, phaseDurationSec: 4, kind: 'exhale' as const },   // B — overlaps
+      { audioTime: 13, phaseDurationSec: 4, kind: 'inhale' as const },   // C — overlaps
+      { audioTime: 17, phaseDurationSec: 4, kind: 'exhale' as const },  // D — new
     ]
 
     // Option A (cancel-then-reschedule): cancel future cues THEN dispatch second walk
@@ -1211,14 +1212,14 @@ describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
     const engine = await createAudioEngine({ timbre: 'bowl' })
 
     // Seed the in-flight boundary cue.
-    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'inhale' }] })
     inSpy.mockClear()
 
     // Re-walk: the same boundary (10) plus the genuinely-next cue (14).
     engine.topUpLookahead({
       cues: [
-        { audioTime: 10, phaseDurationSec: 4, kind: 'in' }, // duplicate of in-flight → skipped
-        { audioTime: 14, phaseDurationSec: 4, kind: 'in' }, // distinct → scheduled
+        { audioTime: 10, phaseDurationSec: 4, kind: 'inhale' }, // duplicate of in-flight → skipped
+        { audioTime: 14, phaseDurationSec: 4, kind: 'inhale' }, // distinct → scheduled
       ],
     })
 
@@ -1236,11 +1237,11 @@ describe('GAP-52H-2 / WR-01 in-flight boundary-cue dedup', () => {
     const inSpy = vi.spyOn(cueSynth, 'scheduleInCueForTimbre').mockReturnValue(future.handle)
     const engine = await createAudioEngine({ timbre: 'bowl' })
 
-    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'inhale' }] })
     inSpy.mockClear()
 
     // Re-walk the same time: a FUTURE match must still be scheduled (caller cancels first).
-    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'in' }] })
+    engine.topUpLookahead({ cues: [{ audioTime: 10, phaseDurationSec: 4, kind: 'inhale' }] })
 
     expect(inSpy.mock.calls.length).toBe(1)
     await engine.close()

@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
-import { APP_TEST_NOW, settingGroup, startAndAdvancePastLeadIn } from './appTestHarness'
+import { APP_TEST_NOW, seedSettings, startAndAdvancePastLeadIn } from './appTestHarness'
 
 describe('end-session confirmation modal (App integration)', () => {
   beforeEach(() => {
@@ -69,13 +69,8 @@ describe('end-session confirmation modal (App integration)', () => {
   })
 
   it('open-ended sessions skip the modal entirely (D-14)', async () => {
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
-
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-    for (let i = 0; i < 11; i += 1) {
-      fireEvent.click(increase)
-    }
 
     await startAndAdvancePastLeadIn()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
@@ -92,11 +87,12 @@ describe('end-session confirmation modal (App integration)', () => {
       await startAndAdvancePastLeadIn()
 
       const readout = screen.getByRole('region', { name: 'Session readout' })
-      expect(within(readout).getByText('10:00')).toBeVisible()
+      // Default Box-4 × 10 rounds = 160s = 2:40.
+      expect(within(readout).getByText('2:40')).toBeVisible()
 
       fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
-      // Modal opened, clock still at 10:00.
+      // Modal opened, clock still at 2:40.
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
 
       act(() => {
@@ -106,21 +102,17 @@ describe('end-session confirmation modal (App integration)', () => {
       // Modal still open …
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
       // … and clock has advanced (Remaining shrunk by 1s).
-      expect(within(readout).queryByText('10:00')).not.toBeInTheDocument()
-      expect(within(readout).getByText('9:59')).toBeVisible()
+      expect(within(readout).queryByText('2:40')).not.toBeInTheDocument()
+      expect(within(readout).getByText('2:39')).toBeVisible()
 
       fireEvent.click(screen.getByRole('button', { name: 'Keep going' }))
     })
 
     it('auto-closes the modal when the session completes underneath it (WR-01)', async () => {
+      // 1 round of Box-4 (16s) completes quickly.
+      seedSettings({ rounds: 1 })
       render(<App />)
 
-      // Use a 5-min duration so the clock can run out within the test.
-      fireEvent.click(
-        within(settingGroup('Duration')).getByRole('button', {
-          name: /decrease duration/i,
-        }),
-      )
       await startAndAdvancePastLeadIn()
       fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
@@ -128,10 +120,8 @@ describe('end-session confirmation modal (App integration)', () => {
       expect(screen.getByRole('dialog', { name: 'End this session?' })).toBeVisible()
 
       // Advance past the session end without the user dismissing the modal.
-      // Completion waits for the surrounding cycle to finish;
-      // advance an extra minute past the 5-min duration mark.
       act(() => {
-        vi.advanceTimersByTime(6 * 60_000)
+        vi.advanceTimersByTime(60_000)
       })
 
       // Modal must auto-close, and the app should land on the completion

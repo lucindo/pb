@@ -1,34 +1,39 @@
-import type { RatioLabel, SessionSettings } from './settings'
-import { RATIO_PARTS, validateSettings } from './settings'
+import type { BreathPhase, PatternSettings, RoundsOption } from './settings'
+import { validatePatternSettings } from './settings'
 
-export interface BreathingPlan {
-  readonly bpm: number
-  readonly ratio: RatioLabel
-  readonly cycleSec: number
-  readonly inhaleSec: number
-  readonly exhaleSec: number
-  readonly totalSec: number | null
+export interface PlanPhase {
+  readonly phase: BreathPhase
+  readonly durationSec: number // effective seconds = base × multiplier
 }
 
-const SEC_PER_MINUTE = 60
+export interface BreathingPlan {
+  // Ordered, non-zero phases of one cycle (a 0-second hold is omitted — FR-4).
+  readonly phases: readonly PlanPhase[]
+  readonly cycleSec: number // sum of phase durations
+  readonly rounds: RoundsOption
+  readonly totalSec: number | null // rounds × cycleSec; null when open-ended
+}
 
-export function createBreathingPlan(settings: SessionSettings): BreathingPlan {
-  const validSettings = validateSettings(settings)
-  const ratio = RATIO_PARTS[validSettings.ratio]
-  const cycleSec = SEC_PER_MINUTE / validSettings.bpm
-  const inhaleSec = cycleSec * (ratio.inhale / 100)
-  const exhaleSec = cycleSec * (ratio.exhale / 100)
-  const totalSec =
-    validSettings.durationMinutes === 'open-ended'
-      ? null
-      : validSettings.durationMinutes * SEC_PER_MINUTE
+// Cycle order; inhale/exhale always survive (base ≥ 1), only holds can be 0.
+const PHASE_ORDER: readonly { phase: BreathPhase; key: keyof Omit<PatternSettings, 'multiplier' | 'rounds'> }[] = [
+  { phase: 'inhale', key: 'inhale' },
+  { phase: 'hold-in', key: 'holdIn' },
+  { phase: 'exhale', key: 'exhale' },
+  { phase: 'hold-out', key: 'holdOut' },
+]
 
-  return {
-    bpm: validSettings.bpm,
-    ratio: validSettings.ratio,
-    cycleSec,
-    inhaleSec,
-    exhaleSec,
-    totalSec,
+export function createBreathingPlan(settings: PatternSettings): BreathingPlan {
+  const s = validatePatternSettings(settings)
+
+  const phases: PlanPhase[] = []
+  for (const { phase, key } of PHASE_ORDER) {
+    const base = s[key]
+    if (base <= 0) continue // FR-4: a zero-base phase is omitted entirely.
+    phases.push({ phase, durationSec: base * s.multiplier })
   }
+
+  const cycleSec = phases.reduce((sum, p) => sum + p.durationSec, 0)
+  const totalSec = s.rounds === 'open-ended' ? null : s.rounds * cycleSec
+
+  return { phases, cycleSec, rounds: s.rounds, totalSec }
 }

@@ -11,10 +11,11 @@ const EN_STRINGS_FIXTURE = UI_STRINGS.en
 // Sample frame: `remainingSec` is null for open-ended, a number for timed;
 // either is fine here since RingBody only reads phase/phaseLabel/phaseProgress.
 const sampleFrame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
+  phase: 'inhale',
+  phaseIndex: 0,
   phaseProgress: 0,
-  cycleIndex: 0,
+  round: 1,
+  totalRounds: 'open-ended',
   elapsedSec: 0,
   remainingSec: null,
   isComplete: false,
@@ -61,10 +62,20 @@ describe('BreathingRing — phase label', () => {
     expect(screen.getByText('In')).toBeVisible()
   })
 
-  it('renders the localized phaseLabel text for "out"', () => {
-    const outFrame: SessionFrame = { ...sampleFrame, phase: 'out', phaseLabel: 'Out' }
+  it('renders the localized phaseLabel text for "exhale"', () => {
+    const outFrame: SessionFrame = { ...sampleFrame, phase: 'exhale' }
     render(<BreathingRing frame={outFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByText('Out')).toBeVisible()
+  })
+
+  it('renders the shared "Hold" label for both hold phases', () => {
+    for (const phase of ['hold-in', 'hold-out'] as const) {
+      const { unmount } = render(
+        <BreathingRing frame={{ ...sampleFrame, phase }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+      )
+      expect(screen.getByText('Hold')).toBeVisible()
+      unmount()
+    }
   })
 
   it('root role=img aria-label carries the localized shape label + phaseLabel', () => {
@@ -132,5 +143,77 @@ describe('BreathingRing — progress arc', () => {
     )
     const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
     expect(arcSvg).toBeNull()
+  })
+
+  it('keeps the completed (full) arc closed during hold-in', () => {
+    const arcSelector = 'svg[aria-hidden="true"][viewBox="0 0 100 100"] path'
+    // A fully-completed inhale (progress 1) is the reference for "closed".
+    const completed = render(
+      <BreathingRing frame={{ ...sampleFrame, phase: 'inhale', phaseProgress: 1 }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    const fullD = completed.container.querySelector(arcSelector)?.getAttribute('d')
+    completed.unmount()
+
+    // hold-in keeps that closed arc regardless of its own progress.
+    const { container } = render(
+      <BreathingRing frame={{ ...partialFrame, phase: 'hold-in' }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    const paths = container.querySelectorAll(arcSelector)
+    expect(paths.length).toBe(2)
+    expect(paths[0]?.getAttribute('d')).toBe(fullD)
+  })
+
+  it('suppresses the arc during hold-out (ring is empty after the exhale)', () => {
+    const { container } = render(
+      <BreathingRing frame={{ ...partialFrame, phase: 'hold-out' }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    expect(container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')).toBeNull()
+  })
+})
+
+// The hold progress bar replaces the arc during holds. The fill is the only span
+// with a percentage width — that uniquely identifies it across the layered spans.
+describe('BreathingRing — hold progress bar', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  function findFill(container: HTMLElement): HTMLElement | undefined {
+    return [...container.querySelectorAll('span')].find((s) => s.style.width.endsWith('%'))
+  }
+
+  it.each(['hold-in', 'hold-out'] as const)('%s renders a fill sized to phaseProgress', (phase) => {
+    const { container } = render(
+      <BreathingRing frame={{ ...sampleFrame, phase, phaseProgress: 0.5 }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    expect(findFill(container)?.style.width).toBe('50%')
+  })
+
+  it('renders no hold bar fill during inhale/exhale', () => {
+    const { container } = render(
+      <BreathingRing frame={{ ...sampleFrame, phaseProgress: 0.5 }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    expect(findFill(container)).toBeUndefined()
+  })
+
+  it('reduced-motion keeps the track but suppresses the advancing fill', () => {
+    // Reason: cast documents the intended stub shape; matchMedia returns a structurally-compatible mock.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    } as unknown as MediaQueryList)
+
+    const { container } = render(
+      <BreathingRing frame={{ ...sampleFrame, phase: 'hold-in', phaseProgress: 0.5 }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    expect(findFill(container)).toBeUndefined() // no advancing fill
+    expect(screen.getByText('Hold')).toBeVisible() // label + track still present
   })
 })

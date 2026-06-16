@@ -41,9 +41,11 @@ describe('LearnPage', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('renders the LearnPanel body — section1 heading', () => {
+  it('renders the LearnPanel body — section headings', () => {
     renderPage()
-    expect(screen.getByText(LEARN_CONTENT.en.section1.title)).toBeInTheDocument()
+    for (const section of LEARN_CONTENT.en.sections) {
+      expect(screen.getByText(section.title)).toBeInTheDocument()
+    }
   })
 
   it('focuses the back button on mount', () => {

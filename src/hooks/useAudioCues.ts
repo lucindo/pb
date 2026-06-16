@@ -29,7 +29,7 @@ import type { SessionClock } from '../audio/sessionClock'
 // synchronously into `timbreRef` BEFORE any await. DEFAULT_TIMBRE is the ref's
 // initial value — overwritten at the user's first Start click. The hook NEVER
 // reads user prefs for timbre — caller (App.tsx) owns the storage read.
-import { DEFAULT_TIMBRE, type TimbreId } from '../domain/settings'
+import { DEFAULT_TIMBRE, type BreathPhase, type TimbreId } from '../domain/settings'
 import { useAudioHealth } from './useAudioHealth'
 import { useCueScheduler } from './useCueScheduler'
 
@@ -85,11 +85,11 @@ export interface UseAudioCues {
    *  the length of the UPCOMING phase (derived from plan.inhaleSec / plan.exhaleSec
    *  — ms→sec cascade); the engine forwards it to cueSynth so the
    *  bowl-cue decay envelope stretches with the phase length at low BPM. */
-  notifyPhaseBoundary(this: void, args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void
+  notifyPhaseBoundary(this: void, args: { newPhase: BreathPhase; audioTime: number; phaseDurationSec: number }): void
   /** Dispatch a caller-supplied list of pre-computed cues via engine.topUpLookahead.
    *  The controller calls this on every session frame (rAF tick) with the walkFutureCues output.
    *  Facade: delegates to engine.topUpLookahead({ cues }); no-op if engine is null (before start). */
-  topUpLookahead(this: void, cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void
+  topUpLookahead(this: void, cues: Array<{ audioTime: number; phaseDurationSec: number; kind: BreathPhase }>): void
   /** Cancel all future cues in the engine's activeCues queue.
    *  The controller calls this immediately before audioTopUpLookahead() on every
    *  session.currentFrame change (cancel-then-reschedule per the SCHED-05 doctrine).

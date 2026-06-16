@@ -17,13 +17,8 @@ interface PracticeSettingsViewProps {
   onCloseSheet(this: void): void
 }
 
-// During a running session the settings affordance is not surfaced on screen.
-//
-// The extend-duration logic remains in the codebase (BreathingSessionController
-// .extendDuration + the AppPracticeSettingsViewModel.onExtendDuration callback)
-// but is intentionally not wired to any UI on the practice surface. If a future
-// design wants to bring back an extend-duration affordance during running, it
-// can plug directly into the existing callback without any domain changes.
+// During a running session the settings affordance is not surfaced on screen
+// (buildSetupCardSummary returns null, so this view renders nothing).
 export function PracticeSettingsView({
   settings,
   isSheetOpen,
@@ -65,9 +60,7 @@ function renderForm(
   return (
     <PatternBreathingSettingsForm
       settings={settings.settings}
-      isRunning={settings.isRunning}
       onChange={settings.onChange}
-      onExtendDuration={settings.onExtendDuration}
       strings={practice.settingsForm}
     />
   )

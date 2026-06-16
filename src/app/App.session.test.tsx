@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import {
   APP_TEST_NOW,
+  seedSettings,
   sessionReadout,
-  settingGroup,
   startAndAdvancePastLeadIn,
 } from './appTestHarness'
 import * as cueSynth from '../audio/cueSynth'
@@ -43,19 +43,14 @@ describe('running session display', () => {
     await startAndAdvancePastLeadIn()
 
     const readout = sessionReadout()
-    // J16: readout chrome dropped the "Remaining"/"Elapsed" labels — the time
-    // value alone is the primary content of FeedbackTime.
-    expect(within(readout).getByText('10:00')).toBeVisible()
+    // Default Box-4 (16s cycle) × 10 rounds = 160s = 2:40.
+    expect(within(readout).getByText('2:40')).toBeVisible()
   })
 
   it('shows elapsed time counting up for open-ended sessions', async () => {
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
 
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-    for (let index = 0; index < 11; index += 1) {
-      fireEvent.click(increase)
-    }
     await startAndAdvancePastLeadIn()
 
     // Starts at 0:00 (elapsed, not remaining — open-ended has no countdown).
@@ -95,16 +90,15 @@ describe('running duration edits and completion', () => {
   })
 
   it('automatically renders Session complete when a timed session reaches the end', async () => {
+    // 1 round of Box-4 (16s) completes quickly.
+    seedSettings({ rounds: 1 })
     render(<App />)
 
-    fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /decrease duration/i }))
     await startAndAdvancePastLeadIn()
 
-    // Timed completion holds until the surrounding cycle ends so cues are not cut
-    // mid-In/mid-Out. 5 min at the default bpm lands mid-cycle; advance an extra
-    // minute to clear the next boundary.
+    // Completion fires exactly at rounds × cycleSec; advance well past it.
     act(() => {
-      vi.advanceTimersByTime(6 * 60_000)
+      vi.advanceTimersByTime(60_000)
     })
 
     expect(screen.getByText('Session complete')).toBeVisible()
@@ -114,13 +108,9 @@ describe('running duration edits and completion', () => {
   })
 
   it('keeps open-ended sessions running when mocked time advances', async () => {
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
 
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-    for (let index = 0; index < 11; index += 1) {
-      fireEvent.click(increase)
-    }
     await startAndAdvancePastLeadIn()
 
     act(() => {
@@ -160,9 +150,10 @@ describe('manual session ending', () => {
   })
 
   it('confirms timed manual end via the modal End button, clears active readouts, and keeps selected settings', async () => {
+    // Distinctive timed rounds so we can assert the selection survives the end.
+    seedSettings({ rounds: 7 })
     render(<App />)
 
-    fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
     await startAndAdvancePastLeadIn()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
     fireEvent.click(
@@ -173,17 +164,14 @@ describe('manual session ending', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeVisible()
     expect(screen.queryByRole('status', { name: 'Session announcement' })).not.toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /Breathing shape/i })).not.toBeInTheDocument()
-    expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
+    const card = screen.getByRole('button', { name: /^Edit Pattern Breathing settings$/ })
+    expect(within(card).getByText('7')).toBeVisible()
   })
 
   it('ends open-ended sessions directly without showing the modal (D-14)', async () => {
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
 
-    const duration = settingGroup('Duration')
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
-    for (let index = 0; index < 11; index += 1) {
-      fireEvent.click(increase)
-    }
     await startAndAdvancePastLeadIn()
     fireEvent.click(screen.getByRole('button', { name: 'End' }))
 
@@ -312,12 +300,7 @@ describe('end-confirmation dialog gating', () => {
 
   // UAT GAP 3: open-ended sessions still end directly (no dialog — regression guard)
   it('GAP 3: open-ended sessions still end directly without dialog (no over-trigger)', async () => {
-    // Open-ended: set durationMinutes to 'open-ended' via localStorage
-    window.localStorage.setItem(STATE_KEY, JSON.stringify({
-      version: 1,
-      settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' },
-      stats: { totalSessions: 0, totalElapsedSeconds: 0, lastSessionAtMs: null, lastSessionDurationSeconds: null },
-    }))
+    seedSettings({ rounds: 'open-ended' })
     render(<App />)
 
     await startAndAdvancePastLeadIn()
