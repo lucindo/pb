@@ -78,6 +78,7 @@ function RingBody({ frame, strings }: RingBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
   const phaseLabel = phaseLabelFor(frame.phase, strings)
+  const isHold = frame.phase === 'hold-in' || frame.phase === 'hold-out'
 
   return (
     <RingContainer
@@ -91,13 +92,48 @@ function RingBody({ frame, strings }: RingBodyProps) {
         />
       }
     >
-      <span
-        className="relative z-10 text-5xl font-semibold tracking-tight sm:text-6xl"
-        style={{ color: LABEL_COLOR }}
-      >
-        {phaseLabel}
-      </span>
+      <div className="relative z-10 flex flex-col items-center gap-3">
+        <span
+          className="text-5xl font-semibold tracking-tight sm:text-6xl"
+          style={{ color: LABEL_COLOR }}
+        >
+          {phaseLabel}
+        </span>
+        {isHold && <HoldProgressBar progress={progress} reducedMotion={reducedMotion} />}
+      </div>
     </RingContainer>
+  )
+}
+
+// Thin progress track under the "Hold" label, filled L→R by hold progress. Holds
+// carry no arc (the ring shows the label only), so this bar is the hold's progress
+// cue. Static under reduced motion — the track renders, the fill does not advance.
+const HOLD_BAR_WIDTH_PX = 80
+const HOLD_BAR_HEIGHT_PX = 3
+const HOLD_BAR_RADIUS = '9999px'
+
+function HoldProgressBar({ progress, reducedMotion }: { progress: number; reducedMotion: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="relative block"
+      style={{ width: HOLD_BAR_WIDTH_PX, height: HOLD_BAR_HEIGHT_PX }}
+    >
+      <span
+        className="absolute inset-0"
+        style={{ background: 'var(--color-breathing-accent)', borderRadius: HOLD_BAR_RADIUS, opacity: RING_OPACITY }}
+      />
+      {!reducedMotion && (
+        <span
+          className="absolute left-0 top-0 h-full"
+          style={{
+            width: `${String(progress * 100)}%`,
+            background: 'var(--color-breathing-accent-strong)',
+            borderRadius: HOLD_BAR_RADIUS,
+          }}
+        />
+      )}
+    </span>
   )
 }
 
@@ -176,10 +212,12 @@ function ProgressArcLayer({
   const r = 49.7
   const south = 50 + r
   const north = 50 - r
-  // The arc tracks inhale (fills) and exhale (empties). Holds show the label only —
-  // their progress bar is a separate (deferred) treatment.
-  if (phase !== 'inhale' && phase !== 'exhale') return null
-  const t = phase === 'inhale' ? progress : 1 - progress
+  // Inhale fills the arc, exhale empties it. hold-in keeps the completed (full)
+  // arc closed — the inhale ended at full closure and the hold preserves it;
+  // hold-out has nothing to draw (exhale ended empty). The hold progress bar is
+  // the holds' separate progress cue.
+  if (phase === 'hold-out') return null
+  const t = phase === 'inhale' ? progress : phase === 'exhale' ? 1 - progress : 1
   const showArc = !reducedMotion && t > 0
 
   if (!showArc) return null
