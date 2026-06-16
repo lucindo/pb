@@ -5,7 +5,7 @@ import {
   type SessionFrame,
   type SessionStatus,
 } from '../domain'
-import type { UiStrings } from '../content/strings'
+import { OPEN_ENDED_GLYPH, type UiStrings } from '../content/strings'
 import { FeedbackTime } from './FeedbackTime'
 import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 
@@ -13,9 +13,6 @@ import { SessionCompletionHeadline } from './SessionCompletionHeadline'
 // uppercase tracked secondary line — the round counter "X/N" (∞ when open-ended).
 // Completion shows just the "Session complete" headline; lead-in shows the
 // placeholder time the upcoming session counts from.
-
-// Locale-neutral glyph for an open-ended (un-counted) round total.
-const OPEN_ENDED_GLYPH = '∞'
 
 export interface SessionReadoutProps {
   frame: SessionFrame | null

@@ -17,6 +17,10 @@
 
 import type { LocaleId } from '../domain'
 
+// Locale-neutral glyph for an open-ended (un-counted) round total — shared by the
+// settings rounds stepper and the session readout's X/N counter.
+export const OPEN_ENDED_GLYPH = '∞'
+
 export interface UiStrings {
   readonly practice: {
     readonly title: string
@@ -206,7 +210,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         roundsLabel: 'Rounds',
         roundsLimitLabel: 'Limit rounds',
         secondsUnit: 's',
-        openEndedLabel: '∞',
+        openEndedLabel: OPEN_ENDED_GLYPH,
         stepper: {
           fieldAriaLabel: (l) => l,
           decreaseLabel: (l) => `Decrease ${l}`,
@@ -341,7 +345,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
         roundsLabel: 'Ciclos',
         roundsLimitLabel: 'Limitar ciclos',
         secondsUnit: 's',
-        openEndedLabel: '∞',
+        openEndedLabel: OPEN_ENDED_GLYPH,
         stepper: {
           fieldAriaLabel: (l) => l,
           decreaseLabel: (l) => `Diminuir ${l}`,
