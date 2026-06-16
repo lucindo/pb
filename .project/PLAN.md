@@ -70,6 +70,18 @@ core breathing engine.
     the rounds stepper + `SessionReadout`. Then the last user-facing items: About-page
     copy (`2fc49a9`), README (`74ffd46`), smaller in/out/hold label (`e66da58`), and a
     new ring+arc app icon + favicon replacing the inherited HRV art (`48792eb`).
+- [x] **Merge to `main` + ship v1.0.** Merged `feat/pattern-breathing` (`8065da6`, no-ff).
+  Purged the 12 inherited HRV tags (`v1.0`–`v2.4`, local + origin) and released fresh:
+  `package.json` 1.0.0, `versions.json` official `v1.0`, tag `v1.0` (`615d5d4`). First
+  deploy failed on inherited config — fixed by dropping the vestigial `build-archives`
+  job (hardcoded `tag: ['v1.5']`) (`b15a2ad`) and re-pointing `v1.0`. Two one-time GitHub
+  repo-config steps (NOT in source, persist on GitHub): enabled Pages with the Actions
+  source; added a `v*` tag deployment-branch policy to the `github-pages` environment.
+  **Live at https://lucindo.github.io/pb/ (200) and /pb/v1.0/ (200).**
+- [x] **Bump CI actions to Node 24 majors** (PR #1, merged `fc7e426`). `deploy.yml`:
+  checkout→v6, setup-node→v6, upload-artifact→v7, download-artifact→v8, configure-pages→v6,
+  upload-pages-artifact→v5, deploy-pages→v5. Clears the Node-20 deprecation; takes effect
+  on the next tag / `workflow_dispatch`. Build `node-version: 20` input left unchanged.
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -139,26 +151,26 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — Pattern Breathing is **DONE and shipping to `main`**. The full feature —
-engine (Step 3 model migration `a30fd53`), sustained hold tone (`eb6b712`), hold-phase
-ring visuals (`0ff0159`), rounds limit toggle (`a08d8ab`) — plus the pre-merge review
-and the final user-facing items (About page, README, smaller phase label, new ring+arc
-icon/favicon) all landed on `feat/pattern-breathing` and reviewed clean.
+**State** — **v1.0 shipped and live** at https://lucindo.github.io/pb/ (and /pb/v1.0/).
+Pattern Breathing is feature-complete, merged to `main` (`8065da6`), released as `v1.0`,
+and deployed green. CI action bumps merged on top (`fc7e426`). `main` is at `fc7e426`,
+clean working tree, **730 vitest green**. Nothing outstanding — this is a natural stopping
+point / between-features state.
 
-`tsc -b` + eslint + **730 vitest green** + production build (PWA precache). App runs the
-real engine: preset picker, per-phase steppers, Scale, rounds toggle + stepper→∞, X/N
-readout, In/Out/Hold ring with sustained hold tone + hold progress bar.
+**Next** — No required action. Optional: a real-device glance at the v1.0 site (app icon
+on a light home screen, favicon in a dark tab). New work starts from a fresh spec. To cut
+the next release: bump `package.json` version, set `versions.json` official to the new
+`vX.Y`, commit, tag `vX.Y`, push (tag push triggers deploy; append-versions-json records it).
 
-**Next** — Merging `feat/pattern-breathing` → `main`. Nothing outstanding. To cut a
-release: tag `vX.Y` (matches first two `package.json.version` segments) for the
-multi-version Pages deploy under `/pb/`. Optional final device glance: app icon on a
-light home screen, favicon in a dark tab.
-
-**Cross-session note** — the hold tone was UAT'd by ear and the volume signed off
-(`HOLD_SUSTAIN_GAIN` 0.12). The three `HOLD_*` knobs in `cueSynth.ts` are the only
-feel-tuning left. Icon/favicon masters live in `assets/icons/` — regenerate the PNGs
-with `rsvg-convert` if the palette changes (favicon SVG is synced across
-`faviconPalette.ts`, `index.html`, `public/favicon.svg`).
+**Cross-session notes**
+- Deploy gotchas are now solved but worth knowing: the deploy only triggers on `vX.Y` tag
+  pushes (no PR/branch CI). Pages + the `github-pages` env `v*` tag policy are configured on
+  GitHub (one-time, not in source). The next tag also first-exercises the Node-24 action bumps.
+- Hold tone UAT'd by ear; volume signed off (`HOLD_SUSTAIN_GAIN` 0.12). The three `HOLD_*`
+  knobs in `cueSynth.ts` are the only feel-tuning left.
+- Icon/favicon masters live in `assets/icons/`; regenerate PNGs with `rsvg-convert` if the
+  palette changes. Favicon SVG is synced across `faviconPalette.ts`, `index.html`,
+  `public/favicon.svg` (color hexes guarded by `favicon.sync.test.ts`).
 
 **Open questions**
 - ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6/D7**.
