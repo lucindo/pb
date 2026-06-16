@@ -1,8 +1,9 @@
-// React hook wrapping the audioEngine service. Owns the React-side state
-// machine (status + audioAvailable + muted) and the imperative API consumed
-// by App.tsx.
-//
-// State machine: 'idle' → 'lead-in' (success) | 'failed' (AC construction error).
+// React hook wrapping the audioEngine service. Owns the engine lifecycle
+// (create / close / reconstruct), the stable-identity proxy clock, mute, and the
+// 'idle' → 'lead-in' | 'failed' status machine, and exposes the imperative API
+// consumed by App.tsx. Two cohesive concerns are composed in:
+//   - useAudioHealth   — audioAvailable + AudioStatusFlag + clock-health subscribers
+//   - useCueScheduler  — the per-frame cue-dispatch facade
 //
 // muted defaults to `initialMuted`, or false (first-visit audio is ON) when
 // the parent does not supply a value.
@@ -29,6 +30,8 @@ import type { SessionClock } from '../audio/sessionClock'
 // initial value — overwritten at the user's first Start click. The hook NEVER
 // reads user prefs for timbre — caller (App.tsx) owns the storage read.
 import { DEFAULT_TIMBRE, type TimbreId } from '../domain/settings'
+import { useAudioHealth } from './useAudioHealth'
+import { useCueScheduler } from './useCueScheduler'
 
 export type { AudioStatus }
 export type { AudioStatusFlag } from '../audio/audioStatus'
@@ -130,6 +133,28 @@ export function useAudioCues(
   // Imperative resource — engineRef is NOT in render state because each AC create/close
   // is a side effect, not a UI value. Mirrors useSessionEngine.ts's animationFrameId posture.
   const engineRef = useRef<AudioEngine | null>(null)
+
+  // Composed concerns. Both read engineRef (owned here); neither mutates it.
+  const {
+    audioAvailable,
+    audioStatus,
+    setAudioAvailable,
+    setAudioStatus,
+    handleResume,
+    handleSuspend,
+    handleClose,
+    resetResumeGate,
+  } = useAudioHealth(engineRef)
+  const {
+    notifyPhaseBoundary,
+    topUpLookahead,
+    cancelFutureCues,
+    audioNow,
+    playEndChord,
+    handleForceTopUp,
+    clearCueCache,
+  } = useCueScheduler(engineRef)
+
   // Cache the firstInCueTime returned by the original engine.scheduleLeadIn call so a
   // defensive double-call to start() returns the deterministic anchor (matching the JSDoc
   // contract on start()) instead of a fresh "now + 3" projection that drifts from the
@@ -168,22 +193,6 @@ export function useAudioCues(
   // behavior). NO useEffect mirror: only ever set synchronously in start() and
   // read in reconstructEngine().
   const bypassSilentModeRef = useRef<boolean | undefined>(undefined)
-  const [audioAvailable, setAudioAvailable] = useState<boolean>(true)
-
-  // High-level audio-path health surface.
-  const [audioStatus, setAudioStatus] = useState<AudioStatusFlag>('ok')
-
-  // Gate audioStatus = 'needs-resume' on a prior resume attempt for THIS suspend
-  // cycle. Without this, AC startup's transient 'suspended' → 'running' transition
-  // would briefly flash the affordance for one render. Reset to false on every
-  // transition back to 'running' (or on stop()).
-  const visibilityResumeAttemptedRef = useRef<boolean>(false)
-
-  /** Cache the last cues array dispatched via topUpLookahead.
-   *  handleForceTopUp re-dispatches this on clock.onResume so AC reconstruction /
-   *  iOS unlock force-tops up before the next rAF tick fires. Stale by ≤ 1 rAF
-   *  (~16ms); engine's SAFE_LEAD_SEC callee clamp absorbs the drift. */
-  const lastTopUpCuesRef = useRef<Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>>([])
 
   // Re-anchor callback stored in a ref to avoid closure-capture issues when
   // App.tsx passes a new callback identity per render. The reconstruction path
@@ -207,51 +216,6 @@ export function useAudioCues(
   // engineRef.current = engine, before any external code can call engine.resume()).
   const clockUnsubsRef = useRef<Array<() => void>>([])
 
-  // Three clock subscribers — one per channel (suspend / resume / close).
-  // AudioStatusFlag is exactly `'ok' | 'needs-resume' | 'unavailable'`.
-  //   - handleResume: clears the needs-resume state when AC transitions to running.
-  //   - handleSuspend: flips to needs-resume when a prior visibility-resume attempt
-  //     is in flight for this cycle (the resume-attempt gate).
-  //   - handleClose: sets unavailable when the AC transitions to closed.
-  const handleResume = useCallback((): void => {
-    if (engineRef.current === null) return
-    visibilityResumeAttemptedRef.current = false
-    setAudioStatus('ok')
-  }, [])
-
-  const handleSuspend = useCallback((): void => {
-    if (engineRef.current === null) return
-    // Resume-attempt gate: only flip to 'needs-resume' when a prior visibility-driven
-    // resume attempt is in flight for this suspend cycle. Startup-time transient
-    // suspended → running transitions are intentionally ignored.
-    if (visibilityResumeAttemptedRef.current) {
-      setAudioStatus('needs-resume')
-    }
-  }, [])
-
-  const handleClose = useCallback((): void => {
-    // engine.clock.onClose fires this when the AC transitions to 'closed' — whether
-    // via stop()/reconstructEngine paths OR an unexpected browser-side AC kill.
-    if (engineRef.current === null) return
-    setAudioStatus('unavailable')
-  }, [])
-
-  // Force-top-up handler subscribed to clock.onResume.
-  // Re-dispatches the last cues array passed to topUpLookahead so the lookahead
-  // queue refills before the next rAF tick fires (covers AC reconstruction /
-  // iOS unlock / engine swap). Cached cues may be �� 1 rAF stale (~16ms);
-  // engine's SAFE_LEAD_SEC callee clamp absorbs drift.
-  // Same defensive-gate posture as handleResume: engineRef null-gate + early return.
-  const handleForceTopUp = useCallback((): void => {
-    // AC reconstruction / iOS unlock force-top-up. Re-dispatches last cues so
-    // the queue refills before the next rAF tick fires.
-    const engine = engineRef.current
-    if (engine === null) return
-    const cues = lastTopUpCuesRef.current
-    if (cues.length === 0) return // No prior dispatch (e.g., lead-in still running) — safe no-op.
-    engine.topUpLookahead({ cues })
-  }, [])
-
   // Cleanup-on-unmount: close the engine if a session is still alive.
   // Rapid mount/unmount during dev/strict-mode would otherwise leak AudioContexts.
   // Browsers cap concurrent ACs (~6 in Chrome) before refusing new ones.
@@ -272,30 +236,6 @@ export function useAudioCues(
         engineRef.current = null
       }
       firstInCueTimeRef.current = null
-    }
-  }, [])
-
-  // Visibility-resume listener.
-  // Mirrors useWakeLock.ts — same shape, same gate posture. The hook owns its own
-  // DOM listener so the audioEngine stays free of document.* / window.* access.
-  // The single gate is engineRef.current !== null. visibilityResumeAttemptedRef is
-  // set to true BEFORE the void-call, which arms the resume-attempt gate inside
-  // handleSuspend so a subsequent 'suspended'/'interrupted' transition can flip
-  // audioStatus = 'needs-resume'. The optimistic resume call is preserved —
-  // sometimes it works without a gesture (headphone in, brief lock, certain iOS
-  // versions). When it rejects, the affordance becomes the user's recovery path.
-  useEffect(() => {
-    const onVisibility = (): void => {
-      if (document.visibilityState !== 'visible') return
-      if (engineRef.current === null) return
-      // Arm the gate BEFORE the resume call so a subsequent 'suspended'/'interrupted'
-      // statechange can transition audioStatus.
-      visibilityResumeAttemptedRef.current = true
-      void engineRef.current.resume()
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 
@@ -361,7 +301,7 @@ export function useAudioCues(
           proxyMemoRef.current.setSource(createWallSessionClock())
           // Step 4: clear cached refs (mirror stop() cache-clear).
           firstInCueTimeRef.current = null
-          lastTopUpCuesRef.current = []
+          clearCueCache()
           // Step 5: propagate failure (preserved from prior code).
           setAudioAvailable(false)
           // Step 6: set audioStatus='unavailable' so MuteToggle.needsResume
@@ -393,7 +333,7 @@ export function useAudioCues(
         return null
       }
     },
-    [handleResume, handleSuspend, handleClose, handleForceTopUp],
+    [handleResume, handleSuspend, handleClose, handleForceTopUp, clearCueCache, setAudioAvailable, setAudioStatus],
   )
 
   const stop = useCallback(async (): Promise<void> => {
@@ -424,17 +364,17 @@ export function useAudioCues(
     // together, so no post-unmount clock.now() read can reach the proxy.
     proxyMemoRef.current.setSource(createWallSessionClock())
     firstInCueTimeRef.current = null // Clear cached anchor for the next start()
-    lastTopUpCuesRef.current = [] // Clear cache so fast stop()→start() cannot replay stale cues into new engine.
+    clearCueCache() // Clear cache so fast stop()→start() cannot replay stale cues into new engine.
     // Reset the audioStatus state machine + resume-attempt gate so the next session
     // starts clean (otherwise a residual 'needs-resume' from a prior suspend cycle
     // would carry into the new session's first render).
-    visibilityResumeAttemptedRef.current = false
+    resetResumeGate()
     setAudioStatus('ok')
     setStatus('idle')
     if (engine !== null) {
       await engine.close()
     }
-  }, [])
+  }, [clearCueCache, resetResumeGate, setAudioStatus])
 
   // Reconstruction path — close old engine + create new one + replay muted state
   // + signal re-anchor to App.tsx.
@@ -487,7 +427,7 @@ export function useAudioCues(
     // collapsing all N cues onto one instant (stacked strike). Clearing here
     // ensures the first onResume after reconstruction sees an empty cache and exits
     // early.
-    lastTopUpCuesRef.current = []
+    clearCueCache()
 
     let newEngine: AudioEngine
     try {
@@ -558,10 +498,19 @@ export function useAudioCues(
     // The new AC starts in 'running' via the constructor path. Set audioStatus =
     // 'ok' synchronously — the clock's resume subscriber will also fire but may
     // race with the React render.
-    visibilityResumeAttemptedRef.current = false
+    resetResumeGate()
     setAudioStatus('ok')
     setAudioAvailable(true)
-  }, [handleResume, handleSuspend, handleClose, handleForceTopUp])
+  }, [
+    handleResume,
+    handleSuspend,
+    handleClose,
+    handleForceTopUp,
+    clearCueCache,
+    resetResumeGate,
+    setAudioStatus,
+    setAudioAvailable,
+  ])
 
   // Public resume() — invoked from the App.tsx mute-button click handler when
   // audioStatus === 'needs-resume'. The click IS a user gesture that we use to
@@ -587,56 +536,12 @@ export function useAudioCues(
       return
     }
     await reconstructEngine()
-  }, [reconstructEngine])
+  }, [reconstructEngine, setAudioStatus, setAudioAvailable])
 
   const setMuted = useCallback((next: boolean): void => {
     setMutedState(next)
     // Fade-out tail when muting mid-cue is owned by the engine.
     engineRef.current?.setMuted(next)
-  }, [])
-
-  const notifyPhaseBoundary = useCallback(
-    (args: { newPhase: 'in' | 'out'; audioTime: number; phaseDurationSec: number }): void => {
-      engineRef.current?.scheduleNextCue(args)
-    },
-    [],
-  )
-
-  // Top-up facade — parallel to notifyPhaseBoundary; delegates to
-  // engine.topUpLookahead({ cues }). Caches the cues array in lastTopUpCuesRef
-  // for the clock.onResume force-top-up path (handleForceTopUp).
-  // Defensive gate pattern: read engineRef into local `engine`; early-return when
-  // null (matches handleResume and all other clock-subscriber callbacks).
-  const topUpLookahead = useCallback(
-    (cues: Array<{ audioTime: number; phaseDurationSec: number; kind: 'in' | 'out' }>): void => {
-      const engine = engineRef.current
-      if (engine === null) return
-      lastTopUpCuesRef.current = cues // Cache AFTER null-gate so a pre-start call cannot poison the force-top-up cache
-      engine.topUpLookahead({ cues })
-    },
-    [],
-  )
-
-  // Cancel-future-cues facade — parallel to topUpLookahead.
-  // Stable-identity (empty deps array) matching topUpLookahead. The controller
-  // calls this immediately before audioTopUpLookahead() on every
-  // session.currentFrame change (cancel-then-reschedule per the SCHED-05 doctrine).
-  // Defensive gate: reads engineRef into local `engine`; early-returns when null
-  // (matches topUpLookahead and all other clock-subscriber callbacks).
-  const cancelFutureCues = useCallback((): void => {
-    const engine = engineRef.current
-    if (engine === null) return
-    engine.cancelFutureCues()
-  }, [])
-
-  const audioNow = useCallback((): number | null => {
-    // Read through the SessionClock seam (engine.clock.now()) — byte-identical to
-    // the prior engineRef.current?.now() (the AC's currentTime).
-    return engineRef.current?.clock.now() ?? null
-  }, [])
-
-  const playEndChord = useCallback((): void => {
-    engineRef.current?.playEndChord()
   }, [])
 
   return {
