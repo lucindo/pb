@@ -6,12 +6,11 @@ import type { RefObject } from 'react'
 // the audio subdirectory's internal layout.
 import type { SessionClock } from '../audio/audioEngine'
 import type { SessionFrame } from '../domain/sessionMath'
-import type { SessionSettings } from '../domain/settings'
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import type { PatternSettings } from '../domain/settings'
+import { DEFAULT_PATTERN_SETTINGS } from '../domain/settings'
 import {
   completeIfNeeded,
   endSession,
-  extendTimedSession,
   startSession,
   type SessionState,
 } from '../domain/sessionController'
@@ -59,18 +58,9 @@ export interface SessionEngine {
    * do NOT put in effect dep arrays.
    */
   runningSnapshotRef: RefObject<RunningSnapshot | null>
-  setSelectedSettings(this: void, settings: SessionSettings): void
+  setSelectedSettings(this: void, settings: PatternSettings): void
   start(this: void): void
   end(this: void): void
-  /**
-   * Extends the running timed session by `durationMinutes`. No-op if the
-   * session is not in `running`. Rejections from the underlying domain
-   * (e.g., `RangeError` when the new duration violates invariants) are
-   * silently absorbed — state is left unchanged. Callers cannot distinguish
-   * "applied" from "declined"; if a user-facing affordance needs that
-   * distinction, surface it from this hook before consumers are wired.
-   */
-  extendDuration(this: void, durationMinutes: number): void
   /**
    * Reanchor `startedAtSec` after an AudioContext reconstruction (iOS recovery
    * path).
@@ -107,7 +97,7 @@ export interface SessionEngine {
  * audioCtx.currentTime via the SessionClock seam without any caller change.
  */
 export function useSessionEngine(
-  initialSettings: SessionSettings = DEFAULT_SETTINGS,
+  initialSettings: PatternSettings = DEFAULT_PATTERN_SETTINGS,
   clock: SessionClock,
 ): SessionEngine {
   const [state, setState] = useState<SessionState>(() => ({
@@ -236,7 +226,7 @@ export function useSessionEngine(
   // (`cycleKey` / `phaseKey`) cleanly so the dep array carries only primitives
   // — and they're computed by the same `state.status === 'running'` narrowing
   // the memo body uses, so the memo and its deps stay in lock-step.
-  const cycleKey = state.status === 'running' ? state.lastFrame.cycleIndex : null
+  const cycleKey = state.status === 'running' ? state.lastFrame.round : null
   const phaseKey = state.status === 'running' ? state.lastFrame.phase : null
   const currentFrame = useMemo<SessionFrame | null>(
     () => (state.status === 'running' ? state.lastFrame : null),
@@ -250,7 +240,7 @@ export function useSessionEngine(
   // `elapsedMs` per frame. Direct read, NO useMemo wrapper.
   const liveFrame: SessionFrame | null = state.status === 'running' ? state.lastFrame : null
 
-  const setSelectedSettings = useCallback((settings: SessionSettings) => {
+  const setSelectedSettings = useCallback((settings: PatternSettings) => {
     setState((currentState) => {
       if (currentState.status === 'running') {
         return currentState
@@ -283,28 +273,6 @@ export function useSessionEngine(
     })
   }, [])
 
-  const extendDuration = useCallback((durationMinutes: number) => {
-    setState((currentState) => {
-      if (currentState.status !== 'running') {
-        return currentState
-      }
-
-      try {
-        // Pass a fresh clock reading so `extendTimedSession` recomputes `lastFrame`
-        // from `nowSec - startedAtSec`, mirroring how `startSession` is called
-        // above (`startSession(..., clock.now())`). Session capture flows through
-        // the injected `clock.now()` only.
-        return extendTimedSession(currentState, durationMinutes, clock.now())
-      } catch (error) {
-        if (error instanceof RangeError) {
-          return currentState
-        }
-
-        throw error
-      }
-    })
-  }, [clock])
-
   // Reanchor startedAtSec after a proxy source swap (AudioContext reconstruction
   // on iOS). The setState updater narrows on 'running' and rewrites
   // startedAtSec = newClockNow - lastFrame.elapsedSec.
@@ -336,7 +304,6 @@ export function useSessionEngine(
     setSelectedSettings,
     start,
     end,
-    extendDuration,
     reanchorSessionClock,
   }
 }

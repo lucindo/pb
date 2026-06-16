@@ -45,10 +45,14 @@ export function createCueStore(audioCtx: AudioContext, masterGain: GainNode, tim
       case 'lead-in-tick':
         activeCues.add(scheduleCountdownTick(audioCtx, whenSec, masterGain, timbre))
         return
-      case 'in':
+      // Holds reuse the in/out strike as a placeholder until the dedicated
+      // sustained hold tone lands: hold-in follows the inhale cue, hold-out the exhale.
+      case 'inhale':
+      case 'hold-in':
         activeCues.add(scheduleInCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
         return
-      case 'out':
+      case 'exhale':
+      case 'hold-out':
         activeCues.add(scheduleOutCueForTimbre(audioCtx, whenSec, masterGain, timbre, cue.phaseDurationSec))
         return
       case 'end-chord': {

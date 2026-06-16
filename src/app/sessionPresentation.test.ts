@@ -10,12 +10,13 @@ import { UI_STRINGS } from '../content/strings'
 
 // SessionFrame is seconds-shaped.
 const frame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
+  phase: 'inhale',
+  phaseIndex: 0,
+  phaseProgress: 0,
+  round: 1,
+  totalRounds: 10,
   elapsedSec: 0,
   remainingSec: 600,
-  phaseProgress: 0,
-  cycleIndex: 0,
   isComplete: false,
 }
 
@@ -28,8 +29,6 @@ describe('breathing presentation model', () => {
       liveFrame: frame,
       status: 'running',
       inSessionView: true,
-      bpm: 5.5,
-      ratio: '40:60',
     })
 
     expect(model.shape).toEqual({ frame, leadInDigit: null })
@@ -49,8 +48,6 @@ describe('breathing presentation model', () => {
       liveFrame: null,
       status: 'idle',
       inSessionView: true,
-      bpm: 5.5,
-      ratio: '40:60',
     })
 
     expect(model.shape).toEqual({ frame: null, leadInDigit: 3 })

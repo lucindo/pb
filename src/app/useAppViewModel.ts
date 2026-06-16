@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { LEARN_CONTENT } from '../content/learnContent'
 import { LOCKED_COPY } from '../content/lockedCopy'
-import type { SessionSettings } from '../domain'
+import type { PatternSettings } from '../domain'
 import { useBeforeInstallPrompt } from '../hooks/useBeforeInstallPrompt'
 import { useBreathingSessionController } from '../hooks/useBreathingSessionController'
 import { useBypassSilentMode } from '../hooks/useBypassSilentMode'
@@ -73,7 +73,7 @@ function useBreathingPrimaryClick(input: {
 }
 
 export function useAppViewModel(): AppViewModel {
-  const initialSettings = useMemo<SessionSettings>(() => loadSettings(), [])
+  const initialSettings = useMemo<PatternSettings>(() => loadSettings(), [])
   const wakeLock = useWakeLock()
   useTheme()
   useFavicon()
@@ -140,7 +140,6 @@ export function useAppViewModel(): AppViewModel {
       liveFrame: breathing.session.liveFrame,
       status: breathing.session.state.status,
       inSessionView: breathing.inSessionView,
-      selectedSettings: breathing.session.state.selectedSettings,
     },
   })
   const isComplete = breathing.session.state.status === 'complete' && !breathing.inSessionView
@@ -149,7 +148,6 @@ export function useAppViewModel(): AppViewModel {
     isRunning: breathing.inSessionView,
     isComplete,
     onChange: breathing.setSelectedSettings,
-    onExtendDuration: breathing.session.extendDuration,
   })
   const endSession: AppEndSessionDialogViewModel = {
     open: breathing.endDialogOpen,

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 import {
+  seedSettings,
   settingGroup,
   startAndAdvancePastLeadIn,
 } from './appTestHarness'
@@ -15,41 +16,34 @@ afterEach(() => {
 })
 
 describe('main screen settings controls', () => {
-  it('shows the first-open defaults for BPM, ratio, and duration', () => {
+  it('shows the first-open Box-4 defaults (pattern, scale, rounds)', () => {
     render(<App />)
 
-    expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
-    expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
-    expect(within(settingGroup('Duration')).getByText('10 min')).toBeVisible()
+    // Default Box-4 = 1·1·1·1 ×4, 10 rounds.
+    expect(within(settingGroup('In')).getByText('1 s')).toBeVisible()
+    expect(within(settingGroup('Scale')).getByText('×4')).toBeVisible()
+    expect(within(settingGroup('Rounds')).getByText('10')).toBeVisible()
   })
 
-  it('uses compact ratio labels without expanded inhale or exhale wording', () => {
+  it('shows the preset picker with the named presets', () => {
     render(<App />)
 
-    const ratio = settingGroup('Ratio')
-    expect(within(ratio).getByText('40:60')).toBeVisible()
-    expect(within(ratio).queryByText(/inhale/i)).not.toBeInTheDocument()
-    expect(within(ratio).queryByText(/exhale/i)).not.toBeInTheDocument()
+    const preset = settingGroup('Preset')
+    expect(within(preset).getByText('Box-4')).toBeVisible()
+    expect(within(preset).getByText('Custom')).toBeVisible()
   })
 
-  it('steps duration through finite five-minute values and the open-ended option', async () => {
+  it('steps rounds past the max to the open-ended option (FR-18a)', async () => {
     const user = userEvent.setup()
+    seedSettings({ rounds: 99 })
     render(<App />)
 
-    const duration = settingGroup('Duration')
-    const decrease = within(duration).getByRole('button', { name: /decrease duration/i })
-    const increase = within(duration).getByRole('button', { name: /increase duration/i })
+    const rounds = settingGroup('Rounds')
+    expect(within(rounds).getByText('99')).toBeVisible()
 
-    await user.click(decrease)
-    expect(within(duration).getByText('5 min')).toBeVisible()
-
-    for (let index = 0; index < 11; index += 1) {
-      await user.click(increase)
-    }
-    expect(within(duration).getByText('60 min')).toBeVisible()
-
-    await user.click(increase)
-    expect(within(duration).getByText('∞')).toBeVisible()
+    // Stepping above the max (99) flips to open-ended, shown as ∞.
+    await user.click(within(rounds).getByRole('button', { name: /increase rounds/i }))
+    expect(within(rounds).getByText('∞')).toBeVisible()
   })
 
   it('starts a running session from the primary idle action', async () => {
@@ -88,9 +82,10 @@ describe('main screen settings controls', () => {
   it('keeps selected settings visible after manually ending a session', async () => {
     vi.useFakeTimers()
     try {
+      // Distinctive timed rounds so we can confirm the selection survives the end.
+      seedSettings({ rounds: 7 })
       render(<App />)
 
-      fireEvent.click(within(settingGroup('Duration')).getByRole('button', { name: /increase duration/i }))
       await startAndAdvancePastLeadIn()
       fireEvent.click(screen.getByRole('button', { name: 'End' }))
       fireEvent.click(
@@ -98,9 +93,7 @@ describe('main screen settings controls', () => {
           .getByRole('button', { name: 'End' }),
       )
 
-      expect(within(settingGroup('BPM')).getByText('5.5 BPM')).toBeVisible()
-      expect(within(settingGroup('Ratio')).getByText('40:60')).toBeVisible()
-      expect(within(settingGroup('Duration')).getByText('15 min')).toBeVisible()
+      expect(within(settingGroup('Rounds')).getByText('7')).toBeVisible()
     } finally {
       vi.useRealTimers()
     }

@@ -11,10 +11,11 @@ const EN_STRINGS_FIXTURE = UI_STRINGS.en
 // Sample frame: `remainingSec` is null for open-ended, a number for timed;
 // either is fine here since RingBody only reads phase/phaseLabel/phaseProgress.
 const sampleFrame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
+  phase: 'inhale',
+  phaseIndex: 0,
   phaseProgress: 0,
-  cycleIndex: 0,
+  round: 1,
+  totalRounds: 'open-ended',
   elapsedSec: 0,
   remainingSec: null,
   isComplete: false,
@@ -61,10 +62,20 @@ describe('BreathingRing — phase label', () => {
     expect(screen.getByText('In')).toBeVisible()
   })
 
-  it('renders the localized phaseLabel text for "out"', () => {
-    const outFrame: SessionFrame = { ...sampleFrame, phase: 'out', phaseLabel: 'Out' }
+  it('renders the localized phaseLabel text for "exhale"', () => {
+    const outFrame: SessionFrame = { ...sampleFrame, phase: 'exhale' }
     render(<BreathingRing frame={outFrame} strings={EN_STRINGS_FIXTURE.practice.breathing} />)
     expect(screen.getByText('Out')).toBeVisible()
+  })
+
+  it('renders the shared "Hold" label for both hold phases', () => {
+    for (const phase of ['hold-in', 'hold-out'] as const) {
+      const { unmount } = render(
+        <BreathingRing frame={{ ...sampleFrame, phase }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+      )
+      expect(screen.getByText('Hold')).toBeVisible()
+      unmount()
+    }
   })
 
   it('root role=img aria-label carries the localized shape label + phaseLabel', () => {
@@ -132,5 +143,12 @@ describe('BreathingRing — progress arc', () => {
     )
     const arcSvg = container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')
     expect(arcSvg).toBeNull()
+  })
+
+  it('suppresses the arc during a hold phase even mid-progress', () => {
+    const { container } = render(
+      <BreathingRing frame={{ ...partialFrame, phase: 'hold-in' }} strings={EN_STRINGS_FIXTURE.practice.breathing} />,
+    )
+    expect(container.querySelector('svg[aria-hidden="true"][viewBox="0 0 100 100"]')).toBeNull()
   })
 })

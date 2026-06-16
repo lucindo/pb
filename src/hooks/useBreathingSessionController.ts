@@ -8,7 +8,7 @@ import { createBreathingPlan } from '../domain/breathingPlan'
 import { resolveTargetSec, walkFutureCues } from '../domain/sessionAudio'
 import type { BreathingSessionPhase, LeadInDigit } from '../domain/sessionLifecycle'
 import { getSessionFrame, type SessionFrame } from '../domain/sessionMath'
-import type { SessionSettings } from '../domain/settings'
+import type { PatternSettings } from '../domain/settings'
 import {
   loadMute,
   loadPrefs,
@@ -38,7 +38,7 @@ export interface BreathingSessionController {
   leadInPlaceholderFrame: SessionFrame | null
   endDialogOpen: boolean
   audio: BreathingAudioControls
-  setSelectedSettings(this: void, next: SessionSettings): void
+  setSelectedSettings(this: void, next: PatternSettings): void
   startOrCancel(this: void): Promise<void>
   requestEnd(this: void): void
   confirmEnd(this: void): void
@@ -47,7 +47,7 @@ export interface BreathingSessionController {
 }
 
 export interface UseBreathingSessionControllerArgs {
-  initialSettings: SessionSettings
+  initialSettings: PatternSettings
   wakeLock: UseWakeLock
   /** Optional bypass-silent-mode setting threaded from useBypassSilentMode.
    *  Undefined passes through to useAudioCues.start → audioEngine where it coerces
@@ -141,7 +141,7 @@ export function useBreathingSessionController({
     planRef.current = null
   }, [])
 
-  const setSelectedSettings = useCallback((next: SessionSettings): void => {
+  const setSelectedSettings = useCallback((next: PatternSettings): void => {
     sessionSetSelectedSettings(next)
     savePatternBreathingSettings(next)
   }, [sessionSetSelectedSettings])
@@ -220,7 +220,7 @@ export function useBreathingSessionController({
 
   const runningNeedsConfirmation =
     state.status === 'running' &&
-    state.lockedSettings.durationMinutes !== 'open-ended'
+    state.lockedSettings.rounds !== 'open-ended'
 
   const requestEnd = useCallback((): void => {
     if (runningNeedsConfirmation) {
@@ -325,8 +325,8 @@ export function useBreathingSessionController({
     const cues = walkFutureCues({
       audioAnchor,
       elapsedSec,
-      fromCycleIndex: frame.cycleIndex,
-      fromPhase: frame.phase,
+      fromCycleIndex: frame.round - 1,
+      fromPhaseIndex: frame.phaseIndex,
       plan,
       lookaheadWindowSec: LOOKAHEAD_WINDOW_SEC,
       minCues: LOOKAHEAD_MIN_CUES,

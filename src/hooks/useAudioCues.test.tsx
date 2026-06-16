@@ -11,13 +11,14 @@ import * as cueSynth from '../audio/cueSynth'
 import { STATE_KEY } from '../storage'
 import { useAudioCues } from './useAudioCues'
 
-// BreathingPlan fixture is seconds-shaped.
+// BreathingPlan fixture: inhale 4s, exhale 6s → cycle 10s, 60 rounds → 600s.
 const samplePlan: BreathingPlan = {
-  bpm: 5.5,
-  ratio: '40:60',
-  cycleSec: 60 / 5.5,
-  inhaleSec: (60 / 5.5) * 0.4,
-  exhaleSec: (60 / 5.5) * 0.6,
+  phases: [
+    { phase: 'inhale', durationSec: 4 },
+    { phase: 'exhale', durationSec: 6 },
+  ],
+  cycleSec: 10,
+  rounds: 60,
   totalSec: 600,
 }
 
@@ -164,9 +165,9 @@ describe('useAudioCues', () => {
     outSpy.mockClear()
     act(() => {
       result.current.notifyPhaseBoundary({
-        newPhase: 'out',
+        newPhase: 'exhale',
         audioTime: 8,
-        phaseDurationSec: samplePlan.exhaleSec,
+        phaseDurationSec: 6,
       })
     })
 
@@ -1625,7 +1626,7 @@ describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
 
-    const cues = [{ audioTime: 5, phaseDurationSec: 3, kind: 'in' as const }]
+    const cues = [{ audioTime: 5, phaseDurationSec: 3, kind: 'inhale' as const }]
     act(() => {
       result.current.topUpLookahead(cues)
     })
@@ -1640,7 +1641,7 @@ describe('useAudioCues — Phase 52 D-04 topUpLookahead facade', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
     // Should not throw even with no engine
     expect(() => {
-      result.current.topUpLookahead([{ audioTime: 5, phaseDurationSec: 3, kind: 'in' }])
+      result.current.topUpLookahead([{ audioTime: 5, phaseDurationSec: 3, kind: 'inhale' }])
     }).not.toThrow()
     unmount()
   })
@@ -1741,8 +1742,8 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
 
     const cues = [
-      { audioTime: 5, phaseDurationSec: 4, kind: 'in' as const },
-      { audioTime: 15, phaseDurationSec: 6, kind: 'out' as const },
+      { audioTime: 5, phaseDurationSec: 4, kind: 'inhale' as const },
+      { audioTime: 15, phaseDurationSec: 6, kind: 'exhale' as const },
     ]
 
     // Call topUpLookahead to cache the cues
@@ -1789,10 +1790,10 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
 
-    const firstCues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' as const }]
+    const firstCues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'inhale' as const }]
     const secondCues = [
-      { audioTime: 10, phaseDurationSec: 6, kind: 'out' as const },
-      { audioTime: 16, phaseDurationSec: 4, kind: 'in' as const },
+      { audioTime: 10, phaseDurationSec: 6, kind: 'exhale' as const },
+      { audioTime: 16, phaseDurationSec: 4, kind: 'inhale' as const },
     ]
 
     act(() => { result.current.topUpLookahead(firstCues) })
@@ -1819,7 +1820,7 @@ describe('useAudioCues — Phase 52 D-04 forceTopUp on clock.onResume', () => {
     const { result, unmount } = renderHook(() => useAudioCues())
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
 
-    const cues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' as const }]
+    const cues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'inhale' as const }]
     act(() => { result.current.topUpLookahead(cues) })
     topUpSpy.mockClear()
 
@@ -1947,7 +1948,7 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
 
     // Call topUpLookahead BEFORE start() — engine is null, cache should NOT be poisoned
     act(() => {
-      result.current.topUpLookahead([{ audioTime: 999, phaseDurationSec: 4, kind: 'in' }])
+      result.current.topUpLookahead([{ audioTime: 999, phaseDurationSec: 4, kind: 'inhale' }])
     })
 
     // Now start the engine
@@ -1999,7 +2000,7 @@ describe('Phase 52 WR-02-FIX: topUpLookahead cache-after-gate', () => {
     await act(async () => { await result.current.start(samplePlan, 'bowl') })
 
     // Cache some cues in the first session
-    const sessionOneCues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'in' as const }]
+    const sessionOneCues = [{ audioTime: 5, phaseDurationSec: 4, kind: 'inhale' as const }]
     act(() => { result.current.topUpLookahead(sessionOneCues) })
 
     // Stop the first session (should clear the cache)
@@ -2115,8 +2116,8 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
 
     // Populate lastTopUpCuesRef with pre-reconstruction cues (old AC origin audioTimes)
     const preReconstructCues = [
-      { audioTime: 10 + 5, phaseDurationSec: 4, kind: 'in' as const },  // absolute to engineA origin
-      { audioTime: 10 + 15, phaseDurationSec: 6, kind: 'out' as const },
+      { audioTime: 10 + 5, phaseDurationSec: 4, kind: 'inhale' as const },  // absolute to engineA origin
+      { audioTime: 10 + 15, phaseDurationSec: 6, kind: 'exhale' as const },
     ]
     act(() => { result.current.topUpLookahead(preReconstructCues) })
 
@@ -2160,9 +2161,9 @@ describe('Phase 52 Plan 06 WR-04 + WR-05: reconstruction-path top-up gating and 
     // Cache several cues with audioTimes belonging to engineA's clock origin (currentTime=10).
     // If these were replayed on the engineB origin (currentTime=0.5), all would clamp to 0.505.
     const staleCues = [
-      { audioTime: 15, phaseDurationSec: 4, kind: 'in' as const },
-      { audioTime: 25, phaseDurationSec: 6, kind: 'out' as const },
-      { audioTime: 35, phaseDurationSec: 4, kind: 'in' as const },
+      { audioTime: 15, phaseDurationSec: 4, kind: 'inhale' as const },
+      { audioTime: 25, phaseDurationSec: 6, kind: 'exhale' as const },
+      { audioTime: 35, phaseDurationSec: 4, kind: 'inhale' as const },
     ]
     act(() => { result.current.topUpLookahead(staleCues) })
 

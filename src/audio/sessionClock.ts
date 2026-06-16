@@ -26,17 +26,18 @@
 //     External consumers see only the read-only interface and cannot reach
 //     notifySuspended.
 
+import type { BreathPhase } from '../domain/settings'
+
 /**
  * Closed catalog of cue kinds the engine and any lookahead scheduler can dispatch.
  *
  * The catalog is closed — adding a new kind is an interface change visible to
- * every scheduler. The `'in'` and `'out'` variants carry `phaseDurationSec`
+ * every scheduler. The per-phase variants (`BreathPhase`) carry `phaseDurationSec`
  * because the per-cue builders need it; timbre is NOT a cue field — the engine
  * resolves it from its closed-over `sessionTimbre` at dispatch time.
  */
 export type Cue =
-  | { kind: 'in'; phaseDurationSec: number }
-  | { kind: 'out'; phaseDurationSec: number }
+  | { kind: BreathPhase; phaseDurationSec: number }
   | { kind: 'lead-in-tick' }
   | { kind: 'end-chord' }
 

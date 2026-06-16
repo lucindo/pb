@@ -8,10 +8,8 @@ export interface BuildSetupCardSummaryArgs {
 }
 
 // Maps the practice-settings viewmodel into pre-formatted SetupCard items using
-// the form labels + units. Returns null when the card should not render: hidden
-// during a running session (the extend-duration callback stays retained but
-// unwired — see PracticeSettingsView) and on Complete so the completion panel
-// reads alone.
+// the form labels. Returns null when the card should not render: hidden during a
+// running session and on Complete so the completion panel reads alone.
 export function buildSetupCardSummary({
   settings,
   practice,
@@ -21,15 +19,16 @@ export function buildSetupCardSummary({
   const f = practice.settingsForm
   const s = settings.settings
   return [
-    { id: 'bpm', label: f.bpmLabel, value: `${String(s.bpm)} ${f.bpmUnit}` },
-    { id: 'ratio', label: f.ratioLabel, value: s.ratio },
     {
-      id: 'duration',
-      label: f.durationLabel,
-      value:
-        s.durationMinutes === 'open-ended'
-          ? f.openEndedLabel
-          : `${String(s.durationMinutes)} ${f.minutesUnit}`,
+      id: 'pattern',
+      label: f.patternLabel,
+      value: `${String(s.inhale)}·${String(s.holdIn)}·${String(s.exhale)}·${String(s.holdOut)}`,
+    },
+    { id: 'scale', label: f.scaleLabel, value: `×${String(s.multiplier)}` },
+    {
+      id: 'rounds',
+      label: f.roundsLabel,
+      value: s.rounds === 'open-ended' ? f.openEndedLabel : String(s.rounds),
     },
   ]
 }

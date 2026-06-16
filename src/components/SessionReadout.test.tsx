@@ -8,17 +8,16 @@ import { UI_STRINGS } from '../content/strings'
 import type { UiStrings } from '../content/strings'
 
 const EN_STRINGS_FIXTURE = UI_STRINGS.en
-const EN_FORM_FIXTURE = EN_STRINGS_FIXTURE.practice.settingsForm
 
-// Sample frame with a non-null remainingSec for timed session scenarios.
-// 600 sec remaining → formatDuration renders "10:00".
+// 600 sec remaining → "10:00"; round 3 of 10 → secondary "3/10".
 const sampleFrame: SessionFrame = {
-  phase: 'in',
-  phaseLabel: 'In',
+  phase: 'inhale',
+  phaseIndex: 0,
+  phaseProgress: 0,
+  round: 3,
+  totalRounds: 10,
   elapsedSec: 0,
   remainingSec: 600,
-  phaseProgress: 0,
-  cycleIndex: 0,
   isComplete: false,
 }
 
@@ -28,28 +27,14 @@ interface RenderReadoutProps {
   status?: 'idle' | 'running' | 'complete'
   showCompletionHeadline?: boolean
   strings?: UiStrings['practice']['readout']
-  bpm?: number
-  ratio?: string
 }
 
 function renderReadout(props: RenderReadoutProps = {}) {
   const strings = props.strings ?? EN_STRINGS_FIXTURE.practice.readout
   const frame = props.frame ?? null
-  const bpm = props.bpm ?? 5.5
-  const ratio = props.ratio ?? '40:60'
-  const bpmUnit = EN_FORM_FIXTURE.bpmUnit
 
   if (props.mode === 'lead-in') {
-    return render(
-      <SessionReadout
-        mode="lead-in"
-        frame={frame}
-        strings={strings}
-        bpm={bpm}
-        ratio={ratio}
-        bpmUnit={bpmUnit}
-      />,
-    )
+    return render(<SessionReadout mode="lead-in" frame={frame} strings={strings} />)
   }
 
   return render(
@@ -59,18 +44,20 @@ function renderReadout(props: RenderReadoutProps = {}) {
       status={props.status ?? 'idle'}
       showCompletionHeadline={props.showCompletionHeadline ?? false}
       strings={strings}
-      bpm={bpm}
-      ratio={ratio}
-      bpmUnit={bpmUnit}
     />,
   )
 }
 
 describe('SessionReadout', () => {
-  it('lead-in mode renders the time as primary and the pace as secondary', () => {
+  it('lead-in mode renders the time as primary and the round counter as secondary', () => {
     renderReadout({ mode: 'lead-in', frame: sampleFrame })
     expect(screen.getByText('10:00')).toBeInTheDocument()
-    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
+    expect(screen.getByText('3/10')).toBeInTheDocument()
+  })
+
+  it('renders the infinity glyph for an open-ended round total', () => {
+    renderReadout({ mode: 'session', status: 'running', frame: { ...sampleFrame, totalRounds: 'open-ended' } })
+    expect(screen.getByText('3/∞')).toBeInTheDocument()
   })
 
   it('lead-in mode does not show the completion headline (owned by session mode)', () => {
@@ -79,11 +66,7 @@ describe('SessionReadout', () => {
   })
 
   it('session mode with showCompletionHeadline renders the headline and hides the time', () => {
-    renderReadout({
-      frame: sampleFrame,
-      status: 'complete',
-      showCompletionHeadline: true,
-    })
+    renderReadout({ frame: sampleFrame, status: 'complete', showCompletionHeadline: true })
     expect(screen.getByText(EN_STRINGS_FIXTURE.practice.readout.sessionComplete)).toBeInTheDocument()
     expect(screen.queryByText('10:00')).not.toBeInTheDocument()
   })
@@ -92,17 +75,10 @@ describe('SessionReadout', () => {
     const { container } = renderReadout({ status: 'idle', frame: null })
     expect(container.firstChild).toBeNull()
   })
-})
 
-describe('SessionReadout — secondary content', () => {
-  it('Pattern Breathing frame (no currentBpm) renders "{bpm} BPM · {ratio}" in the secondary', () => {
-    renderReadout({ frame: sampleFrame, status: 'running', bpm: 5.5, ratio: '40:60' })
-    expect(screen.getByText(`5.5 ${EN_FORM_FIXTURE.bpmUnit} · 40:60`)).toBeInTheDocument()
-  })
-
-  it('a completed session renders only the headline, no time / secondary content', () => {
+  it('a completed session renders only the headline, no time / round counter', () => {
     renderReadout({ frame: sampleFrame, status: 'complete', showCompletionHeadline: true })
     expect(screen.queryByText('10:00')).not.toBeInTheDocument()
-    expect(screen.queryByText(/5\.5/)).not.toBeInTheDocument()
+    expect(screen.queryByText('3/10')).not.toBeInTheDocument()
   })
 })

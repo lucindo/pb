@@ -7,8 +7,8 @@ import type {
   BreathingSessionPhase,
   LeadInDigit,
   LocaleId,
+  PatternSettings,
   SessionFrame,
-  SessionSettings,
   SessionStatus,
 } from '../domain'
 import type { PersistedStats } from '../storage'
@@ -68,11 +68,10 @@ export type AppPracticeSessionViewModel = {
 }
 
 export type AppPracticeSettingsViewModel = {
-  settings: SessionSettings
+  settings: PatternSettings
   isRunning: boolean
   isComplete: boolean
-  onChange(this: void, settings: SessionSettings): void
-  onExtendDuration(this: void, durationMinutes: number): void
+  onChange(this: void, settings: PatternSettings): void
 }
 
 // Stats snapshot: refreshed from disk when Settings opens, updated optimistically on reset.
@@ -124,8 +123,6 @@ export interface BreathingSessionViewState {
   liveFrame: SessionFrame | null
   status: SessionStatus
   inSessionView: boolean
-  // Selected settings — drive the pace caption (X BPM · ratio).
-  selectedSettings: SessionSettings
 }
 
 export interface CreatePracticeSessionViewModelArgs {
@@ -142,19 +139,16 @@ export function createPracticeSessionViewModel({
     liveFrame: breathing.liveFrame,
     status: breathing.status,
     inSessionView: breathing.inSessionView,
-    bpm: breathing.selectedSettings.bpm,
-    ratio: breathing.selectedSettings.ratio,
   })
 
   return { presentation }
 }
 
 export interface PracticeSettingsSources {
-  settings: SessionSettings
+  settings: PatternSettings
   isRunning: boolean
   isComplete: boolean
-  onChange(this: void, settings: SessionSettings): void
-  onExtendDuration(this: void, durationMinutes: number): void
+  onChange(this: void, settings: PatternSettings): void
 }
 
 export function createPracticeSettingsViewModel(
@@ -165,7 +159,6 @@ export function createPracticeSettingsViewModel(
     isRunning: sources.isRunning,
     isComplete: sources.isComplete,
     onChange: sources.onChange,
-    onExtendDuration: sources.onExtendDuration,
   }
 }
 

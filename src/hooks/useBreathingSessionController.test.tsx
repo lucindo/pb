@@ -6,7 +6,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import { DEFAULT_PATTERN_SETTINGS } from '../domain/settings'
 import type { UseWakeLock } from './useWakeLock'
 import { useBreathingSessionController } from './useBreathingSessionController'
 import * as useAudioCuesModule from './useAudioCues'
@@ -31,7 +31,7 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
   it('renders without crashing in idle state', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -50,7 +50,7 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
   it('exposes session.reanchorSessionClock as a callable function', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -72,17 +72,17 @@ describe('useBreathingSessionController (Phase 51 Plan 02 — D-05 wiring smoke 
   it('setSelectedSettings updates engine state without throwing', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
 
-    const nextSettings = { ...DEFAULT_SETTINGS, bpm: 7 }
+    const nextSettings = { ...DEFAULT_PATTERN_SETTINGS, inhale: 7 }
     act(() => {
       result.current.setSelectedSettings(nextSettings)
     })
 
-    expect(result.current.session.state.selectedSettings.bpm).toBe(7)
+    expect(result.current.session.state.selectedSettings.inhale).toBe(7)
 
     unmount()
   })
@@ -105,7 +105,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   it('controller wires top-up trigger: session.currentFrame changes call audio.topUpLookahead', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -120,7 +120,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   it('phase guard: top-up effect is no-op during lead-in phase', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -138,7 +138,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     // This test verifies the controller renders cleanly after the replacement
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -150,7 +150,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   it('top-up wiring: controller uses walkFutureCues to compute cue list on tick', () => {
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -164,7 +164,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
     // Behavioral proxy: renders without import errors
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -176,7 +176,7 @@ describe('useBreathingSessionController — Phase 52 D-04/D-14 top-up trigger', 
   // boundary itself (the Pattern Breathing completion boundary) is
   // covered behaviorally in sessionAudio.test.ts; this is a render smoke test.
   it('timed session: controller renders through the top-up effect without error', () => {
-    const timedSettings = { ...DEFAULT_SETTINGS, durationMinutes: 5 as const }
+    const timedSettings = { ...DEFAULT_PATTERN_SETTINGS, rounds: 5 as const }
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
         initialSettings: timedSettings,
@@ -229,7 +229,7 @@ describe('Phase 52 Plan 06 CR-01: cancel-then-reschedule ordering (dispatch-site
 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -308,7 +308,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -332,7 +332,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     topUpLookahead.mockClear()
 
     // Trigger a session.currentFrame advance by advancing past a phase boundary.
-    // At DEFAULT_SETTINGS (5.5 BPM, 40:60), in-phase is ~4.36s. Advancing by 5.1s
+    // At DEFAULT_PATTERN_SETTINGS (5.5 BPM, 40:60), in-phase is ~4.36s. Advancing by 5.1s
     // crosses the first In→Out boundary, which changes session.currentFrame and
     // triggers the top-up effect dep (session.currentFrame identity changes at phase boundaries).
     await act(async () => {
@@ -362,7 +362,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -379,7 +379,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
     topUpLookahead.mockClear()
 
     // TWO frame advances: each advance crosses a phase boundary (In→Out, Out→In).
-    // At DEFAULT_SETTINGS (5.5 BPM), in-phase ~4.36s, out-phase ~6.55s.
+    // At DEFAULT_PATTERN_SETTINGS (5.5 BPM), in-phase ~4.36s, out-phase ~6.55s.
     // Advance 5.1s per step to reliably cross one phase boundary per step.
     await act(async () => { vi.advanceTimersByTime(5100); await Promise.resolve() })
     await act(async () => { vi.advanceTimersByTime(7000); await Promise.resolve() })
@@ -404,7 +404,7 @@ describe('Phase 52 CR-01-FIX: controller top-up effect calls cancelFutureCues be
 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )
@@ -452,7 +452,7 @@ describe('useBreathingSessionController — lead-in→running audioAnchor handof
 
     const { result, unmount } = renderHook(() =>
       useBreathingSessionController({
-        initialSettings: DEFAULT_SETTINGS,
+        initialSettings: DEFAULT_PATTERN_SETTINGS,
         wakeLock: makeWakeLock(),
       }),
     )

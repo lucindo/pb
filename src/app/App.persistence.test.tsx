@@ -18,7 +18,14 @@ import { STATE_KEY } from '../storage'
 // fireEvent + act(async () => { ... }) is sufficient for all persistence assertions here.
 
 interface SeedOpts {
-  settings?: { bpm?: number; ratio?: string; durationMinutes?: number | 'open-ended' }
+  settings?: {
+    inhale?: number
+    holdIn?: number
+    exhale?: number
+    holdOut?: number
+    multiplier?: number
+    rounds?: number | 'open-ended'
+  }
   mute?: boolean
   stats?: {
     totalSessions?: number
@@ -57,13 +64,13 @@ afterEach(() => {
 })
 
 describe('LOCL-01 — restoration on mount', () => {
-  it('restores persisted settings (bpm, ratio, durationMinutes) — D-15', () => {
-    seedEnvelope({ settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 } })
+  it('restores persisted pattern settings — D-15', () => {
+    seedEnvelope({ settings: { inhale: 4, holdIn: 2, exhale: 6, holdOut: 0, multiplier: 2, rounds: 5 } })
     render(<App />)
-    // SettingsStepper formats BPM as "4 BPM" and Duration as "5 min"
-    expect(screen.getByText('4 BPM')).toBeInTheDocument()
-    expect(screen.getByText('50:50')).toBeInTheDocument()
-    expect(screen.getByText('5 min')).toBeInTheDocument()
+    // The SetupCard summary shows pattern · scale · rounds.
+    expect(screen.getByText('4·2·6·0')).toBeInTheDocument()
+    expect(screen.getByText('×2')).toBeInTheDocument()
+    expect(screen.getByText('5')).toBeInTheDocument()
   })
 
   it('restores persisted mute=true (D-14)', () => {
@@ -75,9 +82,10 @@ describe('LOCL-01 — restoration on mount', () => {
 
   it('falls back to defaults when nothing is stored (D-07, D-15)', () => {
     render(<App />)
-    expect(screen.getByText('5.5 BPM')).toBeInTheDocument()
-    expect(screen.getByText('40:60')).toBeInTheDocument()
-    expect(screen.getByText('10 min')).toBeInTheDocument()
+    // Default Box-4 = 1·1·1·1 ×4, 10 rounds.
+    expect(screen.getByText('1·1·1·1')).toBeInTheDocument()
+    expect(screen.getByText('×4')).toBeInTheDocument()
+    expect(screen.getByText('10')).toBeInTheDocument()
     // Default mute is false — aria-label "Mute audio cues"
     expect(screen.getByRole('button', { name: 'Mute audio cues' })).toBeInTheDocument()
   })
@@ -113,35 +121,34 @@ describe('LOCL-01 — persistence on change', () => {
 
   it('persists settings change to the envelope settings field (LOCL-01 / CR-01)', async () => {
     render(<App />)
-    // Click the BPM decrease button — default is 5.5 BPM; decrease goes to 5 BPM.
-    const bpmGroup = settingGroup('BPM')
-    fireEvent.click(within(bpmGroup).getByRole('button', { name: 'Decrease BPM' }))
+    // Decrease Rounds — default is 10; decrease goes to 9.
+    const roundsGroup = settingGroup('Rounds')
+    fireEvent.click(within(roundsGroup).getByRole('button', { name: 'Decrease Rounds' }))
     await act(async () => { await Promise.resolve() })
     const env = readRawEnvelope()
     // savePatternBreathingSettings writes the flat top-level settings field.
-    expect(settingsOf(env)).toMatchObject({ bpm: 5 })
+    expect(settingsOf(env)).toMatchObject({ rounds: 9 })
   })
 })
 
 describe('LOCL-02 — stats record on each end path', () => {
   it('records a session when timed completion fires (D-01 completion bypass)', async () => {
-    seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 5 } })
+    // 1 round of Box-4 (16s) completes quickly; completion records regardless of the 30s floor.
+    seedEnvelope({ settings: { rounds: 1 } })
     render(<App />)
     await startAndAdvancePastLeadIn()
-    // Run past 5 minutes — the engine flips to 'complete'.
-    // Advance an extra minute so the surrounding cycle finishes.
-    await advanceTime(6 * 60_000)
+    await advanceTime(60_000)
     const env = readRawEnvelope()
     const stats = statsOf(env)
     expect(stats?.['totalSessions']).toBe(1)
-    // elapsed is at least 300s for a 5-min session
-    expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(300)
+    // 1 round of Box-4 = 16s.
+    expect(stats?.['totalElapsedSeconds']).toBeGreaterThanOrEqual(15)
     expect(stats?.['lastSessionAtMs']).toEqual(expect.any(Number))
   })
 
   it('records a session on manual End when elapsed >= 30s (D-04 + D-01 threshold)', async () => {
     // Open-ended duration so manual End fires directly without modal
-    seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' } })
+    seedEnvelope({ settings: { rounds: 'open-ended' } })
     render(<App />)
     await startAndAdvancePastLeadIn()
     // Advance well past 35s so the final rAF lands at or above the 35s mark.
@@ -158,7 +165,7 @@ describe('LOCL-02 — stats record on each end path', () => {
   })
 
   it('does NOT record a sub-30s manual End (D-01 threshold)', async () => {
-    seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' } })
+    seedEnvelope({ settings: { rounds: 'open-ended' } })
     render(<App />)
     await startAndAdvancePastLeadIn()
     await advanceTime(10_000)  // 10s elapsed — below 30s threshold
@@ -187,7 +194,7 @@ describe('LOCL-02 — stats record on each end path', () => {
   })
 
   it('does NOT double-write when cleanup effect fires after manual End (Pitfall 1)', async () => {
-    seedEnvelope({ settings: { bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' } })
+    seedEnvelope({ settings: { rounds: 'open-ended' } })
     render(<App />)
     await startAndAdvancePastLeadIn()
     await advanceTime(35_000)
@@ -202,11 +209,11 @@ describe('LOCL-02 — stats record on each end path', () => {
 
 describe('PRACTICE-02 — settings survive remount', () => {
   it('persisted settings survive a reload', () => {
-    seedEnvelope({ settings: { bpm: 4, ratio: '50:50', durationMinutes: 5 } })
+    seedEnvelope({ settings: { inhale: 4, holdIn: 2, exhale: 6, holdOut: 0, multiplier: 2, rounds: 5 } })
     render(<App />)
-    expect(screen.getByText('4 BPM')).toBeInTheDocument()
-    expect(screen.getByText('50:50')).toBeInTheDocument()
-    expect(screen.getByText('5 min')).toBeInTheDocument()
+    expect(screen.getByText('4·2·6·0')).toBeInTheDocument()
+    expect(screen.getByText('×2')).toBeInTheDocument()
+    expect(screen.getByText('5')).toBeInTheDocument()
   })
 })
 

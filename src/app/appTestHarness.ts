@@ -2,7 +2,16 @@ import { act, fireEvent, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 
 import { LEAD_IN_DURATION_MS } from '../audio/audioEngine'
+import { DEFAULT_PATTERN_SETTINGS, type PatternSettings } from '../domain'
 import { STATE_KEY } from '../storage'
+
+// Seed a PatternSettings envelope before render(<App />) so a test can choose a
+// timed (rounds: N) or open-ended (rounds: 'open-ended') session, or a short
+// pattern for fast completion, without driving the settings form.
+export function seedSettings(overrides: Partial<PatternSettings> = {}): void {
+  const settings: PatternSettings = { ...DEFAULT_PATTERN_SETTINGS, ...overrides }
+  window.localStorage.setItem(STATE_KEY, JSON.stringify({ version: 1, settings }))
+}
 
 export const APP_TEST_NOW = new Date('2026-05-09T00:00:00.000Z')
 export const APP_LEAD_IN_MS = LEAD_IN_DURATION_MS

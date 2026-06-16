@@ -1,33 +1,23 @@
 // src/storage/settings.ts
 //
-// Per-field validate-and-fallback for settings + mute. Coercers are NON-THROWING
-// (cousin to validateSettings in src/domain/settings.ts which throws). Per-field
-// policy means a single drifted field does NOT discard the rest of the envelope.
+// Validate-and-fallback for the persisted pattern settings + mute. The pattern
+// coercer (validatePatternSettings) is per-field and NON-THROWING, so a single
+// drifted field does not discard the rest, and a legacy resonance envelope
+// coerces cleanly to the pattern defaults.
 
-import {
-  DEFAULT_SETTINGS,
-  isValidBpm,
-  isValidRatio,
-  isValidDuration,
-  type SessionSettings,
-} from '../domain/settings'
+import { validatePatternSettings, type PatternSettings } from '../domain/settings'
 
-import { asRecord, readEnvelope, writeEnvelope, type StorageDeps } from './storage'
+import { readEnvelope, writeEnvelope, type StorageDeps } from './storage'
 
-export function coerceSettings(raw: unknown): SessionSettings {
-  const r = asRecord(raw)
-  return {
-    bpm:             isValidBpm(r.bpm)           ? r.bpm             : DEFAULT_SETTINGS.bpm,
-    ratio:           isValidRatio(r.ratio)       ? r.ratio           : DEFAULT_SETTINGS.ratio,
-    durationMinutes: isValidDuration(r.durationMinutes) ? r.durationMinutes : DEFAULT_SETTINGS.durationMinutes,
-  }
+export function coerceSettings(raw: unknown): PatternSettings {
+  return validatePatternSettings(raw)
 }
 
-export function loadSettings(deps: StorageDeps = {}): SessionSettings {
+export function loadSettings(deps: StorageDeps = {}): PatternSettings {
   return coerceSettings(readEnvelope(deps).settings)
 }
 
-export function savePatternBreathingSettings(settings: SessionSettings, deps: StorageDeps = {}): void {
+export function savePatternBreathingSettings(settings: PatternSettings, deps: StorageDeps = {}): void {
   const env = readEnvelope(deps)
   writeEnvelope({ ...env, settings }, deps)
 }

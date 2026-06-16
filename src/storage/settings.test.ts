@@ -8,7 +8,9 @@ import {
   savePatternBreathingSettings,
 } from './settings'
 import { STATE_KEY } from './storage'
-import { DEFAULT_SETTINGS, type SessionSettings } from '../domain/settings'
+import { DEFAULT_PATTERN_SETTINGS, type PatternSettings } from '../domain/settings'
+
+const valid: PatternSettings = { inhale: 4, holdIn: 7, exhale: 8, holdOut: 0, multiplier: 1, rounds: 5 }
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -19,97 +21,38 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('coerceSettings (D-15)', () => {
-  it('returns DEFAULT_SETTINGS when raw is null / undefined / non-object', () => {
-    expect(coerceSettings(null)).toEqual(DEFAULT_SETTINGS)
-    expect(coerceSettings(undefined)).toEqual(DEFAULT_SETTINGS)
-    expect(coerceSettings(42)).toEqual(DEFAULT_SETTINGS)
-    expect(coerceSettings('str')).toEqual(DEFAULT_SETTINGS)
-    expect(coerceSettings([1, 2, 3])).toEqual(DEFAULT_SETTINGS)
+// coerceSettings delegates to validatePatternSettings (covered in depth by
+// patternSettings.test.ts); here we pin the storage-boundary behavior.
+describe('coerceSettings', () => {
+  it('returns defaults for null / non-object / legacy resonance envelopes', () => {
+    expect(coerceSettings(null)).toEqual(DEFAULT_PATTERN_SETTINGS)
+    expect(coerceSettings(42)).toEqual(DEFAULT_PATTERN_SETTINGS)
+    expect(coerceSettings({})).toEqual(DEFAULT_PATTERN_SETTINGS)
+    expect(coerceSettings({ bpm: 5.5, ratio: '40:60', durationMinutes: 10 })).toEqual(DEFAULT_PATTERN_SETTINGS)
   })
 
-  it('returns DEFAULT_SETTINGS when raw is empty object', () => {
-    expect(coerceSettings({})).toEqual(DEFAULT_SETTINGS)
-  })
-
-  it('preserves all valid fields verbatim', () => {
-    const valid: SessionSettings = { ...DEFAULT_SETTINGS, bpm: 4, ratio: '50:50', durationMinutes: 5 }
+  it('preserves a valid pattern verbatim', () => {
     expect(coerceSettings(valid)).toEqual(valid)
   })
 
-  it('accepts open-ended duration', () => {
-    expect(coerceSettings({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' }))
-      .toMatchObject({ bpm: 5.5, ratio: '40:60', durationMinutes: 'open-ended' })
-  })
-
-  it('falls back PER FIELD when bpm is invalid (D-15) — keeps ratio + duration', () => {
-    expect(coerceSettings({ bpm: 99, ratio: '50:50', durationMinutes: 5 }))
-      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, ratio: '50:50', durationMinutes: 5 })
-  })
-
-  it('falls back PER FIELD when ratio is invalid (D-15) — keeps bpm + duration', () => {
-    expect(coerceSettings({ bpm: 4, ratio: '11:22', durationMinutes: 5 }))
-      .toMatchObject({ bpm: 4, ratio: DEFAULT_SETTINGS.ratio, durationMinutes: 5 })
-  })
-
-  it('falls back PER FIELD when duration is invalid (D-15) — keeps bpm + ratio', () => {
-    expect(coerceSettings({ bpm: 4, ratio: '50:50', durationMinutes: 7 }))
-      .toMatchObject({ bpm: 4, ratio: '50:50', durationMinutes: DEFAULT_SETTINGS.durationMinutes })
-  })
-
-  it('rejects bpm of wrong type (string) and falls back', () => {
-    expect(coerceSettings({ bpm: '5.5', ratio: '40:60', durationMinutes: 10 }))
-      .toMatchObject({ bpm: DEFAULT_SETTINGS.bpm, ratio: '40:60', durationMinutes: 10 })
-  })
-
-  it('rejects bpm = NaN / Infinity', () => {
-    expect(coerceSettings({ bpm: NaN, ratio: '40:60', durationMinutes: 10 }).bpm).toBe(DEFAULT_SETTINGS.bpm)
-    expect(coerceSettings({ bpm: Infinity, ratio: '40:60', durationMinutes: 10 }).bpm).toBe(DEFAULT_SETTINGS.bpm)
-  })
-
-  it('does not throw when raw has prototype-polluting keys (T-04-02 mitigation)', () => {
-    // Prototype-pollution mitigation: we only read three known keys, never spread `raw`
-    // into an object we use as a prototype. Test that a __proto__ key in the raw doesn't
-    // propagate to the returned object.
-    const polluted: unknown = JSON.parse('{"bpm":4,"ratio":"40:60","durationMinutes":10,"__proto__":{"polluted":true}}')
-    const out = coerceSettings(polluted) as unknown as Record<string, unknown>
-    expect(out.polluted).toBeUndefined()
-    expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
-  })
-
-  // coerceSettings reads only the 3 known keys; any extra drifted fields are dropped.
-  it('returns exactly { bpm, ratio, durationMinutes } — extra fields dropped', () => {
-    const rawWithExtraFields = {
-      bpm: 5.5,
-      ratio: '40:60',
-      durationMinutes: 10,
-      mode: 'stretch',
-      initialBpm: 6,
-    }
-    const result = coerceSettings(rawWithExtraFields)
-    expect(Object.keys(result).sort()).toEqual(['bpm', 'durationMinutes', 'ratio'])
-    expect(result.bpm).toBe(5.5)
-    expect(result.ratio).toBe('40:60')
-    expect(result.durationMinutes).toBe(10)
-    const asAny = result as unknown as Record<string, unknown>
-    expect(asAny['mode']).toBeUndefined()
-    expect(asAny['initialBpm']).toBeUndefined()
+  it('returns exactly the six pattern keys — extra fields dropped', () => {
+    const result = coerceSettings({ ...valid, mode: 'stretch', initialBpm: 6 })
+    expect(Object.keys(result).sort()).toEqual(['exhale', 'holdIn', 'holdOut', 'inhale', 'multiplier', 'rounds'])
   })
 })
 
-describe('coerceMute (D-14 / D-07)', () => {
-  it('returns true when raw is true', () => { expect(coerceMute(true)).toBe(true) })
-  it('returns false when raw is false', () => { expect(coerceMute(false)).toBe(false) })
-  it('returns false when raw is null / undefined / "true" / 1 (D-15 type check)', () => {
+describe('coerceMute', () => {
+  it('returns the boolean verbatim, else false', () => {
+    expect(coerceMute(true)).toBe(true)
+    expect(coerceMute(false)).toBe(false)
     expect(coerceMute(null)).toBe(false)
-    expect(coerceMute(undefined)).toBe(false)
     expect(coerceMute('true')).toBe(false)
     expect(coerceMute(1)).toBe(false)
   })
 })
 
 describe('loadMute / saveMute round-trip', () => {
-  it('returns false when nothing is stored (D-07 seed)', () => {
+  it('returns false when nothing is stored', () => {
     expect(loadMute()).toBe(false)
   })
 
@@ -121,12 +64,11 @@ describe('loadMute / saveMute round-trip', () => {
   })
 
   it('preserves settings + mute when saving mute (envelope merge)', () => {
-    savePatternBreathingSettings({ ...DEFAULT_SETTINGS, bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    savePatternBreathingSettings(valid)
     saveMute(true)
-    // Reason: STATE_KEY is always present after saveMute; non-null asserted by storage contract.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const raw = JSON.parse(window.localStorage.getItem(STATE_KEY)!) as Record<string, unknown>
-    expect(raw['settings']).toMatchObject({ bpm: 4, ratio: '40:60', durationMinutes: 5 })
+    expect(raw['settings']).toMatchObject(valid)
     expect(raw).toMatchObject({ mute: true })
   })
 })

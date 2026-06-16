@@ -36,6 +36,7 @@ export interface UiStrings {
     readonly breathing: {
       readonly inhale: string
       readonly exhale: string
+      readonly hold: string
       readonly breathingShapeAriaLabel: string
       readonly leadInAriaLabel: (digit: number) => string
     }
@@ -50,12 +51,22 @@ export interface UiStrings {
     }
     readonly settingsForm: {
       readonly ariaLabel: string
-      readonly bpmLabel: string
-      readonly ratioLabel: string
-      readonly durationLabel: string
+      readonly presetLabel: string
+      readonly presets: {
+        readonly 'box-4': string
+        readonly weiss: string
+        readonly '1-4-2': string
+        readonly custom: string
+      }
+      readonly patternLabel: string
+      readonly inhaleLabel: string
+      readonly holdInLabel: string
+      readonly exhaleLabel: string
+      readonly holdOutLabel: string
+      readonly scaleLabel: string
+      readonly roundsLabel: string
+      readonly secondsUnit: string
       readonly openEndedLabel: string
-      readonly bpmUnit: string
-      readonly minutesUnit: string
       readonly stepper: {
         readonly fieldAriaLabel: (label: string) => string
         readonly decreaseLabel: (label: string) => string
@@ -163,6 +174,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       breathing: {
         inhale: 'In',
         exhale: 'Out',
+        hold: 'Hold',
         breathingShapeAriaLabel: 'Breathing shape',
         leadInAriaLabel: (d) => `Lead-in ${String(d)}`,
       },
@@ -177,12 +189,22 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       settingsForm: {
         ariaLabel: 'Session settings',
-        bpmLabel: 'BPM',
-        ratioLabel: 'Ratio',
-        durationLabel: 'Duration',
+        presetLabel: 'Preset',
+        presets: {
+          'box-4': 'Box-4',
+          weiss: '4-7-8',
+          '1-4-2': '1-4-2',
+          custom: 'Custom',
+        },
+        patternLabel: 'Pattern',
+        inhaleLabel: 'In',
+        holdInLabel: 'Hold in',
+        exhaleLabel: 'Out',
+        holdOutLabel: 'Hold out',
+        scaleLabel: 'Scale',
+        roundsLabel: 'Rounds',
+        secondsUnit: 's',
         openEndedLabel: '∞',
-        bpmUnit: 'BPM',
-        minutesUnit: 'min',
         stepper: {
           fieldAriaLabel: (l) => l,
           decreaseLabel: (l) => `Decrease ${l}`,
@@ -286,6 +308,7 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       breathing: {
         inhale: 'Puxa',
         exhale: 'Solta',
+        hold: 'Prende',
         breathingShapeAriaLabel: 'Forma de respiração',
         leadInAriaLabel: (d) => `Contagem regressiva ${String(d)}`,
       },
@@ -300,12 +323,22 @@ export const UI_STRINGS: Readonly<Record<LocaleId, UiStrings>> = {
       },
       settingsForm: {
         ariaLabel: 'Configurações da sessão',
-        bpmLabel: 'RPM',
-        ratioLabel: 'Proporção',
-        durationLabel: 'Duração',
+        presetLabel: 'Predefinição',
+        presets: {
+          'box-4': 'Box-4',
+          weiss: '4-7-8',
+          '1-4-2': '1-4-2',
+          custom: 'Personalizado',
+        },
+        patternLabel: 'Padrão',
+        inhaleLabel: 'Puxa',
+        holdInLabel: 'Prende (cheio)',
+        exhaleLabel: 'Solta',
+        holdOutLabel: 'Prende (vazio)',
+        scaleLabel: 'Escala',
+        roundsLabel: 'Ciclos',
+        secondsUnit: 's',
         openEndedLabel: '∞',
-        bpmUnit: 'RPM',
-        minutesUnit: 'min',
         stepper: {
           fieldAriaLabel: (l) => l,
           decreaseLabel: (l) => `Diminuir ${l}`,

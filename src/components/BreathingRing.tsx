@@ -68,10 +68,16 @@ interface RingBodyProps {
   strings: UiStrings['practice']['breathing']
 }
 
+function phaseLabelFor(phase: SessionFrame['phase'], strings: UiStrings['practice']['breathing']): string {
+  if (phase === 'inhale') return strings.inhale
+  if (phase === 'exhale') return strings.exhale
+  return strings.hold // both holds share the single Hold label
+}
+
 function RingBody({ frame, strings }: RingBodyProps) {
   const reducedMotion = usePrefersReducedMotion()
   const progress = Math.min(1, Math.max(0, frame.phaseProgress))
-  const phaseLabel = frame.phase === 'in' ? strings.inhale : strings.exhale
+  const phaseLabel = phaseLabelFor(frame.phase, strings)
 
   return (
     <RingContainer
@@ -163,14 +169,17 @@ function ProgressArcLayer({
   progress,
   reducedMotion,
 }: {
-  phase: 'in' | 'out'
+  phase: SessionFrame['phase']
   progress: number
   reducedMotion: boolean
 }) {
   const r = 49.7
   const south = 50 + r
   const north = 50 - r
-  const t = phase === 'in' ? progress : 1 - progress
+  // The arc tracks inhale (fills) and exhale (empties). Holds show the label only —
+  // their progress bar is a separate (deferred) treatment.
+  if (phase !== 'inhale' && phase !== 'exhale') return null
+  const t = phase === 'inhale' ? progress : 1 - progress
   const showArc = !reducedMotion && t > 0
 
   if (!showArc) return null
