@@ -50,6 +50,17 @@ interface PadEnvelope {
   releaseSec: number // gain ramps peak → 0 over the last releaseSec of the tone
 }
 
+// One built tone's node chain + its stop/cleanup timing — the buildToneNodes
+// return shape, shared with disconnectToneNodes and the end-chord voice list.
+interface ToneNodes {
+  osc: OscillatorNode
+  partialGain: GainNode
+  filter: BiquadFilterNode
+  envelope: GainNode
+  stopAt: number
+  cleanupAt: number
+}
+
 /**
  * Private helper: build a single oscillator → partialGain → filter → envelope chain.
  * Schedules the tone at `when` for `durationSec`, connects to `destination`, and
@@ -71,7 +82,7 @@ function buildToneNodes(
   preset: TimbrePreset,
   peakGain: number,
   envelopeSpec: number | PadEnvelope,
-): { osc: OscillatorNode; partialGain: GainNode; filter: BiquadFilterNode; envelope: GainNode; stopAt: number; cleanupAt: number } {
+): ToneNodes {
   const filter = audioCtx.createBiquadFilter()
   filter.type = 'lowpass'
   filter.frequency.value = preset.filterFreqHz
@@ -127,9 +138,7 @@ function buildToneNodes(
 // Disconnect a built tone's four nodes. Wrapped per-node so a node already
 // disconnected (by a prior 'ended' or cancel()) doesn't abort the rest — the
 // 'ended' listener and cancel() may both fire and both must be idempotent.
-function disconnectToneNodes(
-  t: { osc: OscillatorNode; partialGain: GainNode; filter: BiquadFilterNode; envelope: GainNode },
-): void {
+function disconnectToneNodes(t: ToneNodes): void {
   try { t.osc.disconnect() } catch { /* silent */ }
   try { t.partialGain.disconnect() } catch { /* silent */ }
   try { t.filter.disconnect() } catch { /* silent */ }
@@ -192,60 +201,40 @@ export function scheduleEndChord(
   masterEnvelope.gain.value = 1.0
   masterEnvelope.connect(destination)
 
-  let lastCleanupAt = 0
-  let lastOsc: OscillatorNode | null = null
-
-  // Collect voice nodes for cancel() closure.
-  const voiceOscs: OscillatorNode[] = []
-  const voicePartialGains: GainNode[] = []
-  const voiceFilters: BiquadFilterNode[] = []
-  const voiceEnvelopes: GainNode[] = []
-
+  // One entry per chord voice; each carries its full node chain for cancel().
+  const voices: ToneNodes[] = []
   for (const ratio of END_CHORD_RATIOS) {
     const t = buildToneNodes(
       audioCtx, preset.fundamentalHzOut * ratio, END_CHORD_DURATION_SEC, when,
       masterEnvelope, preset, END_CHORD_PEAK_GAIN,
       { attackSec: END_CHORD_ATTACK_SEC, releaseSec: END_CHORD_RELEASE_SEC },
     )
-    // Disconnect each chord tone's nodes on 'ended'
+    // Disconnect each chord tone's nodes on 'ended'.
     t.osc.addEventListener('ended', () => { disconnectToneNodes(t) }, { once: true })
-    voiceOscs.push(t.osc)
-    voicePartialGains.push(t.partialGain)
-    voiceFilters.push(t.filter)
-    voiceEnvelopes.push(t.envelope)
-    lastCleanupAt = t.cleanupAt
-    lastOsc = t.osc
+    voices.push(t)
   }
 
   // All three voices share the same stopAt (when + END_CHORD_DURATION_SEC), so
-  // any voice's 'ended' is safe for tearing down the shared master bus.
-  if (lastOsc !== null) {
-    lastOsc.addEventListener('ended', () => {
+  // the last voice's 'ended' is safe for tearing down the shared master bus.
+  const lastVoice = voices.at(-1)
+  if (lastVoice !== undefined) {
+    lastVoice.osc.addEventListener('ended', () => {
       try { masterEnvelope.disconnect() } catch { /* silent */ }
     }, { once: true })
   }
 
-  // cancel() — stop all voice oscillators + disconnect all nodes.
+  // cancel() — stop all voice oscillators + disconnect every node.
   // cancelScheduledValues on the master envelope discards pending automation.
   // Same try/catch posture as the 'ended' listeners above. The 'ended' listeners
   // and cancel() may both fire on the same voice; both must be safe (idempotent).
   const cancel = (): void => {
     masterEnvelope.gain.cancelScheduledValues(audioCtx.currentTime)
-    for (const osc of voiceOscs) {
-      try { osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
-      try { osc.disconnect() } catch { /* silent — node may already be disconnected */ }
-    }
-    for (const pg of voicePartialGains) {
-      try { pg.disconnect() } catch { /* silent — node may already be disconnected */ }
-    }
-    for (const f of voiceFilters) {
-      try { f.disconnect() } catch { /* silent — node may already be disconnected */ }
-    }
-    for (const ve of voiceEnvelopes) {
-      try { ve.disconnect() } catch { /* silent — node may already be disconnected */ }
+    for (const t of voices) {
+      try { t.osc.stop(audioCtx.currentTime) } catch { /* silent — osc may already be stopped */ }
+      disconnectToneNodes(t)
     }
     try { masterEnvelope.disconnect() } catch { /* silent — node may already be disconnected */ }
   }
 
-  return { envelope: masterEnvelope, scheduledAt: when, cleanupAt: lastCleanupAt, cancel }
+  return { envelope: masterEnvelope, scheduledAt: when, cleanupAt: lastVoice?.cleanupAt ?? 0, cancel }
 }
