@@ -15,7 +15,7 @@ export interface PatternPreset {
 export const PRESETS: readonly PatternPreset[] = [
   { id: 'box-4', shape: { inhale: 1, holdIn: 1, exhale: 1, holdOut: 1, multiplier: 4 } },
   { id: 'weiss', shape: { inhale: 4, holdIn: 7, exhale: 8, holdOut: 0, multiplier: 1 } },
-  { id: '1-4-2', shape: { inhale: 1, holdIn: 4, exhale: 2, holdOut: 0, multiplier: 1 } },
+  { id: '1-4-2', shape: { inhale: 1, holdIn: 4, exhale: 2, holdOut: 0, multiplier: 2 } },
 ]
 
 function shapeMatches(shape: PatternShape, s: PatternSettings): boolean {
