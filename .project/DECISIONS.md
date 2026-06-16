@@ -109,3 +109,34 @@ parameterization — there is no separate rate knob; rate is implied by the coun
 This is the spec that unblocks architecture-plan Step 3 (`'in'|'out'` → `BreathPhase`,
 `PatternSettings` across ~16 files). New app ⇒ no storage migration; stale `bpm`/`ratio`
 envelopes fail validation and fall to defaults.
+
+## D7 — Resolve SPEC open questions before Step 3
+
+**Q:** SPEC.md left six open questions (cue sound, multiplier label, phase
+wording, round counter, first-run default, long-hold UX). Which are settled?
+
+**A:** Five resolved; one (multiplier label) deferred but non-blocking.
+
+- **Default pattern (SPEC Q5):** **Box-4 = `1·1·1·1 ×4`, rounds `10`.** Also the
+  coercer fallback for corrupt/legacy envelopes (FR-12).
+- **Phase labels (SPEC Q3):** EN **In / Out / Hold**, PT-BR **Puxa / Solta /
+  Prende**. *Both* holds (hold-in, hold-out) share the single **Hold / Prende**
+  label — no separate "hold-in"/"hold-out" wording.
+- **Round counter (SPEC Q4):** **`X/N`** readout. Simpler than Navi's old
+  "Round X of N · phase" string (`FeedbackCount`).
+- **Hold cue sound (SPEC Q1):** each of the 4 timbres gains a **3rd flavor** — a
+  **sustained, bounded** tone (note-on at hold start, note-off at hold end),
+  designed to mix with that timbre's existing in/out cues. Same sound for
+  hold-in and hold-out. This refines D6: a hold is a **bounded sustained voice**,
+  not a fire-and-forget one-shot — the engine must schedule a note-off at the
+  phase boundary. Long holds drone flat (no fade/loop); the bound is the guard
+  (SPEC Q6 closed — no extra long-hold treatment).
+- **Hold visual (SPEC Q6):** inside the ring, below the "Hold" word, a thin
+  static track line filled L→R by a thicker line as the hold progresses — a
+  progress bar in the same visual language as the arc. Under
+  `prefers-reduced-motion` it is **static** (no smooth fill), matching the
+  In/Out arc (NFR-4).
+- **Multiplier label (SPEC Q2):** still **deferred** — internal name stays
+  `multiplier`. Candidates surfaced: Scale / Depth / Level / keep "Multiplier"
+  (avoid "Pace" — reads backwards). Not blocking; needed only when the settings
+  UI lands.
