@@ -86,7 +86,11 @@ Out of scope (deferred, tracked in Open Questions):
   current Ratio control).
 - **FR-18**: The settings surface SHALL present editable controls for all six fields,
   each clamped to its bounds (FR-8..FR-11), with `holdIn`/`holdOut` allowing `0` and
-  `rounds` allowing open-ended.
+  `rounds` allowing open-ended. The `multiplier` control is labeled **"Scale"**.
+- **FR-18a**: The `rounds` control SHALL be a toggle (default **on**) plus a number
+  stepper: toggle on ⇒ finite rounds in `[1,99]`; toggle off ⇒ `'open-ended'`. Stepping
+  the number above the max (99) SHALL also set `'open-ended'`. Open-ended SHALL render as
+  the infinity symbol `∞` in both the control and the readout.
 
 ### Session playback
 
@@ -232,9 +236,8 @@ All resolved in **D7** except #2 (deferred, non-blocking). See `.project/DECISIO
    flavor for holds (note-on at hold start, note-off at hold end). Same sound for both
    holds. This refines FR-20 — a hold is a bounded sustained voice, not a one-shot;
    the engine schedules a note-off at the phase boundary.
-2. **Multiplier UI label** — DEFERRED (non-blocking). Internal name stays `multiplier`;
-   candidates: Scale / Depth / Level / keep "Multiplier" (avoid "Pace"). Decide when the
-   settings UI lands.
+2. ~~**Multiplier UI label**~~ — RESOLVED (D7): **"Scale"** (internal name stays
+   `multiplier`).
 3. ~~**Phase label wording**~~ — RESOLVED (D7): EN In/Out/Hold, PT-BR Puxa/Solta/Prende;
    both holds share the single "Hold" label.
 4. ~~**Round counter**~~ — RESOLVED (D7): `X/N` readout.

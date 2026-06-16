@@ -136,7 +136,11 @@ wording, round counter, first-run default, long-hold UX). Which are settled?
   progress bar in the same visual language as the arc. Under
   `prefers-reduced-motion` it is **static** (no smooth fill), matching the
   In/Out arc (NFR-4).
-- **Multiplier label (SPEC Q2):** still **deferred** — internal name stays
-  `multiplier`. Candidates surfaced: Scale / Depth / Level / keep "Multiplier"
-  (avoid "Pace" — reads backwards). Not blocking; needed only when the settings
-  UI lands.
+- **Multiplier label (SPEC Q2):** **"Scale"** (EN). Internal name stays
+  `multiplier`; "Scale" is the user-facing control label.
+- **Rounds control (FR-17/FR-18):** a **toggle (default on)** + a number stepper.
+  Toggle on ⇒ finite rounds, user sets `1–99`. Toggle off ⇒ **open-ended**.
+  Stepping the number **up past the max (99)** also flips to open-ended — so the
+  toggle and the stepper are two paths to the same state, with open-ended sitting
+  just above 99. **Open-ended renders as the infinity symbol `∞`** wherever it
+  appears (control + readout).

@@ -116,16 +116,15 @@ pattern-breathing *functionality* is NOT built.
 `BreathPhase` + `PatternSettings` migration (~16 files: domain→audio→hooks→
 components→content→storage) against `.project/SPEC.md`. Add characterization tests at
 the domain plan/cue seam first (`/ds-tdd-mode`). All SPEC open questions resolved in
-**D7** except the multiplier UI *label* (deferred, non-blocking). Concrete decisions:
-default Box-4 `1·1·1·1 ×4` rounds 10; labels In/Out/Hold (Puxa/Solta/Prende, both holds
-"Hold"); `X/N` round readout; holds = **sustained** cue (note-on/off) + a 3rd timbre
-flavor each; hold visual = static-track progress bar below "Hold", static under
-reduced-motion.
+**D7**. Concrete decisions: default Box-4 `1·1·1·1 ×4` rounds 10; labels In/Out/Hold
+(Puxa/Solta/Prende, both holds "Hold"); Scale = multiplier label; `X/N` round readout
+with open-ended as `∞`; rounds control = toggle (default on) + stepper, off / step-past-99
+⇒ open-ended; holds = **sustained** cue (note-on/off) + a 3rd timbre flavor each; hold
+visual = static-track progress bar below "Hold", static under reduced-motion.
 
 **Open questions**
 - ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6/D7**.
-- Multiplier UI **label** — DEFERRED (D7), non-blocking; internal name `multiplier`.
-  Candidates: Scale / Depth / Level / keep "Multiplier". Decide before the settings UI.
+- ~~Multiplier UI label~~ — RESOLVED (D7): **"Scale"** (internal name `multiplier`).
 - App name and the breathing-*technique* name both resolve to "Pattern Breathing"
   (`practice.name`). The preset feature will likely surface a per-preset label on the
   settings sheet/header; revisit then. (D2 collapsed the two identical strings to one.)
