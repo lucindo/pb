@@ -113,9 +113,18 @@ sources; stripped ~83 ceremonial/restating comments and tightened buried WHY one
 (D4). All gates green throughout (`tsc -b`, `eslint`, 739 vitest tests). The app is still
 the resonance timer under the new name — pattern-breathing *functionality* is not built.
 
-**Next** — Decide: merge `chore/code-cleanup` → `main`, then start the pattern-breathing
-feature spec (`/ds-spec`) — **presets over one configurable engine** per D1. Tree clean,
-safe to clear.
+**Update (this session)** — On top of the cleanup pass, the branch now also carries:
+the `/ds-ts-review` mechanical fixes (`7d89ee2`), architecture Steps 1–2 (`71688f5`,
+`9ae0ffa` — split `useAudioCues`, extract `cueStore`), all four deferred function-length
+refactors (`aa01ac0`, `3a6f3b5`, `b2c67d6`, `91dd376`), and the Pattern Breathing spec +
+D6 model docs. All behavior-preserving; 739 tests green throughout. The app is still the
+resonance timer — pattern-breathing functionality is NOT built (that's Step 3 / the
+feature, gated on `.project/SPEC.md`).
+
+**Next** — Merge `chore/code-cleanup` → `main` (it's grown well past the original cleanup),
+then start the pattern-breathing feature: implement architecture **Step 3** (the
+`BreathPhase`/`PatternSettings` migration) against `.project/SPEC.md`, adding
+characterization tests at the domain plan/cue seam first.
 
 **Open questions**
 - ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6**: 4 phases
@@ -153,29 +162,23 @@ coupling, not structural rot. Sequenced steps:
 - Leave alone (no symptom): VM factories (D3), modal class strings (D4), storage
   barrel, audio sub-layering, `strings.ts`. No L3 move warranted at this scale.
 
-## Deferred refactors (from `/ds-ts-review`, full-repo pass)
+## Deferred refactors (from `/ds-ts-review`, full-repo pass) — ALL DONE
 
-All `minor`, none blocking. The repo is clean otherwise (no `any`/`enum`/`namespace`,
-no floating promises, validated storage boundaries, 739 tests green). Mechanical fixes
-already applied in `7d89ee2` (explicit `ReactElement`/`void` return types). Deferred —
-each changes structure or rests on judgment, so left for a focused pass:
+All `minor`, none blocking; all behavior-preserving with 739 tests green throughout.
+Mechanical return-type fixes in `7d89ee2`. The function-length / cast items below are
+now complete:
 
-- **`createAudioEngine` (`src/audio/audioEngine.ts:141`, ~350 lines)** — the highest-impact
-  refactor; the one genuinely large unit. Extract the engine method group and the
-  construction/resume-failure setup into helpers. While in here, fold in the two
-  ride-along minors that live inside this function:
-  - `audioEngine.ts:474` — `(err as DOMException)?.name` casts a caught `unknown` without a
-    guard. Replace with a duck-typed `.name` check (NOT `instanceof DOMException` — the
-    test rejects with a plain name-tagged Error, and a real DOMException is not
-    `instanceof Error` in browsers, so instanceof breaks one side or the other).
-  - `audioEngine.ts:215` — `endChordTailUntil` lacks the file's `*Sec` unit suffix; rename
-    to `endChordTailUntilSec` (touches its in-closure refs).
-- **`scheduleBowlCue` (`src/audio/cueSynth.ts:55`, ~136 lines)** — extract the
-  envelope-shaping block and the partial-build loop into named helpers.
-- **`scheduleEndChord` (`src/audio/boundaryCueSynth.ts:179`, ~73 lines)** — collapse the
-  four parallel voice-node arrays + cancel() closure into one `voices: ToneNodes[]` array.
-- **`useAppViewModel` (`src/app/useAppViewModel.ts:33`, ~134 lines)** — mostly flat
-  declarative VM wiring; extract the audio-VM assembly, the `onBreathingPrimaryClick`
-  handler, and the session/settings VM wiring into smaller helpers.
-- **`appTestHarness.ts:61`** — `JSON.parse(raw) as Record<string, unknown>` with no runtime
-  validation (test harness, not production — lowest priority).
+- **`createAudioEngine`** — DONE (`9ae0ffa`, architecture Step 2). Extracted `cueStore`;
+  construction kept inline (an awaited helper shifted start-path microtask timing).
+  Both ride-along minors folded in: `endChordTailUntilSec` rename + duck-typed `.name`
+  guard (NOT `instanceof DOMException` — the test rejects with a plain name-tagged Error,
+  and a real DOMException is not `instanceof Error` in browsers).
+- **`scheduleBowlCue`** — DONE (`aa01ac0`). 136→58 lines; extracted `buildBowlEnvelope`
+  + `buildPartialStack`.
+- **`scheduleEndChord`** — DONE (`3a6f3b5`). 73→53 lines; collapsed the four parallel
+  voice arrays into one `ToneNodes[]` (new shared `ToneNodes` type).
+- **`useAppViewModel`** — DONE (`b2c67d6`). 134→109 lines; extracted `useStatsPanel` +
+  `useBreathingPrimaryClick`. Left the flat factory wiring inline (already delegates to
+  the tested VM factories per D3).
+- **`appTestHarness.ts`** — DONE (`91dd376`). Guards the parsed-envelope shape before
+  narrowing instead of an unchecked `as Record` cast.
