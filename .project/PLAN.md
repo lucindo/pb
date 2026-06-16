@@ -24,13 +24,16 @@ core breathing engine.
     `OrbShape`→`BreathingRing` (`4ddac9b`, `200e25f`); drop dead `nk-om-pulse`
     (`51abb3a`). Ring never grows/shrinks; In/Out fixed size; text on page bg.
   - [x] Trim COMPLETE — no further removal items
-- [x] Pre-feature code-cleanup pass on branch `chore/code-cleanup` (9 commits;
-  deslop + SSOT review + comment review, all under /ds-step-mode). Collapsed the
-  remaining multi-practice scaffolding to honest single-engine shape. Decisions
-  in `.project/DECISIONS.md` (D1: presets-over-one-engine). Not yet merged.
+- [x] Pre-feature code-cleanup pass on branch `chore/code-cleanup`. Started as
+  deslop + SSOT + comment review (collapsed multi-practice scaffolding to honest
+  single-engine shape; D1 in `.project/DECISIONS.md`), then grew to include: the
+  `/ds-ts-review` mechanical fixes, architecture Steps 1–2 (split `useAudioCues`,
+  extract `cueStore`), all four deferred function-length refactors, a final deslop,
+  and the Pattern Breathing spec + D6 model. All behavior-preserving; 739 tests green.
+  Merged to `main`.
 - [ ] Implement pattern-breathing functionality — **presets over one configurable
-  engine** (D1); model now specified in **D6** (4 phases + multiplier + rounds,
-  presets-as-data). Engine work = architecture-plan Step 3 below.
+  engine** (D1); model specified in **D6**, full spec in `.project/SPEC.md`. Engine
+  work = architecture-plan **Step 3** (the `BreathPhase`/`PatternSettings` migration).
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -100,31 +103,20 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — On branch `chore/code-cleanup`, 9 commits ahead of `main`, tree clean,
-nothing pushed/merged. The strip-to-pattern-breathing trim is done and merged (prior
-branch). This branch is a pre-feature cleanup pass (deslop → SSOT review → comment
-review, all gated under /ds-step-mode): collapsed the leftover multi-practice
-scaffolding to an honest single-engine shape. Notable: dead `switcher` namespace →
-single `practice.name`; dropped the `kind: 'patternBreathing'` discriminant; flattened
-the single end-session dialog VM (renamed `EndSessionDialogsView`→`EndSessionDialogView`);
-inlined `SessionPrimaryAction`; hoisted `PREFS_CHANGED_EVENT`/`STATE_KEY` to single
-sources; stripped ~83 ceremonial/restating comments and tightened buried WHY ones.
-**Kept by decision:** the ViewModel factories (tested seam, D3) and modal class strings
-(D4). All gates green throughout (`tsc -b`, `eslint`, 739 vitest tests). The app is still
-the resonance timer under the new name — pattern-breathing *functionality* is not built.
+**State** — `chore/code-cleanup` is **merged to `main`**; tree clean. The branch grew
+from a deslop/SSOT/comment pass into the full pre-feature cleanup: `/ds-ts-review`
+mechanical fixes, architecture Steps 1–2 (split `useAudioCues` →
+`useCueScheduler`/`useAudioHealth`; extract `cueStore` from `createAudioEngine`), all
+four deferred function-length refactors, a final deslop, and the Pattern Breathing
+spec + D6 model. Everything behavior-preserving — `tsc -b`, `eslint`, 739 vitest tests
+green throughout. The app is still the resonance timer under the new name;
+pattern-breathing *functionality* is NOT built.
 
-**Update (this session)** — On top of the cleanup pass, the branch now also carries:
-the `/ds-ts-review` mechanical fixes (`7d89ee2`), architecture Steps 1–2 (`71688f5`,
-`9ae0ffa` — split `useAudioCues`, extract `cueStore`), all four deferred function-length
-refactors (`aa01ac0`, `3a6f3b5`, `b2c67d6`, `91dd376`), and the Pattern Breathing spec +
-D6 model docs. All behavior-preserving; 739 tests green throughout. The app is still the
-resonance timer — pattern-breathing functionality is NOT built (that's Step 3 / the
-feature, gated on `.project/SPEC.md`).
-
-**Next** — Merge `chore/code-cleanup` → `main` (it's grown well past the original cleanup),
-then start the pattern-breathing feature: implement architecture **Step 3** (the
-`BreathPhase`/`PatternSettings` migration) against `.project/SPEC.md`, adding
-characterization tests at the domain plan/cue seam first.
+**Next** — Start the pattern-breathing feature: architecture **Step 3** — the
+`BreathPhase` + `PatternSettings` migration (~16 files: domain→audio→hooks→
+components→content→storage) against `.project/SPEC.md`. Add characterization tests at
+the domain plan/cue seam first (`/ds-tdd-mode`); answer SPEC Open Question #5 (default
+`PatternSettings` + rounds) early.
 
 **Open questions**
 - ~~Pattern-breathing spec / hold phase~~ — RESOLVED in **D6**: 4 phases
@@ -134,7 +126,7 @@ characterization tests at the domain plan/cue seam first.
 - App name and the breathing-*technique* name both resolve to "Pattern Breathing"
   (`practice.name`). The preset feature will likely surface a per-preset label on the
   settings sheet/header; revisit then. (D2 collapsed the two identical strings to one.)
-- Decisions log: `.project/DECISIONS.md` (D1–D5).
+- Decisions log: `.project/DECISIONS.md` (D1–D6).
 
 ## Architecture (from `/ds-architecture-plan`, full repo, max-level=3)
 
