@@ -94,7 +94,7 @@ function RingBody({ frame, strings }: RingBodyProps) {
     >
       <div className="relative z-10 flex flex-col items-center gap-3">
         <span
-          className="text-5xl font-semibold tracking-tight sm:text-6xl"
+          className="text-4xl font-semibold tracking-tight sm:text-5xl"
           style={{ color: LABEL_COLOR }}
         >
           {phaseLabel}
