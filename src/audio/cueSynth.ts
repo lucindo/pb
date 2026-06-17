@@ -320,7 +320,9 @@ function scheduleHoldCue(
   kind: 'in' | 'out',
   phaseDurationSec: number,
 ): CueHandle {
-  const fundamentalHz = kind === 'in' ? preset.fundamentalHzIn : preset.fundamentalHzOut
+  // Hold-in drops an octave below the inhale strike — a sustained A4 (440) reads
+  // too pitchy held; A3 sits in the calm register as the out-hold already does.
+  const fundamentalHz = kind === 'in' ? preset.fundamentalHzIn / 2 : preset.fundamentalHzOut
   const t = buildToneNodes(
     audioCtx, fundamentalHz, phaseDurationSec, when, destination, preset, HOLD_SUSTAIN_GAIN,
     { attackSec: HOLD_ATTACK_SEC, releaseSec: HOLD_RELEASE_SEC },
@@ -362,9 +364,10 @@ export function scheduleOutCueForTimbre(
   return scheduleBowlCue(audioCtx, when, destination, preset, 'out', phaseDurationSec)
 }
 
-// Hold cues pitch-match the adjacent breath strike: hold-in follows the inhale
-// (440 Hz), hold-out follows the exhale (220 Hz) — the sustained tone continues
-// the breath rather than introducing a new pitch.
+// Hold cues sit a calm octave below the inhale strike: both hold tones land at
+// 220 Hz (A3) — hold-in drops from the 440 Hz strike (see scheduleHoldCue), hold-out
+// matches the 220 Hz exhale. A sustained tone reads more pitchy than a struck one,
+// so the held note stays in the low register.
 export function scheduleHoldInCueForTimbre(
   audioCtx: AudioContext,
   when: number,

@@ -410,7 +410,7 @@ describe('scheduleHoldCue', () => {
   const HOLD_RELEASE_SEC = 1.1
   const HOLD_SUSTAIN_GAIN = 0.12
 
-  it('hold-in uses the inhale fundamental (440 Hz); hold-out uses the exhale (220 Hz)', () => {
+  it('both holds sound at 220 Hz (A3): hold-in drops an octave from the 440 Hz strike; hold-out matches the exhale', () => {
     const ac = createAc()
     const oscillators: OscillatorNode[] = []
     const realCreate = ac.createOscillator.bind(ac)
@@ -421,7 +421,7 @@ describe('scheduleHoldCue', () => {
     })
 
     scheduleHoldInCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
-    expect(oscillators[0]?.frequency.value).toBeCloseTo(440, 5)
+    expect(oscillators[0]?.frequency.value).toBeCloseTo(220, 5)
 
     oscillators.length = 0
     scheduleHoldOutCueForTimbre(ac, 1.0, ac.destination, 'bowl', 5)
