@@ -87,6 +87,19 @@ core breathing engine.
   unchanged (official already `v1.0`, first two segments still match). Re-pointed the `v1.0`
   tag (`9a4c195`→`529c415`, force-pushed) — same release line, so the tag moves rather than
   cutting `v1.1`. Tag push triggers deploy + first-exercises the Node-24 action bumps.
+- [x] **v1.1 — drop in-hold tone an octave to 220 Hz** (`343cdb7`). One audio feel-knob in
+  `cueSynth.ts`. `package.json` 1.1.0; cut as a *new* minor line — fresh `v1.1` tag, appended to
+  `versions.json` and promoted to `official` (root `/pb/` now serves v1.1).
+- [x] **Native desktop binaries — shipped `desktop-v1.0.0`.** Ported HRV's approach: one CI
+  workflow (`.github/workflows/desktop.yml`) wrapping the live `/pb/` PWA in a Pake (Tauri)
+  shell — no app/dep changes. Builds macOS-universal `.dmg`, Windows `.msi`, Linux x64
+  `.deb`/`.rpm`/`.AppImage`. Decoupled from `deploy.yml`: triggers on `workflow_dispatch`
+  (artifacts) or a `desktop-v*` tag (GitHub Release); wrapper version = the tag, app
+  auto-updates via the live URL. PRs #2 (workflow + README "Desktop apps") + #3 (icon fix).
+  **Gotcha (HRV had documented it, missed on first pass):** pb's `public/pwa-512x512.png` was
+  RGB; Tauri's Linux build hard-requires RGBA (mac/win bundlers don't). Converted in place,
+  RGB pixels byte-identical (`201d746`). Released live with all 5 installers at
+  `releases/latest`.
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -156,15 +169,16 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — **v1.0.1 shipped** at https://lucindo.github.io/pb/ (and /pb/v1.0/). Latest
-change: 1-4-2 preset default scale 1→2 (`529c415`), released by re-pointing the `v1.0` tag.
-`main` is at `529c415`, clean working tree. Deploy triggered by the tag push — verify green
-at https://github.com/lucindo/pb/actions. Otherwise a natural between-features stopping point.
+**State** — **Web v1.1** (official, served at `/pb/`) + **native desktop `desktop-v1.0.0`**
+both live. Desktop build confirmed working by the user — all 5 installers
+(macOS/Windows/Linux ×3) published at https://github.com/lucindo/pb/releases/latest. `main`
+at the PR-#3 merge, clean tree. A natural between-features stopping point.
 
-**Next** — No required action once the deploy lands green. New work starts from a fresh spec.
-To cut a *new* release line (vs. patching v1.0): bump `package.json` to `vX.Y.Z`, add `vX.Y`
-to `versions.json` (+ set official), commit, tag `vX.Y`, push. To patch the current line, as
-v1.0.1 did: bump patch, commit, move the `v1.0` tag, force-push it.
+**Next** — No required action. New work starts from a fresh spec. Release mechanics: web —
+new minor = bump `package.json`, add `vX.Y` to `versions.json` (+ official), commit, tag
+`vX.Y`, push; patch = bump patch, move the tag, force-push. Desktop — push a `desktop-v*` tag
+to cut a new installer release (only when the Pake shell itself changes; web content
+auto-updates without one).
 
 **Cross-session notes**
 - Deploy gotchas are now solved but worth knowing: the deploy only triggers on `vX.Y` tag
