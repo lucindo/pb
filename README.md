@@ -15,6 +15,22 @@ optional sound cues. Three presets ship built in:
 Change any field for a custom pattern. Set a fixed number of rounds, or leave it
 open-ended.
 
+## Desktop apps
+
+Native desktop builds wrap the same app in a lightweight [Pake](https://github.com/tw93/pake) (Tauri) window — **macOS** (universal, Intel + Apple Silicon), **Windows** (x64), and **Linux** (x64 `.deb` / `.rpm` / `.AppImage`). They load the live site, so the app stays up to date automatically; there's nothing to update by hand. The wrapper is versioned independently of the web app (`desktop-v*` tags) — a new installer is published only when the shell itself changes.
+
+**[Download the latest release →](https://github.com/lucindo/pb/releases/latest)**
+
+The builds are **unsigned**, so the first launch needs one extra step:
+
+- **macOS** — if you see "Pattern Breathing is damaged", clear the quarantine flag, then open normally:
+  ```bash
+  xattr -dr com.apple.quarantine "/Applications/Pattern Breathing.app"
+  ```
+  (or right-click the app → **Open**).
+- **Windows** — at the SmartScreen prompt, click **More info → Run anyway**.
+- **Linux** — pick the format for your distro: `.deb` (Debian/Ubuntu, `sudo apt install ./…deb`), `.rpm` (Fedora/openSUSE, `sudo dnf install ./…rpm`), or `.AppImage` (any distro — `chmod +x` and run).
+
 ## Develop
 
 ```
