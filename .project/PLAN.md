@@ -100,6 +100,13 @@ core breathing engine.
   RGB; Tauri's Linux build hard-requires RGBA (mac/win bundlers don't). Converted in place,
   RGB pixels byte-identical (`201d746`). Released live with all 5 installers at
   `releases/latest`.
+- [x] **v1.1.1 patch — lock viewport zoom** (`c7bdfa2`). Added `maximum-scale=1,
+  user-scalable=no` to the `index.html` viewport meta (prevents pinch/double-tap zoom
+  disrupting the ring/arc framing). `package.json` 1.1.1; same minor line, so the `v1.1`
+  tag was force-moved (`343cdb7`→`c7bdfa2`) rather than cutting v1.2 — `versions.json`/
+  official untouched (short form still `v1.1`, passes the deploy version gate). Deploy
+  green; **confirmed working incl. iOS** by the user. No desktop release — installed
+  clients auto-catch the web change via the live URL. See **D8**.
 
 ## Settings strip-down plan (Phases A–F)
 
@@ -169,15 +176,17 @@ Verify each phase: `tsc -b`, `npm run lint`, `npm run test:run` (remove tests fo
 
 ## Now
 
-**State** — **Web v1.1** (official, served at `/pb/`) + **native desktop `desktop-v1.0.0`**
-both live. Desktop build confirmed working by the user — all 5 installers
-(macOS/Windows/Linux ×3) published at https://github.com/lucindo/pb/releases/latest. `main`
-at the PR-#3 merge, clean tree. A natural between-features stopping point.
+**State** — **Web v1.1.1** (official, served at `/pb/`; the `v1.1` tag now points at
+`c7bdfa2`) + **native desktop `desktop-v1.0.0`** both live. Latest patch locked viewport
+zoom (`maximum-scale=1, user-scalable=no`) — deploy green, confirmed working on desktop
+**and iOS** by the user (D8). No desktop rebuild needed (installed clients load the live
+URL). `main` clean at `c7bdfa2`, in sync with origin. A natural between-features stopping point.
 
 **Next** — No required action. New work starts from a fresh spec. Release mechanics: web —
 new minor = bump `package.json`, add `vX.Y` to `versions.json` (+ official), commit, tag
-`vX.Y`, push; patch = bump patch, move the tag, force-push. Desktop — push a `desktop-v*` tag
-to cut a new installer release (only when the Pake shell itself changes; web content
+`vX.Y`, push; patch = bump patch, move the tag, force-push (short form of `package.json`
+version MUST still match the tag — the deploy version gate). Desktop — push a `desktop-v*`
+tag to cut a new installer release (only when the Pake shell itself changes; web content
 auto-updates without one).
 
 **Cross-session notes**

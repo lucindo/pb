@@ -144,3 +144,15 @@ wording, round counter, first-run default, long-hold UX). Which are settled?
   toggle and the stepper are two paths to the same state, with open-ended sitting
   just above 99. **Open-ended renders as the infinity symbol `∞`** wherever it
   appears (control + readout).
+
+## D8 — Lock viewport zoom (no pinch / double-tap zoom)
+
+**Q:** Should the app allow the user to zoom the page?
+
+**A:** No. Locked via the viewport meta in `index.html`:
+`maximum-scale=1, user-scalable=no`. Rationale: the breathing UI is a fixed,
+full-viewport guided experience — accidental pinch/double-tap zoom disrupts the
+ring/arc framing. **Non-obvious:** iOS Safari is widely documented to ignore
+`maximum-scale`/`user-scalable`, but the user confirmed the lock IS honored on iOS
+here (app is standalone-capable via `apple-mobile-web-app-capable`). Don't "fix" this
+assuming iOS ignores it. Shipped in v1.1.1 by force-moving the `v1.1` tag.
