@@ -26,6 +26,9 @@ No required action — new work starts from a fresh spec.
 - Desktop installers ship only when the Pake shell changes; web content auto-updates to installed clients.
 - Web release: minor = bump `package.json`, append to `versions.json`, tag `vX.Y`; patch = bump patch and force-move the existing tag.
 - Every change gates on `tsc -b`, `npm run lint`, and `npm run test:run`.
+- Advisories are checked with `osv-scanner scan source -r .` — `npm audit` undercounts them.
+- `--legacy-peer-deps` is never the workaround here — it silently drops `@testing-library/dom` and its peers.
+- Dependabot PRs are batched onto one branch and gated locally — do not merge them one at a time.
 
 # hazards
 - `index.html`: the FOUC pre-paint script hardcodes the state key and `prefs.theme` path — changing `storage.ts`'s key or shape without it causes a theme flash.
@@ -43,3 +46,5 @@ No required action — new work starts from a fresh spec.
 - `versions.json`: `official` selects the ref rebuilt at the site root — editing it changes what `/pb/` serves.
 - GitHub repo settings: the Pages source and the `github-pages` env `v*` tag policy live only on GitHub, not in source — recreating either silently breaks deploys.
 - `.project/PROJECT.md`, `PLAN.md`, `SPEC.md`, `DECISIONS.md`: carry unverified drift — trust the code over them.
+- `package.json`: raising `@vitejs/plugin-react`'s range makes npm unresolvable (its optional `@rolldown/plugin-babel` peer pulls babel 8 against vite-plugin-pwa's babel 7) — move it in place with `npm update`.
+- `src/audio/previewContext.test.ts`: the fake `Omit`s `resume` off `AudioContext` — restoring the intersection re-trips `@typescript-eslint/unbound-method`.
