@@ -2,7 +2,7 @@
 Pattern-breathing is feature-complete and shipped on both web and desktop; nothing in flight.
 
 # next
-No required action — new work starts from a fresh spec.
+No required action — the deferred typescript 7 bump is the only known pending dep work.
 
 # settled
 - No backend, telemetry, analytics, or third-party scripts — settings and stats stay in localStorage on-device.
@@ -26,9 +26,11 @@ No required action — new work starts from a fresh spec.
 - Desktop installers ship only when the Pake shell changes; web content auto-updates to installed clients.
 - Web release: minor = bump `package.json`, append to `versions.json`, tag `vX.Y`; patch = bump patch and force-move the existing tag.
 - Every change gates on `tsc -b`, `npm run lint`, and `npm run test:run`.
-- Advisories are checked with `osv-scanner scan source -r .` — `npm audit` undercounts them.
+- Advisories are checked with `osv-scanner scan source -r .` — `npm audit`'s count disagrees in both directions and is not the gate.
 - `--legacy-peer-deps` is never the workaround here — it silently drops `@testing-library/dom` and its peers.
 - Dependabot PRs are batched onto one branch and gated locally — do not merge them one at a time.
+- A compiler major (typescript) gets its own branch and its own gate — do not fold it into a dependabot batch.
+- The remaining `brace-expansion` osv-scanner hit is stale metadata — 2.1.3 carries the `EXPANSION_MAX_LENGTH` backport, so do not chase it.
 
 # hazards
 - `index.html`: the FOUC pre-paint script hardcodes the state key and `prefs.theme` path — changing `storage.ts`'s key or shape without it causes a theme flash.
@@ -48,3 +50,4 @@ No required action — new work starts from a fresh spec.
 - `.project/PROJECT.md`, `PLAN.md`, `SPEC.md`, `DECISIONS.md`: carry unverified drift — trust the code over them.
 - `package.json`: raising `@vitejs/plugin-react`'s range makes npm unresolvable (its optional `@rolldown/plugin-babel` peer pulls babel 8 against vite-plugin-pwa's babel 7) — move it in place with `npm update`.
 - `src/audio/previewContext.test.ts`: the fake `Omit`s `resume` off `AudioContext` — restoring the intersection re-trips `@typescript-eslint/unbound-method`.
+- `package.json`: a `brace-expansion` `overrides` entry breaks minimatch 5 — v5 exports a namespace, not the callable that `require()` returns.
