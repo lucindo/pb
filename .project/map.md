@@ -1,41 +1,36 @@
-# Map — Pattern Breathing (pb)
+# Overview
 
-## Overview
+Pattern Breathing is a calm, browser-based breathing timer: pick a pattern (Box-4, 4-7-8,
+1-4-2, or custom), run it with a visual ring and optional audio cues, no accounts and no
+backend — all state lives in `localStorage`. Installable as an offline-capable PWA, and
+wrapped separately as unsigned native desktop apps (macOS/Windows/Linux) via Pake/Tauri
+that just load the live site.
 
-A browser-based pattern-breathing timer. The user picks a named preset (Box-4,
-Weiss/4-7-8, 1-4-2) or dials a custom four-phase pattern — inhale, hold-in,
-exhale, hold-out, each a whole-second duration scaled by a `multiplier` — sets a
-round count or open-ended, and breathes along with per-phase audio and visual
-cues. No accounts, no backend: settings and stats live in `localStorage`.
-Installable as an offline-capable PWA, and wrapped as native desktop installers
-by a separate CI workflow. Bilingual EN / PT-BR.
+# Stack
 
-## Stack
+- **Language**: TypeScript (strict), React 19, Vite 8 + `@vitejs/plugin-react`, Tailwind 4 (`@tailwindcss/vite`), `vite-plugin-pwa`.
+- **Runtime**: browser (ESM, `"type": "module"`).
+- **Test**: Vitest 4 + Testing Library (`jsdom` environment via `vitest.setup.ts`).
+- **Lint**: ESLint 10 + `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`.
+- **Commands**: `npm run dev`, `npm run build` (`tsc -b` then `vite build`), `npm run test` / `test:run`, `npm run lint`, `npm run preview`.
+- **CI/CD**: `.github/workflows/deploy.yml` (web, tag-gated) and `desktop.yml` (Pake/Tauri installers, `desktop-v*` tags).
 
-- **Language / runtime:** TypeScript (`~6.0.2`, strict), React 19, browser only, ES2023.
-- **Build:** Vite 8 (`vite.config.ts`), Tailwind CSS v4 via `@tailwindcss/vite`,
-  PWA via `vite-plugin-pwa` (Workbox `generateSW`, `autoUpdate`). Base path `/pb/`.
-- **Test:** Vitest + Testing Library + jsdom. Config in `vite.config.ts`; setup in
-  `vitest.setup.ts`. Tests are colocated (`*.test.ts` / `*.test.tsx`).
-- **Lint:** ESLint (`eslint.config.js`) — typescript-eslint + React Hooks + React Refresh.
-- **Web APIs:** `AudioContext`, `<dialog>`, Page Visibility, Wake Lock, Web Worker, `localStorage`.
-- **Deps:** `react`, `react-dom`, `@fontsource-variable/inter` (self-hosted). No others.
-- **Commands:** `npm run dev` · `npm test` (watch) · `npm run test:run` · `npm run lint` · `npm run build` · `npm run preview`.
-- **Entry:** `index.html` → `src/main.tsx` → `src/app/App.tsx`.
+# Repo map
 
-## Repo map
-
-| Path | Holds |
-|------|-------|
-| `src/app/` | React composition. `App.tsx` (shell) → `ScreenRouter` routes `practice`/`learn`/`appSettings`. `PracticeScreen` + `PracticeSessionView` + `BreathingSessionSurface` host the session; `PracticeControlsView`, `PracticeSettingsView`, `EndSessionDialogView`. State via `useAppViewModel` (+ `useStatsPanel`, `useBreathingPrimaryClick`) and `useAppNavigation`; pure builders in `appViewModel`, `sessionPresentation`, `setupCardSummary`. `pages/` = `LearnPage`, `AppSettingsPage`. `appTestHarness.ts` seeds state for tests. |
-| `src/domain/` | Pure logic, no upward imports; barrel `index.ts`. `settings.ts` (`BreathPhase`, `PatternSettings`, bounds, coercers, defaults), `presets.ts` (`PRESETS`, `resolvePreset`, `applyPreset`), `breathingPlan.ts`, `sessionMath.ts` (`getSessionFrame`, `getCompletionSec`), `sessionController.ts`, `sessionLifecycle.ts`, `sessionAudio.ts`. |
-| `src/hooks/` | `useSessionEngine` (rAF lookahead) + `useBreathingSessionController`; audio via `useAudioCues` → `useCueScheduler` + `useAudioHealth`; `leadInCountdown`, `lookaheadHeartbeat.worker.ts`. Prefs/env: `useTheme`, `useLocale`, `useBypassSilentMode`, `usePreferenceChoice`, `usePrefersReducedMotion`, `useWakeLock`, `useFavicon`, `useUiStringsContext`, `useBeforeInstallPrompt`, `useIsStandaloneOrPhone`. |
-| `src/audio/` | Web Audio layer. `audioEngine` (scheduling, lookahead, `SAFE_LEAD_SEC`) over `cueStore` (in-flight set, prune/cancel/dedup); `cueSynth` (per-phase strikes + sustained hold pad + shared tone-node builders), `boundaryCueSynth` (lead-in tick, end chord), `timbres`, `sessionClock` + `swappableSessionClock`, `audioStatus`, `previewContext`, `silentLoopBypass`, `audioConstants`. |
-| `src/components/` | UI. `BreathingRing` (fixed ring, `ProgressArcLayer`, `HoldProgressBar`, phase label), `SessionReadout`, `FeedbackTime`, `SetupCard`, `SessionActionRow`, `SessionCompletionHeadline`. Settings: `PatternBreathingSettingsForm`, `SettingsSheet`, `SettingsPanelBody`, `SettingsStatsSection`, `Settings*` row/stepper/toggle parts. Dialogs: `ConfirmDialog`, `EndSessionDialog`, `useModalDialog`. Pickers: Theme/Timbre/Language. `IosInstallSteps`, `LearnAnchor`/`LearnPanel`, `MuteToggle`. `primitives/` (shell, cards, segmented control, toggle, app bar), `icons/`. |
-| `src/content/` | Typed copy. `strings.ts` (EN + PT-BR, `OPEN_ENDED_GLYPH`), `learnContent.ts` (About sections per locale), `lockedCopy.ts` (medical-advice + affiliation lines). |
-| `src/storage/` | Flat `localStorage` envelope; barrel `index.ts`. `storage.ts` (read/write, version + downgrade guard), `settings.ts` (pattern settings coercer), `stats.ts`, `prefs.ts` (`UserPrefs`, `loadPrefs`, prefs-changed event), `installDismissed.ts`. |
-| `src/styles/` | `theme.css` (Mono Zen palette, light/dark) + `faviconPalette.ts`. |
-| `public/` | PWA icons (`pwa-*.png`, maskable variants), `apple-touch-icon.png`, `favicon.svg`. |
-| `assets/icons/` | SVG masters (`icon.svg`, `icon-maskable.svg`) for the PNGs in `public/`. |
-| `.github/workflows/` | `deploy.yml` — tag-triggered multi-version GitHub Pages deploy under `/pb/`, driven by `versions.json`. `desktop.yml` — Pake/Tauri wrapper building macOS/Windows/Linux installers. |
-| root | `index.html` (viewport lock, FOUC pre-paint script), `vite.config.ts`, `vitest.setup.ts`, `eslint.config.js`, `tsconfig*.json`, `versions.json`. |
+| Path | Contents |
+|---|---|
+| `src/app/` | Screens and app-level view models — `App.tsx`, `ScreenRouter`, `PracticeScreen`/`PracticeSettingsView`/`PracticeControlsView`, `BreathingSessionSurface`, `EndSessionDialogView`, navigation (`useAppNavigation`), view-model factories (`appViewModel`, `useAppViewModel`), `sessionPresentation`, `setupCardSummary`; `src/app/pages/` holds `AppSettingsPage` and `LearnPage`. |
+| `src/domain/` | Pure logic, zero upward imports: `breathingPlan`, `presets`, `sessionAudio`, `sessionController`, `sessionLifecycle`, `sessionMath`, `settings`; re-exported via `src/domain/index.ts`. |
+| `src/audio/` | Web Audio engine and cue synthesis: `audioEngine`, `cueSynth`/`boundaryCueSynth` (one-way dependency), `sessionClock`/`swappableSessionClock`, `previewContext`, `cueStore`, `timbres`, `silentLoopBypass`, `audioStatus`. |
+| `src/hooks/` | React hooks bridging domain/audio to UI: `useSessionEngine` (single session engine, rAF lookahead), `useBreathingSessionController`, `useAudioCues`, `useCueScheduler`, `useWakeLock`, `useTheme`, `useLocale`, `useFavicon`, `usePrefersReducedMotion`, `useBeforeInstallPrompt`, `useBypassSilentMode`, `useIsStandaloneOrPhone`, `usePreferenceChoice`, `leadInCountdown`; `lookaheadHeartbeat.worker.ts` is a Web Worker. |
+| `src/components/` | Presentational components: `BreathingRing`, `SettingsSheet`/`SettingsPanelBody`/`SettingsStatsSection`/`SettingsRow`/`SettingsStepper`/etc., `PatternBreathingSettingsForm`, `SetupCard`, `SessionReadout`, `EndSessionDialog`/`ConfirmDialog`, `ThemePicker`, `LanguagePicker`, `TimbrePicker`, `MuteToggle`, `LearnPanel`/`LearnAnchor`, `IosInstallSteps`; `icons/` (SVG icon components) and `primitives/` (`IconButton`, `PageShell`, `PickerCardGrid`, `SectionCard`, `SegmentedControl`/`SegmentedField`, `Toggle`, `TopAppBar`). |
+| `src/storage/` | `localStorage` persistence with per-field validation at the boundary: `storage` (envelope + cross-tab guard), `settings`, `prefs`, `stats`, `installDismissed`; re-exported via `src/storage/index.ts`. |
+| `src/content/` | UI copy: `strings` (incl. `OPEN_ENDED_GLYPH`), `learnContent`, `lockedCopy` (byte-frozen medical-advice/affiliation text, enforced by `lockedCopy.test.ts`). |
+| `src/styles/` | `theme.css` plus `faviconPalette` (must match `index.html`/`public/favicon.svg`, enforced by `favicon.sync.test.ts`) and contrast/alpha probe tests. |
+| `public/` | PWA icons (`pwa-192x192.png`, `pwa-512x512.png` — must stay RGBA for Tauri Linux builds), `favicon.svg`, `apple-touch-icon.png`. |
+| `assets/icons/` | Source SVGs (`icon.svg`, `icon-maskable.svg`) for generated PWA icons. |
+| `.github/workflows/` | `deploy.yml` (web deploy, gated on `vX.Y` tags matching `package.json`) and `desktop.yml` (Pake/Tauri desktop installers). |
+| `.project/` | `map.md` (this file), `state.md` (current status, settled decisions, hazards), `config.md` (active modes). |
+| `versions.json` | Version manifest; `official` selects which ref is rebuilt at the site root. |
+| `index.html` | Entry HTML; contains the FOUC pre-paint theme script (reads `storage.ts`'s state key and `prefs.theme` path directly) and the `maximum-scale=1, user-scalable=no` viewport lock. |
+| `vite.config.ts` | Vite/PWA/Tailwind config; derives a build SHA + date via `git rev-parse` for the About row (falls back to `'dev'` outside git). |
