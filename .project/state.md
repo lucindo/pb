@@ -31,6 +31,7 @@ No required action — the deferred typescript 7 bump is the only known pending 
 - Dependabot PRs are batched onto one branch and gated locally — do not merge them one at a time.
 - A compiler major (typescript) gets its own branch and its own gate — do not fold it into a dependabot batch.
 - The remaining `brace-expansion` osv-scanner hit is stale metadata — 2.1.3 carries the `EXPANSION_MAX_LENGTH` backport, so do not chase it.
+- `.github/dependabot.yml` was removed — do not re-add it; Dependabot security alerts/updates are a separate, already-enabled repo setting unaffected by that file.
 
 # hazards
 - `index.html`: the FOUC pre-paint script hardcodes the state key and `prefs.theme` path — changing `storage.ts`'s key or shape without it causes a theme flash.
@@ -51,3 +52,4 @@ No required action — the deferred typescript 7 bump is the only known pending 
 - `package.json`: raising `@vitejs/plugin-react`'s range makes npm unresolvable (its optional `@rolldown/plugin-babel` peer pulls babel 8 against vite-plugin-pwa's babel 7) — move it in place with `npm update`.
 - `src/audio/previewContext.test.ts`: the fake `Omit`s `resume` off `AudioContext` — restoring the intersection re-trips `@typescript-eslint/unbound-method`.
 - `package.json`: a `brace-expansion` `overrides` entry breaks minimatch 5 — v5 exports a namespace, not the callable that `require()` returns.
+- repo-wide: `git push`'s GitHub vulnerability-count banner is stale/cached — confirm real alert state via `gh api repos/<owner>/<repo>/dependabot/alerts`, not the banner.
