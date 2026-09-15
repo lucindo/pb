@@ -30,8 +30,8 @@ No required action — the deferred typescript 7 bump is the only known pending 
 - `--legacy-peer-deps` is never the workaround here — it silently drops `@testing-library/dom` and its peers.
 - Dependabot PRs are batched onto one branch and gated locally — do not merge them one at a time.
 - A compiler major (typescript) gets its own branch and its own gate — do not fold it into a dependabot batch.
-- The remaining `brace-expansion` osv-scanner hit is stale metadata — 2.1.3 carries the `EXPANSION_MAX_LENGTH` backport, so do not chase it.
 - `.github/dependabot.yml` was removed — do not re-add it; Dependabot security alerts/updates are a separate, already-enabled repo setting unaffected by that file.
+- Transitive dev-dep advisories are moved in place with `npm update <pkg>` — never via `overrides` or by widening `package.json` ranges.
 
 # hazards
 - `index.html`: the FOUC pre-paint script hardcodes the state key and `prefs.theme` path — changing `storage.ts`'s key or shape without it causes a theme flash.
