@@ -32,6 +32,7 @@ No required action — the deferred typescript 7 bump is the only known pending 
 - A compiler major (typescript) gets its own branch and its own gate — do not fold it into a dependabot batch.
 - `.github/dependabot.yml` was removed — do not re-add it; Dependabot security alerts/updates are a separate, already-enabled repo setting unaffected by that file.
 - Transitive dev-dep advisories are moved in place with `npm update <pkg>` — never via `overrides` or by widening `package.json` ranges.
+- `.project/` doc commits go straight to `main` — do not branch or PR them.
 
 # hazards
 - `index.html`: the FOUC pre-paint script hardcodes the state key and `prefs.theme` path — changing `storage.ts`'s key or shape without it causes a theme flash.
@@ -48,7 +49,6 @@ No required action — the deferred typescript 7 bump is the only known pending 
 - `.github/workflows/deploy.yml`: deploy fires only on `vX.Y` tag pushes — branch and PR pushes run no CI at all.
 - `versions.json`: `official` selects the ref rebuilt at the site root — editing it changes what `/pb/` serves.
 - GitHub repo settings: the Pages source and the `github-pages` env `v*` tag policy live only on GitHub, not in source — recreating either silently breaks deploys.
-- `.project/PROJECT.md`, `PLAN.md`, `SPEC.md`, `DECISIONS.md`: carry unverified drift — trust the code over them.
 - `package.json`: raising `@vitejs/plugin-react`'s range makes npm unresolvable (its optional `@rolldown/plugin-babel` peer pulls babel 8 against vite-plugin-pwa's babel 7) — move it in place with `npm update`.
 - `src/audio/previewContext.test.ts`: the fake `Omit`s `resume` off `AudioContext` — restoring the intersection re-trips `@typescript-eslint/unbound-method`.
 - `package.json`: a `brace-expansion` `overrides` entry breaks minimatch 5 — v5 exports a namespace, not the callable that `require()` returns.
